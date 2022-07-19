@@ -49,8 +49,6 @@ import java.util.List;
 import java.util.Map;
 
 /** optimize controller.
- * @Auth: hzhuangwei1
- * @Time: 2022/6/6 11:19
  * @Description: optimizer is a task to compact small files in arctic table.
  * OptimizerController is the optimizer interface's controller, through this interface, you can get the optimized table,
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
