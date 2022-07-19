@@ -52,9 +52,7 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
- * @Auth: hzhuangwei1
- * @Time: 2022/6/26 19:47
- * @Description:
+ * @Description: OptimizerController Test
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
