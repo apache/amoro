@@ -32,8 +32,6 @@ import static com.netease.arctic.ams.server.config.VersionInfo.COMMIT_TIME;
 import static com.netease.arctic.ams.server.config.VersionInfo.VERSION;
 
 /** optimize controller.
- * @Auth: hzhuangwei1
- * @Time: 2022/7/1 11:19
  * @Description: get version and commitTime
  */
 public class VersionController {
