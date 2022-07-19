@@ -24,22 +24,6 @@ allowing data lakes to meet more real-time analysis, real-time risk control, Rea
       <li>100% compatible with iceberg / hive table format and syntax</li>
       <li>Provide transactional guarantee for streaming and batch concurrent writing</li>
     </ol>
-    <h2 class="sub-title">Modules</h2>
-    <p class="desc">Arctic contains modules as below:</p>
-    <ol>
-      <li><code>arctic-core</code> contains core abstractions and common implementions for other modules</li>
-      <li><code>arctic-flink</code> is the module for integrating with Apache Flink (use arctic-flink-runtime for a shaded version)</li>
-      <li><code>arctic-spark</code>  is the module for integrating with Apache Spark (use arctic-spark-runtime for a shaded version)</li>
-      <li><code>arctic-trino</code> now provides query integrating with apache trino, built on JDK11</li>
-      <li><code>arctic-optimizing</code> exposes optimizing container/group api and provides default implemetion</li>
-      <li><code>arctic-ams</code> is arctic meta service module
-        <ol class="dash-ol">
-          <li><code>ams-api</code> contains ams thrift api</li>
-          <li><code>ams-dashboard</code>  is the dashboard frontend for ams</li>
-          <li><code>ams-server</code> is the backend server for ams</li>
-        </ol>
-      </li>
-    </ol>
     <h2 class="sub-title">Building</h2>
     <p class="desc">Arctic is built using Maven with Java 1.8 and Java 11(only for <code>trino</code> module).</p>
     <ol>
@@ -150,19 +134,6 @@ export default defineComponent({
       height: 6px;
       border-radius: 100%;
       background-color: #000;
-      left: 14px;
-      top: 10px;
-    }
-  }
-  .dash-ol li {
-    &::after {
-      content: "";
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 100%;
-      background-color: transparent;
-      border: 1px solid #000;
       left: 14px;
       top: 10px;
     }
