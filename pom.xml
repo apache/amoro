@@ -15,6 +15,7 @@
         <module>optimizer</module>
         <module>flink</module>
         <module>spark</module>
+        <module>dist</module>
         <module>trino</module>
     </modules>
 
