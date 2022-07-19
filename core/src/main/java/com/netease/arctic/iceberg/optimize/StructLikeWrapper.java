@@ -26,7 +26,8 @@ import org.apache.iceberg.types.Types;
 import java.util.Comparator;
 
 /**
- * Copy from iceberg {@link org.apache.iceberg.util.StructLikeWrapper}, Add new constructor to create StructLikeWrapper more cheap
+ * Copy from iceberg {@link org.apache.iceberg.util.StructLikeWrapper},
+ * Add new constructor to create StructLikeWrapper more cheap
  */
 public class StructLikeWrapper {
 
