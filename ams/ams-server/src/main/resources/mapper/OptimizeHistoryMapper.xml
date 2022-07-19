@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper">
+    <resultMap id="OptimizeRecordsResultMap"
+               type="com.netease.arctic.ams.server.model.OptimizeHistory">
+        <id column="history_id" property="recordId"/>
+        <result column="optimize_range" property="optimizeRange"/>
+        <result column="optimize_type" property="optimizeType"/>
+        <result column="visible_time" property="visibleTime" typeHandler="Long2Ts"/>
+        <result column="commit_time" property="commitTime" typeHandler="Long2Ts"/>
+        <result column="plan_time" property="planTime" typeHandler="Long2Ts"/>
+        <result column="duration" property="duration"/>
+        <result column="partition_cnt" property="partitionCnt"/>
+        <result column="partitions" property="partitions"/>
+        <result column="base_table_max_file_seq_no" property="baseTableMaxFileSequence"/>
+        <association property="tableIdentifier" javaType="com.netease.arctic.table.TableIdentifier">
+            <constructor>
+                <arg column="table_id" javaType="long"/>
+                <arg column="catalog_name" javaType="String"/>
+                <arg column="db_name" javaType="String"/>
+                <arg column="table_name" javaType="String"/>
+            </constructor>
+        </association>
+        <association property="snapshotInfo" javaType="com.netease.arctic.ams.api.SnapshotInfo">
+            <result column="snapshot_id" property="snapshotId"/>
+            <result column="total_size" property="totalSize"/>
+            <result column="added_files" property="addedFiles"/>
+            <result column="removed_files" property="removedFiles"/>
+            <result column="added_records" property="addedRecords"/>
+            <result column="removed_records" property="removedRecords"/>
+            <result column="added_files_size" property="addedFilesSize"/>
+            <result column="removed_files_size" property="removedFilesSize"/>
+            <result column="total_files" property="totalFiles"/>
+            <result column="total_records" property="totalRecords"/>
+        </association>
+        <association property="totalFilesStatBeforeOptimize"
+                     javaType="com.netease.arctic.ams.server.model.FilesStatistics">
+            <constructor>
+                <arg column="total_file_cnt_before" javaType="int"/>
+                <arg column="total_file_size_before" javaType="long"/>
+            </constructor>
+        </association>
+        <association property="insertFilesStatBeforeOptimize"
+                     javaType="com.netease.arctic.ams.server.model.FilesStatistics">
+            <constructor>
+                <arg column="insert_file_cnt_before" javaType="int"/>
+                <arg column="insert_file_size_before" javaType="long"/>
+            </constructor>
+        </association>
+        <association property="deleteFilesStatBeforeOptimize"
+                     javaType="com.netease.arctic.ams.server.model.FilesStatistics">
+            <constructor>
+                <arg column="delete_file_cnt_before" javaType="int"/>
+                <arg column="delete_file_size_before" javaType="long"/>
+            </constructor>
+        </association>
+        <association property="baseFilesStatBeforeOptimize"
+                     javaType="com.netease.arctic.ams.server.model.FilesStatistics">
+            <constructor>
+                <arg column="base_file_cnt_before" javaType="int"/>
+                <arg column="base_file_size_before" javaType="long"/>
+            </constructor>
+        </association>
+        <association property="totalFilesStatAfterOptimize"
+                     javaType="com.netease.arctic.ams.server.model.FilesStatistics">
+            <constructor>
+                <arg column="total_file_cnt_after" javaType="int"/>
+                <arg column="total_file_size_after" javaType="long"/>
+            </constructor>
+        </association>
+    </resultMap>
+</mapper>

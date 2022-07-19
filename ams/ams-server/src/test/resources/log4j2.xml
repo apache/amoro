@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+    <!--<Configuration status="WARN" monitorInterval="30"> -->
+    <properties>
+        <property name="LOG_HOME">logs</property>
+    </properties>
+
+    <Appenders>
+        <!--*********************Console log***********************-->
+        <Console name="consoleAppender" target="SYSTEM_OUT">
+            <!--Set log format and color-->
+            <PatternLayout
+                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
+        </Console>
+    </Appenders>
+
+    <Loggers>
+        <Root level="error">
+            <AppenderRef ref="consoleAppender" level="error"/>
+        </Root>
+        <logger name="com.netease.arctic" level="info">
+            <AppenderRef ref="consoleAppender" level="info"/>
+        </logger>
+    </Loggers>
+
+</Configuration>

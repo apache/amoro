@@ -1,0 +1,2 @@
+com.netease.arctic.optimizer.flink.FlinkOptimizerFactory
+com.netease.arctic.optimizer.local.LocalOptimizerFactory

@@ -1,0 +1,52 @@
+site_name: Arctic
+site_description: Arctic is a pluggable streaming lakehouse service layer on top of hive and iceberg
+
+remote_name: arctic-site
+use_directory_urls: true
+
+# pip install mkdocs-material
+theme:
+    name: material
+    language: zh
+    favicon: img/favicon.ico
+    logo: img/logo.png
+    palette:
+        # https://cyent.github.io/markdown-with-mkdocs-material/appendix/color/
+        primary: 'Indigo'
+        accent: 'Teal'
+
+extra:
+  search:
+    language: 'jp'
+
+copyright: "Copyright 2018-2021"
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.tasklist
+  - pymdownx.tabbed:
+      alternate_style: true
+  - attr_list:
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+  - 概述: index.md
+  - 快速开始: getting-started.md
+  - 表:
+      - 结构: table-structure.md
+      - 配置: table-properties.md
+  - Flink: flink.md
+  - Spark:
+      - Getting Started: spark/spark-get-started.md
+      - Spark DDL: spark/spark-ddl.md
+      - Spark DML: spark/spark-dml.md
+      - Spark DataFrame: spark/spark-dataframe.md
+  - Trino: trino.md
+
+
+plugins:
+  - search

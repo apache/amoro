@@ -1,0 +1,488 @@
+/*
+  * Licensed to the Apache Software Foundation (ASF) under one
+  * or more contributor license agreements.  See the NOTICE file
+  * distributed with this work for additional information
+  * regarding copyright ownership.  The ASF licenses this file
+  * to you under the Apache License, Version 2.0 (the
+  * "License"); you may not use this file except in compliance
+  * with the License.  You may obtain a copy of the License at
+  *
+  *     http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and 
+  * limitations under the License.
+  */
+
+module.exports = {
+  'GET /mock/ams/v1/login/current': (req, res) => {
+    res.json({
+      code: 403,
+      msg: 'fail',
+      result: null
+    })
+  },
+  'GET /api/catalog': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'catalog1'
+        },
+        {
+          name: 'catalog2'
+        }
+      ]
+    })
+  },
+  'GET /api/database': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: ['database1', 'database2']
+    })
+  },
+  'GET mock/ams/v1/catalogs/opensource_arctic/databases': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: ['database1', 'database2',
+      "arctic_spark_test267",
+      "arctic_spark_test3",
+      "arctic_test",
+      "arctic_test_2",
+      "chbenchmark1",
+      "hellowrld",
+      "hwtest1",
+      "arctic_spark_test36",
+      "uu",
+      "arctic_test_2sw",
+      "chbenchmark2",
+      "tt",
+      "yuyu",
+      "arctic_spark_test32",
+      "arctic_testty",
+      "arctic_test_2ty",
+      "chbenchmark",
+      "hellowrltd",
+      "rt",
+      "arctic_spark_test3",
+      "arctic_test_2yy",
+      "chbenchmark5",
+      "hellowrld7",
+      "hwtesrtrt1"
+    ]
+    })
+  },
+  'GET mock/ams/v1/catalogs/opensource_arctic/databases/arctic_test/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: ['table11', 'table22',"arctic_spark_test267",
+      "arctic_spark_test3",
+      "arctic_test",
+      "arctic_test_2",
+      "chbenchmark1",
+      "hellowrld",
+      "hwtest1",
+      "arctic_spark_test36",
+      "uu",
+      "arctic_test_2sw",
+      "chbenchmark2",
+      "tt",
+      "yuyu",
+      "arctic_spark_test32",
+      "arctic_testty",
+      "arctic_test_2ty",
+      "chbenchmark",
+      "hellowrltd",
+      "rt",
+      "arctic_spark_test3",
+      "arctic_test_2yy",
+      "chbenchmark5",
+      "hellowrld7",
+      "hwtesrtrt1"]
+    })
+  },
+  'GET /api/v1/as/db/t1/detail': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        tableType: 'NEW_TABLE',
+        tableIdentifier: {
+          catalog: 'bdmstest_arctic',
+          database: 'default',
+          tableName: 'zyxtest',
+          id: 580
+        },
+        schema: [
+          {
+            field: 'id',
+            type: 'int',
+            comment: '9NY3o9NY3oKew3C9NY3oKew3CKew3C'
+          },
+          {
+            field: 'id2',
+            type: 'int',
+            comment: 'j3LlkVneOj'
+          }
+        ],
+        pkList: [
+          {
+            field: 'id1id1id1id1id1id1id1',
+            type: 'string',
+            comment: 'comment1comment1comment1comment1'
+          },
+          {
+            field: 'id2',
+            type: 'string',
+            comment: 'comment2'
+          }
+        ],
+        partitionColumnList: [
+          {
+            field: 'oR08d7C7uS',
+            sourceField: 'dN0ELHP0UM',
+            transform: 'MhKJ0LJ8Iu'
+          },
+          {
+            field: 'PGU1tfKH5b',
+            sourceField: 'u2eqHWhRkk',
+            transform: 'eSJU2b9zib'
+          },
+          {
+            field: 'r54KVdiiCX',
+            sourceField: '0xwvC4ujZ8',
+            transform: 'EFWKEFWKsKPSJUEFWKEFWKsKPSJUsKPSJUEFWKEFWKsKPSJUsKPSJUsKPSJU'
+          }
+        ],
+        properties: {
+          EFWKEFWKsKPSJUEFWKEFWKsKPSJUsKPSJUEFWKEFWKsKPSJUsKPSJUsKPSJU: '148'
+        },
+        metrics: {
+          lastCommitTime: 1651301798030,
+          size: '12KB',
+          file: 'file1',
+          averageFileSize: '10KB'
+        }
+      }
+    })
+  },
+  'GET /mock/ams/v1/tables/bdmstest_arctic/ndc_test_db/realtime_dw_inventory_poc_wt_3141/partitions': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        list: [
+          {
+            partition: '2022-03-02',
+            fileCount: 16,
+            size: '123KB',
+            lastCommitTime: 1651301798030
+          },
+          {
+            partition: '2022-03-03',
+            fileCount: 20,
+            size: '1234KB',
+            lastCommitTime: 1651301798030
+          }
+        ],
+        total: 2
+      }
+    })
+  },
+  'GET /api/v1/as/db/t1/2022-03-02/detail': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          file: 'file',
+          fsn: 'fsn1',
+          type: 'type1',
+          size: '123KB',
+          commitTime: 1651301798030,
+          commitId: 'commitId',
+          path: 'path'
+        },
+        {
+          file: 'file2',
+          fsn: 'fsn2',
+          type: 'type2',
+          size: '1234KB',
+          commitTime: 1651301798030,
+          commitId: 'commitId2',
+          path: 'path2'
+        }
+      ]
+    })
+  },
+  'GET /api/v1/as/db/t1/transactions': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        list: [
+          {
+            id: 'id1',
+            fileCount: 200,
+            fileSize: 'Bic05xfOhE',
+            commitTime: 1651301798030,
+            snapshotId: '81213'
+          },
+          {
+            id: 'id2',
+            fileCount: 200,
+            fileSize: 'OiuK7iAcU1',
+            commitTime: 1651301798030,
+            snapshotId: '82194'
+          }
+        ],
+        total: 100
+      }
+    })
+  },
+  'GET /api/v1/tables/as/db/t1/optimize': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        list: [
+          {
+            tableIdentifier: {
+              catalog: 'arctic_online_new',
+              database: 'tmp_music',
+              tableName: 'dim_moyi_itm_gift_base_dd',
+              id: 205
+            },
+            compactRange: 'Partition',
+            recordId: 103354,
+            visibleTime: 1651301798030,
+            commitTime: 1651301798030,
+            planTime: 1651301798030,
+            duration: 18173,
+            parallelism: 10,
+            totalFilesStatBeforeCompact: {
+              fileCnt: 5,
+              totalSize: 78539,
+              averageSize: 15707
+            },
+            insertFilesStatBeforeCompact: {
+              fileCnt: 4,
+              totalSize: 66763,
+              averageSize: 16690
+            },
+            deleteFilesStatBeforeCompact: {
+              fileCnt: 0,
+              totalSize: 0,
+              averageSize: 0
+            },
+            baseFilesStatBeforeCompact: {
+              fileCnt: 1,
+              totalSize: 11776,
+              averageSize: 11776
+            },
+            totalFilesStatAfterCompact: {
+              fileCnt: 4,
+              totalSize: 67985,
+              averageSize: 16996
+            },
+            snapshotInfo: {
+              snapshotId: 9197286040231952000,
+              operation: null,
+              totalSize: 7369863,
+              totalFiles: 506,
+              totalRecords: 653,
+              addedFiles: null,
+              addedFilesSize: 67985,
+              addedRecords: 142,
+              removedFilesSize: 11776,
+              removedFiles: 1,
+              removedRecords: 1
+            },
+            partitionCnt: 1,
+            partitions: 'dt=2022-04-29',
+            baseTableMaxFileSequence: '{dt=2022-04-29=12, dt=2022-04-28=7}'
+          },
+          {
+            tableIdentifier: {
+              catalog: 'arctic_online_new',
+              database: 'tmp_music',
+              tableName: 'dim_moyi_itm_gift_base_dd',
+              id: 205
+            },
+            compactRange: 'Partition',
+            recordId: 103354,
+            visibleTime: 1651204980005,
+            commitTime: 1651204980005,
+            planTime: 1651204961832,
+            duration: 18173,
+            totalFilesStatBeforeCompact: {
+              fileCnt: 5,
+              totalSize: 78539,
+              averageSize: 15707
+            },
+            insertFilesStatBeforeCompact: {
+              fileCnt: 4,
+              totalSize: 66763,
+              averageSize: 16690
+            },
+            deleteFilesStatBeforeCompact: {
+              fileCnt: 0,
+              totalSize: 0,
+              averageSize: 0
+            },
+            baseFilesStatBeforeCompact: {
+              fileCnt: 1,
+              totalSize: 11776,
+              averageSize: 11776
+            },
+            totalFilesStatAfterCompact: {
+              fileCnt: 4,
+              totalSize: 67985,
+              averageSize: 16996
+            },
+            snapshotInfo: {
+              snapshotId: 9197286040231952000,
+              operation: null,
+              totalSize: 7369863,
+              totalFiles: 506,
+              totalRecords: 653,
+              addedFiles: null,
+              addedFilesSize: 67985,
+              addedRecords: 142,
+              removedFilesSize: 11776,
+              removedFiles: 1,
+              removedRecords: 1
+            },
+            partitionCnt: 1,
+            partitions: 'dt=2022-04-29',
+            baseTableMaxFileSequence: '{dt=2022-04-29=12, dt=2022-04-28=7}'
+          },
+          {
+            tableIdentifier: {
+              catalog: 'arctic_online_new',
+              database: 'tmp_music',
+              tableName: 'dim_moyi_itm_gift_base_dd',
+              id: 205
+            },
+            compactRange: 'Partition',
+            recordId: 103354,
+            visibleTime: 1651204980005,
+            commitTime: 1651204980005,
+            planTime: 1651204961832,
+            duration: 18173,
+            totalFilesStatBeforeCompact: {
+              fileCnt: 5,
+              totalSize: 78539,
+              averageSize: 15707
+            },
+            insertFilesStatBeforeCompact: {
+              fileCnt: 4,
+              totalSize: 66763,
+              averageSize: 16690
+            },
+            deleteFilesStatBeforeCompact: {
+              fileCnt: 0,
+              totalSize: 0,
+              averageSize: 0
+            },
+            baseFilesStatBeforeCompact: {
+              fileCnt: 1,
+              totalSize: 11776,
+              averageSize: 11776
+            },
+            totalFilesStatAfterCompact: {
+              fileCnt: 4,
+              totalSize: 67985,
+              averageSize: 16996
+            },
+            snapshotInfo: {
+              snapshotId: 9197286040231952000,
+              operation: null,
+              totalSize: 7369863,
+              totalFiles: 506,
+              totalRecords: 653,
+              addedFiles: null,
+              addedFilesSize: 67985,
+              addedRecords: 142,
+              removedFilesSize: 11776,
+              removedFiles: 1,
+              removedRecords: 1
+            },
+            partitionCnt: 1,
+            partitions: 'dt=2022-04-29',
+            baseTableMaxFileSequence: '{dt=2022-04-29=12, dt=2022-04-28=7}'
+          }
+        ],
+        total: 7
+      }
+    })
+  },
+  'GET /mock/ams/v1/terminal/examples': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        'CreateTable',
+        'EditTable',
+        'DeleteTable'
+      ]
+    })
+  },
+  'GET /mock/ams/v1/terminal/examples/CreateTable': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: 'INSERT INTO sloth_test_qa_mysql_167.qa_slothdata.alltype1 select * FROM sloth_test_qa_mysql_167.qa_slothdata.alltype;INSERT INTO sloth_test_qa_mysql_167.qa_slothdata.alltype1 select * FROM sloth_test_qa_mysql_167.qa_slothdata.alltype;'
+    })
+  },
+  'GET /mock/ams/v1/terminal/3/result': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          id: 'Result1',
+          status: 'Failed',
+          columns: [
+            'namespace'
+          ],
+          rowData: [
+            [
+              'arctic_test'
+            ],
+            [
+              'arctic_test_2'
+            ],
+            [
+              'hellowrld'
+            ]
+          ]
+        },
+        {
+          id: 'Result2',
+          status: 'Failed',
+          columns: [
+            'namespace'
+          ],
+          rowData: [
+            [
+              'arctic_test222222222222222222'
+            ],
+            [
+              'arctic_test_24444444444444'
+            ],
+            [
+              'hellowrld666666666666666666666'
+            ]
+          ]
+        }
+      ]
+    })
+  }
+}

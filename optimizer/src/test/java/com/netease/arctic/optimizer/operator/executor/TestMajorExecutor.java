@@ -1,0 +1,76 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.optimizer.operator.executor;
+
+import com.google.common.collect.Iterables;
+import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.OptimizeTaskId;
+import com.netease.arctic.ams.api.OptimizeType;
+import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.optimizer.OptimizerConfig;
+import com.netease.arctic.optimizer.util.ContentFileUtil;
+import com.netease.arctic.utils.FileUtil;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionKey;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+
+public class TestMajorExecutor extends TestBaseExecutor {
+
+  @Test
+  public void testMajorExecutor() throws Exception {
+    insertBasePosDeleteFiles(2);
+    NodeTask nodeTask = constructNodeTask();
+    String[] arg = new String[0];
+    OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
+    optimizerConfig.setOptimizerId("UnitTest");
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
+  }
+
+  private NodeTask constructNodeTask() {
+    NodeTask nodeTask = new NodeTask();
+    nodeTask.setSourceNodes(baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
+        .collect(Collectors.toSet()));
+    nodeTask.setTableIdentifier(testKeyedTable.id());
+    nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Major, UUID.randomUUID().toString()));
+    nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
+    nodeTask.setPartition(FILE_A.partition());
+
+    for (DataFileInfo fileInfo : baseDataFilesInfo) {
+      nodeTask.addFile(
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          DataFileType.BASE_FILE);
+    }
+    for (DataFileInfo fileInfo : posDeleteFilesInfo) {
+      nodeTask.addFile(
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          DataFileType.POS_DELETE_FILE);
+    }
+
+    return nodeTask;
+  }
+}

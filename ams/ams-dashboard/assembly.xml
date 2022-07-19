@@ -1,0 +1,8 @@
+<assembly>
+    <id>ams-dashboard</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+
+    <includeBaseDirectory>false</includeBaseDirectory>
+</assembly>
