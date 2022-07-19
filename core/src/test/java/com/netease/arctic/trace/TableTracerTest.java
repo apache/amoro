@@ -29,6 +29,7 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
@@ -68,7 +69,7 @@ public class TableTracerTest extends TableTestBase {
         .appendFile(FILE_B)
         .commit();
 
-    Assert.assertTrue(!AMS.handler().getTableCommitMetas().containsKey(TABLE_ID.buildTableIdentifier()));
+    Assert.assertFalse(AMS.handler().getTableCommitMetas().containsKey(TABLE_ID.buildTableIdentifier()));
 
     transaction.commitTransaction();
 
@@ -101,7 +102,7 @@ public class TableTracerTest extends TableTestBase {
         .appendFile(FILE_B)
         .commit();
 
-    Assert.assertTrue(!AMS.handler().getTableCommitMetas().containsKey(TABLE_ID.buildTableIdentifier()));
+    Assert.assertFalse(AMS.handler().getTableCommitMetas().containsKey(TABLE_ID.buildTableIdentifier()));
 
     transaction.commitTransaction();
     List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
@@ -248,6 +249,39 @@ public class TableTracerTest extends TableTestBase {
     Assert.assertEquals(4, tableCommitMetas.size());
     TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
     Assert.assertEquals(1, commitMeta.getChanges().size());
+    TableChange tableChange = commitMeta.getChanges().get(0);
+    Assert.assertEquals(2, tableChange.deleteFiles.size());
+  }
+
+  @Test
+  public void testTraceRemovePosDeleteInternalInTransaction() throws Exception {
+    testKeyedTable.baseTable().newAppend().appendFile(FILE_A).commit();
+
+    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
+        .withTransactionId(1).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
+    writer.delete(FILE_A.path(), 1);
+    writer.delete(FILE_A.path(), 3);
+    writer.delete(FILE_A.path(), 5);
+    List<DeleteFile> result = writer.complete();
+    RowDelta rowDelta = testKeyedTable.baseTable().newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+
+    testKeyedTable.baseTable().newAppend().appendFile(FILE_C).commit();
+    Transaction transaction = testKeyedTable.baseTable().newTransaction();
+    OverwriteFiles overwriteFiles = transaction.newOverwrite();
+    overwriteFiles.deleteFile(FILE_A);
+    overwriteFiles.addFile(FILE_B);
+    overwriteFiles.commit();
+    DeleteFiles deleteFiles = transaction.newDelete();
+    deleteFiles.deleteFile(FILE_C);
+    deleteFiles.commit();
+    transaction.commitTransaction();
+
+    List<TableCommitMeta> tableCommitMetas = AMS.handler().getTableCommitMetas().get(PK_TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(4, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
+    Assert.assertEquals(2, commitMeta.getChanges().size());
     TableChange tableChange = commitMeta.getChanges().get(0);
     Assert.assertEquals(2, tableChange.deleteFiles.size());
   }
