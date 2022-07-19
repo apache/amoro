@@ -155,7 +155,7 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-ams-api</artifactId>
             <version>${project.version}</version>
-            <type>test-jar</type>
+            <classifier>tests</classifier>
             <scope>test</scope>
         </dependency>
 
@@ -171,7 +171,7 @@
             <artifactId>arctic-core</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
-            <type>test-jar</type>
+            <classifier>tests</classifier>
         </dependency>
 
         <dependency>
