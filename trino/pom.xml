@@ -521,7 +521,7 @@
 
     <profiles>
         <profile>
-            <id>toolChain</id>
+            <id>toolchain</id>
             <build>
                 <plugins>
                     <plugin>
