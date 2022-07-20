@@ -10,7 +10,7 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 
 ```
 ${SPARK_HOME/bin/spark-sql \
-    --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkSessionExtensions \
+    --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
     --conf spark.sql.catalog.spark_catalog= com.netease.arctic.spark.ArcticSparkCatalog \
     --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/arctic_catalog_name
 ```
