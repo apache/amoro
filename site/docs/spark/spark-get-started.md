@@ -9,10 +9,10 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
-${SPARK_HOME/bin/spark-sql \
+${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
-    --conf spark.sql.catalog.spark_catalog= com.netease.arctic.spark.ArcticSparkCatalog \
-    --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/arctic_catalog_name
+    --conf spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
+    --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
 > Arctic 通过 ArcticMetaService 管理 Catalog, Spark catalog 需要通过URL映射到 Arctic Catalog, 格式为:
