@@ -25,6 +25,9 @@ import org.apache.iceberg.types.Types;
 
 import java.util.Comparator;
 
+/**
+ * Factory to create {@link StructLikeWrapper}.
+ */
 public class StructLikeWrapperFactory {
 
   private final Comparator<StructLike> comparator;
