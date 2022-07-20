@@ -145,7 +145,7 @@ public class AmsTableTracer implements TableTracer {
     if (transactionSnapshotTableChanges.size() > 0) {
       transactionSnapshotTableChanges.forEach((snapshotId, internalTableChange) -> {
         if (table.isUnkeyedTable()) {
-          Snapshot snapshot = ((UnkeyedTable) table).snapshot(snapshotId);
+          Snapshot snapshot = table.asUnkeyedTable().snapshot(snapshotId);
           Optional<TableChange> tableChange = internalTableChange.toTableChange(table, snapshot, innerTable);
           tableChange.ifPresent(commitMeta::addToChanges);
         }
