@@ -59,6 +59,7 @@ public class SnapshotFileUtil {
     HadoopTables tables = new HadoopTables();
     Table entriesTable = tables.load(table.location() + "#ENTRIES");
     IcebergGenerics.read(entriesTable)
+        .useSnapshot(snapshot.snapshotId())
         .where(Expressions.equal(ManifestEntryFields.SNAPSHOT_ID.name(), snapshot.snapshotId()))
         .build()
         .forEach(record -> {
