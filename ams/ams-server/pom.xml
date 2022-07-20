@@ -38,6 +38,7 @@
         <websocket.version>9.4.46.v20220331</websocket.version>
         <jetty.verison>9.4.46.v20220331</jetty.verison>
         <kotlin.version>1.5.32</kotlin.version>
+        <spark.version>3.1.1</spark.version>
     </properties>
 
     <dependencies>

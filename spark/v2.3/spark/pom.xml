@@ -28,21 +28,21 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-spark_3.1</artifactId>
+    <artifactId>arctic-spark_2.3</artifactId>
     <packaging>jar</packaging>
 
     <properties>
         <root.dir>${project.basedir}</root.dir>
         <spark.mysql.version>5.1.40</spark.mysql.version>
         <guava.version>14.0.1</guava.version>
-        <spark.version>3.1.1</spark.version>
-        <scala.version>2.12.15</scala.version>
+        <spark.version>2.3.2</spark.version>
+        <scala.version>2.11.8</scala.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.12</artifactId>
+            <artifactId>spark-sql_2.11</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -71,7 +71,7 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.12</artifactId>
+            <artifactId>spark-core_2.11</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -92,7 +92,7 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_2.12</artifactId>
+            <artifactId>spark-hive_2.11</artifactId>
             <version>${spark.version}</version>
             <scope>provided</scope>
             <exclusions>
@@ -142,7 +142,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark3</artifactId>
+            <artifactId>iceberg-spark2</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -152,17 +152,17 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark3-extensions</artifactId>
-            <version>${iceberg.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.parquet</groupId>
-                    <artifactId>parquet-column</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.apache.iceberg</groupId>-->
+<!--            <artifactId>iceberg-spark3-extensions</artifactId>-->
+<!--            <version>${iceberg.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>org.apache.parquet</groupId>-->
+<!--                    <artifactId>parquet-column</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
 
         <!-- test dependency -->
         <dependency>
