@@ -507,7 +507,6 @@
                 <configuration>
                     <verbose>true</verbose>
                     <fork>true</fork>
-                    <executable>${JAVA_11_HOME}/bin/javac</executable>
                     <compilerVersion>11</compilerVersion>
                 </configuration>
             </plugin>
@@ -516,8 +515,26 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.19</version>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-toolchains-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>toolchain</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <jvm>${JAVA_11_HOME}/bin/java</jvm>
+                    <toolchains>
+                        <jdk>
+                            <version>11</version>
+                            <vendor>sun</vendor>
+                        </jdk>
+                    </toolchains>
                 </configuration>
             </plugin>
         </plugins>
