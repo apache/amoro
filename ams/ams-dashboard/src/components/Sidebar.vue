@@ -14,9 +14,10 @@
         <template #icon>
           <DashboardOutlined v-if="item.icon === 'DashboardOutlined'" />
           <TableOutlined v-if="item.icon === 'TableOutlined'" />
-          <ScheduleOutlined v-if="item.icon === 'ScheduleOutlined'" />
+          <svg-icon v-if="item.icon === 'ScheduleOutlined'" icon-class="optimizing" class="svg-icon" />
           <SettingOutlined v-if="item.icon === 'SettingOutlined'" />
-          <ConsoleSqlOutlined v-if="item.icon === 'ConsoleSqlOutlined'" />
+          <SettingOutlined v-if="item.icon === 'SettingOutlined'" />
+          <svg-icon v-if="item.icon === 'ConsoleSqlOutlined'" icon-class="terminal" class="svg-icon" />
         </template>
         <span>{{ $t(item.title) }}</span>
       </a-menu-item>
@@ -38,9 +39,7 @@ import {
   MenuUnfoldOutlined,
   DashboardOutlined,
   TableOutlined,
-  ScheduleOutlined,
-  SettingOutlined,
-  ConsoleSqlOutlined
+  SettingOutlined
 } from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
@@ -60,9 +59,7 @@ export default defineComponent({
     MenuUnfoldOutlined,
     DashboardOutlined,
     TableOutlined,
-    ScheduleOutlined,
     SettingOutlined,
-    ConsoleSqlOutlined,
     TableMenu
   },
   setup () {
@@ -203,7 +200,7 @@ export default defineComponent({
     }
     .arctic-name {
       width: 112px;
-      margin-left: 8px;
+      margin: 4px 0 0 8px;
     }
     .toggle-btn {
       position: absolute;

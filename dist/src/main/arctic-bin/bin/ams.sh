@@ -1,0 +1,154 @@
+#!/bin/bash
+################################################################################
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing,
+#  software distributed under the License is distributed on an
+#  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+#  KIND, either express or implied.  See the License for the
+#  specific language governing permissions and limitations
+#  under the License.
+################################################################################
+
+CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+export ARCTIC_HOME
+
+PRGDIR=$(dirname $0)
+PRGDIR=$(cd $PRGDIR;pwd)
+source ${PRGDIR}/config.sh
+WORKDIR=$ARCTIC_HOME
+RUNSERVER=$RUN_SERVER
+LIB_PATH=$ARCTIC_HOME/lib
+WORKDIR=$ARCTIC_HOME
+LOG_DIR=${WORKDIR}/logs
+STDERR_LOG=${WORKDIR}/logs/app.log.err
+STDOUT_LOG=${WORKDIR}/logs/app.log
+PID=${WORKDIR}/run/app.pid
+
+if [ ! -d "$LOG_DIR" ]; then
+    mkdir "$LOG_DIR"
+fi
+
+if [ ! -d "${WORKDIR}/run" ]; then
+    mkdir "${WORKDIR}/run"
+fi
+
+if [ ! -f $PID_PATH ];then
+    touch $PID_PATH
+fi
+
+if [ ! -f $STDERR_LOG ];then
+    touch $STDERR_LOG
+fi
+
+if [ ! -f $STDOUT_LOG ];then
+    touch $STDOUT_LOG
+fi
+
+if [ -z "$JAVA_OPTS" ]; then
+    JAVA_OPTS="-Xms512m -Xmx512m -verbose:gc -XX:+PrintGCDetails"
+fi
+
+if [ -z "$RUNSERVER" ]; then
+    echo "RunServer not exist, please check !"
+    exit 1
+fi
+
+export CLASSPATH=$ARCTIC_HOME/conf/:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
+CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${ARCTIC_HOME}  $JAVA_OPTS ${RUNSERVER}"
+#0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
+function status(){
+    test -e ${PID} || return 2
+    test -d /proc/$(cat ${PID}) && return 0 || return 1
+}
+
+function start() {
+  nohup ${CMDS} </dev/null >>${STDOUT_LOG} 2>>${STDERR_LOG} &
+    if [ $? -ne 0 ]; then
+        echo "start failed."
+    fi
+    echo $! > ${PID}; sleep 1.5
+    if status ; then
+        echo "process start success."; return 0
+    else
+        echo "process start failed."; return 1
+    fi
+}
+function stop() {
+    status && kill $(cat ${PID})
+    if ! status; then
+        rm -f ${PID};
+        echo "stop success."; return 0
+    fi
+    
+    kill_times=0
+    while status
+    do
+        sleep 1
+        let kill_times++
+        if [ ${kill_times} -eq 10 ]
+        then
+            kill -9 $(cat ${PID})
+            sleep 3; break
+        fi
+    done
+
+    if status; then
+        echo "stop failed. process is still running."; return 1
+    else
+        rm -f ${PID};
+        echo "stop success."; return 0
+    fi
+}
+
+case "$1" in
+    start)
+        status;
+        if [ $? -eq 2 ]; then
+            echo 'starting app server.'
+            start
+        elif [ $? -eq 0 ]; then
+            echo "alreadly running. start app failed." 
+        else 
+            echo "the pid file exists but porc is down; will delete ths pidfile ${PID} and starting app server."
+            start
+        fi
+        ;;
+    stop)
+        status;
+        if [ $? -ne 0 ]; then
+            echo "proc not running."
+        else
+            echo 'stopping app server.'
+            stop
+        fi
+        ;;
+    restart)
+        stop && sleep 3 && start
+        ;;
+    status)
+        status;
+        if [ $? -eq 0 ];then
+            echo 'running.'
+        else
+            echo 'not running.'
+            exit 1
+        fi
+        ;;
+    pid)
+        cat $PID
+        ;;
+    *)
+        echo "Usage $0 start|stop|restart|status|pid"
+        exit 1
+        ;;
+esac

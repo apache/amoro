@@ -27,10 +27,6 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
-/**
- * @author hzhuangwei1
- * @version 1.0 Create 2022/6/27
- */
 public interface DerbyTableMetadataMapper extends TableMetadataMapper {
   String TABLE_NAME = "table_metadata";
 

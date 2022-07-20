@@ -18,11 +18,6 @@
 
 package com.netease.arctic.ams.server.model;
 
-/**
- * Created on 2022/6/7.
- *
- * @author hzhuangwei1
- */
 public enum TableTaskStatus {
   COMPLETED,
   STOPPED,
