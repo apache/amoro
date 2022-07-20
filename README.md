@@ -46,16 +46,16 @@ Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
 ```
 <toolchains>
 <!--  JDK toolchains  -->
-<toolchain>
-<type>jdk</type>
-<provides>
-<version>11</version>
-<vendor>sun</vendor>
-</provides>
-<configuration>
-<jdkHome>${yourJdk11Home}</jdkHome>
-</configuration>
-</toolchain>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>11</version>
+            <vendor>sun</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>${yourJdk11Home}</jdkHome>
+        </configuration>
+    </toolchain>
 </toolchains>
 ```
 * To invoke a build and run tests: `mvn package -P toolchain`
