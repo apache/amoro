@@ -73,52 +73,6 @@ case class ExtendedArcticUnkeyedStrategy(spark: SparkSession) extends Strategy {
       Nil
   }
 
-  def convertTableProperties(c: CreateTableAsSelectStatement): Map[String, String] = {
-    convertTableProperties(
-      c.properties, c.options, c.serde, c.location, c.comment, c.provider, c.external)
-  }
-
-  private def convertTableProperties(
-                                      properties: Map[String, String],
-                                      options: Map[String, String],
-                                      serdeInfo: Option[SerdeInfo],
-                                      location: Option[String],
-                                      comment: Option[String],
-                                      provider: Option[String],
-                                      external: Boolean = false): Map[String, String] = {
-    properties ++
-      options ++ // to make the transition to the "option." prefix easier, add both
-      options.map { case (key, value) => TableCatalog.OPTION_PREFIX + key -> value } ++
-      convertToProperties(serdeInfo) ++
-      (if (external) Some(TableCatalog.PROP_EXTERNAL -> "true") else None) ++
-      provider.map(TableCatalog.PROP_PROVIDER -> _) ++
-      comment.map(TableCatalog.PROP_COMMENT -> _) ++
-      location.map(TableCatalog.PROP_LOCATION -> _)
-  }
-
-  /**
-   * Converts Hive Serde info to table properties. The mapped property keys are:
-   *  - INPUTFORMAT/OUTPUTFORMAT: hive.input/output-format
-   *  - STORED AS: hive.stored-as
-   *  - ROW FORMAT SERDE: hive.serde
-   *  - SERDEPROPERTIES: add "option." prefix
-   */
-  private def convertToProperties(serdeInfo: Option[SerdeInfo]): Map[String, String] = {
-    serdeInfo match {
-      case Some(s) =>
-        s.formatClasses.map { f =>
-          Map("hive.input-format" -> f.input, "hive.output-format" -> f.output)
-        }.getOrElse(Map.empty) ++
-          s.storedAs.map("hive.stored-as" -> _) ++
-          s.serde.map("hive.serde" -> _) ++
-          s.serdeProperties.map {
-            case (key, value) => TableCatalog.OPTION_PREFIX + key -> value
-          }
-      case None =>
-        Map.empty
-    }
-  }
-
   private def withProjectAndFilter(
                                     project: Seq[NamedExpression],
                                     filters: Seq[Expression],
