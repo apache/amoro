@@ -32,10 +32,6 @@ import org.apache.ibatis.annotations.Update;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author hengshu
- * @version 1.0 Create 2021/11/22 Update
- */
 public interface TableMetadataMapper {
   String TABLE_NAME = "table_metadata";
 
