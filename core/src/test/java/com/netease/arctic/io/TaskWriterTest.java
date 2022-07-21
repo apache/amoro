@@ -73,18 +73,6 @@ public class TaskWriterTest extends TableTestBase {
     writer.delete(FILE_A.path(), 5);
     List<DeleteFile> result = writer.complete();
     Assert.assertEquals(1, result.size());
-  }
-
-  @Test
-  public void testBasePosDeleteWriterMetrics() throws IOException {
-    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
-
-    writer.delete(FILE_A.path(), 1);
-    writer.delete(FILE_A.path(), 3);
-    writer.delete(FILE_A.path(), 5);
-    List<DeleteFile> result = writer.complete();
-    Assert.assertEquals(1, result.size());
     RowDelta rowDelta = testKeyedTable.baseTable().newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
