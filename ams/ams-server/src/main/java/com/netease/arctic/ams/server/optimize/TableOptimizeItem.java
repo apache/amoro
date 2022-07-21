@@ -565,8 +565,13 @@ public class TableOptimizeItem extends IJDBCService {
     try {
       HashSet<OptimizeTaskItem> toRemoved = new HashSet<>(optimizeTasks.values());
       optimizeTasks.clear();
+      Set<String> removedTaskHistory = new HashSet<>();
       for (OptimizeTaskItem task : toRemoved) {
         task.clearOptimizeTask();
+        removedTaskHistory.add(task.getOptimizeTask().getTaskHistoryId());
+      }
+      for (String taskHistoryId : removedTaskHistory) {
+        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithHistoryId(tableIdentifier, taskHistoryId);
       }
       LOG.info("{} clear all optimize tasks", getTableIdentifier());
       updateTableOptimizeStatus();
