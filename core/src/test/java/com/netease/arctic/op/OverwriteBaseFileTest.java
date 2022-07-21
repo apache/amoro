@@ -21,7 +21,6 @@ package com.netease.arctic.op;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
@@ -56,12 +55,12 @@ public class OverwriteBaseFileTest extends TableTestBase {
   public void setupTables() throws Exception {
     testCatalog = CatalogLoader.load(AMS.getUrl());
     tableDir = temp.newFolder();
-    testKeyedTable = (KeyedTable) testCatalog
+    testKeyedTable = testCatalog
         .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
         .withPartitionSpec(SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-        .create();
+        .create().asKeyedTable();
     this.before();
   }
 

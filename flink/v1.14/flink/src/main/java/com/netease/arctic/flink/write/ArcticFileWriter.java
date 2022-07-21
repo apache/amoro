@@ -111,7 +111,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     long transaction = -1;
     if (table.isKeyedTable()) {
       String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
-      transaction = ((KeyedTable) table).beginTransaction(signature);
+      transaction = table.asKeyedTable().beginTransaction(signature);
       LOG.info("table:{}, signature:{}, transactionId:{}", table.name(), signature, transaction);
     }
     return transaction;

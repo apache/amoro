@@ -80,7 +80,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
 
     Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
-    KeyedTable keyedTable = (KeyedTable) table;
+    KeyedTable keyedTable = table.asKeyedTable();
 
     long insertCount = 0;
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
@@ -176,7 +176,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     if (table.isKeyedTable()) {
-      KeyedTable keyedTable = (KeyedTable) table;
+      KeyedTable keyedTable = table.asKeyedTable();
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
     GenericArcticDataReader arcticDataReader =

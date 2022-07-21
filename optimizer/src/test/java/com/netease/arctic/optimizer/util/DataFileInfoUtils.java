@@ -44,7 +44,7 @@ public class DataFileInfoUtils {
     dataFileInfo.setPartition(partitionToPath(partitionFields(arcticTable.spec(), dataFile.partition())));
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(dataFile.recordCount());
-    if (arcticTable instanceof KeyedTable) {
+    if (arcticTable.isKeyedTable()) {
       PrimaryKeyedFile keyedTableFile = new DefaultKeyedFile(dataFile);
       dataFileInfo.setType(keyedTableFile.type().name());
       dataFileInfo.setIndex(keyedTableFile.index());

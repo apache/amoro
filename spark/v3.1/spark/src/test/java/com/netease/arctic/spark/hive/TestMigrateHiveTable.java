@@ -93,7 +93,7 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
     Assert.assertEquals(6, rows.size());
 
     ArcticTable t = loadTable(catalogName, database, table);
-    UnkeyedTable unkey = (UnkeyedTable) t ;
+    UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(3, partitionFiles.size());
   }
@@ -123,7 +123,7 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
     Assert.assertEquals(5, rows.size());
 
     ArcticTable t = loadTable(catalogName, database, table);
-    UnkeyedTable unkey = (UnkeyedTable) t ;
+    UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(1, partitionFiles.size());
   }
