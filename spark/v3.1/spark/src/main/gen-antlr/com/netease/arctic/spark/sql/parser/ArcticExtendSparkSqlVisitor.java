@@ -1,4 +1,5 @@
-package com.netease.arctic.spark.sql.parser;// Generated from /Users/jinsilei/arctic/arctic/spark/v3.1/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7.2
+// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7
+package com.netease.arctic.spark.sql.parser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**

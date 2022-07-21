@@ -35,8 +35,6 @@ public class TestKeyedTableDDL extends SparkTestBase {
   private final String database = "db_def";
   private final String table = "testA";
 
-  private final String sourceTable = "test_table";
-
   @Before
   public void prepare() {
     sql("use " + catalogName);
