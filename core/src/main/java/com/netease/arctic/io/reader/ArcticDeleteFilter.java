@@ -92,6 +92,7 @@ public abstract class ArcticDeleteFilter<T> {
   private Map<String, Set<Long>> positionMap;
   private final Accessor<StructLike> posAccessor;
   private final Accessor<StructLike> filePathAccessor;
+  private final Set<String> pathSets;
 
   protected ArcticDeleteFilter(
       KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
@@ -115,6 +116,9 @@ public abstract class ArcticDeleteFilter<T> {
       }
     }
     this.posDeletes = map.values().stream().collect(Collectors.toList());
+
+    this.pathSets =
+        keyedTableScanTask.dataTasks().stream().map(s -> s.file().path().toString()).collect(Collectors.toSet());
 
     this.primaryKeyId = primaryKeySpec.primaryKeyStruct().fields().stream()
         .map(Types.NestedField::fieldId).collect(Collectors.toSet());
@@ -305,6 +309,9 @@ public abstract class ArcticDeleteFilter<T> {
       while (iterator.hasNext()) {
         Record deleteRecord = iterator.next();
         String path = FILENAME_ACCESSOR.get(deleteRecord).toString();
+        if (!pathSets.contains(path)) {
+          continue;
+        }
         Set<Long> posSet = positionMap.get(path);
         if (posSet == null) {
           posSet = new HashSet<>();
