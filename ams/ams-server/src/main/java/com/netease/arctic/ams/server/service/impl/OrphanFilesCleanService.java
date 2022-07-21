@@ -122,8 +122,8 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
 
   public static void clean(ArcticTable arcticTable, long lastTime, boolean execute,
                            String mode, boolean metadata) {
-    if (arcticTable instanceof KeyedTable) {
-      KeyedTable keyedArcticTable = (KeyedTable) arcticTable;
+    if (arcticTable.isKeyedTable()) {
+      KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
       if ("base".equals(mode)) {
         clearInternalTable(keyedArcticTable, keyedArcticTable.baseTable(), lastTime, execute, metadata);
       } else if ("change".equals(mode)) {
@@ -139,7 +139,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         throw new IllegalStateException("only support mode=all/base/change");
       }
     } else {
-      clearInternalTable(arcticTable, (UnkeyedTable) arcticTable, lastTime, execute, metadata);
+      clearInternalTable(arcticTable, arcticTable.asUnkeyedTable(), lastTime, execute, metadata);
     }
   }
 

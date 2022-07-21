@@ -20,11 +20,12 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import java.util.List;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.List;
 
 public class TestMigrateNonHiveTable extends SparkTestBase {
   //
@@ -76,7 +77,7 @@ public class TestMigrateNonHiveTable extends SparkTestBase {
     Assert.assertEquals(8, rows.size());
 
     ArcticTable t = loadTable(catalogName, database, table);
-    UnkeyedTable unkey = (UnkeyedTable) t ;
+    UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(2, partitionFiles.size());
 
