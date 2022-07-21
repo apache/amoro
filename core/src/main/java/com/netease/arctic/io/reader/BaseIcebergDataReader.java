@@ -107,6 +107,19 @@ public abstract class BaseIcebergDataReader<T> {
     return iterable;
   }
 
+  public CloseableIterable<T> readDataWithoutApplyPosDelete(ArcticFileScanTask task) {
+
+    Map<Integer, ?> idToConstant = getIdToConstant(task);
+
+    CloseableIterable<T> iterable = newIterable(task, projectedSchema, idToConstant);
+
+    if (dataNodeFilter != null) {
+      return dataNodeFilter.filter(iterable);
+    }
+
+    return iterable;
+  }
+
   protected Map<Integer, ?> getIdToConstant(ArcticFileScanTask task) {
     Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
     Map<Integer, Object> idToConstant = new HashMap<>();

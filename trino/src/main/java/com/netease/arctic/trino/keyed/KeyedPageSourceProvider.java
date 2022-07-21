@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
+import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
 import io.trino.plugin.hive.HdfsEnvironment;
 import io.trino.plugin.iceberg.FileIoProvider;
@@ -75,12 +76,12 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) table;
     List<IcebergColumnHandle> icebergColumnHandles = columns.stream().map(IcebergColumnHandle.class::cast)
         .collect(Collectors.toList());
-
-    List<PrimaryKeyedFile> equDeleteFiles = keyedConnectorSplit.getKeyedTableScanTask().arcticEquityDeletes().stream()
+    KeyedTableScanTask keyedTableScanTask = keyedConnectorSplit.getKeyedTableScanTask();
+    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
         .map(ArcticFileScanTask::file).collect(Collectors.toList());
     Schema tableSchema = SchemaParser.fromJson(keyedTableHandle.getIcebergTableHandle().getTableSchemaJson());
     List<IcebergColumnHandle> deleteFilterRequiredSchema = IcebergUtil.getColumns(new KeyedDeleteFilter(
-        equDeleteFiles,
+        keyedTableScanTask,
         tableSchema,
         ImmutableList.of(),
         keyedTableHandle.getPrimaryKeySpec(),
@@ -93,7 +94,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         .forEach(requiredColumnsBuilder::add);
     List<IcebergColumnHandle> requiredColumns = requiredColumnsBuilder.build();
     ArcticDeleteFilter<TrinoRow> arcticDeleteFilter = new KeyedDeleteFilter(
-        equDeleteFiles,
+        keyedTableScanTask,
         tableSchema,
         requiredColumns,
         keyedTableHandle.getPrimaryKeySpec(),
