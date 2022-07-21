@@ -50,12 +50,6 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/19
- * Update
- */
 public class JDBCSqlSessionFactoryProvider {
 
   private static volatile SqlSessionFactory sqlSessionFactory;

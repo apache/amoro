@@ -20,12 +20,6 @@ package com.netease.arctic.ams.server.handler;
 
 import com.netease.arctic.ams.api.OptimizeManager;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/16
- * Update
- */
 public interface IOptimizeManagerHandler extends OptimizeManager.Iface {
 
 }
