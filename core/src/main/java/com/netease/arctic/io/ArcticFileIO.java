@@ -46,20 +46,17 @@ public interface ArcticFileIO extends FileIO {
    */
   boolean exists(String path);
 
-  //TODO wait to delete
-  boolean rename(String src, String dts);
-
-  //TODO wait to delete
-  boolean mkdirs(String src);
-
-  //TODO wait to delete
-  boolean deleteFileWithResult(String path);
-
-  //TODO wait to delete
+  /** Delete a file.
+   *
+   * @param path the path to delete.
+   * @param recursive if path is a directory and set to
+   * true, the directory is deleted else throws an exception. In
+   * case of a file the recursive can be set to either true or false.
+   * @return  true if delete is successful else false.
+   */
   boolean deleteFileWithResult(String path, boolean recursive);
 
   //TODO FileStatus is a hadoop object, need to be replaced
-
   List<FileStatus> list(String location);
 
   /**

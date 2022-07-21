@@ -70,24 +70,9 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       try {
         fs.delete(toDelete, false);
       } catch (IOException e) {
-        throw new UncheckedIOException("Failed to delete file: " + new Object[]{path}, e);
+        throw new UncheckedIOException("Failed to delete file: " + path, e);
       }
       return null;
-    });
-  }
-
-  @Override
-  public boolean deleteFileWithResult(String path) {
-    return tableMetaStore.doAs(() -> {
-      Path toDelete = new Path(path);
-      FileSystem fs = getFs(toDelete);
-      boolean result;
-      try {
-        result = fs.delete(toDelete, false /* not recursive */);
-      } catch (IOException e) {
-        result = false;
-      }
-      return result;
     });
   }
 
@@ -191,34 +176,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         return fs.exists(filePath);
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to check file exist for " + path, e);
-      }
-    });
-  }
-
-  @Override
-  public boolean rename(String src, String dts) {
-    return tableMetaStore.doAs(() -> {
-      Path srcPath = new Path(src);
-      Path dtsPath = new Path(dts);
-      FileSystem fs = getFs(srcPath);
-      try {
-        return fs.rename(srcPath, dtsPath);
-      } catch (IOException e) {
-        throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
-      }
-    });
-  }
-
-  @Override
-  public boolean mkdirs(String src) {
-    return tableMetaStore.doAs(() -> {
-      Path path = new Path(src);
-      FileSystem fs = getFs(path);
-      try {
-        return fs.mkdirs(path);
-      } catch (IOException e) {
-        LOG.error("Failed to mkdirs: path {}, exception {}", path, e);
-        throw new UncheckedIOException("Failed to mkdirs: path " + src, e);
       }
     });
   }
