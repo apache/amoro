@@ -63,7 +63,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * Abstract implementation of filtering equality delete files with insert files and base files.
+ * Abstract implementation of filtering equality and position delete files with insert files and base files.
  *
  * @param <T> to indicate the record data type.
  */
