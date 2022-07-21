@@ -20,6 +20,7 @@ package com.netease.arctic.trino.keyed;
 
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
+import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.delete.TrinoRow;
@@ -45,12 +46,12 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
   private FileIO fileIO;
 
   protected KeyedDeleteFilter(
-      List<PrimaryKeyedFile> equDeletes,
+      KeyedTableScanTask keyedTableScanTask,
       Schema tableSchema,
       List<IcebergColumnHandle> requestedSchema,
       PrimaryKeySpec primaryKeySpec,
       FileIO fileIO) {
-    super(equDeletes, tableSchema, filterSchema(tableSchema, requestedSchema), primaryKeySpec);
+    super(keyedTableScanTask, tableSchema, filterSchema(tableSchema, requestedSchema), primaryKeySpec);
     this.fileIO = fileIO;
   }
 
