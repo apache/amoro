@@ -91,32 +91,18 @@ public abstract class BaseArcticDataReader<T> {
   }
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
-    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file).collect(Collectors.toList());
 
-    CloseableIterable<T> dataIterable;
-    if (!equDeleteFiles.isEmpty()) {
-      ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
-          equDeleteFiles, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
-      );
-      Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-      BaseIcebergDataReader<T> baseIcebergDataReader = new GenericIcebergDataReader(
-          fileIO, tableSchema, newProjectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer
-      );
+    ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
+        keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
+    );
+    Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
+    BaseIcebergDataReader<T> baseIcebergDataReader = new GenericIcebergDataReader(
+        fileIO, tableSchema, newProjectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer
+    );
 
-      dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filter(baseIcebergDataReader.readData(fileScanTask))));
-    } else {
-      BaseIcebergDataReader<T> baseIcebergDataReader = new GenericIcebergDataReader(
-          fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer
-      );
-
-      dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          baseIcebergDataReader::readData));
-    }
-
+    CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
+        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
+        fileScanTask -> arcticDeleteFilter.filter(baseIcebergDataReader.readDataWithoutApplyPosDelete(fileScanTask))));
     return fileIO.doAs(dataIterable::iterator);
   }
 
@@ -126,7 +112,7 @@ public abstract class BaseArcticDataReader<T> {
 
     if (!equDeleteFiles.isEmpty()) {
       ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
-          equDeleteFiles, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
+          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
       );
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
       BaseIcebergDataReader<T> baseIcebergDataReader = new GenericIcebergDataReader(
@@ -135,7 +121,8 @@ public abstract class BaseArcticDataReader<T> {
 
       CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
           CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(baseIcebergDataReader.readData(fileScanTask))));
+          fileScanTask -> arcticDeleteFilter.filterNegate(
+              baseIcebergDataReader.readDataWithoutApplyPosDelete(fileScanTask))));
       return fileIO.doAs(dataIterable::iterator);
     } else {
       return CloseableIterator.empty();
@@ -179,19 +166,19 @@ public abstract class BaseArcticDataReader<T> {
     protected Function<T, StructLike> asStructLike;
 
     protected GenericArcticDeleteFilter(
-        List<PrimaryKeyedFile> equDeletes,
+        KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
-      super(equDeletes, tableSchema, requestedSchema, primaryKeySpec);
+      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
       this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
     protected GenericArcticDeleteFilter(
-        List<PrimaryKeyedFile> equDeletes,
+        KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema,
         Schema requestedSchema,
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes) {
-      super(equDeletes, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
+      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
       this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 
