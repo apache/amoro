@@ -174,7 +174,7 @@ public class TestUnkeyed extends FlinkTestBase {
         "/*+ OPTIONS('arctic.emit.mode'='file')*/ select * from input");
 
     ArcticTable table = testCatalog.loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TestUnkeyed.TABLE));
-    Iterable<Snapshot> snapshots = ((UnkeyedTable) table).snapshots();
+    Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
     Assert.assertEquals(
@@ -217,7 +217,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     ArcticTable table = testCatalog.loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TestUnkeyed.TABLE));
 
-    Iterable<Snapshot> snapshots = ((UnkeyedTable) table).snapshots();
+    Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
     TableResult result = exec("select * from arcticCatalog." + DB + "." + TestUnkeyed.TABLE +
@@ -388,7 +388,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     TableIdentifier identifier = TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE);
     ArcticTable table = testCatalog.loadTable(identifier);
-    Iterable<Snapshot> snapshots = ((UnkeyedTable) table).snapshots();
+    Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
     Assert.assertEquals(DataUtil.toRowSet(expected), sqlSet("select * from arcticCatalog." + DB + "." + TestUnkeyed.TABLE +
@@ -444,7 +444,7 @@ public class TestUnkeyed extends FlinkTestBase {
 
     TableIdentifier identifier = TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE);
     ArcticTable table = testCatalog.loadTable(identifier);
-    Iterable<Snapshot> snapshots = ((UnkeyedTable) table).snapshots();
+    Iterable<Snapshot> snapshots = table.asUnkeyedTable().snapshots();
     Snapshot s = snapshots.iterator().next();
 
     TableResult result = exec("select * from arcticCatalog." + DB + "." + TestUnkeyed.TABLE +

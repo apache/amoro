@@ -34,11 +34,9 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,11 +252,11 @@ public abstract class BaseOptimizePlan {
   }
 
   public boolean tableNeedPlan() {
-    if (arcticTable instanceof KeyedTable) {
-      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(((KeyedTable) arcticTable).baseTable());
-      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(((KeyedTable) arcticTable).changeTable());
+    if (arcticTable.isKeyedTable()) {
+      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
+      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
     } else {
-      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(((UnkeyedTable) arcticTable));
+      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
     }
 
     return tableChanged();
@@ -294,24 +292,15 @@ public abstract class BaseOptimizePlan {
 
   private boolean baseTableChanged() {
     long lastBaseSnapshotId = tableOptimizeRuntime.getCurrentSnapshotId();
-    Iterable<Snapshot> snapshots;
-    if (arcticTable instanceof KeyedTable) {
-      snapshots = ((KeyedTable) arcticTable).baseTable().snapshots();
+    Snapshot snapshot;
+    if (arcticTable.isKeyedTable()) {
+      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
     } else {
-      snapshots = ((UnkeyedTable) arcticTable).snapshots();
+      snapshot = arcticTable.asUnkeyedTable().currentSnapshot();
     }
 
-    if (snapshots != null) {
-      List<Snapshot> snapshotsList = new ArrayList<>();
-      Iterables.addAll(snapshotsList, snapshots);
-      if (snapshotsList.isEmpty()) {
-        // if no snapshot(no data), there is no need to do compaction
-        return false;
-      }
-      // find if any new data came after last check snapshot
-      int index = snapshotsList.size() - 1;
+    if (snapshot != null) {
       boolean findNewData = false;
-      Snapshot snapshot = snapshotsList.get(index);
       if (snapshot.snapshotId() != lastBaseSnapshotId) {
         findNewData = true;
         LOG.debug("{} ==== {} find {} data in base snapshot={}", tableId(), getOptimizeType(), snapshot.operation(),

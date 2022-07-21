@@ -113,17 +113,17 @@ public class FlinkTestBase extends TableTestBase {
   public void before() {
     if (IS_LOCAL) {
       metastoreUrl = "thrift://127.0.0.1:" + AMS.port();
-      testKeyedNoPartitionTable = (KeyedTable) testCatalog
+      testKeyedNoPartitionTable = testCatalog
           .newTableBuilder(PK_TABLE_ID_WITHOUT_PARTITION, TABLE_SCHEMA)
           .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_no_partition_table")
           .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-          .create();
+          .create().asKeyedTable();
 
-      testPartitionTable = (UnkeyedTable) testCatalog
+      testPartitionTable = testCatalog
           .newTableBuilder(PARTITION_TABLE_ID, TABLE_SCHEMA)
           .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/partition_table")
           .withPartitionSpec(SPEC)
-          .create();
+          .create().asUnkeyedTable();
 
       catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl + "/" + TEST_CATALOG_NAME);
     } else {

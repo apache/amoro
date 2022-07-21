@@ -108,7 +108,7 @@ public class KeyedConnectorMetadata implements ConnectorMetadata {
   @Override
   public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
 
-    KeyedTable arcticTable = (KeyedTable) getArcticTable(tableName);
+    KeyedTable arcticTable = getArcticTable(tableName).asKeyedTable();
     if (arcticTable == null) {
       return null;
     }

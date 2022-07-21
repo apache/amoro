@@ -21,13 +21,10 @@ package com.netease.arctic.trino;
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.trino.keyed.KeyedConnectorMetadata;
-import com.netease.arctic.trino.keyed.KeyedConnectorSplitManager;
 import com.netease.arctic.trino.keyed.KeyedTableHandle;
 import com.netease.arctic.trino.unkeyed.IcebergMetadata;
-import com.netease.arctic.trino.unkeyed.IcebergSplitManager;
 import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.BeginTableExecuteResult;
@@ -104,7 +101,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
     } catch (NoSuchTableException e) {
       return null;
     }
-    if (arcticTable instanceof KeyedTable) {
+    if (arcticTable.isKeyedTable()) {
       return keyedConnectorMetadata.getTableHandle(session, tableName);
     } else {
       return icebergMetadata.getTableHandle(session, tableName);
@@ -172,7 +169,7 @@ public class ArcticConnectorMetadata implements ConnectorMetadata {
       } catch (NoSuchTableException e) {
         return Stream.empty();
       }
-      if (arcticTable instanceof KeyedTable) {
+      if (arcticTable.isKeyedTable()) {
         return keyedConnectorMetadata.streamTableColumns(session, prefix);
       } else {
         return icebergMetadata.streamTableColumns(session, prefix);
