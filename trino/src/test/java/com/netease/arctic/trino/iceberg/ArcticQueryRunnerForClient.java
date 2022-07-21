@@ -61,8 +61,7 @@ public final class ArcticQueryRunnerForClient
 
         queryRunner.installPlugin(new ArcticPlugin());
         Map<String, String> icebergProperties = ImmutableMap.<String, String>builder()
-            // .put("arctic.url", "thrift://localhost:8080/" + ARCTIC_CATALOG)
-            .put("arctic.url", "thrift://10.196.98.23:18111/trino_online_env")
+            .put("arctic.url", "thrift://localhost:8080/" + ARCTIC_CATALOG)
             .build();
 
         queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
