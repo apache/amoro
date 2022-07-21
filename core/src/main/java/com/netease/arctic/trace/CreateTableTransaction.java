@@ -200,11 +200,11 @@ public class CreateTableTransaction implements Transaction {
           throw new IllegalStateException("last operation has not committed");
         }
         Transaction transaction = null;
-        if (arcticTable instanceof UnkeyedTable) {
-          UnkeyedTable table = (UnkeyedTable) arcticTable;
+        if (arcticTable.isUnkeyedTable()) {
+          UnkeyedTable table = arcticTable.asUnkeyedTable();
           transaction = table.newTransaction();
         } else {
-          KeyedTable keyedTable = (KeyedTable) arcticTable;
+          KeyedTable keyedTable = arcticTable.asKeyedTable();
           transaction = keyedTable.baseTable().newTransaction();
         }
         AppendFiles appendFiles = transaction.newAppend();

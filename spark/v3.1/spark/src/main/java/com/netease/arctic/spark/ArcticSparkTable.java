@@ -25,7 +25,6 @@ import com.netease.arctic.spark.writer.SparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -63,10 +62,10 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
   private SparkSession lazySpark = null;
 
   public static Table ofArcticTable(ArcticTable table) {
-    if (table instanceof UnkeyedTable) {
-      return new ArcticUnkeyedSparkTable((UnkeyedTable) table, false);
+    if (table.isUnkeyedTable()) {
+      return new ArcticUnkeyedSparkTable(table.asUnkeyedTable(), false);
     }
-    return new ArcticSparkTable((KeyedTable) table, false);
+    return new ArcticSparkTable(table.asKeyedTable(), false);
   }
 
   public ArcticSparkTable(KeyedTable arcticTable, boolean refreshEagerly) {

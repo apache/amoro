@@ -78,10 +78,10 @@ public class KeyedConnectorSplitManager implements ConnectorSplitManager {
       Constraint constraint) {
     KeyedTableHandle keyedTableHandle = (KeyedTableHandle) handle;
     IcebergTableHandle icebergTableHandle = keyedTableHandle.getIcebergTableHandle();
-    KeyedTable arcticTable = (KeyedTable) (arcticTransactionManager.get(transaction))
+    KeyedTable arcticTable = (arcticTransactionManager.get(transaction))
         .getArcticTable(new SchemaTableName(
             icebergTableHandle.getSchemaName(),
-            icebergTableHandle.getTableName()));
+            icebergTableHandle.getTableName())).asKeyedTable();
     if (arcticTable == null) {
       throw new TableNotFoundException(new SchemaTableName(
           icebergTableHandle.getSchemaName(),

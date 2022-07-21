@@ -38,7 +38,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
@@ -130,7 +129,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
   }
 
   private Iterable<DataFile> optimizeKeyedTable(CloseableIterator<Record> recordIterator) throws Exception {
-    KeyedTable keyedTable = (KeyedTable) table;
+    KeyedTable keyedTable = table.asKeyedTable();
 
     GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(keyedTable)
         .withTransactionId(getMaxTransactionId(task.dataFiles()))
@@ -157,7 +156,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
     OutputFileFactory outputFileFactory = OutputFileFactory
-        .builderFor((UnkeyedTable) table, 0, 0).format(fileFormat).build();
+        .builderFor(table.asUnkeyedTable(), 0, 0).format(fileFormat).build();
     EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(task.getPartition());
     DataFile targetFile = table.io().doAs(() -> {
       DataWriter<Record> writer = appenderFactory
@@ -192,7 +191,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     if (table.isKeyedTable()) {
-      KeyedTable keyedTable = (KeyedTable) table;
+      KeyedTable keyedTable = table.asKeyedTable();
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
 
