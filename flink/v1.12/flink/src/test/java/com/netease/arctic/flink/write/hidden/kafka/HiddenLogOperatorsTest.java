@@ -50,6 +50,7 @@ import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -491,6 +492,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
   private static Properties getPropertiesByTopic(String topic) {
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
+    properties.put(ProducerConfig.ACKS_CONFIG, "1");
     return properties;
   }
 }
