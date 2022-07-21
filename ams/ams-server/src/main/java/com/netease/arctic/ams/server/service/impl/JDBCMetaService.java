@@ -62,9 +62,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
 
   @Override
   public void createTable(TableMetadata tableMetadata) throws MetaException {
-    boolean isNewTable = false;
-    // HiveTable hiveTable = null;
-    // TableMetadata tableMetadata = new TableMetadata(metadata);
     try (SqlSession sqlSession = getSqlSession(false)) {
       try {
         TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
