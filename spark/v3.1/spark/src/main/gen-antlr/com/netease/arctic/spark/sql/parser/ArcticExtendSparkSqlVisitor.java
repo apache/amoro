@@ -1,5 +1,4 @@
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7
-package com.netease.arctic.spark.sql.parser;
+package com.netease.arctic.spark.sql.parser;// Generated from /Users/jinsilei/arctic/arctic/spark/v3.1/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7.2
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
 /**
@@ -22,6 +21,12 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#singleStatement}.
 	 * @param ctx the parse tree
@@ -675,12 +680,6 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitTableProvider(ArcticExtendSparkSqlParser.TableProviderContext ctx);
-	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tablePropertyList}.
 	 * @param ctx the parse tree

@@ -40,6 +40,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterSingleStatement(ArcticExtendSparkSqlParser.SingleStatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -1199,18 +1211,6 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitTableProvider(ArcticExtendSparkSqlParser.TableProviderContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

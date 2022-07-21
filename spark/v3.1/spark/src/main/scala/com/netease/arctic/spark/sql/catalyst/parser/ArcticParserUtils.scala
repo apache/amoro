@@ -24,6 +24,8 @@ import org.apache.spark.sql.catalyst.trees.{CurrentOrigin, Origin}
 
 /* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
 object ArcticParserUtils {
+  val escapedIdentifier = "`((?s).+)`".r
+
   def withOrigin[T](ctx: ParserRuleContext)(f: => T): T = {
     val current = CurrentOrigin.get
     CurrentOrigin.set(position(ctx.getStart))

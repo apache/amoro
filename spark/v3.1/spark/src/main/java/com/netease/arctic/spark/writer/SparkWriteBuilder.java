@@ -80,7 +80,7 @@ public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite
     } else if (overwriteDynamic) {
       return write.asDynamicOverwrite();
     } else {
-      throw new UnsupportedOperationException("support insert overwrite only");
+      return write.asDynamicOverwrite();
     }
   }
 }

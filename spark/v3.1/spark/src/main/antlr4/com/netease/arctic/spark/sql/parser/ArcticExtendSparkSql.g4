@@ -26,6 +26,18 @@ primarySpec
 colTypeList
     : colType (',' colType)* (',' primarySpec)?
     ;
+createTableClauses
+    :((OPTIONS options=tablePropertyList) |
+    primarySpec |
+    (PARTITIONED BY partitioning=partitionFieldList) |
+    skewSpec |
+    bucketSpec |
+    rowFormat |
+    createFileFormat |
+    locationSpec |
+    commentSpec |
+    (TBLPROPERTIES tableProps=tablePropertyList))*
+    ;
 
 KEY: 'KEY';
 MIGRATE: 'MIGRATE';

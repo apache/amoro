@@ -1,5 +1,4 @@
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7
-package com.netease.arctic.spark.sql.parser;
+package com.netease.arctic.spark.sql.parser;// Generated from /Users/jinsilei/arctic/arctic/spark/v3.1/spark/src/main/antlr4/com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7.2
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
 /**
@@ -27,6 +26,16 @@ public interface ArcticExtendSparkSqlListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
+	 * @param ctx the parse tree
+	 */
+	void enterCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
+	 * @param ctx the parse tree
+	 */
+	void exitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#singleStatement}.
 	 * @param ctx the parse tree
@@ -1139,16 +1148,6 @@ public interface ArcticExtendSparkSqlListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitTableProvider(ArcticExtendSparkSqlParser.TableProviderContext ctx);
-	/**
-	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
-	 * @param ctx the parse tree
-	 */
-	void enterCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
-	/**
-	 * Exit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
-	 * @param ctx the parse tree
-	 */
-	void exitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#tablePropertyList}.
 	 * @param ctx the parse tree
