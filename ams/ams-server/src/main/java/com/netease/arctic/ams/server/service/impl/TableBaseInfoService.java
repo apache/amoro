@@ -73,12 +73,12 @@ public class TableBaseInfoService implements ITableInfoService {
 
       ArcticCatalog catalog = CatalogLoader.load(client, tableIdentifier.getCatalog());
       ArcticTable table = catalog.loadTable(tableIdentifier);
-      if (table instanceof UnkeyedTable) {
-        UnkeyedTable unkeyedTable = (UnkeyedTable) table;
+      if (table.isUnkeyedTable()) {
+        UnkeyedTable unkeyedTable = table.asUnkeyedTable();
         baseInfo = new TableStatistics();
         TableStatCollector.fillTableStatistics(baseInfo, unkeyedTable, table, "TABLE");
-      } else if (table instanceof KeyedTable) {
-        KeyedTable keyedTable = (KeyedTable) table;
+      } else if (table.isKeyedTable()) {
+        KeyedTable keyedTable = table.asKeyedTable();
         if (!PrimaryKeySpec.noPrimaryKey().equals(keyedTable.primaryKeySpec())) {
           changeInfo = TableStatCollector.collectChangeTableInfo(keyedTable);
         }

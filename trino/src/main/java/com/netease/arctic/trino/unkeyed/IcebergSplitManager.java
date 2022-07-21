@@ -74,7 +74,7 @@ public class IcebergSplitManager implements ConnectorSplitManager {
       return new FixedSplitSource(ImmutableList.of());
     }
 
-    Table icebergTable = (UnkeyedTable) transactionManager.get(transaction).getArcticTable(table.getSchemaTableName());
+    Table icebergTable = transactionManager.get(transaction).getArcticTable(table.getSchemaTableName()).asUnkeyedTable();
     Duration dynamicFilteringWaitTimeout = getDynamicFilteringWaitTimeout(session);
 
     TableScan tableScan = icebergTable.newScan()

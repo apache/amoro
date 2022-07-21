@@ -52,7 +52,7 @@ public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
         ") using arctic \n" +
         " partitioned by ( dt ) \n", database, table);
 
-    keyedTable = (KeyedTable) loadTable(identifier);
+    keyedTable = loadTable(identifier).asKeyedTable();
 
     sql("insert overwrite {0}.{1} values \n" +
         "(1, ''aaa'',  ''2021-1-1''), \n " +

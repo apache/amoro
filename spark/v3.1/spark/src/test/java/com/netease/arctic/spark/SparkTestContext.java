@@ -32,22 +32,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.sql.Timestamp;
-import java.text.MessageFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -72,6 +56,23 @@ import org.glassfish.jersey.internal.guava.Sets;
 import org.junit.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.sql.Timestamp;
+import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * test context for all spark tests.
@@ -172,7 +173,7 @@ public class SparkTestContext {
   }
 
   public static void writeBase(TableIdentifier identifier, List<Object[]> records) {
-    KeyedTable table = (KeyedTable) SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier);
+    KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction(System.currentTimeMillis() + "");
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId)
@@ -211,7 +212,7 @@ public class SparkTestContext {
   }
 
   public static void writeChange(TableIdentifier identifier, ChangeAction action, List<Record> rows) {
-    KeyedTable table = (KeyedTable) SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier);
+    KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction(System.currentTimeMillis() + "");
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId)
