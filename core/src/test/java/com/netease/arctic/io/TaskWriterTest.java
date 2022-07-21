@@ -23,18 +23,31 @@ import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.utils.ManifestEntryFields;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.checkerframework.checker.index.qual.LowerBoundUnknown;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 public class TaskWriterTest extends TableTestBase {
 
@@ -60,6 +73,27 @@ public class TaskWriterTest extends TableTestBase {
     writer.delete(FILE_A.path(), 5);
     List<DeleteFile> result = writer.complete();
     Assert.assertEquals(1, result.size());
+    RowDelta rowDelta = testKeyedTable.baseTable().newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+
+    // check lower bounds and upper bounds of file_path
+    HadoopTables tables = new HadoopTables();
+    Table entriesTable = tables.load(testKeyedTable.baseTable().location() + "#ENTRIES");
+    IcebergGenerics.read(entriesTable)
+        .build()
+        .forEach(record -> {
+          GenericRecord dataFile = (GenericRecord) record.get(ManifestEntryFields.DATA_FILE_ID);
+          Map<Integer, ByteBuffer> lowerBounds =
+              (Map<Integer, ByteBuffer>) dataFile.getField(DataFile.LOWER_BOUNDS.name());
+          String pathLowerBounds = new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+          Map<Integer, ByteBuffer> upperBounds =
+              (Map<Integer, ByteBuffer>) dataFile.getField(DataFile.UPPER_BOUNDS.name());
+          String pathUpperBounds = new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
+
+          Assert.assertEquals(FILE_A.path().toString(), pathLowerBounds);
+          Assert.assertEquals(FILE_A.path().toString(), pathUpperBounds);
+        });
   }
 
   @Test
