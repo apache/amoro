@@ -237,7 +237,7 @@ public class IcebergPageSourceProvider
         Optional.ofNullable(icebergSplit.getFileType())
             .map(s -> s == DataFileType.EQ_DELETE_FILE ? ChangeAction.DELETE.name() : ChangeAction.INSERT.name()));
     return createPageSource(transaction, session, connectorSplit, connectorTable, columns, dynamicFilter,
-        idToConstant);
+        idToConstant, true);
   }
 
   public ConnectorPageSource createPageSource(
@@ -247,7 +247,8 @@ public class IcebergPageSourceProvider
       ConnectorTableHandle connectorTable,
       List<ColumnHandle> columns,
       DynamicFilter dynamicFilter,
-      Map<Integer, Optional<String>> idToConstant) {
+      Map<Integer, Optional<String>> idToConstant,
+      boolean useIcebergDelete) {
     IcebergSplit split = (IcebergSplit) connectorSplit;
     IcebergTableHandle table = (IcebergTableHandle) connectorTable;
 
@@ -262,12 +263,13 @@ public class IcebergPageSourceProvider
     // Creating a DeleteFilter with no requestedSchema ensures `deleteFilterRequiredSchema`
     // is only columns needed by the filter.
     List<IcebergColumnHandle> deleteFilterRequiredSchema = getColumns(
+        useIcebergDelete ?
         new TrinoDeleteFilter(
             dummyFileScanTask,
             tableSchema,
             ImmutableList.of(),
             fileIO)
-            .requiredSchema(),
+            .requiredSchema() : tableSchema,
         typeManager);
 
     PartitionSpec partitionSpec = PartitionSpecParser.fromJson(tableSchema, split.getPartitionSpecJson());
@@ -346,7 +348,7 @@ public class IcebergPageSourceProvider
         projectionsAdapter,
         //                Optional.of(deleteFilter).filter(filter -> filter.hasPosDeletes() || filter.hasEqDeletes()),
         //为了兼容iceberg0.12的版本
-        Optional.of(deleteFilter),
+        useIcebergDelete ? Optional.of(deleteFilter) : Optional.empty(),
         positionDeleteSink);
   }
 
