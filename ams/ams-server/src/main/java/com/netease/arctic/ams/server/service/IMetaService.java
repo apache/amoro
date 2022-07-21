@@ -26,12 +26,6 @@ import com.netease.arctic.table.UnkeyedTable;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/24
- * Update
- */
 public interface IMetaService {
   /**
    * create table metadata

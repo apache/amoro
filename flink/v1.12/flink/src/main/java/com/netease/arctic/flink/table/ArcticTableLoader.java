@@ -22,7 +22,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.interceptor.FlinkTablePropertiesInvocationHandler;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.flink.TableLoader;
@@ -106,11 +105,11 @@ public class ArcticTableLoader implements TableLoader {
   public Table loadTable() {
     ArcticTable table = loadArcticTable();
 
-    if (table instanceof KeyedTable) {
+    if (table.isKeyedTable()) {
       if (loadBaseForKeyedTable) {
-        return ((KeyedTable) table).baseTable();
+        return table.asKeyedTable().baseTable();
       } else {
-        return ((KeyedTable) table).changeTable();
+        return table.asKeyedTable().changeTable();
       }
     }
     if (!(table instanceof Table)) {

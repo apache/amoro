@@ -113,12 +113,12 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     }
 
     if (!testCatalog.tableExists(FAIL_TABLE_ID)) {
-      testFailoverTable = (KeyedTable) testCatalog
+      testFailoverTable = testCatalog
           .newTableBuilder(FAIL_TABLE_ID, TABLE_SCHEMA)
           .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + sinkTableName)
           .withPartitionSpec(SPEC)
           .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-          .create();
+          .create().asKeyedTable();
     }
   }
 

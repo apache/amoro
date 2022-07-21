@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
-import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
@@ -51,12 +50,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
-   * @author hengshu
-   * @version 1.0
-   * Create 2021/11/23
-   * Update
- */
 public class JDBCMetaService extends IJDBCService implements IMetaService {
   public static final Logger LOG = LoggerFactory.getLogger(JDBCMetaService.class);
   public static final Map<Key, TableMetaStore> TABLE_META_STORE_CACHE = new ConcurrentHashMap<>();

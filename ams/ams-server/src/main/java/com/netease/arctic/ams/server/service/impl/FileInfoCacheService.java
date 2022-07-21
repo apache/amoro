@@ -49,7 +49,6 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -165,13 +164,13 @@ public class FileInfoCacheService extends IJDBCService {
             identifier.getDatabase(),
             identifier.getTableName());
         ArcticTable arcticTable = catalog.loadTable(tmp);
-        if (arcticTable instanceof UnkeyedTable) {
-          table = ((UnkeyedTable) arcticTable);
+        if (arcticTable.isUnkeyedTable()) {
+          table = arcticTable.asUnkeyedTable();
         } else {
           if ("change".equalsIgnoreCase(tableType)) {
-            table = ((KeyedTable) arcticTable).changeTable();
+            table = arcticTable.asKeyedTable().changeTable();
           } else {
-            table = ((KeyedTable) arcticTable).baseTable();
+            table = arcticTable.asKeyedTable().baseTable();
           }
         }
       } catch (Exception e) {
@@ -510,7 +509,7 @@ public class FileInfoCacheService extends IJDBCService {
               tableIdentifier.getTableName());
           ArcticTable arcticTable = catalog.loadTable(tmp);
           doSync(tableIdentifier, "base", lowTime);
-          if (arcticTable instanceof KeyedTable) {
+          if (arcticTable.isKeyedTable()) {
             doSync(tableIdentifier, "change", lowTime);
           }
         } catch (Exception e) {

@@ -27,9 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @Auth: hzhuangwei1
- * @Time: 2022/6/26 19:47
- * @Description:
+ * @Description: Version Info Test
  */
 public class VersionControllerTest extends TestCase {
   private final Logger LOG = LoggerFactory.getLogger("VersionControllerTest");

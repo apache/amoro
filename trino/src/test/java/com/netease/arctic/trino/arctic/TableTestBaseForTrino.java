@@ -1,19 +1,19 @@
 /*
- *   Licensed to the Apache Software Foundation (ASF) under one
- *   or more contributor license agreements.  See the NOTICE file
- *   distributed with this work for additional information
- *   regarding copyright ownership.  The ASF licenses this file
- *   to you under the Apache License, Version 2.0 (the
- *   "License"); you may not use this file except in compliance
- *   with the License.  You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.netease.arctic.trino.arctic;
@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
@@ -35,12 +36,6 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import io.trino.testing.AbstractTestQueryFramework;
-import java.io.File;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -52,12 +47,18 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.Types;
+
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
@@ -115,18 +116,18 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
     }
     testCatalog = CatalogLoader.load(AMS.getUrl());
 
-    testTable = (UnkeyedTable) testCatalog
+    testTable = testCatalog
         .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
         .withPartitionSpec(SPEC)
-        .create();
+        .create().asUnkeyedTable();
 
-    testKeyedTable = (KeyedTable) testCatalog
+    testKeyedTable = testCatalog
         .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
         .withPartitionSpec(SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-        .create();
+        .create().asKeyedTable();
 
     this.before();
   }
@@ -145,7 +146,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   }
 
   protected List<DataFile> writeBase(TableIdentifier identifier, List<Record> records) {
-    KeyedTable table = (KeyedTable) testCatalog.loadTable(identifier);
+    KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction("");
     try (GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId).buildBaseWriter()) {
@@ -167,7 +168,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   }
 
   protected List<DataFile> writeChange(TableIdentifier identifier, ChangeAction action, List<Record> records) {
-    KeyedTable table = (KeyedTable) testCatalog.loadTable(identifier);
+    KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction("");
     try (GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(table)
         .withChangeAction(action)

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.trace;
 
-import com.netease.arctic.ams.api.TableChange;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
@@ -54,7 +53,6 @@ import org.apache.iceberg.io.LocationProvider;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * Wrap {@link Transaction} with {@link TableTracer}.
@@ -147,7 +145,8 @@ public class TracedTransaction implements Transaction {
 
   @Override
   public DeleteFiles newDelete() {
-    return transaction.newDelete();
+    tracer.setAction(DataOperations.DELETE);
+    return new TracedDeleteFiles(transaction.newDelete(), new TransactionTracker());
   }
 
   @Override
@@ -191,9 +190,9 @@ public class TracedTransaction implements Transaction {
 
     @Override
     public void commit() {
-      Optional<TableChange> tableChange =
-          internalTableChange.toTableChange(tracer.table(), transaction.table(), tracer.innerTable());
-      tableChange.ifPresent(tracer::addTransactionTableChange);
+      if (transaction.table().currentSnapshot() != null) {
+        tracer.addTransactionTableSnapshot(transaction.table().currentSnapshot().snapshotId(), internalTableChange);
+      }
     }
 
     @Override

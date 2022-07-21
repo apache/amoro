@@ -38,6 +38,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 
+/**
+ * Copy from Iceberg {@link org.apache.iceberg.deletes.Deletes}.
+ */
 public class Deletes {
 
   private static final Schema POSITION_DELETE_SCHEMA = new Schema(
