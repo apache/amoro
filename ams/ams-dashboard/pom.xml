@@ -113,30 +113,6 @@
     <build>
         <finalName>arctic-ams-dashboard-${project.version}</finalName>
         <plugins>
-            <!--compress files which in dist directory to jar-->
-            <!--            <plugin>-->
-            <!--                <groupId>org.apache.maven.plugins</groupId>-->
-            <!--                <artifactId>maven-assembly-plugin</artifactId>-->
-            <!--                <version>${maven-assembly-plugin.version}</version>-->
-            <!--                <executions>-->
-            <!--                    <execution>-->
-            <!--                        <id>make-assembly</id>-->
-            <!--                        <phase>package</phase>-->
-            <!--                        <goals>-->
-            <!--                            <goal>single</goal>-->
-            <!--                        </goals>-->
-            <!--                        <configuration>-->
-            <!--                            <skipAssembly>true</skipAssembly>-->
-            <!--                            <appendAssemblyId>false</appendAssemblyId>-->
-            <!--                            <finalName>ams-dashboard</finalName>-->
-            <!--                            <descriptors>-->
-            <!--                                <descriptor>assembly.xml</descriptor>-->
-            <!--                            </descriptors>-->
-            <!--                        </configuration>-->
-            <!--                    </execution>-->
-            <!--                </executions>-->
-            <!--            </plugin>-->
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
