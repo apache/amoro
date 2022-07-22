@@ -25,5 +25,8 @@ import com.netease.arctic.catalog.ArcticCatalog;
  */
 public interface ArcticCatalogFactory {
 
+  /**
+   * generate ArcticCatalog
+   */
   ArcticCatalog getArcticCatalog();
 }
