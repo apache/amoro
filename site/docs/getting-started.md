@@ -327,12 +327,14 @@ arctic.ams.mybatis.ConnectionPassword: {password}                        #MySQL�
 arctic.ams.database.type: mysql                                          #系统库类型
 ```
 
+???+note "目前只支持 MySQL 5.x 版本，不支持 MySQL 8"
+
 **2.初始化MySQL表**
 
 根据`conf/ams-init.sql`初始化AMS所需表：
 
 ```shell
-mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} < {AMS_HOME_DIR}/conf/ams-init.sql
+mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_HOME_DIR}/conf/ams-init.sql
 ```
 
 **3.重启AMS**
