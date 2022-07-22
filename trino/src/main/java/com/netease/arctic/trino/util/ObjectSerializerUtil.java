@@ -24,8 +24,14 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
+/**
+ * Tools to resolve java Serializer
+ */
 public class ObjectSerializerUtil {
 
+  /**
+   * Write java class to byte array
+   */
   public static byte[] write(Object o) {
     try (ByteArrayOutputStream arrayOutputStream = new ByteArrayOutputStream();
         ObjectOutputStream objectOutputStream = new ObjectOutputStream(arrayOutputStream)) {
@@ -36,6 +42,9 @@ public class ObjectSerializerUtil {
     }
   }
 
+  /**
+   * Read class from Serialize byte array
+   */
   public static <T> T read(byte[] bytes, Class<T> clazz) {
     if (bytes == null) {
       return null;

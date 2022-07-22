@@ -52,7 +52,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -177,7 +176,7 @@ public class TableOptimizeItem extends IJDBCService {
     if (arcticTable == null) {
       tryRefresh(false);
     }
-    return arcticTable instanceof KeyedTable;
+    return arcticTable.isKeyedTable();
   }
 
   /**
@@ -533,12 +532,12 @@ public class TableOptimizeItem extends IJDBCService {
     record.setPartitionCnt(tasks.keySet().size());
     record.setPartitions(String.join(",", tasks.keySet()));
     if (isKeyedTable()) {
-      KeyedTable keyedHiveTable = ((KeyedTable) getArcticTable(true));
+      KeyedTable keyedHiveTable = getArcticTable(true).asKeyedTable();
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(keyedHiveTable.baseTable()));
       record.setBaseTableMaxTransactionId(keyedHiveTable.baseTable().maxTransactionId().toString());
     } else {
       getArcticTable(true);
-      record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo((UnkeyedTable) getArcticTable(true)));
+      record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
     }
     return record;
   }
@@ -565,8 +564,13 @@ public class TableOptimizeItem extends IJDBCService {
     try {
       HashSet<OptimizeTaskItem> toRemoved = new HashSet<>(optimizeTasks.values());
       optimizeTasks.clear();
+      Set<String> removedTaskHistory = new HashSet<>();
       for (OptimizeTaskItem task : toRemoved) {
         task.clearOptimizeTask();
+        removedTaskHistory.add(task.getOptimizeTask().getTaskHistoryId());
+      }
+      for (String taskHistoryId : removedTaskHistory) {
+        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithHistoryId(tableIdentifier, taskHistoryId);
       }
       LOG.info("{} clear all optimize tasks", getTableIdentifier());
       updateTableOptimizeStatus();

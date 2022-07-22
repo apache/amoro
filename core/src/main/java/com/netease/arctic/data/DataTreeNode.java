@@ -18,6 +18,7 @@
 
 package com.netease.arctic.data;
 
+import com.netease.arctic.ams.api.TreeNode;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
@@ -104,10 +105,6 @@ public final class DataTreeNode implements Serializable {
     return DataTreeNode.of(parentMask, parentIndex);
   }
 
-  public static DataTreeNode fromFile(PrimaryKeyedFile file) {
-    return of(file.mask(), file.index());
-  }
-
   @Override
   public boolean equals(Object o) {
     if (this == o) return true;
@@ -137,5 +134,9 @@ public final class DataTreeNode implements Serializable {
 
   public long getId() {
     return mask + 1 + index;
+  }
+
+  public TreeNode toAmsTreeNode() {
+    return new TreeNode(mask, index);
   }
 }

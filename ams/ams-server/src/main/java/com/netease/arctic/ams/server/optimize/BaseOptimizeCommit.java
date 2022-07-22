@@ -27,7 +27,6 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
@@ -103,7 +102,7 @@ public class BaseOptimizeCommit {
 
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
             if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
-              if (((KeyedTable) arcticTable).baseTable().spec().isUnpartitioned()) {
+              if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
                 maxTransactionIds.put(null, maxTransactionId);
               } else {
                 maxTransactionIds.putIfAbsent(
@@ -144,14 +143,14 @@ public class BaseOptimizeCommit {
 
       UnkeyedTable baseArcticTable;
       if (arcticTable.isKeyedTable()) {
-        baseArcticTable = ((KeyedTable) arcticTable).baseTable();
+        baseArcticTable = arcticTable.asKeyedTable().baseTable();
       } else {
-        baseArcticTable = (UnkeyedTable) arcticTable;
+        baseArcticTable = arcticTable.asUnkeyedTable();
       }
 
       // commit minor optimize content
       if (CollectionUtils.isNotEmpty(minorAddFiles) || CollectionUtils.isNotEmpty(minorDeleteFiles)) {
-        OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles((KeyedTable) arcticTable);
+        OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(arcticTable.asKeyedTable());
         AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
         minorAddFiles.forEach(contentFile -> {
           if (contentFile instanceof DataFile) {
@@ -237,10 +236,10 @@ public class BaseOptimizeCommit {
 
         // update table runtime base snapshotId, avoid repeat Major plan
         if (arcticTable.isKeyedTable()) {
-          tableOptimizeRuntime.setCurrentSnapshotId(((KeyedTable) arcticTable).baseTable()
+          tableOptimizeRuntime.setCurrentSnapshotId(arcticTable.asKeyedTable().baseTable()
               .currentSnapshot().snapshotId());
         } else {
-          tableOptimizeRuntime.setCurrentSnapshotId(((UnkeyedTable) arcticTable)
+          tableOptimizeRuntime.setCurrentSnapshotId(arcticTable.asUnkeyedTable()
               .currentSnapshot().snapshotId());
         }
       } else {

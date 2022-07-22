@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.catalog;
 
-import com.google.gson.Gson;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.table.DynamicTableFactory;
@@ -73,7 +72,6 @@ import java.util.stream.Collectors;
  */
 public class ArcticCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
-  private static final Gson gson = new Gson();
 
   private final InternalCatalogBuilder catalogBuilder;
 

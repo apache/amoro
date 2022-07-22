@@ -73,7 +73,7 @@ public class ArcticUtils {
     if (table.isUnkeyedTable()) {
       return Collections.emptyList();
     }
-    return ((KeyedTable) table).primaryKeySpec().fields()
+    return table.asKeyedTable().primaryKeySpec().fields()
         .stream()
         .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
         .collect(Collectors.toList());

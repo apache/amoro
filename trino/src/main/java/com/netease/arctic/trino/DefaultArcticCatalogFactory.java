@@ -23,6 +23,9 @@ import com.netease.arctic.catalog.CatalogLoader;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import javax.inject.Inject;
 
+/**
+ * A factory to generate {@link ArcticCatalog}
+ */
 public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
 
   private ArcticConfig arcticConfig;

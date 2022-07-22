@@ -42,6 +42,9 @@ import static io.trino.plugin.base.session.PropertyMetadataUtil.durationProperty
 import static io.trino.spi.session.PropertyMetadata.booleanProperty;
 import static io.trino.spi.session.PropertyMetadata.integerProperty;
 
+/**
+ * Arctic supporting session properties
+ */
 public final class ArcticSessionProperties
     implements SessionPropertiesProvider {
   private static final String COMPRESSION_CODEC = "compression_codec";

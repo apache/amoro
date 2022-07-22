@@ -57,7 +57,7 @@ public class ShuffleHelper implements Serializable {
       return new ShuffleHelper(rowType, schema.asStruct(), partitionKey);
     }
 
-    KeyedTable keyedTable = (KeyedTable) table;
+    KeyedTable keyedTable = table.asKeyedTable();
     PrimaryKeyData primaryKeyData = new PrimaryKeyData(keyedTable.primaryKeySpec(), schema);
     return new ShuffleHelper(keyedTable.primaryKeySpec().primaryKeyExisted(),
         primaryKeyData, partitionKey, rowType, schema.asStruct());

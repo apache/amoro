@@ -30,7 +30,6 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
@@ -118,7 +117,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   protected List<BaseOptimizeTask> collectTask(String partition) {
     List<BaseOptimizeTask> result;
-    if (arcticTable instanceof UnkeyedTable) {
+    if (arcticTable.isUnkeyedTable()) {
       List<DataFile> fileList = partitionSmallFiles.computeIfAbsent(partition, e -> new ArrayList<>());
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
@@ -144,9 +143,9 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     LOG.debug("{} start {} plan base files", tableId(), getOptimizeType());
     UnkeyedTable baseTable;
     if (arcticTable.isKeyedTable()) {
-      baseTable = ((KeyedTable) arcticTable).baseTable();
+      baseTable = arcticTable.asKeyedTable().baseTable();
     } else {
-      baseTable = (UnkeyedTable) arcticTable;
+      baseTable = arcticTable.asUnkeyedTable();
     }
 
     AtomicInteger addCnt = new AtomicInteger();

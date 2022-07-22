@@ -18,14 +18,14 @@
 
 package com.netease.arctic.trino;
 
+import com.netease.arctic.ams.api.Constants;
+
 /**
  * To resolve sub table name, such as "tableName#base", "tableName#change"
  */
 public class TableNameResolve {
 
   private static final String SPLIT = "#";
-  private static final String BASE = "base";
-  private static final String CHANGE = "change";
 
   private String original;
   private String tableName;
@@ -36,9 +36,9 @@ public class TableNameResolve {
     if (original.contains(SPLIT)) {
       String[] sts = original.split(SPLIT);
       this.tableName = sts[0];
-      if (BASE.equalsIgnoreCase(sts[1])) {
+      if (Constants.INNER_TABLE_BASE.equalsIgnoreCase(sts[1])) {
         isBase = true;
-      } else if (CHANGE.equalsIgnoreCase(sts[1])) {
+      } else if (Constants.INNER_TABLE_CHANGE.equalsIgnoreCase(sts[1])) {
         isBase = false;
       } else {
         throw new IllegalArgumentException("table name " + tableName + " is illegal");

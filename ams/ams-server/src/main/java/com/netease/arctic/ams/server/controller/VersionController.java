@@ -21,15 +21,11 @@ package com.netease.arctic.ams.server.controller;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.model.VersionInfo;
 import io.javalin.http.Context;
-import org.apache.iceberg.OverwriteFiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.util.Properties;
-
-import static com.netease.arctic.ams.server.config.VersionInfo.COMMIT_TIME;
-import static com.netease.arctic.ams.server.config.VersionInfo.VERSION;
 
 /** optimize controller.
  * @Description: get version and commitTime
