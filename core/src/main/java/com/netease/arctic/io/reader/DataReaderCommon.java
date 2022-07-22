@@ -23,7 +23,8 @@ public class DataReaderCommon {
     if (!partitionSchema.columns().isEmpty()) {
       idToConstant.putAll(PartitionUtil.constantsMap(task, convertConstant));
     }
-    idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(), task.file().path().toString());
+    idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
+        convertConstant.apply(Types.StringType.get(), task.file().path().toString()));
     idToConstant.put(
         MetadataColumns.TRANSACTION_ID_FILED_ID,
         convertConstant.apply(Types.LongType.get(), task.file().transactionId()));
