@@ -67,6 +67,9 @@ import static io.airlift.configuration.ConfigBinder.configBinder;
 import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
 import static org.weakref.jmx.guice.ExportBinder.newExporter;
 
+/**
+ * Arctic module of Trino
+ */
 public class ArcticModule implements Module {
 
   private TypeManager typeManager;

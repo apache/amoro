@@ -241,7 +241,6 @@ public abstract class ArcticDeleteFilter<T> {
       StructLike data = asStructLike(record);
       StructLike dataPk = dataPKProjectRow.copyWrap(data);
       ChangedLsn dataLSN = dataLSN(data);
-
       ChangedLsn deleteLsn = structLikeMap.get(dataPk);
       if (deleteLsn == null) {
         return false;
@@ -380,7 +379,11 @@ public abstract class ArcticDeleteFilter<T> {
       requiredIds.add(org.apache.iceberg.MetadataColumns.ROW_POSITION.fieldId());
     }
 
-    requiredIds.addAll(primaryKeyId);
+    if (!eqDeletes.isEmpty()) {
+      requiredIds.addAll(primaryKeyId);
+      requiredIds.add(MetadataColumns.TRANSACTION_ID_FILED.fieldId());
+      requiredIds.add(MetadataColumns.FILE_OFFSET_FILED.fieldId());
+    }
 
     Set<Integer> missingIds = Sets.newLinkedHashSet(
         Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
@@ -389,7 +392,10 @@ public abstract class ArcticDeleteFilter<T> {
     List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
     for (int fieldId : missingIds) {
       if (fieldId == org.apache.iceberg.MetadataColumns.ROW_POSITION.fieldId() ||
-          fieldId == org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId()) {
+          fieldId == org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId() ||
+          fieldId == MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
+          fieldId == MetadataColumns.FILE_OFFSET_FILED.fieldId()
+      ) {
         continue;
       }
 
@@ -399,14 +405,21 @@ public abstract class ArcticDeleteFilter<T> {
       columns.add(field);
     }
 
-    if (missingIds.contains(org.apache.iceberg.MetadataColumns.ROW_POSITION.fieldId())) {
+    if (missingIds.contains(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId())) {
       columns.add(org.apache.iceberg.MetadataColumns.FILE_PATH);
+    }
+
+    if (missingIds.contains(org.apache.iceberg.MetadataColumns.ROW_POSITION.fieldId())) {
       columns.add(org.apache.iceberg.MetadataColumns.ROW_POSITION);
     }
 
     //add lsn
-    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
-    columns.add(MetadataColumns.FILE_OFFSET_FILED);
+    if (missingIds.contains(MetadataColumns.TRANSACTION_ID_FILED.fieldId())) {
+      columns.add(MetadataColumns.TRANSACTION_ID_FILED);
+    }
+    if (missingIds.contains(MetadataColumns.FILE_OFFSET_FILED.fieldId())) {
+      columns.add(MetadataColumns.FILE_OFFSET_FILED);
+    }
 
     return new Schema(columns);
   }
