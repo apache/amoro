@@ -42,10 +42,10 @@ Arctic contains modules as below:
 
 Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
 
-* To build Trino module need config toolchains.xml in ${user.home}/.m2/ dir, the content is
+* To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
 ```
+<?xml version="1.0" encoding="UTF-8"?>
 <toolchains>
-<!--  JDK toolchains  -->
     <toolchain>
         <type>jdk</type>
         <provides>

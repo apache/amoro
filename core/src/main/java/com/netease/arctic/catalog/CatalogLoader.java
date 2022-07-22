@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 
 /**
- * Catalogs,  create catalog from arctic metastore thrift url.
+ * Catalogs, create catalog from arctic metastore thrift url.
  */
 public class CatalogLoader {
 

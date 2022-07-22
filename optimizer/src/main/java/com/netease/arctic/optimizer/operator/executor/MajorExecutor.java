@@ -206,7 +206,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
             return new BaseArcticFileScanTask(defaultKeyedFile, null, table.spec());
           } else {
             return new BaseArcticFileScanTask(defaultKeyedFile,
-                deleteFileMap.get(DataTreeNode.of(defaultKeyedFile.mask(), defaultKeyedFile.index())), table.spec());
+                deleteFileMap.get(defaultKeyedFile.node()), table.spec());
           }
         })
         .collect(Collectors.toList());
