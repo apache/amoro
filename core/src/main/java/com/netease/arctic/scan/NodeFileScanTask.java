@@ -20,7 +20,6 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.TableProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -126,40 +125,6 @@ public class NodeFileScanTask implements KeyedTableScanTask {
         LOG.warn("file type is {}, not add in node", fileType);
         // ignore the object
     }
-  }
-
-  //fixme 为了optimize不报错，后面要删除此方法的
-  public void addFile(PrimaryKeyedFile file) {
-
-    DataFileType fileType = file.type();
-    if (fileType == null) {
-      LOG.warn("file type is null");
-      return;
-    }
-    cost = cost + Math.max(file.fileSizeInBytes(), openFileCost);
-    rowNums = rowNums + file.recordCount();
-
-    //fixme 为了optimize不报错，后面要删除此方法的
-    BaseArcticFileScanTask task = new BaseArcticFileScanTask(file, null, null);
-    switch (fileType) {
-      case BASE_FILE:
-        baseTasks.add(task);
-        break;
-      case INSERT_FILE:
-        insertTasks.add(task);
-        break;
-      case EQ_DELETE_FILE:
-        deleteFiles.add(task);
-        break;
-      default:
-        LOG.warn("file type is {}, not add in node", fileType);
-        // ignore the object
-    }
-  }
-
-  //fixme 为了optimize不报错，后面要删除此方法的
-  public void addFiles(List<PrimaryKeyedFile> files) {
-    files.forEach(this::addFile);
   }
 
   public void addTasks(List<ArcticFileScanTask> files) {

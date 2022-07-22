@@ -30,10 +30,10 @@ public interface PrimaryKeyedFile extends DataFile {
    */
   DataFileType type();
 
-  //TODO change to DataTreeNode
-  long mask();
-
-  long index();
+  /**
+   * Returns the {@link DataTreeNode} file belong
+   */
+  DataTreeNode node();
 
   /**
    * Returns the id of transaction which file added into table

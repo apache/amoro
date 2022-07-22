@@ -36,7 +36,6 @@ import java.io.IOException;
  */
 public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
 
-  //TODO rename to rowSequence
   private long fileOffset = 0L;
 
   protected ChangeTaskWriter(FileFormat format, FileAppenderFactory<T> appenderFactory,
