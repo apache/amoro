@@ -46,6 +46,15 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   }
 
   @Test
+  public void tableMORWithProject() throws InterruptedException {
+    assertQuery("select op_time, name from " + PK_TABLE_FULL_NAME,
+        "VALUES ('john', TIMESTAMP '2022-01-01 12:00:00'), " +
+            "('lily', TIMESTAMP '2022-01-02 12:00:00'), " +
+            "('jake', TIMESTAMP '2022-01-03 12:00:00'), " +
+            "('mack', TIMESTAMP '2022-01-01 12:00:00)");
+  }
+
+  @Test
   public void baseQuery(){
     assertQuery("select id from " + "arctic.test_db.\"test_pk_table#base\"",  "VALUES 1, 2, 3");
   }

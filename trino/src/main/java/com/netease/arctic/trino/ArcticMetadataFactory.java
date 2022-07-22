@@ -29,6 +29,9 @@ import javax.inject.Inject;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A factory to generate {@link ArcticConnectorMetadata}
+ */
 public class ArcticMetadataFactory {
   private final TypeManager typeManager;
   private final JsonCodec<CommitTaskData> commitTaskCodec;

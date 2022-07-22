@@ -20,6 +20,9 @@ package com.netease.arctic.trino;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 
+/**
+ * A interface of factory to generate ArcticCatalog
+ */
 public interface ArcticCatalogFactory {
 
   ArcticCatalog getArcticCatalog();

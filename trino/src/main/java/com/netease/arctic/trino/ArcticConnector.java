@@ -54,6 +54,9 @@ import static io.trino.spi.transaction.IsolationLevel.SERIALIZABLE;
 import static io.trino.spi.transaction.IsolationLevel.checkConnectorSupports;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * A Connector of arctic to Trino
+ */
 public class ArcticConnector implements Connector {
 
   private static final Logger log = LoggerFactory.getLogger(ArcticConnector.class);
