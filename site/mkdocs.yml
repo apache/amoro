@@ -4,6 +4,10 @@ site_description: Arctic is a pluggable streaming lakehouse service layer on top
 remote_name: arctic-site
 use_directory_urls: true
 
+repo_url: https://github.com/NetEase/arctic
+repo_name: NetEase/arctic
+edit_uri: ""
+
 # pip install mkdocs-material
 theme:
     name: material
@@ -14,6 +18,9 @@ theme:
         # https://cyent.github.io/markdown-with-mkdocs-material/appendix/color/
         primary: 'Indigo'
         accent: 'Teal'
+    icon:
+        repo: fontawesome/brands/github
+
 
 extra:
   search:
