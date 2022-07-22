@@ -21,11 +21,12 @@ package org.apache.spark.sql.catalyst.parser
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticParserUtils.withOrigin
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.CreateArcticTableStatement
+import com.netease.arctic.spark.sql.execution.CreateArcticTableLikeExec
 import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlBaseVisitor, ArcticExtendSparkSqlParser}
 import org.antlr.v4.runtime.tree.{ParseTree, RuleNode}
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.catalog.BucketSpec
+import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, CatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser.astBuilder.{cleanTableOptions, cleanTableProperties}
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{checkDuplicateClauses, checkDuplicateKeys, operationNotAllowed, string, validate}
@@ -33,6 +34,8 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.{SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.execution.command.CreateTableLikeCommand
+import org.apache.spark.sql.internal.HiveSerDe
 import org.apache.spark.sql.types._
 
 import java.util
@@ -136,6 +139,76 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
         plans.CreateArcticTableStatement(table, schema, partitioning, bucketSpec, properties, provider,
           options, location, comment, serdeInfo, primary, external = external, ifNotExists = ifNotExists)
     }
+  }
+
+
+  private def toStorageFormat(
+                               location: Option[String],
+                               maybeSerdeInfo: Option[SerdeInfo],
+                               ctx: ParserRuleContext): CatalogStorageFormat = {
+    if (maybeSerdeInfo.isEmpty) {
+      CatalogStorageFormat.empty.copy(locationUri = location.map(CatalogUtils.stringToURI))
+    } else {
+      val serdeInfo = maybeSerdeInfo.get
+      if (serdeInfo.storedAs.isEmpty) {
+        CatalogStorageFormat.empty.copy(
+          locationUri = location.map(CatalogUtils.stringToURI),
+          inputFormat = serdeInfo.formatClasses.map(_.input),
+          outputFormat = serdeInfo.formatClasses.map(_.output),
+          serde = serdeInfo.serde,
+          properties = serdeInfo.serdeProperties)
+      } else {
+        HiveSerDe.sourceToSerDe(serdeInfo.storedAs.get) match {
+          case Some(hiveSerde) =>
+            CatalogStorageFormat.empty.copy(
+              locationUri = location.map(CatalogUtils.stringToURI),
+              inputFormat = hiveSerde.inputFormat,
+              outputFormat = hiveSerde.outputFormat,
+              serde = serdeInfo.serde.orElse(hiveSerde.serde),
+              properties = serdeInfo.serdeProperties)
+          case _ =>
+            operationNotAllowed(s"STORED AS with file format '${serdeInfo.storedAs.get}'", ctx)
+        }
+      }
+    }
+  }
+
+  override def visitTableIdentifier(
+                                     ctx: ArcticExtendSparkSqlParser.TableIdentifierContext): TableIdentifier = withOrigin(ctx) {
+    TableIdentifier(ctx.table.getText, Option(ctx.db).map(_.getText))
+  }
+
+  override def visitCreateTableLike(ctx: ArcticExtendSparkSqlParser.CreateTableLikeContext): LogicalPlan = withOrigin(ctx) {
+    val targetTable = visitTableIdentifier(ctx.target)
+    val sourceTable = visitTableIdentifier(ctx.source)
+    checkDuplicateClauses(ctx.tableProvider, "PROVIDER", ctx)
+    checkDuplicateClauses(ctx.createFileFormat, "STORED AS/BY", ctx)
+    checkDuplicateClauses(ctx.rowFormat, "ROW FORMAT", ctx)
+    checkDuplicateClauses(ctx.locationSpec, "LOCATION", ctx)
+    checkDuplicateClauses(ctx.TBLPROPERTIES, "TBLPROPERTIES", ctx)
+    val provider = ctx.tableProvider.asScala.headOption.map(_.multipartIdentifier.getText)
+    val location = visitLocationSpecList(ctx.locationSpec())
+    // TODO: Do not skip serde check for CREATE TABLE LIKE.
+    val serdeInfo = getSerdeInfo(
+      ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx, skipCheck = true)
+    if (provider.isDefined && serdeInfo.isDefined) {
+      operationNotAllowed(s"CREATE TABLE LIKE ... USING ... ${serdeInfo.get.describe}", ctx)
+    }
+
+    // TODO: remove this restriction as it seems unnecessary.
+    serdeInfo match {
+      case Some(SerdeInfo(storedAs, formatClasses, serde, _)) =>
+        if (storedAs.isEmpty && formatClasses.isEmpty && serde.isDefined) {
+          throw new ParseException("'ROW FORMAT' must be used with 'STORED AS'", ctx)
+        }
+      case _ =>
+    }
+
+    // TODO: also look at `HiveSerDe.getDefaultStorage`.
+    val storage = toStorageFormat(location, serdeInfo, ctx)
+    val properties = Option(ctx.tableProps).map(visitPropertyKeyValues).getOrElse(Map.empty)
+    CreateArcticTableLikeExec(
+      targetTable, sourceTable, storage, provider, properties, ctx.EXISTS != null)
   }
 
   /**
