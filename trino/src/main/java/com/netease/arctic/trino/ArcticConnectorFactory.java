@@ -65,6 +65,9 @@ import java.util.Set;
 
 import static com.google.inject.Scopes.SINGLETON;
 
+/**
+ * Factory to generate {@link Connector}
+ */
 public class ArcticConnectorFactory implements ConnectorFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticConnectorFactory.class);

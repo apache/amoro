@@ -23,6 +23,9 @@ import com.google.common.collect.ImmutableList;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 
+/**
+ * Arctic Plugin Impl of {@link Plugin}
+ */
 public class ArcticPlugin implements Plugin {
 
   @Override
