@@ -136,4 +136,4 @@ WHEN NOT MATCHED THEN INSERT *
 
 ```
 
-???+note "UPDATE 语法在当前版本只支持无主键表"
+???+note "MERGE INTO 语法在当前版本只支持无主键表"
