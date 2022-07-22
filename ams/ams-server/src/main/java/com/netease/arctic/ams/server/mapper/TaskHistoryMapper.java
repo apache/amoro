@@ -178,4 +178,11 @@ public interface TaskHistoryMapper {
       "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
       "and table_name = #{tableIdentifier.tableName}")
   void deleteTaskHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+
+  @Delete("delete from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName} and task_history_id = #{historyId}")
+  void deleteTaskHistoryWithHistoryId(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+                                      @Param("historyId") String historyId);
+  
 }

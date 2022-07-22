@@ -30,10 +30,14 @@ import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
 public class SnapshotFileUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(SnapshotFileUtil.class);
+
   public static void getSnapshotFiles(ArcticTable table, Snapshot snapshot,
                                       List<com.netease.arctic.ams.api.DataFile> addFiles,
                                       List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
@@ -51,6 +55,9 @@ public class SnapshotFileUtil {
       getDeleteFiles(table, snapshot, addFiles, deleteFiles);
       return null;
     });
+
+    LOG.debug("{} snapshot get {} add files count and {} delete file count.",
+        snapshot.snapshotId(), addFiles.size(), deleteFiles.size());
   }
 
   private static void getDeleteFiles(ArcticTable table, Snapshot snapshot,
