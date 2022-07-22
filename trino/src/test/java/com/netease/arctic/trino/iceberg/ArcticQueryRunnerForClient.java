@@ -37,14 +37,14 @@ public final class ArcticQueryRunnerForClient
 
     private ArcticQueryRunnerForClient() {}
 
-    public static DistributedQueryRunner createIcebergQueryRunner(Map<String, String> extraProperties) throws Exception
+    public static DistributedQueryRunner createIcebergQueryRunner(Map<String, String> extraProperties, String url) throws Exception
     {
-        return createIcebergQueryRunner(extraProperties, false);
+        return createIcebergQueryRunner(extraProperties, false, url);
     }
 
     public static DistributedQueryRunner createIcebergQueryRunner(
             Map<String, String> extraProperties,
-            boolean createTpchTables)
+            boolean createTpchTables, String url)
             throws Exception
     {
         Session session = testSessionBuilder()
@@ -61,8 +61,7 @@ public final class ArcticQueryRunnerForClient
 
         queryRunner.installPlugin(new ArcticPlugin());
         Map<String, String> icebergProperties = ImmutableMap.<String, String>builder()
-            // .put("arctic.url", "thrift://localhost:8080/" + ARCTIC_CATALOG)
-            .put("arctic.url", "thrift://10.196.98.23:18111/trino_online_env")
+            .put("arctic.url", url)
             .build();
 
         queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
@@ -75,9 +74,13 @@ public final class ArcticQueryRunnerForClient
     {
         Logging.initialize();
         Map<String, String> properties = ImmutableMap.of("http-server.http.port", "8080");
+        String url = args[0];
+        if (url == null) {
+            throw new RuntimeException("please config arctic url");
+        }
         DistributedQueryRunner queryRunner = null;
         try {
-            queryRunner = createIcebergQueryRunner(properties);
+            queryRunner = createIcebergQueryRunner(properties, url);
         }
         catch (Throwable t) {
             log.error(t);
