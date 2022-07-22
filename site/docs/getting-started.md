@@ -10,7 +10,7 @@ AMS依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经�
 ```shell
 java -version
 ```
-[下载](https://github.com/NetEase/arctic/releases)最新版的AMS并解压。
+[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip)最新版的AMS并解压。
 
 **2.启动AMS**
 
@@ -52,8 +52,6 @@ create table test_db.test_table(
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
-**TODO**: Arctic-flink-runtime jar下载位置及AMS url 获取方式
-
 **1.准备环境**
 
 下载flink和相关依赖：
@@ -72,7 +70,7 @@ tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
 # 下载 hadoop 依赖
 wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
 # 下载 arctic flink connector
-wget XXX
+wget https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.12-0.3.0.jar
 ```
 
 修改 Flink 相关配置文件：
@@ -95,7 +93,7 @@ execution.checkpointing.interval: 10s
 ```shell
 # 用于创建 socket connector，以便通过 socket 输入 CDC 数据
 cp examples/table/ChangelogSocketExample.jar lib
-cp ../arctic-flink-runtime-xxx.jar lib
+cp ../arctic-flink-runtime-1.12-0.3.0.jar lib
 cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ```
 
@@ -114,7 +112,7 @@ cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 -- 创建 catalog
 CREATE CATALOG arctic WITH (
   'type' = 'arctic',
-  'metastore.url'='thrift://localhost:1630/local_catalog'
+  'metastore.url'='thrift://localhost:1260/local_catalog'
 );
 -- 创建 CDC Socket 源表
 CREATE TABLE cdc_source(
