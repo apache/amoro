@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.SnapshotInfo;
 import com.netease.arctic.ams.server.model.TableStatistics;
@@ -42,9 +43,6 @@ import java.util.Map;
 public class TableStatCollector {
   private static final Logger LOG = LoggerFactory.getLogger(TableStatCollector.class);
 
-  private static final String CHANGE_TABLE = "change";
-  private static final String BASE_TABLE = "base";
-
   @Nonnull
   public static TableStatistics collectChangeTableInfo(KeyedTable table) {
     try {
@@ -55,7 +53,7 @@ public class TableStatCollector {
         LOG.warn("No related hive table found. " + table.id(), e);
       }
       TableStatistics tableInfo = new TableStatistics();
-      fillTableStatistics(tableInfo, internalTable, table, CHANGE_TABLE);
+      fillTableStatistics(tableInfo, internalTable, table, Constants.INNER_TABLE_CHANGE);
       return tableInfo;
     } catch (Exception e) {
       LOG.error("failed to collect change table info of " + table.id(), e);
@@ -66,7 +64,7 @@ public class TableStatCollector {
   @Nonnull
   public static TableStatistics collectBaseTableInfo(KeyedTable table) {
     try {
-      LOG.info("start collect {} table info of {}", BASE_TABLE, table.id());
+      LOG.info("start collect {} table info of {}", Constants.INNER_TABLE_BASE, table.id());
       BaseTable internalTable = null;
       try {
         internalTable = table.baseTable();
@@ -74,7 +72,7 @@ public class TableStatCollector {
         LOG.warn("No related hive table found. " + table.id(), e);
       }
       TableStatistics tableInfo = new TableStatistics();
-      fillTableStatistics(tableInfo, internalTable, table, BASE_TABLE);
+      fillTableStatistics(tableInfo, internalTable, table, Constants.INNER_TABLE_BASE);
       return tableInfo;
     } catch (Exception e) {
       LOG.error("failed to collect base table info of " + table.id(), e);

@@ -47,7 +47,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -167,7 +166,7 @@ public class FileInfoCacheService extends IJDBCService {
         if (arcticTable.isUnkeyedTable()) {
           table = arcticTable.asUnkeyedTable();
         } else {
-          if ("change".equalsIgnoreCase(tableType)) {
+          if (Constants.INNER_TABLE_CHANGE.equalsIgnoreCase(tableType)) {
             table = arcticTable.asKeyedTable().changeTable();
           } else {
             table = arcticTable.asKeyedTable().baseTable();
@@ -191,7 +190,7 @@ public class FileInfoCacheService extends IJDBCService {
       }
       long fromId = from == null ? -1 : from;
       long toId = to == null ? currId : to;
-      //if there is no new snapshots commit in table after last sync will not sync file cache
+      // if there is no new snapshots commit in table after last sync will not sync file cache
       if (fromId == toId) {
         return;
       }
@@ -225,8 +224,10 @@ public class FileInfoCacheService extends IJDBCService {
       snapInfoCacheMapper.deleteTableCache(tableIdentifier);
 
       // update local on-memory cache
-      cacheTableSnapshot.remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + "base");
-      cacheTableSnapshot.remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + "change");
+      cacheTableSnapshot
+          .remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + Constants.INNER_TABLE_BASE);
+      cacheTableSnapshot
+          .remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + Constants.INNER_TABLE_CHANGE);
     } catch (Exception e) {
       LOG.error("delete table file cache error ", e);
     }
@@ -264,9 +265,7 @@ public class FileInfoCacheService extends IJDBCService {
   private static List<Snapshot> snapshotsWithin(Table table, long fromSnapshotId, long toSnapshotId) {
     List<Long> snapshotIds = SnapshotUtil.snapshotIdsBetween(table, fromSnapshotId, toSnapshotId);
     List<Snapshot> snapshots = Lists.newArrayList();
-    snapshotIds.forEach(id -> {
-      snapshots.add(table.snapshot(id));
-    });
+    snapshotIds.forEach(id -> snapshots.add(table.snapshot(id)));
     return snapshots;
   }
 
@@ -508,9 +507,9 @@ public class FileInfoCacheService extends IJDBCService {
               tableIdentifier.getDatabase(),
               tableIdentifier.getTableName());
           ArcticTable arcticTable = catalog.loadTable(tmp);
-          doSync(tableIdentifier, "base", lowTime);
+          doSync(tableIdentifier, Constants.INNER_TABLE_BASE, lowTime);
           if (arcticTable.isKeyedTable()) {
-            doSync(tableIdentifier, "change", lowTime);
+            doSync(tableIdentifier, Constants.INNER_TABLE_CHANGE, lowTime);
           }
         } catch (Exception e) {
           LOG.error(
