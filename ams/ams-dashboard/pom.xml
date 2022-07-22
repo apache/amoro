@@ -34,6 +34,7 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <maven.resources.overwrite>true</maven.resources.overwrite>
     </properties>
 
     <profiles>
@@ -44,6 +45,23 @@
             </activation>
             <build>
                 <plugins>
+                    <!-- clean the files-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>2.5</version>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${basedir}/dist</directory>
+                                </fileset>
+                                <fileset>
+                                    <directory>${basedir}/node_modules</directory>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
@@ -55,7 +73,7 @@
                             <!--npm install-->
                             <execution>
                                 <id>exec-npm-install</id>
-                                <phase>generate-resources</phase>
+                                <phase>generate-sources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -72,7 +90,7 @@
                             <!--npm build-->
                             <execution>
                                 <id>exec-npm-run-build</id>
-                                <phase>generate-resources</phase>
+                                <phase>generate-sources</phase>
                                 <goals>
                                     <goal>exec</goal>
                                 </goals>
@@ -95,30 +113,6 @@
     <build>
         <finalName>arctic-ams-dashboard-${project.version}</finalName>
         <plugins>
-            <!--compress files which in dist directory to jar-->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>${maven-assembly-plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>single</goal>
-                        </goals>
-                        <configuration>
-                            <skipAssembly>true</skipAssembly>
-                            <appendAssemblyId>false</appendAssemblyId>
-                            <finalName>ams-dashboard</finalName>
-                            <descriptors>
-                                <descriptor>assembly.xml</descriptor>
-                            </descriptors>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -139,8 +133,7 @@
                                     <!-- specify the source file -->
                                     <directory>${basedir}/dist</directory>
                                     <includes>
-                                        <include>*.*</include>
-                                        <include>*/</include>
+                                        <include>**/*</include>
                                     </includes>
                                 </resource>
                             </resources>
