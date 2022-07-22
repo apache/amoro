@@ -124,9 +124,9 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                            String mode, boolean metadata) {
     if (arcticTable.isKeyedTable()) {
       KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
-      if ("base".equals(mode)) {
+      if (Constants.INNER_TABLE_BASE.equals(mode)) {
         clearInternalTable(keyedArcticTable, keyedArcticTable.baseTable(), lastTime, execute, metadata);
-      } else if ("change".equals(mode)) {
+      } else if (Constants.INNER_TABLE_CHANGE.equals(mode)) {
         if (keyedArcticTable.primaryKeySpec().primaryKeyExisted()) {
           clearInternalTable(keyedArcticTable, keyedArcticTable.changeTable(), lastTime, execute, metadata);
         } else {
