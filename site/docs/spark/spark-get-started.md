@@ -5,7 +5,8 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 
 ## 准备
 
-当前 Arctic-Spark-Connector 支持与 Spark3.1+ 版本使用。在开始使用前，将 arctic-spark_3.1-runtime.jar 复制到
+当前 Arctic-Spark-Connector 支持与 Spark3.1+ 版本使用。在开始使用前，
+[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip)并将arctic-spark_3.1-runtime.jar 复制到
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
