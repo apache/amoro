@@ -39,9 +39,9 @@ public class KeyedDataFileTest extends TableTestBase {
     Assert.assertEquals(1, writeFiles.size());
     DefaultKeyedFile defaultKeyedFile = new DefaultKeyedFile(writeFiles.get(0));
     Assert.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
-    Assert.assertEquals(3, defaultKeyedFile.mask());
+    Assert.assertEquals(3, defaultKeyedFile.node().mask());
     Long txId = AMS.handler().getTableCurrentTxId(PK_TABLE_ID.buildTableIdentifier());
-    Assert.assertEquals(0, defaultKeyedFile.index());
+    Assert.assertEquals(0, defaultKeyedFile.node().index());
     Assert.assertEquals(txId, defaultKeyedFile.transactionId());
     Assert.assertEquals(ChangedLsn.of(txId, 1), defaultKeyedFile.minLsn());
     Assert.assertEquals(ChangedLsn.of(txId,2), defaultKeyedFile.maxLsn());

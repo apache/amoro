@@ -27,19 +27,11 @@ import com.netease.arctic.ams.server.handler.IOptimizeManagerHandler;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import org.apache.thrift.TException;
 
-
-
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/16
- * Update
- */
 public class OptimizeManagerHandler implements IOptimizeManagerHandler {
 
   @Override
   public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
-      throws NoSuchObjectException, TException {
+      throws TException {
     return ServiceContainer.getOptimizeQueueService().pollTask(queueId, jobId, attemptId, waitTime);
   }
 

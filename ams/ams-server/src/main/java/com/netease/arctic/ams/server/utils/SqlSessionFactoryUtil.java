@@ -22,12 +22,6 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.session.SqlSessionFactoryBuilder;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/19
- * Update
- */
 public class SqlSessionFactoryUtil {
   private static volatile SqlSessionFactory sqlSessionFactory;
 

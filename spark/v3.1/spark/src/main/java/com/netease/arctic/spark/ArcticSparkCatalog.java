@@ -205,11 +205,11 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
       throw new NoSuchTableException(ident);
     }
-    if (table instanceof UnkeyedTable) {
-      alterUnKeyedTable((UnkeyedTable) table, changes);
+    if (table.isUnkeyedTable()) {
+      alterUnKeyedTable(table.asUnkeyedTable(), changes);
       return ArcticSparkTable.ofArcticTable(table);
-    } else if (table instanceof KeyedTable) {
-      alterKeyedTable((KeyedTable) table, changes);
+    } else if (table.isKeyedTable()) {
+      alterKeyedTable(table.asKeyedTable(), changes);
       return ArcticSparkTable.ofArcticTable(table);
     }
     throw new UnsupportedOperationException("Unsupported alter table");

@@ -190,7 +190,9 @@ public class TracedTransaction implements Transaction {
 
     @Override
     public void commit() {
-      tracer.addTransactionTableSnapshot(transaction.table().currentSnapshot().snapshotId(), internalTableChange);
+      if (transaction.table().currentSnapshot() != null) {
+        tracer.addTransactionTableSnapshot(transaction.table().currentSnapshot().snapshotId(), internalTableChange);
+      }
     }
 
     @Override

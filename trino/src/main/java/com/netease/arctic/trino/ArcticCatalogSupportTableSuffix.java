@@ -112,11 +112,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
       TableIdentifier newTableIdentifier = TableIdentifier.of(tableIdentifier.getCatalog(),
           tableIdentifier.getDatabase(), tableNameResolve.getTableName());
       ArcticTable arcticTable = arcticCatalog.loadTable(newTableIdentifier);
-      if (!(arcticTable instanceof KeyedTable)) {
+      if (arcticTable.isUnkeyedTable()) {
         throw new IllegalArgumentException("table " + newTableIdentifier + " is not keyed table can not use " +
             "change or base suffix");
       }
-      KeyedTable keyedTable = (KeyedTable) arcticTable;
+      KeyedTable keyedTable = arcticTable.asKeyedTable();
       if (tableNameResolve.isBase()) {
         return keyedTable.baseTable();
       } else {

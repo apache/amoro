@@ -96,7 +96,7 @@ public class SparkWrite {
               2.0 /* exponential */)
           .throwFailureWhenFinished()
           .run(file -> {
-            table.io().deleteFileWithResult(file.path().toString());
+            table.io().deleteFile(file.path().toString());
           });
     }
   }

@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
@@ -42,7 +43,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
@@ -125,18 +125,18 @@ public class TableTestBase {
       testCatalog.createDatabase(db);
     }
 
-    testTable = (UnkeyedTable) testCatalog
+    testTable = testCatalog
         .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
         .withPartitionSpec(SPEC)
-        .create();
+        .create().asUnkeyedTable();
 
-    testKeyedTable = (KeyedTable) testCatalog
+    testKeyedTable = testCatalog
         .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
         .withPartitionSpec(SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-        .create();
+        .create().asKeyedTable();
 
     this.before();
   }
@@ -155,7 +155,7 @@ public class TableTestBase {
   }
 
   public List<DataFile> writeBase(TableIdentifier identifier, List<Record> records) {
-    KeyedTable table = (KeyedTable) testCatalog.loadTable(identifier);
+    KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction("");
     try (GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId).buildBaseWriter()) {
@@ -177,7 +177,7 @@ public class TableTestBase {
   }
 
   public List<DataFile> writeChange(TableIdentifier identifier, ChangeAction action, List<Record> records) {
-    KeyedTable table = (KeyedTable) testCatalog.loadTable(identifier);
+    KeyedTable table = testCatalog.loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction("");
     try (GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(table)
         .withChangeAction(action)

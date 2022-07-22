@@ -101,7 +101,7 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
     List<DataFile> dataFiles = insertKeyedTableBaseDataFiles(3);
     return dataFiles.stream().collect(Collectors.groupingBy(dataFile ->  {
       DefaultKeyedFile keyedFile = new DefaultKeyedFile(dataFile);
-      return new TreeNode(keyedFile.mask(), keyedFile.index());
+      return keyedFile.node().toAmsTreeNode();
     }));
   }
 }
