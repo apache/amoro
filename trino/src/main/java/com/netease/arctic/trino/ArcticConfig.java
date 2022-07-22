@@ -22,12 +22,11 @@ package com.netease.arctic.trino;
 import io.airlift.configuration.Config;
 import org.apache.commons.lang3.StringUtils;
 
+/**
+ * Arctic config
+ */
 public class ArcticConfig {
   private String catalogUrl;
-
-  private Long externalMapMemorySize;
-
-  private String externalMapMemoryPath;
 
   public String getCatalogUrl() {
     return catalogUrl;

@@ -25,6 +25,9 @@ import io.trino.spi.classloader.ThreadContextClassLoader;
 import io.trino.spi.security.ConnectorIdentity;
 import javax.inject.Inject;
 
+/**
+ * Arctic HDFS Authentication using TableMetaStore
+ */
 public class ArcticHdfsAuthentication implements HdfsAuthentication {
 
   private ArcticCatalogFactory arcticCatalogFactory;

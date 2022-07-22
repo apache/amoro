@@ -24,11 +24,14 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.mapping.NameMappingParser;
+import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.parquet.schema.MessageType;
@@ -96,13 +99,11 @@ public abstract class BaseArcticDataReader<T> {
         keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
     );
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-    BaseIcebergDataReader<T> baseIcebergDataReader = new GenericIcebergDataReader(
-        fileIO, tableSchema, newProjectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer
-    );
 
     CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
         CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(baseIcebergDataReader.readDataWithoutApplyPosDelete(fileScanTask))));
+        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
+            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
     return fileIO.doAs(dataIterable::iterator);
   }
 
@@ -115,18 +116,35 @@ public abstract class BaseArcticDataReader<T> {
           keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
       );
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-      BaseIcebergDataReader<T> baseIcebergDataReader = new GenericIcebergDataReader(
-          fileIO, tableSchema, newProjectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer
-      );
 
       CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
           CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
           fileScanTask -> arcticDeleteFilter.filterNegate(
-              baseIcebergDataReader.readDataWithoutApplyPosDelete(fileScanTask))));
+              newParquetIterable(fileScanTask, newProjectedSchema,
+                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
       return fileIO.doAs(dataIterable::iterator);
     } else {
       return CloseableIterator.empty();
     }
+  }
+
+  private CloseableIterable<T> newParquetIterable(
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
+    Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
+        .split(task.start(), task.length())
+        .project(schema)
+        .createReaderFunc(getNewReaderFunction(schema, idToConstant))
+        .filter(task.residual())
+        .caseSensitive(caseSensitive);
+
+    if (reuseContainer) {
+      builder.reuseContainers();
+    }
+    if (nameMapping != null) {
+      builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
+    }
+
+    return builder.build();
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
@@ -134,32 +152,6 @@ public abstract class BaseArcticDataReader<T> {
       Map<Integer, ?> idToConstant);
 
   protected abstract Function<Schema, Function<T, StructLike>> toStructLikeFunction();
-
-  protected class GenericIcebergDataReader extends BaseIcebergDataReader<T> {
-
-    public GenericIcebergDataReader(
-        ArcticFileIO fileIO,
-        Schema tableSchema,
-        Schema projectedSchema,
-        String nameMapping,
-        boolean caseSensitive,
-        BiFunction<Type, Object, Object> convertConstant,
-        boolean reuseContainer) {
-      super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
-    }
-
-    @Override
-    protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-        Schema projectSchema,
-        Map<Integer, ?> idToConstant) {
-      return BaseArcticDataReader.this.getNewReaderFunction(projectSchema, idToConstant);
-    }
-
-    @Override
-    protected Function<Schema, Function<T, StructLike>> toStructLikeFunction() {
-      return BaseArcticDataReader.this.toStructLikeFunction();
-    }
-  }
 
   private class GenericArcticDeleteFilter extends ArcticDeleteFilter<T> {
 
