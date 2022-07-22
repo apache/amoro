@@ -52,8 +52,6 @@ create table test_db.test_table(
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
-**TODO**: Arctic-flink-runtime jar下载位置及AMS url 获取方式
-
 **1.准备环境**
 
 下载flink和相关依赖：
