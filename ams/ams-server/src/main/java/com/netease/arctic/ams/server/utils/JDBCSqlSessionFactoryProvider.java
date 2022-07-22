@@ -77,22 +77,20 @@ public class JDBCSqlSessionFactoryProvider {
                     ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
           }
           dataSource.setDefaultAutoCommit(true);
-          dataSource.setMaxTotal(10);
-          dataSource.setMaxIdle(8);
+          dataSource.setMaxTotal(50);
+          dataSource.setMaxIdle(30);
           dataSource.setMinIdle(0);
-          dataSource.setMaxWaitMillis(1000L);
+          dataSource.setMaxWaitMillis(2000L);
           dataSource.setLogAbandoned(true);
           dataSource.setRemoveAbandonedOnBorrow(true);
           dataSource.setRemoveAbandonedTimeout(60);
-          dataSource.setTimeBetweenEvictionRunsMillis(
-              BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
-          dataSource.setTestOnBorrow(BaseObjectPoolConfig.DEFAULT_TEST_ON_BORROW);
-          dataSource.setTestWhileIdle(BaseObjectPoolConfig.DEFAULT_TEST_WHILE_IDLE);
-          dataSource.setMinEvictableIdleTimeMillis(1000);
+          dataSource.setTimeBetweenEvictionRunsMillis(60000);
+          dataSource.setTestOnBorrow(true);
+          dataSource.setTestWhileIdle(false);
+          dataSource.setMinEvictableIdleTimeMillis(60000);
           dataSource.setNumTestsPerEvictionRun(BaseObjectPoolConfig.DEFAULT_NUM_TESTS_PER_EVICTION_RUN);
           dataSource.setTestOnReturn(BaseObjectPoolConfig.DEFAULT_TEST_ON_RETURN);
-          dataSource.setSoftMinEvictableIdleTimeMillis(
-              BaseObjectPoolConfig.DEFAULT_SOFT_MIN_EVICTABLE_IDLE_TIME.toMillis());
+          dataSource.setSoftMinEvictableIdleTimeMillis(60000);
           dataSource.setLifo(BaseObjectPoolConfig.DEFAULT_LIFO);
           TransactionFactory transactionFactory = new JdbcTransactionFactory();
           Environment environment = new Environment("develop", transactionFactory, dataSource);

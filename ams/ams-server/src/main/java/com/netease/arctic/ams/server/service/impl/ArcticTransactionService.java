@@ -76,6 +76,7 @@ public class ArcticTransactionService extends IJDBCService {
       return finalTxId;
     } catch (PersistenceException e) {
       sqlSession.rollback();
+      sqlSession.close();
       if (retry <= 0) {
         throw e;
       }
