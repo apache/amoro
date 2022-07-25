@@ -27,7 +27,6 @@ import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
-// todo -lt (optimize_type)
 public interface InternalTableFilesMapper {
   String TABLE_NAME = "optimize_file";
 
