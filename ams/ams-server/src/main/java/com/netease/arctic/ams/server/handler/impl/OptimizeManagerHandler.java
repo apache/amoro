@@ -20,14 +20,14 @@ package com.netease.arctic.ams.server.handler.impl;
 
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.OptimizerStateReport;
-import com.netease.arctic.ams.server.handler.IOptimizeManagerHandler;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import org.apache.thrift.TException;
 
-public class OptimizeManagerHandler implements IOptimizeManagerHandler {
+public class OptimizeManagerHandler implements OptimizeManager.Iface {
 
   @Override
   public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)

@@ -83,27 +83,6 @@ public class Utils {
     }
   }
 
-  public static String readAll(Reader reader) throws IOException {
-    BufferedReader bufferedReader = new BufferedReader(reader);
-    StringBuilder sb = new StringBuilder();
-    String line = null;
-
-    while ((line = bufferedReader.readLine()) != null) {
-      sb.append(line);
-    }
-    return sb.toString();
-  }
-
-  public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-  public static synchronized String getDateFormatByLong(Long time) {
-    return DATE_FORMAT.format(new Date(time));
-  }
-
-  public static long getTimestampByDate(String date) {
-    return DATE_FORMAT.parse(date, new ParsePosition(0)).getTime();
-  }
-
   public static boolean ping(String ip) {
     try {
       return InetAddress.getByName(ip).isReachable(500);

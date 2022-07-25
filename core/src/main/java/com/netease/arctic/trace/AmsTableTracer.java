@@ -107,7 +107,7 @@ public class AmsTableTracer implements TableTracer {
   }
 
   public void addTransactionTableSnapshot(Long snapshotId, AmsTableTracer.InternalTableChange internalTableChange) {
-    transactionSnapshotTableChanges.put(snapshotId, internalTableChange);
+    transactionSnapshotTableChanges.putIfAbsent(snapshotId, internalTableChange);
   }
 
   public ArcticTable table() {

@@ -545,7 +545,6 @@ public class TableOptimizeItem extends IJDBCService {
   private void removeOptimizeTask(OptimizeTaskId optimizeTaskId) {
     tasksLock.lock();
     try {
-      // TODO wangtao3
       OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
       if (removed != null) {
         removed.clearOptimizeTask();
