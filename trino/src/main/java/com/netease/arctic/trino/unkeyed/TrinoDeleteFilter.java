@@ -37,6 +37,9 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Iceberg original TrinoDeleteFilter has some problems for arctic, such as iceberg version, table type.
+ */
 public class TrinoDeleteFilter
     extends DeleteFilter<TrinoRow> {
   private final FileIO fileIO;

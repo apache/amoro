@@ -54,7 +54,7 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
         "(1, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
         "(2, ''bbb'',  timestamp('' 2022-1-2 09:00:00 '')), \n " +
         "(3, ''ccc'',  timestamp('' 2022-1-3 09:00:00 '')) \n ", database, table);
-    keyedTable = (KeyedTable) loadTable(identifier);
+    keyedTable = loadTable(identifier).asKeyedTable();
 
     writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(1)),

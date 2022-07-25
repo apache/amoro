@@ -1,25 +1,11 @@
 /*
- *   Licensed to the Apache Software Foundation (ASF) under one
- *   or more contributor license agreements.  See the NOTICE file
- *   distributed with this work for additional information
- *   regarding copyright ownership.  The ASF licenses this file
- *   to you under the Apache License, Version 2.0 (the
- *   "License"); you may not use this file except in compliance
- *   with the License.  You may obtain a copy of the License at
- *
- *       http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- */
-
-/*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -29,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.netease.arctic.trino.iceberg;
 
 import com.google.common.collect.ImmutableMap;
@@ -50,14 +37,14 @@ public final class ArcticQueryRunnerForClient
 
     private ArcticQueryRunnerForClient() {}
 
-    public static DistributedQueryRunner createIcebergQueryRunner(Map<String, String> extraProperties) throws Exception
+    public static DistributedQueryRunner createIcebergQueryRunner(Map<String, String> extraProperties, String url) throws Exception
     {
-        return createIcebergQueryRunner(extraProperties, false);
+        return createIcebergQueryRunner(extraProperties, false, url);
     }
 
     public static DistributedQueryRunner createIcebergQueryRunner(
             Map<String, String> extraProperties,
-            boolean createTpchTables)
+            boolean createTpchTables, String url)
             throws Exception
     {
         Session session = testSessionBuilder()
@@ -74,7 +61,7 @@ public final class ArcticQueryRunnerForClient
 
         queryRunner.installPlugin(new ArcticPlugin());
         Map<String, String> icebergProperties = ImmutableMap.<String, String>builder()
-            .put("arctic.url", "thrift://localhost:8080/" + ARCTIC_CATALOG)
+            .put("arctic.url", url)
             .build();
 
         queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
@@ -87,9 +74,13 @@ public final class ArcticQueryRunnerForClient
     {
         Logging.initialize();
         Map<String, String> properties = ImmutableMap.of("http-server.http.port", "8080");
+        String url = args[0];
+        if (url == null) {
+            throw new RuntimeException("please config arctic url");
+        }
         DistributedQueryRunner queryRunner = null;
         try {
-            queryRunner = createIcebergQueryRunner(properties);
+            queryRunner = createIcebergQueryRunner(properties, url);
         }
         catch (Throwable t) {
             log.error(t);

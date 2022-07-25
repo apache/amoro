@@ -23,20 +23,10 @@ import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/23
- * Update
- */
 public class ArcticMetaValidator {
   public static final Logger LOG = LoggerFactory.getLogger(ArcticMetaValidator.class);
 

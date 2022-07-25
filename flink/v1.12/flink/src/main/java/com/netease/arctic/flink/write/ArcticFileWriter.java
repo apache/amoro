@@ -24,8 +24,6 @@ import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
@@ -36,7 +34,6 @@ import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.io.BaseEncoding;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,7 +110,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     long transaction = -1;
     if (table.isKeyedTable()) {
       String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
-      transaction = ((KeyedTable) table).beginTransaction(signature);
+      transaction = table.asKeyedTable().beginTransaction(signature);
       LOG.info("table:{}, signature:{}, transactionId:{}", table.name(), signature, transaction);
     }
     return transaction;

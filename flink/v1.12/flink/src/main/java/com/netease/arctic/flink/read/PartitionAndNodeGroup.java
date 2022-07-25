@@ -85,7 +85,7 @@ public class PartitionAndNodeGroup {
 
     tasks.forEach(task -> {
       String partitionKey = task.file().partition().toString();
-      Long index = task.file().index();
+      Long index = task.file().node().index();
       Map<Long, Node> indexNodes = nodes.getOrDefault(partitionKey, new HashMap<>());
       Node node = indexNodes.getOrDefault(index, new Node());
       if (insert) {

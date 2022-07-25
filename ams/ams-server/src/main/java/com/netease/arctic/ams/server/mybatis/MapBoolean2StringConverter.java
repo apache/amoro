@@ -33,16 +33,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/7/20
- * Update
- */
 @MappedJdbcTypes(JdbcType.VARCHAR)
 @MappedTypes(Map.class)
 public class MapBoolean2StringConverter implements TypeHandler<Map<String, Boolean>> {
-  private Gson gson = new Gson();
+  private final Gson gson = new Gson();
 
   @Override
   public void setParameter(PreparedStatement ps, int i, Map<String, Boolean> parameter,

@@ -76,8 +76,8 @@ public class MetaService {
 
     serverTableMeta.setFilter(null);
     LOG.info("is keyedTable: {}", at instanceof KeyedTable);
-    if (at instanceof KeyedTable) {
-      KeyedTable kt = (KeyedTable) at;
+    if (at.isKeyedTable()) {
+      KeyedTable kt = at.asKeyedTable();
       if (kt.primaryKeySpec() != null) {
         serverTableMeta.setPkList(kt
                 .primaryKeySpec()

@@ -23,6 +23,8 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericAppenderFactory;
@@ -92,7 +94,15 @@ public class GenericTaskWriters {
       Preconditions.checkNotNull(transactionId);
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-      return new SortedPosDeleteWriter<>(new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
+      GenericAppenderFactory appenderFactory =
+          new GenericAppenderFactory(table.baseTable().schema(), table.spec());
+      appenderFactory.set(
+          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
+          MetricsModes.Full.get().toString());
+      appenderFactory.set(
+          org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
+          MetricsModes.Full.get().toString());
+      return new SortedPosDeleteWriter<>(appenderFactory,
           new OutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
           fileFormat, mask, index, partitionKey);

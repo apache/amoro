@@ -42,8 +42,24 @@ Arctic contains modules as below:
 
 Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
 
-* To invoke a build and run tests: `mvn package`
-* To skip tests: `mvn -DskipTests package`
+* To build Trino module need config `toolchains.xml` in `${user.home}/.m2/` dir, the content is
+```
+<?xml version="1.0" encoding="UTF-8"?>
+<toolchains>
+    <toolchain>
+        <type>jdk</type>
+        <provides>
+            <version>11</version>
+            <vendor>sun</vendor>
+        </provides>
+        <configuration>
+            <jdkHome>${yourJdk11Home}</jdkHome>
+        </configuration>
+    </toolchain>
+</toolchains>
+```
+* To invoke a build and run tests: `mvn package -P toolchain`
+* To skip tests: `mvn -DskipTests package -P toolchain`
 
 ## Engines supported
 
