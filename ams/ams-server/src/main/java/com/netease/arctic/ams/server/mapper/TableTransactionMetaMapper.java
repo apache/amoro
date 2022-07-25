@@ -45,11 +45,11 @@ public interface TableTransactionMetaMapper {
       "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
   Long getCurrentTxId(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
-  @Delete("delete from " + TABLE_NAME + "where table_identifier = #{tableIdentifier, " +
+  @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
   void deleteTableTx(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
-  @Delete("delete from " + TABLE_NAME + "where table_identifier = #{tableIdentifier,typeHandler=com.netease.arctic" +
+  @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier,typeHandler=com.netease.arctic" +
       ".ams.server.mybatis.TableIdentifier2StringConverter} and commit_time < #{expiredTime, typeHandler=com.netease" +
       ".arctic.ams.server.mybatis.Long2TsConvertor} and transaction_id < " +
       "( select id from (select max(transaction_id) as id from " + TABLE_NAME + " where table_identifier = " +
