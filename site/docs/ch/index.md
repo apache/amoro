@@ -1,12 +1,19 @@
-# 概述
+# 总览
 欢迎使用 arctic，arctic 是由网易开源的流式湖仓系统，arctic 在 iceberg 和 hive 之上添加了更多实时场景的能力，并且面向 dataops 提供流批统一，开箱即用的元数据服务，让数据湖更加好用和实用。
-## Arctic 是什么
-Arctic是搭建在 apache iceberg 表格式之上的流式湖仓服务（streaming lakehouse service）。通过 arctic，用户可以在 flink、spark、trino等引擎上实现更加优化的 CDC，流式更新，olap 等功能，结合数据湖高效的离线处理能力，arctic 能够服务于更多流批混用的场景；同时，arctic 的结构自优化、并发冲突解决以及标准化的湖仓管理功能，可以有效减少用户在数据湖管理和优化上的负担。
-![Introduce](img/arctic_introduce.png)
-Arctic 服务通过部署 AMS 来展现，AMS 可以认为是 HMS（Hive Metastore）的下一代产品，或者是面向 iceberg 的 HMS。Arctic 依赖 iceberg 作为基础表格式，但 arctic 没有侵入 iceberg 实现，而是将 iceberg 作为一个 lib 使用，在 flink、spark、trino 等计算引擎来看，arctic 首先是一个独立数据源，具有流式湖仓的特性，其次也可以将 arctic 表当做一个或多个 iceberg 表来使用，考虑到 hive 依然有很大的用户体量，arctic 在设计时考虑了 hive 的兼容性。Arctic 开放的叠加式架构，可以帮助已具规模的离线数据湖快速批量升级为实时数据湖，而不用担心和原有数据湖的兼容性问题，让数据湖满足更多实时分析，实时风控，实时训练，特征工程等场景。
 
+### 概述
 
-## Arctic 功能特性
+Arctic是搭建在 apache iceberg 表格式之上的流式湖仓服务（streaming lakehouse service）。通过 arctic，用户可以在 flink、spark、trino等引擎上实现更加优化的 CDC，流式更新，olap 等功能，
+结合数据湖高效的离线处理能力，arctic 能够服务于更多流批混用的场景；同时，arctic 的结构自优化、并发冲突解决以及标准化的湖仓管理功能，可以有效减少用户在数据湖管理和优化上的负担。
+![Introduce](images/arctic_introduce.png)
+Arctic 服务通过部署 AMS 来展现，AMS 可以认为是 HMS（Hive Metastore）的下一代产品，或者是面向 iceberg 的 HMS。
+Arctic 依赖 iceberg 作为基础表格式，但 arctic 没有侵入 iceberg 实现，而是将 iceberg 作为一个 lib 使用，
+在 flink、spark、trino 等计算引擎来看，arctic 首先是一个独立数据源，具有流式湖仓的特性，
+其次也可以将 arctic 表当做一个或多个 iceberg 表来使用，考虑到 hive 依然有很大的用户体量，
+arctic 在设计时考虑了 hive 的兼容性。Arctic 开放的叠加式架构，可以帮助已具规模的离线数据湖快速批量升级为实时数据湖，
+而不用担心和原有数据湖的兼容性问题，让数据湖满足更多实时分析，实时风控，实时训练，特征工程等场景。
+
+### Arctic 特性
 
 * 基于主键高效地流式更新
 * 数据自动分桶，结构自优化（self-optimized）
@@ -17,9 +24,9 @@ Arctic 服务通过部署 AMS 来展现，AMS 可以认为是 HMS（Hive Metasto
 * 为流批并发写入提供事务性保障
 
 
-## 架构与概念
+### 架构与概念
 Arctic 的组件包括 AMS，optimizer 以及 dashboard，如下所示：
-![Architecture](img/arctic_architecture.png)
+![Architecture](images/arctic_architecture.png)
 
 **AMS**
 

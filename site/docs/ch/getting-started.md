@@ -10,7 +10,7 @@ AMS依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经�
 ```shell
 java -version
 ```
-[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip)最新版的AMS并解压。
+[下载](https://github.com/NetEase/arctic/releases)最新版的AMS并解压。
 
 **2.启动AMS**
 
@@ -27,11 +27,11 @@ java -version
 AMS中的optimizer负责自动为表进行结构优化，AMS默认配置下会有一个类型为local的optimizer group，这里需要在此group下创建一个optimizer。
 进入AMS的Optimizing页面，选择Optimizers。
 
-![Optimizing.png](img/Optimizing.png)
+![Optimizing.png](images/Optimizing.png)
 
 点击`Scale-Out`按钮选择对应`Optimizer Group`并且配置optimizer并发度，点击OK后即完成了optimizer的创建。
 
-![ScaleOut.png](img/ScaleOut.png)
+![ScaleOut.png](images/ScaleOut.png)
 
 ## 建表
 
@@ -44,13 +44,15 @@ create table test_db.test_table(
   name string,
   op_time timestamp,
   primary key(id)
-) using arctic partitioned by(days(op_time));
+) partitioned by(days(op_time)) using arctic;
 ```
 
 ## 实时写入与读取
 入门试用推荐使用 [Flink SQL Client](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html),
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
+
+**TODO**: Arctic-flink-runtime jar下载位置及AMS url 获取方式
 
 **1.准备环境**
 
@@ -70,7 +72,7 @@ tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
 # 下载 hadoop 依赖
 wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
 # 下载 arctic flink connector
-wget https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.12-0.3.0.jar
+wget XXX
 ```
 
 修改 Flink 相关配置文件：
@@ -93,7 +95,7 @@ execution.checkpointing.interval: 10s
 ```shell
 # 用于创建 socket connector，以便通过 socket 输入 CDC 数据
 cp examples/table/ChangelogSocketExample.jar lib
-cp ../arctic-flink-runtime-1.12-0.3.0.jar lib
+cp ../arctic-flink-runtime-xxx.jar lib
 cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ```
 
@@ -112,7 +114,7 @@ cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 -- 创建 catalog
 CREATE CATALOG arctic WITH (
   'type' = 'arctic',
-  'metastore.url'='thrift://localhost:1260/local_catalog'
+  'metastore.url'='thrift://<ip>:<port>/<catalog_name>'
 );
 -- 创建 CDC Socket 源表
 CREATE TABLE cdc_source(
@@ -127,7 +129,7 @@ CREATE TABLE cdc_source(
     'changelog-csv.column-delimiter' = '|'
 );
 -- 往 Arctic 表实时写入数据
-INSERT INTO arctic.test_db.test_table
+INSERT INTO arctic.db.test_table
 SELECT id,
        name,
        CAST(TO_TIMESTAMP(op_time) AS TIMESTAMP(6) WITH LOCAL TIME ZONE) op_time
@@ -137,7 +139,7 @@ FROM cdc_source;
 SET table.dynamic-table-options.enabled=true;
 
 -- 读 Arctic 表的 CDC 数据，观察主键表的聚合结果
-SELECT id, `name` FROM arctic.test_db.test_table/*+OPTIONS('streaming' = 'true')*/;
+SELECT id, `name` FROM arctic.db.test_table/*+OPTIONS('streaming' = 'true')*/;
 ```
 
 **3.模拟测试数据**
@@ -156,7 +158,7 @@ INSERT|2|frank|2022-07-02 09:11:00
 DELETE|2|frank|2022-07-02 09:11:00
 INSERT|3|lee|2022-07-01 10:11:00
 INSERT|4|rock|2022-07-02 09:01:00
-INSERT|5|jack|2022-07-02 12:11:40
+INSERT|5|jack|2022-07-02 01:11:40
 INSERT|6|mars|2022-07-02 11:19:10
 ```
 
@@ -179,8 +181,8 @@ INSERT|6|mars|2022-07-02 11:19:10
 ```text
 DELETE|1|eric|2022-07-01 12:32:00
 INSERT|7|randy|2022-07-03 19:11:00
-DELETE|4|rock|2022-07-02 09:01:00
-DELETE|3|lee|2022-07-01 10:11:00
+DELETE|4|rock|2022-07-02 10:11:00
+DELETE|3|lee|2022-07-01 20:00:00
 ```
 
 此时预期的结果集为：
@@ -211,7 +213,7 @@ select * from test_db.test_table order by id;
 +---+-----+-------------------+
 | id| name|            op_time|
 +---+-----+-------------------+
-|  5| jack|2022-07-02 12:11:40|
+|  5| jack|2022-07-02 01:11:40|
 |  6| mars|2022-07-02 11:19:10|
 |  7|randy|2022-07-03 19:11:00|
 +---+-----+-------------------+
@@ -223,7 +225,7 @@ select * from test_db.test_table order by id;
 insert overwrite 
   test_db.test_table
 values
-  (5, 'jack', timestamp('2022-07-02 12:11:40')),
+  (5, 'jack', timestamp('2022-07-02 01:11:40')),
   (6, 'mars', timestamp('2022-07-02 11:19:10')),
   (7, 'randy', timestamp('2022-07-03 19:11:00'));
 ```
@@ -237,7 +239,7 @@ set spark.sql.sources.partitionOverwriteMode=DYNAMIC;
 insert overwrite 
   test_db.test_table
 values
-  (5, 'peter', timestamp('2022-07-02 08:11:40')),
+  (5, 'peter', timestamp('2022-07-02 07:11:40')),
   (8, 'alice', timestamp('2022-07-04 19:11:00'));
 ```
 
@@ -255,7 +257,7 @@ select * from test_db.test_table order by id;
 +---+-----+-------------------+
 | id| name|            op_time|
 +---+-----+-------------------+
-|  5|peter|2022-07-02 08:11:40|
+|  5|peter|2022-07-02 07:11:40|
 |  7|randy|2022-07-03 19:11:00|
 |  8|alice|2022-07-04 19:11:00|
 +---+-----+-------------------+
@@ -268,7 +270,7 @@ select * from test_db.test_table order by id;
 启动optimizer之后，表的结构优化会自动触发。
 登录并进入[AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](img/table_optimizing.png)
+![table_optimizing](../../overrides/images/table_optimizing.png)
 
 其中：
 
@@ -287,9 +289,9 @@ select * from test_db.test_table order by id;
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取](#_3)，测试表预期会进行3次结构优化，分别是2次minor optimize, 一次major optimize。
+如果已经完成[实时写入与读取](#_3)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
 
-![optimize_history](img/optimize_history.png)
+![optimize_history](images/optimize_history.png)
 
 上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
 
@@ -299,13 +301,13 @@ select * from test_db.test_table order by id;
 
  - Input：合并之前的文件个数和文件大小
 
- - Output：合并新生成的文件个数和文件大小
+ - Output：合并生成的文件个数和文件大小
 
-两次 Optimize 之后，文件情况如下，以分区 op_time_day=2022-07-02 为例
+两次 Optimize 之后，文件情况如下
 
-![files_after_optimize](img/files_after_optimize.png)
+![files_after_optimize](images/files_after_optimize.png)
 
-新增的1个 pos-delete 是 minor optimize 的结果，而新增的1个 base file 是 major optimize 的结果，由于只有一行数据被删除，因此只有1个 base 文件和 pos-delete 文件合并生成了最终的 base file。
+新增的4个 pos-delete 是 minor optimize 的结果，而新增的一个 base file 是 major optimize 的最终结果，由于当前的 pos-delete 的数据量还比较少，因此 major optimize 并没有将它们删除。
 
 更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-structure.md#_3)。
 
@@ -325,14 +327,12 @@ arctic.ams.mybatis.ConnectionPassword: {password}                        #MySQL�
 arctic.ams.database.type: mysql                                          #系统库类型
 ```
 
-???+note "目前只支持 MySQL 5.x 版本，不支持 MySQL 8"
-
 **2.初始化MySQL表**
 
 根据`conf/ams-init.sql`初始化AMS所需表：
 
 ```shell
-mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_HOME_DIR}/conf/ams-init.sql
+mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} < {AMS_HOME_DIR}/conf/ams-init.sql
 ```
 
 **3.重启AMS**
