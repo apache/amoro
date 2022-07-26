@@ -37,9 +37,15 @@ import scala.collection.JavaConverters.seqAsJavaList
 case class ExtendedArcticUnkeyedStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
-      val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(options))
-      CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query),
-        props, writeOptions, ifNotExists) :: Nil
+      var propertiesMap: Map[String, String] = props
+      var optionsMap: Map[String, String] = options
+      if (options.contains("primary.keys")) {
+        propertiesMap += ("primary.keys" -> options("primary.keys"))
+        optionsMap += ("overwrite-mode" -> "dynamic")
+      }
+      val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
+      CreateTableAsSelectExec(catalog, ident, parts, query, planLater(query),
+        propertiesMap, writeOptions, ifNotExists) :: Nil
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
       if (partitionSpec.nonEmpty) {
         throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")

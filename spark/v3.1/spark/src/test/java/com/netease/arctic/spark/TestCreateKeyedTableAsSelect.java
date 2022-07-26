@@ -134,23 +134,4 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     Assert.assertEquals("Should have preserved table property",
         "val2", loadTable(identifier).properties().get("prop2"));
   }
-
-  private void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
-        primaryKeysBlock = false;
-      } else if (primaryKeysBlock){
-        descPrimaryKeys.add(row[0].toString());
-      }
-    }
-
-    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.toArray(), descPrimaryKeys.toArray());
-  }
-
-
 }
