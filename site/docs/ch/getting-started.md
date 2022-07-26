@@ -10,7 +10,7 @@ AMS依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经�
 ```shell
 java -version
 ```
-[下载](https://github.com/NetEase/arctic/releases)最新版的AMS并解压。
+[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip)最新版的AMS并解压。
 
 **2.启动AMS**
 
@@ -52,8 +52,6 @@ create table test_db.test_table(
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
-**TODO**: Arctic-flink-runtime jar下载位置及AMS url 获取方式
-
 **1.准备环境**
 
 下载flink和相关依赖：
@@ -72,7 +70,7 @@ tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
 # 下载 hadoop 依赖
 wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
 # 下载 arctic flink connector
-wget XXX
+wget https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.12-0.3.0.jar
 ```
 
 修改 Flink 相关配置文件：
@@ -95,7 +93,7 @@ execution.checkpointing.interval: 10s
 ```shell
 # 用于创建 socket connector，以便通过 socket 输入 CDC 数据
 cp examples/table/ChangelogSocketExample.jar lib
-cp ../arctic-flink-runtime-xxx.jar lib
+cp ../arctic-flink-runtime-1.12-0.3.0.jar lib
 cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ```
 
@@ -114,7 +112,7 @@ cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 -- 创建 catalog
 CREATE CATALOG arctic WITH (
   'type' = 'arctic',
-  'metastore.url'='thrift://<ip>:<port>/<catalog_name>'
+  'metastore.url'='thrift://localhost:1260/local_catalog'
 );
 -- 创建 CDC Socket 源表
 CREATE TABLE cdc_source(
@@ -158,7 +156,7 @@ INSERT|2|frank|2022-07-02 09:11:00
 DELETE|2|frank|2022-07-02 09:11:00
 INSERT|3|lee|2022-07-01 10:11:00
 INSERT|4|rock|2022-07-02 09:01:00
-INSERT|5|jack|2022-07-02 01:11:40
+INSERT|5|jack|2022-07-02 12:11:40
 INSERT|6|mars|2022-07-02 11:19:10
 ```
 
@@ -181,8 +179,8 @@ INSERT|6|mars|2022-07-02 11:19:10
 ```text
 DELETE|1|eric|2022-07-01 12:32:00
 INSERT|7|randy|2022-07-03 19:11:00
-DELETE|4|rock|2022-07-02 10:11:00
-DELETE|3|lee|2022-07-01 20:00:00
+DELETE|4|rock|2022-07-02 09:01:00
+DELETE|3|lee|2022-07-01 10:11:00
 ```
 
 此时预期的结果集为：
@@ -213,7 +211,7 @@ select * from test_db.test_table order by id;
 +---+-----+-------------------+
 | id| name|            op_time|
 +---+-----+-------------------+
-|  5| jack|2022-07-02 01:11:40|
+|  5| jack|2022-07-02 12:11:40|
 |  6| mars|2022-07-02 11:19:10|
 |  7|randy|2022-07-03 19:11:00|
 +---+-----+-------------------+
@@ -225,7 +223,7 @@ select * from test_db.test_table order by id;
 insert overwrite 
   test_db.test_table
 values
-  (5, 'jack', timestamp('2022-07-02 01:11:40')),
+  (5, 'jack', timestamp('2022-07-02 12:11:40')),
   (6, 'mars', timestamp('2022-07-02 11:19:10')),
   (7, 'randy', timestamp('2022-07-03 19:11:00'));
 ```
@@ -239,7 +237,7 @@ set spark.sql.sources.partitionOverwriteMode=DYNAMIC;
 insert overwrite 
   test_db.test_table
 values
-  (5, 'peter', timestamp('2022-07-02 07:11:40')),
+  (5, 'peter', timestamp('2022-07-02 08:11:40')),
   (8, 'alice', timestamp('2022-07-04 19:11:00'));
 ```
 
@@ -257,7 +255,7 @@ select * from test_db.test_table order by id;
 +---+-----+-------------------+
 | id| name|            op_time|
 +---+-----+-------------------+
-|  5|peter|2022-07-02 07:11:40|
+|  5|peter|2022-07-02 08:11:40|
 |  7|randy|2022-07-03 19:11:00|
 |  8|alice|2022-07-04 19:11:00|
 +---+-----+-------------------+
@@ -270,7 +268,7 @@ select * from test_db.test_table order by id;
 启动optimizer之后，表的结构优化会自动触发。
 登录并进入[AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](../../overrides/images/table_optimizing.png)
+![table_optimizing](images/table_optimizing.png)
 
 其中：
 
@@ -327,12 +325,14 @@ arctic.ams.mybatis.ConnectionPassword: {password}                        #MySQL�
 arctic.ams.database.type: mysql                                          #系统库类型
 ```
 
+???+note "目前只支持 MySQL 5.x 版本，不支持 MySQL 8"
+
 **2.初始化MySQL表**
 
 根据`conf/ams-init.sql`初始化AMS所需表：
 
 ```shell
-mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} < {AMS_HOME_DIR}/conf/ams-init.sql
+mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_HOME_DIR}/conf/ams-init.sql
 ```
 
 **3.重启AMS**
@@ -370,7 +370,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} < {AMS_HOME_DIR}/c
 
 ???+ note
 
-    修改配置文件后需重启AMS服务才可生效，参考[AMS重启](#ams)
+    修改配置文件后需重启AMS服务才可生效，参考[AMS重启](#ams_1)
 
 **3.启动optimizer**
 
