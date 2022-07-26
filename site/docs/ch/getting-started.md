@@ -270,7 +270,7 @@ select * from test_db.test_table order by id;
 启动optimizer之后，表的结构优化会自动触发。
 登录并进入[AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](../../overrides/images/table_optimizing.png)
+![table_optimizing](images/table_optimizing.png)
 
 其中：
 
