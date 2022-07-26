@@ -106,17 +106,16 @@ group by data
 或者也可以在 jar 任务中使用 DataFrame Api 查询 Arctic 表
 
 === "Scala"
-    ```scala
-    val df = spark.table("test_db.test1")
-    df.count
-    ```
+```scala
+val df = spark.table("test_db.test1")
+df.count
+```
 
 === "Java"
-    ```java
-    Dataset<Row> df = spark.table("test_db.test1");
-    df.count();
-    ```
+```java
+Dataset<Row> df = spark.table("test_db.test1");
+df.count();
+```
 
 
 关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](spark-ddl.md)
-

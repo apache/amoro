@@ -119,4 +119,3 @@ df.count();
 
 
 关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](spark-ddl.md)
-
