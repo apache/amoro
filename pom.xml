@@ -35,6 +35,7 @@
         <module>spark</module>
         <module>dist</module>
         <module>trino</module>
+        <module>hive</module>
     </modules>
 
     <properties>
