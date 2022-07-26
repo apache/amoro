@@ -59,6 +59,7 @@ import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -85,7 +86,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public class ArcticSourceTest extends RowDataReaderFunctionTest implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSourceTest.class);
   private static final long serialVersionUID = 7418812854449034756L;
-  private static final int PARALLELISM = 2;
+  private static final int PARALLELISM = 4;
 
   @Rule
   public final MiniClusterWithClientResource miniClusterResource =
@@ -150,11 +151,13 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     assertArrayEquals(excepts(), actualResult);
   }
 
+  @Ignore
   @Test
   public void testArcticSourceStaticJobManagerFailover() throws Exception {
     testArcticSource(FailoverType.JM);
   }
 
+  @Ignore
   @Test
   public void testArcticSourceStaticTaskManagerFailover() throws Exception {
     testArcticSource(FailoverType.TM);
@@ -254,11 +257,13 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
   }
 
+  @Ignore
   @Test
   public void testArcticContinuousSourceJobManagerFailover() throws Exception {
     testArcticContinuousSource(FailoverType.JM);
   }
 
+  @Ignore
   @Test
   public void testArcticContinuousSourceTaskManagerFailover() throws Exception {
     testArcticContinuousSource(FailoverType.TM);
