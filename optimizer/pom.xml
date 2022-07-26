@@ -37,39 +37,7 @@
     <dependencies>
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-flink-1.12</artifactId>
-            <version>${project.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.logging.log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.datanucleus</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <!--                local test need remove-->
-                <exclusion>
-                    <groupId>org.objenesis</groupId>
-                    <artifactId>objenesis</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.flink</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.hbase</groupId>
-                    <artifactId>hbase-client</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>arctic-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
