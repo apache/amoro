@@ -116,7 +116,6 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
     Assert.assertEquals(3, df.count());
 
     // test overwrite dynamic
-
     df = spark.createDataFrame(
         Lists.newArrayList(
             RowFactory.create(4, "aaa", quickTs(1)),
@@ -131,6 +130,17 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
         .save(tablePath);
     df = spark.read().format("arctic").load(tablePath);
     Assert.assertEquals(5, df.count());
+
+    df = spark.createDataFrame(
+        Lists.newArrayList(
+            RowFactory.create(4, "aaa", quickTs(3)),
+            RowFactory.create(5, "bbb", quickTs(4)),
+            RowFactory.create(6, "ccc", quickTs(5))
+        ), structType
+    );
+    df.writeTo(tablePath).overwritePartitions();
+    df = spark.read().table(tablePath);
+    Assert.assertEquals(3, df.count());
   }
 
 }
