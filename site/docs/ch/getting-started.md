@@ -274,17 +274,17 @@ select * from test_db.test_table order by id;
 
 其中：
 
- - Status：结构优化的状态，可能为：Idle，Pending，MinorOptimizing，MajorOptimizing
+- Status：结构优化的状态，可能为：Idle，Pending，MinorOptimizing，MajorOptimizing
 
- - Duration：进入到该状态的持续时间
+- Duration：进入到该状态的持续时间
 
- - File Count：准备或者正在进行合并的文件个数
+- File Count：准备或者正在进行合并的文件个数
 
- - File size：准备或者正在进行合并的文件大小
+- File size：准备或者正在进行合并的文件大小
 
- - Quota：表的资源配额
+- Quota：表的资源配额
 
- - Quota Occupation：最近1个小时内，该表的实际配额占用百分比
+- Quota Occupation：最近1个小时内，该表的实际配额占用百分比
 
 **2.查看结构优化历史**
 
@@ -295,13 +295,13 @@ select * from test_db.test_table order by id;
 
 上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
 
- - StartTime：结构优化的开始时间
+- StartTime：结构优化的开始时间
 
- - Duration：结构优化的持续时间
+- Duration：结构优化的持续时间
 
- - Input：合并之前的文件个数和文件大小
+- Input：合并之前的文件个数和文件大小
 
- - Output：合并生成的文件个数和文件大小
+- Output：合并生成的文件个数和文件大小
 
 两次 Optimize 之后，文件情况如下
 

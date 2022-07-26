@@ -5,7 +5,6 @@ docs_dir: '../../docs/ch'
 site_dir: '../../generated/ch'
 remote_name: arctic-site
 use_directory_urls: true
-
 repo_url: https://github.com/NetEase/arctic
 repo_name: NetEase/arctic
 edit_uri: ""
@@ -22,6 +21,8 @@ theme:
     palette:
         primary: indigo
         accent: indigo
+    icon:
+        repo: fontawesome/brands/github
 
 extra:
   search:
