@@ -28,17 +28,18 @@ import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
+import scala.collection.JavaConverters
 import scala.collection.JavaConverters.seqAsJavaList
 
 case class ExtendedArcticUnkeyedStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateTableStatement(ArcticCatalogAndIdentifier(catalog, identifier),
-    schema, partitioning, _, properties, _, _, _, _, _, _, ifNotExists) =>
-      CreateArcticTableStatementExec(catalog, identifier, schema,
-        partitioning, properties, ifNotExists) :: Nil
-
+    case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
+      val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(options))
+      CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query),
+        props, writeOptions, ifNotExists) :: Nil
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
       if (partitionSpec.nonEmpty) {
         throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
