@@ -14,10 +14,10 @@ theme:
     font:
       text: sans-serif
     name: material
-    language: EN
+    language: en
     custom_dir: '../../overrides/'
     favicon: images/favicon.ico
-    logo: images/logo_2.png
+    logo: images/arctic_banner.png
     palette:
         primary: indigo
         accent: indigo
