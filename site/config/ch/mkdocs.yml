@@ -6,6 +6,10 @@ site_dir: '../../generated/ch'
 remote_name: arctic-site
 use_directory_urls: true
 
+repo_url: https://github.com/NetEase/arctic
+repo_name: NetEase/arctic
+edit_uri: ""
+
 # pip install mkdocs-material
 theme:
     font:
