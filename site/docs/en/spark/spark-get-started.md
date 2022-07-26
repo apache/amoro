@@ -5,19 +5,23 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 
 ## 准备
 
-当前 Arctic-Spark-Connector 支持与 Spark3.1+ 版本使用。在开始使用前，将 arctic-spark_3.1-runtime.jar 复制到
+当前 Arctic-Spark-Connector 支持与 Spark3.1+ 版本使用。在开始使用前，
+[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-spark_3.1-runtime-0.3.0.jar)并将 arctic-spark_3.1-runtime.jar 复制到
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
 ${SPARK_HOME/bin/spark-sql \
-    --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkSessionExtensions \
-    --conf spark.sql.catalog.spark_catalog= com.netease.arctic.spark.ArcticSparkCatalog \
-    --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/arctic_catalog_name
+    --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
+    --conf spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
+    --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
 > Arctic 通过 ArcticMetaService 管理 Catalog, Spark catalog 需要通过URL映射到 Arctic Catalog, 格式为:
 > `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`, arctic-spark-connector 会通过 thrift 协议自动
-> 下载 hadoop site 配置文件用于访问 hdfs 集群
+> 下载 hadoop site 配置文件用于访问 hdfs 集群.
+>
+> AMS_PORT 为AMS服务 thrift api接口端口号，默认值为 1260
+> AMS_CATALOG_NAME 为启动AMS 服务时配置的 Catalog, 默认值为 local_catalog
 
 ## 创建表
 
@@ -26,6 +30,9 @@ ${SPARK_HOME/bin/spark-sql \
 在执行建表操作前，请先创建 database 。
 
 ```
+-- switch to arctic catalog defined in spark conf
+use local_catalog;
+
 -- create databsae first 
 create database if not exists test_db;
 ```
@@ -59,7 +66,7 @@ insert into test2 values
 ( 3, "bbb", timestamp('2022-1-3 00:00:00'));
 
 -- dynamic overwrite table 
-insert overwrite test2 values 
+insert overwrite test3 values 
 ( 1, "aaa", timestamp('2022-1-1 00:00:00')),
 ( 2, "bbb", timestamp('2022-1-2 00:00:00')),
 ( 3, "bbb", timestamp('2022-1-3 00:00:00'));
@@ -91,24 +98,24 @@ group by data
 对于有主键表，支持通过 `.change` 的方式访问 `ChangeStore`
 
 ``` 
-select count(1) as count, op_type
-from test2.change
-group by op_type
+select count(1) as count, data
+from test3.change
+group by data
 ```
 
 或者也可以在 jar 任务中使用 DataFrame Api 查询 Arctic 表
 
 === "Scala"
-    ```scala
-    val df = spark.table("test_db.test1")
-    df.count
-    ```
+```scala
+val df = spark.table("test_db.test1")
+df.count
+```
 
 === "Java"
-    ```java
-    Dataset<Row> df = spark.table("test_db.test1");
-    df.count();
-    ```
+```java
+Dataset<Row> df = spark.table("test_db.test1");
+df.count();
+```
 
 
 关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](spark-ddl.md)
