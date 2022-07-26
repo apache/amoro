@@ -140,7 +140,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (isOptimized(dataFile, partition)) {
@@ -187,7 +187,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
