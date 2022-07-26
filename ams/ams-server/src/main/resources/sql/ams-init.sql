@@ -46,7 +46,6 @@ CREATE TABLE `file_info_cache`
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `watermark`          timestamp  NULL DEFAULT NULL,
     PRIMARY KEY (`table_identifier`,`inner_table`,`file_path`),
-    KEY                  `table_index` (`table_identifier`),
     KEY                  `table_snap_index` (`table_identifier`,`add_snapshot_id`),
     KEY                  `commit_time_index` (`table_identifier`,`commit_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
