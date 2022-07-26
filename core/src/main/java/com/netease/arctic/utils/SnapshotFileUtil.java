@@ -73,6 +73,8 @@ public class SnapshotFileUtil {
       List<com.netease.arctic.ams.api.DataFile> addFiles,
       List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
     Configuration hadoopConf = new Configuration();
+    //avoid close file error when use cached FileSystem
+    hadoopConf.setBoolean("fs.hdfs.impl.disable.cache", true);
     if (table.io() instanceof ArcticHadoopFileIO) {
       ArcticHadoopFileIO io = (ArcticHadoopFileIO) table.io();
       hadoopConf = io.conf();
