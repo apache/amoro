@@ -127,7 +127,7 @@ CREATE TABLE cdc_source(
     'changelog-csv.column-delimiter' = '|'
 );
 -- 往 Arctic 表实时写入数据
-INSERT INTO arctic.db.test_table
+INSERT INTO arctic.test_db.test_table
 SELECT id,
        name,
        CAST(TO_TIMESTAMP(op_time) AS TIMESTAMP(6) WITH LOCAL TIME ZONE) op_time
@@ -137,7 +137,7 @@ FROM cdc_source;
 SET table.dynamic-table-options.enabled=true;
 
 -- 读 Arctic 表的 CDC 数据，观察主键表的聚合结果
-SELECT id, `name` FROM arctic.db.test_table/*+OPTIONS('streaming' = 'true')*/;
+SELECT id, `name` FROM arctic.test_db.test_table/*+OPTIONS('streaming' = 'true')*/;
 ```
 
 **3.模拟测试数据**
