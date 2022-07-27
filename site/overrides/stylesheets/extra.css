@@ -2,9 +2,14 @@
   max-width: 1440px;
 }
 
-.md-ellipsis {
-  color: hsl(0deg 0% 100% / 0%);
+.md-header__topic:first-child {
+    color: hsl(0deg 0% 100% / 0%);
 }
+
+.md-source {
+    color: #333;
+}
+
 .md-header--shadow {
     box-shadow: none;
 }
@@ -87,10 +92,6 @@
 .md-header__inner.md-grid {
     height: 50px;
 }
-
-
-
-
 
 .md-content__inner {
     padding-top: 0;
