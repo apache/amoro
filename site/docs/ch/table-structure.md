@@ -5,7 +5,7 @@ Arctic能够兼容已有的存储介质(如hdfs、oss)和表结构(如hive、ice
 ## 存储结构
 对于一张定义了主键的Arctic表，存储结构上最多可以拆分为三部分：change store、base store、log store。
 
-![TableStructure](img/table-structure.png)
+![TableStructure](images/table-structure.png)
 
 ### Change store
 Change store中存储了表上最近的变更数据。
@@ -56,7 +56,7 @@ Minor Optimize 将 Change Store 中的文件合并到 Base Store 中，只对有
 - Change Store 中的 eq-delete 文件转化为 Base Store 中的 pos-delete 文件，替换旧的 pos-delete 文件
 
 
-![Minor Optimize](img/minor-optimize.png)
+![Minor Optimize](images/minor-optimize.png)
 
 由于上述两个操作的执行代价都不高， Minor Optimize 的执行频率可以更加激进一些，一般可以配置为几分钟到几十分钟，执行代价较低的原因在于：
 
@@ -78,9 +78,9 @@ Major Optimize 只对 Base Store 中的文件进行合并，因此对有主键�
 
 - 只有 base 文件中的小文件与 pos-delete 文件进行合并，小文件合并生成新的 base 文件，重写 pos-delete 文件
 
-![Major Optimize with all files](img/major-optimize-all-files.png)
+![Major Optimize with all files](images/major-optimize-all-files.png)
 
-![Major Optimize with small files](img/major-optimize-small-files.png)
+![Major Optimize with small files](images/major-optimize-small-files.png)
 
 第一种方式由于需要重写所有历史 base 文件，执行代价高，好处是可以彻底清理掉 pos-delete 文件以及 base 文件中的无效数据；第二种方式只处理小文件，执行代价相对低一些，但是 pos-delete 文件和无效数据不能得到清理。
 

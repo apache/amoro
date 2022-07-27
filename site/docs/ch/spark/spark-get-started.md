@@ -6,24 +6,22 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 ## 准备
 
 当前 Arctic-Spark-Connector 支持与 Spark3.1+ 版本使用。在开始使用前，
-[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip)并将arctic-spark_3.1-runtime.jar 复制到
+[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-spark_3.1-runtime-0.3.0.jar)并将 arctic-spark_3.1-runtime.jar 复制到
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
-${SPARK_HOME}/bin/spark-sql \
+${SPARK_HOME/bin/spark-sql \
     --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
-    --conf spark.sql.catalog.local_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
-    --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
+    --conf spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
+    --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
 > Arctic 通过 ArcticMetaService 管理 Catalog, Spark catalog 需要通过URL映射到 Arctic Catalog, 格式为:
 > `thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}`, arctic-spark-connector 会通过 thrift 协议自动
-> 下载 hadoop site 配置文件用于访问 hdfs 集群. 
-
+> 下载 hadoop site 配置文件用于访问 hdfs 集群.
+>
 > AMS_PORT 为AMS服务 thrift api接口端口号，默认值为 1260
 > AMS_CATALOG_NAME 为启动AMS 服务时配置的 Catalog, 默认值为 local_catalog
-
-
 
 ## 创建表
 
@@ -85,7 +83,7 @@ val df = spark.read().load("/path-to-table")
 df.writeTo('test_db.table1').overwritePartitions()
 ```
 
-关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](./spark-ddl.md)
+关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](spark-ddl.md)
 
 ## 读取
 
@@ -108,17 +106,16 @@ group by data
 或者也可以在 jar 任务中使用 DataFrame Api 查询 Arctic 表
 
 === "Scala"
-    ```scala
-    val df = spark.table("test_db.test1")
-    df.count
-    ```
+```scala
+val df = spark.table("test_db.test1")
+df.count
+```
 
 === "Java"
-    ```java
-    Dataset<Row> df = spark.table("test_db.test1");
-    df.count();
-    ```
+```java
+Dataset<Row> df = spark.table("test_db.test1");
+df.count();
+```
 
 
-关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](./spark-ddl.md)
-
+关于更多使用 DataFrame Api 的细节，可以参考 [DataFrame API](spark-ddl.md)
