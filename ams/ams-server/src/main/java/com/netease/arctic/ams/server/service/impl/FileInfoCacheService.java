@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
@@ -81,21 +82,26 @@ public class FileInfoCacheService extends IJDBCService {
     List<CacheFileInfo> fileInfoList = genFileInfo(tableCommitMeta);
 
     try (SqlSession sqlSession = getSqlSession(false)) {
-      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() == null)
-          .forEach(fileInfoCacheMapper::insertCache);
-      LOG.info("insert {} files into file cache", fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() == null)
-          .count());
+      try {
+        FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
+        fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() == null)
+            .forEach(fileInfoCacheMapper::insertCache);
+        LOG.info("insert {} files into file cache", fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() == null)
+            .count());
 
-      fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() != null).forEach(fileInfoCacheMapper::updateCache);
-      LOG.info("update {} files in file cache", fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() != null)
-          .count());
+        fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() != null).forEach(fileInfoCacheMapper::updateCache);
+        LOG.info("update {} files in file cache", fileInfoList.stream().filter(e -> e.getDeleteSnapshotId() != null)
+            .count());
 
-      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      cacheSnapInfoList.forEach(snapInfoCacheMapper::insertCache);
-      LOG.info("insert {} snapshot into snapshot cache", cacheSnapInfoList.size());
+        SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+        cacheSnapInfoList.forEach(snapInfoCacheMapper::insertCache);
+        LOG.info("insert {} snapshot into snapshot cache", cacheSnapInfoList.size());
 
-      sqlSession.commit();
+        sqlSession.commit();
+      } catch (Exception e) {
+        sqlSession.rollback();
+      }
+
     } catch (Exception e) {
       LOG.error("insert file cache error", e);
     }
@@ -311,18 +317,29 @@ public class FileInfoCacheService extends IJDBCService {
         fileInfos.add(cacheFileInfo);
       }
       List<CacheSnapshotInfo> snapshotInfos = syncSnapInfo(identifier, tableType, snapshot);
+      //set snapshot null to release memory of snapshot, because there is too much cache in BaseSnapshot
+      snapshot = null;
 
       try (SqlSession sqlSession = getSqlSession(false)) {
-        FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-        fileInfos.stream().filter(e -> e.getDeleteSnapshotId() == null).forEach(fileInfoCacheMapper::insertCache);
-        fileInfos.stream().filter(e -> e.getDeleteSnapshotId() != null).forEach(fileInfoCacheMapper::updateCache);
+        try {
+          FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
+          fileInfos.stream().filter(e -> e.getDeleteSnapshotId() == null).forEach(fileInfoCacheMapper::insertCache);
+          fileInfos.stream().filter(e -> e.getDeleteSnapshotId() != null).forEach(fileInfoCacheMapper::updateCache);
 
-        SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-        snapshotInfos.forEach(snapInfoCacheMapper::insertCache);
+          SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+          snapshotInfos.forEach(snapInfoCacheMapper::insertCache);
 
-        sqlSession.commit();
+          sqlSession.commit();
+        } catch (Exception e) {
+          sqlSession.rollback();
+        }
       } catch (Exception e) {
-        LOG.error("insert file cache error", e);
+        LOG.error(
+            "insert table {} file {} snap {} cache error",
+            identifier,
+            JSONObject.toJSONString(fileInfos),
+            JSONObject.toJSONString(snapshotInfos),
+            e);
       }
     }
   }

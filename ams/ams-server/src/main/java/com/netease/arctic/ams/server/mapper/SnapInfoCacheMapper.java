@@ -34,7 +34,7 @@ import java.util.List;
 public interface SnapInfoCacheMapper {
   String TABLE_NAME = "snapshot_info_cache";
 
-  @Insert("replace into " + TABLE_NAME + " (table_identifier, snapshot_id, parent_snapshot_id, action," +
+  @Insert("insert into " + TABLE_NAME + " (table_identifier, snapshot_id, parent_snapshot_id, action," +
       " inner_table, commit_time)" +
       " values(#{cacheFileInfo.tableIdentifier," +
       "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}," +

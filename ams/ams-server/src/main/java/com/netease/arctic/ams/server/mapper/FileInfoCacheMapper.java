@@ -39,7 +39,7 @@ import java.util.List;
 public interface FileInfoCacheMapper {
   String TABLE_NAME = "file_info_cache";
 
-  @Insert("replace into " + TABLE_NAME + " (table_identifier, add_snapshot_id, delete_snapshot_id," +
+  @Insert("insert into " + TABLE_NAME + " (table_identifier, add_snapshot_id, delete_snapshot_id," +
       " inner_table, file_path, file_type, file_size, file_mask, file_index, spec_id, record_count, " +
       "action, partition_name, commit_time, watermark) values(#{cacheFileInfo.tableIdentifier, typeHandler=com" +
       ".netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}, " +
