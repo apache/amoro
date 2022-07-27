@@ -8,7 +8,7 @@
 
 ```tex
 connector.name=arctic
-arctic.url=thrift://{amsIp}:{amsPort}/{catalogName}
+arctic.url=thrift://10.196.98.23:18111/{catalogName}
 ```
 
 其他的读取文件的配置与trino支持的iceberg参数相同
