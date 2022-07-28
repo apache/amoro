@@ -33,12 +33,10 @@ public class ArcticSparkMainTest {
   public static void suiteSetup() throws IOException {
     sparkTestContext.setUpTestDirAndArctic();
     sparkTestContext.cleanUpAdditionSparkConfigs();
-    sparkTestContext.setUpHMS();
     sparkTestContext.setUpSparkSession();
   }
   @AfterClass
   public static void suiteTeardown() {
-    sparkTestContext.cleanUpHive();
     sparkTestContext.cleanUpAms();
     sparkTestContext.cleanUpSparkSession();
   }

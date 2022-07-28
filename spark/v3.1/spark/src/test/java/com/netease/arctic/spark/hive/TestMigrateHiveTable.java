@@ -32,26 +32,26 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestMigrateHiveTable extends SparkTestBase {
+public class TestMigrateHiveTable extends SparkHiveTestContext {
 
   private final String sourceDatabase = "db1" ;
   private final String sourceTable = "hive_table";
   private final String database = "arctic_db";
   private final String table = "arctic_table";
 
-//  @BeforeClass
-//  public static void beforeAll() throws IOException {
-//    setUpTestDirAndArctic();
-//    setUpHMS();
-//    setUpSparkSession();
-//  }
-//
-//  @AfterClass
-//  public static void tearDown() {
-//    cleanUpHive();
-//    cleanUpAms();
-//    cleanUpSparkSession();
-//  }
+  @BeforeClass
+  public static void beforeAll() throws IOException {
+    setUpTestDirAndArctic();
+    setUpHMS();
+    setUpSparkSession();
+  }
+
+  @AfterClass
+  public static void tearDown() {
+    cleanUpHive();
+    cleanUpAms();
+    cleanUpSparkSession();
+  }
 
   @Before
   public void setUpArcticDatabase(){

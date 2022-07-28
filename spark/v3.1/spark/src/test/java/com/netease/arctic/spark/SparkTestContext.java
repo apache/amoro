@@ -98,9 +98,6 @@ public class SparkTestContext extends ExternalResource {
 
   private static int refCount = 0;
 
-  static final File hmsDir = new File(testBaseDir, "hive");
-  static final HMSMockServer hms = new HMSMockServer(hmsDir);
-
   public static SparkTestContext getSparkTestContext () {
     if (refCount == 0) {
       sparkTestContext = new SparkTestContext();
@@ -111,22 +108,6 @@ public class SparkTestContext extends ExternalResource {
   public void cleanUpAdditionSparkConfigs() {
     additionSparkConfigs.clear();
   }
-
-  public void setUpHMS(){
-    System.out.println("======================== start hive metastore ========================= ");
-    hms.start();
-    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort()) ;
-    additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
-    additionSparkConfigs.put("spark.sql.hive.metastore.version", "2.3.7");
-    //hive.metastore.client.capability.check
-    additionSparkConfigs.put("hive.metastore.client.capability.check", "false");
-  }
-
-  public void cleanUpHive() {
-    System.out.println("======================== stop hive metastore ========================= ");
-    hms.stop();
-  }
-
 
   public static void setUpTestDirAndArctic() throws IOException {
     System.out.println("======================== start AMS  ========================= ");
