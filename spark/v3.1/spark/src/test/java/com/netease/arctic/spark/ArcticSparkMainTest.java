@@ -1,15 +1,6 @@
-package com.netease.arctic.spark.optimize;
+package com.netease.arctic.spark;
 
-import com.netease.arctic.spark.SparkTestContext;
-import com.netease.arctic.spark.TestAlterKeyedTable;
-import com.netease.arctic.spark.TestKeyedTableDDL;
-import com.netease.arctic.spark.TestKeyedTableDML;
-import com.netease.arctic.spark.TestKeyedTableDMLInsertOverwriteDynamic;
-import com.netease.arctic.spark.TestKeyedTableDMLInsertOverwriteStatic;
-import com.netease.arctic.spark.TestMigrateNonHiveTable;
-import com.netease.arctic.spark.TestOptimizeWrite;
-import com.netease.arctic.spark.TestUnKeyedTableDDL;
-import com.netease.arctic.spark.TestUnKeyedTableDML;
+import com.netease.arctic.spark.hive.TestMigrateHiveTable;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
 import com.netease.arctic.spark.source.TestUnKeyedTableDataFrameAPI;
 import org.junit.AfterClass;
@@ -32,8 +23,9 @@ import java.io.IOException;
     TestOptimizeWrite.class,
     TestUnKeyedTableDML.class,
     TestKeyedTableDataFrameAPI.class,
-    TestUnKeyedTableDataFrameAPI.class})
-public class TestMain1 {
+    TestUnKeyedTableDataFrameAPI.class,
+    TestMigrateHiveTable.class})
+public class ArcticSparkMainTest {
   @ClassRule
   public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
 
@@ -41,10 +33,12 @@ public class TestMain1 {
   public static void suiteSetup() throws IOException {
     sparkTestContext.setUpTestDirAndArctic();
     sparkTestContext.cleanUpAdditionSparkConfigs();
+    sparkTestContext.setUpHMS();
     sparkTestContext.setUpSparkSession();
   }
   @AfterClass
   public static void suiteTeardown() {
+    sparkTestContext.cleanUpHive();
     sparkTestContext.cleanUpAms();
     sparkTestContext.cleanUpSparkSession();
   }

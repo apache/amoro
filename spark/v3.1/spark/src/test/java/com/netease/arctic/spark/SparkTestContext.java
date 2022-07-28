@@ -28,6 +28,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -91,11 +92,14 @@ public class SparkTestContext extends ExternalResource {
   protected static MockArcticMetastoreServer ams = new MockArcticMetastoreServer();
   protected static String amsUrl;
   public static String catalogName;
-  protected List<Object[]> rows;
+  public static List<Object[]> rows;
 
   private static SparkTestContext sparkTestContext;
 
   private static int refCount = 0;
+
+  static final File hmsDir = new File(testBaseDir, "hive");
+  static final HMSMockServer hms = new HMSMockServer(hmsDir);
 
   public static SparkTestContext getSparkTestContext () {
     if (refCount == 0) {
@@ -108,8 +112,23 @@ public class SparkTestContext extends ExternalResource {
     additionSparkConfigs.clear();
   }
 
+  public void setUpHMS(){
+    System.out.println("======================== start hive metastore ========================= ");
+    hms.start();
+    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort()) ;
+    additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
+    additionSparkConfigs.put("spark.sql.hive.metastore.version", "2.3.7");
+    //hive.metastore.client.capability.check
+    additionSparkConfigs.put("hive.metastore.client.capability.check", "false");
+  }
+
+  public void cleanUpHive() {
+    System.out.println("======================== stop hive metastore ========================= ");
+    hms.stop();
+  }
+
   public void setUpTestDirAndArctic() throws IOException {
-    System.out.println("Set Up Ams success");
+    System.out.println("======================== start AMS  ========================= ");
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -126,7 +145,7 @@ public class SparkTestContext extends ExternalResource {
 
 
   public void setUpSparkSession() {
-    System.out.println("Set Up spark session success");
+    System.out.println("======================== set up spark session  ========================= ");
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
@@ -158,13 +177,13 @@ public class SparkTestContext extends ExternalResource {
   }
 
   public void cleanUpAms() {
-    System.out.println("Clean Up Ams success");
+    System.out.println("======================== clean up AMS  ========================= ");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
   }
 
   public void cleanUpSparkSession(){
-    System.out.println("Clean Up spark session success");
+    System.out.println("======================== clean up spark session  ========================= ");
     spark.stop();
     spark.close();
     spark = null;
