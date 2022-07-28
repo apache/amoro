@@ -172,6 +172,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(icebergSchema)
             .addDescription(properties.get("primary.keys"))
             .build();
+        properties.remove("primary.keys");
         builder.withPartitionSpec(spec)
             .withProperties(properties)
             .withPrimaryKeySpec(primaryKeySpec);
