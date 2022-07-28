@@ -3,7 +3,7 @@
 
 - [Docker-Compose](#Docker-Compose)
 - [启动AMS](#启动AMS)
-- [实时写入与读取(Flink)](#实时写入与读取(Flink))
+- [实时写入与读取-Flink](#实时写入与读取-Flink)
 - [结构优化](#结构优化)
 - [Spark](#Spark)
 
@@ -108,7 +108,7 @@ create table test_db.test_table(
 ) partitioned by(days(op_time)) using arctic;
 ```
 
-## 实时写入与读取(Flink)
+## 实时写入与读取-Flink
 入门试用推荐使用 [Flink SQL Client](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html),
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
@@ -324,7 +324,7 @@ select * from test_db.test_table order by id;
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取](#_3)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
+如果已经完成[实时写入与读取-Flink](#实时写入与读取-Flink)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
 
 ![optimize_history](images/optimize_history.png)
 
