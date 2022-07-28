@@ -25,10 +25,9 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
-import com.netease.arctic.ams.server.utils.SerializationUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DeleteFile;
 import org.junit.Assert;
 import org.junit.Before;
@@ -75,9 +74,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     testKeyedTable.baseTable().newScan().planFiles()
         .forEach(fileScanTask -> {
           oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> {
-            oldDeleteFilesPath.add((String) deleteFile.path());
-          });
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
         });
 
     List<DataFileInfo> changeTableFilesInfo = new ArrayList<>(changeInsertFilesInfo);
@@ -115,9 +112,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     testKeyedTable.baseTable().newScan().planFiles()
         .forEach(fileScanTask -> {
           newDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> {
-            newDeleteFilesPath.add((String) deleteFile.path());
-          });
+          fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);

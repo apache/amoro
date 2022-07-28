@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.utils;
+package com.netease.arctic.utils;
 
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.util.ByteBuffers;

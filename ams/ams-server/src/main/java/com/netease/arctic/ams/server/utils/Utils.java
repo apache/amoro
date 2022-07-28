@@ -22,13 +22,7 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.net.InetAddress;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Utils {
   private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
