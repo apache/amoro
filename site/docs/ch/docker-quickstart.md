@@ -1,5 +1,5 @@
 # 使用Docker快速开始
-本指南将用Docker帮助您快速的启动并部署AMS(Arctic Meta Service)，Spark，Flink环境，并体验Arctic的各种功能。
+本指南将用Docker帮助您快速启动并部署AMS(Arctic Meta Service)，Spark，Flink环境，并体验Arctic的各种功能。
 
 - [Docker-Compose](#Docker-Compose)
 - [启动AMS](#启动AMS)
@@ -14,6 +14,7 @@
   
 如果您已经万事俱备，请新建一个名为```docker-compose.yml```的文件，并写入以下内容。您也可以在[docker-compose.yml](https://github.com/NetEase/arctic/tree/master/docker/docker-compose.yml)处查看。  
 ```yaml
+version: "2"
 services:
   ams:
     image: arctic163/ams
@@ -393,7 +394,6 @@ create table test2 (id int, data string, ts timestamp) using arctic partitioned 
 create table test3 (id int, data string, ts timestamp, primary key(id)) using arctic partitioned by (days(ts));
 ```
 
-更多表相关DDL，请参考 [SPARK DDL](spark-ddl.md)
 
 ### 写入
 
