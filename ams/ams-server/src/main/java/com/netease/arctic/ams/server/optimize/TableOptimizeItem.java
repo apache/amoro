@@ -96,7 +96,7 @@ public class TableOptimizeItem extends IJDBCService {
   private final FileInfoCacheService fileInfoCacheService;
   private final IQuotaService quotaService;
   private final AmsClient metastoreClient;
-  private volatile double quotaCache = 0.1;
+  private volatile double quotaCache;
 
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
@@ -114,14 +114,12 @@ public class TableOptimizeItem extends IJDBCService {
   /**
    * Initial optimize tasks.
    * @param optimizeTasks -
-   * @return this for chain
    */
-  public TableOptimizeItem initOptimizeTasks(List<OptimizeTaskItem> optimizeTasks) {
+  public void initOptimizeTasks(List<OptimizeTaskItem> optimizeTasks) {
     if (CollectionUtils.isNotEmpty(optimizeTasks)) {
       optimizeTasks
           .forEach(task -> this.optimizeTasks.put(task.getOptimizeTask().getTaskId(), task));
     }
-    return this;
   }
 
   /**
@@ -322,7 +320,6 @@ public class TableOptimizeItem extends IJDBCService {
         .propertyAsString(getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
       tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
-      return;
     } else {
       MajorOptimizePlan majorPlan = getMajorPlan(-1, System.currentTimeMillis());
       List<BaseOptimizeTask> majorTasks = majorPlan.plan();
@@ -336,10 +333,8 @@ public class TableOptimizeItem extends IJDBCService {
           }
         }
         tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
-        return;
       } else {
         tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, majorTasks, OptimizeType.Major);
-        return;
       }
     }
   }

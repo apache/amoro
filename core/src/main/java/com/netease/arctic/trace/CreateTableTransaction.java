@@ -199,7 +199,7 @@ public class CreateTableTransaction implements Transaction {
         if (!transactionTracer.isCommit) {
           throw new IllegalStateException("last operation has not committed");
         }
-        Transaction transaction = null;
+        Transaction transaction;
         if (arcticTable.isUnkeyedTable()) {
           UnkeyedTable table = arcticTable.asUnkeyedTable();
           transaction = table.newTransaction();
@@ -220,9 +220,9 @@ public class CreateTableTransaction implements Transaction {
     }
   }
 
-  class TransactionTracker implements TableTracer {
+  static class TransactionTracker implements TableTracer {
 
-    private List<DataFile> add = new ArrayList<>();
+    private final List<DataFile> add = new ArrayList<>();
 
     private boolean isCommit;
 

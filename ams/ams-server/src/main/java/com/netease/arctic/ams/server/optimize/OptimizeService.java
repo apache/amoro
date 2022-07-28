@@ -34,7 +34,6 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.TableMetadata;
-import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
@@ -223,11 +222,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       return reloadTableOptimizeItem;
     }
     return tableOptimizeItem;
-  }
-
-  @Override
-  public TableOptimizeInfo getTableOptimizeInfo(TableIdentifier tableIdentifier) throws NoSuchObjectException {
-    return getTableOptimizeItem(tableIdentifier).buildTableOptimizeInfo();
   }
 
   @Override
