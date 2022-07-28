@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
+import com.netease.arctic.ams.server.model.SnapshotStatistics;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -684,8 +685,13 @@ public class TableOptimizeItem extends IJDBCService {
     baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
     List<DataFileInfo> posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
 
+    List<SnapshotStatistics> snapshotStatistics =
+        fileInfoCacheService.getCurrentSnapInfo(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
+    long cacheCurrentBaseTableSnapshotId = CollectionUtils.isEmpty(snapshotStatistics) ?
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID : snapshotStatistics.get(0).getId();
+
     return new MajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-        baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime);
+        baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, cacheCurrentBaseTableSnapshotId);
   }
 
   /**
@@ -703,8 +709,15 @@ public class TableOptimizeItem extends IJDBCService {
 
     List<DataFileInfo> changeTableFiles =
         fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
-    return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-        baseFiles, changeTableFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime);
+
+
+    List<SnapshotStatistics> snapshotStatistics =
+        fileInfoCacheService.getCurrentSnapInfo(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
+    long cacheCurrentBaseTableSnapshotId = CollectionUtils.isEmpty(snapshotStatistics) ?
+        TableOptimizeRuntime.INVALID_SNAPSHOT_ID : snapshotStatistics.get(0).getId();
+
+    return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeTableFiles, posDeleteFiles,
+        generatePartitionRunning(), queueId, currentTime, cacheCurrentBaseTableSnapshotId);
   }
 
   /**
