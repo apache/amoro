@@ -162,7 +162,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {

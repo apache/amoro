@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -71,7 +70,7 @@ public class FileInfoCacheService extends IJDBCService {
 
   public static ConcurrentHashMap<String, Long> cacheTableSnapshot = new ConcurrentHashMap<>();
 
-  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
+  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) {
     if (isNeedCache(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;

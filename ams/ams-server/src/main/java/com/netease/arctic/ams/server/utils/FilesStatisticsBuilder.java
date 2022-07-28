@@ -24,10 +24,9 @@ public class FilesStatisticsBuilder {
   private int fileCnt = 0;
   private long totalSize = 0;
 
-  public FilesStatisticsBuilder addFile(long fileSize) {
+  public void addFile(long fileSize) {
     this.totalSize += fileSize;
     this.fileCnt++;
-    return this;
   }
 
   public FilesStatisticsBuilder addFilesStatistics(FilesStatistics fs) {
@@ -36,10 +35,9 @@ public class FilesStatisticsBuilder {
     return this;
   }
 
-  public FilesStatisticsBuilder addFiles(long totalSize, int fileCnt) {
+  public void addFiles(long totalSize, int fileCnt) {
     this.totalSize += totalSize;
     this.fileCnt += fileCnt;
-    return this;
   }
 
   public FilesStatistics build() {

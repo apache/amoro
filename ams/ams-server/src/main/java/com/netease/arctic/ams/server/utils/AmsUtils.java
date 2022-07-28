@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
 import com.netease.arctic.ams.server.model.BaseMajorCompactRecord;
 import com.netease.arctic.ams.server.model.CompactRangeType;
-import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 
@@ -82,9 +81,6 @@ public class AmsUtils {
 
   /**
    * Convert size to a different unit, ensuring that the converted value is > 1
-   *
-   * @param size
-   * @return
    */
   public static String byteToXB(long size) {
     String[] units = new String[]{"B", "KB", "MB", "GB", "TB", "PB", "EB"};

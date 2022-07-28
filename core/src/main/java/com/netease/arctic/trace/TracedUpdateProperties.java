@@ -29,8 +29,8 @@ import java.util.Map;
  */
 public class TracedUpdateProperties implements UpdateProperties {
 
-  private UpdateProperties updateProperties;
-  private TableTracer tracer;
+  private final UpdateProperties updateProperties;
+  private final TableTracer tracer;
   private Map<String, String> properties;
 
   public TracedUpdateProperties(UpdateProperties updateProperties, TableTracer tracer) {
