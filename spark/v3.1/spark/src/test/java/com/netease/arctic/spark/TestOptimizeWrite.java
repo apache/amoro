@@ -37,19 +37,23 @@ import org.apache.spark.sql.types.StructType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-public class TestOptimizeWrite extends SparkTestBase {
+public class TestOptimizeWrite {
 
   private final String database = "db";
   private final String sinkTable = "sink_table";
   private final String sourceTable = "source_table";
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, sinkTable);
+  private final TableIdentifier identifier = TableIdentifier.of(SparkTestContext.catalogName, database, sinkTable);
+
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
 
   @Before
   public void before() {
-    sql("use " + catalogName);
-    sql("create database if not exists {0}", database);
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists {0}", database);
     List<Row> rows = Lists.newArrayList(
         RowFactory.create(1, "aaa", "aaa"),
         RowFactory.create(2, "bbb", "aaa"),
@@ -63,16 +67,16 @@ public class TestOptimizeWrite extends SparkTestBase {
         Types.NestedField.of(2, false, "column1", Types.StringType.get()),
         Types.NestedField.of(3, false, "column2", Types.StringType.get())
     ));
-    Dataset<Row> ds = spark.createDataFrame(rows, schema);
+    Dataset<Row> ds = SparkTestContext.spark.createDataFrame(rows, schema);
     ds = ds.repartition(new Column("column2"));
     ds.registerTempTable(sourceTable);
   }
 
   @After
   public void cleanUpTable() {
-    sql("drop table " + database + "." + sinkTable);
-    sql("drop table " + sourceTable);
-    sql("drop database " + database);
+    sparkTestContext.sql("drop table " + database + "." + sinkTable);
+    sparkTestContext.sql("drop table " + sourceTable);
+    sparkTestContext.sql("drop database " + database);
   }
 
   /**
@@ -82,7 +86,7 @@ public class TestOptimizeWrite extends SparkTestBase {
    */
   @Test
   public void testModeIsNone() {
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
             " id int , \n" +
             " column1 string , \n " +
             " column2 string, \n" +
@@ -91,10 +95,10 @@ public class TestOptimizeWrite extends SparkTestBase {
             " partitioned by ( column1 ) \n" +
             " TBLPROPERTIES(''write.distribution-mode'' = ''none'') "
         , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+    sparkTestContext.sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, sparkTestContext.rows.size());
     Assert.assertEquals(
         6,
         baseTableSize(identifier));
@@ -105,7 +109,7 @@ public class TestOptimizeWrite extends SparkTestBase {
    */
   @Test
   public void testPrimaryKeyPartitionedTable() {
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
             " id int , \n" +
             " column1 string , \n " +
             " column2 string, \n" +
@@ -116,18 +120,18 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''auto''," +
             "''base.file-index.hash-bucket'' = ''1'')"
         , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+    sparkTestContext.sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, sparkTestContext.rows.size());
     Assert.assertEquals(
         2,
-        Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
+        Iterables.size(SparkTestContext.loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
   }
 
   @Test
   public void testPartitionedTableWithoutPrimaryKey() {
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
             " id int , \n" +
             " column1 string , \n " +
             " column2 string, \n" +
@@ -137,13 +141,13 @@ public class TestOptimizeWrite extends SparkTestBase {
             " TBLPROPERTIES(''write.distribution-mode'' = ''hash'', " +
             "''write.distribution.hash-mode'' = ''partition-key'')"
         , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+    sparkTestContext.sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, sparkTestContext.rows.size());
     Assert.assertEquals(
         4,
-        Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
+        Iterables.size(SparkTestContext.loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
   }
 
   /**
@@ -153,7 +157,7 @@ public class TestOptimizeWrite extends SparkTestBase {
    */
   @Test
   public void testPrimaryKeyTableWithoutPartition() {
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
             " id int , \n" +
             " column1 string , \n " +
             " column2 string, \n" +
@@ -164,13 +168,13 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''primary-key''," +
             "''base.file-index.hash-bucket'' = ''1'')"
         , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+    sparkTestContext.sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, sparkTestContext.rows.size());
     Assert.assertEquals(
         2,
-        Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
+        Iterables.size(SparkTestContext.loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
   }
 
   /**
@@ -180,7 +184,7 @@ public class TestOptimizeWrite extends SparkTestBase {
    */
   @Test
   public void testPrimaryKeyTableFileSplitNum() {
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
             " id int , \n" +
             " column1 string , \n " +
             " column2 string, \n" +
@@ -191,26 +195,26 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''primary-key''," +
             "''base.file-index.hash-bucket'' = ''2'')"
         , database, sinkTable);
-    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+    sparkTestContext.sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
         database, sinkTable, sourceTable);
-    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
-    Assert.assertEquals(6, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, sparkTestContext.rows.size());
     // Assert.assertEquals(
     //     4,
-    //     Iterables.size(loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
+    //     Iterables.size(SparkTestContext.loadTable(identifier).asKeyedTable().baseTable().newScan().planFiles()));
     Assert.assertEquals(4,
         baseTableSize(identifier));
   }
 
   protected long baseTableSize(TableIdentifier identifier) {
-    ArcticTable arcticTable = loadTable(identifier);
+    ArcticTable arcticTable = SparkTestContext.loadTable(identifier);
     UnkeyedTable base = null;
     if (arcticTable.isKeyedTable()) {
       base = arcticTable.asKeyedTable().baseTable();
     } else {
       base = arcticTable.asUnkeyedTable();
     }
-    StructLikeMap<List<DataFile>> dfMap = partitionFiles(base);
+    StructLikeMap<List<DataFile>> dfMap = SparkTestContext.partitionFiles(base);
     return dfMap.values().stream().map(List::size)
         .reduce(0, Integer::sum).longValue();
   }

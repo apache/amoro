@@ -22,43 +22,39 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.util.StructLikeMap;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.List;
 
-public class TestMigrateNonHiveTable extends SparkTestBase {
-  //
-  // @Before
-  // public void before(){
-  //   sql("use spark_catalog");
-  // }
-  //
-  //
-  // @After
-  // public void after(){
-  //   sql("use spark_catalog");
-  // }
+public class TestMigrateNonHiveTable {
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
 
   private final String sourceDatabase = "test_db";
   private final String sourceTable = "test_table";
   private final String database = "db1";
   private final String table = "table1";
 
+  @Before
+  public void before(){
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists " + database);
 
+    sparkTestContext.sql("use spark_catalog");
+    sparkTestContext.sql("create database if not exists {0}", sourceDatabase);
+  }
 
   @Test
   public void testMigrateNoBucketParquetTable() {
-    sql("use " + catalogName);
-    sql("create database if not exists " + database);
-
-    sql("use spark_catalog");
-    sql("create database if not exists {0}", sourceDatabase);
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
         " id int , data string, pt string ) using parquet \n" +
         " partitioned by (pt) \n" , sourceDatabase, sourceTable);
 
-    sql("insert overwrite {0}.{1} values \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} values \n" +
             "( 1, ''aaaa'', ''0001''), \n" +
             "( 2, ''aaaa'', ''0001''), \n" +
             "( 3, ''aaaa'', ''0001''), \n" +
@@ -69,16 +65,16 @@ public class TestMigrateNonHiveTable extends SparkTestBase {
             "( 8, ''aaaa'', ''0002'') \n" ,
         sourceDatabase, sourceTable);
 
-    sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
+    sparkTestContext.sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
         sourceDatabase, sourceTable,
-        catalogName, database, table);
+        SparkTestContext.catalogName, database, table);
 
-    rows = sql("select * from {0}.{1}.{2}", catalogName, database, table);
-    Assert.assertEquals(8, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1}.{2}", SparkTestContext.catalogName, database, table);
+    Assert.assertEquals(8, sparkTestContext.rows.size());
 
-    ArcticTable t = loadTable(catalogName, database, table);
+    ArcticTable t = SparkTestContext.loadTable(SparkTestContext.catalogName, database, table);
     UnkeyedTable unkey = t.asUnkeyedTable();
-    StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
+    StructLikeMap<List<DataFile>> partitionFiles = SparkTestContext.partitionFiles(unkey);
     Assert.assertEquals(2, partitionFiles.size());
 
   }

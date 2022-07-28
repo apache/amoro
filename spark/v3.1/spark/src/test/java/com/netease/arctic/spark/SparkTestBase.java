@@ -34,15 +34,15 @@ public class SparkTestBase extends SparkTestContext {
 
   @BeforeClass
   public static void setUpSparkForTests() throws Exception {
-    setUpTestDirAndArctic();
-    additionSparkConfigs.clear();
-    setUpSparkSession();
+//    setUpTestDirAndArctic();
+//    additionSparkConfigs.clear();
+//    setUpSparkSession();
   }
 
   @AfterClass
   public static void tearDownTests() {
-    cleanUpAms();
-    cleanUpSparkSession();
+//    cleanUpAms();
+//    cleanUpSparkSession();
   }
 
   @Rule

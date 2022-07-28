@@ -25,26 +25,30 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
+public class TestKeyedTableDMLInsertOverwriteStatic {
 
   private final String database = "db";
   private final String table = "testA";
   private KeyedTable keyedTable;
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final TableIdentifier identifier = TableIdentifier.of(SparkTestContext.catalogName, database, table);
 
   private String contextOverwriteMode;
 
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
+
   @Before
   public void before() {
-    contextOverwriteMode = spark.conf().get("spark.sql.sources.partitionOverwriteMode");
+    contextOverwriteMode = SparkTestContext.spark.conf().get("spark.sql.sources.partitionOverwriteMode");
     System.out.println("spark.sql.sources.partitionOverwriteMode = " + contextOverwriteMode);
-    sql("set spark.sql.sources.partitionOverwriteMode = {0}", "STATIC");
+    sparkTestContext.sql("set spark.sql.sources.partitionOverwriteMode = {0}", "STATIC");
 
-    sql("use " + catalogName);
-    sql("create database if not exists {0}", database);
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists {0}", database);
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
         " dt string , \n" +
@@ -52,39 +56,40 @@ public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
         ") using arctic \n" +
         " partitioned by ( dt ) \n", database, table);
 
-    keyedTable = loadTable(identifier).asKeyedTable();
+    keyedTable = SparkTestContext.loadTable(identifier).asKeyedTable();
 
-    sql("insert overwrite {0}.{1} values \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} values \n" +
         "(1, ''aaa'',  ''2021-1-1''), \n " +
         "(2, ''bbb'',  ''2021-1-2''), \n " +
         "(3, ''ccc'',  ''2021-1-3'') \n ", database, table);
 
-    writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
-        newRecord(keyedTable, 4, "ddd", "2021-1-1"),
-        newRecord(keyedTable, 5, "eee", "2021-1-2"),
-        newRecord(keyedTable, 6, "666", "2021-1-3"),
-        newRecord(keyedTable, 1024, "1024", "2021-1-4")
+    SparkTestContext.writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
+        SparkTestContext.newRecord(keyedTable, 4, "ddd", "2021-1-1"),
+        SparkTestContext.newRecord(keyedTable, 5, "eee", "2021-1-2"),
+        SparkTestContext.newRecord(keyedTable, 6, "666", "2021-1-3"),
+        SparkTestContext.newRecord(keyedTable, 1024, "1024", "2021-1-4")
     ));
   }
 
   @After
   public void after() {
-    sql("drop table {0}.{1}", database, table);
-    sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
+    sparkTestContext.sql("drop table {0}.{1}", database, table);
+    sparkTestContext.sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
+    sparkTestContext.sql("DROP DATABASE IF EXISTS {0}", database);
   }
 
   @Test
   public void testInsertOverwriteAllPartitionByValue() {
     // insert overwrite by values, no partition expr
-    sql("insert overwrite {0}.{1} values \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} values \n" +
         "(7, ''aaa'',  ''2021-1-1''), \n " +
         "(8, ''bbb'',  ''2021-1-2''), \n " +
         "(9, ''ccc'',  ''2021-1-2'') \n ", database, table);
 
-    rows = sql("select * from {0}.{1}", database, table);
-    Assert.assertEquals(3, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1}", database, table);
+    Assert.assertEquals(3, sparkTestContext.rows.size());
 
-    assertContainIdSet(rows, 0, 7, 8, 9);
+    SparkTestContext.assertContainIdSet(sparkTestContext.rows, 0, 7, 8, 9);
   }
 
   @Test
@@ -96,14 +101,14 @@ public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
     // P[2]=> [2,5]
     // P[3]=> [3,6]
     // P[4]=> [1024]
-    sql("insert overwrite {0}.{1} \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} \n" +
         "partition( dt = ''2021-1-1'')  values \n" +
         "(7, ''aaa''), \n " +
         "(8, ''bbb''), \n " +
         "(9, ''ccc'') \n ", database, table);
 
-    rows = sql("select * from {0}.{1} order by id", database, table);
-    Assert.assertEquals(8, rows.size());
-    assertContainIdSet(rows, 0, 7, 8, 9, 2, 5, 3, 6, 1024);
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1} order by id", database, table);
+    Assert.assertEquals(8, sparkTestContext.rows.size());
+    SparkTestContext.assertContainIdSet(sparkTestContext.rows, 0, 7, 8, 9, 2, 5, 3, 6, 1024);
   }
 }

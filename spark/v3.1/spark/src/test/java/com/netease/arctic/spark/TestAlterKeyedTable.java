@@ -26,21 +26,25 @@ import org.apache.spark.sql.AnalysisException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
  * test for alter arctic keyed table
  */
-public class TestAlterKeyedTable extends SparkTestBase {
+public class TestAlterKeyedTable {
   private final String database = "db_def";
   private final String tableName = "testA";
-  private final TableIdentifier tableIdent = TableIdentifier.of(catalogName, database, tableName);
+  private final TableIdentifier tableIdent = TableIdentifier.of(SparkTestContext.catalogName, database, tableName);
+
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
-    sql("create database if not exists " + database);
-    sql("CREATE TABLE {0}.{1} \n" +
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists " + database);
+    sparkTestContext.sql("CREATE TABLE {0}.{1} \n" +
             "(id bigint, data string, ts timestamp, primary key (id)) \n" +
             "using arctic partitioned by ( days(ts) ) \n" +
             "tblproperties ( 'test.props1' = 'val1' , 'test.props2' = 'val2' )",
@@ -49,8 +53,9 @@ public class TestAlterKeyedTable extends SparkTestBase {
   }
 
   @After
-  public void removeTables() {
-    sql("DROP TABLE IF EXISTS {0}.{1}", database, tableName);
+  public void cleanUp() {
+    sparkTestContext.sql("DROP TABLE IF EXISTS {0}.{1}", database, tableName);
+    sparkTestContext.sql("DROP DATABASE IF EXISTS {0}", database);
   }
 
   @Test
@@ -60,19 +65,19 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(2, "data", Types.StringType.get()),
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testAddColumnNotNull() {
     Assert.assertThrows(
         SparkException.class,
-        () -> sql("ALTER TABLE {0}.{1} ADD COLUMN c3 INT NOT NULL", database, tableName));
+        () -> sparkTestContext.sql("ALTER TABLE {0}.{1} ADD COLUMN c3 INT NOT NULL", database, tableName));
   }
 
   @Test
   public void testAddColumn() {
-    sql(
+    sparkTestContext.sql(
         "ALTER TABLE {0}.{1} ADD COLUMN point struct<x: double NOT NULL, y: double NOT NULL> AFTER id",
         database,
         tableName);
@@ -87,9 +92,9 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
 
-    sql("ALTER TABLE {0}.{1} ADD COLUMN point.z double COMMENT ''May be null'' FIRST", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ADD COLUMN point.z double COMMENT ''May be null'' FIRST", database, tableName);
 
     Types.StructType expectedSchema2 = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -102,24 +107,24 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema2, loadTable(tableIdent).schema().asStruct());
+        expectedSchema2, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testDropColumn() {
-    sql("ALTER TABLE {0}.{1} DROP COLUMN data", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} DROP COLUMN data", database, tableName);
 
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get()),
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testRenameColumn() {
-    sql("ALTER TABLE {0}.{1} RENAME COLUMN data TO row_data", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} RENAME COLUMN data TO row_data", database, tableName);
 
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -127,12 +132,12 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testAlterColumnComment() {
-    sql("ALTER TABLE {0}.{1} ALTER COLUMN id COMMENT ''Record id''", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ALTER COLUMN id COMMENT ''Record id''", database, tableName);
 
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get(), "Record id"),
@@ -140,13 +145,13 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testAlterColumnType() {
-    sql("ALTER TABLE {0}.{1} ADD COLUMN count int", database, tableName);
-    sql("ALTER TABLE {0}.{1} ALTER COLUMN count TYPE bigint", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ADD COLUMN count int", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ALTER COLUMN count TYPE bigint", database, tableName);
 
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -155,12 +160,12 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(4, "count", Types.LongType.get()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testAlterColumnDropNotNull() {
-    sql("ALTER TABLE {0}.{1} ALTER COLUMN data DROP NOT NULL", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ALTER COLUMN data DROP NOT NULL", database, tableName);
 
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -168,20 +173,20 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testAlterColumnSetNotNull() {
     Assert.assertThrows(
         AnalysisException.class,
-        () -> sql("ALTER TABLE {0}.{1} ALTER COLUMN data SET NOT NULL", database, tableName));
+        () -> sparkTestContext.sql("ALTER TABLE {0}.{1} ALTER COLUMN data SET NOT NULL", database, tableName));
   }
 
   @Test
   public void testAlterColumnPositionAfter() {
-    sql("ALTER TABLE {0}.{1} ADD COLUMN count int", database, tableName);
-    sql("ALTER TABLE {0}.{1} ALTER COLUMN count AFTER id", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ADD COLUMN count int", database, tableName);
+    sparkTestContext.sql("ALTER TABLE {0}.{1} ALTER COLUMN count AFTER id", database, tableName);
 
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.LongType.get()),
@@ -190,15 +195,15 @@ public class TestAlterKeyedTable extends SparkTestBase {
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
 
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, loadTable(tableIdent).schema().asStruct());
+        expectedSchema, SparkTestContext.loadTable(tableIdent).schema().asStruct());
   }
 
   @Test
   public void testAlterTableProperties() {
-    sql("ALTER TABLE {0}.{1} SET TBLPROPERTIES " +
+    sparkTestContext.sql("ALTER TABLE {0}.{1} SET TBLPROPERTIES " +
         "( ''test.props2'' = ''new-value'', ''test.props3'' = ''val3'' )", database, tableName);
 
-    ArcticTable keyedTable = loadTable(catalogName, database, tableName);
+    ArcticTable keyedTable = SparkTestContext.loadTable(SparkTestContext.catalogName, database, tableName);
     //Assert.assertEquals(3, keyedTable.properties().size());
 
     Assert.assertEquals("val1", keyedTable.properties().get("test.props1"));

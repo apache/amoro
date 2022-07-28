@@ -54,6 +54,7 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.junit.Assert;
+import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +78,7 @@ import java.util.stream.IntStream;
 /**
  * test context for all spark tests.
  */
-public class SparkTestContext {
+public class SparkTestContext extends ExternalResource {
   protected static final Object ANY = new Object();
   final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
   private static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
@@ -86,13 +87,29 @@ public class SparkTestContext {
   protected static File testBaseDir = new File("unit_test_base_tmp");
   protected static File testSparkDir = new File(testBaseDir, "spark-warehouse");
   protected static File testArcticDir = new File(testBaseDir, "arctic");
-  protected static SparkSession spark = null;
+  public static SparkSession spark = null;
   protected static MockArcticMetastoreServer ams = new MockArcticMetastoreServer();
   protected static String amsUrl;
-  protected static String catalogName;
+  public static String catalogName;
   protected List<Object[]> rows;
 
-  public static void setUpTestDirAndArctic() throws IOException {
+  private static SparkTestContext sparkTestContext;
+
+  private static int refCount = 0;
+
+  public static SparkTestContext getSparkTestContext () {
+    if (refCount == 0) {
+      sparkTestContext = new SparkTestContext();
+    }
+    return sparkTestContext;
+  }
+
+  public void cleanUpAdditionSparkConfigs() {
+    additionSparkConfigs.clear();
+  }
+
+  public void setUpTestDirAndArctic() throws IOException {
+    System.out.println("Set Up Ams success");
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -108,7 +125,8 @@ public class SparkTestContext {
   }
 
 
-  public static void setUpSparkSession() {
+  public void setUpSparkSession() {
+    System.out.println("Set Up spark session success");
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
@@ -139,12 +157,14 @@ public class SparkTestContext {
     spark.sparkContext().setLogLevel("WARN");
   }
 
-  public static void cleanUpAms() {
+  public void cleanUpAms() {
+    System.out.println("Clean Up Ams success");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
   }
 
-  public static void cleanUpSparkSession(){
+  public void cleanUpSparkSession(){
+    System.out.println("Clean Up spark session success");
     spark.stop();
     spark.close();
     spark = null;
@@ -271,7 +291,7 @@ public class SparkTestContext {
     return map;
   }
 
-  protected List<Object[]> sql(String query, Object... args) throws RuntimeException {
+  public List<Object[]> sql(String query, Object... args) throws RuntimeException {
     MessageFormat format = new MessageFormat(query);
     String sql = format.format(args);
     if (args.length == 0) {
@@ -309,7 +329,7 @@ public class SparkTestContext {
     }
   }
 
-  protected void assertTableExist(TableIdentifier ident) {
+  public void assertTableExist(TableIdentifier ident) {
     try {
       TableMeta meta = ams.handler().getTable(
           ident.buildTableIdentifier());
@@ -319,11 +339,11 @@ public class SparkTestContext {
     }
   }
 
-  protected void assertTableNotExist(TableIdentifier identifier) {
+  public void assertTableNotExist(TableIdentifier identifier) {
     Assert.assertThrows(NoSuchObjectException.class, () -> ams.handler().getTable(identifier.buildTableIdentifier()));
   }
 
-  protected static Timestamp quickTs(int day) {
+  public static Timestamp quickTs(int day) {
     return Timestamp.valueOf(quickDateWithZone(day).toLocalDateTime());
   }
 }

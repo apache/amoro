@@ -25,21 +25,25 @@ import com.netease.arctic.table.TableIdentifier;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestKeyedTableDML extends SparkTestBase {
+public class TestKeyedTableDML {
   private final String database = "db_test";
   private final String table = "testA";
   private KeyedTable keyedTable;
 
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
+
   @Before
   public void before() {
-    sql("use " + catalogName);
-    sql("create database if not exists {0}", database);
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists {0}", database);
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
         " ts timestamp , \n" +
@@ -49,33 +53,34 @@ public class TestKeyedTableDML extends SparkTestBase {
         " options ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, table);
-    keyedTable = loadTable(TableIdentifier.of(catalogName, database, table)).asKeyedTable();
+    keyedTable = SparkTestContext.loadTable(TableIdentifier.of(SparkTestContext.catalogName, database, table)).asKeyedTable();
   }
 
   @After
   public void cleanUp() {
-    sql("drop table {0}.{1}", database, table);
+    sparkTestContext.sql("drop table {0}.{1}", database, table);
+    sparkTestContext.sql("DROP DATABASE IF EXISTS {0}", database);
   }
 
   @Test
   public void testMergeOnRead() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
-    writeBase(identifier,  Lists.newArrayList(
-        new Object[]{1, "aaa", ofDateWithZone(2022, 1, 1,0)},
-        new Object[]{2, "bbb", ofDateWithZone(2022, 1, 2,0)},
-        new Object[]{3, "ccc", ofDateWithZone(2022, 1, 2,0)}
+    TableIdentifier identifier = TableIdentifier.of(SparkTestContext.catalogName, database, table);
+    SparkTestContext.writeBase(identifier,  Lists.newArrayList(
+        new Object[]{1, "aaa", SparkTestContext.ofDateWithZone(2022, 1, 1,0)},
+        new Object[]{2, "bbb", SparkTestContext.ofDateWithZone(2022, 1, 2,0)},
+        new Object[]{3, "ccc", SparkTestContext.ofDateWithZone(2022, 1, 2,0)}
     ));
-    writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
-        newRecord(keyedTable, 4, "ddd", quickDateWithZone(4) ),
-        newRecord(keyedTable, 5, "eee", quickDateWithZone(4) )
+    SparkTestContext.writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
+        SparkTestContext.newRecord(keyedTable, 4, "ddd", SparkTestContext.quickDateWithZone(4) ),
+        SparkTestContext.newRecord(keyedTable, 5, "eee", SparkTestContext.quickDateWithZone(4) )
     ));
-    writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", quickDateWithZone(1))
+    SparkTestContext.writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
+        SparkTestContext.newRecord(keyedTable, 1, "aaa", SparkTestContext.quickDateWithZone(1))
     ));
 
-    rows = sql("select * from {0}.{1}", database, table);
-    Assert.assertEquals(4, rows.size());
-    Set<Object> idSet = rows.stream().map(r -> r[0]).collect(Collectors.toSet());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1}", database, table);
+    Assert.assertEquals(4, sparkTestContext.rows.size());
+    Set<Object> idSet = sparkTestContext.rows.stream().map(r -> r[0]).collect(Collectors.toSet());
 
     Assert.assertEquals(4, idSet.size());
     Assert.assertTrue(idSet.contains(4));
@@ -86,13 +91,13 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testSelectChangeFiles() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
-    writeChange(identifier,  ChangeAction.INSERT, Lists.newArrayList(
-        newRecord(keyedTable, 4, "ddd", quickDateWithZone(4)),
-        newRecord(keyedTable, 5, "eee", quickDateWithZone(4))
+    TableIdentifier identifier = TableIdentifier.of(SparkTestContext.catalogName, database, table);
+    SparkTestContext.writeChange(identifier,  ChangeAction.INSERT, Lists.newArrayList(
+        SparkTestContext.newRecord(keyedTable, 4, "ddd", SparkTestContext.quickDateWithZone(4)),
+        SparkTestContext.newRecord(keyedTable, 5, "eee", SparkTestContext.quickDateWithZone(4))
     ));
-    rows = sql("select * from {0}.{1}.change", database, table);
-    Assert.assertEquals(2, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select * from {0}.{1}.change", database, table);
+    Assert.assertEquals(2, sparkTestContext.rows.size());
   }
 
 }

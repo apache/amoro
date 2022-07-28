@@ -23,29 +23,39 @@ import com.netease.arctic.table.TableIdentifier;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
  * test for arctic keyed table
  */
-public class TestKeyedTableDDL extends SparkTestBase {
+public class TestKeyedTableDDL {
+
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
 
   private final String database = "db_def";
   private final String table = "testA";
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
-    sql("create database if not exists " + database);
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists " + database);
+  }
+
+  @After
+  public void cleanUp() {
+    sparkTestContext.sql("DROP DATABASE IF EXISTS {0}", database);
   }
 
   @Test
   public void testCreateKeyedTable() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+    TableIdentifier identifier = TableIdentifier.of(SparkTestContext.catalogName, database, table);
 
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
         " ts timestamp , \n" +
@@ -55,21 +65,21 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, table);
-    assertTableExist(identifier);
-    sql("desc table {0}.{1}", database, table);
-    assertDescResult(rows, Lists.newArrayList("id"));
+    sparkTestContext.assertTableExist(identifier);
+    sparkTestContext.sql("desc table {0}.{1}", database, table);
+    assertDescResult(sparkTestContext.rows, Lists.newArrayList("id"));
 
-    sql("desc table extended {0}.{1}", database, table);
-    assertDescResult(rows, Lists.newArrayList("id"));
+    sparkTestContext.sql("desc table extended {0}.{1}", database, table);
+    assertDescResult(sparkTestContext.rows, Lists.newArrayList("id"));
 
-    ArcticTable keyedTable = loadTable(identifier);
+    ArcticTable keyedTable = SparkTestContext.loadTable(identifier);
     Assert.assertTrue(keyedTable.properties().containsKey("props.test1"));
     Assert.assertEquals("val1", keyedTable.properties().get("props.test1"));
     Assert.assertTrue(keyedTable.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", keyedTable.properties().get("props.test2"));
 
-    sql("drop table {0}.{1}", database, table);
-    assertTableNotExist(identifier);
+    sparkTestContext.sql("drop table {0}.{1}", database, table);
+    sparkTestContext.assertTableNotExist(identifier);
   }
 
   private void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {

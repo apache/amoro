@@ -21,28 +21,30 @@ package com.netease.arctic.spark;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.Set;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
+public class TestKeyedTableDMLInsertOverwriteDynamic {
 
   private final String database = "db";
   private final String table = "testA";
   private KeyedTable keyedTable;
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final TableIdentifier identifier = TableIdentifier.of(SparkTestContext.catalogName, database, table);
 
   private String contextOverwriteMode;
 
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
+
   @Before
   public void before() {
-    sql("use " + catalogName);
-    sql("create database if not exists {0}", database);
-    sql("create table {0}.{1} ( \n" +
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("create database if not exists {0}", database);
+    sparkTestContext.sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
         " ts timestamp , \n" +
@@ -50,30 +52,31 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
         ") using arctic \n" +
         " partitioned by ( days(ts) ) \n", database, table);
 
-    sql("insert overwrite {0}.{1} values \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} values \n" +
         "(1, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
         "(2, ''bbb'',  timestamp('' 2022-1-2 09:00:00 '')), \n " +
         "(3, ''ccc'',  timestamp('' 2022-1-3 09:00:00 '')) \n ", database, table);
-    keyedTable = loadTable(identifier).asKeyedTable();
+    keyedTable = SparkTestContext.loadTable(identifier).asKeyedTable();
 
-    writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
-        newRecord(keyedTable, 4, "ddd", quickDateWithZone(1)),
-        newRecord(keyedTable, 5, "eee", quickDateWithZone(2)),
-        newRecord(keyedTable, 6, "666", quickDateWithZone(3)),
-        newRecord(keyedTable, 1024, "1024", quickDateWithZone(4))
+    SparkTestContext.writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
+        SparkTestContext.newRecord(keyedTable, 4, "ddd", SparkTestContext.quickDateWithZone(1)),
+        SparkTestContext.newRecord(keyedTable, 5, "eee", SparkTestContext.quickDateWithZone(2)),
+        SparkTestContext.newRecord(keyedTable, 6, "666", SparkTestContext.quickDateWithZone(3)),
+        SparkTestContext.newRecord(keyedTable, 1024, "1024", SparkTestContext.quickDateWithZone(4))
     ));
 
-    sql("select * from {0}.{1} order by id", database, table);
+    sparkTestContext.sql("select * from {0}.{1} order by id", database, table);
 
-    contextOverwriteMode = spark.conf().get("spark.sql.sources.partitionOverwriteMode");
+    contextOverwriteMode = SparkTestContext.spark.conf().get("spark.sql.sources.partitionOverwriteMode");
     System.out.println("spark.sql.sources.partitionOverwriteMode = " + contextOverwriteMode);
-    sql("set spark.sql.sources.partitionOverwriteMode = {0}", "DYNAMIC");
+    sparkTestContext.sql("set spark.sql.sources.partitionOverwriteMode = {0}", "DYNAMIC");
   }
 
   @After
   public void after() {
-    sql("drop table {0}.{1}", database, table);
-    sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
+    sparkTestContext.sql("drop table {0}.{1}", database, table);
+    sparkTestContext.sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
+    sparkTestContext.sql("DROP DATABASE IF EXISTS {0}", database);
   }
 
   @Test
@@ -86,15 +89,15 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
     // P[3]=> [3,6]
     // P[4]=> [1024]
     //
-    sql("insert overwrite {0}.{1} values \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} values \n" +
         "(7, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
         "(8, ''bbb'',  timestamp('' 2022-1-2 09:00:00 '')), \n " +
         "(9, ''ccc'',  timestamp('' 2022-1-2 09:00:00 '')) \n ", database, table);
 
-    rows = sql("select id, data, ts from {0}.{1} order by id", database, table);
-    Assert.assertEquals(6, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select id, data, ts from {0}.{1} order by id", database, table);
+    Assert.assertEquals(6, sparkTestContext.rows.size());
 
-    assertContainIdSet(rows, 0, 7, 8, 9, 3, 6, 1024);
+    SparkTestContext.assertContainIdSet(sparkTestContext.rows, 0, 7, 8, 9, 3, 6, 1024);
   }
 
   @Test
@@ -107,14 +110,14 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
     // P[3]=> [3,6]
     // P[4]=> [7，8，9]
     //
-    sql("insert overwrite {0}.{1} values \n" +
+    sparkTestContext.sql("insert overwrite {0}.{1} values \n" +
         "(7, ''aaa'',  timestamp('' 2022-1-4 09:00:00 '')), \n " +
         "(8, ''bbb'',  timestamp('' 2022-1-4 09:00:00 '')), \n " +
         "(9, ''ccc'',  timestamp('' 2022-1-4 09:00:00 '')) \n ", database, table);
 
-    rows = sql("select id, data, ts from {0}.{1} order by id", database, table);
-    Assert.assertEquals(9, rows.size());
+    sparkTestContext.rows = sparkTestContext.sql("select id, data, ts from {0}.{1} order by id", database, table);
+    Assert.assertEquals(9, sparkTestContext.rows.size());
 
-    assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
+    SparkTestContext.assertContainIdSet(sparkTestContext.rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
   }
 }

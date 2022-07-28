@@ -25,6 +25,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,27 +34,30 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 
-public class TestUnKeyedTableDDL extends SparkTestBase {
+public class TestUnKeyedTableDDL {
   private static final Logger LOG = LoggerFactory.getLogger(TestUnKeyedTableDDL.class);
+
+  @ClassRule
+  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
 
   @Test
   public void testDatabaseDDL() throws Exception {
-    sql("use " + catalogName);
-    sql("show databases");
-    Assert.assertEquals(0, rows.size());
+    sparkTestContext.sql("use " + SparkTestContext.catalogName);
+    sparkTestContext.sql("show databases");
+    Assert.assertEquals(0, sparkTestContext.rows.size());
 
-    sql("create database db1");
-    sql("show databases");
-    Assert.assertEquals(1, rows.size());
-    Assert.assertEquals("db1", rows.get(0)[0]);
+    sparkTestContext.sql("create database db1");
+    sparkTestContext.sql("show databases");
+    Assert.assertEquals(1, sparkTestContext.rows.size());
+    Assert.assertEquals("db1", sparkTestContext.rows.get(0)[0]);
 
-    sql("drop database db1");
-    Assert.assertEquals(0, rows.size());
+    sparkTestContext.sql("drop database db1");
+    Assert.assertEquals(0, sparkTestContext.rows.size());
   }
 
   @Test
   public void testArcticCatalogTableDDL() throws Exception {
-    TableIdentifier ident = TableIdentifier.of(catalogName, "def", "t1");
+    TableIdentifier ident = TableIdentifier.of(SparkTestContext.catalogName, "def", "t1");
     doTableCreateTest(ident);
     doTablePropertiesAlterTest(ident);
     doTableColumnAlterTest(ident);
@@ -61,28 +66,28 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
 
   private void doTableCreateTest(TableIdentifier ident)   {
-    sql("use " + ident.getCatalog());
-    if (catalogName.equals(ident.getCatalog())){
-      sql("create database " + ident.getDatabase());
+    sparkTestContext.sql("use " + ident.getCatalog());
+    if (SparkTestContext.catalogName.equals(ident.getCatalog())){
+      sparkTestContext.sql("create database " + ident.getDatabase());
     }
 
     List<Object[]> rows;
 
     Assert.assertThrows(
         NoSuchObjectException.class,
-        () -> ams.handler().getTable(ident.buildTableIdentifier()));
+        () -> SparkTestContext.ams.handler().getTable(ident.buildTableIdentifier()));
 
-    sql("create table " + ident.getDatabase() + "." + ident.getTableName() + " ( \n" +
+    sparkTestContext.sql("create table " + ident.getDatabase() + "." + ident.getTableName() + " ( \n" +
         " id int , \n" +
         " name string, \n" +
         " birthday date ) \n" +
         " using arctic \n " +
         " partitioned by ( days(birthday) )");
-    assertTableExist(ident);
-    rows = sql("desc table {0}.{1}", ident.getDatabase(), ident.getTableName());
+    sparkTestContext.assertTableExist(ident);
+    rows = sparkTestContext.sql("desc table {0}.{1}", ident.getDatabase(), ident.getTableName());
     Assert.assertEquals(6, rows.size());
 
-    rows = sql("show tables");
+    rows = sparkTestContext.sql("show tables");
     Assert.assertEquals(1, rows.size());
     // result: |namespace|tableName|
     Assert.assertEquals(ident.getDatabase(), rows.get(0)[0]);
@@ -90,56 +95,56 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
   }
 
   protected void doTablePropertiesAlterTest(TableIdentifier ident) {
-    sql("use " + ident.getCatalog());
+    sparkTestContext.sql("use " + ident.getCatalog());
 
-    assertTableExist(ident);
-    sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
+    sparkTestContext.assertTableExist(ident);
+    sparkTestContext.sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
         + " set tblproperties ('test-props' = 'val')");
 
-    ArcticTable table = loadTable(ident);
+    ArcticTable table = SparkTestContext.loadTable(ident);
     Map<String, String> props = table.properties();
     Assert.assertEquals("val",props.get("test-props"));
-    props = loadTablePropertiesFromAms(ident);
+    props = SparkTestContext.loadTablePropertiesFromAms(ident);
     Assert.assertTrue(props.containsKey("test-props"));
 
-    sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
+    sparkTestContext.sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
       + " unset tblproperties ('test-props') ");
-    table = loadTable(ident);
+    table = SparkTestContext.loadTable(ident);
     Assert.assertFalse(table.properties().containsKey("test-props"));
-    props = loadTablePropertiesFromAms(ident);
+    props = SparkTestContext.loadTablePropertiesFromAms(ident);
     Assert.assertFalse(props.containsKey("test-props"));
 
   }
 
   protected void doTableColumnAlterTest(TableIdentifier ident){
-    sql("use " + ident.getCatalog());
+    sparkTestContext.sql("use " + ident.getCatalog());
 
-    assertTableExist(ident);
-    sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
+    sparkTestContext.assertTableExist(ident);
+    sparkTestContext.sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
         + " add column col double ");
 
-    ArcticTable table = loadTable(ident);
+    ArcticTable table = SparkTestContext.loadTable(ident);
     Types.NestedField field = table.schema().findField("col");
     Assert.assertNotNull(field);
     Assert.assertEquals(Types.DoubleType.get(), field.type());
 
-    sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
+    sparkTestContext.sql("alter table " + ident.getDatabase() + "." + ident.getTableName()
         + " drop column col");
-    table = loadTable(ident);
+    table = SparkTestContext.loadTable(ident);
     field = table.schema().findField("col");
     Assert.assertNull(field);
   }
 
   protected void doTableDropTest(TableIdentifier ident)  {
-    sql("use " + ident.getCatalog());
-    assertTableExist(ident);
+    sparkTestContext.sql("use " + ident.getCatalog());
+    sparkTestContext.assertTableExist(ident);
 
-    sql("drop table " + ident.getDatabase()  + "." + ident.getTableName());
-    rows = sql("show tables");
-    Assert.assertEquals(0, rows.size());
+    sparkTestContext.sql("drop table " + ident.getDatabase()  + "." + ident.getTableName());
+    sparkTestContext.rows = sparkTestContext.sql("show tables");
+    Assert.assertEquals(0, sparkTestContext.rows.size());
 
     Assert.assertThrows(
         NoSuchObjectException.class,
-        () -> ams.handler().getTable(ident.buildTableIdentifier()));
+        () -> SparkTestContext.ams.handler().getTable(ident.buildTableIdentifier()));
   }
 }
