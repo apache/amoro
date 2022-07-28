@@ -28,6 +28,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -54,6 +55,7 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.junit.Assert;
+import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +79,7 @@ import java.util.stream.IntStream;
 /**
  * test context for all spark tests.
  */
-public class SparkTestContext {
+public class SparkTestContext extends ExternalResource {
   protected static final Object ANY = new Object();
   final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
   private static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
@@ -92,7 +94,42 @@ public class SparkTestContext {
   protected static String catalogName;
   protected List<Object[]> rows;
 
+  private static SparkTestContext sparkTestContext;
+
+  private static int refCount = 0;
+
+  static final File hmsDir = new File(testBaseDir, "hive");
+  static final HMSMockServer hms = new HMSMockServer(hmsDir);
+
+  public static SparkTestContext getSparkTestContext () {
+    if (refCount == 0) {
+      sparkTestContext = new SparkTestContext();
+    }
+    return sparkTestContext;
+  }
+
+  public void cleanUpAdditionSparkConfigs() {
+    additionSparkConfigs.clear();
+  }
+
+  public void setUpHMS(){
+    System.out.println("======================== start hive metastore ========================= ");
+    hms.start();
+    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort()) ;
+    additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
+    additionSparkConfigs.put("spark.sql.hive.metastore.version", "2.3.7");
+    //hive.metastore.client.capability.check
+    additionSparkConfigs.put("hive.metastore.client.capability.check", "false");
+  }
+
+  public void cleanUpHive() {
+    System.out.println("======================== stop hive metastore ========================= ");
+    hms.stop();
+  }
+
+
   public static void setUpTestDirAndArctic() throws IOException {
+    System.out.println("======================== start AMS  ========================= ");
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -109,6 +146,7 @@ public class SparkTestContext {
 
 
   public static void setUpSparkSession() {
+    System.out.println("======================== set up spark session  ========================= ");
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
@@ -140,11 +178,13 @@ public class SparkTestContext {
   }
 
   public static void cleanUpAms() {
+    System.out.println("======================== clean up AMS  ========================= ");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
   }
 
   public static void cleanUpSparkSession(){
+    System.out.println("======================== clean up spark session  ========================= ");
     spark.stop();
     spark.close();
     spark = null;
