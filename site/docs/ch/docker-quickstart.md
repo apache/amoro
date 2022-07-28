@@ -1,7 +1,11 @@
 # 使用Docker快速开始
 本指南将用Docker帮助您快速的启动并部署AMS(Arctic Meta Service)，Spark，Flink环境，并体验Arctic的各种功能。
 
-- [Docker-Compose](##Docker-Compose)
+- [Docker-Compose](#Docker-Compose)
+- [启动AMS](#启动AMS)
+- [实时写入与读取(Flink)](#实时写入与读取(Flink))
+- [结构优化](#结构优化)
+- [Spark](#Spark)
 
 ## Docker-Compose
 使用Docker-Compose将很快帮助您搭建起一套Arctic使用所需的环境，相关镜像已上传到Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams)镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink)镜像已包含Flink及所需环境。[arctic163/spark](https://hub.docker.com/repository/docker/arctic163/spark)镜像已包含Spark及所需环境。
@@ -57,7 +61,7 @@ networks:
 docker-compose up -d
 ```
 启动成功后，使用```docker ps```命令查看当前已启动的容器，您将看到三个容器，分别为ams, arctic_flink, arctic_spark。  
-### 启动AMS
+## 启动AMS
 如[概述](index.md)中所述，AMS(Arctic Meta Service)是Arctic中负责元数据管理与结构优化的独立服务，使用Arctic的第一步就是启动AMS。  
 **1.进入ams容器**  
 
@@ -90,7 +94,7 @@ AMS中的optimizer负责自动为表进行结构优化，AMS默认配置下会�
 
 ![ScaleOut.png](images/ScaleOut.png)
 
-## 建表
+### 建表
 
 登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，在SQL输入框中输入下面的SQL并执行：
 
@@ -228,7 +232,7 @@ DELETE|3|lee|2022-07-01 10:11:00
 |  7|randy|
 +---+-----+
 ```
-## 批量修改
+### 批量修改
 
 **1.查询已有数据**
 
@@ -360,7 +364,7 @@ ${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.catalog.local_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
     --conf spark.sql.catalog.local_catalog.url=thrift://ams:1260/local_catalog
 ```
-## 创建表
+### 创建表
 
 在 Spark SQL 命令行中，可以通过 `CREATE TABLE` 语句执行建表命令。
 
@@ -391,7 +395,7 @@ create table test3 (id int, data string, ts timestamp, primary key(id)) using ar
 
 更多表相关DDL，请参考 [SPARK DDL](spark-ddl.md)
 
-## 写入
+### 写入
 
 如果您使用SparkSQL, 可以通过 `INSERT OVERWRITE` 或 `INSERT` SQL语句向 Arctic 表写入数据。
 
@@ -413,7 +417,7 @@ insert overwrite test3 values
 
 > 如果使用 static 类型的 Overwrite, 不能在分区上定义函数。  
 
-## 读取
+### 读取
 
 使用 `SELECT` SQL语句查询 Arctic 表
 
