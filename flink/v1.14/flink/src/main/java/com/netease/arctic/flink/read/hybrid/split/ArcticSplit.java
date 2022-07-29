@@ -97,8 +97,8 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
             MoreObjects.toStringHelper(primaryKeyedFile)
                 .add("file", primaryKeyedFile.path().toString())
                 .add("type", primaryKeyedFile.type().shortName())
-                .add("mask", primaryKeyedFile.mask())
-                .add("index", primaryKeyedFile.index())
+                .add("mask", primaryKeyedFile.node().mask())
+                .add("index", primaryKeyedFile.node().index())
                 .add("transactionId", primaryKeyedFile.transactionId())
                 .toString()).collect(Collectors.toList()));
   }
