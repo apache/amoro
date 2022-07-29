@@ -105,7 +105,8 @@ public class SparkTestContext extends ExternalResource {
     return sparkTestContext;
   }
 
-  public void cleanUpAdditionSparkConfigs() {
+  public static
+  void cleanUpAdditionSparkConfigs() {
     additionSparkConfigs.clear();
   }
 

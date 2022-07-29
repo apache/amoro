@@ -39,20 +39,6 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
   private final String database = "arctic_db";
   private final String table = "arctic_table";
 
-  @BeforeClass
-  public static void beforeAll() throws IOException {
-    setUpTestDirAndArctic();
-    setUpHMS();
-    setUpSparkSession();
-  }
-
-  @AfterClass
-  public static void tearDown() {
-    cleanUpHive();
-    cleanUpAms();
-    cleanUpSparkSession();
-  }
-
   @Before
   public void setUpArcticDatabase(){
     sql("use " + catalogName);

@@ -242,7 +242,8 @@
                 <version>2.19</version>
                 <configuration>
                     <includes>
-                        <include>com.netease.arctic.spark.ArcticSparkMainTest</include>
+                        <include>**/ArcticSparkHiveMainTest.java</include>
+                        <include>**/ArcticSparkNonHiveMainTest.java</include>
                     </includes>
                 </configuration>
             </plugin>

@@ -23,22 +23,19 @@ import java.io.IOException;
     TestOptimizeWrite.class,
     TestUnKeyedTableDML.class,
     TestKeyedTableDataFrameAPI.class,
-    TestUnKeyedTableDataFrameAPI.class,
-    TestMigrateHiveTable.class})
-public class ArcticSparkMainTest {
-  @ClassRule
-  public static SparkTestContext sparkTestContext = SparkTestContext.getSparkTestContext();
+    TestUnKeyedTableDataFrameAPI.class})
+public class ArcticSparkNonHiveMainTest {
 
   @BeforeClass
   public static void suiteSetup() throws IOException {
-    sparkTestContext.setUpTestDirAndArctic();
-    sparkTestContext.cleanUpAdditionSparkConfigs();
-    sparkTestContext.setUpSparkSession();
+    SparkTestContext.setUpTestDirAndArctic();
+    SparkTestContext.cleanUpAdditionSparkConfigs();
+    SparkTestContext.setUpSparkSession();
   }
   @AfterClass
   public static void suiteTeardown() {
-    sparkTestContext.cleanUpAms();
-    sparkTestContext.cleanUpSparkSession();
+    SparkTestContext.cleanUpAms();
+    SparkTestContext.cleanUpSparkSession();
   }
 
 }
