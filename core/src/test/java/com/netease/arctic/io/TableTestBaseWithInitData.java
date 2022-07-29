@@ -103,7 +103,7 @@ public class TableTestBaseWithInitData extends TableTestBase {
     // write position delete
     {
       SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(4).buildBasePosDeleteWriter(2, 1, dataFileForPositionDelete.partition());
+          .withTransactionId(4).buildBasePosDeleteWriter(3, 3, dataFileForPositionDelete.partition());
       writer.delete(dataFileForPositionDelete.path().toString(), 0);
       DeleteFile posDeleteFiles = writer.complete().stream().findAny().get();
       this.deleteFileOfPositionDelete = posDeleteFiles;
