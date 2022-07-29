@@ -1,8 +1,8 @@
 # 使用Docker快速开始
-本指南将用Docker帮助您快速启动并部署AMS(Arctic Meta Service)，Spark，Flink环境，并体验Arctic的各种功能。
+本指南将用Docker帮助您快速启动并部署AMS(Arctic Meta Service),Spark和Flink环境，并体验Arctic的各种功能。
 
 ## Docker-Compose
-使用Docker-Compose将很快帮助您搭建起一套Arctic使用所需的环境，相关镜像已上传到Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams)镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink)镜像已包含Flink及所需环境。
+使用Docker-Compose将很快帮助您搭建起一套Arctic使用所需的环境，相关镜像已上传到Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams)镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink)镜像已包含Flink及所需环境。(Spark相关镜像已上传到[arctic163/spark](https://hub.docker.com/repository/docker/arctic163/spark)，如有需要请您自行拉取使用)
   
 要使用Docker以及Docker-Compose，您需要安装[Docker CLI](https://docs.docker.com/get-docker/)以及[Docker Compose CLI](https://github.com/docker/compose-cli/blob/main/INSTALL.md)。  
   
