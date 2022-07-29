@@ -4,7 +4,7 @@
       <span class="g-mr-8">{{`${$t('version')}:  ${verInfo.version}`}}</span>
       <span class="g-mr-8">{{`${$t('commitTime')}:  ${verInfo.commitTime}`}}</span>
     </div>
-    <a-tooltip>
+    <a-tooltip placement="bottomRight" arrow-point-at-center>
       <template #title>{{$t('userGuide')}}</template>
       <question-circle-outlined class="question-icon" @click="goDocs" />
     </a-tooltip>

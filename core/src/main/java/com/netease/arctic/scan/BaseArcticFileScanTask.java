@@ -28,6 +28,9 @@ import org.apache.iceberg.expressions.Expressions;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.netease.arctic.data.DefaultKeyedFile.parseMetaFromFileName;
 
 /**
  * Base implementation of {@link ArcticFileScanTask}
@@ -46,10 +49,16 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this(baseFile, posDeleteFiles, spec, Expressions.alwaysTrue());
   }
 
-  public BaseArcticFileScanTask(PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec,
+  public BaseArcticFileScanTask(
+      PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec,
       Expression expression) {
     this.baseFile = baseFile;
-    this.posDeleteFiles = posDeleteFiles == null ? Collections.emptyList() : posDeleteFiles;
+    this.posDeleteFiles = posDeleteFiles == null ?
+        Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
+          DefaultKeyedFile.FileMeta fileMeta = parseMetaFromFileName(s.path().toString());
+          return fileMeta.node().index() == baseFile.node().index() &&
+            fileMeta.node().mask() == baseFile.node().mask();
+        }).collect(Collectors.toList());
     this.spec = spec;
     this.expression = expression;
   }

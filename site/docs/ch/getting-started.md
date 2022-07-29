@@ -27,11 +27,11 @@ java -version
 AMS中的optimizer负责自动为表进行结构优化，AMS默认配置下会有一个类型为local的optimizer group，这里需要在此group下创建一个optimizer。
 进入AMS的Optimizing页面，选择Optimizers。
 
-![Optimizing.png](img/Optimizing.png)
+![Optimizing.png](images/Optimizing.png)
 
 点击`Scale-Out`按钮选择对应`Optimizer Group`并且配置optimizer并发度，点击OK后即完成了optimizer的创建。
 
-![ScaleOut.png](img/ScaleOut.png)
+![ScaleOut.png](images/ScaleOut.png)
 
 ## 建表
 
@@ -44,7 +44,7 @@ create table test_db.test_table(
   name string,
   op_time timestamp,
   primary key(id)
-) using arctic partitioned by(days(op_time));
+) partitioned by(days(op_time)) using arctic;
 ```
 
 ## 实时写入与读取
@@ -268,44 +268,44 @@ select * from test_db.test_table order by id;
 启动optimizer之后，表的结构优化会自动触发。
 登录并进入[AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](img/table_optimizing.png)
+![table_optimizing](images/table_optimizing.png)
 
 其中：
 
- - Status：结构优化的状态，可能为：Idle，Pending，MinorOptimizing，MajorOptimizing
+- Status：结构优化的状态，可能为：Idle，Pending，MinorOptimizing，MajorOptimizing
 
- - Duration：进入到该状态的持续时间
+- Duration：进入到该状态的持续时间
 
- - File Count：准备或者正在进行合并的文件个数
+- File Count：准备或者正在进行合并的文件个数
 
- - File size：准备或者正在进行合并的文件大小
+- File size：准备或者正在进行合并的文件大小
 
- - Quota：表的资源配额
+- Quota：表的资源配额
 
- - Quota Occupation：最近1个小时内，该表的实际配额占用百分比
+- Quota Occupation：最近1个小时内，该表的实际配额占用百分比
 
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取](#_3)，测试表预期会进行3次结构优化，分别是2次minor optimize, 一次major optimize。
+如果已经完成[实时写入与读取](#_3)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
 
-![optimize_history](img/optimize_history.png)
+![optimize_history](images/optimize_history.png)
 
 上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
 
- - StartTime：结构优化的开始时间
+- StartTime：结构优化的开始时间
 
- - Duration：结构优化的持续时间
+- Duration：结构优化的持续时间
 
- - Input：合并之前的文件个数和文件大小
+- Input：合并之前的文件个数和文件大小
 
- - Output：合并新生成的文件个数和文件大小
+- Output：合并生成的文件个数和文件大小
 
-两次 Optimize 之后，文件情况如下，以分区 op_time_day=2022-07-02 为例
+两次 Optimize 之后，文件情况如下
 
-![files_after_optimize](img/files_after_optimize.png)
+![files_after_optimize](images/files_after_optimize.png)
 
-新增的1个 pos-delete 是 minor optimize 的结果，而新增的1个 base file 是 major optimize 的结果，由于只有一行数据被删除，因此只有1个 base 文件和 pos-delete 文件合并生成了最终的 base file。
+新增的4个 pos-delete 是 minor optimize 的结果，而新增的一个 base file 是 major optimize 的最终结果，由于当前的 pos-delete 的数据量还比较少，因此 major optimize 并没有将它们删除。
 
 更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-structure.md#_3)。
 
@@ -370,7 +370,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
 ???+ note
 
-    修改配置文件后需重启AMS服务才可生效，参考[AMS重启](#ams)
+    修改配置文件后需重启AMS服务才可生效，参考[AMS重启](#ams_1)
 
 **3.启动optimizer**
 

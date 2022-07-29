@@ -1,4 +1,4 @@
-![logo](site/docs/img/arctic_logo_for_git.png)
+![logo](site/overrides/images/arctic_logo_for_git.png)
 
 Welcome to arctic, arctic is a streaming lake warehouse system open sourced by NetEase.
  Arctic adds more real-time capabilities on top of iceberg and hive, and provides stream-batch unified, out-of-the-box metadata services for dataops, 
@@ -8,7 +8,7 @@ Arctic is a streaming lakehouse service built on top of apache iceberg table for
 Through arctic, users could benefit optimized CDC、streaming update、fresh olap etc. on engines like flink, spark, and trino. 
 Combined with efficient offline processing capabilities of data lakes, arctic can serve more scenarios where streaming and batch are fused. 
 At the same time, the function of self-optimization、concurrent conflict resolution and standard management tools could effectively reduce the burden on users in data lake management and optimization.
-![Introduce](site/docs/img/arctic_introduce.png)
+![Introduce](site/overrides/images/arctic_introduce.png)
 
 Arctic services are presented by deploying AMS, which can be considered as a replacement for HMS (Hive Metastore), or HMS for iceberg. 
 Arctic uses iceberg as the base table format, but instead of hacking the iceberg implementation, it uses iceberg as a lib. 
@@ -73,4 +73,4 @@ Arctic support multiple processing engines as below:
 
 ## Quickstart
 
-Visit [https://arctic.netease.com/getting-started/](https://arctic.netease.com/getting-started/) to quickly explore what arctic can do.
+Visit [https://arctic.netease.com/ch/getting-started/](https://arctic.netease.com/ch/getting-started/) to quickly explore what arctic can do.

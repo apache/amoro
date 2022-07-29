@@ -1,30 +1,39 @@
 site_name: Arctic
 site_description: Arctic is a pluggable streaming lakehouse service layer on top of hive and iceberg
 
+docs_dir: '../../docs/en'
+site_dir: '../../generated/en'
 remote_name: arctic-site
 use_directory_urls: true
-
 repo_url: https://github.com/NetEase/arctic
 repo_name: NetEase/arctic
 edit_uri: ""
 
 # pip install mkdocs-material
 theme:
+    font:
+      text: sans-serif
     name: material
-    language: zh
-    favicon: img/favicon.ico
-    logo: img/logo.png
+    language: en
+    custom_dir: '../../overrides/'
+    favicon: images/favicon.ico
+    logo: images/arctic_banner.png
     palette:
-        # https://cyent.github.io/markdown-with-mkdocs-material/appendix/color/
-        primary: 'Indigo'
-        accent: 'Teal'
+        primary: indigo
+        accent: indigo
     icon:
-        repo: fontawesome/brands/github
-
+      repo: fontawesome/brands/github
 
 extra:
   search:
-    language: 'jp'
+    language: 'en'
+  alternate:
+    - name: 中文
+      link: /ch/
+      lang: zh-Hant
+    - name: English
+      link: /en/
+      lang: en
 
 copyright: "Copyright 2018-2021"
 
@@ -41,11 +50,11 @@ markdown_extensions:
       emoji_generator: !!python/name:materialx.emoji.to_svg
 
 nav:
-  - 概述: index.md
-  - 快速开始: getting-started.md
-  - 表:
-      - 结构: table-structure.md
-      - 配置: table-properties.md
+  - Overview: index.md
+  - Quickstart: getting-started.md
+  - Tables:
+      - Table Store: table-structure.md
+      - Table Config: table-properties.md
   - Flink: flink.md
   - Spark:
       - Getting Started: spark/spark-get-started.md
@@ -57,3 +66,6 @@ nav:
 
 plugins:
   - search
+
+extra_css:
+  - stylesheets/extra.css

@@ -29,9 +29,9 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
-import com.netease.arctic.ams.server.utils.SerializationUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -91,7 +91,7 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
-  public TableTaskHistory onExecuting(JobId jobId, String attemptId, TableOptimizeItem tableItem) {
+  public TableTaskHistory onExecuting(JobId jobId, String attemptId) {
     lock.lock();
     try {
       long currentTime = System.currentTimeMillis();
@@ -275,8 +275,6 @@ public class OptimizeTaskItem extends IJDBCService {
 
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
-      OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
-          getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
       InternalTableFilesMapper internalTableFilesMapper =
           getMapper(sqlSession, InternalTableFilesMapper.class);
 
@@ -323,8 +321,6 @@ public class OptimizeTaskItem extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(false)) {
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
-      OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
-          getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
       InternalTableFilesMapper internalTableFilesMapper =
           getMapper(sqlSession, InternalTableFilesMapper.class);
       
