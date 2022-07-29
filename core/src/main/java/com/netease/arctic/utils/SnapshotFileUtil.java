@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.BaseTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -57,7 +58,7 @@ public class SnapshotFileUtil {
       deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
     }
 
-    if (table.isKeyedTable()) {
+    if (table instanceof BaseTable) {
       table.io().doAs(() -> {
         getDeleteFiles(table, snapshot, addFiles, deleteFiles);
         return null;
@@ -74,7 +75,7 @@ public class SnapshotFileUtil {
       List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
     Configuration hadoopConf = new Configuration();
     //avoid close file error when use cached FileSystem
-    hadoopConf.setBoolean("fs.hdfs.impl.disable.cache", true);
+    // hadoopConf.setBoolean("fs.hdfs.impl.disable.cache", true);
     if (table.io() instanceof ArcticHadoopFileIO) {
       ArcticHadoopFileIO io = (ArcticHadoopFileIO) table.io();
       hadoopConf = io.conf();

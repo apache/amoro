@@ -30,8 +30,10 @@ CREATE TABLE `database_metadata`
 
 CREATE TABLE `file_info_cache`
 (
+    `primary_key_md5`   varchar(64) NOT NULL,
     `table_identifier`   varchar(64) NOT NULL,
     `add_snapshot_id`    bigint(20) NOT NULL,
+    `parent_snapshot_id` bigint(20) NOT NULL,
     `delete_snapshot_id` bigint(20) DEFAULT NULL,
     `inner_table`        varchar(64)          DEFAULT NULL,
     `file_path`          varchar(400)         NOT NULL,
@@ -45,7 +47,7 @@ CREATE TABLE `file_info_cache`
     `action`             varchar(64)          DEFAULT NULL,
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `watermark`          timestamp  NULL DEFAULT NULL,
-    PRIMARY KEY (`table_identifier`,`inner_table`,`file_path`),
+    PRIMARY KEY (`primary_key_md5`),
     KEY                  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
