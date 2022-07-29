@@ -12,17 +12,6 @@ services:
       - arctic_network
     tty: true
     stdin_open: true
-  spark:
-    image: arctic163/spark
-    depends_on:
-      - ams
-    container_name: arctic_spark
-    volumes:
-      - ./data:/tmp/arctic/warehouse
-    networks:
-      - arctic_network
-    tty: true
-    stdin_open: true
   flink:
     image: arctic163/flink
     depends_on:

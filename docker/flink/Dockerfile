@@ -20,6 +20,8 @@ RUN wget ${APACHE_FLINK_URL}/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-s
     && cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ENV FLINK_HOME=/usr/local/arctic_flink/flink-${FLINK_VERSION} \
     PATH=${PATH}:${FLINK_HOME}/bin
+WORKDIR ${FLINK_HOME}
+COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 
 CMD ["/bin/bash"]
 

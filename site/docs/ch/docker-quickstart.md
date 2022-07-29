@@ -1,14 +1,8 @@
 # 使用Docker快速开始
 本指南将用Docker帮助您快速启动并部署AMS(Arctic Meta Service)，Spark，Flink环境，并体验Arctic的各种功能。
 
-- [Docker-Compose](#Docker-Compose)
-- [启动AMS](#启动AMS)
-- [实时写入与读取-Flink](#实时写入与读取-Flink)
-- [结构优化](#结构优化)
-- [Spark](#Spark)
-
 ## Docker-Compose
-使用Docker-Compose将很快帮助您搭建起一套Arctic使用所需的环境，相关镜像已上传到Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams)镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink)镜像已包含Flink及所需环境。[arctic163/spark](https://hub.docker.com/repository/docker/arctic163/spark)镜像已包含Spark及所需环境。
+使用Docker-Compose将很快帮助您搭建起一套Arctic使用所需的环境，相关镜像已上传到Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams)镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink)镜像已包含Flink及所需环境。
   
 要使用Docker以及Docker-Compose，您需要安装[Docker CLI](https://docs.docker.com/get-docker/)以及[Docker Compose CLI](https://github.com/docker/compose-cli/blob/main/INSTALL.md)。  
   
@@ -24,17 +18,6 @@ services:
     ports:
       - 1630:1630
       - 1260:1260
-    networks:
-      - arctic_network
-    tty: true
-    stdin_open: true
-  spark:
-    image: arctic163/spark
-    depends_on:
-      - ams
-    container_name: arctic_spark
-    volumes:
-      - ./data:/tmp/arctic/warehouse
     networks:
       - arctic_network
     tty: true
@@ -61,30 +44,15 @@ networks:
 ```shell
 docker-compose up -d
 ```
-启动成功后，使用```docker ps```命令查看当前已启动的容器，您将看到三个容器，分别为ams, arctic_flink, arctic_spark。  
+启动成功后，使用```docker ps```命令查看当前已启动的容器，您将看到两个个容器，分别为ams和arctic_flink。 
 ## 启动AMS
 如[概述](index.md)中所述，AMS(Arctic Meta Service)是Arctic中负责元数据管理与结构优化的独立服务，使用Arctic的第一步就是启动AMS。  
-**1.进入ams容器**  
 
-使用以下命令进入ams容器：
-```shell
-docker exec -it ams /bin/bash
-```
-进入arctic目录:
-```shell
-cd arctic-0.3.0
-```
-**2.启动AMS**
+**1.启动AMS**  
 
-通过如下命令启动AMS：
+我们已经在ams容器中自动为您启动了AMS服务，如果您的ams容器已经启动成功，可通过 [AMS Dashboard](http://localhost:1630) 来访问ams页面，默认的用户名密码为：`admin/admin`。
 
-```shell
-./bin/ams.sh start
-```
-
-启动后即可通过 [AMS Dashboard](http://localhost:1630) 来访问ams页面，默认的用户名密码为：`admin/admin`。
-
-**3.启动Optimizer**
+**2.启动Optimizer**
 
 AMS中的optimizer负责自动为表进行结构优化，AMS默认配置下会有一个类型为local的optimizer group，这里需要在此group下创建一个optimizer。
 进入AMS的Optimizing页面，选择Optimizers。
@@ -109,31 +77,16 @@ create table test_db.test_table(
 ) partitioned by(days(op_time)) using arctic;
 ```
 
-## 实时写入与读取-Flink
+## 实时写入与读取
 入门试用推荐使用 [Flink SQL Client](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html),
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
-**1.进入arctic_flink容器**  
+**1.启动flink sql client**  
 
 使用以下命令进入arctic_flink容器。
 ```shell
 docker exec -it arctic_flink /bin/bash
-```
-**2.修改相关配置并启动Flink SQL Client**  
-
-修改 Flink 相关配置文件：
-
-```shell
-cd flink-1.12.7
-vim conf/flink-conf.yaml
-```
-修改下面的配置：
-```yaml
-# 需要同时运行两个流任务，增加 slot
-taskmanager.numberOfTaskSlots: 4
-# 开启 Checkpoint。只有开启 Checkpoint，写入 file 的数据才可见
-execution.checkpointing.interval: 10s
 ```
 
 启动flink sql client:
@@ -141,7 +94,7 @@ execution.checkpointing.interval: 10s
 ./bin/start-cluster.sh
 ./bin/sql-client.sh embedded
 ```
-**3.启动 Flink 实时任务**  
+**2.启动 Flink 实时任务**  
 
 在sql client中输入下面的sql:
 
@@ -177,7 +130,7 @@ SET table.dynamic-table-options.enabled=true;
 SELECT id, `name` FROM arctic.test_db.test_table/*+OPTIONS('streaming' = 'true')*/;
 ```
 
-**4.模拟测试数据**  
+**3.模拟测试数据**  
 
 打开一个新的arctic_flink容器窗口。(注意，不是创建一个新的容器)  
 ```shell
@@ -325,7 +278,7 @@ select * from test_db.test_table order by id;
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取-Flink](#实时写入与读取-Flink)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
+如果已经完成[实时写入与读取](#实时写入与读取)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
 
 ![optimize_history](images/optimize_history.png)
 
@@ -346,91 +299,3 @@ select * from test_db.test_table order by id;
 新增的4个 pos-delete 是 minor optimize 的结果，而新增的一个 base file 是 major optimize 的最终结果，由于当前的 pos-delete 的数据量还比较少，因此 major optimize 并没有将它们删除。
 
 更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-structure.md#_3)。
-
-## Spark
-Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批量读写，并且采用了 Merge-On-Read 模式，以此保证数据近实时性。 数据的延迟，取决于数据最终写入 HDFS
-的延迟，一旦数据落盘成功，使用 Arctic-Spark-Connector 即可立即访问到最新数据。 当前仅支持 Spark SQL 作业(Jar暂不支持)对 Arctic 表的数据进行近实时的 ETL。  
-
-**1.进入arctic_spark容器**  
-```shell
-docker exec -it arctic_spark /bin/bash
-```
-
-**2.启动Spark-SQL**  
-
-通过 Bash 启动Spark-Sql 客户端。
-```shell
-${SPARK_HOME}/bin/spark-sql \
-    --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
-    --conf spark.sql.catalog.local_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
-    --conf spark.sql.catalog.local_catalog.url=thrift://ams:1260/local_catalog
-```
-### 创建表
-
-在 Spark SQL 命令行中，可以通过 `CREATE TABLE` 语句执行建表命令。
-
-在执行建表操作前，请先创建 database 。
-
-```
--- switch to arctic catalog defined in spark conf
-use local_catalog;
-
--- create databsae first 
-create database if not exists test_db;
-```
-
-然后切换到刚建立的 database 下进行建表操作
-
-```
-use test_db;
-
--- create a table with 3 columns
-create table test1 (id int, data string, ts timestamp) using arctic;
-
--- create a table with hidden partition
-create table test2 (id int, data string, ts timestamp) using arctic partitioned by (days(ts));
-
--- create a table with hidden partition and primary key
-create table test3 (id int, data string, ts timestamp, primary key(id)) using arctic partitioned by (days(ts));
-```
-
-
-### 写入
-
-如果您使用SparkSQL, 可以通过 `INSERT OVERWRITE` 或 `INSERT` SQL语句向 Arctic 表写入数据。
-
-```
--- insert values into unkeyed table
-insert into test2 values 
-( 1, "aaa", timestamp('2022-1-1 00:00:00')),
-( 2, "bbb", timestamp('2022-1-2 00:00:00')),
-( 3, "bbb", timestamp('2022-1-3 00:00:00'));
-
--- dynamic overwrite table 
-insert overwrite test3 values 
-( 1, "aaa", timestamp('2022-1-1 00:00:00')),
-( 2, "bbb", timestamp('2022-1-2 00:00:00')),
-( 3, "bbb", timestamp('2022-1-3 00:00:00'));
-```
-
-> 在当前版本中, 只在无主键表上支持 insert into 语法，在有主键表上目前只支持 insert overwrite 语法
-
-> 如果使用 static 类型的 Overwrite, 不能在分区上定义函数。  
-
-### 读取
-
-使用 `SELECT` SQL语句查询 Arctic 表
-
-``` 
-select count(1) as count, data 
-from test2 
-group by data;
-```
-
-对于有主键表，支持通过 `.change` 的方式访问 `ChangeStore`
-
-``` 
-select count(1) as count, data
-from test_db.test3.change group by data;
-```
-> 此处change表没有数据，结果返回空
