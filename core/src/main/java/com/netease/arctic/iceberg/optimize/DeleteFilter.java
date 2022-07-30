@@ -18,6 +18,9 @@
 
 package com.netease.arctic.iceberg.optimize;
 
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.scan.ArcticFileScanTask;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -77,12 +80,24 @@ public abstract class DeleteFilter<T> {
     this.setFilterThreshold = DEFAULT_SET_FILTER_THRESHOLD;
     this.dataFile = task.file();
 
+    DataTreeNode dataNode = null;
+    if (task instanceof ArcticFileScanTask){
+      dataNode = DefaultKeyedFile.parseMetaFromFileName(task.file().path().toString()).node();
+    }
+
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
     for (DeleteFile delete : task.deletes()) {
       switch (delete.content()) {
         case POSITION_DELETES:
-          posDeleteBuilder.add(delete);
+          if (task instanceof ArcticFileScanTask){
+            DataTreeNode pdNode = DefaultKeyedFile.parseMetaFromFileName(delete.path().toString()).node();
+            if (dataNode.index() == pdNode.index() && dataNode.mask() == pdNode.mask()) {
+              posDeleteBuilder.add(delete);
+            }
+          } else {
+            posDeleteBuilder.add(delete);
+          }
           break;
         case EQUALITY_DELETES:
           eqDeleteBuilder.add(delete);
