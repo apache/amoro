@@ -57,11 +57,11 @@ docker-compose up -d
 AMS中的optimizer负责自动为表进行结构优化，AMS默认配置下会有一个类型为local的optimizer group，这里需要在此group下创建一个optimizer。
 进入AMS的Optimizing页面，选择Optimizers。
 
-![Optimizing.png](site/overrides/images/Optimizing.png)
+![Optimizing.png](../../overrides/images/Optimizing.png)
 
 点击`Scale-Out`按钮选择对应`Optimizer Group`并且配置optimizer并发度，点击OK后即完成了optimizer的创建。
 
-![ScaleOut.png](site/overrides/images/ScaleOut.png)
+![ScaleOut.png](../../overrides/images/ScaleOut.png)
 
 ### 建表
 
@@ -259,7 +259,7 @@ select * from test_db.test_table order by id;
 启动optimizer之后，表的结构优化会自动触发。
 登录并进入[AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](site/overrides/images/table_optimizing.png)
+![table_optimizing](../../overrides/images/table_optimizing.png)
 
 其中：
 
@@ -280,7 +280,7 @@ select * from test_db.test_table order by id;
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
 如果已经完成[实时写入与读取](#实时写入与读取)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
 
-![optimize_history](site/overrides/images/optimize_history.png)
+![optimize_history](../../overrides/images/optimize_history.png)
 
 上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
 
@@ -294,7 +294,7 @@ select * from test_db.test_table order by id;
 
 两次 Optimize 之后，文件情况如下
 
-![files_after_optimize](site/overrides/images/files_after_optimize.png)
+![files_after_optimize](../../overrides/images/files_after_optimize.png)
 
 新增的4个 pos-delete 是 minor optimize 的结果，而新增的一个 base file 是 major optimize 的最终结果，由于当前的 pos-delete 的数据量还比较少，因此 major optimize 并没有将它们删除。
 
