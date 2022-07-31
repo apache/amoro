@@ -38,7 +38,7 @@ public class ParamSignatureCalculator {
   }
 
   /**
-   * 计算字符串的md5值
+   * To calculate md5
    *
    * @param value
    * @return
@@ -54,10 +54,10 @@ public class ParamSignatureCalculator {
   }
 
   /**
-   * 根据请求参数对，获取升序的 keyvalue拼接字符串。
+   * Gets an ascending KeyValue concatenation string based on the request argument pair.
    * 例：
    * params: name=&value=111&age=11&sex=1&high=180&nick=
-   * 去除空，升序排列： age11high180sex1value111
+   * Remove null and arrange in ascending order： age11high180sex1value111
    *
    * @param map
    * @return
@@ -91,7 +91,7 @@ public class ParamSignatureCalculator {
     for (int i = 0; i < keyArray.length; i++) {
       List<String> values = map.get(keyArray[i]);
       Collections.sort(values);
-      // 如果有值，只取第1个值进行校验
+
       if (values.size() >= 1) {
         if (!StringUtils.isBlank(values.get(0))) {
           try {
