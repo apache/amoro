@@ -25,4 +25,11 @@ public class ApiTokenService extends IJDBCService {
       apiTokensMapper.insert(apiToken);
     }
   }
+
+  public void deleteApiToken(Integer  id) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      ApiTokensMapper  apiTokensMapper = getMapper(sqlSession, ApiTokensMapper.class);
+      apiTokensMapper.delToken(id);
+    }
+  }
 }

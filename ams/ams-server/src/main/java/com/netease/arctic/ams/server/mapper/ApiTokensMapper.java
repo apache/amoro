@@ -12,10 +12,11 @@ public interface ApiTokensMapper {
           TABLE_NAME + " where apikey = #{apikey}")
   String getSecretBykey(String apikey);
 
-  @Insert("insert into " + TABLE_NAME + "(apikey,secret,applyTime) values(#{apiTokens.apikey}," +
+  @Insert("insert into " + TABLE_NAME + " (apikey,secret,applyTime) values(#{apiTokens.apikey}," +
           "#{apiTokens.secret},#{apiTokens.applyTime})")
   void insert(ApiTokens apiTokens);
 
-  void delToken(@Param(value = "id") Integer id);
+  @Insert("delete from " + TABLE_NAME + " where id = #{id}")
+  void delToken(Integer id);
 
 }
