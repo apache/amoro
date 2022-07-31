@@ -82,7 +82,7 @@ public class ParamSignatureCalculator {
     return sb.toString();
   }
 
-  public static String generateParamStringWithValueArray(Map<String, List<String>> map) {
+  public static String generateParamStringWithValueList(Map<String, List<String>> map) {
     Set<String> set = map.keySet();
     String[] keyArray = (String[]) set.toArray(new String[set.size()]);
     StringBuffer sb = new StringBuffer("");

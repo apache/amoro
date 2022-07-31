@@ -115,7 +115,7 @@ public class AmsRestServer {
           params.remove("apiKey");
           params.remove("signature");
 
-          String paramString = ParamSignatureCalculator.generateParamStringWithValueArray(params);
+          String paramString = ParamSignatureCalculator.generateParamStringWithValueList(params);
           if (StringUtils.isBlank(paramString)) {
             encryptString = ParamSignatureCalculator.SIMPLE_DATE_FORMAT.format(new Date());
           } else {
