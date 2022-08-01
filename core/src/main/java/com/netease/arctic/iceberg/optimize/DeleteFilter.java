@@ -18,9 +18,6 @@
 
 package com.netease.arctic.iceberg.optimize;
 
-import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
