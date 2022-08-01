@@ -48,7 +48,7 @@ import javax.xml.bind.DatatypeConverter
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
+class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
   extends ArcticExtendSparkSqlBaseVisitor[AnyRef] with SQLConfHelper with Logging{
   import ParserUtils._
   
@@ -66,13 +66,37 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
     )
   }
 
-  override def visitCreateTable(ctx: ArcticExtendSparkSqlParser.CreateTableContext): LogicalPlan = withOrigin(ctx) {
+   type colListAndPk = (Seq[StructField], Seq[String])
+
+  private def visitColListAndPk(ctx: ArcticExtendSparkSqlParser.ColListAndPkContext): colListAndPk = {
+    ctx match {
+      case colWithPk: ColListWithPkContext =>
+        (visitColTypeList(colWithPk.colTypeList()), visitPrimarySpec(colWithPk.primarySpec()))
+      case colOnlyPk: ColListOnlyPkContext =>
+        (Nil, visitPrimarySpec(colOnlyPk.primarySpec()))
+      case _ =>
+        throw new ParseException("Invalid InsertIntoContext", ctx)
+    }
+  }
+
+  override def visitCreateTableWithPk(ctx: ArcticExtendSparkSqlParser.CreateTableWithPkContext): LogicalPlan = withOrigin(ctx) {
+    visitCreateTableWithPrimaryKey(ctx.createTableWithPrimaryKey())
+  }
+
+  override def visitCreateTableWithPrimaryKey(ctx: ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext): LogicalPlan = withOrigin(ctx) {
     val (table, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
 
-    val columns = Option(ctx.colTypeList()).map(visitColTypeList).getOrElse(Nil)
+    val colListAndPk = visitColListAndPk(ctx.colListAndPk())
+    val columns = Option(colListAndPk._1).getOrElse(Nil)
     val provider = Option(ctx.tableProvider).map(_.multipartIdentifier.getText)
-    val (partTransforms, partCols, bucketSpec, properties, options, location, comment, serdeInfo, primaryForCtas) =
+    val (partTransforms, partCols, bucketSpec, properties, options, location, comment, serdeInfo) = {
       visitCreateTableClauses(ctx.createTableClauses())
+    }
+
+    var primaryForCtas: Seq[String] = Seq.empty
+    if (columns.isEmpty) {
+      primaryForCtas = colListAndPk._2
+    }
 
     if (provider.isDefined && serdeInfo.isDefined) {
       operationNotAllowed(s"CREATE TABLE ... USING ... ${serdeInfo.get.describe}", ctx)
@@ -99,7 +123,7 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
           ctx)
 
       case Some(query) =>
-        val propertiesMap = buildProperties(primaryForCtas.get, properties)
+        val propertiesMap = buildProperties(primaryForCtas, properties)
         var writeOptions: Map[String, String] = Map.empty
         writeOptions += ("overwrite-mode" -> "dynamic")
         CreateTableAsSelectStatement(
@@ -114,7 +138,7 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
             "Primary keys do not allow this input format in a Create Table",
             ctx)
         }
-        val primary = visitPrimarySpec(ctx.colTypeList().primarySpec())
+        val primary = colListAndPk._2
         // Setting the primary key not nullable
         val newColumns = setPrimaryKeyNotNull(columns, primary)
         val schema = StructType(newColumns ++ partCols)
@@ -140,7 +164,7 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
 
   type TableClauses = (
     Seq[Transform], Seq[StructField], Option[BucketSpec], Map[String, String],
-      Map[String, String], Option[String], Option[String], Option[SerdeInfo],  Option[Seq[String]])
+      Map[String, String], Option[String], Option[String], Option[SerdeInfo])
 
 
   protected def visitPrimarySpecList(ctx: util.List[ArcticExtendSparkSqlParser.PrimarySpecContext]): Option[Seq[String]] = {
@@ -178,11 +202,10 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
     val location = visitLocationSpecList(ctx.locationSpec())
     val (cleanedOptions, newLocation) = cleanTableOptions(ctx, options, location)
     val comment = visitCommentSpecList(ctx.commentSpec())
-    val primary = visitPrimarySpecList(ctx.primarySpec())
     val serdeInfo =
       getSerdeInfo(ctx.rowFormat.asScala.toSeq, ctx.createFileFormat.asScala.toSeq, ctx)
     (partTransforms, partCols, bucketSpec, cleanedProperties, cleanedOptions, newLocation, comment,
-      serdeInfo, primary)
+      serdeInfo)
   }
 
   protected def typedVisit[T](ctx: ParseTree): T = {
@@ -204,6 +227,10 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
 
   override def visitSingleStatement(ctx: SingleStatementContext): LogicalPlan = withOrigin(ctx) {
     visit(ctx.statement).asInstanceOf[LogicalPlan]
+  }
+
+  override def visitArcticCommand(ctx: ArcticCommandContext): LogicalPlan = withOrigin(ctx) {
+    visit(ctx.arcticStatement).asInstanceOf[LogicalPlan]
   }
 
   override def visitSingleExpression(ctx: SingleExpressionContext): Expression = withOrigin(ctx) {
@@ -3123,7 +3150,7 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
       operationNotAllowed("REPLACE ... IF NOT EXISTS, use CREATE IF NOT EXISTS instead", ctx)
     }
 
-    val (partTransforms, partCols, bucketSpec, properties, options, location, comment, serdeInfo, primary) =
+    val (partTransforms, partCols, bucketSpec, properties, options, location, comment, serdeInfo) =
       visitCreateTableClauses(ctx.createTableClauses())
     val columns = Option(ctx.colTypeList()).map(visitColTypeList).getOrElse(Nil)
     val provider = Option(ctx.tableProvider).map(_.multipartIdentifier.getText)

@@ -28,7 +28,9 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * test base class for normal spark tests.
@@ -84,6 +86,7 @@ public class SparkTestBase extends SparkTestContext {
     }
 
     Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.toArray(), descPrimaryKeys.toArray());
+    Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
+        descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 }

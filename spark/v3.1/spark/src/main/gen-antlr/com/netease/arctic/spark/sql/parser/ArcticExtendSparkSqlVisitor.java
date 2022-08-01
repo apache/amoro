@@ -1,4 +1,4 @@
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7
+// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlCommand.g4 by ANTLR 4.7
 package com.netease.arctic.spark.sql.parser;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -11,23 +11,44 @@ import org.antlr.v4.runtime.tree.ParseTreeVisitor;
  */
 public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	/**
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#arcticCommand}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArcticCommand(ArcticExtendSparkSqlParser.ArcticCommandContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code createTableWithPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#arcticStatement}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCreateTableWithPk(ArcticExtendSparkSqlParser.CreateTableWithPkContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableWithPrimaryKey}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCreateTableWithPrimaryKey(ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#primarySpec}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
 	T visitPrimarySpec(ArcticExtendSparkSqlParser.PrimarySpecContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#colTypeList}.
+	 * Visit a parse tree produced by the {@code colListWithPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#colListAndPk}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
+	T visitColListWithPk(ArcticExtendSparkSqlParser.ColListWithPkContext ctx);
 	/**
-	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
+	 * Visit a parse tree produced by the {@code colListOnlyPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#colListAndPk}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
 	 */
-	T visitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
+	T visitColListOnlyPk(ArcticExtendSparkSqlParser.ColListOnlyPkContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#singleStatement}.
 	 * @param ctx the parse tree
@@ -681,6 +702,12 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitTableProvider(ArcticExtendSparkSqlParser.TableProviderContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableClauses}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitCreateTableClauses(ArcticExtendSparkSqlParser.CreateTableClausesContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#tablePropertyList}.
 	 * @param ctx the parse tree
@@ -1634,6 +1661,12 @@ public interface ArcticExtendSparkSqlVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitQualifiedColTypeWithPosition(ArcticExtendSparkSqlParser.QualifiedColTypeWithPositionContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#colTypeList}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
 	/**
 	 * Visit a parse tree produced by {@link ArcticExtendSparkSqlParser#colType}.
 	 * @param ctx the parse tree

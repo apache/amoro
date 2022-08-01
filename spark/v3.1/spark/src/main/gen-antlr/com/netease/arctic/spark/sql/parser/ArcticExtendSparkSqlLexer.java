@@ -1,4 +1,4 @@
-// Generated from com/netease/arctic/spark/sql/parser/ArcticExtendSparkSql.g4 by ANTLR 4.7
+// Generated from com/netease/arctic/spark/sql/parser/ArcticSqlCommand.g4 by ANTLR 4.7
 package com.netease.arctic.spark.sql.parser;
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
@@ -126,7 +126,7 @@ public class ArcticExtendSparkSqlLexer extends Lexer {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "','", "';'", "'('", "')'", "'.'", "'/*+'", "'*/'", "'->'", "'['", 
+			null, "'('", "','", "')'", "';'", "'.'", "'/*+'", "'*/'", "'->'", "'['", 
 			"']'", "':'", "'KEY'", "'MIGRATE'", "'ADD'", "'AFTER'", "'ALL'", "'ALTER'", 
 			"'ANALYZE'", "'AND'", "'ANTI'", "'ANY'", "'ARCHIVE'", "'ARRAY'", "'AS'", 
 			"'ASC'", "'AT'", "'AUTHORIZATION'", "'BETWEEN'", "'BOTH'", "'BUCKET'", 
@@ -853,9 +853,9 @@ public class ArcticExtendSparkSqlLexer extends Lexer {
 		"\u0a90\3\2\2\2\u0257\u0aa6\3\2\2\2\u0259\u0aab\3\2\2\2\u025b\u0aaf\3\2"+
 		"\2\2\u025d\u0acc\3\2\2\2\u025f\u0ace\3\2\2\2\u0261\u0ad7\3\2\2\2\u0263"+
 		"\u0ad9\3\2\2\2\u0265\u0adb\3\2\2\2\u0267\u0aee\3\2\2\2\u0269\u0b02\3\2"+
-		"\2\2\u026b\u0b08\3\2\2\2\u026d\u026e\7.\2\2\u026e\4\3\2\2\2\u026f\u0270"+
-		"\7=\2\2\u0270\6\3\2\2\2\u0271\u0272\7*\2\2\u0272\b\3\2\2\2\u0273\u0274"+
-		"\7+\2\2\u0274\n\3\2\2\2\u0275\u0276\7\60\2\2\u0276\f\3\2\2\2\u0277\u0278"+
+		"\2\2\u026b\u0b08\3\2\2\2\u026d\u026e\7*\2\2\u026e\4\3\2\2\2\u026f\u0270"+
+		"\7.\2\2\u0270\6\3\2\2\2\u0271\u0272\7+\2\2\u0272\b\3\2\2\2\u0273\u0274"+
+		"\7=\2\2\u0274\n\3\2\2\2\u0275\u0276\7\60\2\2\u0276\f\3\2\2\2\u0277\u0278"+
 		"\7\61\2\2\u0278\u0279\7,\2\2\u0279\u027a\7-\2\2\u027a\16\3\2\2\2\u027b"+
 		"\u027c\7,\2\2\u027c\u027d\7\61\2\2\u027d\20\3\2\2\2\u027e\u027f\7/\2\2"+
 		"\u027f\u0280\7@\2\2\u0280\22\3\2\2\2\u0281\u0282\7]\2\2\u0282\24\3\2\2"+

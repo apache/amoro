@@ -67,7 +67,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
 
   @Test
   public void testPrimaryKeyCTAS() {
-    sql("create table {0}.{1} using arctic primary key(id) AS SELECT * from {2}.{3}.{4}",
+    sql("create table {0}.{1} primary key(id) using arctic  AS SELECT * from {2}.{3}.{4}",
         database, table, catalogName, database, sourceTable);
     assertTableExist(identifier);
     sql("desc table {0}.{1}", database, table);

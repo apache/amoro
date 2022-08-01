@@ -20,23 +20,28 @@ grammar ArcticExtendSparkSql;
 import SqlBase;
 
 
+arcticCommand
+    : arcticStatement
+    ;
+
+arcticStatement
+    : createTableWithPrimaryKey                                         #createTableWithPk
+    ;
+
+
+createTableWithPrimaryKey
+      : createTableHeader colListAndPk tableProvider
+        createTableClauses
+        (AS? query)?
+      ;
+
 primarySpec
     : PRIMARY KEY identifierList
     ;
-colTypeList
-    : colType (',' colType)* (',' primarySpec)?
-    ;
-createTableClauses
-    :((OPTIONS options=tablePropertyList) |
-    primarySpec |
-    (PARTITIONED BY partitioning=partitionFieldList) |
-    skewSpec |
-    bucketSpec |
-    rowFormat |
-    createFileFormat |
-    locationSpec |
-    commentSpec |
-    (TBLPROPERTIES tableProps=tablePropertyList))*
+
+colListAndPk
+    :'(' colTypeList (',' primarySpec )? ')'
+    | primarySpec
     ;
 
 KEY: 'KEY';
