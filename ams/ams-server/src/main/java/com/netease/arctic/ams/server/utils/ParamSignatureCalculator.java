@@ -73,7 +73,7 @@ public class ParamSignatureCalculator {
 
   /**
    * Gets an ascending KeyValue concatenation string based on the request argument pair.
-   * 例：
+   * Example：
    * params: name=&value=111&age=11&sex=1&high=180&nick=
    * Remove null and arrange in ascending order： age11high180sex1value111
    *
