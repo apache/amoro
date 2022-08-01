@@ -25,6 +25,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,14 @@ import java.util.Map;
 
 public class TestUnKeyedTableDDL extends SparkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(TestUnKeyedTableDDL.class);
+
+  @Before
+  public void prepare() {
+    sql("use " + catalogName);
+    sql("drop database if exists db_def");
+    sql("drop database if exists db_test");
+    sql("drop database if exists db");
+  }
 
   @Test
   public void testDatabaseDDL() throws Exception {
