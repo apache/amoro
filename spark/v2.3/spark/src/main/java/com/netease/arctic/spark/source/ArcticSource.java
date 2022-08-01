@@ -3,7 +3,6 @@ package com.netease.arctic.spark.source;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
-import java.util.Optional;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -18,6 +17,7 @@ import org.apache.spark.sql.sources.v2.WriteSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
+import java.util.Optional;
 
 public class ArcticSource implements DataSourceRegister, DataSourceV2,
     ReadSupport, WriteSupport, TableSupport {
@@ -64,7 +64,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   public boolean isDelegateTable(CatalogTable tableDesc) {
     SparkSession spark = SparkSession.getActiveSession().get();
     String sparkCatalogImpl = spark.conf().get(StaticSQLConf$.MODULE$.CATALOG_IMPLEMENTATION());
-    if (! "hive".equalsIgnoreCase(sparkCatalogImpl)){
+    if (!"hive".equalsIgnoreCase(sparkCatalogImpl)) {
       return false;
     }
     boolean delegateHiveTable = ArcticSparkUtil.delegateHiveTable(spark.conf());
@@ -82,10 +82,10 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
     }
     TableIdentifier identifier = tableDesc.identifier();
     ArcticCatalog catalog = catalog(spark.conf());
-    com.netease.arctic.table.TableIdentifier tId = com.netease.arctic.table.TableIdentifier.of(
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
         catalog.name(), identifier.database().get(), identifier.table()
     );
-    return catalog.tableExists(tId);
+    return catalog.tableExists(tableId);
   }
 
   private ArcticCatalog catalog(RuntimeConfig conf) {

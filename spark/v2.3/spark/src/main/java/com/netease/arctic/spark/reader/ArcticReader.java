@@ -1,6 +1,5 @@
 package com.netease.arctic.spark.reader;
 
-import java.util.List;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.v2.reader.DataReaderFactory;
@@ -10,6 +9,8 @@ import org.apache.spark.sql.sources.v2.reader.SupportsPushDownFilters;
 import org.apache.spark.sql.sources.v2.reader.SupportsPushDownRequiredColumns;
 import org.apache.spark.sql.sources.v2.reader.SupportsReportStatistics;
 import org.apache.spark.sql.types.StructType;
+
+import java.util.List;
 
 public class ArcticReader implements DataSourceReader,
     SupportsPushDownFilters, SupportsPushDownRequiredColumns, SupportsReportStatistics {

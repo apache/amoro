@@ -9,5 +9,5 @@ public interface DataSourceTable extends ReadSupport, WriteSupport {
 
   DataSourceWriter createOverwriteWriter(StructType schema);
 
-  DataSourceWriter createAppendWriter(StructType schema) ;
+  DataSourceWriter createAppendWriter(StructType schema);
 }
