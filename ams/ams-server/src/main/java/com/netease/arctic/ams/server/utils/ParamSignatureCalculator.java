@@ -80,26 +80,6 @@ public class ParamSignatureCalculator {
    * @param map
    * @return
    */
-  public static String generateParamString(Map<String, String> map) {
-    Set<String> set = map.keySet();
-    String[] keyArray = (String[]) set.toArray(new String[set.size()]);
-    StringBuffer sb = new StringBuffer("");
-    Arrays.sort(keyArray);
-    for (int i = 0; i < keyArray.length; i++) {
-      String value = map.get(keyArray[i]);
-      if (!StringUtils.isBlank(value)) {
-        try {
-          value = URLDecoder.decode(value, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-          LOG.error("Failed to caculate signature", e);
-          return null;
-        }
-        sb.append(keyArray[i]).append(value);
-      }
-    }
-    return sb.toString();
-  }
-
   public static String generateParamStringWithValueList(Map<String, List<String>> map) {
     Set<String> set = map.keySet();
     String[] keyArray = (String[]) set.toArray(new String[set.size()]);
