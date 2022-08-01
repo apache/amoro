@@ -112,7 +112,7 @@ public abstract class BaseOptimizePlan {
   public List<BaseOptimizeTask> plan() {
     long startTime = System.nanoTime();
 
-    //
+    // add check for base table file cache when optimize
     if (!baseTableCacheAll()) {
       return Collections.emptyList();
     }
