@@ -27,7 +27,6 @@ import com.netease.arctic.flink.write.MetricsGenerator;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.IdGenerator;
@@ -73,7 +72,7 @@ public class ArcticUtils {
     if (table.isUnkeyedTable()) {
       return Collections.emptyList();
     }
-    return ((KeyedTable) table).primaryKeySpec().fields()
+    return table.asKeyedTable().primaryKeySpec().fields()
         .stream()
         .map(PrimaryKeySpec.PrimaryKeyField::fieldName)
         .collect(Collectors.toList());

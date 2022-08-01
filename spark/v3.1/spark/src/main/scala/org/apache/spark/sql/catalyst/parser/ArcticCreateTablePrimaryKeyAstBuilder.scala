@@ -21,11 +21,12 @@ package org.apache.spark.sql.catalyst.parser
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticParserUtils.withOrigin
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.CreateArcticTableStatement
+import com.netease.arctic.spark.sql.execution.CreateArcticTableLikeExec
 import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlBaseVisitor, ArcticExtendSparkSqlParser}
 import org.antlr.v4.runtime.tree.{ParseTree, RuleNode}
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.catalyst.catalog.BucketSpec
+import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, CatalogUtils}
 import org.apache.spark.sql.catalyst.expressions.Literal
 import org.apache.spark.sql.catalyst.parser.CatalystSqlParser.astBuilder.{cleanTableOptions, cleanTableProperties}
 import org.apache.spark.sql.catalyst.parser.ParserUtils.{checkDuplicateClauses, checkDuplicateKeys, operationNotAllowed, string, validate}
@@ -33,6 +34,8 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.{SQLConfHelper, TableIdentifier}
 import org.apache.spark.sql.connector.expressions.{ApplyTransform, BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, LiteralValue, MonthsTransform, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.execution.command.CreateTableLikeCommand
+import org.apache.spark.sql.internal.HiveSerDe
 import org.apache.spark.sql.types._
 
 import java.util
@@ -136,6 +139,11 @@ class ArcticCreateTablePrimaryKeyAstBuilder(delegate: ParserInterface)
         plans.CreateArcticTableStatement(table, schema, partitioning, bucketSpec, properties, provider,
           options, location, comment, serdeInfo, primary, external = external, ifNotExists = ifNotExists)
     }
+  }
+
+  override def visitTableIdentifier(
+                                     ctx: ArcticExtendSparkSqlParser.TableIdentifierContext): TableIdentifier = withOrigin(ctx) {
+    TableIdentifier(ctx.table.getText, Option(ctx.db).map(_.getText))
   }
 
   /**

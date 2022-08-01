@@ -25,7 +25,7 @@ import java.util.Objects;
 
 public class TableIdentificationInfo implements Serializable {
 
-  private String amsUrl;
+  private final String amsUrl;
   private TableIdentifier tableIdentifier;
 
   public TableIdentificationInfo(String amsUrl, TableIdentifier tableIdentifier) {
@@ -35,10 +35,6 @@ public class TableIdentificationInfo implements Serializable {
 
   public String getAmsUrl() {
     return amsUrl;
-  }
-
-  public void setAmsUrl(String amsUrl) {
-    this.amsUrl = amsUrl;
   }
 
   public TableIdentifier getTableIdentifier() {

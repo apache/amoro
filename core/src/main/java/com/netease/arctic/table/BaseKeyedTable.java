@@ -28,7 +28,6 @@ import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.AmsTableTracer;
-import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
 import com.netease.arctic.utils.TablePropertyUtil;

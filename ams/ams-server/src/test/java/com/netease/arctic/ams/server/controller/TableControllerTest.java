@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.controller;
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.AmsClientPools;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.OptimizeRangeType;
@@ -109,9 +110,9 @@ public class TableControllerTest {
 
   private final Logger LOG = LoggerFactory.getLogger("TableControllerTest");
 
-  private static File testBaseDir = new File("unit_test_base_tmp");
+  private static final File testBaseDir = new File("unit_test_base_tmp");
 
-  private static MockArcticMetastoreServer ams = MockArcticMetastoreServer.getInstance();
+  private static final MockArcticMetastoreServer ams = MockArcticMetastoreServer.getInstance();
 
   private static volatile SqlSessionFactory sqlSessionFactory;
 
@@ -131,7 +132,7 @@ public class TableControllerTest {
 
   private static String catalogName;
   private static String database;
-  private static String table = "test_table";
+  private static final String table = "test_table";
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -154,7 +155,7 @@ public class TableControllerTest {
       ams.start();
     }
     catalogName = TEST_CATALOG_NAME;
-    database = ams.TEST_DB_NAME;
+    database = MockArcticMetastoreServer.TEST_DB_NAME;
 
     mockStatic(JDBCSqlSessionFactoryProvider.class);
     when(JDBCSqlSessionFactoryProvider.get()).thenAnswer((Answer<SqlSessionFactory>) invocation ->
@@ -182,7 +183,7 @@ public class TableControllerTest {
   public void testGetCatalogs() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-            app.get("/", ctx -> TableController.getCatalogs(ctx));
+            app.get("/", TableController::getCatalogs);
       final okhttp3.Response resp = client.get("/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -193,7 +194,7 @@ public class TableControllerTest {
   @Test
   public void testGetDatabaseList() {
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/", ctx -> TableController.getDatabaseList(ctx));
+      app.get("/{catalog}/", TableController::getDatabaseList);
       final okhttp3.Response resp = client.get("/" + catalogName + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -204,7 +205,7 @@ public class TableControllerTest {
   @Test
   public void testGetTableList() {
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/", ctx -> TableController.getTableList(ctx));
+      app.get("/{catalog}/{db}/", TableController::getTableList);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -216,7 +217,7 @@ public class TableControllerTest {
   public void testGetTableDetail() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/", ctx -> TableController.getTableDetail(ctx));
+      app.get("/{catalog}/{db}/{table}/", TableController::getTableDetail);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -228,7 +229,7 @@ public class TableControllerTest {
   public void testGetOptimizeInfo() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/", ctx -> TableController.getOptimizeInfo(ctx));
+      app.get("/{catalog}/{db}/{table}/", TableController::getOptimizeInfo);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -239,8 +240,8 @@ public class TableControllerTest {
   @Test
   public void testGetTableTransactions() throws Exception {
     mockService(catalogName, database, table);
-    JavalinTest.test((app, client) -> { ;
-      app.get("/{catalog}/{db}/{table}/", ctx -> TableController.getTableTransactions(ctx));
+    JavalinTest.test((app, client) -> {
+      app.get("/{catalog}/{db}/{table}/", TableController::getTableTransactions);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -252,7 +253,7 @@ public class TableControllerTest {
   public void testGetTransactionDetail() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/{transactionId}/", ctx -> TableController.getTransactionDetail(ctx));
+      app.get("/{catalog}/{db}/{table}/{transactionId}/", TableController::getTransactionDetail);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/1/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -264,7 +265,7 @@ public class TableControllerTest {
   public void testGetTablePartitions() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/", ctx -> TableController.getTablePartitions(ctx));
+      app.get("/{catalog}/{db}/{table}/", TableController::getTablePartitions);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -276,7 +277,7 @@ public class TableControllerTest {
   public void testGetPartitionFileListInfo() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/{partition}/", ctx -> TableController.getPartitionFileListInfo(ctx));
+      app.get("/{catalog}/{db}/{table}/{partition}/", TableController::getPartitionFileListInfo);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/dt/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
@@ -307,9 +308,9 @@ public class TableControllerTest {
         .thenReturn(mockTableBasicInfo(catalog, db, table));
     FileInfoCacheService fileInfoCacheService = mock(FileInfoCacheService.class);
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
-    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),"change"))
+    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),Constants.INNER_TABLE_CHANGE))
         .thenReturn(1000L);
-    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),"base"))
+    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE))
         .thenReturn(1000L);
     when(fileInfoCacheService.getTransactions(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
         .thenReturn(mockTableTransactions());

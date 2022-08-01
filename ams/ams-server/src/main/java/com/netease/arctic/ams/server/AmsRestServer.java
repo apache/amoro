@@ -181,7 +181,7 @@ public class AmsRestServer {
     "/css/*"
   };
 
-  private static final boolean needLoginCheck(String uri) {
+  private static boolean needLoginCheck(String uri) {
     for (String item : urlWhiteList) {
       if (item.endsWith("*")) {
         if (uri.startsWith(item.substring(0, item.length() - 1))) {

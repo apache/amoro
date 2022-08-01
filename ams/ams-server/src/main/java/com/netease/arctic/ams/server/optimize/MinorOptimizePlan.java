@@ -126,7 +126,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private void addChangeFilesIntoFileTree() {
     LOG.debug("{} start {} plan change files", tableId(), getOptimizeType());
-    KeyedTable keyedArcticTable = (KeyedTable) arcticTable;
+    KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
 
     AtomicInteger addCnt = new AtomicInteger();
     List<DataFile> changeOptimizeFiles = changeTableFileList.stream().map(dataFileInfo -> {
@@ -140,7 +140,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (isOptimized(dataFile, partition)) {
@@ -171,7 +171,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private void addBaseFileIntoFileTree() {
     LOG.debug("{} start plan base files", tableId());
-    KeyedTable keyedArcticTable = (KeyedTable) arcticTable;
+    KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
 
     AtomicInteger addCnt = new AtomicInteger();
     List<DataFileInfo> baseFileList = new ArrayList<>();
@@ -187,7 +187,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
@@ -274,7 +274,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   private long getBaseMaxTransactionId(String partition) {
     if (baseTableMaxTransactionId == null) {
       baseTableMaxTransactionId = new HashMap<>();
-      baseTableMaxTransactionId.putAll(((KeyedTable) arcticTable).baseTable().maxTransactionId());
+      baseTableMaxTransactionId.putAll(arcticTable.asKeyedTable().baseTable().maxTransactionId());
       LOG.debug("{} ==== get base table max transaction id: {}", tableId(), baseTableMaxTransactionId);
     }
     Long maxTransactionId = baseTableMaxTransactionId.get(partition);

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.hive;
 
+import com.netease.arctic.spark.SparkTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import java.io.IOException;
@@ -37,20 +38,6 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
   private final String sourceTable = "hive_table";
   private final String database = "arctic_db";
   private final String table = "arctic_table";
-
-  @BeforeClass
-  public static void beforeAll() throws IOException {
-    setUpTestDirAndArctic();
-    setUpHMS();
-    setUpSparkSession();
-  }
-
-  @AfterClass
-  public static void tearDown() {
-    cleanUpHive();
-    cleanUpAms();
-    cleanUpSparkSession();
-  }
 
   @Before
   public void setUpArcticDatabase(){
@@ -93,7 +80,7 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
     Assert.assertEquals(6, rows.size());
 
     ArcticTable t = loadTable(catalogName, database, table);
-    UnkeyedTable unkey = (UnkeyedTable) t ;
+    UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(3, partitionFiles.size());
   }
@@ -123,7 +110,7 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
     Assert.assertEquals(5, rows.size());
 
     ArcticTable t = loadTable(catalogName, database, table);
-    UnkeyedTable unkey = (UnkeyedTable) t ;
+    UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(1, partitionFiles.size());
   }

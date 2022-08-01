@@ -159,7 +159,9 @@ const request = function (options: CustomAxiosRequestConfig) {
         store.updateUserInfo({
           userName: ''
         })
-        message.error(msg || 'need login')
+        if (requestConfig.handleError) {
+          message.error(msg || 'need login')
+        } 
         return router.push({
           path: '/login'
         })

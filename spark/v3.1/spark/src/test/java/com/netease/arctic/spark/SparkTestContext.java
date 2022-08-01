@@ -28,26 +28,11 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.File;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.sql.Timestamp;
-import java.text.MessageFormat;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -70,13 +55,31 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.junit.Assert;
+import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.sql.Timestamp;
+import java.text.MessageFormat;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * test context for all spark tests.
  */
-public class SparkTestContext {
+public class SparkTestContext extends ExternalResource {
   protected static final Object ANY = new Object();
   final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
   private static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
@@ -91,7 +94,24 @@ public class SparkTestContext {
   protected static String catalogName;
   protected List<Object[]> rows;
 
+  private static SparkTestContext sparkTestContext;
+
+  private static int refCount = 0;
+
+  public static SparkTestContext getSparkTestContext () {
+    if (refCount == 0) {
+      sparkTestContext = new SparkTestContext();
+    }
+    return sparkTestContext;
+  }
+
+  public static
+  void cleanUpAdditionSparkConfigs() {
+    additionSparkConfigs.clear();
+  }
+
   public static void setUpTestDirAndArctic() throws IOException {
+    System.out.println("======================== start AMS  ========================= ");
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -108,6 +128,7 @@ public class SparkTestContext {
 
 
   public static void setUpSparkSession() {
+    System.out.println("======================== set up spark session  ========================= ");
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
@@ -139,11 +160,13 @@ public class SparkTestContext {
   }
 
   public static void cleanUpAms() {
+    System.out.println("======================== clean up AMS  ========================= ");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
   }
 
   public static void cleanUpSparkSession(){
+    System.out.println("======================== clean up spark session  ========================= ");
     spark.stop();
     spark.close();
     spark = null;
@@ -172,7 +195,7 @@ public class SparkTestContext {
   }
 
   public static void writeBase(TableIdentifier identifier, List<Object[]> records) {
-    KeyedTable table = (KeyedTable) SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier);
+    KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction(System.currentTimeMillis() + "");
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId)
@@ -211,7 +234,7 @@ public class SparkTestContext {
   }
 
   public static void writeChange(TableIdentifier identifier, ChangeAction action, List<Record> rows) {
-    KeyedTable table = (KeyedTable) SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier);
+    KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction(System.currentTimeMillis() + "");
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId)

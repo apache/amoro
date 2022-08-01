@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.controller;
 
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
@@ -115,7 +116,7 @@ public class TableController extends RestBaseController {
     baseMetrics.put("file", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
     Long baseMaxET = fileInfoCacheService
-        .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), "base");
+        .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE);
     if (baseMaxET != null && baseMaxET != 0L) {
       baseMetrics.put("maxEventTime", sd.format(new Date(baseMaxET)));
     } else {
@@ -132,7 +133,8 @@ public class TableController extends RestBaseController {
       changeMetrics.put("file", changeFilesStatistics.getFileCnt());
       changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
       Long changeMaxET = fileInfoCacheService
-          .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),"change");
+          .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),
+              Constants.INNER_TABLE_CHANGE);
       if (changeMaxET != null && changeMaxET != 0L) {
         changeMetrics.put("maxEventTime", sd.format(new Date(changeMaxET)));
       } else {

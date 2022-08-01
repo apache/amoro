@@ -18,14 +18,10 @@
 
 package com.netease.arctic.data;
 
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * @TODO rename to GlobalRowSequence
  * Global row sequence number.
  * <p>
  * Consist of two parts:
@@ -37,30 +33,11 @@ import java.util.Objects;
 
 public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
 
-  public static final int RECORD_LSN_LENGTH = Long.BYTES * 2;
-  public static final long minimumLsn = 0L;
-
   private final long transactionId;
-  //TODO rename to rowSequence
   private final long fileOffset;
 
   public static ChangedLsn of(long transactionId, long fileOffset) {
     return new ChangedLsn(transactionId, fileOffset);
-  }
-
-  public static ChangedLsn from(ByteBuffer byteBuffer) {
-    Preconditions.checkArgument(byteBuffer.remaining() == RECORD_LSN_LENGTH);
-    ChangedLsn recordLsn = ChangedLsn.of(byteBuffer.getLong(), byteBuffer.getLong());
-    byteBuffer.rewind();
-    return recordLsn;
-  }
-
-  /**
-   * TODO deleted
-   * @return minimum lsn, like base file data lsn
-   */
-  public static ChangedLsn minimum() {
-    return new ChangedLsn(minimumLsn, minimumLsn);
   }
 
   private ChangedLsn(long transactionId, long fileOffset) {
@@ -76,9 +53,6 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
     return fileOffset;
   }
 
-  public ByteBuffer byteBuffer() {
-    return ByteBuffer.allocate(RECORD_LSN_LENGTH).putLong(transactionId).putLong(fileOffset);
-  }
 
   @Override
   public int compareTo(ChangedLsn another) {

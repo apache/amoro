@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.controller;
 
-import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;

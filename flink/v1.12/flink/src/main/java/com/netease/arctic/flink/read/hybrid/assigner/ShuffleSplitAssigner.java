@@ -139,7 +139,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
 
     int subtaskId = partitionIndexSubtaskMap.computeIfAbsent(
         partitionIndexKey, key -> (partitionIndexSubtaskMap.size() + 1) % totalParallelism);
-    LOG.info("partition = {}, index = {}, subtaskId = {}", file.partition().toString(), file.index(), subtaskId);
+    LOG.info("partition = {}, index = {}, subtaskId = {}", file.partition().toString(), file.node().index(), subtaskId);
     return subtaskId;
   }
 

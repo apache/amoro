@@ -19,10 +19,7 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.server.ArcticMetaStore;
-import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
-import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;

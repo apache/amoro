@@ -43,12 +43,6 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.PrimaryKeySpec.PRIMARY_KEY_COLUMN_JOIN_DELIMITER;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/22
- * Update
- */
 public class TableMetadata implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(TableMetadata.class);
 

@@ -18,12 +18,6 @@
 
 package com.netease.arctic.ams.server.config;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/17
- * Update
- */
 public class ArcticMetaStoreConf {
   public static final ConfigOption<Long> SERVER_MAX_MESSAGE_SIZE =
       ConfigOptions.key("arctic.ams.server.max.message.size")
