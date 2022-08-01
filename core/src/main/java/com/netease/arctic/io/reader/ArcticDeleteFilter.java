@@ -334,7 +334,7 @@ public abstract class ArcticDeleteFilter<T> {
 
         Set<Long> posSet;
         if (currentDataPath != null) {
-          if (currentPosSet == null){
+          if (currentPosSet == null) {
             currentPosSet = positionMap.get(currentDataPath);
           }
           posSet = currentPosSet;

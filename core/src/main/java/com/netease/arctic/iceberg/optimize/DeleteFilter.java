@@ -81,7 +81,7 @@ public abstract class DeleteFilter<T> {
     this.dataFile = task.file();
 
     DataTreeNode dataNode = null;
-    if (task instanceof ArcticFileScanTask){
+    if (task instanceof ArcticFileScanTask) {
       dataNode = DefaultKeyedFile.parseMetaFromFileName(task.file().path().toString()).node();
     }
 
@@ -90,7 +90,7 @@ public abstract class DeleteFilter<T> {
     for (DeleteFile delete : task.deletes()) {
       switch (delete.content()) {
         case POSITION_DELETES:
-          if (task instanceof ArcticFileScanTask){
+          if (task instanceof ArcticFileScanTask) {
             DataTreeNode pdNode = DefaultKeyedFile.parseMetaFromFileName(delete.path().toString()).node();
             if (dataNode.index() == pdNode.index() && dataNode.mask() == pdNode.mask()) {
               posDeleteBuilder.add(delete);
