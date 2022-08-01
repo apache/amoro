@@ -29,7 +29,6 @@ import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
-import com.netease.arctic.optimizer.util.SerializationUtil;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BaseArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -37,6 +36,7 @@ import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
@@ -80,7 +80,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
 
     Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
-    KeyedTable keyedTable = (KeyedTable) table;
+    KeyedTable keyedTable = table.asKeyedTable();
 
     long insertCount = 0;
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
@@ -176,7 +176,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
 
     PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     if (table.isKeyedTable()) {
-      KeyedTable keyedTable = (KeyedTable) table;
+      KeyedTable keyedTable = table.asKeyedTable();
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
     GenericArcticDataReader arcticDataReader =

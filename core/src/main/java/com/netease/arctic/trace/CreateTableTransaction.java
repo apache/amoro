@@ -199,12 +199,12 @@ public class CreateTableTransaction implements Transaction {
         if (!transactionTracer.isCommit) {
           throw new IllegalStateException("last operation has not committed");
         }
-        Transaction transaction = null;
-        if (arcticTable instanceof UnkeyedTable) {
-          UnkeyedTable table = (UnkeyedTable) arcticTable;
+        Transaction transaction;
+        if (arcticTable.isUnkeyedTable()) {
+          UnkeyedTable table = arcticTable.asUnkeyedTable();
           transaction = table.newTransaction();
         } else {
-          KeyedTable keyedTable = (KeyedTable) arcticTable;
+          KeyedTable keyedTable = arcticTable.asKeyedTable();
           transaction = keyedTable.baseTable().newTransaction();
         }
         AppendFiles appendFiles = transaction.newAppend();
@@ -220,9 +220,9 @@ public class CreateTableTransaction implements Transaction {
     }
   }
 
-  class TransactionTracker implements TableTracer {
+  static class TransactionTracker implements TableTracer {
 
-    private List<DataFile> add = new ArrayList<>();
+    private final List<DataFile> add = new ArrayList<>();
 
     private boolean isCommit;
 

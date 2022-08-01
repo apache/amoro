@@ -29,7 +29,6 @@ import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
-import com.netease.arctic.op.ArcticTableOperations;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;

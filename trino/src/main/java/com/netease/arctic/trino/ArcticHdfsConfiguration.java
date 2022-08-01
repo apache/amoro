@@ -26,6 +26,9 @@ import org.apache.hadoop.conf.Configuration;
 import javax.inject.Inject;
 import java.net.URI;
 
+/**
+ * Factory to generate Configuration of Hadoop
+ */
 public class ArcticHdfsConfiguration implements HdfsConfiguration {
 
   private ArcticCatalogFactory arcticCatalogFactory;

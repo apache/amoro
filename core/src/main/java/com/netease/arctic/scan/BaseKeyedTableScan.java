@@ -18,7 +18,6 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -193,7 +192,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     keyedTableTasks.stream().forEach(task -> {
       if (!pathSets.contains(task.file().path().toString())) {
         pathSets.add(task.file().path().toString());
-        DataTreeNode treeNode = DataTreeNode.fromFile(task.file());
+        DataTreeNode treeNode = task.file().node();
         NodeFileScanTask nodeFileScanTask = nodeFileScanTaskMap.getOrDefault(treeNode, new NodeFileScanTask(treeNode));
         nodeFileScanTask.addFile(task);
         nodeFileScanTaskMap.put(treeNode, nodeFileScanTask);
@@ -208,7 +207,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
       nodeFileScanTaskMap.forEach((treeNode1, nodeFileScanTask1) -> {
         if (!treeNode1.equals(treeNode) && (treeNode1.isSonOf(treeNode) || treeNode.isSonOf(treeNode1))) {
           List<ArcticFileScanTask> deletes = nodeFileScanTask1.arcticEquityDeletes().stream()
-              .filter(file -> file.file().mask() == treeNode1.mask() && file.file().index() == treeNode1.index())
+              .filter(file -> file.file().node().equals(treeNode1))
               .collect(Collectors.toList());
 
           nodeFileScanTask.addTasks(deletes);

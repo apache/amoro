@@ -44,11 +44,11 @@ public class DataFileInfoUtils {
     dataFileInfo.setPartition(partitionToPath(partitionFields(arcticTable.spec(), dataFile.partition())));
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(dataFile.recordCount());
-    if (arcticTable instanceof KeyedTable) {
+    if (arcticTable.isKeyedTable()) {
       PrimaryKeyedFile keyedTableFile = new DefaultKeyedFile(dataFile);
       dataFileInfo.setType(keyedTableFile.type().name());
-      dataFileInfo.setIndex(keyedTableFile.index());
-      dataFileInfo.setMask(keyedTableFile.mask());
+      dataFileInfo.setIndex(keyedTableFile.node().index());
+      dataFileInfo.setMask(keyedTableFile.node().mask());
     } else {
       dataFileInfo.setType(DataFileType.BASE_FILE.name());
       dataFileInfo.setIndex(0);

@@ -34,8 +34,6 @@ import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
-// todo -lt (current_change_snapshotId,latest_major_optimize_time,
-//  latest_minor_optimize_time,partition_location,hive_sync_check)
 public interface TableOptimizeRuntimeMapper {
   String TABLE_NAME = "optimize_table_runtime";
 

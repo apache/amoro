@@ -55,8 +55,8 @@ public class ArcticTransactionService extends IJDBCService {
       TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
       TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
       Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
-      Long currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
-      Long finalTxId = currentTxId + 1;
+      long currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
+      long finalTxId = currentTxId + 1;
       if (!StringUtils.isEmpty(transactionSignature)) {
         TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
         Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);
@@ -86,7 +86,7 @@ public class ArcticTransactionService extends IJDBCService {
   }
 
   public void expire() {
-    try (SqlSession sqlSession = getSqlSession(false);) {
+    try (SqlSession sqlSession = getSqlSession(false)) {
       TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
       Long expireTime = System.currentTimeMillis() - this.expireTime;
       mapper.expire(expireTime);

@@ -57,6 +57,7 @@ import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.netease.arctic.ArcticErrorCode.ARCTIC_BAD_DATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static java.util.Objects.requireNonNull;
+import static org.apache.iceberg.MetadataColumns.FILE_PATH;
 
 /**
  * ConnectorPageSource for Keyed Table
@@ -257,6 +258,7 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     if (primaryKeyedFile.type() == DataFileType.BASE_FILE) {
       idToConstant.put(MetadataColumns.FILE_OFFSET_FILED_ID, Optional.of(Long.MAX_VALUE + ""));
     }
+    idToConstant.put(FILE_PATH.fieldId(), Optional.of(primaryKeyedFile.path().toString()));
     return icebergPageSourceProvider.createPageSource(
         transaction,
         session,
@@ -276,7 +278,8 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
         table.getIcebergTableHandle(),
         requireColumnsDummy,
         dynamicFilter,
-        idToConstant
+        idToConstant,
+        false
     );
   }
 }

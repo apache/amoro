@@ -25,21 +25,20 @@ import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.List;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.junit.Before;
+
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 public class TableTestBaseWithInitData extends TableTestBase {
 
@@ -104,7 +103,7 @@ public class TableTestBaseWithInitData extends TableTestBase {
     // write position delete
     {
       SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(4).buildBasePosDeleteWriter(2, 1, dataFileForPositionDelete.partition());
+          .withTransactionId(4).buildBasePosDeleteWriter(3, 3, dataFileForPositionDelete.partition());
       writer.delete(dataFileForPositionDelete.path().toString(), 0);
       DeleteFile posDeleteFiles = writer.complete().stream().findAny().get();
       this.deleteFileOfPositionDelete = posDeleteFiles;

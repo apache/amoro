@@ -24,7 +24,7 @@
 
     <groupId>com.netease.arctic</groupId>
     <artifactId>arctic-parent</artifactId>
-    <version>0.3-SNAPSHOT</version>
+    <version>0.3.0</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -35,6 +35,7 @@
         <module>spark</module>
         <module>dist</module>
         <module>trino</module>
+        <module>hive</module>
     </modules>
 
     <properties>
