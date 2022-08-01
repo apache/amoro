@@ -365,7 +365,7 @@ public class FlinkSink {
     long targetFileSize = getTargetFileSizeBytes(arcticTable.properties());
     FileFormat fileFormat = getFileFormat(arcticTable.properties());
     return new RowDataTaskWriterFactory(
-        (arcticTable.asUnkeyedTable(), flinkSchema, targetFileSize,
+        arcticTable.asUnkeyedTable(), flinkSchema, targetFileSize,
         fileFormat, equalityFieldIds);
   }
 
