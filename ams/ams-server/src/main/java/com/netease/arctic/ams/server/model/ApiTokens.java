@@ -48,7 +48,6 @@ public class ApiTokens {
     this.apikey = apikey;
   }
 
-
   public String getSecret() {
     return secret;
   }
