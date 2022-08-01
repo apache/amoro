@@ -23,4 +23,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build with Maven
-        run: mvn package -pl '!trino'
+        run: mvn install -pl '!trino'
+      - name: Build Flink 1.14 with Maven
+        run: mvn package -pl 'com.netease.arctic:arctic-flink' -Pflink-1.14 -amd
