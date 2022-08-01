@@ -54,10 +54,12 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public static final Logger LOG = LoggerFactory.getLogger(JDBCMetaService.class);
   public static final Map<Key, TableMetaStore> TABLE_META_STORE_CACHE = new ConcurrentHashMap<>();
   private final FileInfoCacheService fileInfoCacheService;
+  private final ArcticTransactionService transactionService;
 
   public JDBCMetaService() {
     super();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
+    this.transactionService = ServiceContainer.getArcticTransactionService();
   }
 
   @Override
@@ -121,6 +123,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         }
 
         fileInfoCacheService.deleteTableCache(tableIdentifier);
+        transactionService.delete(tableIdentifier.buildTableIdentifier());
       } catch (Exception e) {
         LOG.error("The internal table service drop table failed.");
         sqlSession.rollback(true);
