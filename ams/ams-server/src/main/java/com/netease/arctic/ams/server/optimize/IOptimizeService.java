@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
-import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.List;
@@ -54,15 +53,6 @@ public interface IOptimizeService {
    * @throws NoSuchObjectException if table not exists
    */
   TableOptimizeItem getTableOptimizeItem(TableIdentifier tableIdentifier) throws NoSuchObjectException;
-
-  /**
-   * Get Current optimize state of an ArcticTable.
-   *
-   * @param tableIdentifier -
-   * @return current TableOptimizeInfo
-   * @throws NoSuchObjectException if table not exists
-   */
-  TableOptimizeInfo getTableOptimizeInfo(TableIdentifier tableIdentifier) throws NoSuchObjectException;
 
   /**
    * Handle OptimizeTask execute result, success or failed.

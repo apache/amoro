@@ -475,8 +475,7 @@ public class OptimizeQueueService extends IJDBCService {
           if (tables.contains(task.getTableIdentifier())) {
             task.setFiles();
             try {
-              TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId,
-                  ServiceContainer.getOptimizeService().getTableOptimizeItem(task.getTableIdentifier()));
+              TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
               TableOptimizeItem tableOptimizeItem =
                   ServiceContainer.getOptimizeService().getTableOptimizeItem(task.getTableIdentifier());
               synchronized (tableOptimizeItem) {

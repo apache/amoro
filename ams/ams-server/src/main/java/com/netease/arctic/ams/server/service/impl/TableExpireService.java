@@ -114,8 +114,8 @@ public class TableExpireService implements ITableExpireService {
             .getOrDefault(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
                 TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
 
-        if (arcticTable instanceof KeyedTable) {
-          KeyedTable keyedArcticTable = (KeyedTable) arcticTable;
+        if (arcticTable.isKeyedTable()) {
+          KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
           keyedArcticTable.io().doAs(() -> {
             BaseTable baseTable = keyedArcticTable.baseTable();
             if (baseTable == null) {
@@ -148,7 +148,7 @@ public class TableExpireService implements ITableExpireService {
           LOG.info("[{}] {} expire cost total {} ms", traceId, arcticTable.id(),
               System.currentTimeMillis() - startTime);
         } else {
-          UnkeyedTable unKeyedArcticTable = (UnkeyedTable) arcticTable;
+          UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
           expireSnapshots(unKeyedArcticTable, startTime - baseSnapshotsKeepTime, new HashSet<>());
           long baseCleanedTime = System.currentTimeMillis();
           LOG.info("[{}] {} unKeyedTable expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
@@ -207,7 +207,7 @@ public class TableExpireService implements ITableExpireService {
         LOG.error("{} can not find partitionSpec id: {}", dataFileInfo.getPath(), dataFileInfo.specId);
         return null;
       }
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, keyedTable.io());
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       return new DefaultKeyedFile((DataFile) contentFile);
     }).filter(Objects::nonNull).collect(Collectors.toList());
 

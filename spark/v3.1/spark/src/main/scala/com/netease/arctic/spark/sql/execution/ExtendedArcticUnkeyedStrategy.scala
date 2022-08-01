@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
+import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
@@ -46,6 +47,10 @@ case class ExtendedArcticUnkeyedStrategy(spark: SparkSession) extends Strategy {
       val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
       CreateTableAsSelectExec(catalog, ident, parts, query, planLater(query),
         propertiesMap, writeOptions, ifNotExists) :: Nil
+
+    case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists) =>
+      CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
+
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
       if (partitionSpec.nonEmpty) {
         throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")

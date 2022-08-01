@@ -39,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +59,7 @@ public class AmsTableTracer implements TableTracer {
   private String action;
   private Map<String, String> properties;
   private InternalTableChange defaultTableChange;
-  private List<TableChange> transactionTableChanges = Lists.newArrayList();
+  private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
@@ -105,8 +106,8 @@ public class AmsTableTracer implements TableTracer {
     return defaultTableChange;
   }
 
-  public void addTransactionTableChange(TableChange tableChange) {
-    transactionTableChanges.add(tableChange);
+  public void addTransactionTableSnapshot(Long snapshotId, AmsTableTracer.InternalTableChange internalTableChange) {
+    transactionSnapshotTableChanges.putIfAbsent(snapshotId, internalTableChange);
   }
 
   public ArcticTable table() {
@@ -127,21 +128,28 @@ public class AmsTableTracer implements TableTracer {
     boolean threw = false;
 
     if (defaultTableChange != null) {
-      Table traceTable = null;
+      Table traceTable;
       if (table.isUnkeyedTable()) {
         traceTable = table.asUnkeyedTable();
       } else {
         throw new IllegalStateException("can't apply table change on keyed table.");
       }
 
-      Optional<TableChange> tableChange = defaultTableChange.toTableChange(table, traceTable, innerTable);
+      Optional<TableChange> tableChange =
+          defaultTableChange.toTableChange(table, traceTable.currentSnapshot(), innerTable);
       if (tableChange.isPresent()) {
         commitMeta.addToChanges(tableChange.get());
         update = true;
       }
     }
-    if (transactionTableChanges.size() > 0) {
-      transactionTableChanges.forEach(commitMeta::addToChanges);
+    if (transactionSnapshotTableChanges.size() > 0) {
+      transactionSnapshotTableChanges.forEach((snapshotId, internalTableChange) -> {
+        if (table.isUnkeyedTable()) {
+          Snapshot snapshot = table.asUnkeyedTable().snapshot(snapshotId);
+          Optional<TableChange> tableChange = internalTableChange.toTableChange(table, snapshot, innerTable);
+          tableChange.ifPresent(commitMeta::addToChanges);
+        }
+      });
       update = true;
     }
     if (this.properties != null) {
@@ -201,17 +209,16 @@ public class AmsTableTracer implements TableTracer {
      * Build {@link TableChange} to report to ams.
      *
      * @param arcticTable arctic table which table change belongs
-     * @param traceTable  iceberg table produce the snapshot
+     * @param snapshot  the snapshot produced in this operation
      * @param innerTable  inner table name
      * @return table change
      */
-    public Optional<TableChange> toTableChange(ArcticTable arcticTable, Table traceTable, String innerTable) {
+    public Optional<TableChange> toTableChange(ArcticTable arcticTable, Snapshot snapshot, String innerTable) {
       if (addedFiles.size() > 0 || deletedFiles.size() > 0 || addedDeleteFiles.size() > 0 ||
           deletedDeleteFiles.size() > 0) {
-        long currentSnapshotId = traceTable.currentSnapshot().snapshotId();
+        long currentSnapshotId = snapshot.snapshotId();
         long parentSnapshotId =
-            traceTable.currentSnapshot().parentId() == null ? -1 : traceTable.currentSnapshot().parentId();
-        Snapshot snapshot = traceTable.currentSnapshot();
+            snapshot.parentId() == null ? -1 : snapshot.parentId();
         Map<String, String> summary = snapshot.summary();
         long realAddedDataFiles = summary.get(SnapshotSummary.ADDED_FILES_PROP) == null ?
             0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_FILES_PROP));

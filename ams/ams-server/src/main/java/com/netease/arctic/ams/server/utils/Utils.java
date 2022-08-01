@@ -22,13 +22,7 @@ import org.apache.commons.net.telnet.TelnetClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.Reader;
 import java.net.InetAddress;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 
 public class Utils {
   private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -81,27 +75,6 @@ public class Utils {
       LOG.warn("telnet {} {} timeout! ", host, port);
       return false;
     }
-  }
-
-  public static String readAll(Reader reader) throws IOException {
-    BufferedReader bufferedReader = new BufferedReader(reader);
-    StringBuilder sb = new StringBuilder();
-    String line = null;
-
-    while ((line = bufferedReader.readLine()) != null) {
-      sb.append(line);
-    }
-    return sb.toString();
-  }
-
-  public static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
-  public static synchronized String getDateFormatByLong(Long time) {
-    return DATE_FORMAT.format(new Date(time));
-  }
-
-  public static long getTimestampByDate(String date) {
-    return DATE_FORMAT.parse(date, new ParsePosition(0)).getTime();
   }
 
   public static boolean ping(String ip) {

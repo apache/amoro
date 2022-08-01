@@ -31,7 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * Copy form iceberg {@link StructLike}. Make using StructLikeWrapper more cheap
+ * Copy form iceberg {@link org.apache.iceberg.util.StructLikeSet}. Make using StructLikeWrapper more cheap
  */
 public class StructLikeSet extends AbstractSet<StructLike> implements Set<StructLike> {
   public static StructLikeSet create(Types.StructType type) {

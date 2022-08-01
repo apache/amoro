@@ -68,13 +68,6 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**
- * @author hengshu
- * @version 1.0
- * Create 2021/11/16
- * Update
- * todo metrics、SSL、registerZK、
- */
 public class ArcticMetaStore {
   public static final Logger LOG = LoggerFactory.getLogger(ArcticMetaStore.class);
 

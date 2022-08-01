@@ -18,13 +18,10 @@
 
 package com.netease.arctic.io.reader;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.NodeFilter;
 import org.apache.iceberg.FileScanTask;
@@ -36,13 +33,9 @@ import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
-import org.apache.iceberg.types.TypeUtil;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Filter;
-import org.apache.iceberg.util.PartitionUtil;
 import org.apache.parquet.schema.MessageType;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -92,7 +85,7 @@ public abstract class BaseIcebergDataReader<T> {
 
   public CloseableIterable<T> readData(ArcticFileScanTask task) {
 
-    Map<Integer, ?> idToConstant = getIdToConstant(task);
+    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(task, projectedSchema, convertConstant);
 
     DeleteFilter<T> deleteFilter = new GenericDeleteFilter(task, tableSchema, projectedSchema);
 
@@ -105,34 +98,6 @@ public abstract class BaseIcebergDataReader<T> {
     }
 
     return iterable;
-  }
-
-  protected Map<Integer, ?> getIdToConstant(ArcticFileScanTask task) {
-    Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
-    Map<Integer, Object> idToConstant = new HashMap<>();
-    if (!partitionSchema.columns().isEmpty()) {
-      idToConstant.putAll(PartitionUtil.constantsMap(task, convertConstant));
-    }
-    idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(), task.file().path().toString());
-    idToConstant.put(
-        MetadataColumns.TRANSACTION_ID_FILED_ID,
-        convertConstant.apply(Types.LongType.get(), task.file().transactionId()));
-
-    if (task.fileType() == DataFileType.BASE_FILE) {
-      idToConstant.put(
-          MetadataColumns.FILE_OFFSET_FILED_ID,
-          convertConstant.apply(Types.LongType.get(), Long.MAX_VALUE));
-    }
-    if (task.fileType() == DataFileType.EQ_DELETE_FILE) {
-      idToConstant.put(MetadataColumns.CHANGE_ACTION_ID, convertConstant.apply(
-          Types.StringType.get(),
-          ChangeAction.DELETE.toString()));
-    } else if (task.fileType() == DataFileType.INSERT_FILE) {
-      idToConstant.put(MetadataColumns.CHANGE_ACTION_ID, convertConstant.apply(
-          Types.StringType.get(),
-          ChangeAction.INSERT.toString()));
-    }
-    return idToConstant;
   }
 
   private CloseableIterable<T> newIterable(

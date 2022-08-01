@@ -52,7 +52,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -97,7 +96,7 @@ public class TableOptimizeItem extends IJDBCService {
   private final FileInfoCacheService fileInfoCacheService;
   private final IQuotaService quotaService;
   private final AmsClient metastoreClient;
-  private volatile double quotaCache = 0.1;
+  private volatile double quotaCache;
 
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
@@ -115,14 +114,12 @@ public class TableOptimizeItem extends IJDBCService {
   /**
    * Initial optimize tasks.
    * @param optimizeTasks -
-   * @return this for chain
    */
-  public TableOptimizeItem initOptimizeTasks(List<OptimizeTaskItem> optimizeTasks) {
+  public void initOptimizeTasks(List<OptimizeTaskItem> optimizeTasks) {
     if (CollectionUtils.isNotEmpty(optimizeTasks)) {
       optimizeTasks
           .forEach(task -> this.optimizeTasks.put(task.getOptimizeTask().getTaskId(), task));
     }
-    return this;
   }
 
   /**
@@ -177,7 +174,7 @@ public class TableOptimizeItem extends IJDBCService {
     if (arcticTable == null) {
       tryRefresh(false);
     }
-    return arcticTable instanceof KeyedTable;
+    return arcticTable.isKeyedTable();
   }
 
   /**
@@ -323,7 +320,6 @@ public class TableOptimizeItem extends IJDBCService {
         .propertyAsString(getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
       tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
-      return;
     } else {
       MajorOptimizePlan majorPlan = getMajorPlan(-1, System.currentTimeMillis());
       List<BaseOptimizeTask> majorTasks = majorPlan.plan();
@@ -337,10 +333,8 @@ public class TableOptimizeItem extends IJDBCService {
           }
         }
         tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
-        return;
       } else {
         tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, majorTasks, OptimizeType.Major);
-        return;
       }
     }
   }
@@ -533,12 +527,12 @@ public class TableOptimizeItem extends IJDBCService {
     record.setPartitionCnt(tasks.keySet().size());
     record.setPartitions(String.join(",", tasks.keySet()));
     if (isKeyedTable()) {
-      KeyedTable keyedHiveTable = ((KeyedTable) getArcticTable(true));
+      KeyedTable keyedHiveTable = getArcticTable(true).asKeyedTable();
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(keyedHiveTable.baseTable()));
       record.setBaseTableMaxTransactionId(keyedHiveTable.baseTable().maxTransactionId().toString());
     } else {
       getArcticTable(true);
-      record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo((UnkeyedTable) getArcticTable(true)));
+      record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
     }
     return record;
   }
@@ -546,7 +540,6 @@ public class TableOptimizeItem extends IJDBCService {
   private void removeOptimizeTask(OptimizeTaskId optimizeTaskId) {
     tasksLock.lock();
     try {
-      // TODO wangtao3
       OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
       if (removed != null) {
         removed.clearOptimizeTask();
@@ -565,8 +558,13 @@ public class TableOptimizeItem extends IJDBCService {
     try {
       HashSet<OptimizeTaskItem> toRemoved = new HashSet<>(optimizeTasks.values());
       optimizeTasks.clear();
+      Set<String> removedTaskHistory = new HashSet<>();
       for (OptimizeTaskItem task : toRemoved) {
         task.clearOptimizeTask();
+        removedTaskHistory.add(task.getOptimizeTask().getTaskHistoryId());
+      }
+      for (String taskHistoryId : removedTaskHistory) {
+        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithHistoryId(tableIdentifier, taskHistoryId);
       }
       LOG.info("{} clear all optimize tasks", getTableIdentifier());
       updateTableOptimizeStatus();

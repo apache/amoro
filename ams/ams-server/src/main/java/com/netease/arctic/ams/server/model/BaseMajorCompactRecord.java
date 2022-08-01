@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.model;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.table.TableIdentifier;
 
+// TODO remove after web changed in 0.3.1
 public class BaseMajorCompactRecord {
   protected TableIdentifier tableIdentifier;
   protected CompactRangeType compactRange;

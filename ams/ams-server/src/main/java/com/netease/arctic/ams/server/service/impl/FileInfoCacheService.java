@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -47,9 +46,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -73,7 +70,7 @@ public class FileInfoCacheService extends IJDBCService {
 
   public static ConcurrentHashMap<String, Long> cacheTableSnapshot = new ConcurrentHashMap<>();
 
-  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
+  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) {
     if (isNeedCache(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;
@@ -165,13 +162,13 @@ public class FileInfoCacheService extends IJDBCService {
             identifier.getDatabase(),
             identifier.getTableName());
         ArcticTable arcticTable = catalog.loadTable(tmp);
-        if (arcticTable instanceof UnkeyedTable) {
-          table = ((UnkeyedTable) arcticTable);
+        if (arcticTable.isUnkeyedTable()) {
+          table = arcticTable.asUnkeyedTable();
         } else {
-          if ("change".equalsIgnoreCase(tableType)) {
-            table = ((KeyedTable) arcticTable).changeTable();
+          if (Constants.INNER_TABLE_CHANGE.equalsIgnoreCase(tableType)) {
+            table = arcticTable.asKeyedTable().changeTable();
           } else {
-            table = ((KeyedTable) arcticTable).baseTable();
+            table = arcticTable.asKeyedTable().baseTable();
           }
         }
       } catch (Exception e) {
@@ -192,7 +189,7 @@ public class FileInfoCacheService extends IJDBCService {
       }
       long fromId = from == null ? -1 : from;
       long toId = to == null ? currId : to;
-      //if there is no new snapshots commit in table after last sync will not sync file cache
+      // if there is no new snapshots commit in table after last sync will not sync file cache
       if (fromId == toId) {
         return;
       }
@@ -226,8 +223,10 @@ public class FileInfoCacheService extends IJDBCService {
       snapInfoCacheMapper.deleteTableCache(tableIdentifier);
 
       // update local on-memory cache
-      cacheTableSnapshot.remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + "base");
-      cacheTableSnapshot.remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + "change");
+      cacheTableSnapshot
+          .remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + Constants.INNER_TABLE_BASE);
+      cacheTableSnapshot
+          .remove(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier) + Constants.INNER_TABLE_CHANGE);
     } catch (Exception e) {
       LOG.error("delete table file cache error ", e);
     }
@@ -265,9 +264,7 @@ public class FileInfoCacheService extends IJDBCService {
   private static List<Snapshot> snapshotsWithin(Table table, long fromSnapshotId, long toSnapshotId) {
     List<Long> snapshotIds = SnapshotUtil.snapshotIdsBetween(table, fromSnapshotId, toSnapshotId);
     List<Snapshot> snapshots = Lists.newArrayList();
-    snapshotIds.forEach(id -> {
-      snapshots.add(table.snapshot(id));
-    });
+    snapshotIds.forEach(id -> snapshots.add(table.snapshot(id)));
     return snapshots;
   }
 
@@ -509,9 +506,9 @@ public class FileInfoCacheService extends IJDBCService {
               tableIdentifier.getDatabase(),
               tableIdentifier.getTableName());
           ArcticTable arcticTable = catalog.loadTable(tmp);
-          doSync(tableIdentifier, "base", lowTime);
-          if (arcticTable instanceof KeyedTable) {
-            doSync(tableIdentifier, "change", lowTime);
+          doSync(tableIdentifier, Constants.INNER_TABLE_BASE, lowTime);
+          if (arcticTable.isKeyedTable()) {
+            doSync(tableIdentifier, Constants.INNER_TABLE_CHANGE, lowTime);
           }
         } catch (Exception e) {
           LOG.error(

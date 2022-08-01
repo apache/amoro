@@ -191,19 +191,11 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   @Override
-  public long mask() {
+  public DataTreeNode node() {
     if (meta == null) {
       parse();
     }
-    return meta.node().mask();
-  }
-
-  @Override
-  public long index() {
-    if (meta == null) {
-      parse();
-    }
-    return meta.node().index();
+    return meta.node();
   }
 
   @Override

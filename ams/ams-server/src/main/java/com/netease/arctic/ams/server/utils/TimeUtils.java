@@ -215,7 +215,7 @@ public class TimeUtils {
       this.unit = unit;
       this.labels =
           Arrays.stream(labels)
-              .flatMap(ls -> Arrays.stream(ls))
+              .flatMap(Arrays::stream)
               .collect(Collectors.toList());
     }
 

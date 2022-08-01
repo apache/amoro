@@ -49,6 +49,9 @@ import static io.trino.plugin.base.util.Closables.closeAllSuppress;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Iceberg original IcebergPageSource has some problems for arctic, such as iceberg version, table type.
+ */
 public class IcebergPageSource
     implements UpdatablePageSource {
   private final Type[] columnTypes;

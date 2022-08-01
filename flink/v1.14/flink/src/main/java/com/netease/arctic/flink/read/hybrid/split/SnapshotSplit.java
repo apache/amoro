@@ -44,7 +44,7 @@ public class SnapshotSplit extends ArcticSplit {
     this.insertScanTasks = insertScanTasks;
     this.taskIndex = taskIndex;
     PrimaryKeyedFile file = insertScanTasks.stream().findFirst().get().file();
-    this.dataTreeNode = DataTreeNode.of(file.mask(), file.index());
+    this.dataTreeNode = DataTreeNode.of(file.node().mask(), file.node().index());
   }
 
   @Override

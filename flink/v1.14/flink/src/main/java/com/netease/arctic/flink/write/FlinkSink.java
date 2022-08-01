@@ -348,7 +348,7 @@ public class FlinkSink {
       RowType flinkSchema,
       List<String> equalityFieldColumns) {
     if (arcticTable.isKeyedTable()) {
-      return new KeyedRowDataTaskWriterFactory((KeyedTable) arcticTable, flinkSchema, overwrite);
+      return new KeyedRowDataTaskWriterFactory(arcticTable.asKeyedTable(), flinkSchema, overwrite);
     }
 
     // Find out the equality field id list based on the user-provided equality field column names.
@@ -365,7 +365,7 @@ public class FlinkSink {
     long targetFileSize = getTargetFileSizeBytes(arcticTable.properties());
     FileFormat fileFormat = getFileFormat(arcticTable.properties());
     return new RowDataTaskWriterFactory(
-        ((UnkeyedTable) arcticTable), flinkSchema, targetFileSize,
+        arcticTable.asUnkeyedTable(), flinkSchema, targetFileSize,
         fileFormat, equalityFieldIds);
   }
 

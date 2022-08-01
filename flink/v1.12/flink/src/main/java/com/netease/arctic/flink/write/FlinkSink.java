@@ -29,9 +29,7 @@ import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.DistributionHashMode;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.shaded.guava18.com.google.common.collect.Lists;
@@ -339,7 +337,7 @@ public class FlinkSink {
                                                                     RowType flinkSchema,
                                                                     List<String> equalityFieldColumns) {
     if (arcticTable.isKeyedTable()) {
-      return new KeyedRowDataTaskWriterFactory((KeyedTable) arcticTable, flinkSchema, overwrite);
+      return new KeyedRowDataTaskWriterFactory(arcticTable.asKeyedTable(), flinkSchema, overwrite);
     }
 
     // Find out the equality field id list based on the user-provided equality field column names.
@@ -356,7 +354,7 @@ public class FlinkSink {
     long targetFileSize = getTargetFileSizeBytes(arcticTable.properties());
     FileFormat fileFormat = getFileFormat(arcticTable.properties());
     return new RowDataTaskWriterFactory(
-        ((UnkeyedTable) arcticTable), flinkSchema, targetFileSize,
+        arcticTable.asUnkeyedTable(), flinkSchema, targetFileSize,
         fileFormat, equalityFieldIds);
   }
 
