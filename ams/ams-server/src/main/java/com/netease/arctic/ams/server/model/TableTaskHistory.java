@@ -85,4 +85,16 @@ public class TableTaskHistory {
     this.queueId = queueId;
   }
 
+  @Override
+  public String toString() {
+    return "TableTaskHistory{" +
+        "tableIdentifier=" + tableIdentifier +
+        ", taskGroupId='" + taskGroupId + '\'' +
+        ", taskHistoryId='" + taskHistoryId + '\'' +
+        ", startTime=" + startTime +
+        ", endTime=" + endTime +
+        ", costTime=" + costTime +
+        ", queueId=" + queueId +
+        '}';
+  }
 }
