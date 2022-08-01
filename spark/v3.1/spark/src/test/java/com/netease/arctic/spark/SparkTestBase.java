@@ -32,19 +32,6 @@ import org.junit.rules.TestName;
  */
 public class SparkTestBase extends SparkTestContext {
 
-  @BeforeClass
-  public static void setUpSparkForTests() throws Exception {
-    setUpTestDirAndArctic();
-    additionSparkConfigs.clear();
-    setUpSparkSession();
-  }
-
-  @AfterClass
-  public static void tearDownTests() {
-    cleanUpAms();
-    cleanUpSparkSession();
-  }
-
   @Rule
   public TestName testName = new TestName();
   protected long begin ;
