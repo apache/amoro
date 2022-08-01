@@ -124,7 +124,7 @@ Arctic 表提供了 File 和 Log 的存储，File 存储海量的全量数据，
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|log-store.enable|false|Boolean|否|是否打开 Log Store，目前支持只Kafka|
+|log-store.enable|false|Boolean|否|是否打开 Log Store，目前只支持 Kafka|
 |log-store.type<img width=100/>|kafka|String|否|当前仅支持 Kafka|
 |log-store.address|(none)|String|否|当 log-store.enable=true 时必填，当前为 kafka 的 bootstrap servers 的地址。如 broker1:port1, broker2:port2|
 |log-store.topic|(none)|String|否|当 log-store.enable=true 时必填，填写 kafka topic 名称|
@@ -217,7 +217,7 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |scan.startup.timestamp-millis|(none)|Long|否|scan.startup.mode 取值为 timestamp 时，初次启动时获取数据的起始时间戳（毫秒级）|
 |properties.*|(none)|String|否|Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs)|
 
-**读 Arctic 非主键表 File 中的增量数据**
+**读 Arctic 非主键表 File 中的增量数据**<a name='sql-file-store-read'></a>
 
 ```sql
 -- 在当前 session 中以流的模式运行 Flink 任务
@@ -432,10 +432,12 @@ stream.print();
 // 提交并执行任务
 env.execute("Test Arctic Stream Read");
 ```
+DataStream API 支持读取主键表和非主键表。properties 支持的配置项可以参考 Querying With SQL [章节](#sql-file-store-read)
 
 ## Writing With DataStream
 Arctic 表支持通过 JAVA API 往 Log 或 File 写入数据
 ### Overwrite Data
+Arctic 表目前仅支持非主键表的动态 Overwrite 表中已有的数据
 Arctic 表目前仅支持非主键表的动态 Overwrite 表中已有的数据
 
 ```java
@@ -490,6 +492,8 @@ FlinkSink
 
 env.execute("Test Arctic Append");
 ```
+DataStream API 支持写主键表和非主键表。properties 支持的配置项可以参考 Writing With SQL [章节](#sql-write)
+
 > **TIPS**
 >
 > arctic.emit.mode 包含 log 时，需要配置 log-store.enable = true [开启 Log 配置](#log)
