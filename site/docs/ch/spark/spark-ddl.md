@@ -167,8 +167,8 @@ ALTER TABLE arctic_catalog.db.sample ALTER COLUMN nested.col AFTER other_col
 ```
 ### ALTER TABLE ... DROP COLUMN
 ```sql
-ALTER TABLE arctic_catalog.db.sample RENAME DROP COLUMN id
-ALTER TABLE arctic_catalog.db.sample RENAME DROP COLUMN point.z
+ALTER TABLE arctic_catalog.db.sample DROP COLUMN id
+ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z
 ```
 
 
