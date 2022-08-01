@@ -29,7 +29,7 @@ public interface ApiTokensMapper {
           TABLE_NAME + " where apikey = #{apikey}")
   String getSecretBykey(String apikey);
 
-  @Insert("insert into " + TABLE_NAME + " (apikey,secret,applyTime) values(#{apiTokens.apikey}," +
+  @Insert("insert into " + TABLE_NAME + " (apikey,secret,apply_time) values(#{apiTokens.apikey}," +
           "#{apiTokens.secret},#{apiTokens.applyTime})")
   void insert(ApiTokens apiTokens);
 

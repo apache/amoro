@@ -89,53 +89,8 @@ public class AmsRestServer {
     app.before(ctx -> {
       String uriPath = ctx.path();
       if (needApiKeyCheck(uriPath)) {
-        String plainText;
-        String encryptString;
-        String signCal;
-        String requestMethod = ctx.method();
-        String requestUrl = ctx.url();
-        LOG.debug("[{}] url: {}, ", requestMethod, requestUrl);
-
-        long receive = System.currentTimeMillis();
-        ApiTokenService apiTokenService = new ApiTokenService();
-        try {
-          String apiKey = ctx.queryParam("apiKey");
-          //get secrect
-          String secrete = apiTokenService.getSecretByKey(apiKey);;
-          //            LOG.info("secret: " + secrete);
-          if (secrete == null) {
-            throw new SignatureCheckException();
-          }
-          String signature = ctx.queryParam("signature");
-          if (apiKey == null || signature == null) {
-            throw new SignatureCheckException();
-          }
-
-          Map<String, List<String>> params = ctx.queryParamMap();
-          params.remove("apiKey");
-          params.remove("signature");
-
-          String paramString = ParamSignatureCalculator.generateParamStringWithValueList(params);
-          if (StringUtils.isBlank(paramString)) {
-            encryptString = ParamSignatureCalculator.SIMPLE_DATE_FORMAT.format(new Date());
-          } else {
-            encryptString = paramString;
-          }
-
-          plainText = String.format("%s%s%s", apiKey, encryptString, secrete);
-          signCal = ParamSignatureCalculator.getMD5(plainText);
-          LOG.info("calculate:  plainText:{}, signCal:{}, signFromRequest: {}", plainText, signCal, signature);
-
-          if (!signature.equals(signCal)) {
-            LOG.error(String.format("Signature Check Failed!!, req:%s, cal:%s", signature, signCal));
-            throw new SignatureCheckException();
-          }
-        } catch (Exception e) {
-          LOG.error("api doFilter error. ex:{}", e);
-          throw new SignatureCheckException();
-        } finally {
-          LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);
-        }
+        checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
+                ctx.queryParam("signature"), ctx.queryParamMap());
       } else if (needLoginCheck(uriPath)) {
         if (null == ctx.sessionAttribute("user")) {
           LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
@@ -295,5 +250,53 @@ public class AmsRestServer {
 
   private static boolean needApiKeyCheck(String uri) {
     return uri.startsWith("/api");
+  }
+
+  private static void checkApiToken(String requestMethod, String requestUrl, String apiKey, String signature,
+                             Map<String, List<String>> params) {
+    String plainText;
+    String encryptString;
+    String signCal;
+    LOG.debug("[{}] url: {}, ", requestMethod, requestUrl);
+
+    long receive = System.currentTimeMillis();
+    ApiTokenService apiTokenService = new ApiTokenService();
+    try {
+      //get secrect
+      String secrete = apiTokenService.getSecretByKey(apiKey);
+
+      if (secrete == null) {
+        throw new SignatureCheckException();
+      }
+
+      if (apiKey == null || signature == null) {
+        throw new SignatureCheckException();
+      }
+
+      params.remove("apiKey");
+      params.remove("signature");
+
+      String paramString = ParamSignatureCalculator.generateParamStringWithValueList(params);
+
+      if (StringUtils.isBlank(paramString)) {
+        encryptString = ParamSignatureCalculator.SIMPLE_DATE_FORMAT.format(new Date());
+      } else {
+        encryptString = paramString;
+      }
+
+      plainText = String.format("%s%s%s", apiKey, encryptString, secrete);
+      signCal = ParamSignatureCalculator.getMD5(plainText);
+      LOG.info("calculate:  plainText:{}, signCal:{}, signFromRequest: {}", plainText, signCal, signature);
+
+      if (!signature.equals(signCal)) {
+        LOG.error(String.format("Signature Check Failed!!, req:%s, cal:%s", signature, signCal));
+        throw new SignatureCheckException();
+      }
+    } catch (Exception e) {
+      LOG.error("api doFilter error. ex:{}", e);
+      throw new SignatureCheckException();
+    } finally {
+      LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);
+    }
   }
 }
