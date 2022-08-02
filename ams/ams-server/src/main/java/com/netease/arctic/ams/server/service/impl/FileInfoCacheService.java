@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -70,8 +71,8 @@ public class FileInfoCacheService extends IJDBCService {
 
   public static ConcurrentHashMap<String, Long> cacheTableSnapshot = new ConcurrentHashMap<>();
 
-  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) {
-    if (isNeedCache(tableCommitMeta)) {
+  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
+    if (needRepairCache(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;
     }
@@ -139,7 +140,7 @@ public class FileInfoCacheService extends IJDBCService {
   /**
    * @param time delete all cache which commit time less than time and is deleted
    */
-  public void expiredCache(long time) {
+  public void expiredCache(long time, com.netease.arctic.table.TableIdentifier identifier) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       fileInfoCacheMapper.expireCache(time);
@@ -232,7 +233,7 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
-  private boolean isNeedCache(TableCommitMeta tableCommitMeta) {
+  private boolean needRepairCache(TableCommitMeta tableCommitMeta) {
     if (CollectionUtils.isNotEmpty(tableCommitMeta.getChanges())) {
       TableChange tableChange = tableCommitMeta.getChanges().get(0);
       String innerTableIdentifier =
@@ -309,7 +310,7 @@ public class FileInfoCacheService extends IJDBCService {
         cacheFileInfo.setInnerTable(tableType);
         fileInfos.add(cacheFileInfo);
       }
-      List<CacheSnapshotInfo> snapshotInfos = syncSnapInfo(identifier, tableType, snapshot);
+      CacheSnapshotInfo snapshotInfo = syncSnapInfo(identifier, tableType, snapshot);
 
       try (SqlSession sqlSession = getSqlSession(false)) {
         FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
@@ -317,7 +318,7 @@ public class FileInfoCacheService extends IJDBCService {
         fileInfos.stream().filter(e -> e.getDeleteSnapshotId() != null).forEach(fileInfoCacheMapper::updateCache);
 
         SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-        snapshotInfos.forEach(snapInfoCacheMapper::insertCache);
+        snapInfoCacheMapper.insertCache(snapshotInfo);
 
         sqlSession.commit();
       } catch (Exception e) {
@@ -377,8 +378,7 @@ public class FileInfoCacheService extends IJDBCService {
     return rs;
   }
 
-  private List<CacheSnapshotInfo> syncSnapInfo(TableIdentifier identifier, String tableType, Snapshot snapshot) {
-    List<CacheSnapshotInfo> rs = new ArrayList<>();
+  private CacheSnapshotInfo syncSnapInfo(TableIdentifier identifier, String tableType, Snapshot snapshot) {
     CacheSnapshotInfo cache = new CacheSnapshotInfo();
     cache.setTableIdentifier(identifier);
     cache.setSnapshotId(snapshot.snapshotId());
@@ -386,8 +386,7 @@ public class FileInfoCacheService extends IJDBCService {
     cache.setAction(snapshot.operation());
     cache.setInnerTable(tableType);
     cache.setCommitTime(snapshot.timestampMillis());
-    rs.add(cache);
-    return rs;
+    return cache;
   }
 
   private List<CacheSnapshotInfo> genSnapInfo(TableCommitMeta tableCommitMeta) {
@@ -475,14 +474,7 @@ public class FileInfoCacheService extends IJDBCService {
 
     public void doTask() {
       LOG.info("start execute doTask");
-      expiredCache();
       syncCache();
-    }
-
-    private void expiredCache() {
-      LOG.info("start execute expiredCache");
-      fileInfoCacheService.expiredCache(
-          System.currentTimeMillis() - ArcticMetaStore.conf.getLong(ArcticMetaStoreConf.FILE_CACHE_EXPIRED_INTERVAL));
     }
 
     private void syncCache() {
