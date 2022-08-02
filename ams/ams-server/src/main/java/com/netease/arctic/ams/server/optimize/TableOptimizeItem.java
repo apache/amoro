@@ -53,7 +53,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -618,7 +617,7 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
-   * Get tasks which is ready to commit (only if all tasks in a partition is ready).
+   * Get tasks which is ready to commit (only if all tasks in a table is ready).
    *
    * @return map partition -> tasks of partition
    */
@@ -626,16 +625,11 @@ public class TableOptimizeItem extends IJDBCService {
     tasksLock.lock();
     try {
       Map<String, List<OptimizeTaskItem>> collector = new HashMap<>();
-      Set<String> partitionCannotCommit = new HashSet<>();
       for (OptimizeTaskItem optimizeTaskItem : optimizeTasks.values()) {
         String partition = optimizeTaskItem.getOptimizeTask().getPartition();
-        if (partitionCannotCommit.contains(partition)) {
-          continue;
-        }
         if (!optimizeTaskItem.canCommit()) {
-          partitionCannotCommit.add(partition);
-          collector.remove(partition);
-          continue;
+          collector.clear();
+          break;
         }
         optimizeTaskItem.setFiles();
         collector.computeIfAbsent(partition, p -> new ArrayList<>()).add(optimizeTaskItem);
@@ -653,14 +647,16 @@ public class TableOptimizeItem extends IJDBCService {
   public void commitOptimizeTasks() throws Exception {
     tasksCommitLock.lock();
 
-    // check current base table snapshot whether changed
-    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
-        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
-    if (tableOptimizeRuntime.getCurrentSnapshotId() != UnKeyedTableUtil.getSnapshotId(baseTable)) {
-      LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
-      clearOptimizeTasks();
-      tableOptimizeRuntime.setRunning(false);
+    // check current base table snapshot whether changed when minor optimize
+    if (isMinorOptimizing()) {
+      if (tableOptimizeRuntime.getCurrentSnapshotId() !=
+          UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable())) {
+        LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
+        clearOptimizeTasks();
+        tableOptimizeRuntime.setRunning(false);
+      }
     }
+
     try {
       Map<String, List<OptimizeTaskItem>> tasksToCommit = getOptimizeTasksToCommit();
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
@@ -761,5 +757,13 @@ public class TableOptimizeItem extends IJDBCService {
     }
 
     return result;
+  }
+
+  private boolean isMinorOptimizing() {
+    if (MapUtils.isEmpty(optimizeTasks)) {
+      return false;
+    }
+    OptimizeTaskItem optimizeTaskItem = new ArrayList<>(optimizeTasks.values()).get(0);
+    return optimizeTaskItem.getTaskId().getType() == OptimizeType.Minor;
   }
 }
