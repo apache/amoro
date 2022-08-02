@@ -26,6 +26,38 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
  */
 public interface ArcticExtendSparkSqlListener extends ParseTreeListener {
 	/**
+	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#arcticCommand}.
+	 * @param ctx the parse tree
+	 */
+	void enterArcticCommand(ArcticExtendSparkSqlParser.ArcticCommandContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ArcticExtendSparkSqlParser#arcticCommand}.
+	 * @param ctx the parse tree
+	 */
+	void exitArcticCommand(ArcticExtendSparkSqlParser.ArcticCommandContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code createTableWithPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#arcticStatement}.
+	 * @param ctx the parse tree
+	 */
+	void enterCreateTableWithPk(ArcticExtendSparkSqlParser.CreateTableWithPkContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code createTableWithPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#arcticStatement}.
+	 * @param ctx the parse tree
+	 */
+	void exitCreateTableWithPk(ArcticExtendSparkSqlParser.CreateTableWithPkContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableWithPrimaryKey}.
+	 * @param ctx the parse tree
+	 */
+	void enterCreateTableWithPrimaryKey(ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ArcticExtendSparkSqlParser#createTableWithPrimaryKey}.
+	 * @param ctx the parse tree
+	 */
+	void exitCreateTableWithPrimaryKey(ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#primarySpec}.
 	 * @param ctx the parse tree
 	 */
@@ -36,15 +68,29 @@ public interface ArcticExtendSparkSqlListener extends ParseTreeListener {
 	 */
 	void exitPrimarySpec(ArcticExtendSparkSqlParser.PrimarySpecContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#colTypeList}.
+	 * Enter a parse tree produced by the {@code colListWithPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#colListAndPk}.
 	 * @param ctx the parse tree
 	 */
-	void enterColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
+	void enterColListWithPk(ArcticExtendSparkSqlParser.ColListWithPkContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link ArcticExtendSparkSqlParser#colTypeList}.
+	 * Exit a parse tree produced by the {@code colListWithPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#colListAndPk}.
 	 * @param ctx the parse tree
 	 */
-	void exitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
+	void exitColListWithPk(ArcticExtendSparkSqlParser.ColListWithPkContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code colListOnlyPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#colListAndPk}.
+	 * @param ctx the parse tree
+	 */
+	void enterColListOnlyPk(ArcticExtendSparkSqlParser.ColListOnlyPkContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code colListOnlyPk}
+	 * labeled alternative in {@link ArcticExtendSparkSqlParser#colListAndPk}.
+	 * @param ctx the parse tree
+	 */
+	void exitColListOnlyPk(ArcticExtendSparkSqlParser.ColListOnlyPkContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#singleStatement}.
 	 * @param ctx the parse tree
@@ -2779,6 +2825,16 @@ public interface ArcticExtendSparkSqlListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitQualifiedColTypeWithPosition(ArcticExtendSparkSqlParser.QualifiedColTypeWithPositionContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#colTypeList}.
+	 * @param ctx the parse tree
+	 */
+	void enterColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link ArcticExtendSparkSqlParser#colTypeList}.
+	 * @param ctx the parse tree
+	 */
+	void exitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link ArcticExtendSparkSqlParser#colType}.
 	 * @param ctx the parse tree
