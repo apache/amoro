@@ -21,7 +21,7 @@ package com.netease.arctic.optimizer.operator;
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.optimizer.OptimizerConfig;
-import com.netease.arctic.optimizer.util.OptimizeManagerClients;
+import com.netease.arctic.ams.api.client.OptimizeManagerClients;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

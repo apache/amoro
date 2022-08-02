@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.AmsClientPools;
+import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
@@ -28,7 +28,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;

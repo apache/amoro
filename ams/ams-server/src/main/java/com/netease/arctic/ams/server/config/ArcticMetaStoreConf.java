@@ -19,6 +19,18 @@
 package com.netease.arctic.ams.server.config;
 
 public class ArcticMetaStoreConf {
+  public static final ConfigOption<String> CLUSTER_NAME =
+      ConfigOptions.key("arctic.ams.cluster.name")
+          .stringType()
+          .defaultValue("default")
+          .withDescription("arctic ams cluster name.");
+
+  public static final ConfigOption<Boolean> HA_ENABLE =
+      ConfigOptions.key("arctic.ams.ha.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("is arctic ams running high available.");
+
   public static final ConfigOption<Long> SERVER_MAX_MESSAGE_SIZE =
       ConfigOptions.key("arctic.ams.server.max.message.size")
           .longType()
@@ -88,6 +100,11 @@ public class ArcticMetaStoreConf {
               "These will be used to execute all file sync processes.");
   public static final ConfigOption<String> THRIFT_BIND_HOST =
       ConfigOptions.key("arctic.ams.server-host")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Bind host on which to run the ams thrift service.");
+  public static final ConfigOption<String> ZOOKEEPER_SERVER =
+      ConfigOptions.key("arctic.ams.zookeeper")
           .stringType()
           .defaultValue("")
           .withDescription("Bind host on which to run the ams thrift service.");

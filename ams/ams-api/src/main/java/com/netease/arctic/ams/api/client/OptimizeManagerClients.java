@@ -16,18 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.util;
+package com.netease.arctic.ams.api.client;
 
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.OptimizeManager;
-import com.netease.arctic.ams.api.client.ArcticThriftUrl;
-import com.netease.arctic.ams.api.client.PoolConfig;
-import com.netease.arctic.ams.api.client.ServiceInfo;
-import com.netease.arctic.ams.api.client.ThriftClientPool;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 
@@ -42,7 +36,6 @@ public class OptimizeManagerClients {
       .build(OptimizeManagerClients::buildClient);
 
   public static OptimizeManager.Iface getClient(String metastoreUrl) {
-    Preconditions.checkNotNull(metastoreUrl, "metastoreUrl is null");
     return CLIENT_POOLS.get(metastoreUrl).iface();
   }
 

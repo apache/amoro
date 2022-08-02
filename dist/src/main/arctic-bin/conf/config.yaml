@@ -1,4 +1,5 @@
 ams:
+  arctic.ams.cluster.name: default
   arctic.ams.server-host: 127.0.0.1
   arctic.ams.thrift.port: 1260
   arctic.ams.http.port: 1630

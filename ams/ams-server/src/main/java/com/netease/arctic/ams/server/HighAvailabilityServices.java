@@ -1,51 +1,56 @@
 package com.netease.arctic.ams.server;
 
-import java.nio.charset.StandardCharsets;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
+import com.netease.arctic.ams.api.properties.AmsHAProperties;
+import com.netease.arctic.ams.api.client.ZookeeperService;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
-import org.apache.curator.retry.ExponentialBackoffRetry;
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.data.Stat;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HighAvailabilityServices {
-  private LeaderLatch leaderLatch;
 
+  public static final Logger LOG = LoggerFactory.getLogger(HighAvailabilityServices.class);
 
-  public static class ZookeeperService {
-    private CuratorFramework zkClient;
+  private final LeaderLatch leaderLatch;
+  private static volatile HighAvailabilityServices instance;
+  private static String namespace;
+  private static final List<LeaderLatchListener> listeners = new ArrayList<>();
 
-    public ZookeeperService(String zkServerAddress) {
-      ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
-      this.zkClient = CuratorFrameworkFactory.builder()
-          .connectString(zkServerAddress)
-          .sessionTimeoutMs(5000)
-          .connectionTimeoutMs(5000)
-          .retryPolicy(retryPolicy)
-          .build();
+  private HighAvailabilityServices(String zkServerAddress, String namespace) {
+    ZookeeperService zkService = new ZookeeperService(zkServerAddress);
+    this.namespace = namespace;
+    String lockPath = AmsHAProperties.getLeaderPath(namespace);
+    try {
+      zkService.create(lockPath);
+    } catch (Exception e) {
+      e.printStackTrace();
     }
+    leaderLatch = new LeaderLatch(zkService.getZkClient(), lockPath);
+  }
 
-    public boolean exist(String path) throws Exception {
-      Stat stat = zkClient.checkExists().forPath(path);
-      return stat != null;
-    }
+  public static HighAvailabilityServices getInstance(String zkServerAddress, String namespace) {
+    Preconditions.checkNotNull(namespace, "cluster name cannot be null");
 
-    public void create(String path) throws Exception {
-      if (!exist(path)) {
-        zkClient.create().withMode(CreateMode.PERSISTENT).forPath(path);
+    if (instance == null) {
+      synchronized (HighAvailabilityServices.class) {
+        if (instance == null) {
+          instance = new HighAvailabilityServices(zkServerAddress, namespace);
+        }
       }
     }
+    return instance;
+  }
 
-    public void setData(String path, String data) throws Exception {
-      zkClient.setData().forPath(path, data.getBytes(StandardCharsets.UTF_8));
-    }
+  public void addListener(LeaderLatchListener listener) {
+    listeners.add(listener);
+  }
 
-    public String getData(String path) throws Exception {
-      return new String(zkClient.getData().forPath(path), StandardCharsets.UTF_8);
-    }
-
-    public void delete(String path) throws Exception {
-      zkClient.delete().forPath(path);
-    }
+  public void leaderLatch() throws Exception {
+    listeners.forEach(leaderLatch::addListener);
+    leaderLatch.start();
+    leaderLatch.await();
   }
 }
