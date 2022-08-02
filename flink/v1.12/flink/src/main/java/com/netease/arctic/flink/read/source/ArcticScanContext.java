@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
