@@ -40,8 +40,8 @@ primarySpec
     ;
 
 colListAndPk
-    :'(' colTypeList (',' primarySpec )? ')'
-    | primarySpec
+    :'(' colTypeList (',' primarySpec )? ')'                            #colListWithPk
+    | primarySpec                                                       #colListOnlyPk
     ;
 
 KEY: 'KEY';
