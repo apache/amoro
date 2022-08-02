@@ -259,6 +259,7 @@ Hint Options
 |streaming|false|String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval|10s|String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
+|scan.startup.mode|earliest|String|否|when 'arctic.read.mode' = 'file', there are two options: 'earliest' and 'latest'.<br>'earliest' means reading snapshot data, and if 'streaming'='true' arctic source will read incremental data after snapshot data has been read;<br>'latest'：means reading new committed data after the current snapshot(current snapshot data is exclusive)|
 
 ## Writing With SQL
 Arctic 表支持通过 Flink Sql 往 Log 或 File 写入数据
