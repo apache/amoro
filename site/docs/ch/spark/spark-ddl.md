@@ -109,12 +109,6 @@ ALTER TABLE arctic_catalog.db.sample SET TBLPROPERTIES (
 ```sql
 ALTER TABLE arctic_catalog.db.sample UNSET TBLPROPERTIES ('read.split.target-size');
 ```
-`SET TBLPROPERTIES` 也可以用来设置表注释:
-```sql
-ALTER TABLE arctic_catalog.db.sample SET TBLPROPERTIES (
-    'comment' = 'A table comment.'
-);
-```
 ### ALTER TABLE ... ADD COLUMN
 ```sql
 ALTER TABLE arctic_catalog.db.sample
