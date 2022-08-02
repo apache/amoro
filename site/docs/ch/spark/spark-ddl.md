@@ -100,7 +100,7 @@ Arctic 支持的 `ALTER TABLE` 语法包括：
 
 ### ALTER TABLE ... ADD COLUMN
 ```sql
-ALTER TABLE arctic_catalog.db.sample RENAME
+ALTER TABLE arctic_catalog.db.sample
 ADD COLUMNS (
     new_column string comment 'new_column docs'
   )
