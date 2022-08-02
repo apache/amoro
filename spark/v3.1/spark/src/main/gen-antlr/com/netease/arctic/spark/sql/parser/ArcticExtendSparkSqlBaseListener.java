@@ -34,6 +34,42 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterArcticCommand(ArcticExtendSparkSqlParser.ArcticCommandContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArcticCommand(ArcticExtendSparkSqlParser.ArcticCommandContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCreateTableWithPk(ArcticExtendSparkSqlParser.CreateTableWithPkContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCreateTableWithPk(ArcticExtendSparkSqlParser.CreateTableWithPkContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterCreateTableWithPrimaryKey(ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitCreateTableWithPrimaryKey(ArcticExtendSparkSqlParser.CreateTableWithPrimaryKeyContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterPrimarySpec(ArcticExtendSparkSqlParser.PrimarySpecContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -46,13 +82,25 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx) { }
+	@Override public void enterColListWithPk(ArcticExtendSparkSqlParser.ColListWithPkContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx) { }
+	@Override public void exitColListWithPk(ArcticExtendSparkSqlParser.ColListWithPkContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterColListOnlyPk(ArcticExtendSparkSqlParser.ColListOnlyPkContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitColListOnlyPk(ArcticExtendSparkSqlParser.ColListOnlyPkContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -2993,6 +3041,18 @@ public class ArcticExtendSparkSqlBaseListener implements ArcticExtendSparkSqlLis
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitQualifiedColTypeWithPosition(ArcticExtendSparkSqlParser.QualifiedColTypeWithPositionContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitColTypeList(ArcticExtendSparkSqlParser.ColTypeListContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

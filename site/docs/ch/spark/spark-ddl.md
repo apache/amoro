@@ -87,23 +87,34 @@ AS SELECT ...
 ## DROP TABLE
 
 ```sql
-DROP TABLE  arctic_catalog.db.sample
+DROP TABLE  arctic_catalog.db.sample;
 ```
 
 ## ALTER TABLE
 Arctic 支持的 `ALTER TABLE` 语法包括：
 
+* ALTER TABLE ... SET TBLPROPERTIES
 * ALTER TABLE ... ADD COLUMN  
 * ALTER TABLE ... RENAME COLUMN
 * ALTER TABLE ... ALTER COLUMN
 * ALTER TABLE ... DROP COLUMN
 
+### ALTER TABLE ... SET TBLPROPERTIES
+```sql
+ALTER TABLE arctic_catalog.db.sample SET TBLPROPERTIES (
+    'read.split.target-size'='268435456'
+);
+```
+使用`UNSET` 可以移除 properties:
+```sql
+ALTER TABLE arctic_catalog.db.sample UNSET TBLPROPERTIES ('read.split.target-size');
+```
 ### ALTER TABLE ... ADD COLUMN
 ```sql
-ALTER TABLE arctic_catalog.db.sample RENAME
+ALTER TABLE arctic_catalog.db.sample
 ADD COLUMNS (
     new_column string comment 'new_column docs'
-  )
+  );
 ```
 可以同时添加多个列，用逗号分隔。 
 ```sql
@@ -113,7 +124,7 @@ ADD COLUMN point struct<x: double, y: double>;
 
 -- add a field to the struct
 ALTER TABLE arctic_catalog.db.sample
-ADD COLUMN point.z double
+ADD COLUMN point.z double;
 ```
 ```sql
 -- create a nested array column of struct
@@ -122,7 +133,7 @@ ADD COLUMN points array<struct<x: double, y: double>>;
 
 -- add a field to the struct within an array. Using keyword 'element' to access the array's element column.
 ALTER TABLE arctic_catalog.db.sample
-ADD COLUMN points.element.z double
+ADD COLUMN points.element.z double;
 ```
 ```sql
 -- create a map column of struct key and struct value
@@ -131,44 +142,44 @@ ADD COLUMN points map<struct<x: int>, struct<a: int>>;
 
 -- add a field to the value struct in a map. Using keyword 'value' to access the map's value column.
 ALTER TABLE arctic_catalog.db.sample
-ADD COLUMN points.value.b int
+ADD COLUMN points.value.b int;
 ```
 可以通过添加`FIRST`或`AFTER`子句在任何位置添加列:
 ```sql
 ALTER TABLE arctic_catalog.db.sample
-ADD COLUMN new_column bigint AFTER other_column
+ADD COLUMN new_column bigint AFTER other_column;
 ```
 ```sql
 ALTER TABLEarctic_catalog.db.sample
-ADD COLUMN nested.new_column bigint FIRST
+ADD COLUMN nested.new_column bigint FIRST;
 ```
 ### ALTER TABLE ... RENAME COLUMN
 ```sql
-ALTER TABLE arctic_catalog.db.sample RENAME COLUMN data TO payload
+ALTER TABLE arctic_catalog.db.sample RENAME COLUMN data TO payload;
 ```
 ### ALTER TABLE ... ALTER COLUMN
 Alter column 可以用于加宽类型，使字段成为可选字段，设置注释和重新排序字段。
 ```sql
-ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double
+ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double;
 ```
 若要从结构中添加或删除列，请使用带有嵌套列名的`ADD COLUMN`或`DROP COLUMN`。
 
 Column注释也可以使用`ALTER COLUMN`更新:
 ```sql
-ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double COMMENT 'unit is bytes per second'
-ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement COMMENT 'unit is kilobytes per second'
+ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double COMMENT 'unit is bytes per second';
+ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement COMMENT 'unit is kilobytes per second';
 ```
 允许使用`FIRST`和`AFTER`子句对结构中的顶级列或列进行重新排序:
 ```sql
-ALTER TABLE arctic_catalog.db.sample ALTER COLUMN col FIRST
+ALTER TABLE arctic_catalog.db.sample ALTER COLUMN col FIRST;
 ```
 ```sql
-ALTER TABLE arctic_catalog.db.sample ALTER COLUMN nested.col AFTER other_col
+ALTER TABLE arctic_catalog.db.sample ALTER COLUMN nested.col AFTER other_col;
 ```
 ### ALTER TABLE ... DROP COLUMN
 ```sql
-ALTER TABLE arctic_catalog.db.sample DROP COLUMN id
-ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z
+ALTER TABLE arctic_catalog.db.sample DROP COLUMN id;
+ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z;
 ```
 
 
@@ -176,5 +187,5 @@ ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z
 ## DESC TABLE
 `DESCRIBE TABLE`返回表的基本元数据信息。 对于有主键表，也会展示主键信息。
 ```sql
- { DESC | DESCRIBE }  TABLE  arctic_catalog.db.sample
+ { DESC | DESCRIBE }  TABLE  arctic_catalog.db.sample;
 ```
