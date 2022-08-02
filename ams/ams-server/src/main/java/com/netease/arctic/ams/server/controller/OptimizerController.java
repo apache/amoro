@@ -43,11 +43,14 @@ import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-/** optimize controller.
+/**
+ * optimize controller.
+ *
  * @Description: optimizer is a task to compact small files in arctic table.
  * OptimizerController is the optimizer interface's controller, through this interface, you can get the optimized table,
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
@@ -83,7 +86,7 @@ public class OptimizerController extends RestBaseController {
           arcticTableItemList.add(arcticTableItem);
         } else {
           String groupName = arcticTable.getProperties()
-              .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+                  .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
           if (null != groupName) {
             if (optimizerGroup.equals(groupName)) {
               arcticTableItemList.add(arcticTableItem);
@@ -91,6 +94,30 @@ public class OptimizerController extends RestBaseController {
           }
         }
       }
+
+      // sort the table list
+      arcticTableItemList.sort(new Comparator<TableOptimizeItem>() {
+        @Override
+        public int compare(TableOptimizeItem o1, TableOptimizeItem o2) {
+          // first we compare the status , and then we compare the start time when status are equal;
+          int statDiff = o1.getTableOptimizeRuntime().getOptimizeStatus()
+                  .compareTo(o2.getTableOptimizeRuntime().getOptimizeStatus());
+          // status order is asc, starttime order is desc
+          if (statDiff == 0) {
+            long timeDiff = o1.getTableOptimizeRuntime().getOptimizeStatusStartTime() -
+                    o2.getTableOptimizeRuntime().getOptimizeStatusStartTime();
+            return timeDiff >= 0 ? (timeDiff == 0 ? 0 : -1) : 1;
+          } else if (statDiff < 0) {
+            return -1;
+          } else {
+            return 1;
+          }
+        }
+      });
+      arcticTableItemList.stream().skip(offset).limit(pageSize).forEach(item -> LOG.info("opinfo: {}",
+              String.format("%s-%d",
+              item.getTableOptimizeRuntime().getOptimizeStatus(),
+                      item.getTableOptimizeRuntime().getOptimizeStatusStartTime())));
       PageResult<TableOptimizeItem, TableOptimizeInfo> amsPageResult = PageResult.of(arcticTableItemList,
               offset, pageSize, TableOptimizeItem::buildTableOptimizeInfo);
       ctx.json(OkResponse.of(amsPageResult));
@@ -102,8 +129,9 @@ public class OptimizerController extends RestBaseController {
 
   /**
    * get optimizers.
-   * @pathParam optimizerGroup
+   *
    * @return List of {@link Optimizer}
+   * @pathParam optimizerGroup
    */
   public static void getOptimizers(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
@@ -134,6 +162,7 @@ public class OptimizerController extends RestBaseController {
   /**
    * get optimizerGroup: optimizerGroupId, optimizerGroupName
    * url = /optimizerGroups.
+   *
    * @return List of {@link OptimizerGroup}
    */
   public static void getOptimizerGroups(Context ctx) {
@@ -149,8 +178,9 @@ public class OptimizerController extends RestBaseController {
 
   /**
    * get optimizer info: occupationCore, occupationMemory
-   * @pathParam optimizerGroup
+   *
    * @return {@link OptimizerResourceInfo}
+   * @pathParam optimizerGroup
    */
   public static void getOptimizerGroupInfo(Context ctx) {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
@@ -181,6 +211,7 @@ public class OptimizerController extends RestBaseController {
 
   /**
    * release optimizer.
+   *
    * @pathParam jobId
    */
   public static void releaseOptimizer(Context ctx) {
