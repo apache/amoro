@@ -35,6 +35,8 @@
         <root.dir>${project.basedir}</root.dir>
         <spark.mysql.version>5.1.40</spark.mysql.version>
         <guava.version>14.0.1</guava.version>
+        <spark.version>3.1.1</spark.version>
+        <scala.version>2.12.15</scala.version>
     </properties>
 
     <dependencies>
@@ -237,32 +239,20 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.19</version>
+                <configuration>
+                    <includes>
+                        <include>**/ArcticSparkHiveMainTest.java</include>
+                        <include>**/ArcticSparkNonHiveMainTest.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
-                <version>4.3.0</version>
-                <executions>
-                    <execution>
-                        <id>scala-compile-first</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                            <goal>compile</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>scala-test-compile</id>
-                        <phase>process-test-resources</phase>
-                        <goals>
-                            <goal>add-source</goal>
-                            <goal>testCompile</goal>
-                        </goals>
-                    </execution>
-                </executions>
                 <configuration>
-                    <args>
-                        <arg>-extdirs</arg>
-                        <arg>${project.basedir}/libs</arg>
-                    </args>
                     <scalaVersion>${scala.version}</scalaVersion>
                 </configuration>
             </plugin>

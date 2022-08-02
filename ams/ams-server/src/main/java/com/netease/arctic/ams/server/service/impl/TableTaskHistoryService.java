@@ -44,17 +44,6 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
   }
 
   @Override
-  public List<TableTaskHistory> selectTaskHistoryByGroupId(TableIdentifier identifier,
-                                                           String historyId, String groupId) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      return taskHistoryMapper.selectTaskHistoryByGroupId(identifier, historyId, groupId);
-    }
-  }
-
-  @Override
   public void insertTaskHistory(TableTaskHistory taskHistory) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TaskHistoryMapper taskHistoryMapper =

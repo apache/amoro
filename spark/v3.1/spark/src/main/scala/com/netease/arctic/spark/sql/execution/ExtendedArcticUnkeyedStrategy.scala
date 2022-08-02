@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
+import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
 import org.apache.spark.sql.{SparkSession, Strategy}
@@ -39,6 +40,8 @@ case class ExtendedArcticUnkeyedStrategy(spark: SparkSession) extends Strategy {
     schema, partitioning, _, properties, _, _, _, _, _, primary, _, ifNotExists) =>
       CreateArcticTableStatementExec(catalog, identifier, schema,
         partitioning, properties, seqAsJavaList(primary), ifNotExists) :: Nil
+    case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists) =>
+      CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
 
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
       if (partitionSpec.nonEmpty) {
