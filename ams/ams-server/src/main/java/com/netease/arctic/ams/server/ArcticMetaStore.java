@@ -39,6 +39,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.DerbyService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
+import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
@@ -171,6 +172,7 @@ public class ArcticMetaStore {
         startExpiredClean();
         startOrphanClean();
         monitorOptimizerStatus();
+        tableRuntimeDataExpire();
         AmsRestServer.startRestServer(httpPort);
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
@@ -248,6 +250,15 @@ public class ArcticMetaStore {
         monitor::monitorStatus,
         3 * 1000L,
         60 * 1000L,
+        TimeUnit.MILLISECONDS);
+  }
+
+  private static void tableRuntimeDataExpire() {
+    RuntimeDataExpireService runtimeDataExpireService = ServiceContainer.getRuntimeDataExpireService();
+    ThreadPool.getPool(ThreadPool.Type.TABLE_RUNTIME_DATA_EXPIRE).scheduleWithFixedDelay(
+        runtimeDataExpireService::doExpire,
+        3 * 1000L,
+        60 * 60 * 1000L,
         TimeUnit.MILLISECONDS);
   }
 

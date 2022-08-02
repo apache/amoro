@@ -27,7 +27,7 @@ public class TableMetadataUtil {
   }
 
   public static TableIdentifier getTableAllIdentify(String name) {
-    String[] names = name.split(".");
+    String[] names = name.split("\\.");
     if (names.length != 3) {
       return null;
     }
