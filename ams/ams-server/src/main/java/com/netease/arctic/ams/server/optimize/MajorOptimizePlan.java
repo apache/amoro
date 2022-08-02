@@ -66,9 +66,9 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   public MajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
                            Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                           long currentCacheBaseTableSnapshotId) {
+                           Predicate<Long> snapshotIsCached) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, Collections.emptyList(), posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime, currentCacheBaseTableSnapshotId);
+        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
   }
 
   @Override

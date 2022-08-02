@@ -34,7 +34,6 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
-import com.netease.arctic.ams.server.model.SnapshotStatistics;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -46,6 +45,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
@@ -53,11 +53,14 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.util.PropertyUtil;
+import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +101,13 @@ public class TableOptimizeItem extends IJDBCService {
   private final IQuotaService quotaService;
   private final AmsClient metastoreClient;
   private volatile double quotaCache;
+  private final Predicate<Long> snapshotIsCached = new Predicate<Long>() {
+    @Override
+    public boolean apply(@Nullable Long snapshotId) {
+      return fileInfoCacheService.snapshotIsCached(tableIdentifier.buildTableIdentifier(),
+          Constants.INNER_TABLE_BASE, snapshotId);
+    }
+  };
 
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
@@ -642,6 +652,15 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public void commitOptimizeTasks() throws Exception {
     tasksCommitLock.lock();
+
+    // check current base table snapshot whether changed
+    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
+        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+    if (tableOptimizeRuntime.getCurrentSnapshotId() != UnKeyedTableUtil.getSnapshotId(baseTable)) {
+      LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
+      clearOptimizeTasks();
+      tableOptimizeRuntime.setRunning(false);
+    }
     try {
       Map<String, List<OptimizeTaskItem>> tasksToCommit = getOptimizeTasksToCommit();
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
@@ -685,13 +704,8 @@ public class TableOptimizeItem extends IJDBCService {
     baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
     List<DataFileInfo> posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
 
-    List<SnapshotStatistics> snapshotStatistics =
-        fileInfoCacheService.getCurrentSnapInfo(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-    long cacheCurrentBaseTableSnapshotId = CollectionUtils.isEmpty(snapshotStatistics) ?
-        TableOptimizeRuntime.INVALID_SNAPSHOT_ID : snapshotStatistics.get(0).getId();
-
     return new MajorOptimizePlan(getArcticTable(), tableOptimizeRuntime,
-        baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, cacheCurrentBaseTableSnapshotId);
+        baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
   }
 
   /**
@@ -710,14 +724,8 @@ public class TableOptimizeItem extends IJDBCService {
     List<DataFileInfo> changeTableFiles =
         fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
 
-
-    List<SnapshotStatistics> snapshotStatistics =
-        fileInfoCacheService.getCurrentSnapInfo(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-    long cacheCurrentBaseTableSnapshotId = CollectionUtils.isEmpty(snapshotStatistics) ?
-        TableOptimizeRuntime.INVALID_SNAPSHOT_ID : snapshotStatistics.get(0).getId();
-
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeTableFiles, posDeleteFiles,
-        generatePartitionRunning(), queueId, currentTime, cacheCurrentBaseTableSnapshotId);
+        generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
   }
 
   /**
