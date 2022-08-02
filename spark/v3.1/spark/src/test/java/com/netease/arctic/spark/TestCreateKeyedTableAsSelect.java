@@ -112,7 +112,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
   }
 
   @Test
-  public void testRTAS() {
+  public void testPropertiesCTAS() {
     sql("CREATE TABLE {0}.{1} USING arctic TBLPROPERTIES (''prop1''=''val1'', ''prop2''=''val2'')" +
         "AS SELECT * FROM {2}.{3}", database, table, database, sourceTable);
 
@@ -133,5 +133,32 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
         "val1", loadTable(identifier).properties().get("prop1"));
     Assert.assertEquals("Should have preserved table property",
         "val2", loadTable(identifier).properties().get("prop2"));
+  }
+
+  @Test
+  public void testCTASWithPKAndPartition() {
+    sql("CREATE TABLE {0}.{1} primary key(id) USING arctic PARTITIONED BY (pt)" +
+        "AS SELECT * FROM {2}.{3}", database, table, database, sourceTable);
+
+    assertEquals("Should have rows matching the source table",
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, table),
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
+
+    Schema expectedSchema = new Schema(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "data", Types.StringType.get()),
+        Types.NestedField.optional(3, "pt", Types.StringType.get())
+    );
+
+    sql("desc table {0}.{1}", database, table);
+    assertDescResult(rows, Lists.newArrayList("id"));
+    Assert.assertEquals("Should have expected nullable schema",
+        expectedSchema.asStruct(), loadTable(identifier).schema().asStruct());
+
+    PartitionSpec expectedSpec = PartitionSpec.builderFor(expectedSchema)
+        .identity("pt")
+        .build();
+    Assert.assertEquals("Should be partitioned by pt",
+        expectedSpec, loadTable(identifier).spec());
   }
 }
