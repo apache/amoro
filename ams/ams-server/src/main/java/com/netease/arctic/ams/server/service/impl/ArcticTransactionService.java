@@ -24,28 +24,10 @@ import com.netease.arctic.ams.server.mapper.TableTransactionMetaMapper;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ibatis.exceptions.PersistenceException;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 public class ArcticTransactionService extends IJDBCService {
-
-  Long expireTime = 24 * 60 * 60 * 1000L;
-
-  public long tryAllocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature, Long txId) {
-    SqlSession sqlSession = getSqlSession(true);
-    TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
-
-    while (true) {
-      try {
-        mapper.insertTransaction(txId, transactionSignature, tableIdentifier);
-        return txId;
-      } catch (Exception e) {
-        txId++;
-      }
-
-    }
-  }
 
   public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature, int retry) {
     SqlSession sqlSession = getSqlSession(false);
@@ -54,42 +36,46 @@ public class ArcticTransactionService extends IJDBCService {
           new com.netease.arctic.table.TableIdentifier(tableIdentifier);
       TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
       TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
+      TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
       Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
-      Long currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
+      Long currentTxId = mapper.getCurrentTxId(tableIdentifier);
+      if (currentTxId == null) {
+        currentTxId = tableMetadata.getCurrentTxId()  == null ? 0 : tableMetadata.getCurrentTxId();
+      }
       Long finalTxId = currentTxId + 1;
       if (!StringUtils.isEmpty(transactionSignature)) {
-        TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
         Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);
         if (txId != null) {
           sqlSession.commit(true);
           return txId;
         }
-        try {
-          mapper.insertTransaction(finalTxId, transactionSignature, tableIdentifier);
-        } catch (Exception e) {
-          finalTxId = tryAllocateTransactionId(tableIdentifier, transactionSignature, finalTxId + 1);
-        }
+        mapper.insertTransaction(finalTxId, transactionSignature, tableIdentifier);
       }
 
       tableMetadataMapper.updateTableTxId(identifier, finalTxId);
       sqlSession.commit();
       return finalTxId;
-    } catch (PersistenceException e) {
+    } catch (Exception e) {
       sqlSession.rollback();
+      sqlSession.close();
       if (retry <= 0) {
         throw e;
       }
       return allocateTransactionId(tableIdentifier, transactionSignature, retry - 1);
-    } finally {
-      sqlSession.close();
     }
   }
 
-  public void expire() {
-    try (SqlSession sqlSession = getSqlSession(false);) {
+  public void delete(TableIdentifier tableIdentifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
       TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
-      Long expireTime = System.currentTimeMillis() - this.expireTime;
-      mapper.expire(expireTime);
+      mapper.deleteTableTx(tableIdentifier);
+    }
+  }
+
+  public void expire(TableIdentifier identifier, long time) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
+      mapper.expire(identifier, time);
     }
   }
 }

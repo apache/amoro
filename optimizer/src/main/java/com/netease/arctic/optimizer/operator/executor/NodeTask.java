@@ -38,12 +38,12 @@ import java.util.Set;
 
 public class NodeTask {
   private static final Logger LOG = LoggerFactory.getLogger(NodeTask.class);
-  private List<ContentFile<?>> allFiles = new ArrayList<>();
-  private List<DataFile> dataFiles = new ArrayList<>();
-  private List<DataFile> baseFiles = new ArrayList<>();
-  private List<DataFile> insertFiles = new ArrayList<>();
-  private List<DataFile> deleteFiles = new ArrayList<>();
-  private List<DeleteFile> posDeleteFiles = new ArrayList<>();
+  private final List<ContentFile<?>> allFiles = new ArrayList<>();
+  private final List<DataFile> dataFiles = new ArrayList<>();
+  private final List<DataFile> baseFiles = new ArrayList<>();
+  private final List<DataFile> insertFiles = new ArrayList<>();
+  private final List<DataFile> deleteFiles = new ArrayList<>();
+  private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;

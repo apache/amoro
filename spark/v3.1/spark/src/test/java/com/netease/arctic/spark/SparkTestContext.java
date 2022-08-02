@@ -28,6 +28,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -54,6 +55,7 @@ import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
 import org.glassfish.jersey.internal.guava.Sets;
 import org.junit.Assert;
+import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,7 +79,7 @@ import java.util.stream.IntStream;
 /**
  * test context for all spark tests.
  */
-public class SparkTestContext {
+public class SparkTestContext extends ExternalResource {
   protected static final Object ANY = new Object();
   final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
   private static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
@@ -92,7 +94,24 @@ public class SparkTestContext {
   protected static String catalogName;
   protected List<Object[]> rows;
 
+  private static SparkTestContext sparkTestContext;
+
+  private static int refCount = 0;
+
+  public static SparkTestContext getSparkTestContext () {
+    if (refCount == 0) {
+      sparkTestContext = new SparkTestContext();
+    }
+    return sparkTestContext;
+  }
+
+  public static
+  void cleanUpAdditionSparkConfigs() {
+    additionSparkConfigs.clear();
+  }
+
   public static void setUpTestDirAndArctic() throws IOException {
+    System.out.println("======================== start AMS  ========================= ");
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -109,6 +128,7 @@ public class SparkTestContext {
 
 
   public static void setUpSparkSession() {
+    System.out.println("======================== set up spark session  ========================= ");
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
@@ -140,11 +160,13 @@ public class SparkTestContext {
   }
 
   public static void cleanUpAms() {
+    System.out.println("======================== clean up AMS  ========================= ");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
   }
 
   public static void cleanUpSparkSession(){
+    System.out.println("======================== clean up spark session  ========================= ");
     spark.stop();
     spark.close();
     spark = null;

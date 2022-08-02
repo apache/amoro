@@ -10,10 +10,10 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
-${SPARK_HOME/bin/spark-sql \
+${SPARK_HOME}/bin/spark-sql \
     --conf spark.sql.extensions=com.netease.arctic.spark.ArcticSparkExtensions \
-    --conf spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
-    --conf spark.sql.catalog.spark_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
+    --conf spark.sql.catalog.local_catalog=com.netease.arctic.spark.ArcticSparkCatalog \
+    --conf spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME}
 ```
 
 > Arctic 通过 ArcticMetaService 管理 Catalog, Spark catalog 需要通过URL映射到 Arctic Catalog, 格式为:
@@ -92,16 +92,16 @@ df.writeTo('test_db.table1').overwritePartitions()
 ``` 
 select count(1) as count, data 
 from test2 
-group by data
+group by data;
 ```
 
 对于有主键表，支持通过 `.change` 的方式访问 `ChangeStore`
 
 ``` 
 select count(1) as count, data
-from test3.change
-group by data
+from test_db.test3.change group by data;
 ```
+> 此处change表没有数据，结果返回空
 
 或者也可以在 jar 任务中使用 DataFrame Api 查询 Arctic 表
 

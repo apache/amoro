@@ -207,7 +207,7 @@ public class TableExpireService implements ITableExpireService {
         LOG.error("{} can not find partitionSpec id: {}", dataFileInfo.getPath(), dataFileInfo.specId);
         return null;
       }
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, keyedTable.io());
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       return new DefaultKeyedFile((DataFile) contentFile);
     }).filter(Objects::nonNull).collect(Collectors.toList());
 

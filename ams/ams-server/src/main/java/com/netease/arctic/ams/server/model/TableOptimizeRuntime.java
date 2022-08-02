@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.commons.collections.MapUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,15 +36,10 @@ public class TableOptimizeRuntime {
   private long currentChangeSnapshotId = INVALID_SNAPSHOT_ID;
   private TableOptimizeInfo.OptimizeStatus optimizeStatus = TableOptimizeInfo.OptimizeStatus.Idle;
   private long optimizeStatusStartTime = -1;
-  private Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
-  private Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
+  private final Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
+  private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskHistoryId;
   private volatile boolean isRunning;
-
-  private Map<String, String> partitionLocation = new HashMap<>();
-
-  private TableStatistics changeTableInfo;
-  private TableStatistics baseTableInfo;
 
   public TableOptimizeRuntime() {
   }
@@ -103,10 +99,6 @@ public class TableOptimizeRuntime {
     return time == null ? -1 : time;
   }
 
-  public void setLatestMajorOptimizeTime(Map<String, Long> latestMajorOptimizeTime) {
-    this.latestMajorOptimizeTime = latestMajorOptimizeTime;
-  }
-
   public void putLatestMinorOptimizeTime(String partition, long time) {
     Long oldValue = latestMinorOptimizeTime.putIfAbsent(partition, time);
     if (oldValue != null) {
@@ -121,52 +113,16 @@ public class TableOptimizeRuntime {
     return time == null ? -1 : time;
   }
 
-  public void setLatestMinorOptimizeTime(Map<String, Long> latestMinorOptimizeTime) {
-    this.latestMinorOptimizeTime = latestMinorOptimizeTime;
-  }
-
-  public void putPartitionLocation(String partition, String location) {
-    partitionLocation.put(partition, location);
-  }
-
-  public String getPartitionLocation(String partition) {
-    return partitionLocation.getOrDefault(partition, "");
-  }
-
-  public Map<String, String> getAllPartitionLocation() {
-    return partitionLocation;
-  }
-
-  public void setPartitionLocation(Map<String, String> partitionLocation) {
-    this.partitionLocation = partitionLocation;
-  }
-
   public Set<String> getPartitions() {
     Set<String> result = new HashSet<>();
-    if (latestMajorOptimizeTime != null) {
+    if (MapUtils.isNotEmpty(latestMajorOptimizeTime)) {
       result.addAll(latestMajorOptimizeTime.keySet());
     }
-    if (latestMinorOptimizeTime != null) {
+    if (MapUtils.isNotEmpty(latestMinorOptimizeTime)) {
       result.addAll(latestMinorOptimizeTime.keySet());
     }
 
     return result;
-  }
-
-  public TableStatistics getChangeTableInfo() {
-    return changeTableInfo;
-  }
-
-  public void setChangeTableInfo(TableStatistics changeTableInfo) {
-    this.changeTableInfo = changeTableInfo;
-  }
-
-  public TableStatistics getBaseTableInfo() {
-    return baseTableInfo;
-  }
-
-  public void setBaseTableInfo(TableStatistics baseTableInfo) {
-    this.baseTableInfo = baseTableInfo;
   }
 
   public long getCurrentChangeSnapshotId() {
@@ -205,9 +161,6 @@ public class TableOptimizeRuntime {
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskHistoryId='" + latestTaskHistoryId + '\'' +
         ", isRunning=" + isRunning +
-        ", partitionLocation=" + partitionLocation +
-        ", changeTableInfo=" + changeTableInfo +
-        ", baseTableInfo=" + baseTableInfo +
         '}';
   }
 }
