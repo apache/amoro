@@ -113,5 +113,9 @@ export default {
   fail: 'Fail',
   loading: 'Loading',
   sqlShortcuts: 'SQL Shortcuts',
-  use: 'Use'
+  use: 'Use',
+  upgrade: 'Upgrade',
+  upgrading: 'Upgrading',
+  upgradeHiveTable: 'Upgrade Hive Table',
+  ok: 'Ok'
 }

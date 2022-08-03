@@ -484,5 +484,15 @@ module.exports = {
         }
       ]
     })
-  }
+  },
+  'GET /mock/ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/upgradeStatus': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        status: "upgrade",
+        errorMessage: "errorMessage"
+      }
+    })
+  },
 }

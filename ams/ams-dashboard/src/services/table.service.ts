@@ -46,6 +46,12 @@ export function getTableDetail(
 ) {
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`)
 }
+
+export function getUpgradeStatus(
+  { catalog = '' as string, db = '' as string, table = '' as string }
+) {
+  return request.get(`mock/ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgradeStatus`)
+}
 // get partions table
 export function getPartitionTable(
   params: {

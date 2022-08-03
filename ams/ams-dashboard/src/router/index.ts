@@ -22,6 +22,8 @@ const Home = () => import('@/views/Home.vue')
 const Page404 = () => import('@/views/404.vue')
 const OverView = () => import('@/views/overview/index.vue')
 const Tables = () => import('@/views/tables/index.vue')
+const HiveTables = () => import('@/views/hive-details/index.vue')
+const UpgradeTable = () => import('@/views/hive-details/upgrade.vue')
 const CreateTable = () => import('@/views/tables/create.vue')
 const Optimizing = () => import('@/views/optimize/index.vue')
 const Settings = () => import('@/views/settings/index.vue')
@@ -50,6 +52,18 @@ const routes: Array<RouteRecordRaw> = [
             path: 'create',
             name: 'Create',
             component: CreateTable
+          }
+        ]
+      },
+      {
+        path: 'hive-tables',
+        name: 'HiveTables',
+        component: HiveTables,
+        children: [
+          {
+            path: 'upgrade',
+            name: 'Upgrade',
+            component: UpgradeTable
           }
         ]
       },
