@@ -35,18 +35,12 @@ case class CreateArcticTableStatementExec(catalog: TableCatalog,
                                           structType: StructType,
                                           partitioning: Seq[Transform],
                                           map: Map[String, String],
-                                          primary: util.List[String],
                                           ignoreIfExists: Boolean) extends V2CommandExec {
 
   override protected def run(): Seq[InternalRow] = {
     if (!catalog.tableExists(ident)) {
       try {
-        var scalaMap: Map[String, String] = map
-        scalaMap += ("provider" -> "arctic")
-        if (primary != null) {
-          scalaMap += ("primary.keys" -> String.join(",", primary))
-        }
-        catalog.createTable(ident, structType, partitioning.toArray, JavaConverters.mapAsJavaMap(scalaMap));
+        catalog.createTable(ident, structType, partitioning.toArray, JavaConverters.mapAsJavaMap(map));
       } catch {
         case _: TableAlreadyExistsException if ignoreIfExists =>
           logWarning(s"Table ${ident.name()} was created concurrently. Ignoring.")
