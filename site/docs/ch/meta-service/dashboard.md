@@ -1,6 +1,6 @@
 # Arctic Dashboard
 
-如[概述](index.md)中所述，AMS(Arctic Meta Service)是Arctic中负责元数据管理与结构优化的独立服务，使用Arctic的第一步就是部署AMS。
+如[概述](index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是部署 AMS。
 
 ### 下载
 AMS依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经安装正确。
@@ -31,20 +31,20 @@ AMS安装包中提供了脚本文件`bin/ams.sh`用以处理AMS的日常运维�
 ./bin/ams.sh restart   #重启
 ./bin/ams.sh stop      #关闭
 ```
-AMS完成启动后即可登录[AMS Dashboard](http://localhost:1630)来访问AMS的页面，默认的用户名密码为：`admin/admin`。
+AMS完成启动后即可登录 [AMS Dashboard](http://localhost:1630) 来访问AMS的页面，默认的用户名密码为：`admin/admin`。
 
-### 使用MySQL作为系统库
-AMS默认使用Derby作为系统库存储自己的元数据，在生产环境下我们建议换成MySQL以提升系统的高可用。
+### 使用 MySQL 作为系统库
+AMS 默认使用 Derby 作为系统库存储自己的元数据，在生产环境下我们建议换成MySQL以提升系统的高可用。
 
 **1.修改配置文件**
 
-为使用MySQL作为AMS的系统库需要修改配置文件`conf/config.yaml`将Derby（默认系统数据库）配置修改为MySQL配置，需要修改配置项包括：
+为使用 MySQL 作为 AMS 的系统库需要修改配置文件`conf/config.yaml`将 Derby（默认系统数据库）配置修改为 MySQL 配置，需要修改配置项包括：
 
 ```yaml
-arctic.ams.mybatis.ConnectionURL: jdbc:mysql://{host}:{port}/{database}  #MySQL服务url
+arctic.ams.mybatis.ConnectionURL: jdbc:mysql://{host}:{port}/{database}  #MySQL 服务url
 arctic.ams.mybatis.ConnectionDriverClassName: com.mysql.jdbc.Driver      #MySQL jdbc driver
-arctic.ams.mybatis.ConnectionUserName: {user}                            #MySQL访问用户名
-arctic.ams.mybatis.ConnectionPassword: {password}                        #MySQL访问密码
+arctic.ams.mybatis.ConnectionUserName: {user}                            #MySQL 访问用户名
+arctic.ams.mybatis.ConnectionPassword: {password}                        #MySQL 访问密码
 arctic.ams.database.type: mysql                                          #系统库类型
 ```
 
@@ -52,7 +52,7 @@ arctic.ams.database.type: mysql                                          #系统
 
     目前只支持 MySQL 5.x 版本，不支持 MySQL 8。
 
-**2.初始化MySQL表**
+**2.初始化 MySQL 表**
 
 根据`conf/ams-init.sql`初始化AMS所需表：
 
@@ -60,16 +60,16 @@ arctic.ams.database.type: mysql                                          #系统
 mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_HOME_DIR}/conf/ams-init.sql
 ```
 
-**3.重启AMS**
+**3.重启 AMS**
 
 参考 [启动/重启/关闭](#_3)。
 
-### 导入hadoop集群
+### 导入 hadoop 集群
 
-在默认的AMS配置中，我们已经初始化了一个名为`local`的基于AMS本地文件系统的集群以方便你的测试。
-生产环境中我们需要导入hadoop集群，为此我们需要在AMS的配置中新增一个catalog，并在创建和使用arctic表时使用该catalog。
+在默认的 AMS 配置中，我们已经初始化了一个名为`local`的基于AMS本地文件系统的集群以方便你的测试。
+生产环境中我们需要导入 Hadoop 集群，为此我们需要在AMS的配置中新增一个 catalog，并在创建和使用 Arctic 表时使用该 catalog。
 
-新增catalog通过在`conf/config.yaml`中`catalogs`中增加以下配置：
+新增 catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
 
 ```yaml
   - name:                           #catalog名称
@@ -85,7 +85,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
       warehouse.dir: hdfs://default/default/warehouse         #hadoop集群仓库地址
 ```
 
-如果需要使用KERBEROS认证方式访问hadoop集群可以修改catalog中auth_config如下：
+如果需要使用 KERBEROS 认证方式访问 Hadoop 集群可以修改 catalog 中 auth_config 如下：
 
 ```yaml
     auth_config:
@@ -99,12 +99,12 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
     修改配置文件后需重启AMS服务才可生效，参考[启动/重启/关闭](#_3)。
 
-### 使用Flink执行结构优化
+### 使用 Flink 执行结构优化
 
-在默认的AMS配置中，我们已经初始化了一个名为`default`的optimize group，它会在AMS本地新启动一个进程完成local catalog中表的结构优化。
-生产环境中我们通常在yarn集群红使用flink来完成表的结构优化。
+在默认的 AMS 配置中，我们已经初始化了一个名为`default`的 optimizer group，它会在AMS本地新启动一个进程完成 local catalog 中表的结构优化。
+生产环境中我们通常在 Yarn 集群中使用 Flink 来完成表的结构优化。
 
-**1.新增flink类型container**
+**1.新增 Flink 类型 container**
 
 新增container通过在`conf/config.yaml`中`containers`增加以下配置:
 
@@ -119,9 +119,9 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
       FLINK_CONF_DIR: /etc/hadoop/conf/                  #flink配置文件所在目录
 ```
 
-**2.新增optimizer group**
+**2.新增 optimizer group**
 
-新增optimizer group通过在`conf/config.yaml`中`optimize_group`增加以下配置:
+新增 optimizer group 通过在`conf/config.yaml`中`optimize_group`增加以下配置:
 
 ```yaml
   - name: flinkOG                     #optimize group名称，在ams页面中可见
@@ -135,10 +135,6 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
     修改配置文件后需重启AMS服务才可生效，参考[启动/重启/关闭](#_3)。
 
-**3.启动optimizer**
+**3.启动 optimizer**
 
-新配置的optimize group中还未启动任何的optimizer，所以还需要登录[AMS Dashboard](http://localhost:1630)手动启动至少一个optimizer。
-
-
-
-
+新配置的 optimizer group 中还未启动任何的 optimizer，所以还需要登录 [AMS Dashboard](http://localhost:1630) 手动启动至少一个 optimizer。
