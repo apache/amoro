@@ -119,10 +119,6 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
       FLINK_CONF_DIR: /etc/hadoop/conf/                  #flink配置文件所在目录
 ```
 
-???+ 注意
-
-    请使用 Flink 1.12 以上的版本运行 Flink optimizer container。
-
 **2.新增 optimizer group**
 
 新增 optimizer group 通过在`conf/config.yaml`中`optimize_group`增加以下配置:
