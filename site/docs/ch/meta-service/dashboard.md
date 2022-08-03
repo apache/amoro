@@ -1,6 +1,6 @@
 # Arctic Dashboard
 
-如[概述](index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是部署 AMS。
+如[概述](../index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是部署 AMS。
 
 ### 下载
 AMS依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经安装正确。

@@ -11,18 +11,17 @@ edit_uri: ""
 
 # pip install mkdocs-material
 theme:
-    font:
-      text: Msyh
-    name: material
-    language: zh
-    custom_dir: '../../overrides/'
-    favicon: images/favicon.ico
-    logo: images/arctic_banner.png
-    palette:
-        primary: indigo
-        accent: indigo
-    icon:
-        repo: fontawesome/brands/github
+  font:
+    text: Msyh
+  name: material
+  language: zh
+  favicon: images/favicon.ico
+  logo: images/arctic_banner.png
+  palette:
+    primary: indigo
+    accent: indigo
+  icon:
+    repo: fontawesome/brands/github
 
 extra:
   search:

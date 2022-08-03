@@ -61,6 +61,3 @@
 | log-store.topic                    | NULL             | Logstore 使用的 topic                      |
 | log-store.data-format              | json             | Logstore 中的消息格式，当前仅支持 json         |
 | log-store.data-version             | v1               | Logstore 中消息的版本，当前仅支持 v1           |
-
-
-
