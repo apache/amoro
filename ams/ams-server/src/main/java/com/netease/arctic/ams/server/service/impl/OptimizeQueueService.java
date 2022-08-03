@@ -474,16 +474,11 @@ public class OptimizeQueueService extends IJDBCService {
         } else {
           if (tables.contains(task.getTableIdentifier())) {
             task.setFiles();
+            TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
-              TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId,
-                  ServiceContainer.getOptimizeService().getTableOptimizeItem(task.getTableIdentifier()));
-              TableOptimizeItem tableOptimizeItem =
-                  ServiceContainer.getOptimizeService().getTableOptimizeItem(task.getTableIdentifier());
-              synchronized (tableOptimizeItem) {
-                insertTableTaskHistory(tableTaskHistory);
-              }
-            } catch (NoSuchObjectException e) {
-              LOG.error("can't find table", e);
+              insertTableTaskHistory(tableTaskHistory);
+            } catch (Exception e) {
+              LOG.error("failed to insert tableTaskHistory, {} ignore", tableTaskHistory, e);
             }
             return task.getOptimizeTask();
           }
@@ -493,12 +488,7 @@ public class OptimizeQueueService extends IJDBCService {
 
     private void insertTableTaskHistory(TableTaskHistory tableTaskHistory) {
       ITableTaskHistoryService tableTaskHistoryService = ServiceContainer.getTableTaskHistoryService();
-      List<TableTaskHistory> tableTaskHistories = tableTaskHistoryService
-          .selectTaskHistoryByGroupId(new TableIdentifier(tableTaskHistory.getTableIdentifier().buildTableIdentifier()),
-              tableTaskHistory.getTaskHistoryId(), tableTaskHistory.getTaskGroupId());
-      if (CollectionUtils.isEmpty(tableTaskHistories)) {
-        tableTaskHistoryService.insertTaskHistory(tableTaskHistory);
-      }
+      tableTaskHistoryService.insertTaskHistory(tableTaskHistory);
     }
 
     private void clearTasks(TableIdentifier tableIdentifier) {

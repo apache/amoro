@@ -33,7 +33,7 @@ export class LoginService {
    * Check the login interface
    */
   public getCurUserInfo() {
-    return request.get('ams/v1/login/current').then((res) => {
+    return request.get('ams/v1/login/current', { handleError: false }).then((res) => {
       // if (res) {
       //   store.updateUserInfo({
       //     userName: res.userName

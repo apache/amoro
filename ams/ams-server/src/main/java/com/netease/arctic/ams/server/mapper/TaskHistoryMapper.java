@@ -54,29 +54,7 @@ public interface TaskHistoryMapper {
   List<TableTaskHistory> selectTaskHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                            @Param("historyId") String historyId);
 
-  @Select("select catalog_name, db_name, table_name, task_group_id, task_history_id," +
-      "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
-      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
-      "and table_name = #{tableIdentifier.tableName} and task_history_id = #{historyId} " +
-      "and task_group_id = #{groupId}")
-  @Results({
-      @Result(column = "catalog_name", property = "tableIdentifier.catalog"),
-      @Result(column = "db_name", property = "tableIdentifier.database"),
-      @Result(column = "table_name", property = "tableIdentifier.tableName"),
-      @Result(column = "task_group_id", property = "taskGroupId"),
-      @Result(column = "task_history_id", property = "taskHistoryId"),
-      @Result(column = "start_time", property = "startTime",
-          typeHandler = Long2TsConvertor.class),
-      @Result(column = "end_time", property = "endTime",
-          typeHandler = Long2TsConvertor.class),
-      @Result(column = "cost_time", property = "costTime"),
-      @Result(column = "queue_id", property = "queueId")
-  })
-  List<TableTaskHistory> selectTaskHistoryByGroupId(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-                                                    @Param("historyId") String historyId,
-                                                    @Param("groupId") String groupId);
-
-  @Insert("insert into " + TABLE_NAME + "(catalog_name, db_name, table_name, task_group_id, " +
+  @Insert("insert ignore into " + TABLE_NAME + "(catalog_name, db_name, table_name, task_group_id, " +
       "task_history_id, start_time, end_time, cost_time, queue_id) values ( " +
       "#{taskHistory.tableIdentifier.catalog}, " +
       "#{taskHistory.tableIdentifier.database}, " +

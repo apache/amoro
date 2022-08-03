@@ -73,4 +73,4 @@ Arctic support multiple processing engines as below:
 
 ## Quickstart
 
-Visit [https://arctic.netease.com/getting-started/](https://arctic.netease.com/getting-started/) to quickly explore what arctic can do.
+Visit [https://arctic.netease.com/ch/getting-started/](https://arctic.netease.com/ch/getting-started/) to quickly explore what arctic can do.

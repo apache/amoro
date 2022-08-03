@@ -49,6 +49,7 @@ public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite
     this.options = info.options();
     this.overwriteMode = options.containsKey("overwrite-mode") ?
         options.get("overwrite-mode").toLowerCase(Locale.ROOT) : null;
+    this.overwriteDynamic = "dynamic".equals(overwriteMode);
     this.dsSchema = info.schema();
   }
 

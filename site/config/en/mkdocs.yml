@@ -5,19 +5,24 @@ docs_dir: '../../docs/en'
 site_dir: '../../generated/en'
 remote_name: arctic-site
 use_directory_urls: true
+repo_url: https://github.com/NetEase/arctic
+repo_name: NetEase/arctic
+edit_uri: ""
 
 # pip install mkdocs-material
 theme:
     font:
       text: sans-serif
     name: material
-    language: EN
+    language: en
     custom_dir: '../../overrides/'
     favicon: images/favicon.ico
-    logo: images/logo_2.png
+    logo: images/arctic_banner.png
     palette:
         primary: indigo
         accent: indigo
+    icon:
+      repo: fontawesome/brands/github
 
 extra:
   search:

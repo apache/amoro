@@ -26,8 +26,6 @@ import java.util.List;
 public interface ITableTaskHistoryService {
   List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String historyId);
 
-  List<TableTaskHistory> selectTaskHistoryByGroupId(TableIdentifier identifier, String historyId, String groupId);
-
   void insertTaskHistory(TableTaskHistory taskHistory);
 
   void updateTaskHistory(TableTaskHistory taskHistory);

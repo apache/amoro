@@ -33,9 +33,6 @@ public class CatalogUtil {
 
   /**
    * add cache
-   *
-   * @param thriftHost
-   * @return
    */
   public static ArcticCatalog getArcticCatalog(String thriftHost, Integer thriftPort, String name) {
     if (StringUtils.isBlank(thriftHost)) {

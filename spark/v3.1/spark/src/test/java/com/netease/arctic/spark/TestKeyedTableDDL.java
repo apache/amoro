@@ -23,6 +23,7 @@ import com.netease.arctic.table.TableIdentifier;
 import java.util.List;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,6 +35,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   private final String database = "db_def";
   private final String table = "testA";
+  private final String targetTable = "testB";
 
   @Before
   public void prepare() {
@@ -72,20 +74,60 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableNotExist(identifier);
   }
 
-  private void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
-        primaryKeysBlock = false;
-      } else if (primaryKeysBlock){
-        descPrimaryKeys.add(row[0].toString());
-      }
-    }
 
-    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.toArray(), descPrimaryKeys.toArray());
+  @Test
+  public void testCreateKeyedTableLike() {
+    TableIdentifier identifier = TableIdentifier.of(catalogName, database, targetTable);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp , \n" +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by ( days(ts) ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, targetTable, database, table);
+    sql("desc table {0}.{1}", database, targetTable);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("desc table extended {0}.{1}", database, targetTable);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("drop table {0}.{1}", database, targetTable);
+
+    sql("drop table {0}.{1}", database, table);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateUnKeyedTableLike() {
+    TableIdentifier identifier = TableIdentifier.of(catalogName, database, targetTable);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp " +
+        ") using arctic \n" +
+        " partitioned by ( days(ts) ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, targetTable, database, table);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifier).schema().asStruct());
+
+    sql("drop table {0}.{1}", database, targetTable);
+
+    sql("drop table {0}.{1}", database, table);
+    assertTableNotExist(identifier);
   }
 }
