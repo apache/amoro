@@ -23,16 +23,21 @@ import request from '@/utils/request'
 export function getCatalogList(): Promise<ICatalogItem[]> {
   return request.get('ams/v1/catalogs')
 }
-export function getDatabaseList(catalog: string): Promise<string[]> {
-  return request.get(`ams/v1/catalogs/${catalog}/databases`)
+export function getDatabaseList(params: {
+  catalog: string
+  keywords: string
+}): Promise<string[]> {
+  const { catalog, keywords } = params
+  return request.get(`ams/v1/catalogs/${catalog}/databases`, { params: { keywords } })
 }
 
 export function getTableList(params: {
   catalog: string
   db: string
+  keywords: string
 }): Promise<string[]> {
-  const { catalog, db } = params
-  return request.get(`ams/v1/catalogs/${catalog}/databases/${db}/tables`)
+  const { catalog, db, keywords } = params
+  return request.get(`ams/v1/catalogs/${catalog}/databases/${db}/tables`, { params: { keywords } })
 }
 
 // get tables detail

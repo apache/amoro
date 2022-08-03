@@ -26,7 +26,7 @@
       <MenuUnfoldOutlined v-if="collapsed" />
       <MenuFoldOutlined v-else />
     </a-button>
-    <div @click.self="toggleTablesMenu(false)" v-if="store.isShowTablesMenu" @mouseleave="toggleTablesMenu(false)" :class="{'collapsed-sub-menu': collapsed}" class="tables-menu-wrap">
+    <div @click.self="toggleTablesMenu(false)" v-if="store.isShowTablesMenu" @mouseleave="toggleTablesMenu(true)" :class="{'collapsed-sub-menu': collapsed}" class="tables-menu-wrap">
       <TableMenu @goCreatePage="goCreatePage" />
     </div>
   </div>

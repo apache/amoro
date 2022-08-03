@@ -24,3 +24,4 @@ declare module '*.vue' {
 }
 
 declare module 'sql-formatter'
+declare module 'vue-virtual-scroller'

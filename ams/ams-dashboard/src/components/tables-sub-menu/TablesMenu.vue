@@ -16,19 +16,21 @@
           <span class="label">{{$t('database', 2)}}</span>
           <!-- <plus-outlined @click="addDatabase" class="icon" /> -->
         </div>
-        <a-list
-          :data-source="databaseList"
-          :loading="loading"
-        >
-          <template #renderItem="{ item }">
-            <a-list-item  @mouseenter="mouseEnter(item)" :class="{ active: database === item }">
-              <svg-icon icon-class="database" class="g-mr-8" />
-              <p :title="item" class="name g-text-nowrap">
-                {{ item }}
-              </p>
-            </a-list-item>
-          </template>
-        </a-list>
+        <div class="filter-wrap">
+          <a-input-search
+            v-model:value="DBSearchInput"
+            :placeholder="placeholder.filterDBPh"
+            @change="(val) => handleSearch('db',val)"
+          >
+            <template #prefix>
+              <SearchOutlined />
+            </template>
+            <template #suffix v-if="DBSearchInput">
+              <CloseCircleOutlined @click="clearSearch('db')" class="input-clear-icon" />
+            </template>
+          </a-input-search>
+        </div>
+        <virtual-recycle-scroller :items="databaseList" :itemSize="40" iconName="database" />
       </div>
     </div>
     <div class="table-list">
@@ -38,19 +40,21 @@
           <span class="label">{{$t('table', 2)}}</span>
           <!-- <plus-outlined @click="createTable" class="icon" /> -->
         </div>
-        <a-list
-          :data-source="tableList"
-          :loading="tableLoading"
-        >
-          <template #renderItem="{ item }">
-            <a-list-item @click="handleClickTable(item)" :class="{ active: tableName === item }">
-              <table-outlined class="g-mr-8" />
-              <p :title="item" class="name g-text-nowrap">
-                {{ item }}
-              </p>
-            </a-list-item>
-          </template>
-        </a-list>
+        <div class="filter-wrap">
+          <a-input-search
+            v-model:value="tableSearchInput"
+            :placeholder="placeholder.filterTablePh"
+            @change="(val) => handleSearch('table', val)"
+          >
+            <template #prefix>
+              <SearchOutlined />
+            </template>
+            <template #suffix v-if="tableSearchInput">
+              <CloseCircleOutlined @click="clearSearch('table')" class="input-clear-icon" />
+            </template>
+          </a-input-search>
+        </div>
+        <virtual-recycle-scroller :items="tableList" :itemSize="40" iconName="tableOutlined" />
       </div>
     </div>
   </div>
@@ -61,21 +65,26 @@
 import { defineComponent, onBeforeMount, reactive, toRefs } from 'vue'
 import {
   // PlusOutlined,
-  TableOutlined
+  SearchOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons-vue'
 import CreateDBModal from './CreateDB.vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
 import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
-import { ICatalogItem, ILableAndValue } from '@/types/common.type'
+import { ICatalogItem, ILableAndValue, IMap } from '@/types/common.type'
 import { debounce } from '@/utils/index'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
+import virtualRecycleScroller from '@/components/VirtualRecycleScroller.vue'
 
 export default defineComponent({
   name: 'TablesMenu',
   components: {
     // PlusOutlined,
-    TableOutlined,
-    CreateDBModal
+    SearchOutlined,
+    CloseCircleOutlined,
+    CreateDBModal,
+    virtualRecycleScroller
   },
   emits: ['goCreatePage'],
   setup(props, { emit }) {
@@ -84,6 +93,8 @@ export default defineComponent({
     const store = useStore()
     const state = reactive({
       catalogLoading: false as boolean,
+      DBSearchInput: '' as string,
+      tableSearchInput: '' as string,
       curCatalog: '',
       database: '',
       tableName: '',
@@ -91,8 +102,31 @@ export default defineComponent({
       showCreateDBModal: false,
       loading: false,
       tableLoading: false,
-      databaseList: [] as string[],
-      tableList: [] as string[]
+      databaseList: [] as IMap<string>[],
+      tableList: [] as IMap<string>[]
+    })
+
+    const placeholder = reactive(usePlaceholder())
+
+    const handleSearch = (type: string) => {
+      type === 'table' ? getSearchTableList() : getSearchDBList()
+    }
+    const clearSearch = (type: string) => {
+      if (type === 'table') {
+        state.tableSearchInput = ''
+        getSearchTableList()
+      } else {
+        state.DBSearchInput = ''
+        getSearchDBList()
+      }
+    }
+
+    const getSearchTableList = debounce(() => {
+      getAllTableList()
+    })
+
+    const getSearchDBList = debounce(() => {
+      getAllDatabaseList(true)
     })
 
     const mouseEnter = debounce((item: string) => {
@@ -168,12 +202,21 @@ export default defineComponent({
       })
     }
 
-    const getAllDatabaseList = () => {
+    const getAllDatabaseList = (isSearch = false) => {
+      if (!state.curCatalog) {
+        return
+      }
       state.loading = true
-      getDatabaseList(state.curCatalog).then((res: string[]) => {
-        state.databaseList = res || []
-        if (state.databaseList.length) {
-          state.database = state.databaseList[0]
+      getDatabaseList({
+        catalog: state.curCatalog,
+        keywords: state.DBSearchInput
+      }).then((res: string[]) => {
+        state.databaseList = (res || []).map((ele: string) => ({
+          id: ele,
+          label: ele
+        }))
+        if (state.databaseList.length && !isSearch) {
+          state.database = state.databaseList[0].id
           getAllTableList()
         }
       }).finally(() => {
@@ -182,12 +225,19 @@ export default defineComponent({
     }
 
     const getAllTableList = () => {
+      if (!state.curCatalog || !state.database) {
+        return
+      }
       state.tableLoading = true
       getTableList({
         catalog: state.curCatalog,
-        db: state.database
+        db: state.database,
+        keywords: state.tableSearchInput
       }).then((res: string[]) => {
-        state.tableList = res || []
+        state.tableList = (res || []).map((ele: string) => ({
+          id: ele,
+          label: ele
+        }))
       }).finally(() => {
         state.tableLoading = false
       })
@@ -198,6 +248,7 @@ export default defineComponent({
 
     return {
       ...toRefs(state),
+      placeholder,
       mouseEnter,
       getPopupContainer,
       toggleTablesMenu,
@@ -206,7 +257,9 @@ export default defineComponent({
       addDatabase,
       cancel,
       createTable,
-      handleClickTable
+      handleClickTable,
+      handleSearch,
+      clearSearch
     }
   }
 })
@@ -218,6 +271,15 @@ export default defineComponent({
     height: 100%;
     width: 512px;
     box-shadow: rgb(0 21 41 / 8%) 2px 0 6px;
+    .filter-wrap {
+      padding: 4px 4px 0;
+      .input-clear-icon {
+        font-size: 12px;
+      }
+    }
+    :deep(.ant-input-group-addon) {
+      display: none;
+    }
     .database-list,
     .table-list {
       flex: 1;
@@ -230,12 +292,6 @@ export default defineComponent({
     }
     .list-wrap {
       height: calc(100% - 48px);
-    }
-    :deep(.ant-list) {
-      padding: 0 4px;
-      height: calc(100% - 84px);
-      margin-top: 4px;
-      overflow-y: auto;
     }
     .select-catalog,
     .add {
@@ -260,27 +316,6 @@ export default defineComponent({
     .label {
       font-size: 16px;
       font-weight: 600;
-    }
-    :deep(.ant-list-items) {
-      padding: 4px 0;
-    }
-    :deep(.ant-list-item) {
-      justify-content: flex-start;
-      padding: 12px;
-      color: #102048;
-      height: 40px;
-      cursor: pointer;
-      &.active,
-      &:hover {
-        background-color: #f6f7fa;
-        color: @primary-color;
-      }
-    }
-    .ant-list-split .ant-list-item {
-      border-bottom: 0;
-    }
-    .name {
-      max-width: 200px;
     }
   }
 
