@@ -27,13 +27,13 @@ import org.apache.thrift.protocol.TMultiplexedProtocol;
 
 import java.util.Collections;
 
-public class OptimizeManagerClients {
+public class OptimizeManagerClientPools {
   private static final int CLIENT_POOL_MIN = 1;
   private static final int CLIENT_POOL_MAX = 5;
 
   private static final LoadingCache<String, ThriftClientPool<OptimizeManager.Client>> CLIENT_POOLS
       = Caffeine.newBuilder()
-      .build(OptimizeManagerClients::buildClient);
+      .build(OptimizeManagerClientPools::buildClient);
 
   public static OptimizeManager.Iface getClient(String metastoreUrl) {
     return CLIENT_POOLS.get(metastoreUrl).iface();
@@ -46,8 +46,7 @@ public class OptimizeManagerClients {
     poolConfig.setFailover(true);
     poolConfig.setMinIdle(CLIENT_POOL_MIN);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
-    return new ThriftClientPool<>(Collections.singletonList(
-        new ServiceInfo(arcticThriftUrl.host(), arcticThriftUrl.port())),
+    return new ThriftClientPool<>(url,
         s -> new OptimizeManager.Client(
             new TMultiplexedProtocol(new TBinaryProtocol(s), "OptimizeManager")), c -> true, new PoolConfig());
   }

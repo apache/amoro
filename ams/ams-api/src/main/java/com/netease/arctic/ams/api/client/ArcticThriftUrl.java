@@ -43,6 +43,7 @@ public class ArcticThriftUrl {
 
   /**
    * parse thrift url.
+   *
    * @param url - thrift url
    * @return -
    */
@@ -58,13 +59,19 @@ public class ArcticThriftUrl {
         String cluster = m.group(2);
         AmsServerInfo serverInfo = null;
         try {
-          serverInfo = JSONObject.parseObject(zkService.getData(AmsHAProperties.getMasterPath(cluster)),
+          serverInfo = JSONObject.parseObject(
+              zkService.getData(AmsHAProperties.getMasterPath(cluster)),
               AmsServerInfo.class);
         } catch (Exception e) {
           throw new RuntimeException("get master server info from zookeeper error");
         }
         String catalog = m.group(3);
-        url = String.format("thrift://%s:%d/%s", serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog);
+        String query = "";
+        if (url.contains("?")) {
+          query = url.substring(url.indexOf("?"));
+        }
+        url =
+            String.format("thrift://%s:%d/%s%s", serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog, query);
       }
     }
     String schema;
@@ -98,8 +105,9 @@ public class ArcticThriftUrl {
     }
   }
 
-  private ArcticThriftUrl(String schema, String host, int port, String catalogName, int socketTimeout,
-                         String url) {
+  private ArcticThriftUrl(
+      String schema, String host, int port, String catalogName, int socketTimeout,
+      String url) {
     this.schema = schema;
     this.host = host;
     this.port = port;

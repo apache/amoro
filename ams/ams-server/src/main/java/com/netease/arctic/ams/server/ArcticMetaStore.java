@@ -45,6 +45,7 @@ import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
 import com.netease.arctic.ams.api.client.ZookeeperService;
+import java.util.ArrayList;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -78,6 +79,7 @@ public class ArcticMetaStore {
   public static Configuration conf;
   private static JSONObject yamlConfig;
   private static TServer server;
+  private static List<Thread> residentThreads = new ArrayList<>();
 
   public static void main(String[] args) throws Throwable {
     try {
@@ -166,8 +168,16 @@ public class ArcticMetaStore {
     }
   }
 
+  public static void stopMetaStore() {
+    if (server != null && server.isServing()){
+      server.stop();
+    }
+    residentThreads.forEach(Thread::interrupt);
+    ThreadPool.shutdown();
+  }
+
   public static void failover() {
-    server.stop();
+    stopMetaStore();
     AmsRestServer.stopRestServer();
   }
 
@@ -201,11 +211,7 @@ public class ArcticMetaStore {
 
     t.setName("Metastore threads starter thread");
     t.start();
-  }
-
-  private static void stopMetaStoreThreads() {
-    ThreadPool.shutdown();
-    AmsRestServer.stopRestServer();
+    residentThreads.add(t);
   }
 
   private static void signalOtherThreadsToStart(
@@ -232,6 +238,7 @@ public class ArcticMetaStore {
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static void startOptimizeCheck(final long checkInterval) {
@@ -300,6 +307,7 @@ public class ArcticMetaStore {
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static Configuration initSystemConfig() {

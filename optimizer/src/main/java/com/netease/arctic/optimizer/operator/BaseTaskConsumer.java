@@ -25,7 +25,7 @@ import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
-import com.netease.arctic.ams.api.client.OptimizeManagerClients;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +73,7 @@ public class BaseTaskConsumer implements Serializable {
 
   private OptimizeTask pollTask(int attemptId, long timeout) throws TException {
     try {
-      OptimizeManager.Iface optimizeManager = OptimizeManagerClients.getClient(config.getAmsUrl());
+      OptimizeManager.Iface optimizeManager = OptimizeManagerClientPools.getClient(config.getAmsUrl());
       return optimizeManager.pollTask(config.getQueueId(), jobId, attemptId + "", timeout);
     } catch (NoSuchObjectException e) {
       return null;

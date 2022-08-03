@@ -40,7 +40,6 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-
 public class AmsRestServer {
   public static final Logger LOG = LoggerFactory.getLogger("AmsRestServer");
   private static Javalin app;
@@ -85,7 +84,7 @@ public class AmsRestServer {
       if (needLoginCheck(uriPath)) {
         if (null == ctx.sessionAttribute("user")) {
           LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
-                  ctx.sessionAttributeMap()));
+              ctx.sessionAttributeMap()));
           throw new ForbiddenException();
         }
       }
@@ -105,13 +104,16 @@ public class AmsRestServer {
         /**  table controller **/
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", TableController::getTableDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", TableController::getOptimizeInfo);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-                TableController::getTableTransactions);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-                TableController::getTransactionDetail);
+        get(
+            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+            TableController::getTableTransactions);
+        get(
+            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+            TableController::getTransactionDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", TableController::getTablePartitions);
-        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-                TableController::getPartitionFileListInfo);
+        get(
+            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+            TableController::getPartitionFileListInfo);
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
@@ -162,29 +164,31 @@ public class AmsRestServer {
       ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
     });
 
-    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(),ctx -> {
+    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx -> {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
     });
   }
 
   public static void stopRestServer() {
-    app.stop();
+    if (app != null) {
+      app.stop();
+    }
   }
 
   private static final String[] urlWhiteList = {
-    "/ams/v1/login",
-    "/",
-    "/overview",
-    "/introduce",
-    "/table",
-    "/optimize",
-    "/login",
-    "/terminal",
-    "/index.html",
-    "/favicon.ico",
-    "/js/*",
-    "/img/*",
-    "/css/*"
+      "/ams/v1/login",
+      "/",
+      "/overview",
+      "/introduce",
+      "/table",
+      "/optimize",
+      "/login",
+      "/terminal",
+      "/index.html",
+      "/favicon.ico",
+      "/js/*",
+      "/img/*",
+      "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {

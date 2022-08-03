@@ -8,8 +8,6 @@ import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 import org.apache.thrift.protocol.TProtocol;
 
-import java.util.Collections;
-
 /**
  * Client pool cache for different ams server, sharing in jvm.
  */
@@ -38,8 +36,7 @@ public class AmsClientPools {
     poolConfig.setMinIdle(CLIENT_POOL_MIN);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
     return new ThriftClientPool<>(
-        Collections.singletonList(
-            new ServiceInfo(arcticThriftUrl.host(), arcticThriftUrl.port())),
+        url,
         s -> {
           TProtocol protocol = new TBinaryProtocol(s);
           ArcticTableMetastore.Client tableMetastore = new ArcticTableMetastore.Client(
