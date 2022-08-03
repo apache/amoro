@@ -36,16 +36,14 @@ Arctic Meta Service，在 arctic 架构中，AMS 定义为新一代 HMS，AMS �
 
 Arctic 将一次数据提交定义为事务，并且保障流和批并发写入下的事务一致性语义，与 iceberg 提供的 ACID 不同，arctic 因为支持 CDC 摄取和流式更新，需要保障基于主键的数据一致性。
 
-**TableStore**
+**Tablestore**
 
-TableStore 是 arctic 在数据湖上存储的表格式实体，TableStore 类似于数据库中的 cluster index，代表独立的存储结构，实现中一个 TableStore 是一张 iceberg 表，数据流式写入和批式写入会分别进入 arctic 的 ChangeStore 和 BaseStore，在查询时 arctic 会在多个 TableStore 上提供整合的视图，后续在 arctic 上扩展 sort key 或 aggregate key 也将通过扩展 TableStore 来实现。
+Tablestore 是 arctic 在数据湖上存储的表格式实体，tablestore 类似于数据库中的 cluster index，代表独立的存储结构，一个 tablestore 是一张 iceberg 表，数据流式写入和批式写入会分别进入 arctic 的 changestore 和 basestore，在查询时 arctic 会在多个 tablestore 上提供整合的视图，后续在 arctic 上扩展 sort key 或 aggregate key 也将通过扩展 tablestore 来实现。
 
 **Optimizing**
 
-Arctic 作为流式湖仓服务，会在后台持续进行文件结构优化操作，并致力于这些优化任务的可视化和可测量，优化操作包括但不限于小文件合并，数据分区，数据在 TableStore 之间的合并转化。
+Arctic 作为流式湖仓服务，会在后台持续进行文件结构优化操作，并致力于这些优化任务的可视化和可测量，优化操作包括但不限于小文件合并，数据分区，数据在 Tablestore 之间的合并转化。
 
 - `Optimizing planner` 决定了优化任务的调度策略，Arctic 支持在表属性中设置 quota，以此影响 Optimizing planner 在单表结构优化占用的资源。
 - `Optimizer container` 是 optimizing 任务调度的容器，目前支持两种调度：standalone 和 yarn，standalone 在 AMS 本地调度，适合测试，arctic 支持用户扩展 optimizer container 实现。
 - `Optimizer group` 用于资源隔离，optimizing container 下可以设置一个或多个 optimizer group，也可以通过 optimizer group 保障优先级，在 yarn 上 optimizer container 对应队列。
-
-

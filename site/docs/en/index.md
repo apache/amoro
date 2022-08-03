@@ -38,9 +38,9 @@ Arctic Meta Service，在 arctic 架构中，AMS 定义为新一代 HMS，AMS �
 
 Arctic 将一次数据提交定义为事务，并且保障流和批并发写入下的事务一致性语义，与 iceberg 提供的 ACID 不同，arctic 因为支持 CDC 摄取和流式更新，需要保障基于主键的数据一致性。
 
-**TableStore**
+**Tablestore**
 
-TableStore 是 arctic 在数据湖上存储的表格式实体，TableStore 类似于数据库中的 cluster index，代表独立的存储结构，实现中一个 TableStore 是一张 iceberg 表，数据流式写入和批式写入会分别进入 arctic 的 ChangeStore 和 BaseStore，在查询时 arctic 会在多个 TableStore 上提供整合的视图，后续在 arctic 上扩展 sort key 或 aggregate key 也将通过扩展 TableStore 来实现。
+Tablestore 是 arctic 在数据湖上存储的表格式实体，tablestore 类似于数据库中的 cluster index，代表独立的存储结构，实现中一个 tablestore 是一张 iceberg 表，数据流式写入和批式写入会分别进入 arctic 的 changestore 和 basestore，在查询时 arctic 会在多个 tablestore 上提供整合的视图，后续在 arctic 上扩展 sort key 或 aggregate key 也将通过扩展 tablestore 来实现。
 
 **Optimizing**
 
