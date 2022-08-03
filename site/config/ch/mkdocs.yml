@@ -58,7 +58,11 @@ nav:
       - Table Management: meta-service/table-management.md
       - Table Config: meta-service/table-properties.md
   - Optimizers: optimizers.md
-  - Flink: flink.md
+  - Flink:
+      - Getting Started: flink/flink-get-started.md
+      - Hidden Kafka: flink/hidden-kafka.md
+      - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
+      - Flink Config: flink/flink.md
   - Spark:
       - Getting Started: spark/spark-get-started.md
       - Spark DDL: spark/spark-ddl.md
