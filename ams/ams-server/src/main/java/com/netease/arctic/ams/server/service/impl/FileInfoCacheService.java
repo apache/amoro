@@ -80,7 +80,7 @@ public class FileInfoCacheService extends IJDBCService {
   public static ConcurrentHashMap<String, Long> cacheTableSnapshot = new ConcurrentHashMap<>();
 
   public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
-    if (isNeedCache(tableCommitMeta)) {
+    if (needRepairCache(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;
     }
@@ -285,7 +285,7 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
-  private boolean isNeedCache(TableCommitMeta tableCommitMeta) {
+  private boolean needRepairCache(TableCommitMeta tableCommitMeta) {
     if (CollectionUtils.isNotEmpty(tableCommitMeta.getChanges())) {
       TableChange tableChange = tableCommitMeta.getChanges().get(0);
       String innerTableIdentifier =
