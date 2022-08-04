@@ -27,7 +27,7 @@ import { computed, defineComponent, onMounted, reactive, toRefs, watch } from 'v
 import UDetails from './components/Details.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DetailColumnItem, PartitionColumnItem, upgradeStatusMap } from '@/types/common.type'
-import { getTableDetail, getUpgradeStatus } from '@/services/table.service'
+import { getHiveTableDetail, getUpgradeStatus } from '@/services/table.service'
 
 export default defineComponent({
   name: 'Tables',
@@ -87,7 +87,7 @@ export default defineComponent({
           return
         }
         state.loading = true
-        const result = await getTableDetail({
+        const result = await getHiveTableDetail({
           ...params.value
         })
         const { partitionColumnList = [], schema, tableIdentifier } = result

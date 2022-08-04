@@ -30,8 +30,8 @@
             </template>
           </a-input-search>
         </div>
-        <u-loading v-if="tableLoading" />
-        <virtual-recycle-scroller :loading="loading" :items="databaseList" :activeItem="database" :itemSize="40" @handleFn="mouseEnter" iconName="database" />
+        <u-loading v-if="loading" />
+        <virtual-recycle-scroller :loading="loading" :items="databaseList" :activeItem="database" :itemSize="40" @mouseEnter="mouseEnter" iconName="database" />
       </div>
     </div>
     <div class="table-list">
@@ -56,7 +56,7 @@
           </a-input-search>
         </div>
         <u-loading v-if="tableLoading" />
-        <virtual-recycle-scroller :loading="tableLoading" :items="tableList" :activeItem="tableName" :itemSize="40" @handleFn="handleClickTable" iconName="tableOutlined" />
+        <virtual-recycle-scroller :loading="tableLoading" :items="tableList" :activeItem="tableName" :itemSize="40" @handleClickTable="handleClickTable" iconName="tableOutlined" />
       </div>
     </div>
   </div>
@@ -72,7 +72,6 @@ import {
 } from '@ant-design/icons-vue'
 import CreateDBModal from './CreateDB.vue'
 import { useRoute, useRouter } from 'vue-router'
-import useStore from '@/store/index'
 import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
 import { ICatalogItem, ILableAndValue, IMap } from '@/types/common.type'
 import { debounce } from '@/utils/index'
@@ -92,7 +91,6 @@ export default defineComponent({
   setup(props, { emit }) {
     const router = useRouter()
     const route = useRoute()
-    const store = useStore()
     const state = reactive({
       catalogLoading: false as boolean,
       DBSearchInput: '' as string,
@@ -140,10 +138,6 @@ export default defineComponent({
       getAllTableList()
     })
 
-    const toggleTablesMenu = (flag = false) => {
-      store.updateTablesMenu(flag)
-    }
-
     const getPopupContainer = (triggerNode: Element) => {
       return triggerNode.parentNode
     }
@@ -168,7 +162,6 @@ export default defineComponent({
     }
     const handleClickTable = (item: string) => {
       state.tableName = item
-      store.updateTablesMenu(false)
       const pathQuery = {
         path: '/tables',
         query: {
@@ -254,7 +247,6 @@ export default defineComponent({
       placeholder,
       mouseEnter,
       getPopupContainer,
-      toggleTablesMenu,
       clickDatabase,
       catalogChange,
       addDatabase,

@@ -6,9 +6,9 @@
       :data-source="props.fields"
       :pagination="false"
       >
-      <template #bodyCell="{ column }">
+      <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'primaryKey'">
-          <a-checkbox @click="onChangeCheckBox"></a-checkbox>
+          <a-checkbox v-model:checked="record.checked" @click="onChangeCheckBox"></a-checkbox>
         </template>
       </template>
     </a-table>
@@ -30,7 +30,16 @@ const fieldsColumns = shallowReactive([
   { dataIndex: 'primaryKey', title: t('primaryKey'), scopedSlots: { customRender: 'primaryKey' } }
 ])
 
-function onChangeCheckBox() {}
+defineExpose({
+  getPkname() {
+    return props.fields.filter((ele: DetailColumnItem) => ele.checked)
+      .map((ele: DetailColumnItem) => ({ fieldName: ele.filed || '' }))
+  }
+})
+
+function onChangeCheckBox() {
+  console.log('props.fields', props.fields)
+}
 
 </script>
 <style lang="less" scoped>

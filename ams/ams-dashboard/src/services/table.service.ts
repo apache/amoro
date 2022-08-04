@@ -17,7 +17,7 @@
   */
 
 // import { IOptions } from '@/types/common.type'
-import { ICatalogItem } from '@/types/common.type'
+import { ICatalogItem, IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogList(): Promise<ICatalogItem[]> {
@@ -45,6 +45,12 @@ export function getTableDetail(
   { catalog = '' as string, db = '' as string, table = '' as string }
 ) {
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`)
+}
+
+export function getHiveTableDetail(
+  { catalog = '' as string, db = '' as string, table = '' as string }
+) {
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
 }
 
 export function getUpgradeStatus(
@@ -146,4 +152,17 @@ export function getOptimizes(
 ) {
   const { catalog, db, table, page, pageSize } = params
   return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimize`, { params: { page, pageSize } })
+}
+
+export function upgradeHiveTable(
+  { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] }
+) {
+  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
+    properties,
+    pkList
+  })
+}
+
+export function getUpgradeProperties() {
+  return request.get('ams/v1/upgrade/properties')
 }

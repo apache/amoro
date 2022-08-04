@@ -9,9 +9,9 @@
       <a-auto-complete
         placeholder=""
         :name="item.uuid + '_key'"
-        :data-source="propertiesList"
+        :options="propertiesList"
         :filter-option="filterOption"
-        v-model="item.key"
+        v-model:value="item.key"
         @change="changeProperty(item)"
       />
       <a-input
@@ -19,7 +19,7 @@
         placeholder=""
         :name="item.uuid + '_value'"
         @change="changeProperty(item, 'INPUT')"
-        v-model="item.value"
+        v-model:value="item.value"
         :maxLength="64"
       />
       <close-outlined class="icon-close" @click="removeRule(item, index)"  />
@@ -29,9 +29,11 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { IMap, IKeyAndValue } from '@/types/common.type'
 import { CloseOutlined } from '@ant-design/icons-vue'
+import { getUpgradeProperties } from '@/services/table.service'
+import { getUUid } from '@/utils/index'
 
 // interface IItem {
 //   key: string
@@ -39,16 +41,55 @@ import { CloseOutlined } from '@ant-design/icons-vue'
 //   uuid: string
 // }
 
-// const props = defineProps<{ propertiesObj: IMap<string>, hasSelectOps: boolean, }>()
+const props = defineProps<{ propertiesObj: IMap<string>, hasSelectOps: boolean, }>()
 
 const propertiesArray = reactive<IMap<string>[]>([])
 
-const propertiesList = reactive<string[]>([]) // 属性 只包含key
-const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // 属性可选值，包含key value
+const propertiesKeyList = reactive<string[]>([]) // only includes key
+const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
 
-function changeProperty() {}
-function removeRule() {}
-function addRule() {}
+Object.keys(props.propertiesObj).forEach(key => {
+  propertiesArray.length = 0
+  propertiesArray.push({
+    key: key,
+    value: props.propertiesObj[key],
+    uuid: getUUid()
+  })
+})
+
+async function getPropertiesList() {
+  const result = await getUpgradeProperties()
+  Object.keys(result).forEach(key => {
+    propertiesIncludeValueList.push({
+      key: key,
+      value: result[key]
+    })
+    propertiesKeyList.push(key)
+  })
+}
+
+function changeProperty(value: string) {
+  console.log('onSelect', value)
+}
+function removeRule(item, index) {
+  propertiesArray.splice(index, 1)
+}
+function addRule() {
+  propertiesArray.push({
+    key: '',
+    value: '',
+    uuid: getUUid()
+  })
+}
+defineExpose({
+  getProperties() {
+    return {}
+  }
+})
+
+onMounted(() => {
+  getPropertiesList()
+})
 
 </script>
 
@@ -69,10 +110,17 @@ function addRule() {}
       height: 40px;
       margin-bottom: 8px;
       position: relative;
+      padding-right: 32px;
+      .ant-select-auto-complete {
+        width: 50%;
+      }
+      .ant-input {
+        width: 50%;
+      }
       .icon-close {
         cursor: pointer;
         position: absolute;
-        right: -6px;
+        right: 10px;
         font-size: 12px;
         &.disabled {
           cursor: not-allowed;

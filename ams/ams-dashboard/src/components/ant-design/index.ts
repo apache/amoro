@@ -34,6 +34,8 @@ import {
   Tabs,
   List,
   Breadcrumb,
+  Checkbox,
+  AutoComplete,
   Empty
 } from 'ant-design-vue'
 
@@ -54,6 +56,8 @@ const compontens = [
   Pagination,
   List,
   Breadcrumb,
+  Checkbox,
+  AutoComplete,
   Empty
 ]
 export default function (app: App): void {

@@ -495,4 +495,65 @@ module.exports = {
       }
     })
   },
+  'GET /ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/hive/details': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "tableType": "HIVE",
+    "tableIdentifier": {
+      "catalog": "bdmstest_arctic",
+      "database": "default",
+      "tableName": "zyxtest"
+    },
+    "schema": [
+      {
+        "field": "id1",
+        "type": "int",
+        "description": "rZiGhjpbqj"
+      },
+      {
+        "field": "id2",
+        "type": "int",
+        "description": "x6T9Y8D7wi"
+      },
+      {
+        "field": "id3",
+        "type": "int",
+        "description": "AWpoSVLR6f"
+      }
+    ],
+    "partitionColumnList": [
+      {
+        "field": "TqgUCqOfr0",
+        "type": "bZpDUpDo2l",
+        "description": "D3SVsvwmuD"
+      },
+      {
+        "field": "g1tpuaWFg6",
+        "type": "tJr2zYltbL",
+        "description": "F5z48Arinv"
+      },
+      {
+        "field": "I61mT0lDBP",
+        "type": "dSDu69M3Ph",
+        "description": "X6Nx4K7S8t"
+      }
+    ],
+    "properties": {
+      "xxxx": "148"
+    }
+      }
+    })
+  },
+  'GET ams/v1/upgrade/properties': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "key1": "koYg4SDRzM",
+        "key2": "T3ScQHN0hE"
+      }
+    })
+  },
 }

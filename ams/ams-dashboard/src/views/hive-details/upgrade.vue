@@ -7,17 +7,14 @@
     <div class="content">
       <div class="table-attrs">
         <a-form
-          :model="formState"
           name="fields"
-          @finish="onFinish"
-          @finishFailed="onFinishFailed"
           class="label-120"
         >
           <a-form-item
             :label="$t('field')"
             name="field"
           >
-            <schema-field :fields="field"></schema-field>
+            <schema-field :fields="field" ref="schemaFieldRef"></schema-field>
           </a-form-item>
           <a-form-item
             :label="$t('partitonField')"
@@ -29,13 +26,13 @@
             :label="$t('otherProperties')"
             name="otherProperties"
           >
-            <other-properties :propertiesObj="propertiesObj" />
+            <other-properties :propertiesObj="propertiesObj" ref="propertiesRef" />
           </a-form-item>
         </a-form>
       </div>
       <div class="footer-btn">
-        <a-button type="primary" class="btn g-mr-12">{{$t('ok')}}</a-button>
-        <a-button type="ghost" class="btn">{{$t('cancel')}}</a-button>
+        <a-button type="primary" @click="onCofirm" class="btn g-mr-12">{{$t('ok')}}</a-button>
+        <a-button type="ghost" @click="cancel" class="btn">{{$t('cancel')}}</a-button>
       </div>
     </div>
   </div>
@@ -49,12 +46,13 @@ import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
 import otherProperties from './components/Properties.vue'
 import { IField, PartitionColumnItem, DetailColumnItem, IMap } from '@/types/common.type'
-import { getTableDetail } from '@/services/table.service'
+import { getHiveTableDetail, upgradeHiveTable } from '@/services/table.service'
 
 const loading = ref<boolean>(false)
 const field = reactive<DetailColumnItem[]>([])
 const partitionFields = reactive<IField[]>([])
 const propertiesObj = reactive<IMap<string>>({})
+const pkName = reactive<IMap<string>[]>([])
 
 const emit = defineEmits<{
  (e: 'goBack'): void
@@ -67,6 +65,9 @@ const params = computed(() => {
     ...route.query
   }
 })
+const schemaFieldRef = ref()
+const propertiesRef = ref()
+
 async function getDetails() {
   try {
     const { catalog, db, table } = params.value
@@ -76,7 +77,7 @@ async function getDetails() {
     loading.value = true
     partitionFields.length = 0
     field.length = 0
-    const result = await getTableDetail({
+    const result = await getHiveTableDetail({
       ...params.value
     })
     const { partitionColumnList = [], schema, properties } = result;
@@ -93,10 +94,38 @@ async function getDetails() {
   }
 }
 
-function onFinish() {}
-function onFinishFailed() {}
+function onCofirm() {
+  getParams()
+  upgradeTable()
+}
+
+function getParams() {
+  pkName.length = 0
+  const pkList = schemaFieldRef.value.getPkname()
+  pkList.forEach((ele: DetailColumnItem) => {
+    pkName.push(ele)
+  })
+  Object.assign(propertiesObj, propertiesRef.value.getProperties)
+}
+
+async function upgradeTable() {
+  const { catalog, db, table } = params.value
+  if (!catalog || !db || !table) {
+    return
+  }
+  await upgradeHiveTable({
+    ...params.value,
+    pkList: pkName,
+    properties: propertiesObj
+  })
+  goBack()
+}
 function goBack() {
   emit('goBack')
+}
+
+function cancel() {
+  goBack()
 }
 
 onMounted(() => {

@@ -7,7 +7,7 @@
     v-slot="{ item }"
     v-if="items.length && !loading"
   >
-    <div :class="{'active': activeItem === item.label}" @mouseenter="handleMouseMove(item)" class="desc">
+    <div :class="{'active': activeItem === item.label}" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)" class="desc">
       <table-outlined v-if="iconName === 'tableOutlined'" class="g-mr-8" />
       <svg-icon v-if="iconName === 'database'" icon-class="database" class="g-mr-8" />
       <p :title="item.label" class="name g-text-nowrap">
@@ -31,15 +31,20 @@ export default defineComponent ({
     TableOutlined,
     RecycleScroller
   },
-  emits: ['handleFn'],
+  emits: ['mouseEnter', 'handleClickTable'],
   setup(props, { emit }) {
-    const handleMouseMove = (item: IMap<string>) => {
-      emit('handleFn', item.label)
+    const handleMouseEnter = (item: IMap<string>) => {
+      emit('mouseEnter', item.label)
+    }
+
+    const handleClickTable = (item: IMap<string>) => {
+      emit('handleClickTable', item.label)
     }
 
     return {
       simpleImage: Empty.PRESENTED_IMAGE_SIMPLE,
-      handleMouseMove
+      handleMouseEnter,
+      handleClickTable
     }
   },
   props: {
