@@ -231,3 +231,12 @@ CREATE TABLE database_metadata (
     UNIQUE (catalog_name,db_name)
 );
 
+CREATE TABLE api_tokens (
+    id int NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 33, INCREMENT BY 1),
+    apikey varchar(256) NOT NULL,
+    secret varchar(256) NOT NULL,
+    apply_time timestamp DEFAULT NULL,
+    PRIMARY KEY (id),
+    UNIQUE (apikey)
+);
+
