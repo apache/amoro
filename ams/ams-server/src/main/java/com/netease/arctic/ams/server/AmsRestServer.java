@@ -27,12 +27,20 @@ import com.netease.arctic.ams.server.controller.TerminalController;
 import com.netease.arctic.ams.server.controller.VersionController;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.exception.ForbiddenException;
+import com.netease.arctic.ams.server.exception.SignatureCheckException;
+import com.netease.arctic.ams.server.service.impl.ApiTokenService;
+import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import io.javalin.Javalin;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
+import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import static io.javalin.apibuilder.ApiBuilder.delete;
 import static io.javalin.apibuilder.ApiBuilder.get;
@@ -80,7 +88,10 @@ public class AmsRestServer {
     // before
     app.before(ctx -> {
       String uriPath = ctx.path();
-      if (needLoginCheck(uriPath)) {
+      if (needApiKeyCheck(uriPath)) {
+        checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
+                ctx.queryParam("signature"), ctx.queryParamMap());
+      } else if (needLoginCheck(uriPath)) {
         if (null == ctx.sessionAttribute("user")) {
           LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
                   ctx.sessionAttributeMap()));
@@ -137,6 +148,46 @@ public class AmsRestServer {
         /** version controller **/
         get("/versionInfo", VersionController::getVersionInfo);
       });
+      // for open api
+      path("/api/ams/v1", () -> {
+
+        /**  table controller **/
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", TableController::getTableDetail);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", TableController::getOptimizeInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+                TableController::getTableTransactions);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+                TableController::getTransactionDetail);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", TableController::getTablePartitions);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+                TableController::getPartitionFileListInfo);
+        get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
+        get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
+        get("/catalogs", TableController::getCatalogs);
+
+        /** optimize controller **/
+        get("/optimize/optimizerGroups/{optimizerGroup}/tables", OptimizerController::getOptimizerTables);
+        get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", OptimizerController::getOptimizers);
+        get("/optimize/optimizerGroups", OptimizerController::getOptimizerGroups);
+        get("/optimize/optimizerGroups/{optimizerGroup}/info", OptimizerController::getOptimizerGroupInfo);
+        delete("/optimize/optimizerGroups/{optimizerGroup}/optimizers/{jobId}", OptimizerController::releaseOptimizer);
+        post("/optimize/optimizerGroups/{optimizerGroup}/optimizers", OptimizerController::scaleOutOptimizer);
+
+        /** console controller **/
+        get("/terminal/examples", TerminalController::getExamples);
+        get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        get("/terminal/{sessionId}/logs", TerminalController::getLogs);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        put("/terminal/{sessionId}/stop", TerminalController::stopSql);
+        get("/terminal/latestInfos/", TerminalController::getLatestInfo);
+
+        /** health check **/
+        get("/health/status", HealthCheckController::healthCheck);
+
+        /** version controller **/
+        get("/versionInfo", VersionController::getVersionInfo);
+      });
     });
 
     // after-handler
@@ -148,9 +199,10 @@ public class AmsRestServer {
       if (e instanceof ForbiddenException) {
         ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login! before request", ""));
         return;
+      } else if (e instanceof SignatureCheckException) {
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "SignatureExceptoin! before request", ""));
       } else {
         LOG.error("Failed to handle request", e);
-        JSONObject obj = new JSONObject();
         ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
       }
     });
@@ -194,5 +246,57 @@ public class AmsRestServer {
       }
     }
     return true;
+  }
+
+  private static boolean needApiKeyCheck(String uri) {
+    return uri.startsWith("/api");
+  }
+
+  private static void checkApiToken(String requestMethod, String requestUrl, String apiKey, String signature,
+                             Map<String, List<String>> params) {
+    String plainText;
+    String encryptString;
+    String signCal;
+    LOG.debug("[{}] url: {}, ", requestMethod, requestUrl);
+
+    long receive = System.currentTimeMillis();
+    ApiTokenService apiTokenService = new ApiTokenService();
+    try {
+      //get secrect
+      String secrete = apiTokenService.getSecretByKey(apiKey);
+
+      if (secrete == null) {
+        throw new SignatureCheckException();
+      }
+
+      if (apiKey == null || signature == null) {
+        throw new SignatureCheckException();
+      }
+
+      params.remove("apiKey");
+      params.remove("signature");
+
+      String paramString = ParamSignatureCalculator.generateParamStringWithValueList(params);
+
+      if (StringUtils.isBlank(paramString)) {
+        encryptString = ParamSignatureCalculator.SIMPLE_DATE_FORMAT.format(new Date());
+      } else {
+        encryptString = paramString;
+      }
+
+      plainText = String.format("%s%s%s", apiKey, encryptString, secrete);
+      signCal = ParamSignatureCalculator.getMD5(plainText);
+      LOG.info("calculate:  plainText:{}, signCal:{}, signFromRequest: {}", plainText, signCal, signature);
+
+      if (!signature.equals(signCal)) {
+        LOG.error(String.format("Signature Check Failed!!, req:%s, cal:%s", signature, signCal));
+        throw new SignatureCheckException();
+      }
+    } catch (Exception e) {
+      LOG.error("api doFilter error. ex:{}", e);
+      throw new SignatureCheckException();
+    } finally {
+      LOG.debug("[finish] in {} ms, [{}] {}", System.currentTimeMillis() - receive, requestMethod, requestUrl);
+    }
   }
 }
