@@ -194,4 +194,17 @@ public interface FileInfoCacheMapper {
   })
   List<SnapshotStatistics> getCurrentSnapInfo(@Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("type") String tableType);
+
+  @Select("select add_snapshot_id from " + TABLE_NAME + " where table_identifier = " +
+      "#{tableIdentifier," +
+      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
+      "#{type} and add_snapshot_id = #{snapshotId}")
+  @Results({
+      @Result(column = "add_snapshot_id", property = "id"),
+      @Result(column = "parent_snapshot_id", property = "parentId"),
+      @Result(column = "commit_time", property = "commitTime",
+          typeHandler = Long2TsConvertor.class)
+  })
+  List<Long> snapshotIsCached(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("type") String tableType, @Param("snapshotId") Long snapshotId);
 }
