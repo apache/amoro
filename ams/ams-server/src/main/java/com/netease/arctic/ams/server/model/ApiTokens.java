@@ -18,32 +18,49 @@
 
 package com.netease.arctic.ams.server.model;
 
-public class SnapshotStatistics {
-  private long id;
-  private long parentId;
-  private long commitTime;
+public class ApiTokens {
+  Integer id;
+  String apikey;
+  String secret;
+  String applyTime;
 
-  public long getId() {
+  public ApiTokens() {
+  }
+
+  public ApiTokens(String apiKey, String secret) {
+    this.apikey = apiKey;
+    this.secret = secret;
+  }
+
+  public Integer getId() {
     return id;
   }
 
-  public void setId(long id) {
+  public void setId(Integer id) {
     this.id = id;
   }
 
-  public long getParentId() {
-    return parentId;
+  public String getApikey() {
+    return apikey;
   }
 
-  public void setParentId(long parentId) {
-    this.parentId = parentId;
+  public void setApikey(String apikey) {
+    this.apikey = apikey;
   }
 
-  public long getCommitTime() {
-    return commitTime;
+  public String getSecret() {
+    return secret;
   }
 
-  public void setCommitTime(long commitTime) {
-    this.commitTime = commitTime;
+  public void setSecret(String secret) {
+    this.secret = secret;
+  }
+
+  public String getApplyTime() {
+    return applyTime;
+  }
+
+  public void setApplyTime(String applyTime) {
+    this.applyTime = applyTime;
   }
 }

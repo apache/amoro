@@ -16,34 +16,24 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.model;
+package com.netease.arctic.ams.server.mapper;
 
-public class SnapshotStatistics {
-  private long id;
-  private long parentId;
-  private long commitTime;
+import com.netease.arctic.ams.server.model.ApiTokens;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Select;
 
-  public long getId() {
-    return id;
-  }
+public interface ApiTokensMapper {
+  String TABLE_NAME = "api_tokens";
 
-  public void setId(long id) {
-    this.id = id;
-  }
+  @Select("select secret from " +
+          TABLE_NAME + " where apikey = #{apikey}")
+  String getSecretBykey(String apikey);
 
-  public long getParentId() {
-    return parentId;
-  }
+  @Insert("insert into " + TABLE_NAME + " (apikey,secret,apply_time) values(#{apiTokens.apikey}," +
+          "#{apiTokens.secret},#{apiTokens.applyTime})")
+  void insert(ApiTokens apiTokens);
 
-  public void setParentId(long parentId) {
-    this.parentId = parentId;
-  }
+  @Insert("delete from " + TABLE_NAME + " where id = #{id}")
+  void delToken(Integer id);
 
-  public long getCommitTime() {
-    return commitTime;
-  }
-
-  public void setCommitTime(long commitTime) {
-    this.commitTime = commitTime;
-  }
 }
