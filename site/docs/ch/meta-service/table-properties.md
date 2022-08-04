@@ -55,12 +55,12 @@
 
 | 配置名称                            | 默认值             | 描述                                     |
 | ---------------------------------- | ---------------- | ----------------------------------       |
-| log-store.enable                   | false            | 是否开启 Logstore                         |
-| log-store.type                     | kafka            | Logstore 的类型，当前仅支持 kafka            |
-| log-store.address                  | NULL             | Logstore 的地址                           |
-| log-store.topic                    | NULL             | Logstore 使用的 topic                      |
-| log-store.data-format              | json             | Logstore 中的消息格式，当前仅支持 json         |
-| log-store.data-version             | v1               | Logstore 中消息的版本，当前仅支持 v1           |
+| log-store.enable                   | false            | 是否开启log store                         |
+| log-store.type                     | kafka            | log store的类型，当前仅支持kafka            |
+| log-store.address                  | NULL             | 当 log-store.enable=true 时必填，log store的地址                           |
+| log-store.topic                    | NULL             | 当 log-store.enable=true 时必填，log store使用的topic                      |
+| log-store.data-format              | json             | log store中的消息格式，当前仅支持json         |
+| log-store.data-version             | v1               | log store中消息的版本，当前仅支持v1           |
 
 
 
