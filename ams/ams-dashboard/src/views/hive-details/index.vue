@@ -24,7 +24,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, onMounted, reactive, toRefs, watch } from 'vue'
-import UDetails from './Details.vue'
+import UDetails from './components/Details.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DetailColumnItem, PartitionColumnItem, upgradeStatusMap } from '@/types/common.type'
 import { getTableDetail, getUpgradeStatus } from '@/services/table.service'
@@ -147,10 +147,12 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .hive-tables-wrap {
-  font-size: 14px;
   border: 1px solid #e8e8f0;
   padding: 12px 0;
-  min-height: 100%;
+  display: flex;
+  height: 100%;
+  flex: 1;
+  flex-direction: column;
   .table-top {
     padding: 0 12px;
     .fail-msg {

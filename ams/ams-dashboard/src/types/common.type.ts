@@ -54,6 +54,10 @@ export interface IMap<T> {
   [key: string]: T;
 }
 
+export interface IKeyAndValue {
+  key: string
+  value: string
+}
 export interface IBaseDetailInfo {
   tableName: string
   createTime: string
@@ -67,6 +71,12 @@ export interface DetailColumnItem {
   field: string
   type: string
   comment: string
+}
+
+export interface IField {
+  field: string
+  type: string
+  description: string
 }
 
 export interface PartitionColumnItem {

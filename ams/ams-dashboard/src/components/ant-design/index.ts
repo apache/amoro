@@ -33,7 +33,8 @@ import {
   Divider,
   Tabs,
   List,
-  Breadcrumb
+  Breadcrumb,
+  Empty
 } from 'ant-design-vue'
 
 const compontens = [
@@ -52,7 +53,8 @@ const compontens = [
   Form,
   Pagination,
   List,
-  Breadcrumb
+  Breadcrumb,
+  Empty
 ]
 export default function (app: App): void {
   compontens.forEach(app.use)

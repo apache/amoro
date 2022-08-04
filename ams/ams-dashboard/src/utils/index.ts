@@ -170,3 +170,7 @@ export function debounce (func: any, timeout = 300) {
     }, timeout)
   }
 }
+
+export function getUUid() {
+  return Math.random().toString(36).substr(2)
+}

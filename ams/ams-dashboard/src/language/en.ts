@@ -117,5 +117,7 @@ export default {
   upgrade: 'Upgrade',
   upgrading: 'Upgrading',
   upgradeHiveTable: 'Upgrade Hive Table',
-  ok: 'Ok'
+  ok: 'Ok',
+  partitonField: 'Partiton Field',
+  otherProperties: 'Other Properties'
 }

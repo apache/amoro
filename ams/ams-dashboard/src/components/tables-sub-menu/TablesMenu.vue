@@ -30,7 +30,8 @@
             </template>
           </a-input-search>
         </div>
-        <virtual-recycle-scroller :items="databaseList" :itemSize="40" iconName="database" />
+        <u-loading v-if="tableLoading" />
+        <virtual-recycle-scroller :loading="loading" :items="databaseList" :activeItem="database" :itemSize="40" @handleFn="mouseEnter" iconName="database" />
       </div>
     </div>
     <div class="table-list">
@@ -54,7 +55,8 @@
             </template>
           </a-input-search>
         </div>
-        <virtual-recycle-scroller :items="tableList" :itemSize="40" iconName="tableOutlined" />
+        <u-loading v-if="tableLoading" />
+        <virtual-recycle-scroller :loading="tableLoading" :items="tableList" :activeItem="tableName" :itemSize="40" @handleFn="handleClickTable" iconName="tableOutlined" />
       </div>
     </div>
   </div>
@@ -229,6 +231,7 @@ export default defineComponent({
         return
       }
       state.tableLoading = true
+      state.tableList.length = 0
       getTableList({
         catalog: state.curCatalog,
         db: state.database,
@@ -292,6 +295,12 @@ export default defineComponent({
     }
     .list-wrap {
       height: calc(100% - 48px);
+      position: relative;
+      .u-loading {
+        background: transparent;
+        justify-content: flex-start;
+        padding-top: 200px;
+      }
     }
     .select-catalog,
     .add {

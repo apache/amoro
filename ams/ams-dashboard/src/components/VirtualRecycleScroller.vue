@@ -5,8 +5,9 @@
     :item-size="40"
     key-field="id"
     v-slot="{ item }"
+    v-if="items.length && !loading"
   >
-    <div class="desc">
+    <div :class="{'active': activeItem === item.label}" @mouseenter="handleMouseMove(item)" class="desc">
       <table-outlined v-if="iconName === 'tableOutlined'" class="g-mr-8" />
       <svg-icon v-if="iconName === 'database'" icon-class="database" class="g-mr-8" />
       <p :title="item.label" class="name g-text-nowrap">
@@ -14,6 +15,7 @@
       </p>
     </div>
   </RecycleScroller>
+  <a-empty v-if="!items.length && !loading" :image="simpleImage"></a-empty>
 </template>
 
 <script lang="ts">
@@ -21,17 +23,33 @@ import { defineComponent } from 'vue'
 import { RecycleScroller } from 'vue-virtual-scroller'
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css'
 import { TableOutlined } from '@ant-design/icons-vue'
+import { IMap } from '@/types/common.type'
+import { Empty } from 'ant-design-vue'
 
 export default defineComponent ({
   components: {
     TableOutlined,
     RecycleScroller
   },
-  setup() {},
+  emits: ['handleFn'],
+  setup(props, { emit }) {
+    const handleMouseMove = (item: IMap<string>) => {
+      emit('handleFn', item.label)
+    }
+
+    return {
+      simpleImage: Empty.PRESENTED_IMAGE_SIMPLE,
+      handleMouseMove
+    }
+  },
   props: {
     items: {
       type: Array,
       default: () => []
+    },
+    activeItem: {
+      type: String,
+      default: ''
     },
     itemSize: {
       type: Number,
@@ -40,6 +58,10 @@ export default defineComponent ({
     iconName: {
       type: String,
       default: 'tableOutlined'
+    },
+    loading: {
+      type: Boolean,
+      default: false
     }
   }
 })
