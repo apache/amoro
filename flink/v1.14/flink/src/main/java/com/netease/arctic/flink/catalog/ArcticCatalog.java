@@ -18,9 +18,12 @@
 
 package com.netease.arctic.flink.catalog;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
+import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import com.netease.arctic.flink.table.DynamicTableFactory;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -28,6 +31,7 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.CatalogDatabase;
@@ -68,6 +72,7 @@ import java.util.stream.Collectors;
 
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
+import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 
 /**
  * Catalogs for arctic data lake.
@@ -166,6 +171,7 @@ public class ArcticCatalog extends AbstractCatalog {
     RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
     fillTableProperties(arcticProperties);
+    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
@@ -173,6 +179,27 @@ public class ArcticCatalog extends AbstractCatalog {
         partitionKeys,
         arcticProperties,
         null);
+  }
+
+  private void fillTableMetaPropertiesIfLookupLike(Map<String, String> properties, TableIdentifier tableIdentifier) {
+    StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+    boolean isLookupLike = false;
+    for (int i = 0; i < stackTraceElements.length; i++) {
+      if (Objects.equal("lookupLikeSourceTable", stackTraceElements[i].getMethodName())) {
+        isLookupLike = true;
+        break;
+      }
+    }
+
+    if (!isLookupLike) {
+      return;
+    }
+
+    properties.put(CONNECTOR.key(), DynamicTableFactory.IDENTIFIER);
+    properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
+    properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
+    properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
+    properties.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {
@@ -250,7 +277,20 @@ public class ArcticCatalog extends AbstractCatalog {
     validateFlinkTable(table);
 
     TableSchema tableSchema = table.getSchema();
-    Schema icebergSchema = FlinkSchemaUtil.convert(tableSchema);
+    TableSchema.Builder b = TableSchema.builder();
+
+    tableSchema.getTableColumns().forEach(c->{
+      List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
+      for (WatermarkSpec w : ws) {
+        if (w.getRowtimeAttribute().equals(c.getName())) {
+          return;
+        }
+      }
+      b.field(c.getName(), c.getType());
+    });
+    TableSchema tableSchemaWithoutWatermark = b.build();
+
+    Schema icebergSchema = FlinkSchemaUtil.convert(tableSchemaWithoutWatermark);
 
     TableBuilder tableBuilder = internalCatalog.newTableBuilder(
         getTableIdentifier(tablePath), icebergSchema);
@@ -292,9 +332,9 @@ public class ArcticCatalog extends AbstractCatalog {
       }
     });
 
-    if (!schema.getWatermarkSpecs().isEmpty()) {
-      throw new UnsupportedOperationException("Creating table with watermark specs is not supported yet.");
-    }
+//    if (!schema.getWatermarkSpecs().isEmpty()) {
+//      throw new UnsupportedOperationException("Creating table with watermark specs is not supported yet.");
+//    }
   }
 
   @Override

@@ -20,6 +20,7 @@ package com.netease.arctic.flink;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.flink.write.KeyedRowDataTaskWriterFactory;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -28,6 +29,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -56,12 +58,15 @@ import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.flink.MiniClusterResource;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -74,6 +79,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.IDENTIFIER;
+import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXEC_SOURCE_IDLE_TIMEOUT;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
 public class FlinkTestBase extends TableTestBase {
@@ -159,6 +165,7 @@ public class FlinkTestBase extends TableTestBase {
           Configuration configuration = tEnv.getConfig().getConfiguration();
           // set low-level key-value options
           configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
+          configuration.setString(TABLE_EXEC_SOURCE_IDLE_TIMEOUT.key(), "0");
         }
       }
     }
@@ -270,5 +277,27 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static RowData createRowData(Integer id, String name, String dateTime) {
     return createRowData(id, name, dateTime, RowKind.INSERT);
+  }
+
+  protected static void commit(KeyedTable keyedTable, WriteResult result, boolean base) {
+    if (base) {
+      AppendFiles baseAppend = keyedTable.baseTable().newAppend();
+      Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
+      baseAppend.commit();
+    } else {
+      AppendFiles changeAppend = keyedTable.changeTable().newAppend();
+      Arrays.stream(result.dataFiles()).forEach(changeAppend::appendFile);
+      changeAppend.commit();
+    }
+  }
+
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
+                                                             boolean base) {
+    KeyedRowDataTaskWriterFactory taskWriterFactory =
+        new KeyedRowDataTaskWriterFactory(keyedTable, rowType, base);
+    taskWriterFactory.setTransactionId(transactionId);
+    taskWriterFactory.setMask(3);
+    taskWriterFactory.initialize(0, 0);
+    return taskWriterFactory.create();
   }
 }

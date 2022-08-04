@@ -19,13 +19,17 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.ArcticSource;
+import com.netease.arctic.flink.read.hybrid.enumerator.StartWatermarkEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -36,6 +40,9 @@ import java.util.Map;
  */
 public class ArcticSourceReader<T> extends
     SingleThreadMultiplexSourceReaderBase<ArcticRecordWithOffset<T>, T, ArcticSplit, ArcticSplitState> {
+
+  public static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceReader.class);
+
   public ArcticSourceReader(
       ReaderFunction<T> readerFunction,
       Configuration config,
@@ -45,7 +52,7 @@ public class ArcticSourceReader<T> extends
             readerFunction,
             context
         ),
-        new ArcticRecordEmitter<>(),
+        new ArcticRecordEmitter<T>(config, context.getUserCodeClassLoader().asClassLoader()),
         config,
         context);
   }
@@ -76,5 +83,14 @@ public class ArcticSourceReader<T> extends
 
   private void requestSplit(Collection<String> finishedSplitIds) {
     context.sendSourceEventToCoordinator(new SplitRequestEvent(finishedSplitIds));
+  }
+
+  @Override
+  public void handleSourceEvents(SourceEvent sourceEvent) {
+    if (!(sourceEvent instanceof StartWatermarkEvent)) {
+      return;
+    }
+    LOGGER.info("receive StartWatermarkEvent");
+    ((ArcticRecordEmitter) recordEmitter).startGenerateWatermark();
   }
 }

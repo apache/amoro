@@ -87,7 +87,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     return harness;
   }
 
-  public static TaskWriter<RowData> createTaskWriter(Table table, long targetFileSize, FileFormat format,
+  public static TaskWriter<RowData> createUnkeyedTaskWriter(Table table, long targetFileSize, FileFormat format,
                                                      RowType rowType) {
     TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
         SerializableTable.copyOf(table), rowType, targetFileSize, format, null);
