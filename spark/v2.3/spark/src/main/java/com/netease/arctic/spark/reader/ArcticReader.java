@@ -4,6 +4,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
@@ -42,7 +43,7 @@ public class ArcticReader implements DataSourceReader,
 
   private final KeyedTable table;
 
-  private Schema schema = null;
+  private Schema expectedSchema = null;
   private StructType requestedProjection;
   private StructType readSchema = null;
   private final boolean caseSensitive;
@@ -50,9 +51,9 @@ public class ArcticReader implements DataSourceReader,
   private Filter[] pushedFilters = NO_FILTERS;
   private List<CombinedScanTask> tasks = null;
 
-  public ArcticReader(KeyedTable table, StructType requestedProjection, boolean caseSensitive) {
+  public ArcticReader(KeyedTable table, Schema expectedSchema, boolean caseSensitive) {
     this.table = table;
-    this.requestedProjection = requestedProjection;
+    this.expectedSchema = expectedSchema;
     this.caseSensitive = caseSensitive;
   }
 
@@ -94,13 +95,24 @@ public class ArcticReader implements DataSourceReader,
 
   @Override
   public Statistics getStatistics() {
-    return null;
+    long sizeInBytes = 0L;
+    long numRows = 0L;
+
+    for (CombinedScanTask combinedScanTask : tasks()) {
+      for (KeyedTableScanTask fileScanTask : combinedScanTask.tasks()) {
+
+        sizeInBytes += fileScanTask.cost();
+        numRows += fileScanTask.recordCount();
+      }
+    }
+
+    return new Stats(sizeInBytes, numRows);
   }
 
   @Override
   public StructType readSchema() {
     if (readSchema == null) {
-      this.readSchema = SparkSchemaUtil.convert(schema);
+      this.readSchema = SparkSchemaUtil.convert(expectedSchema);
     }
     return readSchema;
   }
@@ -108,15 +120,15 @@ public class ArcticReader implements DataSourceReader,
   @Override
   public List<DataReaderFactory<Row>> createDataReaderFactories() {
     List<CombinedScanTask> scanTasks = tasks();
-    ReadTask<Row>[] readTasks  = new ReadTask[scanTasks.size()];
+    ReadTask[] readTasks  = new ReadTask[scanTasks.size()];
     for (int i = 0; i < scanTasks.size(); i++) {
-      readTasks[i] = new ReadTask(scanTasks.get(i), table, schema,
+      readTasks[i] = new ReadTask(scanTasks.get(i), table, expectedSchema,
           caseSensitive);
     }
     return Arrays.asList(readTasks);
   }
 
-  private static class ReadTask<T> implements Serializable, DataReaderFactory<Row> {
+  private static class ReadTask implements Serializable, DataReaderFactory<Row> {
     final CombinedScanTask combinedScanTask;
     final ArcticFileIO io;
     final boolean caseSensitive;
