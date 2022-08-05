@@ -8,6 +8,13 @@
       @change="change"
       :loading="loading"
     >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.dataIndex === 'operation'">
+          <span class="text-active g-max-line-3" @click="viewDetail(record)">
+            {{ record.operation }}
+          </span>
+        </template>
+      </template>
     </a-table>
   </div>
 </template>
@@ -19,11 +26,12 @@ import { usePagination } from '@/hooks/usePagination'
 import { IColumns, OperationItem } from '@/types/common.type'
 import { getOperations } from '@/services/table.service'
 import { useRoute } from 'vue-router'
+import { dateFormat } from '@/utils'
 
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
-  { title: t('time'), dataIndex: 'ts' },
-  { title: t('operation'), dataIndex: 'operation' }
+  { title: t('time'), dataIndex: 'ts', width: '30%' },
+  { title: t('operation'), dataIndex: 'operation', scopedSlots: { customRender: 'operation' } }
 ])
 
 const dataSource = reactive<OperationItem[]>([])
@@ -39,7 +47,7 @@ const sourceData = reactive({
   ...query
 })
 
-async function getTableInfo() {
+async function getOperationInfo() {
   try {
     loading.value = true
     dataSource.length = 0
@@ -47,8 +55,11 @@ async function getTableInfo() {
       ...sourceData,
       page: pagination.current,
       pageSize: pagination.pageSize
+    });
+    (result?.list || []).forEach((ele: OperationItem) => {
+      ele.ts = ele.ts ? dateFormat(ele.ts) : ''
+      dataSource.push(ele)
     })
-    dataSource.push(...[result || []])
   } catch (error) {
   } finally {
     loading.value = false
@@ -61,11 +72,13 @@ function change({ current = 1, pageSize = 25 } = pagination) {
     pagination.current = 1
   }
   pagination.pageSize = pageSize
-  getTableInfo()
+  getOperationInfo()
 }
 
+function viewDetail() {}
+
 onMounted(() => {
-  getTableInfo()
+  getOperationInfo()
 })
 
 </script>

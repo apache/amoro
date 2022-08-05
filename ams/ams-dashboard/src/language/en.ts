@@ -77,6 +77,7 @@ export default {
   count: 'Count',
   time: 'Time',
   operation: 'Operation',
+  operationDetails: ' Operation Details',
   optimizer: 'Optimizer',
   optimizers: 'Optimizers',
   container: 'Container',

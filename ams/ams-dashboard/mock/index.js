@@ -583,4 +583,18 @@ module.exports = {
       result: {}
     })
   },
+  'GET /ams/v1/tables/catalogs/trino_online_env/dbs/arctic100wforOptimizeBase/tables/nation/operations': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        list: [
+          {
+            ts: 11234567890123,
+            operation: "sdsd"
+          }
+        ]
+      }
+    })
+  }
 }
