@@ -79,13 +79,13 @@ Optimizer。
 
 LocalOptimizer 通过本地进程方式启动的 Optimizer 的一种方式，支持 Optimize 任务的多线程执行，在演示阶段或单机部署的场景下，LocalOptimizer 是最简单的一种调度方式。
 
-LocalOptimizer 的启动和配置方式，参照 TODO
+LocalOptimizer 的配置方式，参照 [Arctic Dashboard](meta-service/dashboard.md) 部分`conf/config.yaml`中的默认配置。
 
 ### FlinkOptimizer
 
 FlinkOptimizer 是通过 Flink 作业启动 Optimizer 的一种方式，借助 Flink 可以方便地将 Optimizer 部署在 yarn 集群上，从而支持大规模数据场景下的使用。
 
-FlinkOptimizer 的启动和配置方式，参照 TODO
+FlinkOptimizer 的启动和配置方式，参照 [使用 Flink 执行结构优化](meta-service/dashboard.md#使用 Flink 执行结构优化)。
 
 ### 自定义 Optimizer
 
