@@ -1,12 +1,12 @@
 # 使用Docker快速开始
-本指南将用Docker帮助您快速启动并部署AMS(Arctic Meta Service),Spark和Flink环境，并体验Arctic的各种功能。
+本指南将用 Docker 帮助您快速启动并部署 AMS(Arctic Meta Service), Spark 和 Flink 环境，并体验 Arctic 的各种功能。
 
 ## Docker-Compose
-使用Docker-Compose将很快帮助您搭建起一套Arctic使用所需的环境，相关镜像已上传到Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams)镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink)镜像已包含Flink及所需环境。(Spark相关镜像已上传到[arctic163/spark](https://hub.docker.com/repository/docker/arctic163/spark)，如有需要请您自行拉取使用)
+使用 Docker-Compose 将很快帮助您搭建起一套 Arctic 使用所需的环境，相关镜像已上传到 Docker Hub中。[arctic163/ams](https://hub.docker.com/repository/docker/arctic163/ams) 镜像已包含AMS及所需环境。[arctic163/flink](https://hub.docker.com/repository/docker/arctic163/flink) 镜像已包含Flink及所需环境。(Spark 相关镜像已上传到 [arctic163/spark](https://hub.docker.com/repository/docker/arctic163/spark)，如有需要请您自行拉取使用)
   
-要使用Docker以及Docker-Compose，您需要安装[Docker CLI](https://docs.docker.com/get-docker/)以及[Docker Compose CLI](https://github.com/docker/compose-cli/blob/main/INSTALL.md)。  
+要使用 Docker 以及 Docker-Compose，您需要安装 [Docker CLI](https://docs.docker.com/get-docker/) 以及 [Docker Compose CLI](https://github.com/docker/compose-cli/blob/main/INSTALL.md)。  
   
-如果您已经万事俱备，请新建一个名为```docker-compose.yml```的文件，并写入以下内容。您也可以在[docker-compose.yml](https://github.com/NetEase/arctic/tree/master/docker/docker-compose.yml)处查看。  
+如果您已经万事俱备，请新建一个名为`docker-compose.yml`的文件，并写入以下内容。您也可以在 [docker-compose.yml](https://github.com/NetEase/arctic/tree/master/docker/docker-compose.yml) 处查看。  
 ```yaml
 version: "3"
 services:
@@ -40,32 +40,32 @@ networks:
   arctic_network:
     driver: bridge
 ```
-然后，请在您的docker-compose.yml文件所在目录下，使用以下命令启动docker容器：
+然后，请在您的 docker-compose.yml 文件所在目录下，使用以下命令启动 docker 容器：
 ```shell
 docker-compose up -d
 ```
-启动成功后，使用```docker ps```命令查看当前已启动的容器，您将看到两个个容器，分别为ams和arctic_flink。 
+启动成功后，使用`docker ps`命令查看当前已启动的容器，您将看到两个个容器，分别为 ams 和 arctic_flink。 
 ## 启动AMS
-如[概述](index.md)中所述，AMS(Arctic Meta Service)是Arctic中负责元数据管理与结构优化的独立服务，使用Arctic的第一步就是启动AMS。  
+如[概述](index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是启动 AMS。  
 
 **1.启动AMS**  
 
-我们已经在ams容器中自动为您启动了AMS服务，如果您的ams容器已经启动成功，可通过 [AMS Dashboard](http://localhost:1630) 来访问ams页面，默认的用户名密码为：`admin/admin`。
+我们已经在 AMS 容器中自动为您启动了 AMS 服务，如果您的 AMS 容器已经启动成功，可通过 [AMS Dashboard](http://localhost:1630) 来访问 AMS 页面，默认的用户名密码为：`admin/admin`。
 
-**2.启动Optimizer**
+**2.启动 Optimizer**
 
-AMS中的optimizer负责自动为表进行结构优化，AMS默认配置下会有一个类型为local的optimizer group，这里需要在此group下创建一个optimizer。
-进入AMS的Optimizing页面，选择Optimizers。
+AMS 中的 optimizer 负责自动为表进行结构优化，AMS默认配置下会有一个类型为 local 的 optimizer group，这里需要在此 group 下创建一个 optimizer。
+进入 AMS 的 Optimizing 页面，选择 Optimizers。
 
-![Optimizing.png](../../overrides/images/Optimizing.png)
+![Optimizing.png](images/Optimizing.png)
 
-点击`Scale-Out`按钮选择对应`Optimizer Group`并且配置optimizer并发度，点击OK后即完成了optimizer的创建。
+点击`Scale-Out`按钮选择对应`Optimizer Group`并且配置 optimizer 并发度，点击OK后即完成了 optimizer 的创建。
 
-![ScaleOut.png](../../overrides/images/ScaleOut.png)
+![ScaleOut.png](images/ScaleOut.png)
 
 ### 建表
 
-登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，在SQL输入框中输入下面的SQL并执行：
+登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面， 在SQL 输入框中输入下面的 SQL 并执行：
 
 ```sql
 create database test_db;
@@ -82,21 +82,21 @@ create table test_db.test_table(
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
-**1.启动flink sql client**  
+**1.启动 Flink SQL Client**  
 
-使用以下命令进入arctic_flink容器。
+使用以下命令进入 arctic_flink 容器。
 ```shell
 docker exec -it arctic_flink /bin/bash
 ```
 
-启动flink sql client:
+启动 Flink SQL Client:
 ```shell
 ./bin/start-cluster.sh
 ./bin/sql-client.sh embedded
 ```
 **2.启动 Flink 实时任务**  
 
-在sql client中输入下面的sql:
+在 Flink SQL Client 中输入下面的 SQL（由于 Flink SQL Client 暂不支持批量输入 SQL 语句，下面的 SQL 需要逐条输入SQL Client）:
 
 ```sql
 -- 创建 catalog
@@ -132,11 +132,11 @@ SELECT id, `name` FROM arctic.test_db.test_table/*+OPTIONS('streaming' = 'true')
 
 **3.模拟测试数据**  
 
-打开一个新的arctic_flink容器窗口。(注意，不是创建一个新的容器)  
+打开一个新的 arctic_flink 容器窗口。(注意，不是创建一个新的容器)  
 ```shell
 docker exec -it arctic_flink /bin/bash
 ```
-在新的窗口中执行下面的命令以往socket中写入CDC数据：
+在新的窗口中执行下面的命令以往 socket 中写入 CDC 数据：
 ```shell
 nc -lk 9999
 ```
@@ -190,7 +190,7 @@ DELETE|3|lee|2022-07-01 10:11:00
 
 **1.查询已有数据**
 
-登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，如果按照流程完成了[实时写入与读取](#_3)，在SQL窗口输入并执行如下SQL：
+登录并进入 [AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，如果按照流程完成了[实时写入与读取](#_3)，在SQL窗口输入并执行如下SQL：
 
 ```sql
 select * from test_db.test_table order by id;
@@ -256,10 +256,10 @@ select * from test_db.test_table order by id;
 
 **1.查看结构优化状态**
 
-启动optimizer之后，表的结构优化会自动触发。
-登录并进入[AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
+启动 optimizer 之后，表的结构优化会自动触发。
+登录并进入 [AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](../../overrides/images/table_optimizing.png)
+![table_optimizing](images/table_optimizing.png)
 
 其中：
 
@@ -278,9 +278,9 @@ select * from test_db.test_table order by id;
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取](#实时写入与读取)，测试表预期会进行两次结构优化，分别是一次minor optimize, 一次major optimize。
+如果已经完成[实时写入与读取](#实时写入与读取)，测试表预期会进行两次结构优化，分别是一次 minor optimize, 一次 major optimize。
 
-![optimize_history](../../overrides/images/optimize_history.png)
+![optimize_history](images/optimize_history.png)
 
 上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
 
@@ -294,7 +294,7 @@ select * from test_db.test_table order by id;
 
 两次 Optimize 之后，文件情况如下
 
-![files_after_optimize](../../overrides/images/files_after_optimize.png)
+![files_after_optimize](images/files_after_optimize.png)
 
 新增的4个 pos-delete 是 minor optimize 的结果，而新增的一个 base file 是 major optimize 的最终结果，由于当前的 pos-delete 的数据量还比较少，因此 major optimize 并没有将它们删除。
 

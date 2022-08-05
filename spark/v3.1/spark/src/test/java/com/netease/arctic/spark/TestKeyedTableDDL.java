@@ -74,6 +74,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableNotExist(identifier);
   }
 
+
   @Test
   public void testCreateKeyedTableLike() {
     TableIdentifier identifier = TableIdentifier.of(catalogName, database, targetTable);
@@ -128,22 +129,5 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
     sql("drop table {0}.{1}", database, table);
     assertTableNotExist(identifier);
-  }
-
-  private void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
-        primaryKeysBlock = false;
-      } else if (primaryKeysBlock){
-        descPrimaryKeys.add(row[0].toString());
-      }
-    }
-
-    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.toArray(), descPrimaryKeys.toArray());
   }
 }

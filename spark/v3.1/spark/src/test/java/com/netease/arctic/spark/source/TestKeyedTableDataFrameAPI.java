@@ -27,6 +27,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.types.StructType;
 import org.junit.After;
 import org.junit.Assert;
@@ -92,6 +93,54 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
     df.writeTo(tablePath).overwritePartitions();
     df = spark.read().table(tablePath);
     Assert.assertEquals(5, df.count());
+  }
+
+  @Test
+  public void testKeyedTableDataFrameApi() throws Exception {
+    StructType structType = SparkSchemaUtil.convert(schema);
+    // test create
+    df = spark.createDataFrame(
+        Lists.newArrayList(
+            RowFactory.create(1, "aaa", quickTs(1)),
+            RowFactory.create(2, "bbb", quickTs(2)),
+            RowFactory.create(3, "ccc", quickTs(3))
+        ), structType
+    );
+    df.write().format("arctic")
+        .partitionBy("data")
+        .option("primary.keys", "id")
+        .save(tablePath);
+    sql("desc table {0}.{1}", database, table);
+    assertDescResult(rows, Lists.newArrayList("id"));
+    df = spark.read().table(tablePath);
+    Assert.assertEquals(3, df.count());
+
+    // test overwrite dynamic
+    df = spark.createDataFrame(
+        Lists.newArrayList(
+            RowFactory.create(4, "aaa", quickTs(1)),
+            RowFactory.create(5, "aaa", quickTs(2)),
+            RowFactory.create(6, "aaa", quickTs(3))
+        ), structType
+    );
+    df.write().format("arctic")
+        .partitionBy("data")
+        .option("overwrite-mode", "dynamic")
+        .mode(SaveMode.Overwrite)
+        .save(tablePath);
+    df = spark.read().format("arctic").load(tablePath);
+    Assert.assertEquals(5, df.count());
+
+    df = spark.createDataFrame(
+        Lists.newArrayList(
+            RowFactory.create(4, "aaa", quickTs(3)),
+            RowFactory.create(5, "bbb", quickTs(4)),
+            RowFactory.create(6, "ccc", quickTs(5))
+        ), structType
+    );
+    df.writeTo(tablePath).overwritePartitions();
+    df = spark.read().table(tablePath);
+    Assert.assertEquals(3, df.count());
   }
 
 }

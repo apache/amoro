@@ -23,7 +23,8 @@ import java.io.IOException;
     TestOptimizeWrite.class,
     TestUnKeyedTableDML.class,
     TestKeyedTableDataFrameAPI.class,
-    TestUnKeyedTableDataFrameAPI.class})
+    TestUnKeyedTableDataFrameAPI.class,
+    TestCreateKeyedTableAsSelect.class})
 public class ArcticSparkNonHiveMainTest {
 
   @BeforeClass
