@@ -87,7 +87,7 @@ public class ArcticSparkDataReader extends BaseArcticDataReader<Row> {
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> SparkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema -> SparkParquetV2Reader.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
