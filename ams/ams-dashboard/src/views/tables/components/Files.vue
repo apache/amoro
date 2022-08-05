@@ -30,7 +30,16 @@
         @change="change"
         class="g-mt-8"
         :loading="loading"
-      ></a-table>
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'path'">
+            <a-tooltip>
+              <template #title>{{record.path}}</template>
+              <span>{{record.path}}</span>
+            </a-tooltip>
+          </template>
+        </template>
+      </a-table>
     </template>
 
   </div>
@@ -60,7 +69,7 @@ const breadcrumbColumns = shallowReactive([
   { title: t('size'), dataIndex: 'size', width: 120, ellipsis: true },
   { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
   { title: t('commitId'), dataIndex: 'commitId', width: 200, ellipsis: true },
-  { title: t('path'), dataIndex: 'path', ellipsis: true }
+  { title: t('path'), dataIndex: 'path', ellipsis: true, scopedSlots: { customRender: 'path' } }
 ])
 
 const props = defineProps<{ hasPartition: boolean}>()
