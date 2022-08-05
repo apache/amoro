@@ -161,7 +161,7 @@ const request = function (options: CustomAxiosRequestConfig) {
         })
         if (requestConfig.handleError) {
           message.error(msg || 'need login')
-        } 
+        }
         return router.push({
           path: '/login'
         })
