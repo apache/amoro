@@ -63,7 +63,7 @@ AMS 中的 optimizer 负责自动为表进行结构优化，AMS默认配置下�
 
 ![ScaleOut.png](images/ScaleOut.png)
 
-### 建表
+## 建表
 
 登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面， 在SQL 输入框中输入下面的 SQL 并执行：
 
@@ -186,7 +186,7 @@ DELETE|3|lee|2022-07-01 10:11:00
 |  7|randy|
 +---+-----+
 ```
-### 批量修改
+## 批量修改
 
 **1.查询已有数据**
 
@@ -278,7 +278,7 @@ select * from test_db.test_table order by id;
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取](#实时写入与读取)，测试表预期会进行两次结构优化，分别是一次 minor optimize, 一次 major optimize。
+如果已经完成[实时写入与读取](#_3)，测试表预期会进行3次结构优化，分别是2次 minor optimize, 一次 major optimize。
 
 ![optimize_history](images/optimize_history.png)
 
@@ -292,10 +292,10 @@ select * from test_db.test_table order by id;
 
 - Output：合并生成的文件个数和文件大小
 
-两次 Optimize 之后，文件情况如下
+3次 Optimize 之后，文件情况如下，以分区 op_time_day=2022-07-02 为例
 
 ![files_after_optimize](images/files_after_optimize.png)
 
-新增的4个 pos-delete 是 minor optimize 的结果，而新增的一个 base file 是 major optimize 的最终结果，由于当前的 pos-delete 的数据量还比较少，因此 major optimize 并没有将它们删除。
+新增的1个 pos-delete 是 minor optimize 的结果，而新增的1个 base file 是 major optimize 的结果，由于只有一行数据被删除，因此只有1个 base 文件和 pos-delete 文件合并生成了最终的 base file。
 
 更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-structure.md#_3)。
