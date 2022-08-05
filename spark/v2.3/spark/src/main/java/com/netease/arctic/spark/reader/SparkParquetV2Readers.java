@@ -2,7 +2,6 @@ package com.netease.arctic.spark.reader;
 
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.parquet.BaseParquetReaders;
 import org.apache.iceberg.parquet.ParquetSchemaUtil;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.parquet.ParquetValueReaders;
@@ -11,7 +10,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.spark.data.SparkParquetReaders;
 import org.apache.iceberg.types.Types;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.io.api.Binary;
@@ -21,8 +19,8 @@ import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.catalyst.util.ArrayBasedMapData;
 import org.apache.spark.sql.catalyst.util.ArrayData;
@@ -42,8 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class SparkParquetV2Reader{
-  private SparkParquetV2Reader() {
+public class SparkParquetV2Readers {
+  private SparkParquetV2Readers() {
   }
 
   public static ParquetValueReader<Row> buildReader(Schema expectedSchema,
@@ -58,15 +56,15 @@ public class SparkParquetV2Reader{
     if (ParquetSchemaUtil.hasIds(fileSchema)) {
       return (ParquetValueReader<Row>)
           TypeWithSchemaVisitor.visit(expectedSchema.asStruct(), fileSchema,
-              new SparkParquetV2Reader.ReadBuilder(fileSchema, idToConstant));
+              new SparkParquetV2Readers.ReadBuilder(fileSchema, idToConstant));
     } else {
       return (ParquetValueReader<Row>)
           TypeWithSchemaVisitor.visit(expectedSchema.asStruct(), fileSchema,
-              new SparkParquetV2Reader.FallbackReadBuilder(fileSchema, idToConstant));
+              new SparkParquetV2Readers.FallbackReadBuilder(fileSchema, idToConstant));
     }
   }
 
-  private static class FallbackReadBuilder extends SparkParquetV2Reader.ReadBuilder {
+  private static class FallbackReadBuilder extends SparkParquetV2Readers.ReadBuilder {
     FallbackReadBuilder(MessageType type, Map<Integer, ?> idToConstant) {
       super(type, idToConstant);
     }
@@ -93,7 +91,7 @@ public class SparkParquetV2Reader{
         types.add(fieldType);
       }
 
-      return new SparkParquetV2Reader.RowReader(types, newFields);
+      return new SparkParquetV2Readers.RowReader(types, newFields);
     }
   }
 
@@ -158,7 +156,7 @@ public class SparkParquetV2Reader{
         }
       }
 
-      return new SparkParquetV2Reader.RowReader(types, reorderedFields);
+      return new SparkParquetV2Readers.RowReader(types, reorderedFields);
     }
 
     @Override
@@ -173,7 +171,7 @@ public class SparkParquetV2Reader{
       Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName())) - 1;
 
-      return new SparkParquetV2Reader.ArrayReader<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
+      return new SparkParquetV2Readers.ArrayReader<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
     }
 
     @Override
@@ -191,7 +189,7 @@ public class SparkParquetV2Reader{
       Type valueType = repeatedKeyValue.getType(1);
       int valueD = type.getMaxDefinitionLevel(path(valueType.getName())) - 1;
 
-      return new SparkParquetV2Reader.MapReader<>(repeatedD, repeatedR,
+      return new SparkParquetV2Readers.MapReader<>(repeatedD, repeatedR,
           ParquetValueReaders.option(keyType, keyD, keyReader),
           ParquetValueReaders.option(valueType, valueD, valueReader));
     }
@@ -206,7 +204,7 @@ public class SparkParquetV2Reader{
           case ENUM:
           case JSON:
           case UTF8:
-            return new SparkParquetV2Reader.StringReader(desc);
+            return new SparkParquetV2Readers.StringReader(desc);
           case INT_8:
           case INT_16:
           case INT_32:
@@ -220,17 +218,17 @@ public class SparkParquetV2Reader{
           case TIMESTAMP_MICROS:
             return new ParquetValueReaders.UnboxedReader<>(desc);
           case TIMESTAMP_MILLIS:
-            return new SparkParquetV2Reader.TimestampMillisReader(desc);
+            return new SparkParquetV2Readers.TimestampMillisReader(desc);
           case DECIMAL:
             DecimalMetadata decimal = primitive.getDecimalMetadata();
             switch (primitive.getPrimitiveTypeName()) {
               case BINARY:
               case FIXED_LEN_BYTE_ARRAY:
-                return new SparkParquetV2Reader.BinaryDecimalReader(desc, decimal.getScale());
+                return new SparkParquetV2Readers.BinaryDecimalReader(desc, decimal.getScale());
               case INT64:
-                return new SparkParquetV2Reader.LongDecimalReader(desc, decimal.getPrecision(), decimal.getScale());
+                return new SparkParquetV2Readers.LongDecimalReader(desc, decimal.getPrecision(), decimal.getScale());
               case INT32:
-                return new SparkParquetV2Reader.IntegerDecimalReader(desc, decimal.getPrecision(), decimal.getScale());
+                return new SparkParquetV2Readers.IntegerDecimalReader(desc, decimal.getPrecision(), decimal.getScale());
               default:
                 throw new UnsupportedOperationException(
                     "Unsupported base type for decimal: " + primitive.getPrimitiveTypeName());
@@ -266,7 +264,7 @@ public class SparkParquetV2Reader{
         case INT96:
           // Impala & Spark used to write timestamps as INT96 without a logical type. For backwards
           // compatibility we try to read INT96 as timestamps.
-          return new SparkParquetV2Reader.TimestampInt96Reader(desc);
+          return new SparkParquetV2Readers.TimestampInt96Reader(desc);
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
@@ -381,7 +379,7 @@ public class SparkParquetV2Reader{
     }
   }
 
-  private static class ArrayReader<E> extends ParquetValueReaders.RepeatedReader<ArrayData, SparkParquetV2Reader.ReusableArrayData, E> {
+  private static class ArrayReader<E> extends ParquetValueReaders.RepeatedReader<ArrayData, SparkParquetV2Readers.ReusableArrayData, E> {
     private int readPos = 0;
     private int writePos = 0;
 
@@ -391,20 +389,20 @@ public class SparkParquetV2Reader{
 
     @Override
     @SuppressWarnings("unchecked")
-    protected SparkParquetV2Reader.ReusableArrayData newListData(ArrayData reuse) {
+    protected SparkParquetV2Readers.ReusableArrayData newListData(ArrayData reuse) {
       this.readPos = 0;
       this.writePos = 0;
 
-      if (reuse instanceof SparkParquetV2Reader.ReusableArrayData) {
-        return (SparkParquetV2Reader.ReusableArrayData) reuse;
+      if (reuse instanceof SparkParquetV2Readers.ReusableArrayData) {
+        return (SparkParquetV2Readers.ReusableArrayData) reuse;
       } else {
-        return new SparkParquetV2Reader.ReusableArrayData();
+        return new SparkParquetV2Readers.ReusableArrayData();
       }
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected E getElement(SparkParquetV2Reader.ReusableArrayData list) {
+    protected E getElement(SparkParquetV2Readers.ReusableArrayData list) {
       E value = null;
       if (readPos < list.capacity()) {
         value = (E) list.values[readPos];
@@ -416,7 +414,7 @@ public class SparkParquetV2Reader{
     }
 
     @Override
-    protected void addElement(SparkParquetV2Reader.ReusableArrayData reused, E element) {
+    protected void addElement(SparkParquetV2Readers.ReusableArrayData reused, E element) {
       if (writePos >= reused.capacity()) {
         reused.grow();
       }
@@ -427,13 +425,13 @@ public class SparkParquetV2Reader{
     }
 
     @Override
-    protected ArrayData buildList(SparkParquetV2Reader.ReusableArrayData list) {
+    protected ArrayData buildList(SparkParquetV2Readers.ReusableArrayData list) {
       list.setNumElements(writePos);
       return list;
     }
   }
 
-  private static class MapReader<K, V> extends ParquetValueReaders.RepeatedKeyValueReader<MapData, SparkParquetV2Reader.ReusableMapData, K, V> {
+  private static class MapReader<K, V> extends ParquetValueReaders.RepeatedKeyValueReader<MapData, SparkParquetV2Readers.ReusableMapData, K, V> {
     private int readPos = 0;
     private int writePos = 0;
 
@@ -447,20 +445,20 @@ public class SparkParquetV2Reader{
 
     @Override
     @SuppressWarnings("unchecked")
-    protected SparkParquetV2Reader.ReusableMapData newMapData(MapData reuse) {
+    protected SparkParquetV2Readers.ReusableMapData newMapData(MapData reuse) {
       this.readPos = 0;
       this.writePos = 0;
 
-      if (reuse instanceof SparkParquetV2Reader.ReusableMapData) {
-        return (SparkParquetV2Reader.ReusableMapData) reuse;
+      if (reuse instanceof SparkParquetV2Readers.ReusableMapData) {
+        return (SparkParquetV2Readers.ReusableMapData) reuse;
       } else {
-        return new SparkParquetV2Reader.ReusableMapData();
+        return new SparkParquetV2Readers.ReusableMapData();
       }
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    protected Map.Entry<K, V> getPair(SparkParquetV2Reader.ReusableMapData map) {
+    protected Map.Entry<K, V> getPair(SparkParquetV2Readers.ReusableMapData map) {
       Map.Entry<K, V> kv = nullEntry;
       if (readPos < map.capacity()) {
         entry.set((K) map.keys.values[readPos], (V) map.values.values[readPos]);
@@ -473,7 +471,7 @@ public class SparkParquetV2Reader{
     }
 
     @Override
-    protected void addPair(SparkParquetV2Reader.ReusableMapData map, K key, V value) {
+    protected void addPair(SparkParquetV2Readers.ReusableMapData map, K key, V value) {
       if (writePos >= map.capacity()) {
         map.grow();
       }
@@ -485,7 +483,7 @@ public class SparkParquetV2Reader{
     }
 
     @Override
-    protected MapData buildMap(SparkParquetV2Reader.ReusableMapData map) {
+    protected MapData buildMap(SparkParquetV2Readers.ReusableMapData map) {
       map.setNumElements(writePos);
       return map;
     }
@@ -520,19 +518,20 @@ public class SparkParquetV2Reader{
 
     @Override
     protected void set(GenericRow struct, int pos, Object value) {
-      // TODO: 2022/8/5  
+      // TODO: 2022/8/5
+      RowFactory.create(value);
     }
 
   }
 
   private static class ReusableMapData extends MapData {
-    private final SparkParquetV2Reader.ReusableArrayData keys;
-    private final SparkParquetV2Reader.ReusableArrayData values;
+    private final SparkParquetV2Readers.ReusableArrayData keys;
+    private final SparkParquetV2Readers.ReusableArrayData values;
     private int numElements;
 
     private ReusableMapData() {
-      this.keys = new SparkParquetV2Reader.ReusableArrayData();
-      this.values = new SparkParquetV2Reader.ReusableArrayData();
+      this.keys = new SparkParquetV2Readers.ReusableArrayData();
+      this.values = new SparkParquetV2Readers.ReusableArrayData();
     }
 
     private void grow() {
@@ -561,12 +560,12 @@ public class SparkParquetV2Reader{
     }
 
     @Override
-    public SparkParquetV2Reader.ReusableArrayData keyArray() {
+    public SparkParquetV2Readers.ReusableArrayData keyArray() {
       return keys;
     }
 
     @Override
-    public SparkParquetV2Reader.ReusableArrayData valueArray() {
+    public SparkParquetV2Readers.ReusableArrayData valueArray() {
       return values;
     }
   }
