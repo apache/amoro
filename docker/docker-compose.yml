@@ -1,0 +1,31 @@
+version: "3"
+services:
+  ams:
+    image: arctic163/ams
+    container_name: ams
+    volumes:
+      - ./data:/tmp/arctic/warehouse
+    ports:
+      - 1630:1630
+      - 1260:1260
+    networks:
+      - arctic_network
+    tty: true
+    stdin_open: true
+  flink:
+    image: arctic163/flink
+    depends_on:
+      - ams
+    container_name: arctic_flink
+    volumes:
+      - ./data:/tmp/arctic/warehouse
+    ports:
+      - 8081:8081
+    networks:
+      - arctic_network
+    tty: true
+    stdin_open: true
+
+networks:
+  arctic_network:
+    driver: bridge

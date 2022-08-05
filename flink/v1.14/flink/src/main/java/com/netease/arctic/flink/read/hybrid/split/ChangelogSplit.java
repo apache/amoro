@@ -51,7 +51,7 @@ public class ChangelogSplit extends ArcticSplit {
     this.deleteScanTasks = deleteScanTasks;
     Optional<ArcticFileScanTask> task = insertScanTasks.stream().findFirst();
     PrimaryKeyedFile file = task.isPresent() ? task.get().file() : deleteScanTasks.stream().findFirst().get().file();
-    this.dataTreeNode = DataTreeNode.of(file.mask(), file.index());
+    this.dataTreeNode = DataTreeNode.of(file.node().mask(), file.node().index());
   }
 
   @Override

@@ -30,8 +30,10 @@ CREATE TABLE `database_metadata`
 
 CREATE TABLE `file_info_cache`
 (
+    `primary_key_md5`   varchar(64) NOT NULL,
     `table_identifier`   varchar(64) NOT NULL,
     `add_snapshot_id`    bigint(20) NOT NULL,
+    `parent_snapshot_id` bigint(20) NOT NULL,
     `delete_snapshot_id` bigint(20) DEFAULT NULL,
     `inner_table`        varchar(64)          DEFAULT NULL,
     `file_path`          varchar(400)         NOT NULL,
@@ -45,10 +47,8 @@ CREATE TABLE `file_info_cache`
     `action`             varchar(64)          DEFAULT NULL,
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `watermark`          timestamp  NULL DEFAULT NULL,
-    PRIMARY KEY (`table_identifier`,`inner_table`,`file_path`),
-    KEY                  `table_index` (`table_identifier`),
-    KEY                  `table_snap_index` (`table_identifier`,`add_snapshot_id`),
-    KEY                  `commit_time_index` (`table_identifier`,`commit_time`)
+    PRIMARY KEY (`primary_key_md5`),
+    KEY                  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `optimize_file`
@@ -250,5 +250,14 @@ CREATE TABLE `table_transaction_meta`
     PRIMARY KEY (`table_identifier`,`transaction_id`),
     UNIQUE KEY `signature_unique` (`table_identifier`,`signature`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE `api_tokens` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `apikey` varchar(256) NOT NULL COMMENT 'openapi client public key',
+    `secret` varchar(256) NOT NULL COMMENT 'The key used by the client to generate the request signature',
+    `apply_time` datetime DEFAULT NULL COMMENT 'apply time',
+    PRIMARY KEY (`id`) USING BTREE,
+    UNIQUE KEY `account_unique` (`apikey`) USING BTREE COMMENT 'account unique'
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='Openapi  secret';
 
 

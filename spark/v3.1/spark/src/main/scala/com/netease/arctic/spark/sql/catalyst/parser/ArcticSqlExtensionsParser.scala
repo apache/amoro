@@ -28,7 +28,7 @@ import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
-import org.apache.spark.sql.catalyst.parser.{ArcticCreateTablePrimaryKeyAstBuilder, ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.parser.{ArcticExtendSparkSqlAstBuilder, ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
@@ -38,7 +38,7 @@ import java.util.Locale
 
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface with SQLConfHelper {
 
-  private lazy val createTableAstBuilder = new ArcticCreateTablePrimaryKeyAstBuilder(delegate)
+  private lazy val createTableAstBuilder = new ArcticExtendSparkSqlAstBuilder(delegate)
   private lazy val arcticCommandAstVisitor = new ArcticCommandAstParser()
 
 
@@ -97,7 +97,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def isArcticExtendSparkStatement(sqlText: String): Boolean = {
     val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-    normalized.contains("primary key") && normalized.contains("create table") && normalized.contains("using arctic")
+     normalized.contains("create table") && normalized.contains("using arctic") && normalized.contains("primary key")
   }
 
   def buildLexer(sql: String): Option[Lexer] = {
@@ -128,7 +128,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def toLogicalResult(parser: Parser): LogicalPlan = parser match {
     case p: ArcticExtendSparkSqlParser =>
-      createTableAstBuilder.visitSingleStatement(p.singleStatement())
+      createTableAstBuilder.visitArcticCommand(p.arcticCommand())
     case p: ArcticSqlCommandParser =>
       arcticCommandAstVisitor.visitArcticCommand(p.arcticCommand())
   }
