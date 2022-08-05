@@ -56,7 +56,7 @@ const columns: IColumns[] = shallowReactive([
 const breadcrumbColumns = shallowReactive([
   { title: t('file'), dataIndex: 'file', ellipsis: true },
   // { title: t('fsn'), dataIndex: 'fsn' },
-  { title: t('type'), dataIndex: 'fileType', width: 120, ellipsis: true },
+  { title: t('fileType'), dataIndex: 'fileType', width: 120, ellipsis: true },
   { title: t('size'), dataIndex: 'size', width: 120, ellipsis: true },
   { title: t('commitTime'), dataIndex: 'commitTime', width: 200, ellipsis: true },
   { title: t('commitId'), dataIndex: 'commitId', width: 200, ellipsis: true },

@@ -70,6 +70,7 @@ export default {
   fileType: 'File Type',
   startTime: 'StartTime',
   duration: 'Duration',
+  optimizeType: 'Optimize Type',
   parallelism: 'Parallelism',
   input: 'Input',
   output: 'Output',

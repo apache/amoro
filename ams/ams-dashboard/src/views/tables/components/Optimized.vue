@@ -35,6 +35,7 @@ import { bytesToSize, dateFormat, formatMS2Time } from '@/utils/index'
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('startTime'), dataIndex: 'startTime' },
+  { title: t('optimizeType'), dataIndex: 'optimizeType' },
   { title: t('duration'), dataIndex: 'duration' },
   // { title: t('parallelism'), dataIndex: 'parallelism' },
   {
