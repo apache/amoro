@@ -1,26 +1,25 @@
 
 <template>
   <div class="config-properties">
-    <div class="config-header g-flex-ac">
-      <div class="td">{{$t('key')}}</div>
-      <div class="td">{{$t('value')}}</div>
+    <div class="config-header g-flex">
+      <div class="td g-flex-ac">{{$t('key')}}</div>
+      <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
     </div>
     <div class="config-row g-flex-ac" v-for="(item, index) in propertiesArray" :key="item.uuid">
       <a-auto-complete
+        v-model:value="item.key"
         placeholder=""
         :name="item.uuid + '_key'"
-        :options="propertiesList"
+        :options="options"
+        @select="onSelect"
         :filter-option="filterOption"
-        v-model:value="item.key"
-        @change="changeProperty(item)"
+        class="g-mr-12"
       />
       <a-input
-        type="text"
         placeholder=""
         :name="item.uuid + '_value'"
-        @change="changeProperty(item, 'INPUT')"
         v-model:value="item.value"
-        :maxLength="64"
+        :maxlength="64"
       />
       <close-outlined class="icon-close" @click="removeRule(item, index)"  />
     </div>
@@ -29,47 +28,63 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 import { IMap, IKeyAndValue } from '@/types/common.type'
 import { CloseOutlined } from '@ant-design/icons-vue'
 import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
 
-// interface IItem {
-//   key: string
-//   value: string
-//   uuid: string
-// }
+interface IItem {
+  key: string
+  value: string
+  uuid: string
+}
 
-const props = defineProps<{ propertiesObj: IMap<string>, hasSelectOps: boolean, }>()
-
-const propertiesArray = reactive<IMap<string>[]>([])
-
-const propertiesKeyList = reactive<string[]>([]) // only includes key
+const props = defineProps<{ propertiesObj: IMap<string> }>()
+const propertiesArray = reactive<IItem[]>([])
+const options = ref<IMap<string>[]>()
 const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
 
-Object.keys(props.propertiesObj).forEach(key => {
-  propertiesArray.length = 0
-  propertiesArray.push({
-    key: key,
-    value: props.propertiesObj[key],
-    uuid: getUUid()
-  })
+watch(() => props.propertiesObj, () => {
+  initPropertiesArray()
+}, {
+  immediate: true,
+  deep: true
 })
 
-async function getPropertiesList() {
-  const result = await getUpgradeProperties()
-  Object.keys(result).forEach(key => {
-    propertiesIncludeValueList.push({
+function initPropertiesArray() {
+  propertiesArray.length = 0
+  Object.keys(props.propertiesObj).forEach(key => {
+    propertiesArray.push({
       key: key,
-      value: result[key]
+      value: props.propertiesObj[key],
+      uuid: getUUid()
     })
-    propertiesKeyList.push(key)
   })
 }
 
-function changeProperty(value: string) {
-  console.log('onSelect', value)
+async function getPropertiesList() {
+  propertiesIncludeValueList.length = 0
+  options.value = []
+  const result = await getUpgradeProperties()
+  Object.keys(result).forEach(key => {
+    const item = {
+      key: result[key],
+      value: key
+    }
+    propertiesIncludeValueList.push(item)
+    options.value.push(item)
+  })
+}
+
+function filterOption(input: string, option: IMap<string>) {
+  return option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
+}
+
+function onSelect(value: string) {
+  const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
+  const selectVal = propertiesArray.find((ele: IItem) => ele.key === value)
+  selectVal && (selectVal.value = selected.key)
 }
 function removeRule(item, index) {
   propertiesArray.splice(index, 1)
@@ -83,7 +98,11 @@ function addRule() {
 }
 defineExpose({
   getProperties() {
-    return {}
+    const propObj: IMap<string> = {}
+    propertiesArray.forEach(e => {
+      propObj[e.key] = e.value
+    })
+    return propObj
   }
 })
 
@@ -101,9 +120,28 @@ onMounted(() => {
     line-height: 32px;
     .config-header {
       width: 100%;
-      border-bottom: 1px solid #e5e5e5;
       .td {
-        width: 49%;
+        width: 50%;
+        height: 40px;
+        padding: 8px 12px;
+        color: #102048;
+        font-weight: 500;
+        background: #fafafa;
+        border-bottom: 1px solid #e8e8f0;
+      }
+      .bd-left {
+        position: relative;
+        &:before {
+          position: absolute;
+          top: 50%;
+          left: 0;
+          width: 1px;
+          height: 1.6em;
+          background-color: rgba(0, 0, 0, 0.06);
+          transform: translateY(-50%);
+          transition: background-color 0.3s;
+          content: '';
+        }
       }
     }
     .config-row {
@@ -113,6 +151,9 @@ onMounted(() => {
       padding-right: 32px;
       .ant-select-auto-complete {
         width: 50%;
+        input {
+          color: #79809a;
+        }
       }
       .ant-input {
         width: 50%;

@@ -31,7 +31,7 @@
         </a-form>
       </div>
       <div class="footer-btn">
-        <a-button type="primary" @click="onCofirm" class="btn g-mr-12">{{$t('ok')}}</a-button>
+        <a-button type="primary" @click="onCofirm" :loading="loading" class="btn g-mr-12">{{$t('ok')}}</a-button>
         <a-button type="ghost" @click="cancel" class="btn">{{$t('cancel')}}</a-button>
       </div>
     </div>
@@ -40,7 +40,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { LeftOutlined } from '@ant-design/icons-vue'
 import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
@@ -58,6 +58,7 @@ const emit = defineEmits<{
  (e: 'goBack'): void
 }>()
 
+const router = useRouter()
 const route = useRoute()
 
 const params = computed(() => {
@@ -105,20 +106,34 @@ function getParams() {
   pkList.forEach((ele: DetailColumnItem) => {
     pkName.push(ele)
   })
-  Object.assign(propertiesObj, propertiesRef.value.getProperties)
+  Object.assign(propertiesObj, propertiesRef.value.getProperties())
 }
 
 async function upgradeTable() {
-  const { catalog, db, table } = params.value
-  if (!catalog || !db || !table) {
-    return
+  try {
+    const { catalog, db, table } = params.value
+    if (!catalog || !db || !table) {
+      return
+    }
+    loading.value = true
+    await upgradeHiveTable({
+      ...params.value,
+      pkList: pkName,
+      properties: propertiesObj
+    })
+    // success
+    router.replace({
+      path: '/tables',
+      query: {
+        ...route.query
+      }
+    })
+  } catch (error) {
+    // failed
+    goBack()
+  } finally {
+    loading.value = false
   }
-  await upgradeHiveTable({
-    ...params.value,
-    pkList: pkName,
-    properties: propertiesObj
-  })
-  goBack()
 }
 function goBack() {
   emit('goBack')
@@ -135,7 +150,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .upgrade-table {
-  // height: 100%;
+  height: 100%;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -151,13 +166,16 @@ onMounted(() => {
     flex-direction: column;
     width: 66%;
     justify-content: space-between;
+    height: calc(100% - 32px);
     .table-attrs {
       display: flex;
       flex: 1;
       overflow-y: auto;
+      padding-bottom: 48px;
     }
     .footer-btn {
       height: 32px;
+      margin-top: 24px;
       .btn {
         min-width: 78px;
       }

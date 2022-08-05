@@ -26,7 +26,7 @@
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { DetailColumnItem, IColumns, PartitionColumnItem } from '@/types/common.type'
+import { IColumns, IField } from '@/types/common.type'
 
 const { t } = useI18n()
 
@@ -41,7 +41,7 @@ const partitionColumns: IColumns[] = shallowReactive([
   { title: t('description'), dataIndex: 'description', ellipsis: true }
 ])
 
-const props = defineProps<{ schema: DetailColumnItem[], partitionColumnList: PartitionColumnItem[]}>()
+const props = defineProps<{ schema: IField[], partitionColumnList: IField[]}>()
 
 </script>
 

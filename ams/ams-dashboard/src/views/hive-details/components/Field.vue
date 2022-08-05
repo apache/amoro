@@ -8,7 +8,7 @@
       >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'primaryKey'">
-          <a-checkbox v-model:checked="record.checked" @click="onChangeCheckBox"></a-checkbox>
+          <a-checkbox v-model:checked="record.checked"></a-checkbox>
         </template>
       </template>
     </a-table>
@@ -33,13 +33,9 @@ const fieldsColumns = shallowReactive([
 defineExpose({
   getPkname() {
     return props.fields.filter((ele: DetailColumnItem) => ele.checked)
-      .map((ele: DetailColumnItem) => ({ fieldName: ele.filed || '' }))
+      .map((ele: DetailColumnItem) => ({ fieldName: ele.field || '' }))
   }
 })
-
-function onChangeCheckBox() {
-  console.log('props.fields', props.fields)
-}
 
 </script>
 <style lang="less" scoped>

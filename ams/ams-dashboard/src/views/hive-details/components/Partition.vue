@@ -25,7 +25,3 @@ const partitionFieldsColumns = shallowReactive([
 ])
 
 </script>
-<style lang="less" scoped>
-.partition-field-wrap {
-}
-</style>

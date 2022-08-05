@@ -119,5 +119,6 @@ export default {
   upgradeHiveTable: 'Upgrade Hive Table',
   ok: 'Ok',
   partitonField: 'Partiton Field',
-  otherProperties: 'Other Properties'
+  otherProperties: 'Other Properties',
+  errorMessage: 'Error Message'
 }

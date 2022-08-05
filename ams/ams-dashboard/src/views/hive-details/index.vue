@@ -4,8 +4,8 @@
       <div class="g-flex-jsb table-top">
         <span class="table-name g-text-nowrap">{{tableName}}</span>
         <div class="right-btn">
-          <a-button type="primary" :disabled="status === upgradeStatus.upgrading" @click="upgradeTable">{{status}}</a-button>
-          <p v-if="status === upgradeStatus.failed" class="fail-msg">Last Upgrading Failed</p>
+          <a-button type="primary" :disabled="status === upgradeStatus.upgrading" @click="upgradeTable">{{displayStatus}}</a-button>
+          <p v-if="status === upgradeStatus.failed" @click="showErrorMsg = true" class="fail-msg">Last Upgrading Failed</p>
         </div>
       </div>
       <div class="content">
@@ -19,35 +19,41 @@
      <u-loading v-if="loading" />
     <!-- upgrade table secondary page -->
     <router-view v-else @goBack="goBack"></router-view>
+    <error-msg v-if="showErrorMsg" :msg="errorMessage" @cancle="showErrorMsg = false" />
   </div>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, reactive, toRefs, watch } from 'vue'
+import { computed, defineComponent, onBeforeUnmount, onMounted, reactive, ref, toRefs, watch } from 'vue'
 import UDetails from './components/Details.vue'
+import errorMsg from './components/ErrorMsg.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { DetailColumnItem, PartitionColumnItem, upgradeStatusMap } from '@/types/common.type'
+import { IField, upgradeStatusMap } from '@/types/common.type'
 import { getHiveTableDetail, getUpgradeStatus } from '@/services/table.service'
 
 export default defineComponent({
   name: 'Tables',
   components: {
-    UDetails
+    UDetails,
+    errorMsg
   },
   setup() {
     const upgradeStatus = upgradeStatusMap
+    const statusInterval = ref<number>()
     const router = useRouter()
     const route = useRoute()
 
     const state = reactive({
       loading: false,
+      showErrorMsg: false,
       activeKey: 'Details',
       status: '', // failed、upgrading、success、none
+      displayStatus: '',
       errorMessage: '',
       isSecondaryNav: false,
       tableName: 'tableName',
-      partitionColumnList: [] as PartitionColumnItem[],
-      schema: [] as DetailColumnItem[]
+      partitionColumnList: [] as IField[],
+      schema: [] as IField[]
     })
 
     const goBack = () => {
@@ -61,27 +67,45 @@ export default defineComponent({
       }
     })
 
-    const getTableUpgradeStatus = async() => {
+    const getTableUpgradeStatus = async(hideLoading = false) => {
       try {
         const { catalog, db, table } = params.value
         if (!catalog || !db || !table) {
           return
         }
-        state.loading = true
+        !hideLoading && (state.loading = true)
         const result = await getUpgradeStatus({
           ...params.value
         })
         const { status, errorMessage } = result
         state.status = status
+        state.displayStatus = status === upgradeStatusMap.upgrading ? status : 'upgrade'
         state.errorMessage = errorMessage || ''
-      } catch (error) {
+        if (status === upgradeStatusMap.upgrading) {
+          statusInterval.value = setTimeout(() => {
+            getTableUpgradeStatus(true)
+          }, 1500)
+        } else {
+          clearTimeout(statusInterval.value)
+          if (status === upgradeStatusMap.failed) {
+            getHiveTableDetails()
+          } else if (status === upgradeStatusMap.success) {
+            router.replace({
+              path: '/tables',
+              query: {
+                ...route.query
+              }
+            })
+          }
+        }
       } finally {
-        state.loading = false
+        !hideLoading && (state.loading = false)
       }
     }
 
     const getHiveTableDetails = async() => {
       try {
+        console.log('getHiveTableDetails 222')
         const { catalog, db, table } = params.value
         if (!catalog || !db || !table) {
           return
@@ -118,8 +142,11 @@ export default defineComponent({
 
     watch(
       () => route.query,
-      (val) => {
-        val?.catalog && init()
+      (val, old) => {
+        const { catalog, db, table } = val
+        if (catalog !== old.catalog && db !== old.db && table !== old.table) {
+          init()
+        }
       }
     )
 
@@ -130,7 +157,11 @@ export default defineComponent({
       }, { immediate: true }
     )
 
-    onMounted(async() => {
+    onBeforeUnmount(() => {
+      clearTimeout(statusInterval.value)
+    })
+
+    onMounted(() => {
       init()
     })
 
