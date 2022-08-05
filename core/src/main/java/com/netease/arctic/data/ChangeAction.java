@@ -41,7 +41,7 @@ public enum ChangeAction {
   UPDATE_AFTER((byte) 2),
 
   /**
-   * Deletion operation.
+   * Deletion operation. test
    */
   DELETE((byte) 3);
 
