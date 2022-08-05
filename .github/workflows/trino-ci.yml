@@ -5,9 +5,23 @@ name: Trino CI with Maven
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - "master"
+    paths:
+      - "trino/**"
+      - "core/**"
+      - "hive/**"
+      - "ams/ams-api/**"
+
+
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - "master"
+    paths:
+      - "trino/**"
+      - "core/**"
+      - "hive/**"
+      - "ams/ams-api/**"
 
 jobs:
   build:
