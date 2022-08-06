@@ -20,11 +20,14 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
+import com.netease.arctic.flink.read.hybrid.reader.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
+import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.KeyedTable;
+import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.Snapshot;
@@ -33,8 +36,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_LATEST;
@@ -46,12 +51,22 @@ import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSourceEnumerator.class);
   private transient KeyedTable keyedTable;
+  /**
+   * To record the snapshotId at the first planSplits.
+   * <p>
+   * If its value is null, it means that we don't need to generate watermark. Won't check.
+   * If its value is an empty Collection, it means that all splits have been finished.
+   * So enumerator will push an event to all readers to start generate watermark. After that, reset it to null.
+   * If its value is a Collection with elements, it means there are some splits have not been scanned.
+   */
+  private transient FirstSplits firstSplits = null;
   private final ArcticTableLoader loader;
   private final SplitEnumeratorContext<ArcticSplit> context;
   private final ContinuousSplitPlanner continuousSplitPlanner;
   private final SplitAssigner splitAssigner;
   private final ArcticScanContext scanContext;
   private final long snapshotDiscoveryIntervalMs;
+  private final boolean generateWatermark;
   /**
    * snapshotId for the last enumerated snapshot. next incremental enumeration
    * should be based off this as the starting position.
@@ -77,6 +92,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (enumState != null) {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
     }
+    this.generateWatermark = true;
   }
 
   @Override
@@ -119,6 +135,14 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   }
 
   private ContinuousEnumerationResult planSplits() {
+    ContinuousEnumerationResult result = doPlanSplits();
+    if (generateWatermark && firstSplits == null) {
+      firstSplits = new FirstSplits(result.splits());
+    }
+    return result;
+  }
+
+  private ContinuousEnumerationResult doPlanSplits() {
     if (lock.get()) {
       LOG.info("prefix plan splits thread haven't finished.");
       return ContinuousEnumerationResult.EMPTY;
@@ -141,6 +165,40 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     LOG.info("handled result of splits, discover splits size {}, latest offset {}.",
         enumerationResult.splits().size(), enumeratorPosition.get());
     lock.set(false);
+  }
+
+  @Override
+  public void handleSourceEvent(int subtaskId, SourceEvent sourceEvent) {
+    super.handleSourceEvent(subtaskId, sourceEvent);
+    if (sourceEvent instanceof SplitRequestEvent) {
+      SplitRequestEvent splitRequestEvent = (SplitRequestEvent) sourceEvent;
+      Collection<String> finishedSplitIds = splitRequestEvent.finishedSplitIds();
+      if (generateWatermark) {
+        checkAndNotifyReaderTriggerWatermark(finishedSplitIds);
+      }
+    } else {
+      throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
+          subtaskId, sourceEvent.getClass().getCanonicalName()));
+    }
+  }
+
+  /**
+   * TODO annotation
+   *
+   * @param finishedSplitIds
+   */
+  public void checkAndNotifyReaderTriggerWatermark(Collection<String> finishedSplitIds) {
+    if (firstSplits == null || firstSplits.getFinished()) {
+      return;
+    }
+    if (!firstSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
+      return;
+    }
+
+    LOG.info("all splits finished, send events to readers");
+    IntStream.range(0, context.currentParallelism())
+        .forEach(i -> context.sendEventToSourceReader(i, StartWatermarkEvent.INSTANCE));
+    firstSplits.clear();
   }
 
   @Override

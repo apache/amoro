@@ -18,9 +18,11 @@
 
 package com.netease.arctic.flink.catalog;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.table.DynamicTableFactory;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -66,6 +68,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
+import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 
 /**
  * Catalogs for arctic data lake.
@@ -164,6 +169,7 @@ public class ArcticCatalog extends AbstractCatalog {
     RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
     fillTableProperties(arcticProperties);
+    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
@@ -171,6 +177,27 @@ public class ArcticCatalog extends AbstractCatalog {
         partitionKeys,
         arcticProperties,
         null);
+  }
+
+  private void fillTableMetaPropertiesIfLookupLike(Map<String, String> properties, TableIdentifier tableIdentifier) {
+    StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+    boolean isLookupLike = false;
+    for (int i = 0; i < stackTraceElements.length; i++) {
+      if (Objects.equal("lookupLikeSourceTable", stackTraceElements[i].getMethodName())) {
+        isLookupLike = true;
+        break;
+      }
+    }
+
+    if (!isLookupLike) {
+      return;
+    }
+
+    properties.put(CONNECTOR.key(), DynamicTableFactory.IDENTIFIER);
+    properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
+    properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
+    properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
+    properties.put(METASTORE_URL, catalogBuilder.getMetastoreUrl());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {

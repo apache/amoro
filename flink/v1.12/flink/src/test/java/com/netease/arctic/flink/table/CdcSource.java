@@ -20,23 +20,17 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.DynamicTableSourceTestBase;
 import com.netease.arctic.flink.util.DataUtil;
-import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.common.eventtime.WatermarkGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkOutput;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
-import org.apache.flink.table.connector.ChangelogMode;
-import org.apache.flink.table.connector.source.SourceFunctionProvider;
-import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
+import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
-import org.apache.flink.table.planner.factories.TableFactoryHarness;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.LinkedList;
 import java.util.List;
@@ -84,4 +78,8 @@ public class CdcSource extends DynamicTableSourceTestBase {
     }
   }
 
+  @Override
+  public DynamicTableSource copy() {
+    return new CdcSource();
+  }
 }

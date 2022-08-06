@@ -23,6 +23,7 @@ import com.netease.arctic.flink.read.ArcticSource;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.FlinkUtil;
 import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -42,6 +43,7 @@ import org.apache.flink.streaming.api.transformations.OneInputTransformation;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
+import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -49,6 +51,9 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
+import static com.netease.arctic.flink.FlinkSchemaUtil.toRowType;
 
 /**
  * An util class create arctic source data stream.
@@ -137,7 +142,7 @@ public class FlinkSource {
       if (projectedSchema == null) {
         contextBuilder.project(arcticTable.schema());
       } else {
-        contextBuilder.project(FlinkSchemaUtil.convert(arcticTable.schema(), projectedSchema));
+        contextBuilder.project(FlinkSchemaUtil.convert(arcticTable.schema(), filterWatermark(projectedSchema)));
       }
       contextBuilder.fromProperties(properties);
       ArcticScanContext scanContext = contextBuilder.build();
@@ -151,9 +156,19 @@ public class FlinkSource {
           scanContext.caseSensitive(),
           arcticTable.io()
       );
+
+      watermarkStrategy = new ArcticWatermarkStrategy(FlinkUtil.getLocalTimeZone((Configuration) flinkConf));
+
+      RowType rowType;
+      if (projectedSchema != null) {
+        rowType = toRowType(projectedSchema);
+      } else {
+        rowType = FlinkSchemaUtil.convert(scanContext.project());
+      }
+
       return env.fromSource(
           new ArcticSource<>(tableLoader, scanContext, rowDataReaderFunction,
-              InternalTypeInfo.of(FlinkSchemaUtil.convert(scanContext.project())), arcticTable.name()),
+              InternalTypeInfo.of(rowType), arcticTable.name()),
           watermarkStrategy, ArcticSource.class.getName());
     }
 

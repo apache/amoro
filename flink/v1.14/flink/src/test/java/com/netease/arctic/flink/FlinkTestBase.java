@@ -79,7 +79,6 @@ import org.slf4j.LoggerFactory;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.IDENTIFIER;
-import static org.apache.flink.table.api.config.ExecutionConfigOptions.TABLE_EXEC_SOURCE_IDLE_TIMEOUT;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
 public class FlinkTestBase extends TableTestBase {
@@ -165,7 +164,6 @@ public class FlinkTestBase extends TableTestBase {
           Configuration configuration = tEnv.getConfig().getConfiguration();
           // set low-level key-value options
           configuration.setString(TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED.key(), "true");
-          configuration.setString(TABLE_EXEC_SOURCE_IDLE_TIMEOUT.key(), "0");
         }
       }
     }

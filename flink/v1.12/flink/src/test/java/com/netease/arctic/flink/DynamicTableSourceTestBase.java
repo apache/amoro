@@ -24,14 +24,16 @@ import org.apache.flink.api.common.eventtime.WatermarkOutput;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.functions.source.SourceFunction;
 import org.apache.flink.table.connector.ChangelogMode;
+import org.apache.flink.table.connector.source.DynamicTableSource;
+import org.apache.flink.table.connector.source.ScanTableSource;
 import org.apache.flink.table.connector.source.SourceFunctionProvider;
 import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
 import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.planner.factories.TableFactoryHarness;
+import org.apache.flink.types.RowKind;
 
 import java.io.Serializable;
 
-public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.ScanSourceBase implements
+public abstract class DynamicTableSourceTestBase implements ScanTableSource,
     SupportsWatermarkPushDown, Serializable {
 
   public static final long serialVersionUID = 1L;
@@ -39,11 +41,16 @@ public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.Sca
 
   @Override
   public ChangelogMode getChangelogMode() {
-    return ChangelogMode.all();
+    return ChangelogMode.newBuilder()
+        .addContainedKind(RowKind.DELETE)
+        .addContainedKind(RowKind.INSERT)
+        .addContainedKind(RowKind.UPDATE_BEFORE)
+        .addContainedKind(RowKind.UPDATE_AFTER)
+        .build();
   }
 
   @Override
-  public ScanRuntimeProvider getScanRuntimeProvider(ScanContext runtimeProviderContext) {
+  public ScanTableSource.ScanRuntimeProvider getScanRuntimeProvider(ScanContext runtimeProviderContext) {
     init();
     return SourceFunctionProvider.of(
         new SourceFunction<RowData>() {
@@ -61,7 +68,14 @@ public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.Sca
         },
         false);
   }
-  public void init() {};
+
+  @Override
+  public String asSummaryString() {
+    return this.getClass().getSimpleName();
+  }
+
+  public void init() {
+  }
 
   public abstract void doRun(WatermarkGenerator<RowData> generator, WatermarkOutput output,
                              SourceFunction.SourceContext<RowData> ctx);
@@ -88,10 +102,6 @@ public abstract class DynamicTableSourceTestBase extends TableFactoryHarness.Sca
 
     @Override
     public void markIdle() {
-    }
-
-    @Override
-    public void markActive() {
     }
   }
 }

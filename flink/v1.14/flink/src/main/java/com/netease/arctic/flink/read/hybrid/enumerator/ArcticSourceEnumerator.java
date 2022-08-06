@@ -73,6 +73,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    */
   private final AtomicReference<ArcticEnumeratorOffset> enumeratorPosition;
 
+  private final AtomicBoolean lock = new AtomicBoolean(false);
+
   public ArcticSourceEnumerator(
       SplitEnumeratorContext<ArcticSplit> enumContext,
       SplitAssigner splitAssigner,
@@ -92,8 +94,6 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     }
     this.generateWatermark = true;
   }
-
-  private final AtomicBoolean lock = new AtomicBoolean(false);
 
   @Override
   public void start() {

@@ -114,6 +114,22 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           " means this job will submit empty snapshots to the table, it is suitable with some valid reasons, e.g." +
           " advance watermark metadata stored in the table(https://github.com/apache/iceberg/pull/5561).");
 
+  public static final ConfigOption<String> ARCTIC_CATALOG =
+      ConfigOptions.key("arctic.catalog")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic catalog name.");
+  public static final ConfigOption<String> ARCTIC_DATABASE =
+      ConfigOptions.key("arctic.database")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic database name.");
+  public static final ConfigOption<String> ARCTIC_TABLE =
+      ConfigOptions.key("arctic.table")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic table name.");
+
   @Override
   public void validate(DescriptorProperties properties) {
     String emitMode = properties.getString(ARCTIC_EMIT_MODE);

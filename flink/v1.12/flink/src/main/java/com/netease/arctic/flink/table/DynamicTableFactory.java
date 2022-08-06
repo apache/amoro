@@ -46,6 +46,7 @@ import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.utils.TableSchemaUtils;
 import org.apache.flink.types.RowKind;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.util.PropertyUtil;
@@ -59,6 +60,8 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL_OPTION;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FIELDS_PREFIX;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_BOOTSTRAP_SERVERS;
@@ -80,10 +83,10 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.val
  */
 public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTableSinkFactory {
   private static final Logger LOG = LoggerFactory.getLogger(DynamicTableFactory.class);
-  private static final String IDENTIFIER = "arctic";
-  private final ArcticCatalog arcticCatalog;
-  private final InternalCatalogBuilder internalCatalogBuilder;
-  private final String internalCatalogName;
+  public static final String IDENTIFIER = "arctic";
+  private ArcticCatalog arcticCatalog;
+  private InternalCatalogBuilder internalCatalogBuilder;
+  private String internalCatalogName;
 
   public DynamicTableFactory(ArcticCatalog arcticCatalog,
                              InternalCatalogBuilder internalCatalogBuilder,
@@ -93,15 +96,39 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     this.internalCatalogName = internalCatalogName;
   }
 
+  public DynamicTableFactory() {
+  }
+
+  private void initCatalogInfo(Map<String, String> options) {
+    if (internalCatalogName != null && internalCatalogBuilder != null) {
+      return;
+    }
+    String metastoreUrl = options.get(METASTORE_URL);
+    Preconditions.checkNotNull(metastoreUrl, String.format("%s should be set", METASTORE_URL));
+    internalCatalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
+
+    internalCatalogName = options.get(ArcticValidator.ARCTIC_CATALOG.key());
+    Preconditions.checkNotNull(internalCatalogName, String.format("%s should be set",
+        ArcticValidator.ARCTIC_CATALOG.key()));
+  }
+
   @Override
   public DynamicTableSource createDynamicTableSource(Context context) {
     CatalogTable catalogTable = context.getCatalogTable();
     ObjectIdentifier identifier = context.getObjectIdentifier();
+    ObjectPath objectPath;
 
     Map<String, String> options = catalogTable.getOptions();
-    ArcticTableLoader tableLoader = createTableLoader(
-        new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName()),
-        internalCatalogName, internalCatalogBuilder, options);
+    initCatalogInfo(options);
+    if (options.containsKey(ArcticValidator.ARCTIC_DATABASE.key()) &&
+        options.containsKey(ArcticValidator.ARCTIC_TABLE.key())) {
+      objectPath = new ObjectPath(options.get(ArcticValidator.ARCTIC_DATABASE.key()),
+          options.get(ArcticValidator.ARCTIC_TABLE.key()));
+    } else {
+      objectPath = new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName());
+    }
+
+    ArcticTableLoader tableLoader = createTableLoader(objectPath, internalCatalogName, internalCatalogBuilder, options);
 
     ArcticTable arcticTable = ArcticUtils.loadArcticTable(tableLoader);
     ScanTableSource arcticDynamicSource;
@@ -109,7 +136,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String readMode = PropertyUtil.propertyAsString(arcticTable.properties(),
         ArcticValidator.ARCTIC_READ_MODE, ArcticValidator.ARCTIC_READ_MODE_DEFAULT);
 
-    TableSchema tableSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
+    TableSchema tableSchema = com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema(catalogTable.getSchema());
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         LOG.info("build file reader");
@@ -130,6 +157,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     ObjectIdentifier identifier = context.getObjectIdentifier();
     Map<String, String> options = catalogTable.getOptions();
+    initCatalogInfo(options);
+
     final String topic = options.get(TableProperties.LOG_STORE_MESSAGE_TOPIC);
 
     ArcticTableLoader tableLoader = createTableLoader(
@@ -178,6 +207,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(SCAN_STARTUP_SPECIFIC_OFFSETS);
     options.add(SCAN_STARTUP_TIMESTAMP_MILLIS);
     options.add(SINK_PARTITIONER);
+    options.add(ArcticValidator.ARCTIC_CATALOG);
+    options.add(ArcticValidator.ARCTIC_TABLE);
+    options.add(ArcticValidator.ARCTIC_DATABASE);
+    options.add(METASTORE_URL_OPTION);
     return options;
   }
 

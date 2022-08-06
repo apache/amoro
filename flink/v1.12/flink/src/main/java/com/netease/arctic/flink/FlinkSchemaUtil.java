@@ -19,9 +19,13 @@
 package com.netease.arctic.flink;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.flink.table.api.TableColumn;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.WatermarkSpec;
+import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
+import org.apache.flink.util.Preconditions;
 
 import java.util.List;
 
@@ -47,4 +51,83 @@ public class FlinkSchemaUtil {
     return builder.build();
   }
 
+  /**
+   * Add watermark info to help {@link com.netease.arctic.flink.table.FlinkSource}
+   * and {@link com.netease.arctic.flink.table.ArcticDynamicSource} distinguish the watermark field.
+   */
+  public static TableSchema getPhysicalSchema(TableSchema tableSchema) {
+    Preconditions.checkNotNull(tableSchema);
+    TableSchema.Builder builder = new TableSchema.Builder();
+
+    tableSchema
+        .getTableColumns()
+        .forEach(
+            tableColumn -> {
+              if (!tableColumn.isPhysical()) {
+                return;
+              }
+              builder.field(tableColumn.getName(), tableColumn.getType());
+            });
+    tableSchema
+        .getPrimaryKey()
+        .ifPresent(
+            uniqueConstraint ->
+                builder.primaryKey(
+                    uniqueConstraint.getName(),
+                    uniqueConstraint.getColumns().toArray(new String[0])));
+
+    tableSchema.getWatermarkSpecs()
+        .forEach(builder::watermark);
+    return builder.build();
+  }
+
+  /**
+   * filter watermark due to watermark is a virtual field, not in arctic physical table.
+   *
+   * @param tableSchema
+   * @return
+   */
+  public static TableSchema filterWatermark(TableSchema tableSchema) {
+    List<WatermarkSpec> watermarkSpecs = tableSchema.getWatermarkSpecs();
+    if (watermarkSpecs.isEmpty()) {
+      return tableSchema;
+    }
+
+    TableSchema.Builder builder = TableSchema.builder();
+
+    tableSchema
+        .getTableColumns()
+        .forEach(
+            tableColumn -> {
+              boolean isWatermark = false;
+              for (WatermarkSpec spec : watermarkSpecs) {
+                if (spec.getRowtimeAttribute().equals(tableColumn.getName())) {
+                  isWatermark = true;
+                  break;
+                }
+              }
+              if (isWatermark) {
+                return;
+              }
+              builder.field(tableColumn.getName(), tableColumn.getType());
+            });
+    tableSchema
+        .getPrimaryKey()
+        .ifPresent(
+            uniqueConstraint ->
+                builder.primaryKey(
+                    uniqueConstraint.getName(),
+                    uniqueConstraint.getColumns().toArray(new String[0])));
+    return builder.build();
+  }
+
+  public static RowType toRowType(TableSchema tableSchema) {
+    LogicalType[] fields = new LogicalType[tableSchema.getFieldCount()];
+
+    for (int i = 0; i < fields.length; i++) {
+      TableColumn tableColumn = tableSchema.getTableColumn(i).get();
+      fields[i] = tableColumn.getType().getLogicalType();
+    }
+    return RowType.of(fields);
+  }
 }
