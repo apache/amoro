@@ -85,7 +85,7 @@ LocalOptimizer 的配置方式，参照 [Arctic Dashboard](meta-service/dashboar
 
 FlinkOptimizer 是通过 Flink 作业启动 Optimizer 的一种方式，借助 Flink 可以方便地将 Optimizer 部署在 yarn 集群上，从而支持大规模数据场景下的使用。
 
-FlinkOptimizer 的启动和配置方式，参照 [使用 Flink 执行结构优化](meta-service/dashboard.md#使用 Flink 执行结构优化)。
+FlinkOptimizer 的启动和配置方式，参照 [使用 Flink 执行结构优化](meta-service/dashboard.md#flink)。
 
 ### 自定义 Optimizer
 

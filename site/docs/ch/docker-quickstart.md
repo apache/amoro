@@ -83,7 +83,7 @@ create table test_db.test_table(
 的集群上运行。
 
 **1.启动 Flink SQL Client**  
-
+f#
 使用以下命令进入 arctic_flink 容器。
 ```shell
 docker exec -it arctic_flink /bin/bash
@@ -190,7 +190,7 @@ DELETE|3|lee|2022-07-01 10:11:00
 
 **1.查询已有数据**
 
-登录并进入 [AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，如果按照流程完成了[实时写入与读取](#_3)，在SQL窗口输入并执行如下SQL：
+登录并进入 [AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，如果按照流程完成了[实时写入与读取](#_2)，在SQL窗口输入并执行如下SQL：
 
 ```sql
 select * from test_db.test_table order by id;
@@ -208,7 +208,7 @@ select * from test_db.test_table order by id;
 +---+-----+-------------------+
 ```
 
-如若未完成[实时写入与读取](#_3)，也可以通过下面的SQL补充数据：
+如若未完成[实时写入与读取](#_2)，也可以通过下面的SQL补充数据：
 
 ```sql
 insert overwrite 
@@ -278,7 +278,7 @@ select * from test_db.test_table order by id;
 **2.查看结构优化历史**
 
 从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
-如果已经完成[实时写入与读取](#_3)，测试表预期会进行3次结构优化，分别是2次 minor optimize, 一次 major optimize。
+如果已经完成[实时写入与读取](#_2)，测试表预期会进行3次结构优化，分别是2次 minor optimize, 一次 major optimize。
 
 ![optimize_history](images/optimize_history.png)
 
