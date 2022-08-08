@@ -1,28 +1,31 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: SPARK CI with Maven
+name: AMS CI with Maven
 
-# triggered on push pr, only spark module is modified
+# triggered on push pr, only ams module is modified
 
 on:
   push:
     branches:
       - "master"
     paths:
-      - "spark/**"
       - "!core/**"
       - "!hive/**"
-      - "!ams/**"
+      - "!ams/api/**"
+      - "ams/ams-server/**"
+      - "optimizer/**"
 
   pull_request:
     branches:
       - "master"
     paths:
-      - "spark/**"
       - "!core/**"
       - "!hive/**"
       - "!ams/**"
+      - "ams/ams-server/**"
+      - "optimizer/**"
+
 
 jobs:
   build:
@@ -41,15 +44,15 @@ jobs:
         uses: dorny/paths-filter@v2
         with:
           filters: |
-            spark23:
-              - 'spark/v2.3/**'
-            spark31:
-              - 'spark/v3.1/**'
+            ams_server:
+              - 'ams/ams-server/**'
+            optimizer:
+              - 'optimizer/**'
 
-      - name: test for spark 2.3
-        if: steps.changed-files.outputs.spark23 == 'true'
-        run: mvn install -pl 'spark/v2.3/spark' -am -e
+      - name: test for ams server
+        if: steps.changed-files.outputs.ams_server == 'true'
+        run: mvn install -pl 'ams/ams-server' -am -e
 
-      - name: test for spark 3.1
-        if: steps.changed-files.outputs.spark31 == 'true'
-        run: mvn install -pl 'spark/v3.1/spark-runtime,ams/ams-server' -am -e
+      - name: test for optimizer
+        if: steps.changed-files.outputs.optimizer == 'true'
+        run: mvn install -pl 'optimizer' -am -e
