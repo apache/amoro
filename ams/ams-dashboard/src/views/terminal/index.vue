@@ -1,7 +1,7 @@
 <template>
   <div class="console-wrap">
     <div class="console-content" :class="{'fullscreen': fullscreen }">
-      <div class="sql-wrap">
+      <div :style="{ height: `${sqlResultHeight}px` }" class="sql-wrap">
         <div class="sql-block">
           <div class="top-ops g-flex-jsb">
             <div class="title-left g-flex-ac">
@@ -66,7 +66,8 @@
         </div>
       </div>
       <!-- sql result -->
-      <div class="sql-result" v-show="showDebug" :class="resultFullscreen ? 'result-full' : ''">
+      <div class="sql-result" :style="{ height: `calc(100% - ${sqlResultHeight}px)` }"  :class="resultFullscreen ? 'result-full' : ''">
+        <span class="drag-line" @mousedown="dragMounseDown"><svg-icon class="icon" icon-class="slide"/></span>
         <div class="tab-operation">
           <div class="tab">
             <span :class="{ active: operationActive === 'log' }" @click="operationActive = 'log'" class="tab-item">{{$t('log')}}</span>
@@ -101,6 +102,7 @@ import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-
 import { message } from 'ant-design-vue'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+import { useI18n } from 'vue-i18n'
 
 interface ISessionInfo {
   sessionId: number
@@ -123,6 +125,7 @@ export default defineComponent({
     LoadingOutlined
   },
   setup() {
+    const { t } = useI18n()
     const placeholder = reactive(usePlaceholder())
     const loading = ref<boolean>(false)
     const sqlEditorRef = ref<any>(null)
@@ -140,6 +143,8 @@ export default defineComponent({
     const curCatalog = ref<string>('')
     const logInterval = ref<number>()
     const resultTabList = reactive<IDebugResult[]>([])
+
+    const sqlResultHeight = ref<number>(476)
 
     const bgcMap: IMap<string> = shallowReactive(debugResultBgcMap)
 
@@ -237,21 +242,21 @@ export default defineComponent({
     }
 
     const getLogResult = async() => {
+      logInterval.value && clearTimeout(logInterval.value)
       if (runStatus.value !== 'Running') {
         return
       }
       if (sessionId.value) {
         const res: ILogResult = await getLogsResult(sessionId.value)
         operationActive.value = 'log'
-        if (!res) { return }
-        const { logStatus, logs } = res
+        const { logStatus, logs } = res || {}
         if (logs?.length) {
           sqlLogRef.value.initData(logs.join('\n'))
         }
         runStatus.value = logStatus
-        getDebugResult()
+        await getDebugResult()
         if (logStatus === 'Finished' || logStatus === 'Canceled') {
-          clearTimeout(logInterval.value)
+          operationActive.value = resultTabList[0].id
         } else {
           logInterval.value = setTimeout(() => {
             getLogResult()
@@ -262,6 +267,7 @@ export default defineComponent({
 
     const generateCode = async(code: string) => {
       try {
+        operationActive.value = 'log'
         if (runStatus.value === 'Running') {
           return
         }
@@ -305,6 +311,37 @@ export default defineComponent({
         loading.value = false
       }
     }
+    const editorSize = {
+      topbarHeight: 48,
+      optionHeight: 44,
+      resultTabHeight: 40,
+      runStatusHeight: 32,
+      gap: 48
+    }
+    let mounseDownClientTop = 0
+    let mouseDownLeftHeight = 0
+    const dragMounseDown = (e: any) => {
+      mounseDownClientTop = e.clientY
+      mouseDownLeftHeight = sqlResultHeight.value
+      window.addEventListener('mousemove', dragMounseMove)
+      window.addEventListener('mouseup', dragMounseUp)
+    }
+
+    const dragMounseMove = (e: any) => {
+      const mounseTop = e.clientY
+      const diff = mounseTop - mounseDownClientTop
+      const topbarHeight = fullscreen.value ? 0 : editorSize.topbarHeight
+      const runStatusHeight = runStatus.value ? editorSize.runStatusHeight : 0
+      let top = mouseDownLeftHeight + diff
+      top = Math.max(top, editorSize.optionHeight + runStatusHeight)
+      top = Math.min(top, window.innerHeight - topbarHeight - editorSize.gap - editorSize.optionHeight - 4)
+      sqlResultHeight.value = top
+    }
+
+    const dragMounseUp = () => {
+      window.removeEventListener('mousemove', dragMounseMove)
+      window.removeEventListener('mouseup', dragMounseUp)
+    }
 
     onBeforeUnmount(() => {
       clearTimeout(logInterval.value)
@@ -336,7 +373,9 @@ export default defineComponent({
       sqlSource,
       readOnly,
       generateCode,
-      getPopupContainer
+      getPopupContainer,
+      sqlResultHeight,
+      dragMounseDown
     }
   }
 })
@@ -345,6 +384,7 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .console-wrap {
+  user-select: none;
   height: 100%;
   .console-content {
     background-color: #fff;
@@ -375,7 +415,7 @@ export default defineComponent({
         font-size: @font-size-base;
         display: inline-block;
         width: calc(100% - 200px);
-        // height: 100%;
+        height: 100%;
         .top-ops {
           padding: 6px 16px;
           align-items: center;
@@ -399,7 +439,9 @@ export default defineComponent({
           align-items: center;
         }
         .sql-content {
-          height: 440px;
+          // height: 440px;
+          height: 100%;
+          // height: calc(100% - 76px); // 44 + 32
           // height: 60%;
           border-top: 1px solid #e5e5e5;
           border-bottom: 1px solid #e5e5e5;
@@ -430,9 +472,9 @@ export default defineComponent({
         display: inline-block;
         vertical-align: top;
         width: 200px;
-        height: 484px;
+        // height: 484px;
+        height: 100%;
         border-left: 1px solid #e5e5e5;
-        border-bottom: 1px solid #e5e5e5;
         .shortcuts {
           padding: 0 16px;
           line-height: 44px;
@@ -449,12 +491,35 @@ export default defineComponent({
     .sql-result {
       background-color: #fff;
       border: 1px solid #e5e5e5;
+      // border-bottom: 0;
       border-top: 0;
       width: 100%;
       padding-bottom: 12px;
-      height: calc(100% - 476px);
+      // height: calc(100% - 476px);
       display: flex;
       flex-direction: column;
+      position: relative;
+      flex: 1;
+      .drag-line {
+        position: absolute;
+        top: -1px;
+        left: 0;
+        width: 100%;
+        height: 6px;
+        font-size: 18px;
+        border-top: 1px solid #e5e5e5;
+        .icon {
+          position: absolute;
+          top: -12px;
+          font-size: 24px;
+          left: 50%;
+          transform: rotate(90deg);
+          z-index: 3;
+        }
+        &:hover {
+          cursor: n-resize;
+        }
+      }
       .debug-result {
         flex: 1;
         overflow: auto;
@@ -470,8 +535,9 @@ export default defineComponent({
     padding: 6px 12px;
     position: absolute;
     left: 0;
-    bottom: 0;
+    bottom: 44px;
     width: 100%;
+    z-index: 2;
   }
   .tab-operation {
     display: flex;
