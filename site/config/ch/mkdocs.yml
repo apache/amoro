@@ -57,6 +57,7 @@ nav:
       - Arctic Dashboard: meta-service/dashboard.md
       - Table Management: meta-service/table-management.md
       - Table Config: meta-service/table-properties.md
+  - Optimizers: optimizers.md
   - Flink: flink.md
   - Spark:
       - Getting Started: spark/spark-get-started.md
