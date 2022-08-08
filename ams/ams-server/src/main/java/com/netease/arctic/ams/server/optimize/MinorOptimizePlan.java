@@ -69,9 +69,9 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
                            List<DataFileInfo> changeTableFileList,
                            List<DataFileInfo> posDeleteFileList,
                            Map<String, Boolean> partitionTaskRunning,
-                           int queueId, long currentTime) {
+                           int queueId, long currentTime, Predicate<Long> snapshotIsCached) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, changeTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime);
+        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
   }
 
   @Override
@@ -140,7 +140,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (isOptimized(dataFile, partition)) {
@@ -187,7 +187,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, arcticTable.io());
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
       allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {

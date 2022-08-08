@@ -28,12 +28,11 @@ import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
-import com.netease.arctic.ams.server.utils.SerializationUtil;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
@@ -51,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public abstract class BaseOptimizePlan {
@@ -80,13 +80,15 @@ public abstract class BaseOptimizePlan {
   private long currentBaseSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   // for change table
   private long currentChangeSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+  // for check iceberg base table current snapshot whether cached in file cache
+  protected Predicate<Long> snapshotIsCached;
 
   public BaseOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                           List<DataFileInfo> baseTableFileList,
                           List<DataFileInfo> changeTableFileList,
                           List<DataFileInfo> posDeleteFileList,
                           Map<String, Boolean> partitionTaskRunning,
-                          int queueId, long currentTime) {
+                          int queueId, long currentTime, Predicate<Long> snapshotIsCached) {
     this.baseTableFileList = baseTableFileList;
     this.changeTableFileList = changeTableFileList;
     this.posDeleteFileList = posDeleteFileList;
@@ -94,6 +96,7 @@ public abstract class BaseOptimizePlan {
     this.tableOptimizeRuntime = tableOptimizeRuntime;
     this.queueId = queueId;
     this.currentTime = currentTime;
+    this.snapshotIsCached = snapshotIsCached;
     this.partitionTaskRunning = partitionTaskRunning;
     this.historyId = UUID.randomUUID().toString();
   }
@@ -108,6 +111,11 @@ public abstract class BaseOptimizePlan {
 
   public List<BaseOptimizeTask> plan() {
     long startTime = System.nanoTime();
+
+    // add check for base table file cache when optimize
+    if (!baseTableCacheAll()) {
+      return Collections.emptyList();
+    }
 
     if (!tableNeedPlan()) {
       LOG.debug("{} === skip {} plan", tableId(), getOptimizeType());
@@ -249,6 +257,20 @@ public abstract class BaseOptimizePlan {
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
     optimizeTask.setProperties(properties);
     return optimizeTask;
+  }
+
+  public boolean baseTableCacheAll() {
+    Snapshot snapshot;
+    if (arcticTable.isKeyedTable()) {
+      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
+      if (!snapshotIsCached.test(snapshot.snapshotId())) {
+        LOG.debug("File cache don't have cache snapshotId:{}," +
+                "wait file cache sync latest file info", snapshot.snapshotId());
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public boolean tableNeedPlan() {

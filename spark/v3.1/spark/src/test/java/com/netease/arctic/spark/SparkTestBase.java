@@ -18,12 +18,19 @@
 
 package com.netease.arctic.spark;
 
+import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * test base class for normal spark tests.
@@ -31,19 +38,6 @@ import org.junit.rules.TestName;
  * test base class contain no code expect beforeClass && afterClass
  */
 public class SparkTestBase extends SparkTestContext {
-
-  @BeforeClass
-  public static void setUpSparkForTests() throws Exception {
-    setUpTestDirAndArctic();
-    additionSparkConfigs.clear();
-    setUpSparkSession();
-  }
-
-  @AfterClass
-  public static void tearDownTests() {
-    cleanUpAms();
-    cleanUpSparkSession();
-  }
 
   @Rule
   public TestName testName = new TestName();
@@ -63,5 +57,23 @@ public class SparkTestBase extends SparkTestContext {
     System.out.println("==================================");
     System.out.println("  Test End: " + testName.getMethodName() + ", total cost: " + cost + " ms");
     System.out.println("==================================");
+  }
+
+  public void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
+    boolean primaryKeysBlock = false;
+    List<String> descPrimaryKeys = Lists.newArrayList();
+    for (Object[] row : rows) {
+      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
+        primaryKeysBlock = true;
+      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
+        primaryKeysBlock = false;
+      } else if (primaryKeysBlock){
+        descPrimaryKeys.add(row[0].toString());
+      }
+    }
+
+    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
+    Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
+        descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 }

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.catalyst.plans.CreateArcticTableStatement
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
@@ -27,18 +26,30 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
+import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
+import scala.collection.JavaConverters
 import scala.collection.JavaConverters.seqAsJavaList
 
 case class ExtendedArcticUnkeyedStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case CreateArcticTableStatement(ArcticCatalogAndIdentifier(catalog, identifier),
-    schema, partitioning, _, properties, _, _, _, _, _, primary, _, ifNotExists) =>
-      CreateArcticTableStatementExec(catalog, identifier, schema,
-        partitioning, properties, seqAsJavaList(primary), ifNotExists) :: Nil
+    case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
+      var propertiesMap: Map[String, String] = props
+      var optionsMap: Map[String, String] = options
+      if (options.contains("primary.keys")) {
+        propertiesMap += ("primary.keys" -> options("primary.keys"))
+        optionsMap += ("overwrite-mode" -> "dynamic")
+      }
+      val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
+      CreateTableAsSelectExec(catalog, ident, parts, query, planLater(query),
+        propertiesMap, writeOptions, ifNotExists) :: Nil
+
+    case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists) =>
+      CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
 
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
       if (partitionSpec.nonEmpty) {

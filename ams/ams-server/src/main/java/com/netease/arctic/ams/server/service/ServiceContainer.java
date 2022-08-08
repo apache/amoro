@@ -33,6 +33,7 @@ import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.impl.QuotaService;
+import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
@@ -68,6 +69,8 @@ public class ServiceContainer {
   private static volatile ITableInfoService tableInfoService;
 
   private static volatile ArcticTableMetastoreHandler tableMetastoreHandler;
+
+  private static volatile RuntimeDataExpireService runtimeDataExpireService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
@@ -214,6 +217,18 @@ public class ServiceContainer {
       }
     }
     return tableMetastoreHandler;
+  }
+
+  public static RuntimeDataExpireService getRuntimeDataExpireService() {
+    if (runtimeDataExpireService == null) {
+      synchronized (ServiceContainer.class) {
+        if (runtimeDataExpireService == null) {
+          runtimeDataExpireService = new RuntimeDataExpireService();
+        }
+      }
+    }
+
+    return runtimeDataExpireService;
   }
 
   @VisibleForTesting

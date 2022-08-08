@@ -22,12 +22,12 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
-import com.netease.arctic.ams.server.utils.SerializationUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -36,10 +36,12 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -161,9 +163,12 @@ public class BaseOptimizeCommit {
           }
         });
         AtomicInteger deletedPosDeleteFile = new AtomicInteger(0);
+        Set<DeleteFile> deletedPosDeleteFiles = new HashSet<>();
         minorDeleteFiles.forEach(contentFile -> {
           if (contentFile instanceof DataFile) {
             overwriteBaseFiles.deleteFile((DataFile) contentFile);
+          } else {
+            deletedPosDeleteFiles.add((DeleteFile) contentFile);
           }
         });
 
@@ -173,6 +178,17 @@ public class BaseOptimizeCommit {
           maxTransactionIds.forEach(overwriteBaseFiles::withMaxTransactionId);
         }
         overwriteBaseFiles.commit();
+
+        if (CollectionUtils.isNotEmpty(deletedPosDeleteFiles)) {
+          RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
+          rewriteFiles.rewriteFiles(Collections.emptySet(), deletedPosDeleteFiles,
+              Collections.emptySet(), Collections.emptySet());
+          try {
+            rewriteFiles.commit();
+          } catch (ValidationException e) {
+            LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
+          }
+        }
 
         LOG.info("{} minor optimize committed, delete {} files [{} posDelete files], " +
                 "add {} new files [{} posDelete files]",

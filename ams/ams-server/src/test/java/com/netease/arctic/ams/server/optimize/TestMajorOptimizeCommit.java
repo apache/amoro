@@ -23,9 +23,9 @@ import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.utils.SerializationUtil;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,9 +48,7 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
     testKeyedTable.baseTable().newScan().planFiles()
         .forEach(fileScanTask -> {
           oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> {
-            oldDeleteFilesPath.add((String) deleteFile.path());
-          });
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
         });
 
     //testKeyedTable.properties().put(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0");
@@ -59,7 +57,7 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
-        new HashMap<>(), 1, System.currentTimeMillis());
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles();
@@ -89,9 +87,7 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
     testKeyedTable.baseTable().newScan().planFiles()
         .forEach(fileScanTask -> {
           newDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> {
-            newDeleteFilesPath.add((String) deleteFile.path());
-          });
+          fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);

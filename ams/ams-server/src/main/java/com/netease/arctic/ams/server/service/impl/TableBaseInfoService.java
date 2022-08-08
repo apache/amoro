@@ -47,16 +47,10 @@ public class TableBaseInfoService implements ITableInfoService {
 
   private final IMetaService metaService;
 
-  private final CatalogMetadataService catalogMetadataService;
-
-  private final FileInfoCacheService fileInfoCacheService;
-
   private final AmsClient client;
 
   public TableBaseInfoService(IMetaService metaService) {
     this.metaService = metaService;
-    this.catalogMetadataService = ServiceContainer.getCatalogMetadataService();
-    this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.client = ServiceContainer.getTableMetastoreHandler();
   }
 

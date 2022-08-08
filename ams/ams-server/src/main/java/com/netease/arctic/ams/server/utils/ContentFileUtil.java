@@ -23,13 +23,11 @@ import com.netease.arctic.data.DataFileType;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileMetadata;
-import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.io.FileIO;
 
 public class ContentFileUtil {
 
-  public static ContentFile<?> buildContentFile(DataFileInfo dataFileInfo, PartitionSpec partitionSpec, FileIO io) {
+  public static ContentFile<?> buildContentFile(DataFileInfo dataFileInfo, PartitionSpec partitionSpec) {
     ContentFile<?> contentFile;
     if (DataFileType.POS_DELETE_FILE == DataFileType.valueOf(dataFileInfo.getType())) {
       if (partitionSpec.isUnpartitioned()) {

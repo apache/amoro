@@ -54,10 +54,12 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public static final Logger LOG = LoggerFactory.getLogger(JDBCMetaService.class);
   public static final Map<Key, TableMetaStore> TABLE_META_STORE_CACHE = new ConcurrentHashMap<>();
   private final FileInfoCacheService fileInfoCacheService;
+  private final ArcticTransactionService transactionService;
 
   public JDBCMetaService() {
     super();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
+    this.transactionService = ServiceContainer.getArcticTransactionService();
   }
 
   @Override
@@ -121,6 +123,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         }
 
         fileInfoCacheService.deleteTableCache(tableIdentifier);
+        transactionService.delete(tableIdentifier.buildTableIdentifier());
       } catch (Exception e) {
         LOG.error("The internal table service drop table failed.");
         sqlSession.rollback(true);
@@ -144,8 +147,10 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       properties.remove("krb_principal");
       TableMetadata oldTableMetaData = loadTableMetadata(tableIdentifier);
       tableMetadataMapper.updateTableProperties(tableIdentifier, properties);
-      String oldQueueName = oldTableMetaData.getProperties().get(TableProperties.OPTIMIZE_GROUP);
-      String newQueueName = properties.get(TableProperties.OPTIMIZE_GROUP);
+      String oldQueueName = oldTableMetaData.getProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
+          TableProperties.OPTIMIZE_GROUP_DEFAULT);
+      String newQueueName =
+          properties.getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
       if (StringUtils.isNotBlank(oldQueueName) && StringUtils.isNotBlank(newQueueName) && !oldQueueName.equals(
           newQueueName)) {
         OptimizeQueueItem newOptimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(newQueueName);
