@@ -23,11 +23,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.AmsTableTracer;
+import com.netease.arctic.trace.DDLTracer;
+import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -68,7 +69,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Schema schema() {
-    KeyedSchemaUpdate.syncSchema(this);
+    TracedSchemaUpdate.syncSchema(this);
     return baseTable.schema();
   }
 
@@ -146,10 +147,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public UpdateSchema updateSchema() {
-    if (PrimaryKeySpec.noPrimaryKey().equals(primaryKeySpec())) {
-      return baseTable().updateSchema();
-    }
-    return new KeyedSchemaUpdate(this);
+    return new TracedSchemaUpdate(this, new DDLTracer(this, client));
   }
 
   @Override

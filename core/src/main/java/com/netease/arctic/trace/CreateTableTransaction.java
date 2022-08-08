@@ -251,6 +251,16 @@ public class CreateTableTransaction implements Transaction {
     @Override
     public void replaceProperties(Map<String, String> newProperties) {
     }
+
+    @Override
+    public void updateColumn(DDLTracer.UpdateColumn updateColumn) {
+
+    }
+
+    @Override
+    public void newSchema(Schema schema) {
+
+    }
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {

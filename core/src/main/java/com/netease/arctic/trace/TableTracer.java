@@ -20,6 +20,7 @@ package com.netease.arctic.trace;
 
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Schema;
 
 import java.util.Map;
 
@@ -53,13 +54,25 @@ public interface TableTracer {
   void deleteDeleteFile(DeleteFile deleteFile);
 
   /**
-   * Commit table changes.
-   */
-  void commit();
-
-  /**
    * Replace some properties of table
    * @param newProperties properties to replace
    */
   void replaceProperties(Map<String, String> newProperties);
+
+  /**
+   * Replace some properties of table
+   * @param updateColumn updated column info
+   */
+  void updateColumn(DDLTracer.UpdateColumn updateColumn);
+
+  /**
+   * Replace some properties of table
+   * @param schema new schema
+   */
+  void newSchema(Schema schema);
+
+  /**
+   * Commit table changes.
+   */
+  void commit();
 }

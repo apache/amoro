@@ -20,6 +20,8 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.DDLCommitMeta;
+import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
@@ -98,6 +100,11 @@ public class PooledAmsClient implements AmsClient {
   @Override
   public void tableCommit(TableCommitMeta commit) throws TException {
     getIface().tableCommit(commit);
+  }
+
+  @Override
+  public void ddlCommit(DDLCommitMeta commit) throws MetaException, TException {
+    getIface().ddlCommit(commit);
   }
 
   @Override

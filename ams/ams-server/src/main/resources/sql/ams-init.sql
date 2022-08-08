@@ -251,4 +251,13 @@ CREATE TABLE `table_transaction_meta`
     UNIQUE KEY `signature_unique` (`table_identifier`,`signature`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE `ddl_record`
+(
+    `table_identifier` varchar(256) NOT NULL,
+    `schema_id`   int(11),
+    `ddl`        mediumtext,
+    `ddl_type`        varchar(256) NOT NULL,
+    `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 

@@ -45,7 +45,24 @@ struct TableCommitMeta {
     2: string action;
     3: list<TableChange> changes;
     4: i64 commitTime;
-    5: map<string, string> properties;
+    5: map<string, string> newProperties;
+    6: map<string, string> oldProperties;
+}
+
+struct UpdateColumn {
+    1: string name;
+    2: optional string parent;
+    3: optional string type;
+    4: optional string doc;
+    5: string operate;
+    6: optional string isOptional;
+    7: optional string newName;
+}
+
+struct DDLCommitMeta {
+    1: i32 schemaId;
+    2: arctic_commons.TableIdentifier tableIdentifier;
+    3: list<UpdateColumn> updateColumns;
 }
 
 
@@ -103,6 +120,8 @@ service ArcticTableMetastore {
         2:arctic_commons.MetaException e2)
 
     void tableCommit(1: TableCommitMeta commit) throws (1: arctic_commons.MetaException e1)
+
+    void ddlCommit(1: DDLCommitMeta commit) throws (1: arctic_commons.MetaException e1)
 
     i64 allocateTransactionId(1:arctic_commons.TableIdentifier tableIdentifier, 2:string transactionSignature)
 }

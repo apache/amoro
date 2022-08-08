@@ -36,6 +36,7 @@ import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.DerbyService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
@@ -145,6 +146,7 @@ public class ArcticMetaStore {
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
       syncAndExpiredFileInfoCache(server);
+      startSyncDDl(server);
       server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
@@ -272,6 +274,33 @@ public class ArcticMetaStore {
           Thread.sleep(60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+        }
+      }
+    });
+    t.start();
+  }
+
+  private static void startSyncDDl(final TServer server) {
+    Thread t = new Thread(() -> {
+      while (true) {
+        while (server.isServing()) {
+          try {
+            DDLTracerService.DDLSyncTask task =
+                new DDLTracerService.DDLSyncTask();
+            task.doTask();
+          } catch (Exception e) {
+            LOG.error("sync schema change cache error", e);
+          }
+          try {
+            Thread.sleep(5 * 60 * 1000);
+          } catch (InterruptedException e) {
+            LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+          }
+        }
+        try {
+          Thread.sleep(60 * 1000);
+        } catch (InterruptedException e) {
+          LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
         }
       }
     });

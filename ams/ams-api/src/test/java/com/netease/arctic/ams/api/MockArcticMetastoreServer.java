@@ -171,6 +171,7 @@ public class MockArcticMetastoreServer implements Runnable {
     private final ConcurrentHashMap<String, List<String>> databases = new ConcurrentHashMap<>();
 
     private final Map<TableIdentifier, List<TableCommitMeta>> tableCommitMetas = new HashMap<>();
+    private final Map<TableIdentifier, List<DDLCommitMeta>> ddlCommitMetas = new HashMap<>();
     private final Map<TableIdentifier, Map<String, Long>> tableTxId = new HashMap<>();
     private final Map<TableIdentifier, Long> tableCurrentTxId = new HashMap<>();
 
@@ -282,10 +283,16 @@ public class MockArcticMetastoreServer implements Runnable {
     public void tableCommit(TableCommitMeta commit) throws TException {
       tableCommitMetas.putIfAbsent(commit.getTableIdentifier(), new ArrayList<>());
       tableCommitMetas.get(commit.getTableIdentifier()).add(commit);
-      if (commit.getProperties() != null) {
+      if (commit.getNewProperties() != null) {
         TableMeta meta = getTable(commit.getTableIdentifier());
-        meta.setProperties(commit.getProperties());
+        meta.setProperties(commit.getNewProperties());
       }
+    }
+
+    @Override
+    public void ddlCommit(DDLCommitMeta commit) throws MetaException, TException {
+      ddlCommitMetas.putIfAbsent(commit.getTableIdentifier(), new ArrayList<>());
+      ddlCommitMetas.get(commit.getTableIdentifier()).add(commit);
     }
 
     @Override

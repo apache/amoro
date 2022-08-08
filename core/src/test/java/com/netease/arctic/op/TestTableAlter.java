@@ -20,6 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.trace.TracedSchemaUpdate;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Types;
@@ -102,7 +103,7 @@ public class TestTableAlter extends TableTestBase {
         )), "2-D cartesian points");
 
     us.commit();
-    KeyedSchemaUpdate.syncSchema(testKeyedTable);
+    TracedSchemaUpdate.syncSchema(testKeyedTable);
 
     us = testKeyedTable.baseTable().updateSchema();
     // primitive
@@ -144,7 +145,7 @@ public class TestTableAlter extends TableTestBase {
     us.deleteColumn("preferences.feature2.item1");
 
     us.commit();
-    KeyedSchemaUpdate.syncSchema(testKeyedTable);
+    TracedSchemaUpdate.syncSchema(testKeyedTable);
 
     Assert.assertEquals("Should match base and change schema",
         testKeyedTable.baseTable().schema().asStruct(),

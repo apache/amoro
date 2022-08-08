@@ -30,6 +30,7 @@ import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
@@ -57,7 +58,8 @@ public class AmsTableTracer implements TableTracer {
   private final AmsClient client;
 
   private String action;
-  private Map<String, String> properties;
+  private Map<String, String> oldProperties;
+  private Map<String, String> newProperties;
   private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
 
@@ -67,6 +69,7 @@ public class AmsTableTracer implements TableTracer {
     this.table = table;
     this.action = action;
     this.client = client;
+    this.oldProperties = table.properties();
   }
 
   public AmsTableTracer(KeyedTable table, String action, AmsClient client) {
@@ -152,8 +155,8 @@ public class AmsTableTracer implements TableTracer {
       });
       update = true;
     }
-    if (this.properties != null) {
-      commitMeta.setProperties(this.properties);
+    if (this.newProperties != null) {
+      commitMeta.setNewProperties(this.newProperties);
       update = true;
       threw = true;
     }
@@ -173,7 +176,17 @@ public class AmsTableTracer implements TableTracer {
 
   @Override
   public void replaceProperties(Map<String, String> newProperties) {
-    this.properties = newProperties;
+    this.newProperties = newProperties;
+  }
+
+  @Override
+  public void updateColumn(DDLTracer.UpdateColumn updateColumn) {
+
+  }
+
+  @Override
+  public void newSchema(Schema schema) {
+
   }
 
   public void setAction(String action) {

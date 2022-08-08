@@ -61,12 +61,14 @@ public class TracedTransaction implements Transaction {
 
   private final Transaction transaction;
   private final AmsTableTracer tracer;
+  private final DDLTracer ddlTracer;
 
   private final Table transactionTable;
 
-  public TracedTransaction(Transaction transaction, AmsTableTracer tracer) {
+  public TracedTransaction(Transaction transaction, AmsTableTracer tracer, DDLTracer ddlTracer) {
     this.transaction = transaction;
     this.tracer = tracer;
+    this.ddlTracer = ddlTracer;
 
     this.transactionTable = new TransactionTable();
   }
@@ -198,6 +200,16 @@ public class TracedTransaction implements Transaction {
     @Override
     public void replaceProperties(Map<String, String> newProperties) {
       tracer.replaceProperties(newProperties);
+    }
+
+    @Override
+    public void updateColumn(DDLTracer.UpdateColumn updateColumn) {
+      ddlTracer.updateColumn(updateColumn);
+    }
+
+    @Override
+    public void newSchema(Schema schema) {
+      ddlTracer.newSchema(schema);
     }
   }
 

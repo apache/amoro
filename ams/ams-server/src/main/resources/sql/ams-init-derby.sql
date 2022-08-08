@@ -229,3 +229,12 @@ CREATE TABLE database_metadata (
     UNIQUE (catalog_name,db_name)
 );
 
+CREATE TABLE `ddl_record`
+(
+    `table_identifier` varchar(256) NOT NULL,
+    `schema_id`   int,
+    `ddl`        clob(64m),
+    `ddl_type`        varchar(256) NOT NULL,
+    `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

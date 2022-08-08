@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.DDLCommitMeta;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
@@ -32,6 +33,7 @@ import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
 import org.apache.commons.collections.CollectionUtils;
@@ -48,11 +50,13 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   private final IMetaService metaService;
   private final CatalogMetadataService catalogMetadataService;
   private final FileInfoCacheService fileInfoCacheService;
+  private final DDLTracerService ddlTracerService;
 
   public ArcticTableMetastoreHandler(IMetaService metaService) {
     this.metaService = metaService;
     this.catalogMetadataService = ServiceContainer.getCatalogMetadataService();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
+    this.ddlTracerService = ServiceContainer.getDdlTracerService();
   }
 
   @Override
@@ -170,10 +174,17 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     ArcticMetaValidator.metaValidator(commit.getTableIdentifier());
     com.netease.arctic.table.TableIdentifier identifier =
         com.netease.arctic.table.TableIdentifier.of(commit.getTableIdentifier());
-    if (commit.getProperties() != null) {
-      metaService.updateTableProperties(identifier, commit.getProperties());
+    if (commit.getNewProperties() != null) {
+      metaService.updateTableProperties(identifier, commit.getNewProperties());
+      ddlTracerService.commitProperties(commit.getTableIdentifier(), commit.getOldProperties(),
+          commit.getNewProperties());
     }
     fileInfoCacheService.commitCacheFileInfo(commit);
+  }
+
+  @Override
+  public void ddlCommit(DDLCommitMeta commit) throws MetaException, TException {
+    ddlTracerService.commit(commit);
   }
 
   @Override

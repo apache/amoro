@@ -16,12 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.op;
+package com.netease.arctic.trace;
 
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
@@ -34,58 +36,79 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.PriorityQueue;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
  */
-public class KeyedSchemaUpdate implements UpdateSchema {
-  private static final Logger LOG = LoggerFactory.getLogger(KeyedSchemaUpdate.class);
+public class TracedSchemaUpdate implements UpdateSchema {
+  private static final Logger LOG = LoggerFactory.getLogger(TracedSchemaUpdate.class);
 
   public static final String DOT = ".";
 
-  private final KeyedTable keyedTable;
+  private final ArcticTable arcticTable;
+  private boolean isKeyedTable = false;
   private final UpdateSchema baseTableUpdateSchema;
-  private final UpdateSchema changeTableUpdateSchema;
+  private Optional<UpdateSchema> changeTableUpdateSchema;
+  private final TableTracer tracer;
 
-  public KeyedSchemaUpdate(KeyedTable keyedTable) {
-    this.keyedTable = keyedTable;
-    baseTableUpdateSchema = keyedTable.baseTable().updateSchema();
-    changeTableUpdateSchema = keyedTable.changeTable().updateSchema();
+  public TracedSchemaUpdate(ArcticTable arcticTable, TableTracer tracer) {
+    this.arcticTable = arcticTable;
+    this.tracer = tracer;
+    if (arcticTable.isKeyedTable()) {
+      isKeyedTable = true;
+      baseTableUpdateSchema = arcticTable.asKeyedTable().baseTable().updateSchema();
+      changeTableUpdateSchema = Optional.of(arcticTable.asKeyedTable().changeTable().updateSchema());
+    } else {
+      baseTableUpdateSchema = arcticTable.asUnkeyedTable().updateSchema();
+    }
   }
 
   @Override
-  public KeyedSchemaUpdate allowIncompatibleChanges() {
+  public TracedSchemaUpdate allowIncompatibleChanges() {
     baseTableUpdateSchema.allowIncompatibleChanges();
-    changeTableUpdateSchema.allowIncompatibleChanges();
+    changeTableUpdateSchema.ifPresent(UpdateSchema::allowIncompatibleChanges);
     return this;
   }
 
   @Override
   public UpdateSchema addColumn(String name, Type type, String doc) {
     baseTableUpdateSchema.addColumn(name, type, doc);
-    changeTableUpdateSchema.addColumn(name, type, doc);
+    changeTableUpdateSchema.ifPresent(e -> e.addColumn(name, type, doc));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, type, doc,
+        DDLTracer.SchemaOperateType.ADD, null, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
     baseTableUpdateSchema.addColumn(parent, name, type, doc);
-    changeTableUpdateSchema.addColumn(parent, name, type, doc);
+    changeTableUpdateSchema.ifPresent(e -> e.addColumn(parent, name, type, doc));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, parent, type, doc,
+        DDLTracer.SchemaOperateType.ADD, false, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema addRequiredColumn(String name, Type type, String doc) {
     baseTableUpdateSchema.addRequiredColumn(name, type, doc);
-    changeTableUpdateSchema.addRequiredColumn(name, type, doc);
+    changeTableUpdateSchema.ifPresent(e -> e.addRequiredColumn(name, type, doc));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, type, doc,
+        DDLTracer.SchemaOperateType.ADD, false, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema addRequiredColumn(String parent, String name, Type type, String doc) {
     baseTableUpdateSchema.addRequiredColumn(parent, name, type, doc);
-    changeTableUpdateSchema.addRequiredColumn(parent, name, type, doc);
+    changeTableUpdateSchema.ifPresent(e -> e.addRequiredColumn(parent, name, type, doc));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, parent, type, doc,
+        DDLTracer.SchemaOperateType.ADD, false, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
@@ -93,7 +116,10 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   public UpdateSchema deleteColumn(String name) {
     Preconditions.checkArgument(!containsPk(name), "Cannot delete primary key. %s", name);
     baseTableUpdateSchema.deleteColumn(name);
-    changeTableUpdateSchema.deleteColumn(name);
+    changeTableUpdateSchema.ifPresent(e -> e.deleteColumn(name));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.DROP, null, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
@@ -101,14 +127,20 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   public UpdateSchema renameColumn(String name, String newName) {
     Preconditions.checkArgument(!containsPk(name), "Cannot rename primary key %s", name);
     baseTableUpdateSchema.renameColumn(name, newName);
-    changeTableUpdateSchema.renameColumn(name, newName);
+    changeTableUpdateSchema.ifPresent(e -> e.renameColumn(name, newName));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.RENAME, null, newName);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema requireColumn(String name) {
     baseTableUpdateSchema.requireColumn(name);
-    changeTableUpdateSchema.requireColumn(name);
+    changeTableUpdateSchema.ifPresent(e -> e.requireColumn(name));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.ALERT, false, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
@@ -116,49 +148,67 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   public UpdateSchema makeColumnOptional(String name) {
     Preconditions.checkArgument(!containsPk(name), "Cannot make primary key optional. %s", name);
     baseTableUpdateSchema.makeColumnOptional(name);
-    changeTableUpdateSchema.makeColumnOptional(name);
+    changeTableUpdateSchema.ifPresent(e -> e.makeColumnOptional(name));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.ALERT, true, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema updateColumn(String name, Type.PrimitiveType newType) {
     baseTableUpdateSchema.updateColumn(name, newType);
-    changeTableUpdateSchema.updateColumn(name, newType);
+    changeTableUpdateSchema.ifPresent(e -> e.updateColumn(name, newType));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, newType, null,
+        DDLTracer.SchemaOperateType.ALERT, null, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema updateColumnDoc(String name, String doc) {
     baseTableUpdateSchema.updateColumnDoc(name, doc);
-    changeTableUpdateSchema.updateColumnDoc(name, doc);
+    changeTableUpdateSchema.ifPresent(e -> e.updateColumnDoc(name, doc));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, doc,
+        DDLTracer.SchemaOperateType.ALERT, null, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema moveFirst(String name) {
     baseTableUpdateSchema.moveFirst(name);
-    changeTableUpdateSchema.moveFirst(name);
+    changeTableUpdateSchema.ifPresent(e -> e.moveFirst(name));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.MOVE_FIRST, null, null);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema moveBefore(String name, String beforeName) {
     baseTableUpdateSchema.moveBefore(name, beforeName);
-    changeTableUpdateSchema.moveBefore(name, beforeName);
+    changeTableUpdateSchema.ifPresent(e -> e.moveBefore(name, beforeName));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.MOVE_BEFORE, null, beforeName);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema moveAfter(String name, String afterName) {
     baseTableUpdateSchema.moveAfter(name, afterName);
-    changeTableUpdateSchema.moveAfter(name, afterName);
+    changeTableUpdateSchema.ifPresent(e -> e.moveAfter(name, afterName));
+    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
+        DDLTracer.SchemaOperateType.MOVE_AFTER, null, afterName);
+    tracer.updateColumn(updateColumn);
     return this;
   }
 
   @Override
   public UpdateSchema unionByNameWith(Schema newSchema) {
     baseTableUpdateSchema.unionByNameWith(newSchema);
-    changeTableUpdateSchema.unionByNameWith(newSchema);
+    changeTableUpdateSchema.ifPresent(e -> e.unionByNameWith(newSchema));
     return this;
   }
 
@@ -176,28 +226,41 @@ public class KeyedSchemaUpdate implements UpdateSchema {
    */
   @Override
   public Schema apply() {
-    syncSchema(keyedTable);
+    if (isKeyedTable) {
+      syncSchema(arcticTable.asKeyedTable());
+    }
     Schema newSchema = baseTableUpdateSchema.apply();
-    changeTableUpdateSchema.apply();
-
+    changeTableUpdateSchema.ifPresent(UpdateSchema::apply);
     return newSchema;
   }
 
   @Override
   public void commit() {
     baseTableUpdateSchema.commit();
+    Table table;
+    if (isKeyedTable) {
+      table = arcticTable.asKeyedTable().baseTable();
+    } else {
+      table = arcticTable.asUnkeyedTable();
+    }
+    table.refresh();
+    tracer.newSchema(table.schema());
     try {
-      changeTableUpdateSchema.commit();
+      changeTableUpdateSchema.ifPresent(UpdateSchema::commit);
     } catch (Exception e) {
       LOG.warn("change table schema commit exception", e);
     }
+    tracer.commit();
   }
 
   private boolean containsPk(String name) {
-    if (!keyedTable.primaryKeySpec().primaryKeyExisted()) {
-      return false;
+    if (isKeyedTable) {
+      if (!arcticTable.asKeyedTable().primaryKeySpec().primaryKeyExisted()) {
+        return false;
+      }
+      return arcticTable.asKeyedTable().primaryKeySpec().fieldNames().contains(name);
     }
-    return keyedTable.primaryKeySpec().fieldNames().contains(name);
+    return false;
   }
 
   public static void syncSchema(KeyedTable keyedTable) {
@@ -239,11 +302,12 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     changeTableUs.commit();
   }
 
-  private static void syncField(Types.NestedField newField,
-                                Types.NestedField oldField,
-                                UpdateSchema us,
-                                String fieldPrefix,
-                                Collection<Add> adds) {
+  private static void syncField(
+      Types.NestedField newField,
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     if (oldField == null && newField == null) {
       return;
     }
@@ -289,11 +353,12 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     return StringUtils.isBlank(fieldPrefix) ? field : String.join(DOT, fieldPrefix, field);
   }
 
-  private static void updateField(Types.NestedField newField,
-                                  Types.NestedField oldField,
-                                  UpdateSchema us,
-                                  String fieldPrefix,
-                                  Collection<Add> adds) {
+  private static void updateField(
+      Types.NestedField newField,
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     String oldFullFieldName = getFullName(fieldPrefix, oldField.name());
     if (!Objects.equals(newField.doc(), oldField.doc())) {
       us.updateColumnDoc(oldFullFieldName, newField.doc());
@@ -318,11 +383,12 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     }
   }
 
-  private static void updateNestedField(Types.NestedField newField,
-                                        Types.NestedField oldField,
-                                        UpdateSchema us,
-                                        String fieldPrefix,
-                                        Collection<Add> adds) {
+  private static void updateNestedField(
+      Types.NestedField newField,
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     if (oldField.type().isMapType()) {
       updateMapField(newField, oldField, us, fieldPrefix, adds);
       return;
@@ -334,11 +400,12 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     updateNestedField(newType, oldType, us, prefix, adds);
   }
 
-  private static void updateNestedField(Type.NestedType newType,
-                                        Type.NestedType oldType,
-                                        UpdateSchema us,
-                                        String fieldPrefix,
-                                        Collection<Add> adds) {
+  private static void updateNestedField(
+      Type.NestedType newType,
+      Type.NestedType oldType,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     if (Objects.equals(newType, oldType)) {
       return;
     }
@@ -355,11 +422,12 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     }));
   }
 
-  private static void updateMapField(Types.NestedField newField,
-                                     Types.NestedField oldField,
-                                     UpdateSchema us,
-                                     String fieldPrefix,
-                                     Collection<Add> adds) {
+  private static void updateMapField(
+      Types.NestedField newField,
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     Types.MapType newType = newField.type().asMapType();
     Types.MapType oldType = oldField.type().asMapType();
 
@@ -380,10 +448,11 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     }
   }
 
-  private static void updatePrimativeFieldType(Types.NestedField newField,
-                                               Types.NestedField oldField,
-                                               UpdateSchema us,
-                                               String fieldPrefix) {
+  private static void updatePrimativeFieldType(
+      Types.NestedField newField,
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix) {
     String fullName = getFullName(fieldPrefix, oldField.name());
     if (!Objects.equals(newField.type(), oldField.type())) {
       us.updateColumn(fullName, newField.type().asPrimitiveType());
@@ -426,5 +495,4 @@ public class KeyedSchemaUpdate implements UpdateSchema {
           '}';
     }
   }
-
 }

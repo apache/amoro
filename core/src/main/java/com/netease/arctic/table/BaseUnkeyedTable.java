@@ -21,6 +21,7 @@ package com.netease.arctic.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.trace.AmsTableTracer;
+import com.netease.arctic.trace.DDLTracer;
 import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TracedAppendFiles;
 import com.netease.arctic.trace.TracedDeleteFiles;
@@ -293,7 +294,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(transaction, new AmsTableTracer(this, client));
+      return new TracedTransaction(transaction, new AmsTableTracer(this, client), new DDLTracer(this, client));
     } else {
       return transaction;
     }
