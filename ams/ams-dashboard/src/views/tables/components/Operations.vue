@@ -17,6 +17,18 @@
       </template>
     </a-table>
   </div>
+  <a-modal
+    :visible="visible"
+    :width="560"
+    :title="`${$t('operationDetails')}`"
+    @cancel="cancle"
+    class="operation-wrap"
+    >
+    {{ activeCopyText }}
+    <template #footer>
+      <a-button type="primary" @click="onCopy">{{ $t('copy') }}</a-button>
+    </template>
+  </a-modal>
 </template>
 
 <script lang="ts" setup>
@@ -27,12 +39,16 @@ import { IColumns, OperationItem } from '@/types/common.type'
 import { getOperations } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
+import useClipboard from 'vue-clipboard3'
 
+const { toClipboard } = useClipboard()
 const { t } = useI18n()
 const columns: IColumns[] = shallowReactive([
   { title: t('time'), dataIndex: 'ts', width: '30%' },
   { title: t('operation'), dataIndex: 'operation', scopedSlots: { customRender: 'operation' } }
 ])
+const visible = ref<boolean>(false)
+const activeCopyText = ref<string>('')
 
 const dataSource = reactive<OperationItem[]>([])
 
@@ -75,7 +91,20 @@ function change({ current = 1, pageSize = 25 } = pagination) {
   getOperationInfo()
 }
 
-function viewDetail() {}
+function viewDetail(record: OperationItem) {
+  visible.value = true
+  activeCopyText.value = record.operation
+}
+
+function cancle() {
+  visible.value = false
+}
+
+async function onCopy() {
+  try {
+    await toClipboard(activeCopyText.value)
+  } catch (error) {}
+}
 
 onMounted(() => {
   getOperationInfo()
@@ -83,12 +112,16 @@ onMounted(() => {
 
 </script>
 
-<style lang="less" scoped>
+<style lang="less">
 .table-operations {
   padding: 12px;
   .text-active {
     color: #1890ff;
     cursor: pointer;
   }
+}
+.operation-wrap .ant-modal-body {
+  max-height: 360px;
+  overflow-y: auto;
 }
 </style>

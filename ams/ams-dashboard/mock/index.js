@@ -583,7 +583,7 @@ module.exports = {
       result: {}
     })
   },
-  'GET /ams/v1/tables/catalogs/trino_online_env/dbs/arctic100wforOptimizeBase/tables/nation/operations': (req, res) => {
+  'GET /ams/v1/tables/catalogs/trino_online_env/dbs/arctic10wforOptimizeContinue/tables/nation/operations': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',

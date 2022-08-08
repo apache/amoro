@@ -69,6 +69,7 @@ export default defineComponent({
 
     const getTableUpgradeStatus = async(hideLoading = false) => {
       try {
+        statusInterval.value && clearTimeout(statusInterval.value)
         const { catalog, db, table } = params.value
         if (!catalog || !db || !table) {
           return
@@ -86,7 +87,6 @@ export default defineComponent({
             getTableUpgradeStatus(true)
           }, 1500)
         } else {
-          clearTimeout(statusInterval.value)
           if (status === upgradeStatusMap.failed) {
             getHiveTableDetails()
           } else if (status === upgradeStatusMap.success) {
@@ -105,7 +105,6 @@ export default defineComponent({
 
     const getHiveTableDetails = async() => {
       try {
-        console.log('getHiveTableDetails 222')
         const { catalog, db, table } = params.value
         if (!catalog || !db || !table) {
           return

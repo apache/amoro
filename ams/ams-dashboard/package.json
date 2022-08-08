@@ -18,6 +18,7 @@
     "echarts": "^5.3.2",
     "pinia": "^2.0.13",
     "vue": "^3.2.11",
+    "vue-clipboard3": "^2.0.0",
     "vue-i18n": "^9.1.9",
     "vue-router": "^4.0.0-0",
     "vue-virtual-scroller": "2.0.0-alpha.1",
