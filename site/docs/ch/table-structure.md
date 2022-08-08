@@ -41,7 +41,7 @@ Arctic 引入了 Optimize 功能来解决上述问题，Arctic 的 Optimize 主�
 
 - 灵活的部署方式：执行节点支持多种部署方式，便捷的扩缩容
 
-Optimize 主要包括文件的移动、转化、合并等操作，从功能上划分为两类：[Minor Optimize](#Minor Optimize) 和 [Major Optimize](#Major Optimize)。
+Optimize 主要包括文件的移动、转化、合并等操作，从功能上划分为两类：[Minor Optimize](#minor-optimize) 和 [Major Optimize](#major-optimize)。
 
 其中 Minor Optimize 主要进行 Changestore 到 Basestore 的文件移动和转化，主要目标是提升查询性能以及缩短 Basestore 的数据可见延迟；
 
