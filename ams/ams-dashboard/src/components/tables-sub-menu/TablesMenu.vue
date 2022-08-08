@@ -279,7 +279,7 @@ export default defineComponent({
     .table-list {
       flex: 1;
       background-color: #fff;
-      padding-top: 12px;
+      padding-top: 4px;
     }
     .table-list,
     .database-list .list-wrap {
@@ -304,7 +304,7 @@ export default defineComponent({
       padding-right: 4px;
     }
     .add {
-      margin: 8px 4px 0;
+      margin: 4px 4px 0;
       background-color: #f6f7fa;
     }
     :deep(.select-catalog .ant-select) {
