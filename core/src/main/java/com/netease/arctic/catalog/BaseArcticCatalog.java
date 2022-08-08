@@ -220,13 +220,13 @@ public class BaseArcticCatalog implements ArcticCatalog {
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
   }
 
-  private String checkLocation(TableMeta meta, String locationKey) {
+  protected String checkLocation(TableMeta meta, String locationKey) {
     String location = meta.getLocations().get(locationKey);
     Preconditions.checkArgument(StringUtils.isNotBlank(location), "table location can't found");
     return location;
   }
 
-  private Table useArcticTableOperations(
+  protected Table useArcticTableOperations(
       Table table, String tableLocation,
       ArcticFileIO arcticFileIO, Configuration configuration) {
     if (table instanceof org.apache.iceberg.BaseTable) {
@@ -348,6 +348,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
     protected String location;
 
     public BaseArcticTableBuilder(TableIdentifier identifier, Schema schema) {
+      Preconditions.checkArgument(identifier.getCatalog().equals(catalogMeta.getCatalogName()),
+          "Illegal table id:%s for catalog:%s", identifier.toString(), catalogMeta.getCatalogName());
       this.identifier = identifier;
       this.schema = schema;
     }
@@ -508,7 +510,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
             .withBaseLocation(tableLocation + "/base")
             .withChangeLocation(tableLocation + "/change");
       } else {
-        builder = builder.withBaseLocation(tableLocation);
+        builder = builder.withBaseLocation(tableLocation + "/base");
       }
       return builder;
     }
@@ -550,6 +552,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
           primaryKeySpec, client, baseTable, changeTable);
     }
 
+
     protected UnkeyedTable createUnKeyedTable(TableMeta meta) {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
@@ -573,9 +576,31 @@ public class BaseArcticCatalog implements ArcticCatalog {
         return location;
       }
 
-      String catalogWarehouseDir = null;
+      if (properties.containsKey(TableProperties.LOCATION)) {
+        String tableLocation = properties.get(TableProperties.LOCATION);
+        if (!Objects.equals("/", tableLocation) && tableLocation.endsWith("/")) {
+          tableLocation = tableLocation.substring(
+              0, tableLocation.length() - 1);
+        }
+        if (StringUtils.isNotBlank(tableLocation)) {
+          return tableLocation;
+        }
+      }
+
+      String databaseLocation = getDatabaseLocation();
+
+      if (StringUtils.isNotBlank(databaseLocation)) {
+        return databaseLocation + '/' + identifier.getTableName();
+      } else {
+        throw new IllegalStateException(
+            "either `location` in table properties or " +
+                "`warehouse.dir` in catalog properties is specified");
+      }
+    }
+
+    protected String getDatabaseLocation() {
       if (catalogMeta.getCatalogProperties() != null) {
-        catalogWarehouseDir = catalogMeta.getCatalogProperties().getOrDefault(
+        String catalogWarehouseDir = catalogMeta.getCatalogProperties().getOrDefault(
             CatalogMetaProperties.KEY_WAREHOUSE_DIR,
             null
         );
@@ -583,26 +608,11 @@ public class BaseArcticCatalog implements ArcticCatalog {
           catalogWarehouseDir = catalogWarehouseDir.substring(
               0, catalogWarehouseDir.length() - 1);
         }
-      }
-      String tableLocation = null;
-      if (properties.containsKey(TableProperties.LOCATION)) {
-        tableLocation = properties.get(TableProperties.LOCATION);
-        if (tableLocation.endsWith("/")) {
-          tableLocation = tableLocation.substring(
-              0, tableLocation.length() - 1);
+        if (StringUtils.isNotBlank(catalogWarehouseDir)) {
+          return catalogWarehouseDir + '/' + identifier.getDatabase();
         }
       }
-      if (StringUtils.isNotBlank(tableLocation)) {
-        return tableLocation;
-      } else if (StringUtils.isNotBlank(catalogWarehouseDir)) {
-        return catalogWarehouseDir +
-            '/' + identifier.getDatabase() +
-            '/' + identifier.getTableName();
-      } else {
-        throw new IllegalStateException(
-            "either `location` in table properties or " +
-                "`warehouse.dir` in catalog properties is specified");
-      }
+      return null;
     }
 
     protected TableMetadata tableMetadata(

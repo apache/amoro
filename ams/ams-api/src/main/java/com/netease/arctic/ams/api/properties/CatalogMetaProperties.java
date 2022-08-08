@@ -40,6 +40,7 @@ public class CatalogMetaProperties {
     public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
 
     public static final String CATALOG_TYPE_HADOOP = "hadoop";
+    public static final String CATALOG_TYPE_HIVE = "hive";
 
     public static final String CLIENT_POOL_SIZE = "clients";
     public static final int CLIENT_POOL_SIZE_DEFAULT = 2;

@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
- *
+ * Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key.
  */
 public class CachedHiveClientPool implements ClientPool<HiveMetaStoreClient, TException> {
 
