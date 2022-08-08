@@ -39,7 +39,7 @@ jobs:
           filters: |
             spark23:
               - 'spark/v2.3/**'
-            spark31
+            spark31:
               - 'spark/v3.1/**'
 
       - name: test for spark 2.3
