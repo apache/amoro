@@ -177,7 +177,7 @@ public class TestJoin extends FlinkTestBase {
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
       Row i = iterator.next();
-      System.out.println(i);
+      System.out.println("out:" + i);
     }
 
     tableResult.getJobClient().ifPresent(JobClient::cancel);
@@ -244,7 +244,7 @@ public class TestJoin extends FlinkTestBase {
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
       Row i = iterator.next();
-      System.out.println(i);
+      System.out.println("out:" + i);
     }
 
     tableResult.getJobClient().ifPresent(JobClient::cancel);
