@@ -81,6 +81,7 @@ async function getTableInfo() {
     dataSource.push(...[...list || []].map(item => {
       const { recordId, totalFilesStatBeforeCompact, totalFilesStatAfterCompact } = item
       return {
+        ...item,
         recordId,
         // startTime: item.commitTime ? d(new Date(item.commitTime), 'long') : '',
         startTime: item.commitTime ? dateFormat(item.commitTime) : '',
