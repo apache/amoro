@@ -61,6 +61,4 @@
 | log-store.topic                    | NULL             | 当 log-store.enable=true 时必填，log store使用的topic                      |
 | log-store.data-format              | json             | log store中的消息格式，当前仅支持json         |
 | log-store.data-version             | v1               | log store中消息的版本，当前仅支持v1           |
-
-
-
+| log.consistency.guarantee.enable   | false            | 标记是否开启一致性保证                       |

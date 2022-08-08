@@ -56,9 +56,11 @@ nav:
       - Table Config: table-properties.md
   - Flink:
       - Getting Started: flink/flink-get-started.md
-      - Hidden Kafka: flink/hidden-kafka.md
+      - Flink DDL: flink/flink-ddl.md
+      - Flink DML: flink/flink-dml.md
+      - Flink DataStream: flink/flink-ds.md
+      - Using Kafka as Logstore: flink/hidden-kafka.md
       - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
-      - Flink Config: flink/flink.md
   - Spark:
       - Getting Started: spark/spark-get-started.md
       - Spark DDL: spark/spark-ddl.md
