@@ -78,6 +78,11 @@ import { debounce } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import virtualRecycleScroller from '@/components/VirtualRecycleScroller.vue'
 
+interface ITableItem {
+  name: string
+  type: string
+}
+
 export default defineComponent({
   name: 'TablesMenu',
   components: {
@@ -229,10 +234,11 @@ export default defineComponent({
         catalog: state.curCatalog,
         db: state.database,
         keywords: state.tableSearchInput
-      }).then((res: string[]) => {
-        state.tableList = (res || []).map((ele: string) => ({
-          id: ele,
-          label: ele
+      }).then((res: ITableItem[]) => {
+        state.tableList = (res || []).map((ele: ITableItem) => ({
+          id: ele.name,
+          label: ele.name,
+          type: ele.type
         }))
       }).finally(() => {
         state.tableLoading = false

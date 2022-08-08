@@ -35,7 +35,7 @@ export function getTableList(params: {
   catalog: string
   db: string
   keywords: string
-}): Promise<string[]> {
+}) {
   const { catalog, db, keywords } = params
   return request.get(`ams/v1/catalogs/${catalog}/databases/${db}/tables`, { params: { keywords } })
 }
