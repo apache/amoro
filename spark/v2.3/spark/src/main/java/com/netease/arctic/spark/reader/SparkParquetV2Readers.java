@@ -171,7 +171,8 @@ public class SparkParquetV2Readers {
       Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName())) - 1;
 
-      return new SparkParquetV2Readers.ArrayReader<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
+      return new SparkParquetV2Readers.ArrayReader<>(repeatedD,
+          repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
     }
 
     @Override
@@ -379,7 +380,8 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class ArrayReader<E> extends ParquetValueReaders.RepeatedReader<ArrayData, SparkParquetV2Readers.ReusableArrayData, E> {
+  private static class ArrayReader<E> extends ParquetValueReaders.RepeatedReader<ArrayData,
+      SparkParquetV2Readers.ReusableArrayData, E> {
     private int readPos = 0;
     private int writePos = 0;
 
@@ -431,7 +433,8 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class MapReader<K, V> extends ParquetValueReaders.RepeatedKeyValueReader<MapData, SparkParquetV2Readers.ReusableMapData, K, V> {
+  private static class MapReader<K, V> extends ParquetValueReaders.RepeatedKeyValueReader<MapData,
+      SparkParquetV2Readers.ReusableMapData, K, V> {
     private int readPos = 0;
     private int writePos = 0;
 

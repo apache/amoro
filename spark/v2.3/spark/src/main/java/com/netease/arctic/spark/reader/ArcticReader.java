@@ -148,6 +148,7 @@ public class ArcticReader implements DataSourceReader,
       this.io = table.io();
       this.keySpec = table.primaryKeySpec();
     }
+
     @Override
     public String[] preferredLocations() {
       return DataReaderFactory.super.preferredLocations();
