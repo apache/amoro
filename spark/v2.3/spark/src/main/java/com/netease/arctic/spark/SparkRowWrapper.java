@@ -73,8 +73,8 @@ public class SparkRowWrapper implements StructLike {
   }
 
 
-  public SparkRowWrapper wrap(Row internalRow) {
-    this.row = internalRow;
+  public SparkRowWrapper wrap(Row row) {
+    this.row = row;
     return this;
   }
 
