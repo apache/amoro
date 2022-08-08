@@ -84,8 +84,6 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String product = ctx.queryParam("product");
-    String userId = ctx.queryParam("userId");
 
     // get table from catalog
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
@@ -158,8 +156,6 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String product = ctx.queryParam("product");
-    String userId = ctx.queryParam("userId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
@@ -205,8 +201,6 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String product = ctx.queryParam("product");
-    String userId = ctx.queryParam("userId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
@@ -234,8 +228,6 @@ public class TableController extends RestBaseController {
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
     String transactionId = ctx.pathParam("transactionId");
-    String product = ctx.queryParam("product");
-    String userId = ctx.queryParam("userId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
@@ -261,8 +253,6 @@ public class TableController extends RestBaseController {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
     String table = ctx.pathParam("table");
-    String product = ctx.queryParam("product");
-    String userId = ctx.queryParam("userId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
@@ -292,8 +282,6 @@ public class TableController extends RestBaseController {
     String table = ctx.pathParam("table");
     String partition = ctx.pathParam("partition");
 
-    String product = ctx.queryParam("product");
-    String userId = ctx.queryParam("userId");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
