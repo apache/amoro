@@ -26,21 +26,17 @@ singleStatement
     ;
 
 statement
-  :createTableWithPrimayKey                                             #createTableWithPk
+  : createTableHeader colListAndPk? tableProvider
+       ((OPTIONS options=tablePropertyList) |
+       (PARTITIONED BY partitionColumnNames=partitionFieldList) |
+       bucketSpec |
+       locationSpec |
+       (COMMENT comment=STRING) |
+       (TBLPROPERTIES tableProps=tablePropertyList))*
+       (AS? query)?                                                     #createArcticTable
   | .*?                                                                 #passThrough
   ;
 
-
-createTableWithPrimayKey
-  : createTableHeader colListAndPk? tableProvider
-    ((OPTIONS options=tablePropertyList) |
-    (PARTITIONED BY partitionColumnNames=identifierList) |
-    bucketSpec |
-    locationSpec |
-    (COMMENT comment=STRING) |
-    (TBLPROPERTIES tableProps=tablePropertyList))*
-    (AS? query)?
-    ;
 
 
 colListAndPk
@@ -53,6 +49,15 @@ primaryKey
   : PRIMARY KEY '(' identifier (',' identifier)* ')'
   ;
 
+
+partitionFieldList
+    : '(' fields+=partitionField (',' fields+=partitionField)* ')'
+    ;
+
+partitionField
+    : identifier                                                    #partitionColumnRef
+    | colType                                                       #partitionColumnDefine
+    ;
 
 
 PRIMARY: 'PRIMARY';
