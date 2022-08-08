@@ -39,13 +39,13 @@ jobs:
           filters: |
             spark23:
               - 'spark/v2.3/**'
-            spark31
+            spark31:
               - 'spark/v3.1/**'
 
       - name: test for spark 2.3
-        if: steps.changed-files.output.spark23 == 'true'
+        if: steps.changed-files.outputs.spark23 == 'true'
         run: mvn install -pl 'spark/v2.3/spark' -am -e
 
       - name: test for spark 3.1
-        if: steps.changed-files.output.spark31 == 'true'
+        if: steps.changed-files.outputs.spark31 == 'true'
         run: mvn install -pl 'spark/v3.1/spark-runtime' -am -e
