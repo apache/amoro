@@ -117,7 +117,7 @@ public class TestKeyedTableDML extends SparkTestBase {
   @Test
   public void testSelectDeleteAll() throws IOException {
     List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
-    insertBasePosDeleteFiles(dataFiles);
+    insertBasePosDeleteFiles(keyedTable.beginTransaction(""), dataFiles);
     rows = sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(0, rows.size());
   }
@@ -127,12 +127,12 @@ public class TestKeyedTableDML extends SparkTestBase {
     List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
     List<DataFile> deleteFiles = dataFiles.stream().filter(dataFile -> Objects.equals(18993,
         dataFile.partition().get(0, Object.class))).collect(Collectors.toList());
-    insertBasePosDeleteFiles(deleteFiles);
+    insertBasePosDeleteFiles(keyedTable.beginTransaction(""), deleteFiles);
     rows = sql("select id from {0}.{1}", database, table);
     assertContainIdSet(rows, 0, 2, 3);
   }
 
-  protected void insertBasePosDeleteFiles(List<DataFile> dataFiles) throws IOException {
+  protected void insertBasePosDeleteFiles(long transactionId, List<DataFile> dataFiles) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -148,7 +148,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
         // write pos delete
         SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(keyedTable)
-            .withTransactionId(2).buildBasePosDeleteWriter(key.getMask(), key.getIndex(), partition);
+            .withTransactionId(transactionId).buildBasePosDeleteWriter(key.getMask(), key.getIndex(), partition);
         for (DataFile nodeFile : nodeFiles) {
           writer.delete(nodeFile.path(), 0);
         }
