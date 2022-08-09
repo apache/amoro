@@ -26,7 +26,6 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.StructLikeMap;
 import java.util.Map;
 
-
 /**
  * Represents an arctic table with keys supported, consist of one {@link ChangeTable} and one {@link BaseTable}.
  */
@@ -84,6 +83,7 @@ public interface KeyedTable extends ArcticTable {
 
   /**
    * Allocate a new transaction id from this table
+   *
    * @param signature signature for this request. Requests with the same signature will get the same transaction id.
    *                  Requests with signature NULL will always get different transaction id.
    * @return a new transaction id
@@ -92,6 +92,7 @@ public interface KeyedTable extends ArcticTable {
 
   /**
    * get max transactionId of each partition. use {@link #partitionMaxTransactionId()} instead.
+   *
    * @return map of max transactionId of each partition
    */
   @Deprecated
@@ -99,6 +100,7 @@ public interface KeyedTable extends ArcticTable {
 
   /**
    * get max transactionId of each partition
+   *
    * @return map of max transactionId of each partition
    */
   StructLikeMap<Long> partitionMaxTransactionId();
@@ -113,7 +115,7 @@ public interface KeyedTable extends ArcticTable {
     return this;
   }
 
-  RewritePartitions newRewritePartitions() ;
+  RewritePartitions newRewritePartitions();
 
-  OverwriteBaseFiles newOverwriteBaseFiles() ;
+  OverwriteBaseFiles newOverwriteBaseFiles();
 }
