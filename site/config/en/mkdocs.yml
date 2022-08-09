@@ -50,23 +50,6 @@ markdown_extensions:
 
 nav:
   - Overview: index.md
-  - Quickstart: getting-started.md
-  - Tables:
-      - Table Store: table-structure.md
-      - Table Config: table-properties.md
-  - Flink:
-      - Getting Started: flink/flink-get-started.md
-      - Flink DDL: flink/flink-ddl.md
-      - Flink DML: flink/flink-dml.md
-      - Flink DataStream: flink/flink-ds.md
-      - Using Kafka as Logstore: flink/hidden-kafka.md
-      - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
-  - Spark:
-      - Getting Started: spark/spark-get-started.md
-      - Spark DDL: spark/spark-ddl.md
-      - Spark DML: spark/spark-dml.md
-      - Spark DataFrame: spark/spark-dataframe.md
-  - Trino: trino.md
 
 
 plugins:

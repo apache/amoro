@@ -82,7 +82,7 @@ SET table.dynamic-table-options.enabled=true;
 
 SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 ```
-支持以下 Kafka 相关的参数配置：
+支持以下 Hint Options ：
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
