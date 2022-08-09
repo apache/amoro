@@ -156,7 +156,7 @@ public class AmsTableTracer implements TableTracer {
       update = true;
     }
     if (this.newProperties != null) {
-      commitMeta.setNewProperties(this.newProperties);
+      commitMeta.setProperties(this.newProperties);
       update = true;
       threw = true;
     }

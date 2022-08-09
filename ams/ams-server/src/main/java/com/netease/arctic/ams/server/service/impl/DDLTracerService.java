@@ -16,6 +16,7 @@ import com.netease.arctic.trace.DDLTracer;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -139,20 +140,30 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder setSql = new StringBuilder();
     StringBuilder unsetSql = new StringBuilder();
     StringBuilder unsetPro = new StringBuilder();
+    int c = 0;
     for (String oldPro : before.keySet()) {
       if (!after.containsKey(oldPro)) {
-        unsetPro.append(oldPro).append(",").append("\\n");
+        if (c > 0) {
+          unsetPro.append(",").append("\\n");
+        }
+        unsetPro.append(oldPro);
+        c++;
       }
     }
     StringBuilder setPro = new StringBuilder();
+    int c1 = 0;
     for (String newPro : after.keySet()) {
-      if (!before.containsKey(newPro)) {
-        setPro.append(String.format("'%s'='%s',", newPro, after.get(newPro))).append("\\n");
+      if (!after.get(newPro).equals(before.get(newPro))) {
+        if (c1 > 0) {
+          setPro.append(",").append("\\n");
+        }
+        setPro.append(String.format("'%s'='%s'", newPro, after.get(newPro)));
+        c1++;
       }
     }
     if (setPro.length() > 0) {
       setSql.append(String.format(ALTER_TABLE, tableName))
-          .append(String.format(SET_PROPERTIES, setPro.deleteCharAt(setPro.length())));
+          .append(String.format(SET_PROPERTIES, setPro.deleteCharAt(setPro.length() - 1)));
     }
     if (unsetPro.length() > 0) {
       unsetSql.append(String.format(ALTER_TABLE, tableName))
@@ -236,6 +247,7 @@ public class DDLTracerService extends IJDBCService {
       }
     }
 
+    @VisibleForTesting
     private String compareSchema(TableIdentifier identifier, Schema before, Schema after) {
       StringBuilder rs = new StringBuilder();
       String tableName = TableMetadataUtil.getTableAllIdentifyName(identifier);

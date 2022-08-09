@@ -143,6 +143,9 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       properties.remove("krb_conf");
       properties.remove("krb_principal");
       TableMetadata oldTableMetaData = loadTableMetadata(tableIdentifier);
+      ServiceContainer.getDdlTracerService().commitProperties(tableIdentifier.buildTableIdentifier(),
+          oldTableMetaData.getProperties(),
+          properties);
       tableMetadataMapper.updateTableProperties(tableIdentifier, properties);
       String oldQueueName = oldTableMetaData.getProperties().get(TableProperties.OPTIMIZE_GROUP);
       String newQueueName = properties.get(TableProperties.OPTIMIZE_GROUP);

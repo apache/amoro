@@ -344,11 +344,11 @@ public class FileInfoCacheService extends IJDBCService {
             cacheFileInfo.setFileIndex(datafile.getIndex());
             cacheFileInfo.setRecordCount(datafile.getRecordCount());
             cacheFileInfo.setSpecId(datafile.getSpecId());
-            if (tableCommitMeta.getNewProperties() != null &&
-                tableCommitMeta.getNewProperties().containsKey(TableProperties.TABLE_EVENT_TIME_FIELD)) {
+            if (tableCommitMeta.getProperties() != null &&
+                tableCommitMeta.getProperties().containsKey(TableProperties.TABLE_EVENT_TIME_FIELD)) {
               Long watermark =
                   datafile.getUpperBounds()
-                      .get(tableCommitMeta.getNewProperties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
+                      .get(tableCommitMeta.getProperties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
                       .getLong();
               cacheFileInfo.setWatermark(watermark);
             } else {

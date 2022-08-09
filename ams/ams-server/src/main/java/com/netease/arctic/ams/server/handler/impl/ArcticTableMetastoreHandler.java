@@ -174,10 +174,8 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     ArcticMetaValidator.metaValidator(commit.getTableIdentifier());
     com.netease.arctic.table.TableIdentifier identifier =
         com.netease.arctic.table.TableIdentifier.of(commit.getTableIdentifier());
-    if (commit.getNewProperties() != null) {
-      metaService.updateTableProperties(identifier, commit.getNewProperties());
-      ddlTracerService.commitProperties(commit.getTableIdentifier(), commit.getOldProperties(),
-          commit.getNewProperties());
+    if (commit.getProperties() != null) {
+      metaService.updateTableProperties(identifier, commit.getProperties());
     }
     fileInfoCacheService.commitCacheFileInfo(commit);
   }

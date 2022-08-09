@@ -45,8 +45,7 @@ struct TableCommitMeta {
     2: string action;
     3: list<TableChange> changes;
     4: i64 commitTime;
-    5: map<string, string> newProperties;
-    6: map<string, string> oldProperties;
+    5: map<string, string> properties;
 }
 
 struct UpdateColumn {

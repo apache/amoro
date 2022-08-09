@@ -283,9 +283,9 @@ public class MockArcticMetastoreServer implements Runnable {
     public void tableCommit(TableCommitMeta commit) throws TException {
       tableCommitMetas.putIfAbsent(commit.getTableIdentifier(), new ArrayList<>());
       tableCommitMetas.get(commit.getTableIdentifier()).add(commit);
-      if (commit.getNewProperties() != null) {
+      if (commit.getProperties() != null) {
         TableMeta meta = getTable(commit.getTableIdentifier());
-        meta.setProperties(commit.getNewProperties());
+        meta.setProperties(commit.getProperties());
       }
     }
 
