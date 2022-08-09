@@ -29,6 +29,7 @@ import org.apache.flink.table.descriptors.ConnectorDescriptorValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.types.logical.RowType;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -129,6 +130,22 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .stringType()
           .noDefaultValue()
           .withDescription("underlying arctic table name.");
+
+  public static final ConfigOption<Boolean> ARCTIC_WATERMARK =
+      ConfigOptions.key("arctic.watermark")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will generate watermark. It's only use for lookup join," +
+              "and arctic source is used as build table, i.e. right table.");
+
+  public static final ConfigOption<Duration> WATERMARK_IDLE_TIMEOUT =
+      ConfigOptions.key("watermark.idle.timeout")
+          .durationType()
+          .defaultValue(Duration.ofMinutes(1))
+          .withDescription(String.format("If %s set true, source will generate watermark after %s " +
+                  "when there is no data. It's used in the cases that source has no data," +
+                  " or reader's number is greater than first splits'.",
+              ARCTIC_WATERMARK.key(), "watermark.idle.timeout"));
 
   @Override
   public void validate(DescriptorProperties properties) {

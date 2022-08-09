@@ -239,7 +239,7 @@ public class TestJoin extends FlinkTestBase {
       }
     });
     TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
+        "/*+OPTIONS('streaming'='true', 'watermark.idle.timeout'='41s')*/ for system_time as of u.opt as dim on u.id = dim.id");
 
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {

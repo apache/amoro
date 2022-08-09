@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 
 import javax.annotation.Nullable;
@@ -33,14 +34,18 @@ public class ArcticSourceEnumState {
   private final Collection<ArcticSplitState> pendingSplits;
   @Nullable
   private final long[] shuffleSplitRelation;
+  @Nullable
+  private final FirstSplits firstSplits;
 
   public ArcticSourceEnumState(
       Collection<ArcticSplitState> pendingSplits,
       @Nullable ArcticEnumeratorOffset lastEnumeratedOffset,
-      @Nullable long[] shuffleSplitRelation) {
+      @Nullable long[] shuffleSplitRelation,
+      @Nullable FirstSplits firstSplits) {
     this.pendingSplits = pendingSplits;
     this.lastEnumeratedOffset = lastEnumeratedOffset;
     this.shuffleSplitRelation = shuffleSplitRelation;
+    this.firstSplits = firstSplits;
   }
 
   @Nullable
@@ -55,5 +60,10 @@ public class ArcticSourceEnumState {
   @Nullable
   public long[] shuffleSplitRelation() {
     return shuffleSplitRelation;
+  }
+
+  @Nullable
+  public FirstSplits firstSplits() {
+    return firstSplits;
   }
 }

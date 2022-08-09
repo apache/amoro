@@ -20,7 +20,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
-import com.netease.arctic.flink.read.hybrid.reader.FirstSplits;
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
@@ -55,18 +55,15 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * To record the snapshotId at the first planSplits.
    * <p>
    * If its value is null, it means that we don't need to generate watermark. Won't check.
-   * If its value is an empty Collection, it means that all splits have been finished.
-   * So enumerator will push an event to all readers to start generate watermark. After that, reset it to null.
-   * If its value is a Collection with elements, it means there are some splits have not been scanned.
    */
-  private transient FirstSplits firstSplits = null;
+  private FirstSplits firstSplits = null;
   private final ArcticTableLoader loader;
   private final SplitEnumeratorContext<ArcticSplit> context;
   private final ContinuousSplitPlanner continuousSplitPlanner;
   private final SplitAssigner splitAssigner;
   private final ArcticScanContext scanContext;
   private final long snapshotDiscoveryIntervalMs;
-  private final boolean generateWatermark;
+  private final boolean generateWatermarkTimestamp;
   /**
    * snapshotId for the last enumerated snapshot. next incremental enumeration
    * should be based off this as the starting position.
@@ -80,7 +77,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner splitAssigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nullable ArcticSourceEnumState enumState) {
+      @Nullable ArcticSourceEnumState enumState,
+      boolean generateWatermarkTimestamp) {
     super(enumContext, splitAssigner);
     this.loader = loader;
     this.context = enumContext;
@@ -91,8 +89,9 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.enumeratorPosition = new AtomicReference<>();
     if (enumState != null) {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
+      this.firstSplits = enumState.firstSplits();
     }
-    this.generateWatermark = true;
+    this.generateWatermarkTimestamp = generateWatermarkTimestamp;
   }
 
   @Override
@@ -136,7 +135,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
 
   private ContinuousEnumerationResult planSplits() {
     ContinuousEnumerationResult result = doPlanSplits();
-    if (generateWatermark && firstSplits == null) {
+    if (generateWatermarkTimestamp && firstSplits == null) {
       firstSplits = new FirstSplits(result.splits());
     }
     return result;
@@ -173,8 +172,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (sourceEvent instanceof SplitRequestEvent) {
       SplitRequestEvent splitRequestEvent = (SplitRequestEvent) sourceEvent;
       Collection<String> finishedSplitIds = splitRequestEvent.finishedSplitIds();
-      if (generateWatermark) {
-        checkAndNotifyReaderTriggerWatermark(finishedSplitIds);
+      if (generateWatermarkTimestamp) {
+        checkAndNotifyReaderTriggerWatermarkTimestamp(finishedSplitIds);
       }
     } else {
       throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
@@ -187,8 +186,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    *
    * @param finishedSplitIds
    */
-  public void checkAndNotifyReaderTriggerWatermark(Collection<String> finishedSplitIds) {
-    if (firstSplits == null || firstSplits.getFinished()) {
+  public void checkAndNotifyReaderTriggerWatermarkTimestamp(Collection<String> finishedSplitIds) {
+    if (firstSplits == null || firstSplits.getUnfinishedCount() == 0) {
       return;
     }
     if (!firstSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
@@ -207,7 +206,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (splitAssigner instanceof ShuffleSplitAssigner) {
       shuffleSplitRelation = ((ShuffleSplitAssigner) splitAssigner).serializePartitionIndex();
     }
-    return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation);
+    return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation,
+        firstSplits);
   }
 
   @Override

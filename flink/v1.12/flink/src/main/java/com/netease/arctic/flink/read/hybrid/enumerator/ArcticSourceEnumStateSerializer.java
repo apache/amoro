@@ -21,10 +21,14 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitSerializer;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
+import org.apache.flink.util.InstantiationUtil;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -34,6 +38,8 @@ import java.util.Objects;
  * Serializer that serializes and deserializes arctic enumerator {@link ArcticSourceEnumState}.
  */
 public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerializer<ArcticSourceEnumState> {
+
+  private static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceEnumStateSerializer.class);
   private static final int VERSION = 1;
   private final ArcticSplitSerializer splitSerializer = ArcticSplitSerializer.INSTANCE;
   private final ArcticEnumeratorOffsetSerializer offsetSerializer = ArcticEnumeratorOffsetSerializer.INSTANCE;
@@ -77,6 +83,13 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
       for (long l : shuffleSplitRelation) {
         out.writeLong(l);
       }
+    }
+
+    out.writeBoolean(enumState.firstSplits() != null);
+    if (enumState.firstSplits() != null) {
+      byte[] firstSplits = InstantiationUtil.serializeObject(enumState.firstSplits());
+      out.writeInt(firstSplits.length);
+      out.write(firstSplits);
     }
 
     byte[] result = out.getCopyOfBuffer();
@@ -123,7 +136,18 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
         shuffleSplitRelation[i] = in.readLong();
       }
     }
-    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation);
 
+    FirstSplits firstSplits = null;
+    if (in.readBoolean()) {
+      byte[] bytes = new byte[in.readInt()];
+      in.read(bytes);
+      try {
+        firstSplits = InstantiationUtil.deserializeObject(bytes, FirstSplits.class.getClassLoader());
+      } catch (ClassNotFoundException e) {
+        throw new RuntimeException("deserialize FirstSplit error", e);
+      }
+    }
+
+    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation, firstSplits);
   }
 }

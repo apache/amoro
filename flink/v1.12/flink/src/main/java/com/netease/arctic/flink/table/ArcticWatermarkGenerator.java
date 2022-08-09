@@ -32,18 +32,20 @@ public class ArcticWatermarkGenerator implements WatermarkGenerator<RowData>, Se
   public static final long serialVersionUID = 1L;
   private boolean generateWatermark = false;
   private long lastTs = System.currentTimeMillis();
-  private long watermarkIdle = 60 * 1000;
-  private TimeZone timeZone;
+  private final long watermarkIdleMs;
+  private final TimeZone timeZone;
 
-  public ArcticWatermarkGenerator(TimeZone timeZone) {
+  public ArcticWatermarkGenerator(TimeZone timeZone, long watermarkIdleMs) {
     this.timeZone = timeZone;
+    this.watermarkIdleMs = watermarkIdleMs;
   }
 
   @Override
   public void onEvent(RowData event, long eventTimestamp, WatermarkOutput output) {
     lastTs = System.currentTimeMillis();
 
-    TimestampData ts = event.getTimestamp(3, 3);
+    // Timestamp is set in the last field from ArcticRecordEmitter
+    TimestampData ts = event.getTimestamp(event.getArity() - 1, 3);
     eventTimestamp = ts.getMillisecond();
     output.emitWatermark(new Watermark(eventTimestamp));
     if (eventTimestamp > Long.MIN_VALUE) {
@@ -55,7 +57,7 @@ public class ArcticWatermarkGenerator implements WatermarkGenerator<RowData>, Se
   public void onPeriodicEmit(WatermarkOutput output) {
     if (generateWatermark) {
       output.emitWatermark(new Watermark(ArcticUtils.getCurrentTimestampData(timeZone).getMillisecond()));
-    } else if (System.currentTimeMillis() - lastTs >= watermarkIdle) {
+    } else if (System.currentTimeMillis() - lastTs >= watermarkIdleMs) {
       generateWatermark = true;
     }
   }

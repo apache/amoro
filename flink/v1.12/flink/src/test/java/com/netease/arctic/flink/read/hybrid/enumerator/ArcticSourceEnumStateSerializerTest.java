@@ -48,7 +48,8 @@ public class ArcticSourceEnumStateSerializerTest extends ShuffleSplitAssignerTes
     ArcticSourceEnumState expect = new ArcticSourceEnumState(
         shuffleSplitAssigner.state(),
         null,
-        shuffleSplitAssigner.serializePartitionIndex());
+        shuffleSplitAssigner.serializePartitionIndex(),
+        null);
 
     ArcticSourceEnumStateSerializer arcticSourceEnumStateSerializer = new ArcticSourceEnumStateSerializer();
     byte[] ser = arcticSourceEnumStateSerializer.serialize(expect);

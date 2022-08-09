@@ -30,6 +30,7 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitSerializer;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.flink.table.ArcticWatermarkGenerator;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.Source;
@@ -44,6 +45,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Arctic Source based of Flip27.
+ * <p>
+ * If ArcticSource is used as a build table in lookup join, it will be implemented by temporal join.
+ * Two source should use processing time as watermark.
+ * ArcticSource will generate watermark after first splits planned by ArcticSourceEnumerator having been finished,
+ * or {@link ArcticWatermarkGenerator} is idle reaching
+ * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#WATERMARK_IDLE_TIMEOUT} when there is no data or.
  */
 public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumState>, ResultTypeQueryable<T> {
   private static final long serialVersionUID = 1L;
@@ -54,14 +61,20 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
   private final TypeInformation<T> typeInformation;
   private final ArcticTableLoader loader;
   private final String tableName;
+  /**
+   * generate arctic watermark. This is only for lookup join arctic table, and arctic table is used as build table,
+   * i.e. right table.
+   */
+  private final boolean generateWatermark;
 
   public ArcticSource(ArcticTableLoader loader, ArcticScanContext scanContext, ReaderFunction<T> readerFunction,
-                      TypeInformation<T> typeInformation, String tableName) {
+                      TypeInformation<T> typeInformation, String tableName, boolean generateWatermark) {
     this.loader = loader;
     this.scanContext = scanContext;
     this.readerFunction = readerFunction;
     this.typeInformation = typeInformation;
     this.tableName = tableName;
+    this.generateWatermark = generateWatermark;
   }
 
   @Override
@@ -71,7 +84,8 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
 
   @Override
   public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) throws Exception {
-    return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext);
+    return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext,
+        generateWatermark);
   }
 
   @Override
@@ -93,7 +107,8 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
     }
 
     if (scanContext.isStreaming()) {
-      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState);
+      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState,
+          generateWatermark);
     } else {
       return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, null);
     }

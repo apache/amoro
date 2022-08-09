@@ -22,7 +22,6 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.FlinkUtil;
 import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.SourceOutput;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;
@@ -30,6 +29,7 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.data.utils.JoinedRowData;
+import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,20 +44,21 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
   public static final Logger LOGGER = LoggerFactory.getLogger(ArcticRecordEmitter.class);
 
   /**
-   * It signifies whether the watermark need to be generated.
+   * It signifies whether the ProcessingTimestamp need to be set into RowData.
+   * If it's null, RowData won't be changed.
+   * If it's false, RowData would be added a field, which values LONG.MIN_VALUE.
+   * If it's true, RowData would be added a field, which values Processing Time.
    */
-  public Optional<Boolean> generateWatermark = Optional.empty();
-  private long autoWatermarkInterval;
-  private long lastTime = 0L;
-  private TimeZone timeZone;
-  private transient SourceOutput<T> sourceOutput;
+  public Boolean generateProcessingTimestamp;
+  private final TimeZone timeZone;
 
-  public ArcticRecordEmitter(Configuration config, ClassLoader classLoader) {
+  public ArcticRecordEmitter(Configuration config, ClassLoader classLoader, boolean generateWatermarkTimestamp) {
     ExecutionConfig executionConfig = new ExecutionConfig();
 
     timeZone = FlinkUtil.getLocalTimeZone(config);
     executionConfig.configure(config, classLoader);
-    generateWatermark = Optional.of(false);
+
+    this.generateProcessingTimestamp = generateWatermarkTimestamp ? false : null;
   }
 
   @Override
@@ -65,49 +66,27 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
       ArcticRecordWithOffset<T> element,
       SourceOutput<T> sourceOutput,
       ArcticSplitState split) throws Exception {
-    this.sourceOutput = sourceOutput;
-
-    T r = element.record();
-    if (!generateWatermark.isPresent()) {
-      sourceOutput.collect(element.record());
+    T record = element.record();
+    if (generateProcessingTimestamp == null) {
+      sourceOutput.collect(record);
     } else {
-      TimestampData wm = TimestampData.fromEpochMillis(Long.MIN_VALUE);
+      TimestampData rowTime = TimestampData.fromEpochMillis(Long.MIN_VALUE);
 
-      if (generateWatermark.get()) {
-        wm = ArcticUtils.getCurrentTimestampData(timeZone);
+      if (generateProcessingTimestamp) {
+        rowTime = ArcticUtils.getCurrentTimestampData(timeZone);
       }
-      RowData d = new JoinedRowData((RowData) r, GenericRowData.of(wm));
-      sourceOutput.collect((T) d);
+      Preconditions.checkArgument(record instanceof RowData,
+          "Custom watermark strategy doesn't support %s, except RowData for now.",
+          record.getClass());
+      RowData rowData = new JoinedRowData((RowData) record, GenericRowData.of(rowTime));
+      sourceOutput.collect((T) rowData);
     }
     split.updateOffset(new Object[]{element.insertFileOffset(), element.insertRecordOffset(),
         element.deleteFileOffset(), element.deleteRecordOffset()});
   }
 
-  public void generateWatermark(SourceOutput<T> sourceOutput) {
-    if (!generateWatermark.isPresent()) {
-      return;
-    }
-    // todo optimize
-    if (sourceOutput == null) {
-      LOGGER.warn("generateWatermark. But it can not be sent due to there is no data in source before.");
-      return;
-    }
-    Watermark watermark;
-    long now = System.currentTimeMillis();
-    if (now - lastTime < autoWatermarkInterval) {
-      return;
-    }
-
-    if (generateWatermark.get()) {
-      watermark = new Watermark(now);
-      sourceOutput.emitWatermark(watermark);
-    } else {
-//      watermark = Watermark;
-    }
-  }
-
-  public void startGenerateWatermark() {
-    generateWatermark = Optional.of(true);
+  public void startGenerateTimestamp() {
+    generateProcessingTimestamp = true;
   }
 
 }

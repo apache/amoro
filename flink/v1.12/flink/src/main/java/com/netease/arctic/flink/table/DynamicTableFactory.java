@@ -210,6 +210,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(ArcticValidator.ARCTIC_CATALOG);
     options.add(ArcticValidator.ARCTIC_TABLE);
     options.add(ArcticValidator.ARCTIC_DATABASE);
+    options.add(ArcticValidator.ARCTIC_WATERMARK);
+    options.add(ArcticValidator.WATERMARK_IDLE_TIMEOUT);
     options.add(METASTORE_URL_OPTION);
     return options;
   }

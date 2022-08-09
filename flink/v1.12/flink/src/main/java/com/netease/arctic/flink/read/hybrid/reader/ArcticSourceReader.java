@@ -46,13 +46,14 @@ public class ArcticSourceReader<T> extends
   public ArcticSourceReader(
       ReaderFunction<T> readerFunction,
       Configuration config,
-      SourceReaderContext context) {
+      SourceReaderContext context,
+      boolean generateWatermarkTimestamp) {
     super(
         () -> new HybridSplitReader<>(
             readerFunction,
             context
         ),
-        new ArcticRecordEmitter<T>(config, context.getClass().getClassLoader()),
+        new ArcticRecordEmitter<>(config, context.getClass().getClassLoader(), generateWatermarkTimestamp),
         config,
         context);
   }
@@ -91,6 +92,6 @@ public class ArcticSourceReader<T> extends
       return;
     }
     LOGGER.info("receive StartWatermarkEvent");
-    ((ArcticRecordEmitter) recordEmitter).startGenerateWatermark();
+    ((ArcticRecordEmitter) recordEmitter).startGenerateTimestamp();
   }
 }
