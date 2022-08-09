@@ -33,7 +33,7 @@ public class DDLTracerService extends IJDBCService {
   private static final String ADD_COLUMN = " ADD COLUMN ";
   private static final String ALTER_COLUMN = " ALTER COLUMN %s ";
   private static final String MOVE_FIRST = " ALTER COLUMN %s FIRST ";
-  private static final String MOVE_AFTER_COLUMN = "ADD COLUMN %s AFTER %s";
+  private static final String MOVE_AFTER_COLUMN = "ALTER COLUMN %s AFTER %s";
   private static final String RENAME_COLUMN = "RENAME COLUMN %s TO %s ";
   private static final String DROP_COLUMNS = "DROP COLUMN %s";
   private static final String SET_PROPERTIES = " SET TBLPROPERTIES (%s)";
@@ -64,7 +64,7 @@ public class DDLTracerService extends IJDBCService {
         case ADD:
           sql.append(ADD_COLUMN).append(updateColumn.getName());
           if (updateColumn.getType() != null) {
-            sql.append(String.format(TYPE, updateColumn.getType()));
+            sql.append(" ").append(updateColumn.getType()).append(" ");
           }
           if (updateColumn.getDoc() != null) {
             sql.append(String.format(DOC, updateColumn.getDoc()));
@@ -200,14 +200,11 @@ public class DDLTracerService extends IJDBCService {
         tableIdentifier.catalog = meta.getTableIdentifier().getCatalog();
         tableIdentifier.database = meta.getTableIdentifier().getDatabase();
         tableIdentifier.tableName = meta.getTableIdentifier().getTableName();
-        if (meta.getTableIdentifier().getTableName().equals("test_schema")) {
-          syncDDl(tableIdentifier);
-        }
+        syncDDl(tableIdentifier);
       });
     }
 
     public void syncDDl(TableIdentifier identifier) {
-      Long commitTime = System.currentTimeMillis();
       ArcticCatalog catalog = CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), identifier.getCatalog());
       com.netease.arctic.table.TableIdentifier tmp = com.netease.arctic.table.TableIdentifier.of(
           identifier.getCatalog(),
@@ -217,17 +214,16 @@ public class DDLTracerService extends IJDBCService {
       Table table = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
       table.refresh();
       int cacheSchemaId = ServiceContainer.getDdlTracerService().getCurrentSchemaId(identifier);
-
-      if (table.schema().schemaId() == cacheSchemaId) {
-        return;
-      }
       Map<Integer, Schema> allSchemas = table.schemas();
-      Schema cacheSchema = allSchemas.get(cacheSchemaId);
       List<Integer> newSchemas =
           allSchemas.keySet().stream().filter(e -> e > cacheSchemaId).sorted().collect(Collectors.toList());
+
+      Schema cacheSchema = allSchemas.get(cacheSchemaId);
       for (int id : newSchemas) {
+        Long commitTime = System.currentTimeMillis();
         StringBuilder sql = new StringBuilder();
         sql.append(compareSchema(identifier, cacheSchema, allSchemas.get(id)));
+        cacheSchema = allSchemas.get(id);
         if (sql.length() > 0) {
           DDLInfo ddlInfo =
               DDLInfo.of(identifier, sql.toString(), id, DDLType.UPDATE_SCHEMA.name(), commitTime);

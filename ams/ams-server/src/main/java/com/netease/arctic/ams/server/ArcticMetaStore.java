@@ -145,7 +145,7 @@ public class ArcticMetaStore {
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
-      syncAndExpiredFileInfoCache(server);
+      // syncAndExpiredFileInfoCache(server);
       startSyncDDl(server);
       server.serve();
     } catch (Throwable t) {
@@ -168,11 +168,11 @@ public class ArcticMetaStore {
           startCondition.await();
         }
 
-        startOptimizeCheck(conf.getLong(ArcticMetaStoreConf.OPTIMIZE_CHECK_STATUS_INTERVAL));
-        startOptimizeCommit();
-        startExpiredClean();
-        startOrphanClean();
-        monitorOptimizerStatus();
+        // startOptimizeCheck(conf.getLong(ArcticMetaStoreConf.OPTIMIZE_CHECK_STATUS_INTERVAL));
+        // startOptimizeCommit();
+        // startExpiredClean();
+        // startOrphanClean();
+        // monitorOptimizerStatus();
         AmsRestServer.startRestServer(httpPort);
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
