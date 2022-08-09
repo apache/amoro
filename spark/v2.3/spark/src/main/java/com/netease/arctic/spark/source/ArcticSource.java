@@ -4,8 +4,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
 import com.netease.arctic.table.ArcticTable;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
