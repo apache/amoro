@@ -11,18 +11,22 @@ on:
       - "master"
     paths:
       - "spark/**"
+      - "!core/**"
+      - "!hive/**"
+      - "!ams/**"
 
   pull_request:
     branches:
       - "master"
     paths:
       - "spark/**"
+      - "!core/**"
+      - "!hive/**"
+      - "!ams/**"
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 8
@@ -43,9 +47,9 @@ jobs:
               - 'spark/v3.1/**'
 
       - name: test for spark 2.3
-        if: steps.changed-files.output.spark23 == 'true'
+        if: steps.changed-files.outputs.spark23 == 'true'
         run: mvn install -pl 'spark/v2.3/spark' -am -e
 
       - name: test for spark 3.1
-        if: steps.changed-files.output.spark31 == 'true'
-        run: mvn install -pl 'spark/v3.1/spark-runtime' -am -e
+        if: steps.changed-files.outputs.spark31 == 'true'
+        run: mvn install -pl 'spark/v3.1/spark-runtime,ams/ams-server' -am -e

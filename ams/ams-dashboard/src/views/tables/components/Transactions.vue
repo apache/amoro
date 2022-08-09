@@ -6,6 +6,7 @@
       :data-source="dataSource"
       :pagination="pagination"
       v-if="!hasBreadcrumb"
+      :loading="loading"
       @change="change"
     >
       <template #bodyCell="{ column, record }">
@@ -26,6 +27,7 @@
         :columns="breadcrumbColumns"
         :data-source="breadcrumbDataSource"
         :pagination="breadcrumbPagination"
+        :loading="loading"
         @change="change"
         class="g-mt-8"
       ></a-table>
@@ -164,7 +166,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .table-transactions {
-  padding: 12px;
+  padding: 18px 24px;
   .text-active {
     color: #1890ff;
     cursor: pointer;

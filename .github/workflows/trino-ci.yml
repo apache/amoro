@@ -13,7 +13,6 @@ on:
       - "hive/**"
       - "ams/ams-api/**"
 
-
   pull_request:
     branches:
       - "master"
@@ -25,9 +24,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v3
       - name: Set up JDK 11
@@ -37,4 +34,4 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build with Maven
-        run: mvn test -pl 'ams/ams-api,core,trino'
+        run: mvn test -pl 'ams/ams-api,core,trino,hive'

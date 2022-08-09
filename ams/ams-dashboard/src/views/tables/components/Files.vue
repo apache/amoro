@@ -28,7 +28,6 @@
         :data-source="breadcrumbDataSource"
         :pagination="breadcrumbPagination"
         @change="change"
-        class="g-mt-8"
         :loading="loading"
       >
         <template #bodyCell="{ column, record }">
@@ -183,7 +182,7 @@ onMounted(() => {
 
 <style lang="less" scoped>
 .table-partitons {
-  padding: 12px;
+  padding: 18px 24px;
   .text-active {
     color: #1890ff;
     cursor: pointer;
