@@ -3,6 +3,9 @@ package com.netease.arctic.spark.source;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
+import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -46,7 +49,13 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
 
   @Override
   public DataSourceTable loadTable(TableIdentifier identifier) {
-    return null;
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+            catalog.name(), identifier.database().get(), identifier.table()
+    );
+    ArcticTable arcticTable = catalog.loadTable(tableId);
+    return ArcticSparkTable.ofArcticTable(arcticTable);
   }
 
   @Override
