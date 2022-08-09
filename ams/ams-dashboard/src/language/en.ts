@@ -123,5 +123,6 @@ export default {
   ok: 'Ok',
   partitonField: 'Partiton Field',
   otherProperties: 'Other Properties',
-  errorMessage: 'Error Message'
+  errorMessage: 'Error Message',
+  copySuccess: 'Copy Success'
 }

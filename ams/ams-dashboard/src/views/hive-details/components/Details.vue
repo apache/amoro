@@ -48,7 +48,7 @@ const props = defineProps<{ schema: IField[], partitionColumnList: IField[]}>()
 <style lang="less" scoped>
 .hive-table-detail {
   .left-content {
-    padding: 0 12px 12px;
+    padding: 0 24px 12px;
     width: 66%;
   }
   .table-attrs {

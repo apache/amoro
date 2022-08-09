@@ -40,6 +40,7 @@ import { getOperations } from '@/services/table.service'
 import { useRoute } from 'vue-router'
 import { dateFormat } from '@/utils'
 import useClipboard from 'vue-clipboard3'
+import { message } from 'ant-design-vue'
 
 const { toClipboard } = useClipboard()
 const { t } = useI18n()
@@ -71,8 +72,10 @@ async function getOperationInfo() {
       ...sourceData,
       page: pagination.current,
       pageSize: pagination.pageSize
-    });
-    (result?.list || []).forEach((ele: OperationItem) => {
+    })
+    const { total, list } = result
+    pagination.total = total;
+    (list || []).forEach((ele: OperationItem) => {
       ele.ts = ele.ts ? dateFormat(ele.ts) : ''
       dataSource.push(ele)
     })
@@ -103,6 +106,8 @@ function cancle() {
 async function onCopy() {
   try {
     await toClipboard(activeCopyText.value)
+    message.success(t('copySuccess'))
+    cancle()
   } catch (error) {}
 }
 
@@ -115,6 +120,9 @@ onMounted(() => {
 <style lang="less">
 .table-operations {
   padding: 12px;
+  .ant-table-tbody > tr > td {
+    white-space: pre;
+  }
   .text-active {
     color: #1890ff;
     cursor: pointer;
@@ -123,5 +131,6 @@ onMounted(() => {
 .operation-wrap .ant-modal-body {
   max-height: 360px;
   overflow-y: auto;
+  white-space: pre;
 }
 </style>

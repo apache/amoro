@@ -219,8 +219,8 @@ export enum debugResultBgcMap {
 }
 
 export enum upgradeStatusMap {
-  failed = 'failed',
-  upgrading = 'upgrading',
-  success = 'success',
-  none = 'none' // can upgrade
+  failed = 'FAILED',
+  upgrading = 'UPGRADING',
+  success = 'SUCESS',
+  none = 'NONE' // can upgrade
 }

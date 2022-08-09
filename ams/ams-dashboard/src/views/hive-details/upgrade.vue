@@ -97,16 +97,19 @@ async function getDetails() {
 
 function onCofirm() {
   getParams()
-  upgradeTable()
 }
 
-function getParams() {
+async function getParams() {
   pkName.length = 0
   const pkList = schemaFieldRef.value.getPkname()
   pkList.forEach((ele: DetailColumnItem) => {
     pkName.push(ele)
   })
-  Object.assign(propertiesObj, propertiesRef.value.getProperties())
+  const properties = await propertiesRef.value.getProperties()
+  if (properties) {
+    Object.assign(propertiesObj, propertiesRef.value.getProperties())
+    upgradeTable()
+  }
 }
 
 async function upgradeTable() {

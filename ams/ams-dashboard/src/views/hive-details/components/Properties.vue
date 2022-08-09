@@ -5,10 +5,47 @@
       <div class="td g-flex-ac">{{$t('key')}}</div>
       <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
     </div>
-    <div class="config-row g-flex-ac" v-for="(item, index) in propertiesArray" :key="item.uuid">
+    <a-form ref="propertiesFormRef" :model="propertiesArray" layout="inline" name="propertiesForm">
+      <div class="config-row g-flex-ac" v-for="item in propertiesArray" :key="item.uuid">
+        <a-form-item
+          :name="item.uuid + '_key'"
+        >
+          <a-auto-complete
+            v-model:value="item.key"
+            :name="item.uuid + '_key'"
+            :options="options"
+            @select="onSelect"
+            :filter-option="filterOption"
+            style="width: 40%"
+            class="g-mr-12"
+          />
+        </a-form-item>
+        <a-form-item
+          :name="item.uuid + '_value'"
+        >
+          <a-input
+            v-model:value="item.value"
+            :name="item.uuid + '_value'"
+            :maxlength="64"
+            style="width: 40%; margin-right: 8px"
+          />
+          <!-- <close-outlined class="icon-close" @click="removeRule(item, index)"  /> -->
+        </a-form-item>
+        <!-- <a-form-item :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
+          <a-input
+            :name="item.uuid + '_value'"
+            v-model:value="item.value"
+            :maxlength="64"
+          />
+        </a-form-item> -->
+        <!-- <a-form-item> -->
+          <close-outlined class="icon-close" @click="removeRule(item, index)"  />
+        <!-- </a-form-item> -->
+      </div>
+    </a-form>
+    <!-- <div class="config-row g-flex-ac" v-for="(item, index) in propertiesArray" :key="item.uuid">
       <a-auto-complete
         v-model:value="item.key"
-        placeholder=""
         :name="item.uuid + '_key'"
         :options="options"
         @select="onSelect"
@@ -16,13 +53,12 @@
         class="g-mr-12"
       />
       <a-input
-        placeholder=""
         :name="item.uuid + '_value'"
         v-model:value="item.value"
         :maxlength="64"
       />
       <close-outlined class="icon-close" @click="removeRule(item, index)"  />
-    </div>
+    </div> -->
     <a-button class="config-btn" @click="addRule">+</a-button>
   </div>
 </template>
@@ -33,6 +69,7 @@ import { IMap, IKeyAndValue } from '@/types/common.type'
 import { CloseOutlined } from '@ant-design/icons-vue'
 import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
+// import { usePlaceholder } from '@/hooks/usePlaceholder'
 
 interface IItem {
   key: string
@@ -44,6 +81,20 @@ const props = defineProps<{ propertiesObj: IMap<string> }>()
 const propertiesArray = reactive<IItem[]>([])
 const options = ref<IMap<string>[]>()
 const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
+const propertiesFormRef = ref()
+
+// const placeholder = reactive(usePlaceholder())
+
+// async function validatePass(rule: Rule, value: string) {
+//   if (value === '') {
+//     return Promise.reject(Error('Please input'))
+//   } else {
+//     // if (formState.checkPass !== '') {
+//     //   formRef.value.validateFields('checkPass');
+//     // }
+//     return Promise.resolve()
+//   }
+// }
 
 watch(() => props.propertiesObj, () => {
   initPropertiesArray()
@@ -96,6 +147,18 @@ function addRule() {
     uuid: getUUid()
   })
 }
+function validateForm() {
+  propertiesFormRef.value
+    .validateFields()
+    .then(() => {
+      propertiesFormRef.value.resetFields()
+      return Promise.resolve()
+    })
+    .catch((info: Error) => {
+      console.log('Validate Failed:', info)
+      return Promise.reject(Error('Please input'))
+    })
+}
 defineExpose({
   getProperties() {
     const propObj: IMap<string> = {}
@@ -120,14 +183,15 @@ onMounted(() => {
     line-height: 32px;
     .config-header {
       width: 100%;
+      padding-right: 32px;
+      background: #fafafa;
+      border-bottom: 1px solid #e8e8f0;
       .td {
         width: 50%;
         height: 40px;
         padding: 8px 12px;
         color: #102048;
         font-weight: 500;
-        background: #fafafa;
-        border-bottom: 1px solid #e8e8f0;
       }
       .bd-left {
         position: relative;
@@ -149,6 +213,10 @@ onMounted(() => {
       margin-bottom: 8px;
       position: relative;
       padding-right: 32px;
+      width: 100%;
+      .ant-form-item {
+        width: 50%;
+      }
       .ant-select-auto-complete {
         width: 50%;
         input {

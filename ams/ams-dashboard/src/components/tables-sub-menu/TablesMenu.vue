@@ -165,10 +165,11 @@ export default defineComponent({
     const createTable = () => {
       emit('goCreatePage')
     }
-    const handleClickTable = (item: string) => {
-      state.tableName = item
+    const handleClickTable = (item: IMap<string>) => {
+      state.tableName = item.label
+      const path = item.type === 'HIVE' ? '/hive-tables' : '/tables'
       const pathQuery = {
-        path: '/tables',
+        path,
         query: {
           catalog: state.curCatalog,
           db: state.database,

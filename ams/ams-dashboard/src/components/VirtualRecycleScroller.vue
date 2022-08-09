@@ -7,7 +7,7 @@
     v-slot="{ item }"
     v-if="items.length && !loading"
   >
-    <div :class="{'active': activeItem === item.label}" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)" class="desc">
+    <div :class="{'active': activeItem === item.label, 'hive-table': item.type === 'HIVE'}" @mouseenter="handleMouseEnter(item)" @click="handleClickTable(item)" class="desc">
       <table-outlined v-if="iconName === 'tableOutlined'" class="g-mr-8" />
       <svg-icon v-if="iconName === 'database'" icon-class="database" class="g-mr-8" />
       <p :title="item.label" class="name g-text-nowrap">
@@ -38,7 +38,7 @@ export default defineComponent ({
     }
 
     const handleClickTable = (item: IMap<string>) => {
-      emit('handleClickTable', item.label)
+      emit('handleClickTable', item)
     }
 
     return {
@@ -91,6 +91,17 @@ export default defineComponent ({
   &:hover {
     background-color: #f6f7fa;
     color: @primary-color;
+  }
+  &.hive-table {
+    .name {
+      color: #79809a;
+    }
+    &:hover {
+      .name {
+        color: @primary-color;
+      }
+      background-color: #f6f7fa;
+    }
   }
   .name {
     max-width: 200px;

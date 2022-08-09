@@ -202,7 +202,7 @@ export default defineComponent({
     padding-left: 12px;
   }
   :deep(.ant-tabs-nav) {
-    padding-left: 12px;
+    padding-left: 24px;
     margin-bottom: 0;
   }
 }
