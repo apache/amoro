@@ -162,12 +162,10 @@ public class DDLTracerService extends IJDBCService {
       }
     }
     if (setPro.length() > 0) {
-      setSql.append(String.format(ALTER_TABLE, tableName))
-          .append(String.format(SET_PROPERTIES, setPro.deleteCharAt(setPro.length() - 1)));
+      setSql.append(String.format(ALTER_TABLE, tableName)).append(String.format(SET_PROPERTIES, setPro));
     }
     if (unsetPro.length() > 0) {
-      unsetSql.append(String.format(ALTER_TABLE, tableName))
-          .append(String.format(UNSET_PROPERTIES, unsetPro.deleteCharAt(unsetPro.length())));
+      unsetSql.append(String.format(ALTER_TABLE, tableName)).append(String.format(UNSET_PROPERTIES, unsetPro));
     }
     if (setSql.length() > 0) {
       DDLInfo ddlInfo =
