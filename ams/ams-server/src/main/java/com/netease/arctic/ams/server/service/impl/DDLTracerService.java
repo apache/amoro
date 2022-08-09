@@ -29,6 +29,8 @@ public class DDLTracerService extends IJDBCService {
 
   private static final Logger LOG = LoggerFactory.getLogger(DDLTracerService.class);
 
+  static final String DOT = ".";
+
   private static final String ALTER_TABLE = "ALTER TABLE %s ";
   private static final String ADD_COLUMN = " ADD COLUMN ";
   private static final String ALTER_COLUMN = " ALTER COLUMN %s ";
@@ -62,7 +64,9 @@ public class DDLTracerService extends IJDBCService {
           new StringBuilder(String.format(ALTER_TABLE, TableMetadataUtil.getTableAllIdentifyName(tableIdentifier)));
       switch (DDLTracer.SchemaOperateType.valueOf(operateType)) {
         case ADD:
-          sql.append(ADD_COLUMN).append(updateColumn.getName());
+          String colName = updateColumn.getParent() == null ? updateColumn.getName() :
+              updateColumn.getParent() + DOT + updateColumn.getName();
+          sql.append(ADD_COLUMN).append(colName);
           if (updateColumn.getType() != null) {
             sql.append(" ").append(updateColumn.getType()).append(" ");
           }
@@ -275,7 +279,12 @@ public class DDLTracerService extends IJDBCService {
             sb.append(String.format(ALTER_COLUMN, oldField.name()));
 
             if (!oldField.type().equals(field.type())) {
-              sb.append(String.format(TYPE, field.type().toString()));
+              if ((oldField.type() instanceof Types.MapType) && (field.type() instanceof Types.MapType)) {
+                sb = new StringBuilder();
+                sb.append(String.format(ALTER_TABLE, tableName)).append(compareFieldType(oldField, field));
+              } else {
+                sb.append(String.format(TYPE, field.type().toString()));
+              }
             }
 
             if (!Objects.equals(oldField.doc(), field.doc())) {
@@ -298,6 +307,28 @@ public class DDLTracerService extends IJDBCService {
         }
       }
       return rs.toString();
+    }
+
+    private StringBuilder compareFieldType(Types.NestedField oldField, Types.NestedField field) {
+      StringBuilder sb = new StringBuilder();
+
+      Types.StructType oldValueType = oldField.type().asMapType().valueType().asStructType();
+      List<Types.NestedField> oldValueFields = oldValueType.fields();
+      Types.StructType valueType = field.type().asMapType().valueType().asStructType();
+      List<Types.NestedField> valueFields = valueType.fields();
+      for (Types.NestedField old : oldValueFields) {
+        if (valueType.field(old.fieldId()) == null) {
+          //drop column
+          sb.append(String.format(DROP_COLUMNS, oldField.name() + DOT + old.name()));
+        }
+      }
+      for (Types.NestedField newF : valueFields) {
+        if (oldValueType.field(newF.fieldId()) == null) {
+          //add column
+          sb.append(ADD_COLUMN).append(field.name()).append(DOT).append(newF.name()).append(" ").append(newF.type());
+        }
+      }
+      return sb;
     }
   }
 }
