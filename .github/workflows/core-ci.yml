@@ -1,13 +1,24 @@
 # This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Java CI with Maven
+name: Core CI with Maven
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - "master"
+    paths:
+      - "core/**"
+      - "hive/**"
+      - "ams/ams-api/**"
+
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - "master"
+    paths:
+      - "core/**"
+      - "hive/**"
+      - "ams/ams-api/**"
 
 jobs:
   build:
@@ -22,7 +33,8 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
           cache: maven
-      - name: Build with Maven
+      - name: Build all module with Maven
         run: mvn install -pl '!trino'
+
       - name: Build Flink 1.14 with Maven
         run: mvn package -pl 'com.netease.arctic:arctic-flink' -Pflink-1.14 -amd

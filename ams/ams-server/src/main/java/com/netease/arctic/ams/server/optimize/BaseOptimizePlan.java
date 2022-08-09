@@ -263,7 +263,7 @@ public abstract class BaseOptimizePlan {
     Snapshot snapshot;
     if (arcticTable.isKeyedTable()) {
       snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
-      if (!snapshotIsCached.test(snapshot.snapshotId())) {
+      if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
                 "wait file cache sync latest file info", snapshot.snapshotId());
         return false;
