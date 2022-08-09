@@ -18,17 +18,10 @@
 
 package com.netease.arctic.table;
 
-import org.apache.iceberg.util.StructLikeMap;
-
-import java.util.Map;
 
 /**
  * Base table store of an {@link KeyedTable}, storing base records in it.
  */
 public interface BaseTable extends UnkeyedTable {
 
-  @Deprecated
-  Map<String, Long> maxTransactionId();
-
-  StructLikeMap<Long> partitionMaxTransactionId();
 }

@@ -18,9 +18,14 @@
 
 package com.netease.arctic.table;
 
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.util.StructLikeMap;
+import java.util.Map;
+
 
 /**
  * Represents an arctic table with keys supported, consist of one {@link ChangeTable} and one {@link BaseTable}.
@@ -85,6 +90,19 @@ public interface KeyedTable extends ArcticTable {
    */
   long beginTransaction(String signature);
 
+  /**
+   * get max transactionId of each partition. use {@link #partitionMaxTransactionId()} instead.
+   * @return map of max transactionId of each partition
+   */
+  @Deprecated
+  Map<String, Long> maxTransactionId();
+
+  /**
+   * get max transactionId of each partition
+   * @return map of max transactionId of each partition
+   */
+  StructLikeMap<Long> partitionMaxTransactionId();
+
   @Override
   default boolean isKeyedTable() {
     return true;
@@ -94,4 +112,8 @@ public interface KeyedTable extends ArcticTable {
   default KeyedTable asKeyedTable() {
     return this;
   }
+
+  RewritePartitions newRewritePartitions() ;
+
+  OverwriteBaseFiles newOverwriteBaseFiles() ;
 }
