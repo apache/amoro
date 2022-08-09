@@ -3,6 +3,7 @@ package com.netease.arctic.spark.source;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
+import com.netease.arctic.table.ArcticTable;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -17,11 +18,11 @@ import org.apache.spark.sql.sources.v2.WriteSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
+
 import java.util.Optional;
 
 public class ArcticSource implements DataSourceRegister, DataSourceV2,
     ReadSupport, WriteSupport, TableSupport {
-
   @Override
   public String shortName() {
     return "arctic";
@@ -33,20 +34,24 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   }
 
   @Override
-  public Optional<DataSourceWriter> createWriter(
-      String jobId, StructType schema, SaveMode mode, DataSourceOptions options) {
+  public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
+                                                 SaveMode mode, DataSourceOptions options) {
     return Optional.empty();
   }
 
   @Override
-  public DataSourceTable createTable(
-      TableIdentifier identifier, StructType schema) {
+  public DataSourceTable createTable(TableIdentifier identifier, StructType schema) {
     return null;
   }
 
   @Override
   public DataSourceTable loadTable(TableIdentifier identifier) {
-    return null;
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), identifier.database().get(), identifier.table());
+    ArcticTable arcticTable = catalog.loadTable(tableId);
+    return ArcticSparkTable.ofArcticTable(arcticTable);
   }
 
   @Override
@@ -83,8 +88,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
     TableIdentifier identifier = tableDesc.identifier();
     ArcticCatalog catalog = catalog(spark.conf());
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
-        catalog.name(), identifier.database().get(), identifier.table()
-    );
+        catalog.name(), identifier.database().get(), identifier.table());
     return catalog.tableExists(tableId);
   }
 
