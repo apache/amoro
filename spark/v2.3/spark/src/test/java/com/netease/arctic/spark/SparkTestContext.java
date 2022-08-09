@@ -43,6 +43,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoder;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
@@ -304,6 +305,16 @@ public class SparkTestContext extends ExternalResource {
             .toArray(Object[]::new)
         ).collect(Collectors.toList());
     return this.rows;
+  }
+
+  protected <T> List<T> sql(String query, Encoder<T> encoder, Object... args) throws RuntimeException {
+    MessageFormat format = new MessageFormat(query);
+    String sql = format.format(args);
+    if (args.length == 0) {
+      sql = query;
+    }
+    LOG.info("execute sql: " + sql);
+    return spark.sql(sql).as(encoder).collectAsList();
   }
 
   protected void assertEquals(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {
