@@ -29,12 +29,14 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
+import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -132,23 +134,21 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
   @Override
   protected KeyedHiveTable loadKeyedTable(TableMeta tableMeta) {
-    TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-    Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    BaseTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
-        useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, client);
+    ArcticHadoopTableOperations baseTableOps = new ArcticHadoopTableOperations(
+            new Path(baseLocation), fileIO, tableMetaStore.getConfiguration());
 
-    Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
-    ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-        useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, client);
-    return new KeyedHiveTable(tableMeta, tableLocation,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
+    ArcticHadoopTableOperations changeTableOps = new ArcticHadoopTableOperations(
+            new Path(changeLocation), fileIO, tableMetaStore.getConfiguration()
+    );
+
+    return new KeyedHiveTable(
+            tableMeta, tableLocation, client, fileIO, baseTableOps, changeTableOps
+    );
   }
 
   @Override
@@ -194,7 +194,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
     @Override
     protected KeyedHiveTable createKeyedTable(TableMeta meta) {
-      TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
@@ -204,27 +203,28 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-      Table baseIcebergTable = tableMetaStore.doAs(() -> {
+      tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, tableProperties, baseLocation);
         } catch (Exception e) {
           throw new IllegalStateException("create base table failed", e);
         }
       });
-      BaseTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
-          useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-          fileIO, client);
+      ArcticHadoopTableOperations baseTableOps = new ArcticHadoopTableOperations(
+              new Path(baseLocation), fileIO, tableMetaStore.getConfiguration()
+      );
 
-      Table changeIcebergTable = tableMetaStore.doAs(() -> {
+      tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, tableProperties, changeLocation);
         } catch (Exception e) {
           throw new IllegalStateException("create change table failed", e);
         }
       });
-      ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-          useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
-          fileIO, client);
+      ArcticHadoopTableOperations changeTableOps = new ArcticHadoopTableOperations(
+              new Path(changeLocation), fileIO, tableMetaStore.getConfiguration()
+      );
+
 
       try {
         hiveClientPool.run(client -> {
@@ -238,8 +238,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       } catch (TException | InterruptedException e) {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
-      return new KeyedHiveTable(meta, tableLocation,
-          primaryKeySpec, client, baseTable, changeTable);
+      return new KeyedHiveTable(meta, tableLocation, client, fileIO, baseTableOps, changeTableOps);
     }
 
     @Override

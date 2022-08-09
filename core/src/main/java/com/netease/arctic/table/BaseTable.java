@@ -18,6 +18,8 @@
 
 package com.netease.arctic.table;
 
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.RewritePartitions;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.Map;
@@ -26,6 +28,10 @@ import java.util.Map;
  * Base table store of an {@link KeyedTable}, storing base records in it.
  */
 public interface BaseTable extends UnkeyedTable {
+
+  RewritePartitions newRewritePartition();
+
+  OverwriteBaseFiles newOverwriteBaseFiles();
 
   @Deprecated
   Map<String, Long> maxTransactionId();

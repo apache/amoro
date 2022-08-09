@@ -74,7 +74,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     ));
     this.initTxId = txId;
 
-    RewritePartitions overwrite = ArcticOperations.newRewritePartitions(testKeyedTable);
+    RewritePartitions overwrite = testKeyedTable.baseTable().newRewritePartition();
     files.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
     overwrite.commit();
@@ -118,7 +118,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
-    OverwriteBaseFiles overwrite = ArcticOperations.newOverwriteBaseFiles(testKeyedTable);
+    OverwriteBaseFiles overwrite = testKeyedTable.baseTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
         .withTransactionId(txId)
@@ -161,7 +161,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
-    OverwriteBaseFiles overwrite = ArcticOperations.newOverwriteBaseFiles(testKeyedTable);
+    OverwriteBaseFiles overwrite = testKeyedTable.baseTable().newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.withTransactionId(txId);
     overwrite.overwriteByRowFilter(

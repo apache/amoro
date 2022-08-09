@@ -180,36 +180,20 @@ public class BaseArcticCatalog implements ArcticCatalog {
   }
 
   protected KeyedTable loadKeyedTable(TableMeta tableMeta) {
-    TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     String changeLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-    Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
-        useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, client);
-
-    Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
-    ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-        useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, client);
-    return new BaseKeyedTable(tableMeta, tableLocation,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
+    ArcticHadoopTableOperations baseTableOps = new ArcticHadoopTableOperations(
+            new Path(baseLocation),  fileIO, tableMetaStore.getConfiguration()
+    );
+    ArcticHadoopTableOperations changeTableOps = new ArcticHadoopTableOperations(
+            new Path(changeLocation), fileIO, tableMetaStore.getConfiguration()
+    );
+    return new BaseKeyedTable(tableMeta, tableLocation, client, fileIO, baseTableOps, changeTableOps);
   }
 
-  protected PrimaryKeySpec buildPrimaryKeySpec(Schema schema, TableMeta tableMeta) {
-    PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(schema);
-    if (tableMeta.getKeySpec() != null &&
-        tableMeta.getKeySpec().getFields() != null &&
-        tableMeta.getKeySpec().getFields().size() > 0) {
-      for (String field : tableMeta.getKeySpec().getFields()) {
-        builder.addColumn(field);
-      }
-    }
-    return builder.build();
-  }
 
   protected UnkeyedTable loadUnKeyedTable(TableMeta tableMeta) {
     TableIdentifier tableIdentifier = TableIdentifier.of(tableMeta.getTableIdentifier());
@@ -516,7 +500,6 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
 
     protected KeyedTable createKeyedTable(TableMeta meta) {
-      TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
@@ -526,30 +509,28 @@ public class BaseArcticCatalog implements ArcticCatalog {
       tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-      Table baseIcebergTable = tableMetaStore.doAs(() -> {
+      tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, tableProperties, baseLocation);
         } catch (Exception e) {
           throw new IllegalStateException("create base table failed", e);
         }
       });
+      ArcticHadoopTableOperations baseTableOps = new ArcticHadoopTableOperations(
+              new Path(baseLocation), fileIO, tableMetaStore.getConfiguration()
+      );
 
-      BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
-          useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-          fileIO, client);
-
-      Table changeIcebergTable = tableMetaStore.doAs(() -> {
+      tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, tableProperties, changeLocation);
         } catch (Exception e) {
           throw new IllegalStateException("create change table failed", e);
         }
       });
-      ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-          useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
-          fileIO, client);
-      return new BaseKeyedTable(meta, tableLocation,
-          primaryKeySpec, client, baseTable, changeTable);
+      ArcticHadoopTableOperations changeTableOps = new ArcticHadoopTableOperations(
+              new Path(changeLocation), fileIO, tableMetaStore.getConfiguration()
+      );
+      return new BaseKeyedTable(meta, tableLocation, client, fileIO, baseTableOps, changeTableOps);
     }
 
 

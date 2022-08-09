@@ -24,6 +24,8 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedSchemaUpdate;
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScan;
@@ -34,6 +36,7 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableOperations;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -49,21 +52,50 @@ import java.util.Map;
 public class BaseKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
-  private final AmsClient client;
+  protected final AmsClient client;
 
+  protected final TableIdentifier identifier;
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
   protected TableMeta tableMeta;
 
   public BaseKeyedTable(
-      TableMeta tableMeta, String tableLocation,
-      PrimaryKeySpec primaryKeySpec, AmsClient client, BaseTable baseTable, ChangeTable changeTable) {
+      TableMeta tableMeta,
+      String tableLocation,
+      AmsClient client,
+      ArcticFileIO arcticFileIO,
+      TableOperations baseTableOps,
+      TableOperations changeTableOps) {
     this.tableMeta = tableMeta;
     this.tableLocation = tableLocation;
-    this.primaryKeySpec = primaryKeySpec;
     this.client = client;
-    this.baseTable = baseTable;
-    this.changeTable = changeTable;
+
+    this.identifier = TableIdentifier.of(tableMeta.getTableIdentifier());
+
+    this.baseTable = createBaseTable(baseTableOps, arcticFileIO);
+    this.changeTable = createChangeTable(changeTableOps, arcticFileIO);
+
+    PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(baseTable.schema());
+    if (tableMeta.getKeySpec() != null &&
+        tableMeta.getKeySpec().getFields() != null &&
+        tableMeta.getKeySpec().getFields().size() > 0) {
+      for (String field : tableMeta.getKeySpec().getFields()) {
+        builder.addColumn(field);
+      }
+    }
+    this.primaryKeySpec = builder.build();
+  }
+
+  protected BaseTable createBaseTable(TableOperations ops, ArcticFileIO fileIO) {
+    return new BaseInternalTable(
+        this.identifier, new org.apache.iceberg.BaseTable(ops, this.identifier.getTableName()),
+        fileIO, client);
+  }
+
+  protected ChangeTable createChangeTable(TableOperations ops, ArcticFileIO fileIO) {
+    return new ChangeInternalTable(
+        this.identifier, new org.apache.iceberg.BaseTable(ops, this.identifier.getTableName()),
+        fileIO, client);
   }
 
   @Override
@@ -177,12 +209,22 @@ public class BaseKeyedTable implements KeyedTable {
     return name();
   }
 
-  public static class BaseInternalTable extends BaseUnkeyedTable implements BaseTable {
+  public class BaseInternalTable extends BaseUnkeyedTable implements BaseTable {
 
     public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client) {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
+    }
+
+    @Override
+    public RewritePartitions newRewritePartition() {
+      return new RewritePartitions(this);
+    }
+
+    @Override
+    public OverwriteBaseFiles newOverwriteBaseFiles() {
+      return new OverwriteBaseFiles(BaseKeyedTable.this);
     }
 
     @Override

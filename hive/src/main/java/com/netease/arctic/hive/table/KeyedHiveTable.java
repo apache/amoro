@@ -24,26 +24,33 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.TableOperations;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
 public class KeyedHiveTable extends BaseKeyedTable {
+
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
-      PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      BaseTable baseTable, ChangeTable changeTable) {
-    super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
+      ArcticFileIO arcticFileIO,
+      TableOperations baseTableOps,
+      TableOperations changeTableOps) {
+    super(tableMeta, tableLocation, client, arcticFileIO, baseTableOps, changeTableOps);
   }
 
-  public static class HiveBaseInternalTable extends BaseInternalTable {
+  @Override
+  protected BaseTable createBaseTable(TableOperations ops, ArcticFileIO fileIO) {
+    return new HiveBaseInternalTable(identifier,
+        new org.apache.iceberg.BaseTable(ops, identifier.getTableName()), fileIO, client);
+  }
+
+  public class HiveBaseInternalTable extends BaseInternalTable {
 
     public HiveBaseInternalTable(
         TableIdentifier tableIdentifier,

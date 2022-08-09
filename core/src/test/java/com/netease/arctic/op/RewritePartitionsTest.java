@@ -46,7 +46,7 @@ public class RewritePartitionsTest extends TableTestBase {
     ));
     this.initTxId = txId;
 
-    RewritePartitions overwrite = ArcticOperations.newRewritePartitions(testKeyedTable);
+    RewritePartitions overwrite = testKeyedTable.baseTable().newRewritePartition();
     files.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
     overwrite.commit();
@@ -89,7 +89,7 @@ public class RewritePartitionsTest extends TableTestBase {
         newGenericRecord(TABLE_SCHEMA, 9, "999", quickDate(1))
     );
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
-    RewritePartitions overwrite = ArcticOperations.newRewritePartitions(testKeyedTable);
+    RewritePartitions overwrite = testKeyedTable.baseTable().newRewritePartition();
     newFiles.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
     overwrite.commit();

@@ -18,11 +18,9 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.op.ArcticOperations;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
@@ -117,7 +115,7 @@ public class SparkWrite {
   private class DynamicOverwrite extends BaseBatchWrite {
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      RewritePartitions rewritePartitions = ArcticOperations.newRewritePartitions(table);
+      RewritePartitions rewritePartitions = table.baseTable().newRewritePartition();
       rewritePartitions.withTransactionId(transactionId);
 
       for (DataFile file : files(messages)) {
@@ -136,7 +134,7 @@ public class SparkWrite {
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      OverwriteBaseFiles overwriteBaseFiles = ArcticOperations.newOverwriteBaseFiles(table);
+      OverwriteBaseFiles overwriteBaseFiles = table.baseTable().newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
       overwriteBaseFiles.withTransactionId(transactionId);
 
