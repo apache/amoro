@@ -32,6 +32,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,6 +43,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -113,14 +115,24 @@ public class TestKeyedTableDML extends SparkTestBase {
 
 
   @Test
-  public void testSelectDeleteTable() throws IOException {
-    dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
-    insertBasePosDeleteFiles(2);
+  public void testSelectDeleteAll() throws IOException {
+    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
+    insertBasePosDeleteFiles(dataFiles);
     rows = sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(0, rows.size());
   }
 
-  protected List<DeleteFile> insertBasePosDeleteFiles(long transactionId) throws IOException {
+  @Test
+  public void testSelectDeletePart() throws IOException {
+    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
+    List<DataFile> deleteFiles = dataFiles.stream().filter(dataFile -> Objects.equals(18993,
+        dataFile.partition().get(0, Object.class))).collect(Collectors.toList());
+    insertBasePosDeleteFiles(deleteFiles);
+    rows = sql("select id from {0}.{1}", database, table);
+    assertContainIdSet(rows, 0, 2, 3);
+  }
+
+  protected void insertBasePosDeleteFiles(List<DataFile> dataFiles) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -136,7 +148,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
         // write pos delete
         SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(keyedTable)
-            .withTransactionId(transactionId).buildBasePosDeleteWriter(key.getMask(), key.getIndex(), partition);
+            .withTransactionId(2).buildBasePosDeleteWriter(key.getMask(), key.getIndex(), partition);
         for (DataFile nodeFile : nodeFiles) {
           writer.delete(nodeFile.path(), 0);
         }
@@ -146,7 +158,6 @@ public class TestKeyedTableDML extends SparkTestBase {
     RowDelta rowDelta = keyedTable.baseTable().newRowDelta();
     deleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.commit();
-    return deleteFiles;
   }
 
 }
