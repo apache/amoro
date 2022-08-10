@@ -65,10 +65,10 @@ public class ShuffleHelper implements Serializable {
   }
 
   /**
-   * TODO
+   * If using arctic table as build table, there will be an additional implicit field, valuing process time.
    * @param schema The physical schema in Arctic table
    * @param rowType Flink RowData type.
-   * @return
+   * @return the Arctic Schema with additional implicit field.
    */
   public static Schema addFieldsNotInArctic(Schema schema, RowType rowType) {
     Types.NestedField[] nestedFields = new Types.NestedField[rowType.getFieldCount()];

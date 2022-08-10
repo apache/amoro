@@ -28,6 +28,9 @@ import org.apache.flink.table.data.TimestampData;
 import java.io.Serializable;
 import java.util.TimeZone;
 
+/**
+ * Generate watermark according to the value in the last field of RowData.
+ */
 public class ArcticWatermarkGenerator implements WatermarkGenerator<RowData>, Serializable {
   public static final long serialVersionUID = 1L;
   private boolean generateWatermark = false;

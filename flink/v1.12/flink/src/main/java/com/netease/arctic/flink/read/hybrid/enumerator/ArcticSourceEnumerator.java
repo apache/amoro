@@ -182,7 +182,9 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   }
 
   /**
-   * TODO annotation
+   * Check whether all first splits have been finished or not.
+   * After all finished, enumerator will send a {@link StartWatermarkEvent} to notify all
+   * {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}.
    *
    * @param finishedSplitIds
    */

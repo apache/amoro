@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 
 /**
  * If using arctic table as build-table, FirstSplits can record the first splits planned by Enumerator.
- * After
  */
 public class FirstSplits implements Serializable {
 

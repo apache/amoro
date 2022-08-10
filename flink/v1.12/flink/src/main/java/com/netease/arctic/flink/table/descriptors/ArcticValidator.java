@@ -144,7 +144,8 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .defaultValue(Duration.ofMinutes(1))
           .withDescription(String.format("If %s set true, source will generate watermark after %s " +
                   "when there is no data. It's used in the cases that source has no data," +
-                  " or reader's number is greater than first splits'.",
+                  " or reader's number is greater than first splits, or some first splits are not finished," +
+                  " but some reader is idle'.",
               ARCTIC_WATERMARK.key(), "watermark.idle.timeout"));
 
   @Override

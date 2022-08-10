@@ -78,6 +78,8 @@ import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 public class ArcticCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
 
+  public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
+
   private final InternalCatalogBuilder catalogBuilder;
 
   private com.netease.arctic.catalog.ArcticCatalog internalCatalog;
@@ -179,11 +181,19 @@ public class ArcticCatalog extends AbstractCatalog {
         null);
   }
 
+  /**
+   * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in temporal join,
+   * as an alternative of lookup join, and use Arctic table as build table, i.e. right table.
+   * So the properties those required in temporal join will be put automatically.
+   * <p>
+   * If you don't want the properties, 'EXCLUDING ALL' is what you need.
+   * More details @see <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#like">LIKE</a>
+   */
   private void fillTableMetaPropertiesIfLookupLike(Map<String, String> properties, TableIdentifier tableIdentifier) {
     StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
     boolean isLookupLike = false;
-    for (int i = 0; i < stackTraceElements.length; i++) {
-      if (Objects.equal("lookupLikeSourceTable", stackTraceElements[i].getMethodName())) {
+    for (StackTraceElement stackTraceElement : stackTraceElements) {
+      if (Objects.equal(SQL_LIKE_METHOD, stackTraceElement.getMethodName())) {
         isLookupLike = true;
         break;
       }

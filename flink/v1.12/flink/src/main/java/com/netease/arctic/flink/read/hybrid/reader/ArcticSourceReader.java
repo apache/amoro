@@ -92,6 +92,6 @@ public class ArcticSourceReader<T> extends
       return;
     }
     LOGGER.info("receive StartWatermarkEvent");
-    ((ArcticRecordEmitter) recordEmitter).startGenerateTimestamp();
+    ((ArcticRecordEmitter) recordEmitter).startGenerateProcessingTimestamp();
   }
 }

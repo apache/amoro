@@ -99,6 +99,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   public DynamicTableFactory() {
   }
 
+  /**
+   * If table is create by ddl 'connector' option, not catalog.
+   * e.g. CREATE TABLE t (XXX) WITH ('connector'='arctic', ...);
+   */
   private void initCatalogInfo(Map<String, String> options) {
     if (internalCatalogName != null && internalCatalogBuilder != null) {
       return;

@@ -18,10 +18,11 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
+import com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader;
 import org.apache.flink.api.connector.source.SourceEvent;
 
 /**
- * It
+ * {@link ArcticSourceReader} won't set timestamp to RowData until receiving this Event.
  */
 public class StartWatermarkEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;

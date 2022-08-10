@@ -26,6 +26,9 @@ import org.apache.flink.table.data.RowData;
 import java.io.Serializable;
 import java.util.TimeZone;
 
+/**
+ * Generate {@link ArcticWatermarkGenerator}
+ */
 public class ArcticWatermarkStrategy implements WatermarkStrategy<RowData>, Serializable {
   public static final long serialVersionUID = 1L;
   private final TimeZone timeZone;

@@ -33,6 +33,7 @@ import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.data.TimestampData;
+import org.apache.flink.table.planner.codegen.CodeGeneratorContext;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -150,6 +151,9 @@ public class ArcticUtils {
     return toBase;
   }
 
+  /**
+   * keep the same logic with LocalTimestamp in SQL. Refer to {@link CodeGeneratorContext#addReusableLocalDateTime()}
+   */
   public static TimestampData getCurrentTimestampData(TimeZone timeZone){
     long ts = System.currentTimeMillis();
     return TimestampData.fromEpochMillis(ts + timeZone.getOffset(ts));

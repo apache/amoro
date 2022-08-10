@@ -85,7 +85,7 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
         element.deleteFileOffset(), element.deleteRecordOffset()});
   }
 
-  public void startGenerateTimestamp() {
+  public void startGenerateProcessingTimestamp() {
     generateProcessingTimestamp = true;
   }
 

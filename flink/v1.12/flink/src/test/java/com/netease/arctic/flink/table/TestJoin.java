@@ -42,16 +42,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.table.TableProperties.LOCATION;
+import static org.apache.flink.api.common.JobStatus.INITIALIZING;
 
 public class TestJoin extends FlinkTestBase {
 
@@ -76,13 +75,6 @@ public class TestJoin extends FlinkTestBase {
   @Test
   public void testLeftCdcLookupJoin() throws IOException {
     String table;
-    List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1L, "a", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.DELETE, 1L, "b", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.DELETE, 2L, "c", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.UPDATE_BEFORE, 3L, "d", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.UPDATE_AFTER, 4L, "e", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 5L, "e", LocalDateTime.now()});
 
     sql("CREATE TABLE left_view (id bigint, t2 string, opt timestamp(3), watermark for opt as opt) " +
         "with (" +
@@ -184,7 +176,7 @@ public class TestJoin extends FlinkTestBase {
   }
 
   @Test
-  public void testRightContinuousInsertLookupJoin() throws IOException {
+  public void testRightContinuousInsertLookupJoin() throws Exception {
     String table;
 
     sql("create table left_view (id bigint, t2 string, opt AS LOCALTIMESTAMP, watermark for opt as opt," +
@@ -241,6 +233,10 @@ public class TestJoin extends FlinkTestBase {
     TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
         "/*+OPTIONS('streaming'='true', 'watermark.idle.timeout'='41s')*/ for system_time as of u.opt as dim on u.id = dim.id");
 
+    JobClient jc = tableResult.getJobClient().get();
+    while (INITIALIZING.equals(jc.getJobStatus().get())) {
+      Thread.sleep(500L);
+    }
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
       Row i = iterator.next();
