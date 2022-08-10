@@ -16,7 +16,7 @@
         </a-tabs>
       </div>
     </div>
-     <u-loading v-if="loading" />
+    <u-loading v-if="loading" />
     <!-- upgrade table secondary page -->
     <router-view v-else @goBack="goBack"></router-view>
     <error-msg v-if="showErrorMsg" :msg="errorMessage" @cancle="showErrorMsg = false" />
@@ -80,7 +80,7 @@ export default defineComponent({
         })
         const { status, errorMessage } = result
         state.status = status
-        state.displayStatus = status === upgradeStatusMap.upgrading ? status : 'upgrade'
+        state.displayStatus = status === upgradeStatusMap.upgrading ? 'upgrading' : 'upgrade'
         state.errorMessage = errorMessage || ''
         if (status === upgradeStatusMap.upgrading) {
           statusInterval.value = setTimeout(() => {
@@ -143,7 +143,7 @@ export default defineComponent({
       () => route.query,
       (val, old) => {
         const { catalog, db, table } = val
-        if (catalog !== old.catalog && db !== old.db && table !== old.table) {
+        if (catalog !== old.catalog || db !== old.db || table !== old.table) {
           init()
         }
       }
@@ -185,7 +185,14 @@ export default defineComponent({
   flex-direction: column;
   .table-top {
     padding: 0 12px;
+    .right-btn {
+      position: relative;
+    }
     .fail-msg {
+      position: absolute;
+      bottom: -30px;
+      right: 0;
+      z-index: 1;
       font-size: 12px;
       width: 90px;
       color: #ff4d4f;

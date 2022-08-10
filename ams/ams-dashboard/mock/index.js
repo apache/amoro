@@ -495,7 +495,7 @@ module.exports = {
       }
     })
   },
-  'GET /ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/hive/details': (req, res) => {
+  'GET /mock/ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/hive/details': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -566,7 +566,7 @@ module.exports = {
       }
     })
   },
-  'GET /ams/v1/upgrade/properties': (req, res) => {
+  'GET /mock/ams/v1/upgrade/properties': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
@@ -576,14 +576,14 @@ module.exports = {
       }
     })
   },
-  'POST /ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/upgrade': (req, res) => {
+  'POST /mock/ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/upgrade': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',
       result: {}
     })
   },
-  'GET /ams/v1/tables/catalogs/trino_online_env/dbs/arctic10wforOptimizeContinue/tables/nation/operations': (req, res) => {
+  'GET /mock/ams/v1/tables/catalogs/trino_online_env/dbs/arctic10wforOptimizeContinue/tables/nation/operations': (req, res) => {
     res.json({
       code: 200,
       msg: 'success',

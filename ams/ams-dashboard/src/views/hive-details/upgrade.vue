@@ -105,11 +105,12 @@ async function getParams() {
   pkList.forEach((ele: DetailColumnItem) => {
     pkName.push(ele)
   })
-  const properties = await propertiesRef.value.getProperties()
-  if (properties) {
-    Object.assign(propertiesObj, propertiesRef.value.getProperties())
-    upgradeTable()
-  }
+  propertiesRef.value.getProperties().then((res) => {
+    if (res) {
+      Object.assign(propertiesObj, res)
+      upgradeTable()
+    }
+  })
 }
 
 async function upgradeTable() {

@@ -5,60 +5,41 @@
       <div class="td g-flex-ac">{{$t('key')}}</div>
       <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
     </div>
-    <a-form ref="propertiesFormRef" :model="propertiesArray" layout="inline" name="propertiesForm">
-      <div class="config-row g-flex-ac" v-for="item in propertiesArray" :key="item.uuid">
+    <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
+      <div class="config-row g-flex-ac" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
         <a-form-item
-          :name="item.uuid + '_key'"
+          :name="['data', index, 'key']"
+          :rules="[{
+            required: true,
+            message: `${$t(placeholder.selectPh)}`
+          }]"
+          class="g-mr-8"
         >
           <a-auto-complete
             v-model:value="item.key"
-            :name="item.uuid + '_key'"
             :options="options"
             @select="onSelect"
             :filter-option="filterOption"
-            style="width: 40%"
+            style="width: 100%"
             class="g-mr-12"
           />
         </a-form-item>
         <a-form-item
-          :name="item.uuid + '_value'"
+          :name="['data', index, 'value']"
+          :rules="[{
+            required: true,
+            message: `${$t(placeholder.inputPh)}`
+          }]"
         >
           <a-input
             v-model:value="item.value"
-            :name="item.uuid + '_value'"
             :maxlength="64"
-            style="width: 40%; margin-right: 8px"
+            style="width: 100%"
           />
-          <!-- <close-outlined class="icon-close" @click="removeRule(item, index)"  /> -->
         </a-form-item>
-        <!-- <a-form-item :rules="[{ required: true, message: `${placeholder.selectClPh}` }]">
-          <a-input
-            :name="item.uuid + '_value'"
-            v-model:value="item.value"
-            :maxlength="64"
-          />
-        </a-form-item> -->
-        <!-- <a-form-item> -->
-          <close-outlined class="icon-close" @click="removeRule(item, index)"  />
-        <!-- </a-form-item> -->
+          <close-outlined class="icon-close" @click="removeRule(item)"  />
       </div>
     </a-form>
-    <!-- <div class="config-row g-flex-ac" v-for="(item, index) in propertiesArray" :key="item.uuid">
-      <a-auto-complete
-        v-model:value="item.key"
-        :name="item.uuid + '_key'"
-        :options="options"
-        @select="onSelect"
-        :filter-option="filterOption"
-        class="g-mr-12"
-      />
-      <a-input
-        :name="item.uuid + '_value'"
-        v-model:value="item.value"
-        :maxlength="64"
-      />
-      <close-outlined class="icon-close" @click="removeRule(item, index)"  />
-    </div> -->
     <a-button class="config-btn" @click="addRule">+</a-button>
   </div>
 </template>
@@ -69,7 +50,7 @@ import { IMap, IKeyAndValue } from '@/types/common.type'
 import { CloseOutlined } from '@ant-design/icons-vue'
 import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
-// import { usePlaceholder } from '@/hooks/usePlaceholder'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
 
 interface IItem {
   key: string
@@ -82,19 +63,11 @@ const propertiesArray = reactive<IItem[]>([])
 const options = ref<IMap<string>[]>()
 const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
 const propertiesFormRef = ref()
+const propertiesForm = reactive<IMap<string>>({
+  data: []
+})
 
-// const placeholder = reactive(usePlaceholder())
-
-// async function validatePass(rule: Rule, value: string) {
-//   if (value === '') {
-//     return Promise.reject(Error('Please input'))
-//   } else {
-//     // if (formState.checkPass !== '') {
-//     //   formRef.value.validateFields('checkPass');
-//     // }
-//     return Promise.resolve()
-//   }
-// }
+const placeholder = reactive(usePlaceholder())
 
 watch(() => props.propertiesObj, () => {
   initPropertiesArray()
@@ -105,13 +78,15 @@ watch(() => props.propertiesObj, () => {
 
 function initPropertiesArray() {
   propertiesArray.length = 0
+  propertiesForm.data.length = 0
   Object.keys(props.propertiesObj).forEach(key => {
-    propertiesArray.push({
+    propertiesForm.data.push({
       key: key,
       value: props.propertiesObj[key],
       uuid: getUUid()
     })
   })
+  console.log('init propertiesForm.data', propertiesForm.data)
 }
 
 async function getPropertiesList() {
@@ -134,38 +109,47 @@ function filterOption(input: string, option: IMap<string>) {
 
 function onSelect(value: string) {
   const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
-  const selectVal = propertiesArray.find((ele: IItem) => ele.key === value)
+  const selectVal = propertiesForm.data.find((ele: IItem) => ele.key === value)
   selectVal && (selectVal.value = selected.key)
 }
-function removeRule(item, index) {
-  propertiesArray.splice(index, 1)
+function removeRule(item) {
+  const index = propertiesForm.data.indexOf(item)
+  if (index !== -1) {
+    propertiesForm.data.splice(index, 1)
+  }
 }
 function addRule() {
-  propertiesArray.push({
+  propertiesForm.data.push({
     key: '',
     value: '',
     uuid: getUUid()
   })
 }
-function validateForm() {
-  propertiesFormRef.value
-    .validateFields()
-    .then(() => {
-      propertiesFormRef.value.resetFields()
-      return Promise.resolve()
-    })
-    .catch((info: Error) => {
-      console.log('Validate Failed:', info)
-      return Promise.reject(Error('Please input'))
-    })
-}
+
+// async function validateUnique(rule, value) {
+//   if (!value) {
+//     return Promise.reject(new Error(''))
+//   } else if (value && (propertiesForm.data || []).filter(item => item.key === value).length > 1) {
+//     return Promise.reject(new Error('duplicate key'))
+//   } else {
+//     return Promise.resolve()
+//   }
+// }
+
 defineExpose({
   getProperties() {
-    const propObj: IMap<string> = {}
-    propertiesArray.forEach(e => {
-      propObj[e.key] = e.value
-    })
-    return propObj
+    return propertiesFormRef.value
+      .validateFields()
+      .then(() => {
+        const propObj: IMap<string> = {}
+        propertiesForm.data.forEach(e => {
+          propObj[e.key] = e.value
+        })
+        return Promise.resolve(propObj)
+      })
+      .catch(() => {
+        return false
+      })
   }
 })
 
@@ -209,8 +193,7 @@ onMounted(() => {
       }
     }
     .config-row {
-      height: 40px;
-      margin-bottom: 8px;
+      // height: 40px;
       position: relative;
       padding-right: 32px;
       width: 100%;
@@ -229,7 +212,8 @@ onMounted(() => {
       .icon-close {
         cursor: pointer;
         position: absolute;
-        right: 10px;
+        right: 8px;
+        top: 12px;
         font-size: 12px;
         &.disabled {
           cursor: not-allowed;
@@ -241,15 +225,8 @@ onMounted(() => {
       width: 100%;
       border: 1px solid #e5e5e5;
       text-align: center;
-      margin-top: 8px;
       color: #102048;
       box-shadow: none;
     }
-    // .ant-btn {
-    //   color: #102048;
-    // }
-    // .ant-btn[disabled] {
-    //   color: #a9a9b8 !important;
-    // }
   }
 </style>
