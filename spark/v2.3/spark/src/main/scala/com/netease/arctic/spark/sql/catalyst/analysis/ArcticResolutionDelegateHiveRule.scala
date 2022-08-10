@@ -1,23 +1,39 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.source.{ArcticSource, SupportsDynamicOverwrite}
+import com.netease.arctic.spark.sql.execution.{CreateArcticTableAsSelectCommand, CreateArcticTableCommand, DropArcticTableCommand}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
+import org.apache.spark.sql.execution.command.DropTableCommand
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, WriteToDataSourceV2}
+import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
+import java.util.Locale
 
 case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[LogicalPlan] {
 
   lazy val arctic = new ArcticSource
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transformDown {
+    // create table
+    case CreateTable(tableDesc, mode, None)
+      if tableDesc.provider.get.equals("arctic") && isDatasourceTable(tableDesc) =>
+      CreateArcticTableCommand(arctic, tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
+    // create table as select
+    case CreateTable(tableDesc, mode, Some(query))
+      if query.resolved && isDatasourceTable(tableDesc) =>
+      CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
+    // drop table
+    case DropTableCommand(tableDesc, ifExists, _, purge) =>
+      DropArcticTableCommand(arctic, tableDesc, ifExists, purge)
 
     // insert into data source table
     case i @ InsertIntoTable(l: LogicalRelation, _, _, _, _)
@@ -43,6 +59,10 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
       val output = reader.readSchema()
         .map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)() )
       DataSourceV2Relation(output, reader)
+  }
+
+  def isDatasourceTable(table: CatalogTable): Boolean = {
+    table.provider.isDefined && table.provider.get.toLowerCase(Locale.ROOT) != HIVE_PROVIDER
   }
 
   def createWriteToArcticSource(i: InsertIntoTable, tableDesc: CatalogTable): WriteToDataSourceV2 = {

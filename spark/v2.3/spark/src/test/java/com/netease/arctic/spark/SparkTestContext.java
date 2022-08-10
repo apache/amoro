@@ -129,8 +129,8 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.testing.memory", "471859200");
 
     sparkConfigs.put("arctic.catalog." + catalogName, ArcticCatalog.class.getName());
-    sparkConfigs.put("arctic.catalog." + catalogName + ".type", "hive");
-    sparkConfigs.put("arctic.catalog." + catalogName + ".url", amsUrl + "/" + catalogName);
+    sparkConfigs.put("arctic.catalog.type", "hive");
+    sparkConfigs.put("arctic.catalog.url", amsUrl + "/" + catalogName);
 
     sparkConfigs.putAll(additionSparkConfigs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));
