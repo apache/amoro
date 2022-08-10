@@ -1,6 +1,7 @@
 <template>
   <div class="partition-field-wrap">
     <a-table
+      :loading="loading"
       class="ant-table-common"
       :columns="partitionFieldsColumns"
       :data-source="props.partitionFields"
@@ -16,7 +17,7 @@ import { IField } from '@/types/common.type'
 
 const { t } = useI18n()
 
-const props = defineProps<{ partitionFields: IField[] }>()
+const props = defineProps<{ partitionFields: IField[], loading: boolean }>()
 
 const partitionFieldsColumns = shallowReactive([
   { dataIndex: 'field', title: t('field'), ellipsis: true },

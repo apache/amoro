@@ -7,6 +7,7 @@
     </div>
     <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
       <div class="config-row g-flex-ac" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
+        <!-- validator: validateUnique -->
         <a-form-item
           :name="['data', index, 'key']"
           :rules="[{
@@ -37,7 +38,7 @@
             style="width: 100%"
           />
         </a-form-item>
-          <close-outlined class="icon-close" @click="removeRule(item)"  />
+        <close-outlined class="icon-close" @click="removeRule(item)"  />
       </div>
     </a-form>
     <a-button class="config-btn" @click="addRule">+</a-button>
@@ -51,6 +52,7 @@ import { CloseOutlined } from '@ant-design/icons-vue'
 import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
+// import { useI18n } from 'vue-i18n'
 
 interface IItem {
   key: string
@@ -58,6 +60,7 @@ interface IItem {
   uuid: string
 }
 
+// const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string> }>()
 const propertiesArray = reactive<IItem[]>([])
 const options = ref<IMap<string>[]>()
@@ -66,7 +69,6 @@ const propertiesFormRef = ref()
 const propertiesForm = reactive<IMap<string>>({
   data: []
 })
-
 const placeholder = reactive(usePlaceholder())
 
 watch(() => props.propertiesObj, () => {
@@ -86,7 +88,6 @@ function initPropertiesArray() {
       uuid: getUUid()
     })
   })
-  console.log('init propertiesForm.data', propertiesForm.data)
 }
 
 async function getPropertiesList() {
@@ -108,15 +109,21 @@ function filterOption(input: string, option: IMap<string>) {
 }
 
 function onSelect(value: string) {
-  const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
-  const selectVal = propertiesForm.data.find((ele: IItem) => ele.key === value)
-  selectVal && (selectVal.value = selected.key)
+  const keys = (propertiesForm.data || []).map(i => i.key || '').filter(Boolean)
+  if (keys.includes(value)) {
+    propertiesFormRef.value.validateFields()
+  } else {
+    const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
+    const selectVal = propertiesForm.data.find((ele: IItem) => ele.key === value)
+    selectVal && (selectVal.value = selected.key || '')
+  }
 }
 function removeRule(item) {
   const index = propertiesForm.data.indexOf(item)
   if (index !== -1) {
     propertiesForm.data.splice(index, 1)
   }
+  // propertiesFormRef.value.validateFields()
 }
 function addRule() {
   propertiesForm.data.push({
@@ -128,9 +135,9 @@ function addRule() {
 
 // async function validateUnique(rule, value) {
 //   if (!value) {
-//     return Promise.reject(new Error(''))
+//     return Promise.reject(new Error(t(placeholder.selectPh)))
 //   } else if (value && (propertiesForm.data || []).filter(item => item.key === value).length > 1) {
-//     return Promise.reject(new Error('duplicate key'))
+//     return Promise.reject(new Error(t('duplicateKey')))
 //   } else {
 //     return Promise.resolve()
 //   }

@@ -1,6 +1,7 @@
 <template>
   <div class="field-wrap">
     <a-table
+      :loading="loading"
       class="ant-table-common"
       :columns="fieldsColumns"
       :data-source="props.fields"
@@ -21,7 +22,7 @@ import { DetailColumnItem } from '@/types/common.type'
 
 const { t } = useI18n()
 
-const props = defineProps<{ fields: DetailColumnItem[] }>()
+const props = defineProps<{ fields: DetailColumnItem[], loading: boolean }>()
 
 const fieldsColumns = shallowReactive([
   { dataIndex: 'field', title: t('field'), ellipsis: true },

@@ -14,13 +14,13 @@
             :label="$t('field')"
             name="field"
           >
-            <schema-field :fields="field" ref="schemaFieldRef"></schema-field>
+            <schema-field :loading="loading" :fields="field" ref="schemaFieldRef"></schema-field>
           </a-form-item>
           <a-form-item
             :label="$t('partitonField')"
             name="partitonField"
           >
-            <partition-field :partitionFields="partitionFields"></partition-field>
+            <partition-field :loading="loading" :partitionFields="partitionFields"></partition-field>
           </a-form-item>
           <a-form-item
             :label="$t('otherProperties')"

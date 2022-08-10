@@ -124,5 +124,6 @@ export default {
   partitonField: 'Partiton Field',
   otherProperties: 'Other Properties',
   errorMessage: 'Error Message',
-  copySuccess: 'Copy Success'
+  copySuccess: 'Copy Success',
+  duplicateKey: 'duplicate key'
 }
