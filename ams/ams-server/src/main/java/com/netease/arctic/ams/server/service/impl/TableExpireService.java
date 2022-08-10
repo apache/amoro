@@ -32,8 +32,6 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -117,7 +115,7 @@ public class TableExpireService implements ITableExpireService {
         if (arcticTable.isKeyedTable()) {
           KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
           keyedArcticTable.io().doAs(() -> {
-            BaseTable baseTable = keyedArcticTable.baseTable();
+            UnkeyedTable baseTable = keyedArcticTable.baseTable();
             if (baseTable == null) {
               LOG.warn("[{}] Base table is null: {} ", traceId, tableIdentifier);
               return null;
@@ -129,7 +127,7 @@ public class TableExpireService implements ITableExpireService {
             long baseCleanedTime = System.currentTimeMillis();
             LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
 
-            ChangeTable changeTable = keyedArcticTable.changeTable();
+            UnkeyedTable changeTable = keyedArcticTable.changeTable();
             if (changeTable == null) {
               LOG.warn("[{}] Change table is null: {}", traceId, tableIdentifier);
               return null;
@@ -160,7 +158,7 @@ public class TableExpireService implements ITableExpireService {
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
-    StructLikeMap<Long> baseMaxTransactionId = keyedTable.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> baseMaxTransactionId = keyedTable.partitionMaxTransactionId();
     if (MapUtils.isEmpty(baseMaxTransactionId)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;

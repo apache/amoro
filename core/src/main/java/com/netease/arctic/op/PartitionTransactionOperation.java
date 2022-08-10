@@ -19,6 +19,7 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.Transaction;
@@ -31,10 +32,10 @@ import org.apache.iceberg.util.StructLikeMap;
  */
 public abstract class PartitionTransactionOperation {
 
-  BaseTable baseTable;
+  KeyedTable keyedTable;
 
-  public PartitionTransactionOperation(BaseTable baseTable) {
-    this.baseTable = baseTable;
+  public PartitionTransactionOperation(KeyedTable baseTable) {
+    this.keyedTable = baseTable;
   }
 
   /**
@@ -47,11 +48,11 @@ public abstract class PartitionTransactionOperation {
   protected abstract StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId);
 
   public void commit() {
-    Transaction tx = baseTable.newTransaction();
+    Transaction tx = keyedTable.baseTable().newTransaction();
 
-    StructLikeMap<Long> partitionMaxTxId = apply(tx, baseTable.partitionMaxTransactionId());
+    StructLikeMap<Long> partitionMaxTxId = apply(tx, keyedTable.partitionMaxTransactionId());
 
-    String propertyValue = TablePropertyUtil.encodePartitionMaxTxId(baseTable.spec(), partitionMaxTxId);
+    String propertyValue = TablePropertyUtil.encodePartitionMaxTxId(keyedTable.spec(), partitionMaxTxId);
     UpdateProperties updateProperties = tx.updateProperties();
     updateProperties.set(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, propertyValue);
     updateProperties.commit();
