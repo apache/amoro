@@ -20,27 +20,46 @@ package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.ops.HiveSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.trace.AmsTableTracer;
+import com.netease.arctic.trace.TrackerOperations;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.UpdateSchema;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
 public class KeyedHiveTable extends BaseKeyedTable {
+
+  private CachedHiveClientPool hiveClientPool;
+
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      BaseTable baseTable, ChangeTable changeTable) {
+      BaseTable baseTable, ChangeTable changeTable, CachedHiveClientPool hiveClientPool) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
+    this.hiveClientPool = hiveClientPool;
+  }
+
+  @Override
+  public UpdateSchema updateSchema() {
+    if (PrimaryKeySpec.noPrimaryKey().equals(primaryKeySpec())) {
+      return baseTable().updateSchema();
+    }
+    return new HiveSchemaUpdate(this, hiveClientPool);
   }
 
   public static class HiveBaseInternalTable extends BaseInternalTable {

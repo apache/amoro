@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
@@ -148,7 +149,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client);
     return new KeyedHiveTable(tableMeta, tableLocation,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
+        buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable, hiveClientPool);
   }
 
   @Override
@@ -158,7 +159,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
     return new UnkeyedHiveTable(tableIdentifier, useArcticTableOperations(table, baseLocation,
-        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
+        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client, hiveClientPool);
   }
 
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
@@ -232,6 +233,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           hiveTable.setSd(storageDescriptor(tableLocation,
               FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
                   TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+          setProToHive(hiveTable);
           client.createTable(hiveTable);
           return null;
         });
@@ -239,7 +241,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
       return new KeyedHiveTable(meta, tableLocation,
-          primaryKeySpec, client, baseTable, changeTable);
+          primaryKeySpec, client, baseTable, changeTable, hiveClientPool);
     }
 
     @Override
@@ -271,7 +273,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       }
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       return new UnkeyedHiveTable(tableIdentifier, useArcticTableOperations(table, baseLocation, fileIO,
-          tableMetaStore.getConfiguration()), fileIO, client);
+          tableMetaStore.getConfiguration()), fileIO, client, hiveClientPool);
     }
 
     private org.apache.hadoop.hive.metastore.api.Table newHiveTable(TableMeta meta) {
@@ -337,6 +339,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       } catch (TException | InterruptedException e) {
         LOG.warn("Failed to drop hive table while rolling back create table operation", e);
       }
+    }
+
+
+    private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable) {
+      Map<String, String> parameters = new HashMap<>();
+      parameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
+      parameters.put(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
+      hiveTable.setParameters(parameters);
     }
   }
 
