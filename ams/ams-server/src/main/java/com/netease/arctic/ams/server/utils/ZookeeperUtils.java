@@ -1,4 +1,4 @@
-package com.netease.arctic.ams.api.client;
+package com.netease.arctic.ams.server.utils;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -8,10 +8,10 @@ import org.apache.zookeeper.data.Stat;
 
 import java.nio.charset.StandardCharsets;
 
-public class ZookeeperService {
+public class ZookeeperUtils {
   private final CuratorFramework zkClient;
 
-  public ZookeeperService(String zkServerAddress) {
+  public ZookeeperUtils(String zkServerAddress) {
     ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
     this.zkClient = CuratorFrameworkFactory.builder()
         .connectString(zkServerAddress)
