@@ -19,7 +19,7 @@
           <a-auto-complete
             v-model:value="item.key"
             :options="options"
-            @select="onSelect"
+            @select="onSelect(item)"
             :filter-option="filterOption"
             style="width: 100%"
             class="g-mr-12"
@@ -108,15 +108,11 @@ function filterOption(input: string, option: IMap<string>) {
   return option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
 }
 
-function onSelect(value: string) {
-  const keys = (propertiesForm.data || []).map(i => i.key || '').filter(Boolean)
-  if (keys.includes(value)) {
-    propertiesFormRef.value.validateFields()
-  } else {
-    const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
-    const selectVal = propertiesForm.data.find((ele: IItem) => ele.key === value)
-    selectVal && (selectVal.value = selected.key || '')
-  }
+function onSelect(item) {
+  const value = item.key
+  const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
+  const selectVal = propertiesForm.data.find((ele: IItem) => ele.uuid === item.uuid)
+  selectVal && (selectVal.value = selected.key || '')
 }
 function removeRule(item) {
   const index = propertiesForm.data.indexOf(item)
