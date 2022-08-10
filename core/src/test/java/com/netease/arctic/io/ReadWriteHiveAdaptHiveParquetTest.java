@@ -29,8 +29,9 @@ public class ReadWriteHiveAdaptHiveParquetTest {
     Schema schema = new Schema(Types.NestedField.of(1, false, "t1", Types.TimestampType.withoutZone()),
         Types.NestedField.of(2, false, "d", Types.DecimalType.of(9, 7)));
 
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(Files.localInput(new File("/Users/shidayang/IdeaProjects/arctic-github" +
-            "/core/src/test/resources/hive.parquet")))
+
+    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
+        Files.localInput(this.getClass().getClassLoader().getResource("hive.parquet").getFile()))
         .project(schema)
         .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
@@ -51,8 +52,7 @@ public class ReadWriteHiveAdaptHiveParquetTest {
         Types.NestedField.of(2, false, "d", Types.DecimalType.of(9, 0)));
     AdaptHiveGenericAppenderFactory adaptHiveGenericAppenderFactory = new AdaptHiveGenericAppenderFactory(schema);
     FileAppender<Record> recordFileAppender = adaptHiveGenericAppenderFactory.newAppender(Files.localOutput(new File(
-        "/Users/shidayang/IdeaProjects/arctic-github/core" +
-            "/src/test/resources/out.parquet")), FileFormat.PARQUET);
+        "./src/test/resources/out.parquet")), FileFormat.PARQUET);
     GenericRecord record = GenericRecord.create(schema);
     recordFileAppender.add(record.copy("t1",
         LocalDateTime.of(2022, 1, 1, 10, 0, 0), "d", new BigDecimal(11)));
@@ -64,8 +64,8 @@ public class ReadWriteHiveAdaptHiveParquetTest {
     Schema schema = new Schema(Types.NestedField.of(1, false, "t1", Types.TimestampType.withoutZone()),
         Types.NestedField.of(2, false, "d", Types.DecimalType.of(9, 7)));
 
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(Files.localInput(new File("/Users/shidayang/IdeaProjects/arctic-github" +
-            "/core/src/test/resources/out.parquet")))
+    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
+        Files.localInput(this.getClass().getClassLoader().getResource("out.parquet").getFile()))
         .project(schema)
         .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
