@@ -1,7 +1,6 @@
 package org.apache.iceberg.flink.sink;
 
 import com.netease.arctic.flink.write.AdaptHiveFlinkAppenderFactory;
-import java.util.List;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
@@ -18,6 +17,8 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.UnpartitionedWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.ArrayUtil;
+
+import java.util.List;
 
 public class AdaptHiveRowDataTaskWriterFactory implements TaskWriterFactory<RowData> {
   private final Table table;
@@ -70,8 +71,8 @@ public class AdaptHiveRowDataTaskWriterFactory implements TaskWriterFactory<RowD
       if (spec.isUnpartitioned()) {
         return new UnpartitionedWriter<>(spec, format, appenderFactory, outputFileFactory, io, targetFileSizeBytes);
       } else {
-        return new AdaptHiveRowDataTaskWriterFactory.RowDataPartitionedFanoutWriter(spec, format, appenderFactory, outputFileFactory,
-            io, targetFileSizeBytes, schema, flinkSchema);
+        return new AdaptHiveRowDataTaskWriterFactory.RowDataPartitionedFanoutWriter(spec, format,
+            appenderFactory, outputFileFactory, io, targetFileSizeBytes, schema, flinkSchema);
       }
     } else {
       // Initialize a task writer to write both INSERT and equality DELETE.

@@ -19,10 +19,6 @@
 
 package com.netease.arctic.flink.write;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.io.UncheckedIOException;
-import java.util.Map;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.types.logical.RowType;
@@ -49,6 +45,11 @@ import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.UncheckedIOException;
+import java.util.Map;
+
 public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowData>, Serializable {
   private final Schema schema;
   private final RowType flinkSchema;
@@ -61,7 +62,8 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
   private RowType eqDeleteFlinkSchema = null;
   private RowType posDeleteFlinkSchema = null;
 
-  public AdaptHiveFlinkAppenderFactory(Schema schema, RowType flinkSchema, Map<String, String> props, PartitionSpec spec) {
+  public AdaptHiveFlinkAppenderFactory(Schema schema, RowType flinkSchema,
+      Map<String, String> props, PartitionSpec spec) {
     this(schema, flinkSchema, props, spec, null, null, null);
   }
 
@@ -109,7 +111,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case ORC:
           return ORC.write(outputFile)
-              .createWriterFunc((iSchema, typDesc) -> FlinkOrcWriter.buildWriter(flinkSchema, iSchema))
+              .createWriterFunc((schema, typDesc) -> FlinkOrcWriter.buildWriter(flinkSchema, schema))
               .setAll(props)
               .metricsConfig(metricsConfig)
               .schema(schema)

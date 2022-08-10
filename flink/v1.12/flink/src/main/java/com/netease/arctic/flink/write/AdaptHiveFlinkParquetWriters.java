@@ -1,9 +1,5 @@
 package com.netease.arctic.flink.write;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.MapData;
@@ -34,13 +30,19 @@ import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
 public class AdaptHiveFlinkParquetWriters {
   private AdaptHiveFlinkParquetWriters() {
   }
 
   @SuppressWarnings("unchecked")
   public static <T> ParquetValueWriter<T> buildWriter(LogicalType schema, MessageType type) {
-    return (ParquetValueWriter<T>) ParquetWithFlinkSchemaVisitor.visit(schema, type, new AdaptHiveFlinkParquetWriters.WriteBuilder(type));
+    return (ParquetValueWriter<T>) ParquetWithFlinkSchemaVisitor.visit(schema, type,
+        new AdaptHiveFlinkParquetWriters.WriteBuilder(type));
   }
 
   private static class WriteBuilder extends ParquetWithFlinkSchemaVisitor<ParquetValueWriter<?>> {
@@ -51,15 +53,15 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> message(RowType sStruct, MessageType message, List<ParquetValueWriter<?>> fields) {
-      return struct(sStruct, message.asGroupType(), fields);
+    public ParquetValueWriter<?> message(RowType rowType, MessageType message, List<ParquetValueWriter<?>> fields) {
+      return struct(rowType, message.asGroupType(), fields);
     }
 
     @Override
-    public ParquetValueWriter<?> struct(RowType sStruct, GroupType struct,
+    public ParquetValueWriter<?> struct(RowType rowType, GroupType struct,
         List<ParquetValueWriter<?>> fieldWriters) {
       List<Type> fields = struct.getFields();
-      List<RowField> flinkFields = sStruct.getFields();
+      List<RowField> flinkFields = rowType.getFields();
       List<ParquetValueWriter<?>> writers = Lists.newArrayListWithExpectedSize(fieldWriters.size());
       List<LogicalType> flinkTypes = Lists.newArrayList();
       for (int i = 0; i < fields.size(); i += 1) {
@@ -71,7 +73,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> list(ArrayType sArray, GroupType array, ParquetValueWriter<?> elementWriter) {
+    public ParquetValueWriter<?> list(ArrayType arrayType, GroupType array, ParquetValueWriter<?> elementWriter) {
       GroupType repeated = array.getFields().get(0).asGroupType();
       String[] repeatedPath = currentPath();
 
@@ -80,11 +82,11 @@ public class AdaptHiveFlinkParquetWriters {
 
       return new AdaptHiveFlinkParquetWriters.ArrayDataWriter<>(repeatedD, repeatedR,
           newOption(repeated.getType(0), elementWriter),
-          sArray.getElementType());
+          arrayType.getElementType());
     }
 
     @Override
-    public ParquetValueWriter<?> map(MapType sMap, GroupType map,
+    public ParquetValueWriter<?> map(MapType mapType, GroupType map,
         ParquetValueWriter<?> keyWriter, ParquetValueWriter<?> valueWriter) {
       GroupType repeatedKeyValue = map.getFields().get(0).asGroupType();
       String[] repeatedPath = currentPath();
@@ -95,7 +97,7 @@ public class AdaptHiveFlinkParquetWriters {
       return new AdaptHiveFlinkParquetWriters.MapDataWriter<>(repeatedD, repeatedR,
           newOption(repeatedKeyValue.getType(0), keyWriter),
           newOption(repeatedKeyValue.getType(1), valueWriter),
-          sMap.getKeyType(), sMap.getValueType());
+          mapType.getKeyType(), mapType.getValueType());
     }
 
 
@@ -105,7 +107,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> primitive(LogicalType fType, PrimitiveType primitive) {
+    public ParquetValueWriter<?> primitive(LogicalType logicalType, PrimitiveType primitive) {
       ColumnDescriptor desc = type.getColumnDescription(currentPath());
 
       if (primitive.getOriginalType() != null) {
@@ -118,7 +120,7 @@ public class AdaptHiveFlinkParquetWriters {
           case INT_8:
           case INT_16:
           case INT_32:
-            return ints(fType, desc);
+            return ints(logicalType, desc);
           case INT_64:
             return ParquetValueWriters.longs(desc);
           case TIME_MICROS:
@@ -154,7 +156,7 @@ public class AdaptHiveFlinkParquetWriters {
         case BOOLEAN:
           return ParquetValueWriters.booleans(desc);
         case INT32:
-          return ints(fType, desc);
+          return ints(logicalType, desc);
         case INT64:
           return ParquetValueWriters.longs(desc);
         case INT96:
