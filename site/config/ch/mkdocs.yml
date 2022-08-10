@@ -71,6 +71,7 @@ nav:
       - Spark DML: spark/spark-dml.md
       - Spark DataFrame: spark/spark-dataframe.md
   - Trino: trino.md
+  - Benchmark: benchmark.md
 
 
 plugins:
