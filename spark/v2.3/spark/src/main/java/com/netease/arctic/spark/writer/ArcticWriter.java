@@ -1,12 +1,17 @@
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -34,24 +39,44 @@ public class ArcticWriter implements DataSourceWriter, SupportsWriteInternalRow,
 
   private final KeyedTable table;
   private final StructType dsSchema;
-
   private final long transactionId;
+  private final String overwriteMode;
+  private boolean overwriteDynamic = false;
+  private boolean overwriteByFilter = false;
+  private Expression overwriteExpr = null;
 
 
-  public ArcticWriter(KeyedTable table, StructType dsSchema) {
+  public ArcticWriter(KeyedTable table, StructType dsSchema, String overwriteMode) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
+    this.overwriteMode = overwriteMode;
   }
 
   @Override
   public DataSourceWriter overwriteDynamicPartitions() {
-    return null;
+    Preconditions.checkState(!overwriteByFilter, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
+    this.overwriteDynamic = true;
+    return this;
   }
 
   @Override
   public DataSourceWriter overwrite(Filter[] filters) {
-    return null;
+    Expression expression = Expressions.alwaysTrue();
+    for (Filter filter : filters) {
+      Expression converted = SparkFilters.convert(filter);
+      Preconditions.checkArgument(converted != null, "Cannot convert filter to Iceberg: %s", filter);
+      expression = Expressions.and(expression, converted);
+    }
+    this.overwriteExpr = expression;
+    if (overwriteExpr == Expressions.alwaysTrue() && "dynamic".equals(overwriteMode)) {
+      // use the write option to override truncating the table. use dynamic overwrite instead.
+      this.overwriteDynamic = true;
+    } else {
+      Preconditions.checkState(!overwriteDynamic, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
+      this.overwriteByFilter = true;
+    }
+    return this;
   }
 
   @Override
@@ -85,7 +110,12 @@ public class ArcticWriter implements DataSourceWriter, SupportsWriteInternalRow,
 
   @Override
   public void commit(WriterCommitMessage[] messages) {
-
+    RewritePartitions rewritePartitions = table.newRewritePartitions();
+    rewritePartitions.withTransactionId(transactionId);
+    for (DataFile file : files(messages)) {
+      rewritePartitions.addDataFile(file);
+    }
+    rewritePartitions.commit();
   }
 
   @Override
