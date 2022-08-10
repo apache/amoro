@@ -28,6 +28,7 @@ import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.client.AmsServerInfo;
+import com.netease.arctic.ams.api.client.ZookeeperService;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
@@ -44,8 +45,6 @@ import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
-import com.netease.arctic.ams.api.client.ZookeeperService;
-import java.util.ArrayList;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -63,6 +62,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -169,7 +169,7 @@ public class ArcticMetaStore {
   }
 
   public static void stopMetaStore() {
-    if (server != null && server.isServing()){
+    if (server != null && server.isServing()) {
       server.stop();
     }
     residentThreads.forEach(Thread::interrupt);
