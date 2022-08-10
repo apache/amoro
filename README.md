@@ -78,4 +78,4 @@ Visit [https://arctic.netease.com/ch/getting-started/](https://arctic.netease.co
 ## Join Community 
 If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source. 
 
-Join the Arctic Exchange Group: Add " `kllnn999` " as a friend on WeChat and specify "Arctic lover".
+Join the Arctic WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Arctic lover".
