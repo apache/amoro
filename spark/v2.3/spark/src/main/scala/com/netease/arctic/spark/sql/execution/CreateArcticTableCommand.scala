@@ -11,14 +11,6 @@ case class CreateArcticTableCommand(arctic: ArcticSource, catalogTable: CatalogT
   override def run(sparkSession: SparkSession): Seq[Row] = {
     assert(catalogTable.tableType != CatalogTableType.VIEW)
     assert(catalogTable.provider.isDefined)
-    if (arctic.loadTable(catalogTable.identifier) != null) {
-      if (ignoreIfExists) {
-        return Seq.empty[Row]
-      } else {
-        throw AnalysisException.message(
-          s"Table ${catalogTable.identifier.unquotedString} already exists.")
-      }
-    }
     arctic.createTable(catalogTable.identifier, catalogTable.schema,
       scala.collection.JavaConversions.seqAsJavaList(catalogTable.partitionColumnNames),
       scala.collection.JavaConversions.mapAsJavaMap(catalogTable.properties))
