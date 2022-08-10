@@ -22,9 +22,8 @@ import com.netease.arctic.spark.util.ArcticSparkUtils;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.connector.catalog.Identifier;
-import org.apache.spark.sql.connector.catalog.SupportsCatalogOptions;
-import org.apache.spark.sql.connector.catalog.Table;
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
+import org.apache.spark.sql.connector.catalog.*;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.types.StructType;
@@ -57,7 +56,15 @@ public class ArcticSource implements DataSourceRegister, SupportsCatalogOptions 
   @Override
   public Table getTable(
       StructType schema, Transform[] partitioning, Map<String, String> properties) {
-    return null;
+    ArcticSparkUtils.TableCatalogAndIdentifier catalogAndIdentifier = catalogAndIdentifier(
+            new CaseInsensitiveStringMap(properties));
+    TableCatalog catalogPlugin = catalogAndIdentifier.catalog();
+    Identifier identifier = catalogAndIdentifier.identifier();
+    try {
+      return catalogPlugin.loadTable(identifier);
+    } catch (NoSuchTableException e) {
+      throw new com.netease.arctic.exceptions.NoSuchTableException(e, "Cannot find table for %s.", identifier);
+    }
   }
 
   private static ArcticSparkUtils.TableCatalogAndIdentifier catalogAndIdentifier(CaseInsensitiveStringMap options) {
