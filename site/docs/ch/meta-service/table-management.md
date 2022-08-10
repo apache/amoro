@@ -1,6 +1,6 @@
 # 表管理
 [AMS Dashboard](http://localhost:1630) 中提供了命令行工具`Terminal`帮组用户快速完成表的创建、修改与删除操作。
-同时还可以在 [Spark](../spark/spark-ddl.md) 和 [Flink](../flink.md) 等引擎中使用 SQL 完成表的管理。
+同时还可以在 [Spark](../spark/spark-ddl.md) 和 [Flink](../flink/flink-ddl.md) 等引擎中使用 SQL 完成表的管理。
 
 ## 新建表
 登录 [AMS Dashboard](http://localhost:1630) 后，进入`Terminal`，输入建表语句并执行即可完成表的创建。
@@ -24,7 +24,7 @@ tblproperties(
 当前 Terminal 使用 Spark Engine 完成 SQL 的执行，更多有关建表的语法参考 [Spark DDL](../spark/spark-ddl.md#create-table)。
 
 ### 配置 Logstore
-如 [Tablestore](../table-structure.md) 所述，一张 Arctic 表可能由几部分共同组成，一般来说 Basestore 与 Changestore 会随着表的创建而自动创建，
+如 [Tablestore](../table-format/table-store.md) 所述，一张 Arctic 表可能由几部分共同组成，一般来说 Basestore 与 Changestore 会随着表的创建而自动创建，
 Logstore 作为可选组件则需要另外的配置来指明，有关 Logstore 的完整配置可以参考 [Logstore相关配置](table-properties.md#logstore)。
 
 上面的例子中将 kafka 集群：`127.0.0.1:9092`中的 topic：`local_catalog.test_db.test_log_store.log_store`作为了新建表的 Logstore,

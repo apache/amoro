@@ -46,7 +46,7 @@ public class RewritePartitionsTest extends TableTestBase {
     ));
     this.initTxId = txId;
 
-    RewritePartitions overwrite = ArcticOperations.newRewritePartitions(testKeyedTable);
+    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
     files.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
     overwrite.commit();
@@ -58,7 +58,7 @@ public class RewritePartitionsTest extends TableTestBase {
     ));
 
     // init. 3 partition with init txId
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
     Assert.assertEquals(initTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
     ).longValue());
@@ -89,13 +89,13 @@ public class RewritePartitionsTest extends TableTestBase {
         newGenericRecord(TABLE_SCHEMA, 9, "999", quickDate(1))
     );
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
-    RewritePartitions overwrite = ArcticOperations.newRewritePartitions(testKeyedTable);
+    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
     newFiles.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
     overwrite.commit();
     // overwrite 1 partition by data file
 
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(txId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(1))

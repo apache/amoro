@@ -137,7 +137,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          ChangeTable changeTable = table.asKeyedTable().changeTable();
+          UnkeyedTable changeTable = table.asKeyedTable().changeTable();
           return new ArcticSparkChangeTable(changeTable);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
