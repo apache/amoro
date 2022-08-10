@@ -89,12 +89,23 @@ public class MockArcticMetastoreServer implements Runnable {
     return INSTANCE;
   }
 
-  private static String getHadoopSite() {
+  public void createCatalogIfAbsent(CatalogMeta catalogMeta) {
+    MockArcticMetastoreServer server = getInstance();
+    if (!server.handler().catalogs.contains(catalogMeta.catalogName)) {
+      server.handler().createCatalog(catalogMeta);
+    }
+  }
+
+  public static String getHadoopSite() {
     return Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
   }
 
   public String getUrl() {
     return "thrift://127.0.0.1:" + port + "/" + TEST_CATALOG_NAME;
+  }
+
+  public String getUrl(String catalogName) {
+    return "thrift://127.0.0.1:" + port + "/" + catalogName;
   }
 
   public MockArcticMetastoreServer() {

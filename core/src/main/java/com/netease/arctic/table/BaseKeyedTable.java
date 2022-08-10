@@ -177,10 +177,6 @@ public class BaseKeyedTable implements KeyedTable {
 
   public static class BaseInternalTable extends BaseUnkeyedTable implements BaseTable {
 
-    public BaseInternalTable(TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO);
-    }
-
     public BaseInternalTable(
         TableIdentifier tableIdentifier, Table baseIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client) {
@@ -218,10 +214,6 @@ public class BaseKeyedTable implements KeyedTable {
   }
 
   public static class ChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {
-
-    public ChangeInternalTable(TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO) {
-      super(tableIdentifier, changeIcebergTable, arcticFileIO);
-    }
 
     public ChangeInternalTable(
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,

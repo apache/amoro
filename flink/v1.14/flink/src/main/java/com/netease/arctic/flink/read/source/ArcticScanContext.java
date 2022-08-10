@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
@@ -247,7 +248,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           .splitOpenFileCost(config.get(SPLIT_FILE_OPEN_COST))
           .streaming(config.get(STREAMING))
           .monitorInterval(config.get(MONITOR_INTERVAL))
-          .nameMapping(properties.get(DEFAULT_NAME_MAPPING));
+          .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
+          .scanStartupMode(properties.get(FILE_SCAN_STARTUP_MODE.key()));
     }
 
     public ArcticScanContext build() {
