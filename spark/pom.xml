@@ -32,6 +32,7 @@
 
 
     <modules>
+        <module>v2.3/spark</module>
         <module>v3.1/spark</module>
         <module>v3.1/spark-runtime</module>
     </modules>

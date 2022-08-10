@@ -193,9 +193,10 @@ public class SparkTestContext extends ExternalResource {
     }
   }
 
-  public static void writeBase(TableIdentifier identifier, List<Object[]> records) {
+  public static List<DataFile> writeBase(TableIdentifier identifier, List<Object[]> records) {
     KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
     long txId = table.beginTransaction(System.currentTimeMillis() + "");
+    List<DataFile> baseDataFiles = new ArrayList<>();
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
         .withTransactionId(txId)
         .buildBaseWriter()) {
@@ -207,10 +208,11 @@ public class SparkTestContext extends ExternalResource {
           throw new UncheckedIOException(e);
         }
       });
+      baseDataFiles.addAll(Arrays.asList(writer.complete().dataFiles()));
       AppendFiles appendFiles = table.baseTable().newAppend();
-      Arrays.stream(writer.complete().dataFiles())
-          .forEach(appendFiles::appendFile);
+      baseDataFiles.forEach(appendFiles::appendFile);
       appendFiles.commit();
+      return baseDataFiles;
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

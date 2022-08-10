@@ -26,6 +26,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import org.apache.iceberg.common.DynConstructors;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
 /**
  * Catalogs, create catalog from arctic metastore thrift url.
@@ -40,6 +42,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 public class CatalogLoader {
 
   public static final String HADOOP_CATALOG_IMPL = BaseArcticCatalog.class.getName();
+  public static final String HIVE_CATALOG_IMPL = "com.netease.arctic.hive.catalog.ArcticHiveCatalog";
 
   /**
    * Entrypoint for loading Catalog.
@@ -64,7 +67,7 @@ public class CatalogLoader {
    * @return arctic catalog object
    */
   public static ArcticCatalog load(String catalogUrl) {
-    return load(catalogUrl, null);
+    return load(catalogUrl, Maps.newHashMap());
   }
 
   /**
@@ -75,7 +78,7 @@ public class CatalogLoader {
    * @return arctic catalog object
    */
   public static ArcticCatalog load(AmsClient client, String catalogName) {
-    return load(client, catalogName, null);
+    return load(client, catalogName, Maps.newHashMap());
   }
 
   /**
@@ -94,6 +97,9 @@ public class CatalogLoader {
       switch (type) {
         case CATALOG_TYPE_HADOOP:
           catalogImpl = HADOOP_CATALOG_IMPL;
+          break;
+        case CATALOG_TYPE_HIVE:
+          catalogImpl = HIVE_CATALOG_IMPL;
           break;
         default:
           throw new IllegalStateException(

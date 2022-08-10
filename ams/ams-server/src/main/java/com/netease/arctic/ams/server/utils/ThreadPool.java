@@ -44,6 +44,7 @@ public class ThreadPool {
   private static ScheduledExecutorService orphanPool;
   private static ScheduledExecutorService optimizerMonitorPool;
   private static ThreadPoolExecutor syncFileInfoCachePool;
+  private static ScheduledExecutorService tableRuntimeDataExpirePool;
 
   public enum Type {
     OPTIMIZE_CHECK,
@@ -51,7 +52,8 @@ public class ThreadPool {
     EXPIRE,
     ORPHAN,
     SYNC_FILE_INFO_CACHE,
-    OPTIMIZER_MONITOR
+    OPTIMIZER_MONITOR,
+    TABLE_RUNTIME_DATA_EXPIRE
   }
 
   public static synchronized ThreadPool initialize(Configuration conf) {
@@ -104,6 +106,12 @@ public class ThreadPool {
             TimeUnit.MINUTES,
             new LinkedBlockingQueue<>(),
             syncFileInfoCachePoolThreadFactory);
+
+    ThreadFactory tableRuntimeDataExpirePoolThreadFactory = new ThreadFactoryBuilder().setDaemon(false)
+        .setNameFormat("Metastore Scheduled Table Runtime Data Expire Worker %d").build();
+    tableRuntimeDataExpirePool = Executors.newScheduledThreadPool(
+        1,
+        tableRuntimeDataExpirePoolThreadFactory);
   }
 
   public static ScheduledExecutorService getPool(Type type) {
@@ -121,6 +129,8 @@ public class ThreadPool {
         return orphanPool;
       case OPTIMIZER_MONITOR:
         return optimizerMonitorPool;
+      case TABLE_RUNTIME_DATA_EXPIRE:
+        return tableRuntimeDataExpirePool;
       default:
         throw new RuntimeException("ThreadPool not support this type: " + type);
     }
