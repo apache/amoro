@@ -28,7 +28,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
-import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -71,7 +71,7 @@ public class BaseIcebergPosDeleteReader {
     InputFile input = fileIO.newInputFile(deleteFile.path().toString());
     switch (deleteFile.format()) {
       case PARQUET:
-        Parquet.ReadBuilder builder = Parquet.read(input)
+        AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(input)
             .project(POS_DELETE_SCHEMA)
             .reuseContainers()
             .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(POS_DELETE_SCHEMA, fileSchema));

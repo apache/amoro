@@ -28,7 +28,7 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.SerializableTable;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.flink.sink.RowDataTaskWriterFactory;
+import org.apache.iceberg.flink.sink.AdaptHiveRowDataTaskWriterFactory;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -65,7 +65,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
   public static TaskWriter<RowData> createTaskWriter(Table table, long targetFileSize, FileFormat format,
                                                      RowType rowType) {
-    TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
+    TaskWriterFactory<RowData> taskWriterFactory = new AdaptHiveRowDataTaskWriterFactory(
         SerializableTable.copyOf(table), rowType, targetFileSize, format, null);
     taskWriterFactory.initialize(1, 1);
     return taskWriterFactory.create();

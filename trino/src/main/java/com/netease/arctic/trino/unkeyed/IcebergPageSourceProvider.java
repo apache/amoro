@@ -109,7 +109,7 @@ import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.MappedFields;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.mapping.NameMappingParser;
-import org.apache.iceberg.parquet.ParquetSchemaUtil;
+import org.apache.iceberg.parquet.AdaptHiveParquetSchemaUtil;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
@@ -777,10 +777,10 @@ public class IcebergPageSourceProvider
       ParquetMetadata parquetMetadata = hdfsEnvironment.doAs(identity, () -> MetadataReader.readFooter(theDataSource));
       FileMetaData fileMetaData = parquetMetadata.getFileMetaData();
       MessageType fileSchema = fileMetaData.getSchema();
-      if (nameMapping.isPresent() && !ParquetSchemaUtil.hasIds(fileSchema)) {
+      if (nameMapping.isPresent() && !AdaptHiveParquetSchemaUtil.hasIds(fileSchema)) {
         // NameMapping conversion is necessary because MetadataReader converts all column names to lowercase and
         // NameMapping is case sensitive
-        fileSchema = ParquetSchemaUtil.applyNameMapping(fileSchema, convertToLowercase(nameMapping.get()));
+        fileSchema = AdaptHiveParquetSchemaUtil.applyNameMapping(fileSchema, convertToLowercase(nameMapping.get()));
       }
 
       // Mapping from Iceberg field ID to Parquet fields.

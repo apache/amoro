@@ -111,7 +111,7 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
         FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), table.schema());
 
     if (ArcticUtils.isToBase(overwrite)) {
-      appenderFactory = new FlinkAppenderFactory(
+      appenderFactory = new AdaptHiveFlinkAppenderFactory(
           table.baseTable().schema(), flinkSchema, table.properties(), table.spec());
       return new FlinkBaseTaskWriter(
           format,
@@ -122,7 +122,7 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
     } else {
       Schema changeSchemaWithMeta = SchemaUtil.changeWriteSchema(table.baseTable().schema());
       RowType flinkSchemaWithMeta = FlinkSchemaUtil.convert(changeSchemaWithMeta);
-      appenderFactory = new FlinkAppenderFactory(
+      appenderFactory = new AdaptHiveFlinkAppenderFactory(
           changeSchemaWithMeta, flinkSchemaWithMeta, table.properties(), table.spec());
       return new FlinkChangeTaskWriter(
           format,
