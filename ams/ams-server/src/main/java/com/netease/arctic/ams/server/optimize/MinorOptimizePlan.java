@@ -69,9 +69,9 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
                            List<DataFileInfo> changeTableFileList,
                            List<DataFileInfo> posDeleteFileList,
                            Map<String, Boolean> partitionTaskRunning,
-                           int queueId, long currentTime) {
+                           int queueId, long currentTime, Predicate<Long> snapshotIsCached) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, changeTableFileList, posDeleteFileList,
-        partitionTaskRunning, queueId, currentTime);
+        partitionTaskRunning, queueId, currentTime, snapshotIsCached);
   }
 
   @Override
@@ -274,7 +274,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   private long getBaseMaxTransactionId(String partition) {
     if (baseTableMaxTransactionId == null) {
       baseTableMaxTransactionId = new HashMap<>();
-      baseTableMaxTransactionId.putAll(arcticTable.asKeyedTable().baseTable().maxTransactionId());
+      baseTableMaxTransactionId.putAll(arcticTable.asKeyedTable().maxTransactionId());
       LOG.debug("{} ==== get base table max transaction id: {}", tableId(), baseTableMaxTransactionId);
     }
     Long maxTransactionId = baseTableMaxTransactionId.get(partition);

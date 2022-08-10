@@ -74,7 +74,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     ));
     this.initTxId = txId;
 
-    RewritePartitions overwrite = ArcticOperations.newRewritePartitions(testKeyedTable);
+    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
     files.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
     overwrite.commit();
@@ -87,7 +87,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     ));
 
     // init. 3 partition with init txId
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
     Assert.assertEquals(initTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
     ).longValue());
@@ -118,14 +118,14 @@ public class OverwriteBaseFileTest extends TableTestBase {
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
-    OverwriteBaseFiles overwrite = ArcticOperations.newOverwriteBaseFiles(testKeyedTable);
+    OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
         .withTransactionId(txId)
         .commit();
     // overwrite all partition and add new data file
 
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
     // expect result: all partition with new txId
     Assert.assertEquals(txId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
@@ -161,7 +161,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
-    OverwriteBaseFiles overwrite = ArcticOperations.newOverwriteBaseFiles(testKeyedTable);
+    OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.withTransactionId(txId);
     overwrite.overwriteByRowFilter(
@@ -177,7 +177,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     overwrite.commit();
     // overwrite all partition and add new data file
 
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
     // expect result: 1,2 partition with new txId, 3 partition use old txId
     Assert.assertEquals(txId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
