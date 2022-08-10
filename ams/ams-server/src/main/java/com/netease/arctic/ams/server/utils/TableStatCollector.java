@@ -23,8 +23,6 @@ import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.SnapshotInfo;
 import com.netease.arctic.ams.server.model.TableStatistics;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
-import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
@@ -46,7 +44,7 @@ public class TableStatCollector {
   @Nonnull
   public static TableStatistics collectChangeTableInfo(KeyedTable table) {
     try {
-      ChangeTable internalTable = null;
+      UnkeyedTable internalTable = null;
       try {
         internalTable = table.changeTable();
       } catch (NoSuchTableException e) {
@@ -65,7 +63,7 @@ public class TableStatCollector {
   public static TableStatistics collectBaseTableInfo(KeyedTable table) {
     try {
       LOG.info("start collect {} table info of {}", Constants.INNER_TABLE_BASE, table.id());
-      BaseTable internalTable = null;
+      UnkeyedTable internalTable = null;
       try {
         internalTable = table.baseTable();
       } catch (org.apache.iceberg.exceptions.NoSuchTableException e) {
