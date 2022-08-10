@@ -52,6 +52,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
       TableIdentifier identifier, StructType schema, List<String> partitions, Map<String, String> properties) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
+    ArcticTable arcticTable;
     Schema arcticSchema = SparkSchemaUtil.convert(schema, false);
     PartitionSpec spec = toPartitionSpec(partitions, arcticSchema);
     TableBuilder tableBuilder = catalog.newTableBuilder(com.netease.arctic.table.TableIdentifier.
@@ -60,16 +61,16 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
       PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(arcticSchema)
           .addDescription(properties.get("primary.keys"))
           .build();
-      tableBuilder.withPartitionSpec(spec)
+      arcticTable = tableBuilder.withPartitionSpec(spec)
           .withPrimaryKeySpec(primaryKeySpec)
           .withProperties(properties)
           .create();
     } else {
-      tableBuilder.withPartitionSpec(spec)
+      arcticTable = tableBuilder.withPartitionSpec(spec)
           .withProperties(properties)
           .create();
     }
-    return null;
+    return ArcticSparkTable.ofArcticTable(arcticTable);
   }
 
   private static PartitionSpec toPartitionSpec(List<String> partitionKeys, Schema icebergSchema) {
