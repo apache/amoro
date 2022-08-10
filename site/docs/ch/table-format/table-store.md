@@ -5,7 +5,7 @@ Arctic 能够兼容已有的存储介质(如 HDFS、OSS)和表结构(如 Hive、
 ## 存储结构
 对于一张定义了主键的 Arctic 表，存储结构上最多可以拆分为三部分：Changestore、Basestore、Logstore。
 
-![TableStructure](images/table-structure.png)
+![TableStructure](../images/format/table-structure.png)
 
 ### Changestore
 Changestore 中存储了表上最近的变更数据。
@@ -19,7 +19,7 @@ Changestore 内包含了存储插入数据的 insert file 和存储删除数据�
 Basestore 中存储了表的存量数据。
 它通常由 Apache Spark 等引擎完成第一次写入，再之后则通过自动的结构优化过程将 Changestore 中的数据转化之后写入。
 
-Arctic 内 Basestore 一般也是一张独立的 Iceberg 表，它与 Arctic 表拥有相同的表结构和分区规则。
+Arctic 内 Basestore 现阶段支持 Hive Table 与 Iceberg Table 并可以支持更多的扩展，它与 Arctic 表拥有相同的表结构和分区规则。
 Basestore 内包含了存储数据文件的 base file 和存储已经被删除数据的 positional delete file，相较于 Changestore 中的 equality delete file，positional delete file 拥有更好的 merge-on-read 性能。
 
 ### Logstore
@@ -56,7 +56,7 @@ Minor Optimize 将 Changestore 中的文件合并到 Basestore 中，只对有�
 - Changestore 中的 eq-delete 文件转化为 Basestore 中的 pos-delete 文件，替换旧的 pos-delete 文件
 
 
-![Minor Optimize](images/minor-optimize.png)
+![Minor Optimize](../images/format/minor-optimize.png)
 
 由于上述两个操作的执行代价都不高， Minor Optimize 的执行频率可以更加激进一些，一般可以配置为几分钟到几十分钟，执行代价较低的原因在于：
 
@@ -78,9 +78,9 @@ Major Optimize 只对 Basestore 中的文件进行合并，因此对有主键表
 
 - 只有 base 文件中的小文件与 pos-delete 文件进行合并，小文件合并生成新的 base 文件，重写 pos-delete 文件
 
-![Major Optimize with all files](images/major-optimize-all-files.png)
+![Major Optimize with all files](../images/format/major-optimize-all-files.png)
 
-![Major Optimize with small files](images/major-optimize-small-files.png)
+![Major Optimize with small files](../images/format/major-optimize-small-files.png)
 
 第一种方式由于需要重写所有历史 base 文件，执行代价高，好处是可以彻底清理掉 pos-delete 文件以及 base 文件中的无效数据；第二种方式只处理小文件，执行代价相对低一些，但是 pos-delete 文件和无效数据不能得到清理。
 

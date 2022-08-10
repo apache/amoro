@@ -8,7 +8,9 @@
 | ---------------------------------- | ---------------- | ----------------------------------       |
 | read.split.open-file-cost          | 4194304（4MB）    | 打开文件预估的开销                          |
 | read.split.planning-lookback       | 10               | 合并读取任务时同时考虑的任务个数               |
-| read.split.target-siz              | 134217728（128MB）| 合并读取任务时的目标大小                     |
+| read.split.target-size              | 134217728（128MB）| 合并读取任务时的目标大小                     |
+| read.distribution-mode              | hash            | 读取时的数据分区方式，支持 none、hash          |
+| read.distribution.hash-mode         | auto            | 使用 hash 的分区读取方式时，使用的 hash 键，支持 primary-key、partition-key、primary-partition-key 和 auto                     |
 
 ### 表写入配置
 
@@ -55,12 +57,10 @@
 
 | 配置名称                            | 默认值             | 描述                                     |
 | ---------------------------------- | ---------------- | ----------------------------------       |
-| log-store.enable                   | false            | 是否开启 Logstore                         |
-| log-store.type                     | kafka            | Logstore 的类型，当前仅支持 kafka            |
-| log-store.address                  | NULL             | Logstore 的地址                           |
-| log-store.topic                    | NULL             | Logstore 使用的 topic                      |
+| log-store.enable                   | false            | 是否开启 Logstore                        |
+| log-store.type                     | kafka            | Logstore 的类型，当前仅支持 Kafka            |
+| log-store.address                  | NULL             | 当 log-store.enable=true 时必填，Logstore 的地址                           |
+| log-store.topic                    | NULL             | 当 log-store.enable=true 时必填，Logstore 使用的 topic                      |
 | log-store.data-format              | json             | Logstore 中的消息格式，当前仅支持 json         |
 | log-store.data-version             | v1               | Logstore 中消息的版本，当前仅支持 v1           |
-
-
-
+| log.consistency.guarantee.enable   | false            | 标记是否开启一致性保证                       |

@@ -9,6 +9,7 @@ import com.netease.arctic.table.TableBuilder;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import com.netease.arctic.table.ArcticTable;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -30,7 +31,6 @@ import java.util.Optional;
 
 public class ArcticSource implements DataSourceRegister, DataSourceV2,
     ReadSupport, WriteSupport, TableSupport {
-
   @Override
   public String shortName() {
     return "arctic";
@@ -42,8 +42,8 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   }
 
   @Override
-  public Optional<DataSourceWriter> createWriter(
-      String jobId, StructType schema, SaveMode mode, DataSourceOptions options) {
+  public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
+                                                 SaveMode mode, DataSourceOptions options) {
     return Optional.empty();
   }
 
@@ -80,7 +80,12 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
 
   @Override
   public DataSourceTable loadTable(TableIdentifier identifier) {
-    return null;
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), identifier.database().get(), identifier.table());
+    ArcticTable arcticTable = catalog.loadTable(tableId);
+    return ArcticSparkTable.ofArcticTable(arcticTable);
   }
 
   @Override
@@ -120,8 +125,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
     TableIdentifier identifier = tableDesc.identifier();
     ArcticCatalog catalog = catalog(spark.conf());
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
-        catalog.name(), identifier.database().get(), identifier.table()
-    );
+        catalog.name(), identifier.database().get(), identifier.table());
     return catalog.tableExists(tableId);
   }
 

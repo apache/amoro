@@ -298,4 +298,4 @@ select * from test_db.test_table order by id;
 
 新增的1个 pos-delete 是 minor optimize 的结果，而新增的1个 base file 是 major optimize 的结果，由于只有一行数据被删除，因此只有1个 base 文件和 pos-delete 文件合并生成了最终的 base file。
 
-更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-structure.md#_3)。
+更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-format/table-store.md#_3)。
