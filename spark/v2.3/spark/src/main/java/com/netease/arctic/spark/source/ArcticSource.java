@@ -4,12 +4,12 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import com.netease.arctic.table.ArcticTable;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -55,8 +55,8 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
     ArcticTable arcticTable;
     Schema arcticSchema = SparkSchemaUtil.convert(schema, false);
     PartitionSpec spec = toPartitionSpec(partitions, arcticSchema);
-    TableBuilder tableBuilder = catalog.newTableBuilder(com.netease.arctic.table.TableIdentifier.
-        of(catalog.name(), identifier.database().get(), identifier.table()), arcticSchema);
+    TableBuilder tableBuilder = catalog.newTableBuilder(com.netease.arctic.table.TableIdentifier
+        .of(catalog.name(), identifier.database().get(), identifier.table()), arcticSchema);
     if (properties.containsKey("primary.keys")) {
       PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(arcticSchema)
           .addDescription(properties.get("primary.keys"))
@@ -93,8 +93,8 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticHiveCatalog catalog = (ArcticHiveCatalog) catalog(spark.conf());
-    return catalog.dropTable(com.netease.arctic.table.TableIdentifier.
-        of(catalog.name(), identifier.database().get(), identifier.table()), purge);
+    return catalog.dropTable(com.netease.arctic.table.TableIdentifier
+        .of(catalog.name(), identifier.database().get(), identifier.table()), purge);
   }
 
   /**
