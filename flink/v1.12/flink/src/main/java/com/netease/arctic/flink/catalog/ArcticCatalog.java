@@ -208,7 +208,6 @@ public class ArcticCatalog extends AbstractCatalog {
     properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
     properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
     properties.put(METASTORE_URL, catalogBuilder.getMetastoreUrl());
-    properties.put(ArcticValidator.ARCTIC_WATERMARK.key(), String.valueOf(true));
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {

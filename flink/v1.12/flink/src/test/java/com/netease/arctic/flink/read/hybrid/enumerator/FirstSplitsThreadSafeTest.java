@@ -49,7 +49,7 @@ public class FirstSplitsThreadSafeTest {
   }
 
   public void round(List<String> allSplit, Collection<ArcticSplit> arcticSplits) {
-    FirstSplits firstSplits = new FirstSplits(arcticSplits);
+    FirstSplits firstSplits = new FirstSplits(arcticSplits, null);
     int n = allSplit.size();
 
     List<String> s1 = new ArrayList<>(allSplit.subList(0, (int) (2.0 / 3 * n))),

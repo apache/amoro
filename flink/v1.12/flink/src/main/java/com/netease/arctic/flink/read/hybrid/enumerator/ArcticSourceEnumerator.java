@@ -136,7 +136,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   private ContinuousEnumerationResult planSplits() {
     ContinuousEnumerationResult result = doPlanSplits();
     if (generateWatermarkTimestamp && firstSplits == null) {
-      firstSplits = new FirstSplits(result.splits());
+      firstSplits = new FirstSplits(result.splits(), context.metricGroup());
     }
     return result;
   }

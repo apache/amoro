@@ -20,16 +20,23 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.core.execution.JobClient;
+import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
+import org.apache.flink.table.descriptors.Schema;
+import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.types.logical.TimestampKind;
+import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
@@ -42,8 +49,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -51,6 +60,7 @@ import java.util.concurrent.CompletableFuture;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.table.TableProperties.LOCATION;
 import static org.apache.flink.api.common.JobStatus.INITIALIZING;
+import static org.apache.flink.table.api.Expressions.$;
 
 public class TestJoin extends FlinkTestBase {
 
@@ -92,7 +102,8 @@ public class TestJoin extends FlinkTestBase {
     sql(sql);
 
     tableProperties.clear();
-    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
+    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND)" +
+        " WITH ('arctic.watermark'='true')" +
         "like %s", table);
 
     TableSchema flinkSchema = TableSchema.builder()
@@ -145,6 +156,51 @@ public class TestJoin extends FlinkTestBase {
 
   @Test
   public void testRightEmptyLookupJoin() throws IOException {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
+    data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+
+    DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
+        InternalTypeInfo.ofFields(
+            DataTypes.INT().getLogicalType(),
+            DataTypes.VARCHAR(100).getLogicalType(),
+            new TimestampType(true, TimestampKind.ROWTIME, 3)
+        ));
+
+    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time").rowtime());
+    getTableEnv().createTemporaryView("left_view", input);
+
+    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+
+    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
+        " test int, id bigint, name STRING" +
+        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
+    sql(sql);
+
+    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
+        "like %s", table);
+
+    TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
+        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
+
+    CloseableIterator<Row> iterator = tableResult.collect();
+    while (iterator.hasNext()) {
+      Row i = iterator.next();
+      System.out.println("out:" + i);
+    }
+
+    tableResult.getJobClient().ifPresent(JobClient::cancel);
+  }
+
+  @Test
+  public void testRightEmptyLookupJoinDemo() throws IOException {
     String table;
 
     sql("create table left_view (id bigint, t2 string, opt AS LOCALTIMESTAMP, watermark for opt as opt," +

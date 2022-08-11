@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.split;
 
 import org.apache.flink.api.connector.source.SourceSplit;
+import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.CollectionUtil;
 import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
@@ -30,6 +31,9 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.metric.MetricConstant.INIT_END_MS;
+import static com.netease.arctic.flink.metric.MetricConstant.INIT_START_MS;
+
 /**
  * If using arctic table as build-table, FirstSplits can record the first splits planned by Enumerator.
  */
@@ -38,15 +42,21 @@ public class FirstSplits implements Serializable {
   public static final long serialVersionUID = 1L;
   public static final Logger LOGGER = LoggerFactory.getLogger(FirstSplits.class);
 
+  private final MetricGroup metricGroup;
+  private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
 
-  public FirstSplits(Collection<ArcticSplit> splits) {
+  public FirstSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
     this.splits = splits.stream().map(SourceSplit::splitId).collect(Collectors.toMap((k) -> k, (i) -> false));
 
     unfinishedCount = this.splits.size();
     LOGGER.info("init splits at {}, size:{}", LocalDateTime.now(), unfinishedCount);
+    this.metricGroup = metricGroup;
+    if (metricGroup != null) {
+      metricGroup.gauge(INIT_START_MS, () -> startTimeMs);
+    }
   }
 
   public Map<String, Boolean> getSplits() {
@@ -74,6 +84,7 @@ public class FirstSplits implements Serializable {
 
   /**
    * Remove finished splits.
+   *
    * @return True if all splits are finished, otherwise false.
    */
   public synchronized boolean removeAndReturnIfAllFinished(Collection<String> finishedSplitIds) {
@@ -95,6 +106,9 @@ public class FirstSplits implements Serializable {
     });
     if (unfinishedCount == 0) {
       LOGGER.info("finish all splits at {}", LocalDateTime.now());
+      if (metricGroup != null) {
+        metricGroup.gauge(INIT_END_MS, System::currentTimeMillis);
+      }
       return true;
     }
     return false;
