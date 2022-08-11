@@ -36,9 +36,5 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable {
       AmsClient client) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
   }
-
-  @Override
-  public Schema schema() {
-    return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
-  }
+  
 }
