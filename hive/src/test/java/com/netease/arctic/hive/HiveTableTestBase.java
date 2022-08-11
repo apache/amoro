@@ -29,6 +29,7 @@ import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -47,6 +48,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 public class HiveTableTestBase extends TableTestBase {
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
+  protected static final AtomicInteger testCount = new AtomicInteger(0);
 
   protected static TestHiveMetastore metastore;
   protected static HiveConf hiveConf;
@@ -65,44 +67,49 @@ public class HiveTableTestBase extends TableTestBase {
 
   @BeforeClass
   public static void startMetastore() throws Exception {
-    HiveTableTestBase.metastore = new TestHiveMetastore();
-    metastore.start();
-    HiveTableTestBase.hiveConf = metastore.hiveConf();
-    HiveTableTestBase.metastoreClient = new HiveMetaStoreClient(hiveConf);
-    String dbPath = metastore.getDatabasePath(HIVE_DB_NAME);
-    Database db = new Database(HIVE_DB_NAME, "description", dbPath, new HashMap<>());
-    metastoreClient.createDatabase(db);
+    int ref = testCount.incrementAndGet();
+    if (ref == 1){
+      HiveTableTestBase.metastore = new TestHiveMetastore();
+      metastore.start();
+      HiveTableTestBase.hiveConf = metastore.hiveConf();
+      HiveTableTestBase.metastoreClient = new HiveMetaStoreClient(hiveConf);
+      String dbPath = metastore.getDatabasePath(HIVE_DB_NAME);
+      Database db = new Database(HIVE_DB_NAME, "description", dbPath, new HashMap<>());
+      metastoreClient.createDatabase(db);
 
-    Map<String, String> storageConfig = new HashMap<>();
-    storageConfig.put(
-        CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hiveConf));
+      Map<String, String> storageConfig = new HashMap<>();
+      storageConfig.put(
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
+          CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hiveConf));
 
 
-    Map<String, String> authConfig = new HashMap<>();
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-        System.getProperty("user.name"));
+      Map<String, String> authConfig = new HashMap<>();
+      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+          CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
+      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+          System.getProperty("user.name"));
 
-    Map<String, String> catalogProperties = new HashMap<>();
+      Map<String, String> catalogProperties = new HashMap<>();
 
-    CatalogMeta catalogMeta = new CatalogMeta(HIVE_CATALOG_NAME, CATALOG_TYPE_HIVE,
-        storageConfig, authConfig, catalogProperties);
-    AMS.createCatalogIfAbsent(catalogMeta);
+      CatalogMeta catalogMeta = new CatalogMeta(HIVE_CATALOG_NAME, CATALOG_TYPE_HIVE,
+          storageConfig, authConfig, catalogProperties);
+      AMS.createCatalogIfAbsent(catalogMeta);
+    }
   }
 
   @AfterClass
   public static void stopMetastore() {
+    int ref = testCount.decrementAndGet();
+    if (ref == 0){
+      metastoreClient.close();
+      HiveTableTestBase.metastoreClient = null;
 
-    metastoreClient.close();
-    HiveTableTestBase.metastoreClient = null;
-
-    metastore.stop();
-    HiveTableTestBase.metastore = null;
+      metastore.stop();
+      HiveTableTestBase.metastore = null;
+    }
   }
 
   @Before
