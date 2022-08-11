@@ -19,12 +19,9 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.hive.CachedHiveClientPool;
-import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 
 /**
@@ -37,10 +34,7 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements SupportHive {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
   }
 
-  @Override
-  public Schema schema() {
-    return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
-  }
+
 
   @Override
   public String hiveLocation() {
