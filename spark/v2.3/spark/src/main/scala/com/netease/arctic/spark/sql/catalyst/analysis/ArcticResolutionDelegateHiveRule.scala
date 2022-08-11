@@ -25,15 +25,20 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
   override def apply(plan: LogicalPlan): LogicalPlan = plan transformDown {
     // create table
     case CreateTable(tableDesc, mode, None)
-      if tableDesc.provider.get.equals("arctic") && isDatasourceTable(tableDesc) =>
+      if tableDesc.provider.isDefined
+        && tableDesc.provider.get.equals("arctic")
+        && isDatasourceTable(tableDesc) =>
       CreateArcticTableCommand(arctic, tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
     // create table as select
     case CreateTable(tableDesc, mode, Some(query))
-      if query.resolved && isDatasourceTable(tableDesc) =>
+      if tableDesc.provider.isDefined
+        && tableDesc.provider.get.equals("arctic")
+        && query.resolved && isDatasourceTable(tableDesc) =>
       CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
     // drop table
-    case DropTableCommand(tableDesc, ifExists, _, purge) =>
-      DropArcticTableCommand(arctic, tableDesc, ifExists, purge)
+    case DropTableCommand(tableName, ifExists, _, purge)
+    if arctic.tableExists(tableName) =>
+      DropArcticTableCommand(arctic, tableName, ifExists, purge)
 
     // insert into data source table
     case i @ InsertIntoTable(l: LogicalRelation, _, _, _, _)

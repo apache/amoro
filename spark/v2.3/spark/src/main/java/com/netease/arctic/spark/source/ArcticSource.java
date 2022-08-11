@@ -90,6 +90,15 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   }
 
   @Override
+  public boolean tableExists(TableIdentifier identifier) {
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), identifier.database().get(), identifier.table());
+    return catalog.tableExists(tableId);
+  }
+
+  @Override
   public boolean dropTable(TableIdentifier identifier, boolean purge) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticHiveCatalog catalog = (ArcticHiveCatalog) catalog(spark.conf());

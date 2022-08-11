@@ -14,5 +14,7 @@ public interface TableSupport {
 
   DataSourceTable loadTable(TableIdentifier identifier);
 
+  boolean tableExists(TableIdentifier tableIdentifier);
+
   boolean dropTable(TableIdentifier identifier, boolean purge);
 }

@@ -41,18 +41,18 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("create database " + database);
+    sql("create database if not exists " + database);
   }
 
   @After
   public void clean() {
-    sql("drop database " + database);
+    sql("drop database if exists " + database);
   }
 
 
   @Test
-  public void testCreateKeyedTablePartitioned() {
-    sql("show databases");
+  public void testCreateKeyedTableWithPartitioned() {
+    // hive style
     TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
 
     sql("create table {0}.{1} ( \n" +
@@ -85,8 +85,8 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
 
+    // column reference style
     TableIdentifier identifierB = TableIdentifier.of(catalogName, database, tableB);
-
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -122,7 +122,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
   }
 
   @Test
-  public void testCreateKeyedTableUnpartitioned() {
+  public void testCreateKeyedTableUnPartitioned() {
     TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
 
     sql("create table {0}.{1} ( \n" +
@@ -156,9 +156,9 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
 
   @Test
-  public void testCreateUnKeyedTablePartitioned() {
+  public void testCreateUnKeyedTableWithPartitioned() {
+    // hive style
     TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
-
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string \n " +
@@ -169,19 +169,155 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " ''props.test2'' = ''val2'' ) ", database, tableA);
 
     assertTableExist(identifierA);
-    ArcticTable keyedTable = loadTable(identifierA);
+    ArcticTable unKeyedTable = loadTable(identifierA);
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.optional(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
-        expectedSchema, keyedTable.schema().asStruct());
+        expectedSchema, unKeyedTable.schema().asStruct());
 
-    Assert.assertTrue(keyedTable.properties().containsKey("props.test1"));
-    Assert.assertEquals("val1", keyedTable.properties().get("props.test1"));
-    Assert.assertTrue(keyedTable.properties().containsKey("props.test2"));
-    Assert.assertEquals("val2", keyedTable.properties().get("props.test2"));
+    Assert.assertTrue(unKeyedTable.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", unKeyedTable.properties().get("props.test1"));
+    Assert.assertTrue(unKeyedTable.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", unKeyedTable.properties().get("props.test2"));
 
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
+
+    // column reference style
+    TableIdentifier identifierB = TableIdentifier.of(catalogName, database, tableB);
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n" +
+        " ts string \n " +
+        ") using arctic \n" +
+        " partitioned by (ts) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    ArcticTable unKeyedTableB = loadTable(identifierB);
+    Types.StructType expectedSchemaB = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchemaB, unKeyedTableB.schema().asStruct());
+
+    sql("desc table {0}.{1}", database, tableB);
+    assertPartitionResult(rows, Lists.newArrayList("ts"));
+
+    Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", unKeyedTableB.properties().get("props.test1"));
+    Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", unKeyedTableB.properties().get("props.test2"));
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifierB);
+  }
+
+  @Test
+  public void testCreateUnKeyedTableUnPartitioned() {
+    TableIdentifier identifier = TableIdentifier.of(catalogName, database, tableB);
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n" +
+        " ts string \n " +
+        ") using arctic \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    ArcticTable unKeyedTableB = loadTable(identifier);
+    Types.StructType expectedSchemaB = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchemaB, unKeyedTableB.schema().asStruct());
+
+    Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", unKeyedTableB.properties().get("props.test1"));
+    Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", unKeyedTableB.properties().get("props.test2"));
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateHiveTableUnPartitioned() {
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n" +
+        " ts string \n " +
+        ") STORED AS parquet ", database, tableB);
+
+    sql("use {0}", database);
+    rows = sql("show tables");
+    Assert.assertEquals(1, rows.size());
+    sql("drop table {0}.{1}", database, tableB);
+    rows = sql("show tables");
+    Assert.assertEquals(0, rows.size());
+  }
+
+
+  @Test
+  public void testCreateHiveTableWithPartitioned() {
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string \n" +
+        ") partitioned by (ts string) " +
+        "STORED AS parquet ", database, tableB);
+
+    sql("use {0}", database);
+    rows = sql("show tables");
+    Assert.assertEquals(1, rows.size());
+    sql("desc {0}.{1}", database, tableB);
+    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    sql("drop table {0}.{1}", database, tableB);
+    rows = sql("show tables");
+    Assert.assertEquals(0, rows.size());
+  }
+
+  @Test
+  public void testCreateSourceTableWithPartitioned() {
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n" +
+        " ts string \n " +
+        ") using parquet \n" +
+        " partitioned by (ts) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("use {0}", database);
+    rows = sql("show tables");
+    Assert.assertEquals(1, rows.size());
+    sql("desc {0}.{1}", database, tableB);
+    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    sql("drop table {0}.{1}", database, tableB);
+    rows = sql("show tables");
+    Assert.assertEquals(0, rows.size());
+  }
+
+
+  @Test
+  public void testCreateSourceTableUnPartitioned() {
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n" +
+        " ts string \n " +
+        ") using parquet \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("use {0}", database);
+    rows = sql("show tables");
+    Assert.assertEquals(1, rows.size());
+    sql("drop table {0}.{1}", database, tableB);
+    rows = sql("show tables");
+    Assert.assertEquals(0, rows.size());
   }
 }
