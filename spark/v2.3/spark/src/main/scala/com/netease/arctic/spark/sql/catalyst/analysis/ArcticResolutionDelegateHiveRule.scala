@@ -26,13 +26,13 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
     // create table
     case CreateTable(tableDesc, mode, None)
       if tableDesc.provider.isDefined
-        && tableDesc.provider.get.equals("arctic")
+        && tableDesc.provider.get.equalsIgnoreCase("arctic")
         && isDatasourceTable(tableDesc) =>
       CreateArcticTableCommand(arctic, tableDesc, ignoreIfExists = mode == SaveMode.Ignore)
     // create table as select
     case CreateTable(tableDesc, mode, Some(query))
       if tableDesc.provider.isDefined
-        && tableDesc.provider.get.equals("arctic")
+        && tableDesc.provider.get.equalsIgnoreCase("arctic")
         && query.resolved && isDatasourceTable(tableDesc) =>
       CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
     // drop table

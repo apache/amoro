@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * test for arctic keyed table
  */
-public class TestKeyedTableDDL extends SparkTestBase {
+public class TestCreateTableDDL extends SparkTestBase {
 
   private final String database = "db_def";
   private final String tableA = "testA";
@@ -60,7 +60,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " name string , \n " +
         " primary key (id) \n" +
         ") using arctic \n" +
-        " partitioned by (ts string) \n" +
+        " partitioned by (ts string, dt string) \n" +
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, tableA);
@@ -72,7 +72,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTableA.schema().asStruct());
     sql("desc table {0}.{1}", database, tableA);
-    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
 
     Assert.assertArrayEquals("Primary should match expected",
         new List[]{Collections.singletonList("id")},
@@ -91,9 +91,10 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " id int , \n" +
         " name string , \n" +
         " ts string ,\n " +
+        " dt string ,\n " +
         " primary key (id) \n" +
         ") using arctic \n" +
-        " partitioned by (ts) \n" +
+        " partitioned by (ts, dt) \n" +
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, tableB);
@@ -106,7 +107,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
         expectedSchemaB, keyedTableB.schema().asStruct());
 
     sql("desc table {0}.{1}", database, tableB);
-    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
 
     Assert.assertArrayEquals("Primary should match expected",
         new List[]{Collections.singletonList("id")},
@@ -163,7 +164,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " id int , \n" +
         " name string \n " +
         ") using arctic \n" +
-        " partitioned by (ts string) \n" +
+        " partitioned by (ts string, dt string) \n" +
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, tableA);
@@ -189,9 +190,10 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
-        " ts string \n " +
+        " ts string, \n " +
+        " dt string \n " +
         ") using arctic \n" +
-        " partitioned by (ts) \n" +
+        " partitioned by (ts, dt) \n" +
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, tableB);
@@ -204,7 +206,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
         expectedSchemaB, unKeyedTableB.schema().asStruct());
 
     sql("desc table {0}.{1}", database, tableB);
-    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
 
     Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test1"));
     Assert.assertEquals("val1", unKeyedTableB.properties().get("props.test1"));
@@ -266,14 +268,14 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string \n" +
-        ") partitioned by (ts string) " +
+        ") partitioned by (ts string, dt string) " +
         "STORED AS parquet ", database, tableB);
 
     sql("use {0}", database);
     rows = sql("show tables");
     Assert.assertEquals(1, rows.size());
     sql("desc {0}.{1}", database, tableB);
-    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
@@ -284,9 +286,10 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
-        " ts string \n " +
+        " ts string, \n " +
+        " dt string \n " +
         ") using parquet \n" +
-        " partitioned by (ts) \n" +
+        " partitioned by (ts, dt) \n" +
         " tblproperties ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, tableB);
@@ -295,7 +298,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     rows = sql("show tables");
     Assert.assertEquals(1, rows.size());
     sql("desc {0}.{1}", database, tableB);
-    assertPartitionResult(rows, Lists.newArrayList("ts"));
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
