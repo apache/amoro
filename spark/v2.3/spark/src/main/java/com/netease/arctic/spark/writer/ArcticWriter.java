@@ -69,7 +69,7 @@ public class ArcticWriter implements DataSourceWriter, SupportsWriteInternalRow,
       expression = Expressions.and(expression, converted);
     }
     this.overwriteExpr = expression;
-    if (overwriteExpr == Expressions.alwaysTrue() && "dynamic".equals(overwriteMode)) {
+    if (overwriteExpr == Expressions.alwaysTrue()) {
       // use the write option to override truncating the table. use dynamic overwrite instead.
       this.overwriteDynamic = true;
     } else {
