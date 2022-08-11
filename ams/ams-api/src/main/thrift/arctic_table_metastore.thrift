@@ -46,6 +46,7 @@ struct TableCommitMeta {
     3: list<TableChange> changes;
     4: i64 commitTime;
     5: map<string, string> properties;
+    6: bool optimizeProduced;
 }
 
 
