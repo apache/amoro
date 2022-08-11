@@ -19,9 +19,9 @@ Arctic 在设计时考虑了 Hive 的兼容性。Arctic 开放的叠加式架构
 * 数据自动分桶，结构自优化（self-optimized）
 * 支持将数据湖和消息队列封装成统一的表，实现更低延迟的流批一体
 * 提供流式数仓标准化的度量，dashboard 和相关管理工具
-* 支持 Spark 和 Flink 读写数据，支持 Trino 查询数据
+* 支持 Spark 和 Flink 读写数据，支持 Trino/Impala 查询数据
 * 百分百兼容 Iceberg / Hive 的表格式和语法
-* 为流批并发写入提供事务性保障
+* 解决并发写入冲突，实现事务一致性语义
 
 
 ### 架构与概念
