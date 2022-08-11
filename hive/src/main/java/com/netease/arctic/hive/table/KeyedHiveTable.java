@@ -37,7 +37,7 @@ import org.apache.iceberg.Table;
  */
 public class KeyedHiveTable extends BaseKeyedTable {
 
-  CachedHiveClientPool hiveClient ;
+  CachedHiveClientPool hiveClient;
 
   public KeyedHiveTable(
       TableMeta tableMeta,
