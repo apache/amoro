@@ -334,7 +334,7 @@ export default defineComponent({
       const runStatusHeight = runStatus.value ? editorSize.runStatusHeight : 0
       let top = mouseDownLeftHeight + diff
       top = Math.max(top, editorSize.optionHeight + runStatusHeight)
-      top = Math.min(top, window.innerHeight - topbarHeight - editorSize.gap - editorSize.optionHeight - 4)
+      top = Math.min(top, window.innerHeight - topbarHeight - (fullscreen.value ? 0 : editorSize.gap) - editorSize.optionHeight - 4)
       sqlResultHeight.value = top
     }
 
@@ -440,7 +440,7 @@ export default defineComponent({
         }
         .sql-content {
           // height: 440px;
-          height: 100%;
+          height: calc(100% - 44px);
           // height: calc(100% - 76px); // 44 + 32
           // height: 60%;
           border-top: 1px solid #e5e5e5;
@@ -535,7 +535,7 @@ export default defineComponent({
     padding: 6px 12px;
     position: absolute;
     left: 0;
-    bottom: 44px;
+    bottom: 0;
     width: 100%;
     z-index: 2;
   }
