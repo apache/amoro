@@ -156,4 +156,35 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
   }
+
+
+  @Test
+  public void testCreateUnKeyedTablePartitioned() {
+    TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string \n " +
+        ") using arctic \n" +
+        " partitioned by (ts string) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableA);
+
+    assertTableExist(identifierA);
+    ArcticTable keyedTable = loadTable(identifierA);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, keyedTable.schema().asStruct());
+
+    Assert.assertTrue(keyedTable.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", keyedTable.properties().get("props.test1"));
+    Assert.assertTrue(keyedTable.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", keyedTable.properties().get("props.test2"));
+
+    sql("drop table {0}.{1}", database, tableA);
+    assertTableNotExist(identifierA);
+  }
 }

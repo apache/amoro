@@ -84,7 +84,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def isArcticExtendSparkStatement(sqlText: String): Boolean = {
     val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-     normalized.contains("create table") && normalized.contains("using arctic") && normalized.contains("primary key")
+     normalized.contains("create table") && normalized.contains("using arctic")
   }
 
   def buildLexer(sql: String): Option[Lexer] = {

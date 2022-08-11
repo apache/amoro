@@ -106,9 +106,13 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     ctx.colListAndPk() match {
       case colWithPk: ColListWithPkContext =>
         schema = Option(colWithPk.colTypeList()).map(createSchema)
-        primary = visitPrimaryKey(colWithPk.primaryKey())
+        if (colWithPk.primaryKey() != null) {
+          primary = visitPrimaryKey(colWithPk.primaryKey())
+        }
       case colOnlyPk: ColListOnlyPkContext =>
-        primary = visitPrimaryKey(colOnlyPk.primaryKey())
+        if (colOnlyPk.primaryKey() != null) {
+          primary = visitPrimaryKey(colOnlyPk.primaryKey())
+        }
     }
     val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val provider = ctx.tableProvider.qualifiedName.getText
