@@ -114,16 +114,17 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
           primary = visitPrimaryKey(colOnlyPk.primaryKey())
         }
     }
+    val fields = setPrimaryKeyNotNull(schema.get.toSeq, primary)
     val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val provider = ctx.tableProvider.qualifiedName.getText
     if (ctx.partitionColumnNames == null) {
-      finalSchema = schema
+      finalSchema = Option(StructType.apply(fields))
     } else if (isHiveGrammar(ctx.partitionColumnNames) ) {
       val partitionSchema = visitHivePartitionFieldList(ctx.partitionColumnNames)
-      finalSchema = Option(StructType.apply(schema.get.fields ++ partitionSchema))
+      finalSchema = Option(StructType.apply(fields ++ partitionSchema))
       partitionColumnNames = partitionSchema.map(p => p.name)
     } else {
-      finalSchema = schema
+      finalSchema = Option(StructType.apply(fields))
       partitionColumnNames = visitPartitionFieldList(ctx.partitionColumnNames)
     }
     val properties = Option(ctx.tableProps).map(visitPropertyKeyValues).getOrElse(Map.empty)

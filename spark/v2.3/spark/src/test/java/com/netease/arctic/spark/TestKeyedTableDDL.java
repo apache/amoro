@@ -70,7 +70,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableExist(identifierA);
     ArcticTable keyedTableA = loadTable(identifierA);
     Types.StructType expectedSchema = Types.StructType.of(
-        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTableA.schema().asStruct());
@@ -103,7 +103,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
     ArcticTable keyedTableB = loadTable(identifierB);
     Types.StructType expectedSchemaB = Types.StructType.of(
-        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchemaB, keyedTableB.schema().asStruct());
@@ -140,7 +140,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     assertTableExist(identifierA);
     ArcticTable keyedTable = loadTable(identifierA);
     Types.StructType expectedSchema = Types.StructType.of(
-        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTable.schema().asStruct());
