@@ -148,7 +148,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client);
     return new KeyedHiveTable(tableMeta, tableLocation,
-        buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
+        buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, hiveClientPool, baseTable, changeTable);
   }
 
   @Override
@@ -239,7 +239,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
       return new KeyedHiveTable(meta, tableLocation,
-          primaryKeySpec, client, baseTable, changeTable);
+          primaryKeySpec, client, hiveClientPool, baseTable, changeTable);
     }
 
     @Override

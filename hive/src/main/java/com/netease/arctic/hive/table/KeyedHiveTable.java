@@ -20,27 +20,35 @@ package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.op.HiveRewritePartitions;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
 public class KeyedHiveTable extends BaseKeyedTable {
+
+  CachedHiveClientPool hiveClient ;
+
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      BaseTable baseTable, ChangeTable changeTable) {
+      CachedHiveClientPool hiveClient,
+      BaseTable baseTable,
+      ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
+    this.hiveClient = hiveClient;
   }
 
   public static class HiveBaseInternalTable extends BaseInternalTable {
@@ -52,10 +60,10 @@ public class KeyedHiveTable extends BaseKeyedTable {
         AmsClient client) {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
     }
+  }
 
-    @Override
-    public Schema schema() {
-      return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
-    }
+  @Override
+  public RewritePartitions newRewritePartitions() {
+    return new HiveRewritePartitions(this, hiveClient);
   }
 }
