@@ -103,6 +103,8 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     var finalSchema = Option.empty[StructType]
     var primary = Seq.empty[String]
     var partitionColumnNames = Seq.empty[String]
+
+    // visit schema and primary key
     ctx.colListAndPk() match {
       case colWithPk: ColListWithPkContext =>
         schema = Option(colWithPk.colTypeList()).map(createSchema)
@@ -114,9 +116,12 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
           primary = visitPrimaryKey(colOnlyPk.primaryKey())
         }
     }
+    // set primary col not null
     val fields = setPrimaryKeyNotNull(schema.get.toSeq, primary)
     val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val provider = ctx.tableProvider.qualifiedName.getText
+
+    // visit partitions and support arctic partition grammer
     if (ctx.partitionColumnNames == null) {
       finalSchema = Option(StructType.apply(fields))
     } else if (isHiveGrammar(ctx.partitionColumnNames) ) {
@@ -127,6 +132,7 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
       finalSchema = Option(StructType.apply(fields))
       partitionColumnNames = visitPartitionFieldList(ctx.partitionColumnNames)
     }
+    
     val properties = Option(ctx.tableProps).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val bucketSpec = ctx.bucketSpec().asScala.headOption.map(visitBucketSpec)
 
