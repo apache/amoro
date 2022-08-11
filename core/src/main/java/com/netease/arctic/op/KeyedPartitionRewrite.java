@@ -35,7 +35,7 @@ import java.util.List;
  */
 public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
 
-  private List<DataFile> addFiles = Lists.newArrayList();
+  protected List<DataFile> addFiles = Lists.newArrayList();
   private Long transactionId;
   
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
