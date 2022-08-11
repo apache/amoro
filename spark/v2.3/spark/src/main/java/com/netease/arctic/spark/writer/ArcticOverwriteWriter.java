@@ -14,6 +14,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
@@ -22,9 +23,11 @@ import org.apache.spark.sql.sources.v2.writer.DataWriterFactory;
 import org.apache.spark.sql.sources.v2.writer.SupportsWriteInternalRow;
 import org.apache.spark.sql.sources.v2.writer.WriterCommitMessage;
 import org.apache.spark.sql.types.StructType;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
+
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -34,23 +37,23 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-public class ArcticWriter implements DataSourceWriter, SupportsWriteInternalRow,
+public class ArcticOverwriteWriter implements DataSourceWriter, SupportsWriteInternalRow,
     SupportsOverwrite, SupportsDynamicOverwrite {
 
   private final KeyedTable table;
   private final StructType dsSchema;
   private final long transactionId;
-  private final String overwriteMode;
+  private final SaveMode mode;
   private boolean overwriteDynamic = false;
   private boolean overwriteByFilter = false;
   private Expression overwriteExpr = null;
 
 
-  public ArcticWriter(KeyedTable table, StructType dsSchema, String overwriteMode) {
+  public ArcticOverwriteWriter(KeyedTable table, StructType dsSchema, SaveMode mode) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
-    this.overwriteMode = overwriteMode;
+    this.mode = mode;
   }
 
   @Override

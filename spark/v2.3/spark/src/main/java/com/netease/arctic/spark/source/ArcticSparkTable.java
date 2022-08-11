@@ -1,6 +1,9 @@
 package com.netease.arctic.spark.source;
 
+import com.netease.arctic.spark.writer.ArcticAppendWriter;
+import com.netease.arctic.spark.writer.ArcticOverwriteWriter;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.SaveMode;
@@ -12,20 +15,20 @@ import org.apache.spark.sql.types.StructType;
 import java.util.Optional;
 
 public class ArcticSparkTable implements DataSourceTable {
-  private final ArcticTable arcticTable;
+  private final KeyedTable arcticTable;
   private final StructType requestedSchema;
   private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
 
   public static DataSourceTable ofArcticTable(ArcticTable table) {
-    return new ArcticSparkTable(table, false);
+    return new ArcticSparkTable(table.asKeyedTable(), false);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly) {
+  public ArcticSparkTable(KeyedTable arcticTable, boolean refreshEagerly) {
     this(arcticTable, null, refreshEagerly);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, StructType requestedSchema, boolean refreshEagerly) {
+  public ArcticSparkTable(KeyedTable arcticTable, StructType requestedSchema, boolean refreshEagerly) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
     this.refreshEagerly = refreshEagerly;
@@ -58,6 +61,11 @@ public class ArcticSparkTable implements DataSourceTable {
   @Override
   public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
                                                  SaveMode mode, DataSourceOptions options) {
+    if (mode == SaveMode.Overwrite) {
+      return Optional.of(new ArcticOverwriteWriter(arcticTable, schema, mode));
+    } else if (mode == SaveMode.Append) {
+      return Optional.of(new ArcticAppendWriter());
+    }
     return Optional.empty();
   }
 }

@@ -40,7 +40,7 @@ public class SparkInternalRowWriter implements DataWriter<InternalRow> {
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
-    return new ArcticWriter.TaskCommit(result.dataFiles());
+    return new ArcticOverwriteWriter.TaskCommit(result.dataFiles());
   }
 
   @Override
