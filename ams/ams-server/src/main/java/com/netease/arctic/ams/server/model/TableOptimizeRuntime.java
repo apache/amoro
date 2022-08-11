@@ -36,6 +36,7 @@ public class TableOptimizeRuntime {
   private long currentChangeSnapshotId = INVALID_SNAPSHOT_ID;
   private TableOptimizeInfo.OptimizeStatus optimizeStatus = TableOptimizeInfo.OptimizeStatus.Idle;
   private long optimizeStatusStartTime = -1;
+  // only record full major optimize time
   private final Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskHistoryId;
@@ -69,6 +70,7 @@ public class TableOptimizeRuntime {
   }
 
   public void putLatestMajorOptimizeTime(String partition, long time) {
+
     Long oldValue = latestMajorOptimizeTime.putIfAbsent(partition, time);
     if (oldValue != null) {
       if (time > oldValue) {

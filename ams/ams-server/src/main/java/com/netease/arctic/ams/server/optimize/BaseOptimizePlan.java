@@ -77,9 +77,9 @@ public abstract class BaseOptimizePlan {
   protected final Set<String> allPartitions = new HashSet<>();
 
   // for base table or unKeyed table
-  private long currentBaseSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+  protected long currentBaseSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   // for change table
-  private long currentChangeSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+  protected long currentChangeSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   // for check iceberg base table current snapshot whether cached in file cache
   protected Predicate<Long> snapshotIsCached;
 
@@ -101,13 +101,15 @@ public abstract class BaseOptimizePlan {
     this.historyId = UUID.randomUUID().toString();
   }
 
-  public abstract boolean partitionNeedPlan(String partitionToPath);
+  protected abstract boolean partitionNeedPlan(String partitionToPath);
 
-  public abstract void addOptimizeFilesTree();
+  protected abstract void addOptimizeFilesTree();
   
   protected abstract OptimizeType getOptimizeType();
 
   protected abstract List<BaseOptimizeTask> collectTask(String partition);
+
+  protected abstract boolean tableChanged();
 
   public List<BaseOptimizeTask> plan() {
     long startTime = System.nanoTime();
@@ -250,11 +252,19 @@ public abstract class BaseOptimizePlan {
         ((MajorOptimizePlan) this).isDeletePosDelete(taskConfig.getPartition())) {
       optimizeTask.setIsDeletePosDelete(1);
     }
+    if (taskConfig.getOptimizeType() == OptimizeType.Major &&
+        ((MajorOptimizePlan) this).isAdaptHive(taskConfig.getPartition())) {
+      optimizeTask.setIsAdaptHive(1);
+    }
 
     // table ams url
     Map<String, String> properties = new HashMap<>();
     properties.put("all-file-cnt", (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
+    // set optimize location
+    if (taskConfig.getOptimizeLocation() != null) {
+      properties.put("optimizeLocation", taskConfig.getOptimizeLocation());
+    }
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -302,48 +312,6 @@ public abstract class BaseOptimizePlan {
 
   public long getCurrentChangeSnapshotId() {
     return currentChangeSnapshotId;
-  }
-
-  private boolean tableChanged() {
-    if (this instanceof MajorOptimizePlan) {
-      return baseTableChanged();
-    } else {
-      return changeTableChanged();
-    }
-  }
-
-  private boolean baseTableChanged() {
-    long lastBaseSnapshotId = tableOptimizeRuntime.getCurrentSnapshotId();
-    Snapshot snapshot;
-    if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
-    } else {
-      snapshot = arcticTable.asUnkeyedTable().currentSnapshot();
-    }
-
-    if (snapshot != null) {
-      boolean findNewData = false;
-      if (snapshot.snapshotId() != lastBaseSnapshotId) {
-        findNewData = true;
-        LOG.debug("{} ==== {} find {} data in base snapshot={}", tableId(), getOptimizeType(), snapshot.operation(),
-            snapshot.snapshotId());
-      }
-
-      // If last snapshot not exist(may expire), then skip compaction，
-      // because compaction check interval is much shorter than expire time.
-      // Set table properties compact.major.force=true, if compaction is needed.
-      return findNewData;
-    } else {
-      LOG.warn("{} {} base snapshots is null, regard as table not changed", tableId(), getOptimizeType());
-      return false;
-    }
-  }
-
-  private boolean changeTableChanged() {
-    long lastChangeSnapshotId = tableOptimizeRuntime.getCurrentChangeSnapshotId();
-    LOG.debug("{} ==== {} currentChangeSnapshotId={}, lastChangeSnapshotId={}", tableId(), getOptimizeType(),
-        currentChangeSnapshotId, lastChangeSnapshotId);
-    return currentChangeSnapshotId != lastChangeSnapshotId;
   }
 
   protected boolean anyTaskRunning(String partition) {

@@ -51,6 +51,7 @@ public class GenericTaskWriters {
     private int partitionId = 0;
     private int taskId = 0;
     private ChangeAction changeAction = ChangeAction.INSERT;
+    private String location = null;
 
     Builder(KeyedTable table) {
       this.table = table;
@@ -76,6 +77,11 @@ public class GenericTaskWriters {
       return this;
     }
 
+    public Builder withLocation(String location) {
+      this.location = location;
+      return this;
+    }
+
     public GenericBaseTaskWriter buildBaseWriter() {
       Preconditions.checkNotNull(transactionId);
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
@@ -85,7 +91,7 @@ public class GenericTaskWriters {
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
       return new GenericBaseTaskWriter(fileFormat, new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
-          new OutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
+          new OutputFileFactory(location == null ? table.baseLocation() : location, table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.baseTable().schema(), table.spec(), table.primaryKeySpec());
     }
@@ -103,7 +109,7 @@ public class GenericTaskWriters {
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
           MetricsModes.Full.get().toString());
       return new SortedPosDeleteWriter<>(appenderFactory,
-          new OutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
+          new OutputFileFactory(location == null ? table.baseLocation() : location, table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
           fileFormat, mask, index, partitionKey);
     }
@@ -119,7 +125,7 @@ public class GenericTaskWriters {
       Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
       return new GenericChangeTaskWriter(fileFormat,
           new GenericAppenderFactory(changeWriteSchema, table.spec()),
-          new OutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
+          new OutputFileFactory(location == null ? table.changeLocation() : location, table.spec(), fileFormat, table.io(),
               table.changeTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
           changeAction);

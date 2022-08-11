@@ -36,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -124,6 +125,18 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     return result;
   }
 
+  @Override
+  protected boolean tableChanged() {
+    return changeTableChanged();
+  }
+
+  private boolean changeTableChanged() {
+    long lastChangeSnapshotId = tableOptimizeRuntime.getCurrentChangeSnapshotId();
+    LOG.debug("{} ==== {} currentChangeSnapshotId={}, lastChangeSnapshotId={}", tableId(), getOptimizeType(),
+        currentChangeSnapshotId, lastChangeSnapshotId);
+    return currentChangeSnapshotId != lastChangeSnapshotId;
+  }
+
   private void addChangeFilesIntoFileTree() {
     LOG.debug("{} start {} plan change files", tableId(), getOptimizeType());
     KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
@@ -198,7 +211,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
                 DataFileType.POS_DELETE_FILE : DataFileType.BASE_FILE);
 
         // fill node position delete file map
-        if (contentFile instanceof DeleteFile) {
+        if (contentFile.content() == FileContent.POSITION_DELETES) {
           List<DeleteFile> files = partitionPosDeleteFiles.computeIfAbsent(partition, e -> new ArrayList<>());
           files.add((DeleteFile) contentFile);
           partitionPosDeleteFiles.put(partition, files);
@@ -217,7 +230,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, null, changeTableMaxTransactionId.get(partition),
         group, historyId, OptimizeType.Minor, createTime);
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
@@ -255,7 +268,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private boolean isOptimized(ContentFile<?> dataFile, String partition) {
     // if Pos-Delete files, ignore
-    if (dataFile instanceof DeleteFile) {
+    if (dataFile.content() == FileContent.POSITION_DELETES) {
       return false;
     }
 

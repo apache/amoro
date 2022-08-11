@@ -134,6 +134,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
     GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(keyedTable)
         .withTransactionId(getMaxTransactionId(task.dataFiles()))
         .withTaskId(task.getAttemptId())
+        .withLocation(task.getOptimizeLocation())
         .buildBaseWriter();
     long insertCount = 0;
     while (recordIterator.hasNext()) {

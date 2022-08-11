@@ -22,8 +22,11 @@ import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Set;
+import java.util.UUID;
 
 public class FileUtil {
 
@@ -51,6 +54,11 @@ public class FileUtil {
 
   public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath) {
     deleteEmptyDirectory(io, directoryPath, Collections.emptySet());
+  }
+
+  public static String getNewBaseLocation(String baseDirectory) {
+    return String.format("%s/%s-%s", baseDirectory,
+        new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()), UUID.randomUUID());
   }
 
   /**

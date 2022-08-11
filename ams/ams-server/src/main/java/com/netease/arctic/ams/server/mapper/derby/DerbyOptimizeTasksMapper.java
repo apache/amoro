@@ -36,7 +36,7 @@ public interface DerbyOptimizeTasksMapper extends OptimizeTasksMapper {
   String TABLE_NAME = "optimize_task";
 
   @Select("select trace_id, optimize_type, catalog_name, db_name, table_name, partition," +
-      " task_group, task_history_id, max_change_transaction_id, is_delete_pos_delete," +
+      " task_group, task_history_id, max_change_transaction_id, is_delete_pos_delete, is_adapt_hive," +
       " source_nodes, create_time, properties, queue_id," +
       " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size" +
       " insert_files, delete_files, base_files, pos_delete_files from " + TABLE_NAME)
@@ -51,6 +51,7 @@ public interface DerbyOptimizeTasksMapper extends OptimizeTasksMapper {
       @Result(property = "taskHistoryId", column = "task_history_id"),
       @Result(property = "maxChangeTransactionId", column = "max_change_transaction_id"),
       @Result(property = "isDeletePosDelete", column = "is_delete_pos_delete"),
+      @Result(property = "isAdaptHive", column = "is_adapt_hive"),
       @Result(property = "queueId", column = "queue_id"),
       @Result(property = "insertFileSize", column = "insert_file_size"),
       @Result(property = "deleteFileSize", column = "delete_file_size"),
@@ -71,7 +72,7 @@ public interface DerbyOptimizeTasksMapper extends OptimizeTasksMapper {
 
   @Insert("insert into " + TABLE_NAME + " (" +
           " trace_id, optimize_type, catalog_name, db_name, table_name, partition," +
-          " task_group, task_history_id, max_change_transaction_id, is_delete_pos_delete," +
+          " task_group, task_history_id, max_change_transaction_id, is_delete_pos_delete, is_adapt_hive," +
           " source_nodes, create_time, properties, queue_id," +
           " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
           " insert_files, delete_files, base_files, pos_delete_files," +
@@ -89,6 +90,7 @@ public interface DerbyOptimizeTasksMapper extends OptimizeTasksMapper {
           " #{optimizeTask.taskHistoryId, jdbcType=VARCHAR}," +
           " #{optimizeTask.maxChangeTransactionId}," +
           " #{optimizeTask.isDeletePosDelete}," +
+          " #{optimizeTask.isAdaptHive}," +
           " #{optimizeTask.sourceNodes, " +
           "typeHandler=com.netease.arctic.ams.server.mybatis.ListOfTreeNode2StringConverter}," +
           " #{optimizeTask.createTime, " +

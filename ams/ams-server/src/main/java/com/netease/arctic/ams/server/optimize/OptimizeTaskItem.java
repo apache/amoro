@@ -34,7 +34,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -241,7 +241,7 @@ public class OptimizeTaskItem extends IJDBCService {
           internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
           optimizeRuntime.getTargetFiles().forEach(file -> {
             ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
-            if (contentFile instanceof DataFile) {
+            if (contentFile.content() == FileContent.DATA) {
               internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
                   DataFileType.BASE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
             } else {

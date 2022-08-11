@@ -33,6 +33,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
@@ -53,10 +54,10 @@ import java.util.stream.Collectors;
 
 public class BaseOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizeCommit.class);
-  private final ArcticTable arcticTable;
-  private final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
-  private final Map<String, TableTaskHistory> commitTableTaskHistory = new HashMap<>();
-  private final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
+  protected final ArcticTable arcticTable;
+  protected final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
+  protected final Map<String, TableTaskHistory> commitTableTaskHistory = new HashMap<>();
+  protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
 
   public BaseOptimizeCommit(ArcticTable arcticTable, Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
     this.arcticTable = arcticTable;
@@ -150,7 +151,7 @@ public class BaseOptimizeCommit {
         OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(arcticTable.asKeyedTable());
         AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
         minorAddFiles.forEach(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             overwriteBaseFiles.addFile((DataFile) contentFile);
           } else {
             overwriteBaseFiles.addFile((DeleteFile) contentFile);
@@ -160,7 +161,7 @@ public class BaseOptimizeCommit {
         AtomicInteger deletedPosDeleteFile = new AtomicInteger(0);
         Set<DeleteFile> deletedPosDeleteFiles = new HashSet<>();
         minorDeleteFiles.forEach(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             overwriteBaseFiles.deleteFile((DataFile) contentFile);
           } else {
             deletedPosDeleteFiles.add((DeleteFile) contentFile);
@@ -196,14 +197,14 @@ public class BaseOptimizeCommit {
       // commit major optimize content
       if (CollectionUtils.isNotEmpty(majorAddFiles) || CollectionUtils.isNotEmpty(majorDeleteFiles)) {
         Set<DataFile> addDataFiles = majorAddFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             return (DataFile) contentFile;
           }
 
           return null;
         }).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<DeleteFile> addDeleteFiles = majorAddFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DeleteFile) {
+          if (contentFile.content() == FileContent.POSITION_DELETES) {
             return (DeleteFile) contentFile;
           }
 
@@ -211,14 +212,14 @@ public class BaseOptimizeCommit {
         }).filter(Objects::nonNull).collect(Collectors.toSet());
 
         Set<DataFile> deleteDataFiles = majorDeleteFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             return (DataFile) contentFile;
           }
 
           return null;
         }).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<DeleteFile> deleteDeleteFiles = majorDeleteFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DeleteFile) {
+          if (contentFile.content() == FileContent.POSITION_DELETES) {
             return (DeleteFile) contentFile;
           }
 
@@ -282,7 +283,7 @@ public class BaseOptimizeCommit {
   private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask,
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
-      if (contentFile instanceof DeleteFile) {
+      if (contentFile.content() == FileContent.POSITION_DELETES) {
         return DefaultKeyedFile.parseMetaFromFileName(contentFile.path().toString()).node();
       }
 

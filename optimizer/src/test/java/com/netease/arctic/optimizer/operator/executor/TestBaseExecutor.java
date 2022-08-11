@@ -31,13 +31,22 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -51,6 +60,19 @@ import java.util.stream.Collectors;
 public class TestBaseExecutor extends TableTestBase {
   protected List<DataFileInfo> baseDataFilesInfo = new ArrayList<>();
   protected List<DataFileInfo> posDeleteFilesInfo = new ArrayList<>();
+
+
+  @Test
+  public void test() {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(testTable.schema(), testTable.spec());
+    FileFormat fileFormat = FileFormat.PARQUET;
+    UpdateProperties updateProperties = testTable.updateProperties();
+    updateProperties.set(TableProperties.WRITE_NEW_DATA_LOCATION, "/tmp/iceberg");
+    updateProperties.commit();
+    OutputFileFactory outputFileFactory = OutputFileFactory
+        .builderFor(testTable.asUnkeyedTable(), 0, 0).format(fileFormat).build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(FILE_A.partition());
+  }
 
   protected List<DataFile> insertKeyedTableBaseDataFiles(long transactionId) throws IOException {
     GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)

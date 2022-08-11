@@ -96,6 +96,10 @@ public class TableProperties {
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
 
+  // adapt hive
+  public static final String ADAPT_HIVE_METASTORE = "adapt.hive.enable";
+  public static final boolean ADAPT_HIVE_METASTORE_DEFAULT = false;
+
   /**
    * table write related properties
    */
