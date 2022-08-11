@@ -539,7 +539,7 @@ public class TableOptimizeItem extends IJDBCService {
     if (isKeyedTable()) {
       KeyedTable keyedHiveTable = getArcticTable(true).asKeyedTable();
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(keyedHiveTable.baseTable()));
-      record.setBaseTableMaxTransactionId(keyedHiveTable.baseTable().maxTransactionId().toString());
+      record.setBaseTableMaxTransactionId(keyedHiveTable.maxTransactionId().toString());
     } else {
       getArcticTable(true);
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
