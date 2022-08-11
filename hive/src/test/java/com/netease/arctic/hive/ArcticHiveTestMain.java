@@ -16,11 +16,13 @@ public class ArcticHiveTestMain {
 
   @BeforeClass
   public static void setup() throws Exception {
+    System.out.println("================== begin arctic hive test ==================");
     HiveTableTestBase.startMetastore();
   }
 
   @AfterClass
   public static void cleanDown(){
+    System.out.println("================== end arctic hive test ===================");
     HiveTableTestBase.stopMetastore();
   }
 }
