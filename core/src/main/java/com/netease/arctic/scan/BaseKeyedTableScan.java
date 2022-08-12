@@ -230,7 +230,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
       List<ArcticFileScanTask> baseTasks) {
     ListMultimap<StructLike, ArcticFileScanTask> filesGroupedByPartition
         = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
-    StructLikeMap<Long> partitionMaxTxId = table.baseTable().partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = table.partitionMaxTransactionId();
 
     // filter change files according to max transaction id
     changeTasks.forEach(task -> {
