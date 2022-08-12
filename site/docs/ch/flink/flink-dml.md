@@ -8,10 +8,10 @@ Arctic 表提供了 File 和 Log 的存储，File 存储海量的全量数据，
 
 使用 Apache Kafka 作为 Logstore 存储系统[案例分享](hidden-kafka.md)
 
-详细的使用参考 [sql 读](#logstore)、[java 读](flink-ds.md#logstore)、[sql 写](#insert-into)、[java 写](flink.md#appending-data)
+详细的使用参考 [sql 读](#logstore)、[java 读](flink-ds.md#logstore)、[sql 写](#insert-into)、[java 写](flink-ds.md#appending-data)
 ## Changelog 数据
 
-对于 Arctic 主键表，FileStore 分为 BaseStore 和 ChangeStore 两部分数据，其中的 ChangeStore 存放实时写入的 CDC 数据，这部分数据会定期并入 Arctic BaseStore 中，详见 [Optimize](../table-structure.md)。
+对于 Arctic 主键表，FileStore 分为 BaseStore 和 ChangeStore 两部分数据，其中的 ChangeStore 存放实时写入的 CDC 数据，这部分数据会定期并入 Arctic BaseStore 中，详见 [Optimize](../table-format/table-store.md)。
 ChangeStore 数据依赖 Flink checkpoint 的周期时间进行提交，数据的可见性会有分钟级别延迟。
 
 后续可以通过 Flink 引擎读取 ChangeStore 进行数据回放用作计算分析，支持 +I，-D，-U 和 +U 四种 changelog 数据类型。
