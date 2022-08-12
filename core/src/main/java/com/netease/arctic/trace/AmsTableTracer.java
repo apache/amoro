@@ -19,6 +19,7 @@
 package com.netease.arctic.trace;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -126,9 +127,10 @@ public class AmsTableTracer implements TableTracer {
     TableCommitMeta commitMeta = new TableCommitMeta();
     commitMeta.setTableIdentifier(table.id().buildTableIdentifier());
     commitMeta.setAction(action);
-    commitMeta.setOptimizeProduced(PropertyUtil.propertyAsBoolean(snapshotSummary,
-        com.netease.arctic.trace.SnapshotSummary.OPTIMIZE_PRODUCED,
-        com.netease.arctic.trace.SnapshotSummary.OPTIMIZE_PRODUCED_DEFAULT));
+    String commitMetaSource = PropertyUtil.propertyAsString(snapshotSummary,
+        com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER,
+        com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
+    commitMeta.setCommitMetaProducer(CommitMetaProducer.valueOf(commitMetaSource));
     commitMeta.setCommitTime(System.currentTimeMillis());
     boolean update = false;
     boolean threw = false;
