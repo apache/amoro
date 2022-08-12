@@ -61,7 +61,7 @@ public class ArcticTransactionService extends IJDBCService {
         }
       }
     }
-    throw new RuntimeException(String.format("table %s allocateTransactionId error after retry %s times",
+    throw new RuntimeException(String.format("table %s allocateTransactionId error after retry %d times",
         tableIdentifier.toString(), retry));
   }
 
