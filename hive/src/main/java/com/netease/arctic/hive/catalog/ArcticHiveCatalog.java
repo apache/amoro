@@ -139,9 +139,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
-    BaseTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
+    BaseTable baseTable = new UnkeyedHiveTable(tableIdentifier,
         useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-        fileIO, client);
+        fileIO, client, hiveClientPool);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
@@ -158,7 +158,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
     return new UnkeyedHiveTable(tableIdentifier, useArcticTableOperations(table, baseLocation,
-        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
+        arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client, hiveClientPool);
   }
 
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
@@ -172,8 +172,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       super.doCreateCheck();
       try {
         org.apache.hadoop.hive.metastore.api.Table hiveTable =
-            hiveClientPool.run(client -> client.getTable(identifier.getDatabase(),
-            identifier.getTableName()));
+            hiveClientPool.run(client -> client.getTable(
+                identifier.getDatabase(),
+                identifier.getTableName()));
         if (hiveTable != null) {
           throw new IllegalArgumentException("Table is already existed in hive meta store:" + identifier);
         }
@@ -211,9 +212,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           throw new IllegalStateException("create base table failed", e);
         }
       });
-      BaseTable baseTable = new KeyedHiveTable.HiveBaseInternalTable(tableIdentifier,
+      BaseTable baseTable = new UnkeyedHiveTable(tableIdentifier,
           useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
-          fileIO, client);
+          fileIO, client, hiveClientPool);
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
@@ -229,7 +230,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       try {
         hiveClientPool.run(client -> {
           org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
-          hiveTable.setSd(storageDescriptor(tableLocation,
+          hiveTable.setSd(storageDescriptor(
+              tableLocation,
               FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
                   TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
           client.createTable(hiveTable);
@@ -260,7 +262,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       try {
         hiveClientPool.run(client -> {
           org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
-          hiveTable.setSd(storageDescriptor(tableLocation,
+          hiveTable.setSd(storageDescriptor(
+              tableLocation,
               FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
                   TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
           client.createTable(hiveTable);
@@ -271,7 +274,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       }
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       return new UnkeyedHiveTable(tableIdentifier, useArcticTableOperations(table, baseLocation, fileIO,
-          tableMetaStore.getConfiguration()), fileIO, client);
+          tableMetaStore.getConfiguration()), fileIO, client, hiveClientPool);
     }
 
     private org.apache.hadoop.hive.metastore.api.Table newHiveTable(TableMeta meta) {
@@ -328,7 +331,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       super.doRollbackCreateTable(meta);
       try {
         hiveClientPool.run(client -> {
-          client.dropTable(meta.getTableIdentifier().getDatabase(),
+          client.dropTable(
+              meta.getTableIdentifier().getDatabase(),
               meta.getTableIdentifier().getTableName(),
               true,
               true);
@@ -339,5 +343,4 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       }
     }
   }
-
 }

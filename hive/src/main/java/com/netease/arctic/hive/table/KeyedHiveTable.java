@@ -21,6 +21,7 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.op.HiveRewritePartitions;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
@@ -37,29 +38,18 @@ import org.apache.iceberg.Table;
  */
 public class KeyedHiveTable extends BaseKeyedTable {
 
-  CachedHiveClientPool hiveClient;
+  HMSClient hiveClient;
 
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      CachedHiveClientPool hiveClient,
+      HMSClient hiveClient,
       BaseTable baseTable,
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
     this.hiveClient = hiveClient;
-  }
-
-  public static class HiveBaseInternalTable extends BaseInternalTable {
-
-    public HiveBaseInternalTable(
-        TableIdentifier tableIdentifier,
-        Table baseIcebergTable,
-        ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
-    }
   }
 
   @Override

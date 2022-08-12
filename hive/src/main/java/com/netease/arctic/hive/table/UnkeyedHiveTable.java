@@ -19,19 +19,38 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.op.HiveOperationTransaction;
+import com.netease.arctic.hive.op.ReplaceHivePartitions;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
-public class UnkeyedHiveTable extends BaseUnkeyedTable implements SupportHive {
+public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable,SupportHive {
 
-  public UnkeyedHiveTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
-      AmsClient client) {
+  HMSClient hiveClient;
+
+  public UnkeyedHiveTable(
+      TableIdentifier tableIdentifier,
+      Table icebergTable,
+      ArcticFileIO arcticFileIO,
+      AmsClient client,
+      HMSClient hiveClient) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
+    this.hiveClient = hiveClient;
+  }
+
+  @Override
+  public ReplacePartitions newReplacePartitions() {
+    ReplacePartitions replacePartitions = super.newReplacePartitions();
+    return new ReplaceHivePartitions(replacePartitions, this, hiveClient, hiveClient);
   }
 
 
@@ -39,5 +58,11 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements SupportHive {
   @Override
   public String hiveLocation() {
     return null;
+  }
+
+  @Override
+  public Transaction newTransaction() {
+    Transaction transaction = super.newTransaction();
+    return new HiveOperationTransaction(this, transaction, hiveClient);
   }
 }
