@@ -1,9 +1,5 @@
 package com.netease.arctic.flink.write;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.time.Instant;
-import java.util.concurrent.TimeUnit;
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
 import org.apache.flink.table.data.MapData;
@@ -34,10 +30,14 @@ import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 public class AdaptHiveFlinkParquetWriters {
   private AdaptHiveFlinkParquetWriters() {
@@ -61,7 +61,8 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> struct(RowType rowType, GroupType struct,
+    public ParquetValueWriter<?> struct(
+        RowType rowType, GroupType struct,
         List<ParquetValueWriter<?>> fieldWriters) {
       List<Type> fields = struct.getFields();
       List<RowField> flinkFields = rowType.getFields();
@@ -89,7 +90,8 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> map(MapType mapType, GroupType map,
+    public ParquetValueWriter<?> map(
+        MapType mapType, GroupType map,
         ParquetValueWriter<?> keyWriter, ParquetValueWriter<?> valueWriter) {
       GroupType repeatedKeyValue = map.getFields().get(0).asGroupType();
       String[] repeatedPath = currentPath();
@@ -102,7 +104,6 @@ public class AdaptHiveFlinkParquetWriters {
           newOption(repeatedKeyValue.getType(1), valueWriter),
           mapType.getKeyType(), mapType.getValueType());
     }
-
 
     private ParquetValueWriter<?> newOption(Type fieldType, ParquetValueWriter<?> writer) {
       int maxD = type.getMaxDefinitionLevel(path(fieldType.getName()));
@@ -227,21 +228,24 @@ public class AdaptHiveFlinkParquetWriters {
     return new TimeMicrosWriter(desc);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsInteger(ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsInteger(
+      ColumnDescriptor desc,
       int precision, int scale) {
     Preconditions.checkArgument(precision <= 9, "Cannot write decimal value as integer with precision larger than 9," +
         " wrong precision %s", precision);
     return new IntegerDecimalWriter(desc, precision, scale);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsLong(ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsLong(
+      ColumnDescriptor desc,
       int precision, int scale) {
     Preconditions.checkArgument(precision <= 18, "Cannot write decimal value as long with precision larger than 18, " +
         " wrong precision %s", precision);
     return new LongDecimalWriter(desc, precision, scale);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsFixed(ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsFixed(
+      ColumnDescriptor desc,
       int precision, int scale) {
     return new FixedDecimalWriter(desc, precision, scale);
   }
@@ -363,7 +367,8 @@ public class AdaptHiveFlinkParquetWriters {
   private static class ArrayDataWriter<E> extends ParquetValueWriters.RepeatedWriter<ArrayData, E> {
     private final LogicalType elementType;
 
-    private ArrayDataWriter(int definitionLevel, int repetitionLevel,
+    private ArrayDataWriter(
+        int definitionLevel, int repetitionLevel,
         ParquetValueWriter<E> writer, LogicalType elementType) {
       super(definitionLevel, repetitionLevel, writer);
       this.elementType = elementType;
@@ -411,7 +416,8 @@ public class AdaptHiveFlinkParquetWriters {
     private final LogicalType keyType;
     private final LogicalType valueType;
 
-    private MapDataWriter(int definitionLevel, int repetitionLevel,
+    private MapDataWriter(
+        int definitionLevel, int repetitionLevel,
         ParquetValueWriter<K> keyWriter, ParquetValueWriter<V> valueWriter,
         LogicalType keyType, LogicalType valueType) {
       super(definitionLevel, repetitionLevel, keyWriter, valueWriter);
