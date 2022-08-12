@@ -62,6 +62,8 @@ public class ArcticTransactionService extends IJDBCService {
         throw e;
       }
       return allocateTransactionId(tableIdentifier, transactionSignature, retry - 1);
+    } finally {
+      sqlSession.close();
     }
   }
 
