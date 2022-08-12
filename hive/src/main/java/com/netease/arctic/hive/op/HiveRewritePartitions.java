@@ -1,6 +1,7 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.commons.lang.StringUtils;
@@ -25,7 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 public class HiveRewritePartitions extends KeyedPartitionRewrite {
-  private CachedHiveClientPool client;
+  private HMSClient client;
   private final String db;
   private final String tableName;
   private final KeyedTable keyedTable;
@@ -34,7 +35,7 @@ public class HiveRewritePartitions extends KeyedPartitionRewrite {
   private List<Partition> newPartitions;
   private String hiveLocation;
 
-  public HiveRewritePartitions(KeyedTable keyedTable, CachedHiveClientPool client) {
+  public HiveRewritePartitions(KeyedTable keyedTable, HMSClient client) {
     super(keyedTable);
     this.client = client;
     this.db = keyedTable.id().getDatabase();
