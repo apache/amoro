@@ -24,7 +24,6 @@ import org.junit.Test;
 
 public class ReadWriteHiveAdaptHiveParquetTest {
 
-  @Test
   public void readHiveOriginalParquetFile() {
     Schema schema = new Schema(
         Types.NestedField.of(1, false, "t1", Types.TimestampType.withoutZone()),
