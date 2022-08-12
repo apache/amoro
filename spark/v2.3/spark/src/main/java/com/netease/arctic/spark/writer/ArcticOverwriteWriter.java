@@ -14,6 +14,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
+import org.apache.spark.TaskContext;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
@@ -103,7 +104,7 @@ public class ArcticOverwriteWriter implements DataSourceWriter, SupportsWriteInt
       TaskWriter<InternalRow> writer = ArcticSparkTaskWriters.buildFor(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
-          .withTaskId(attemptNumber)
+          .withTaskId(TaskContext.get().taskAttemptId())
           .withDataSourceSchema(dsSchema)
           .buildBaseWriter();
 
