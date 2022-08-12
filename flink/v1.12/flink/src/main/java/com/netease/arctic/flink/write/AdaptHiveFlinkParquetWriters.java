@@ -13,8 +13,8 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.RowType.RowField;
 import org.apache.flink.table.types.logical.SmallIntType;
 import org.apache.flink.table.types.logical.TinyIntType;
-import org.apache.iceberg.data.parquet.TimestampInt96Writer;
 import org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor;
+import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetValueReaders;
 import org.apache.iceberg.parquet.ParquetValueWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters;
@@ -30,10 +30,14 @@ import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.concurrent.TimeUnit;
 
 public class AdaptHiveFlinkParquetWriters {
   private AdaptHiveFlinkParquetWriters() {
@@ -58,7 +62,8 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> struct(RowType rowType, GroupType struct,
+    public ParquetValueWriter<?> struct(
+        RowType rowType, GroupType struct,
         List<ParquetValueWriter<?>> fieldWriters) {
       List<Type> fields = struct.getFields();
       List<RowField> flinkFields = rowType.getFields();
@@ -86,7 +91,8 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> map(MapType mapType, GroupType map,
+    public ParquetValueWriter<?> map(
+        MapType mapType, GroupType map,
         ParquetValueWriter<?> keyWriter, ParquetValueWriter<?> valueWriter) {
       GroupType repeatedKeyValue = map.getFields().get(0).asGroupType();
       String[] repeatedPath = currentPath();
@@ -99,7 +105,6 @@ public class AdaptHiveFlinkParquetWriters {
           newOption(repeatedKeyValue.getType(1), valueWriter),
           mapType.getKeyType(), mapType.getValueType());
     }
-
 
     private ParquetValueWriter<?> newOption(org.apache.parquet.schema.Type fieldType, ParquetValueWriter<?> writer) {
       int maxD = type.getMaxDefinitionLevel(path(fieldType.getName()));
@@ -160,7 +165,7 @@ public class AdaptHiveFlinkParquetWriters {
         case INT64:
           return ParquetValueWriters.longs(desc);
         case INT96:
-          return new TimestampInt96Writer<>(desc);
+          return new TimestampInt96Writer(desc);
         case FLOAT:
           return ParquetValueWriters.floats(desc);
         case DOUBLE:
@@ -168,6 +173,42 @@ public class AdaptHiveFlinkParquetWriters {
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
+    }
+  }
+
+  private static class TimestampInt96Writer extends AdaptHivePrimitiveWriter<TimestampData> {
+
+    private static final long JULIAN_DAY_OF_EPOCH = 2440588L;
+    private static final long MICROS_PER_DAY = 86400000000L;
+    private static final long MILLIS_IN_DAY = TimeUnit.DAYS.toMillis(1);
+    private static final long NANOS_PER_MILLISECOND = TimeUnit.MILLISECONDS.toNanos(1);
+
+    public TimestampInt96Writer(ColumnDescriptor descriptor) {
+      super(descriptor);
+    }
+
+    /**
+     * Writes nano timestamps to parquet int96
+     */
+    void writeBinary(int repetitionLevel, int julianDay, long nanosOfDay) {
+      ByteBuffer buf = ByteBuffer.allocate(12);
+      buf.order(ByteOrder.LITTLE_ENDIAN);
+      buf.putLong(nanosOfDay);
+      buf.putInt(julianDay);
+      buf.flip();
+      column.writeBinary(repetitionLevel, Binary.fromConstantByteBuffer(buf));
+    }
+
+    void writeInstant(int repetitionLevel, Instant instant) {
+      long timestamp = instant.toEpochMilli();
+      int julianDay = (int) (timestamp / MILLIS_IN_DAY + 2440588L);
+      long nanosOfDay = timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND + instant.getNano() % NANOS_PER_MILLISECOND;
+      writeBinary(repetitionLevel, julianDay, nanosOfDay);
+    }
+
+    @Override
+    public void write(int repetitionLevel, TimestampData value) {
+      writeInstant(repetitionLevel, value.toInstant());
     }
   }
 
@@ -188,21 +229,24 @@ public class AdaptHiveFlinkParquetWriters {
     return new AdaptHiveFlinkParquetWriters.TimeMicrosWriter(desc);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsInteger(ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsInteger(
+      ColumnDescriptor desc,
       int precision, int scale) {
     Preconditions.checkArgument(precision <= 9, "Cannot write decimal value as integer with precision larger than 9," +
         " wrong precision %s", precision);
     return new AdaptHiveFlinkParquetWriters.IntegerDecimalWriter(desc, precision, scale);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsLong(ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsLong(
+      ColumnDescriptor desc,
       int precision, int scale) {
     Preconditions.checkArgument(precision <= 18, "Cannot write decimal value as long with precision larger than 18, " +
         " wrong precision %s", precision);
     return new AdaptHiveFlinkParquetWriters.LongDecimalWriter(desc, precision, scale);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsFixed(ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsFixed(
+      ColumnDescriptor desc,
       int precision, int scale) {
     return new AdaptHiveFlinkParquetWriters.FixedDecimalWriter(desc, precision, scale);
   }
@@ -324,7 +368,8 @@ public class AdaptHiveFlinkParquetWriters {
   private static class ArrayDataWriter<E> extends ParquetValueWriters.RepeatedWriter<ArrayData, E> {
     private final LogicalType elementType;
 
-    private ArrayDataWriter(int definitionLevel, int repetitionLevel,
+    private ArrayDataWriter(
+        int definitionLevel, int repetitionLevel,
         ParquetValueWriter<E> writer, LogicalType elementType) {
       super(definitionLevel, repetitionLevel, writer);
       this.elementType = elementType;
@@ -372,7 +417,8 @@ public class AdaptHiveFlinkParquetWriters {
     private final LogicalType keyType;
     private final LogicalType valueType;
 
-    private MapDataWriter(int definitionLevel, int repetitionLevel,
+    private MapDataWriter(
+        int definitionLevel, int repetitionLevel,
         ParquetValueWriter<K> keyWriter, ParquetValueWriter<V> valueWriter,
         LogicalType keyType, LogicalType valueType) {
       super(definitionLevel, repetitionLevel, keyWriter, valueWriter);

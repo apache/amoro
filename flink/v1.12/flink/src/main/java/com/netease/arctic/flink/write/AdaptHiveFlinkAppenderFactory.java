@@ -120,7 +120,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case PARQUET:
           return AdaptHiveParquet.write(outputFile)
-              .createWriterFunc(msgType -> FlinkParquetWriters.buildWriter(flinkSchema, msgType))
+              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkSchema, msgType))
               .setAll(props)
               .metricsConfig(metricsConfig)
               .schema(schema)
@@ -167,7 +167,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case PARQUET:
           return Parquet.writeDeletes(outputFile.encryptingOutputFile())
-              .createWriterFunc(msgType -> FlinkParquetWriters.buildWriter(lazyEqDeleteFlinkSchema(), msgType))
+              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(lazyEqDeleteFlinkSchema(), msgType))
               .withPartition(partition)
               .overwrite()
               .setAll(props)
@@ -207,7 +207,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
         case PARQUET:
           RowType flinkPosDeleteSchema = FlinkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
           return Parquet.writeDeletes(outputFile.encryptingOutputFile())
-              .createWriterFunc(msgType -> FlinkParquetWriters.buildWriter(flinkPosDeleteSchema, msgType))
+              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkPosDeleteSchema, msgType))
               .withPartition(partition)
               .overwrite()
               .setAll(props)

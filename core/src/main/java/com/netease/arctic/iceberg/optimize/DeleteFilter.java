@@ -29,7 +29,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
-import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
@@ -222,7 +222,7 @@ public abstract class DeleteFilter<T> {
         AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(input)
             .project(deleteSchema)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
+            .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(deleteSchema, fileSchema));
 
         if (deleteFile.content() == FileContent.POSITION_DELETES) {
           builder.filter(Expressions.equal(MetadataColumns.DELETE_FILE_PATH.name(), dataFile.path()));

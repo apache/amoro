@@ -37,7 +37,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
-import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
@@ -292,7 +292,8 @@ public abstract class ArcticDeleteFilter<T> {
         AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(input)
             .project(deleteSchema)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
+            .createReaderFunc(fileSchema ->
+                AdaptHiveGenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
 
         return builder.build();
 
@@ -373,7 +374,7 @@ public abstract class ArcticDeleteFilter<T> {
         AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(input)
             .project(deleteSchema)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
+            .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(deleteSchema, fileSchema));
 
         return builder.build();
 

@@ -25,7 +25,7 @@ import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
@@ -74,7 +74,7 @@ public class BaseIcebergPosDeleteReader {
         AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(input)
             .project(POS_DELETE_SCHEMA)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(POS_DELETE_SCHEMA, fileSchema));
+            .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(POS_DELETE_SCHEMA, fileSchema));
 
         return builder.build();
       default:

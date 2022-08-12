@@ -55,25 +55,36 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
   private final Schema eqDeleteRowSchema;
   private final Schema posDeleteRowSchema;
   private final Map<String, String> config = Maps.newHashMap();
+  private final boolean writeHive;
 
   public AdaptHiveGenericAppenderFactory(Schema schema) {
-    this(schema, PartitionSpec.unpartitioned(), null, null, null);
+    this(schema, PartitionSpec.unpartitioned(), null, null, null, false);
   }
 
   public AdaptHiveGenericAppenderFactory(Schema schema, PartitionSpec spec) {
-    this(schema, spec, null, null, null);
+    this(schema, spec, null, null, null, false);
+  }
+
+  public AdaptHiveGenericAppenderFactory(Schema schema, boolean writeHive) {
+    this(schema, PartitionSpec.unpartitioned(), null, null, null, writeHive);
+  }
+
+  public AdaptHiveGenericAppenderFactory(Schema schema, PartitionSpec spec, boolean writeHive) {
+    this(schema, spec, null, null, null, writeHive);
   }
 
   public AdaptHiveGenericAppenderFactory(
       Schema schema, PartitionSpec spec,
       int[] equalityFieldIds,
       Schema eqDeleteRowSchema,
-      Schema posDeleteRowSchema) {
+      Schema posDeleteRowSchema,
+      boolean writeHive) {
     this.schema = schema;
     this.spec = spec;
     this.equalityFieldIds = equalityFieldIds;
     this.eqDeleteRowSchema = eqDeleteRowSchema;
     this.posDeleteRowSchema = posDeleteRowSchema;
+    this.writeHive = writeHive;
   }
 
   public AdaptHiveGenericAppenderFactory set(String property, String value) {

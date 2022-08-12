@@ -21,6 +21,7 @@ package com.netease.arctic.flink.write;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.ArcticTable;
+import java.util.List;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -28,14 +29,12 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.SerializableTable;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.flink.sink.AdaptHiveRowDataTaskWriterFactory;
+import org.apache.iceberg.flink.sink.RowDataTaskWriterFactory;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 public class ArcticFileWriterTest extends FlinkTestBase {
 
@@ -65,7 +64,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
   public static TaskWriter<RowData> createTaskWriter(Table table, long targetFileSize, FileFormat format,
                                                      RowType rowType) {
-    TaskWriterFactory<RowData> taskWriterFactory = new AdaptHiveRowDataTaskWriterFactory(
+    TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
         SerializableTable.copyOf(table), rowType, targetFileSize, format, null);
     taskWriterFactory.initialize(1, 1);
     return taskWriterFactory.create();

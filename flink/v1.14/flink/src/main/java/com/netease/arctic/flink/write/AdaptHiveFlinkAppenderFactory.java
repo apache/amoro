@@ -120,7 +120,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case PARQUET:
           return AdaptHiveParquet.write(outputFile)
-              .createWriterFunc(msgType -> FlinkParquetWriters.buildWriter(flinkSchema, msgType))
+              .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkSchema, msgType))
               .setAll(props)
               .metricsConfig(metricsConfig)
               .schema(schema)

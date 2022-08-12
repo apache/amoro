@@ -25,7 +25,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.data.parquet.GenericParquetReaders;
+import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.parquet.schema.MessageType;
@@ -68,7 +68,7 @@ public class GenericArcticDataReader extends BaseArcticDataReader<Record> {
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> GenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema -> AdaptHiveGenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
