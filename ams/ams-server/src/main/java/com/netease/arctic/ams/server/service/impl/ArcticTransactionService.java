@@ -30,41 +30,38 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 public class ArcticTransactionService extends IJDBCService {
 
   public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature, int retry) {
-    SqlSession sqlSession = getSqlSession(false);
-    try {
-      com.netease.arctic.table.TableIdentifier identifier =
-          new com.netease.arctic.table.TableIdentifier(tableIdentifier);
-      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
-      TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
-      Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
-      Long currentTxId = mapper.getCurrentTxId(tableIdentifier);
-      if (currentTxId == null) {
-        currentTxId = tableMetadata.getCurrentTxId()  == null ? 0 : tableMetadata.getCurrentTxId();
-      }
-      Long finalTxId = currentTxId + 1;
-      if (!StringUtils.isEmpty(transactionSignature)) {
-        Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);
-        if (txId != null) {
-          sqlSession.commit(true);
-          return txId;
-        }
-        mapper.insertTransaction(finalTxId, transactionSignature, tableIdentifier);
-      }
+    for (int i = 0; i < retry; i++) {
+      try (SqlSession sqlSession = getSqlSession(false)) {
+        try {
+          com.netease.arctic.table.TableIdentifier identifier =
+              new com.netease.arctic.table.TableIdentifier(tableIdentifier);
+          TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
+          TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
+          TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
+          Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
+          Long currentTxId = mapper.getCurrentTxId(tableIdentifier);
+          if (currentTxId == null) {
+            currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
+          }
+          Long finalTxId = currentTxId + 1;
+          if (!StringUtils.isEmpty(transactionSignature)) {
+            Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);
+            if (txId != null) {
+              sqlSession.commit(true);
+              return txId;
+            }
+            mapper.insertTransaction(finalTxId, transactionSignature, tableIdentifier);
+          }
 
-      tableMetadataMapper.updateTableTxId(identifier, finalTxId);
-      sqlSession.commit();
-      return finalTxId;
-    } catch (Exception e) {
-      sqlSession.rollback();
-      sqlSession.close();
-      if (retry <= 0) {
-        throw e;
+          tableMetadataMapper.updateTableTxId(identifier, finalTxId);
+          sqlSession.commit();
+          return finalTxId;
+        } catch (Exception e) {
+          sqlSession.rollback();
+        }
       }
-      return allocateTransactionId(tableIdentifier, transactionSignature, retry - 1);
-    } finally {
-      sqlSession.close();
     }
+    throw new RuntimeException(String.format("allocateTransactionId error after retry %s times", retry));
   }
 
   public void delete(TableIdentifier tableIdentifier) {
