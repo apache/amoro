@@ -23,14 +23,12 @@ import com.netease.arctic.ams.api.TableIdentifier;
 public class DDLInfo {
   private TableIdentifier tableIdentifier;
   private String ddl;
-  private Integer schemaId;
   private String ddlType;
   private Long commitTime;
 
   public static DDLInfo of(
       TableIdentifier tableIdentifier,
       String ddl,
-      Integer schemaId,
       String ddlType,
       Long commitTime) {
     DDLInfo ddlInfo = new DDLInfo();
@@ -38,7 +36,6 @@ public class DDLInfo {
     ddlInfo.setDdl(ddl);
     ddlInfo.setCommitTime(commitTime);
     ddlInfo.setDdlType(ddlType);
-    ddlInfo.setSchemaId(schemaId);
     return ddlInfo;
   }
 
@@ -56,14 +53,6 @@ public class DDLInfo {
 
   public void setDdl(String ddl) {
     this.ddl = ddl;
-  }
-
-  public Integer getSchemaId() {
-    return schemaId;
-  }
-
-  public void setSchemaId(Integer schemaId) {
-    this.schemaId = schemaId;
   }
 
   public String getDdlType() {

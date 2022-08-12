@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.util;
 
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
+import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.FileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
@@ -125,6 +126,7 @@ public class DerbyTestUtil extends IJDBCService {
           configuration.addMapper(DerbyCatalogMetadataMapper.class);
           configuration.addMapper(DerbyTableMetadataMapper.class);
           configuration.addMapper(DerbyOptimizeTasksMapper.class);
+          configuration.addMapper(DDLRecordMapper.class);
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }
       }

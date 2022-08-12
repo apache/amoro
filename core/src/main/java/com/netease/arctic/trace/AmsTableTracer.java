@@ -20,6 +20,7 @@ package com.netease.arctic.trace;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.table.ArcticTable;
@@ -36,6 +37,7 @@ import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Type;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,10 +60,11 @@ public class AmsTableTracer implements TableTracer {
   private final AmsClient client;
 
   private String action;
-  private Map<String, String> oldProperties;
   private Map<String, String> newProperties;
   private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
+  private final List<UpdateColumn> updateColumns = new ArrayList<>();
+  private Schema schema;
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
@@ -69,7 +72,6 @@ public class AmsTableTracer implements TableTracer {
     this.table = table;
     this.action = action;
     this.client = client;
-    this.oldProperties = table.properties();
   }
 
   public AmsTableTracer(KeyedTable table, String action, AmsClient client) {
@@ -128,7 +130,6 @@ public class AmsTableTracer implements TableTracer {
     commitMeta.setAction(action);
     commitMeta.setCommitTime(System.currentTimeMillis());
     boolean update = false;
-    boolean threw = false;
 
     if (defaultTableChange != null) {
       Table traceTable;
@@ -155,10 +156,20 @@ public class AmsTableTracer implements TableTracer {
       });
       update = true;
     }
+    if (updateColumns.size() > 0) {
+      int schemaId = schema.schemaId();
+      SchemaUpdateMeta ddlCommitMeta = new SchemaUpdateMeta();
+      ddlCommitMeta.setSchemaId(schemaId);
+      ddlCommitMeta.setTableIdentifier(table.id().buildTableIdentifier());
+      List<com.netease.arctic.ams.api.UpdateColumn> commitUpdateColumns =
+          updateColumns.stream().map(AmsTableTracer::covert).collect(Collectors.toList());
+      ddlCommitMeta.setUpdateColumns(commitUpdateColumns);
+      commitMeta.setSchemaUpdateMeta(ddlCommitMeta);
+      update = true;
+    }
     if (this.newProperties != null) {
       commitMeta.setProperties(this.newProperties);
       update = true;
-      threw = true;
     }
     if (!update) {
       return;
@@ -168,9 +179,6 @@ public class AmsTableTracer implements TableTracer {
       client.tableCommit(commitMeta);
     } catch (Throwable t) {
       LOG.warn("trace table commit failed", t);
-      if (threw) {
-        throw new CommitFailedException(t, "commit table change failed");
-      }
     }
   }
 
@@ -180,13 +188,13 @@ public class AmsTableTracer implements TableTracer {
   }
 
   @Override
-  public void updateColumn(DDLTracer.UpdateColumn updateColumn) {
-
+  public void updateColumn(UpdateColumn updateColumn) {
+    updateColumns.add(updateColumn);
   }
 
   @Override
   public void newSchema(Schema schema) {
-
+    this.schema = schema;
   }
 
   public void setAction(String action) {
@@ -265,6 +273,88 @@ public class AmsTableTracer implements TableTracer {
       } else {
         return Optional.empty();
       }
+    }
+  }
+
+  private static com.netease.arctic.ams.api.UpdateColumn covert(UpdateColumn updateColumn) {
+    com.netease.arctic.ams.api.UpdateColumn commit = new com.netease.arctic.ams.api.UpdateColumn();
+    commit.setName(updateColumn.getName());
+    commit.setParent(updateColumn.getParent());
+    commit.setType(updateColumn.getType() == null ? null : updateColumn.getType().toString());
+    commit.setDoc(updateColumn.getDoc());
+    commit.setOperate(updateColumn.getOperate().name());
+    commit.setIsOptional(updateColumn.getOptional() == null ? null : updateColumn.getOptional().toString());
+    commit.setNewName(updateColumn.getNewName());
+    return commit;
+  }
+
+  public enum SchemaOperateType {
+    ADD,
+    DROP,
+    ALERT,
+    RENAME,
+    MOVE_BEFORE,
+    MOVE_AFTER,
+    MOVE_FIRST
+  }
+
+  public enum PropertiesOPType {
+    SET,
+    UNSET
+  }
+
+  public static class UpdateColumn {
+    private final String parent;
+    private final String name;
+    private final Type type;
+    private final String doc;
+    private final AmsTableTracer.SchemaOperateType operate;
+    private final Boolean isOptional;
+    private final String newName;
+
+    public UpdateColumn(
+        String name,
+        String parent,
+        Type type,
+        String doc,
+        AmsTableTracer.SchemaOperateType operate,
+        Boolean isOptional,
+        String newName) {
+      this.parent = parent;
+      this.name = name;
+      this.type = type;
+      this.doc = doc;
+      this.operate = operate;
+      this.isOptional = isOptional;
+      this.newName = newName;
+    }
+
+    public String getParent() {
+      return parent;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public Type getType() {
+      return type;
+    }
+
+    public String getDoc() {
+      return doc;
+    }
+
+    public AmsTableTracer.SchemaOperateType getOperate() {
+      return operate;
+    }
+
+    public Boolean getOptional() {
+      return isOptional;
+    }
+
+    public String getNewName() {
+      return newName;
     }
   }
 }

@@ -253,7 +253,7 @@ public class CreateTableTransaction implements Transaction {
     }
 
     @Override
-    public void updateColumn(DDLTracer.UpdateColumn updateColumn) {
+    public void updateColumn(AmsTableTracer.UpdateColumn updateColumn) {
 
     }
 

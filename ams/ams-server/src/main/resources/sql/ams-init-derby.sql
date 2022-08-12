@@ -128,6 +128,7 @@ CREATE TABLE table_metadata (
     krb_conf clob(64m),
     krb_principal clob(64m),
     current_tx_id bigint DEFAULT NULL,
+    cur_schema_id   int DEFAULT NULL,
     PRIMARY KEY (catalog_name, db_name, table_name)
 );
 
@@ -240,12 +241,11 @@ CREATE TABLE api_tokens (
     UNIQUE (apikey)
 );
 
-CREATE TABLE `ddl_record`
+CREATE TABLE ddl_record
 (
-    `table_identifier` varchar(256) NOT NULL,
-    `schema_id`   int,
-    `ddl`        clob(64m),
-    `ddl_type`        varchar(256) NOT NULL,
-    `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    table_identifier varchar(256) NOT NULL,
+    ddl        clob(64m),
+    ddl_type       varchar(256) NOT NULL,
+    commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 

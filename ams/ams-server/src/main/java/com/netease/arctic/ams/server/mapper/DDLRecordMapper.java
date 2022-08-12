@@ -18,11 +18,15 @@
 
 package com.netease.arctic.ams.server.mapper;
 
-
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.model.DDLInfo;
+import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
+import com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
@@ -30,13 +34,25 @@ import java.util.List;
 public interface DDLRecordMapper {
   String TABLE_NAME = "ddl_record";
 
-  @Insert("insert into " + TABLE_NAME + " (table_identifier, schema_id, ddl, ddl_type, commit_time) values" +
+  @Insert("insert into " + TABLE_NAME + " (table_identifier, ddl, ddl_type, commit_time) values" +
       "(#{ddlInfo.tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-      ".TableIdentifier2StringConverter}, #{ddlInfo.schemaId}, #{ddlInfo.ddl}, #{ddlInfo.ddlType}, #{ddlInfo" +
+      ".TableIdentifier2StringConverter}, #{ddlInfo.ddl}, #{ddlInfo.ddlType}, #{ddlInfo" +
       ".commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor})")
   void insert(@Param("ddlInfo") DDLInfo ddlInfo);
 
-  @Select("select max(schema_id) from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com" +
-      ".netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and schema_id is not null")
-  List<Integer> getCurrentSchemaId(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+  @Select("select table_identifier, ddl, ddl_type, commit_time from " + TABLE_NAME + " where table_identifier = " +
+      "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
+  @Results({
+      @Result(property = "tableIdentifier", column = "table_identifier", typeHandler =
+          TableIdentifier2StringConverter.class),
+      @Result(property = "ddl", column = "ddl"),
+      @Result(property = "ddlType", column = "ddl_type"),
+      @Result(property = "commitTime", column = "commit_time",
+          typeHandler = Long2TsConvertor.class)
+  })
+  List<DDLInfo> getDDLInfos(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+
+  @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
+      ".ams.server.mybatis.TableIdentifier2StringConverter}")
+  void dropTableData(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 }

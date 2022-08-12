@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.DDLCommitMeta;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
@@ -177,16 +176,14 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     if (commit.getProperties() != null) {
       metaService.updateTableProperties(identifier, commit.getProperties());
     }
+    if (commit.getSchemaUpdateMeta() != null) {
+      ddlTracerService.commit(commit.getSchemaUpdateMeta());
+    }
     try {
       fileInfoCacheService.commitCacheFileInfo(commit);
     } catch (Exception e) {
       LOG.warn("commit file cache failed", e);
     }
-  }
-
-  @Override
-  public void ddlCommit(DDLCommitMeta commit) throws MetaException, TException {
-    ddlTracerService.commit(commit);
   }
 
   @Override

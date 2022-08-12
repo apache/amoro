@@ -27,7 +27,6 @@ import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.trace.AmsTableTracer;
-import com.netease.arctic.trace.DDLTracer;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
@@ -43,6 +42,7 @@ import org.apache.thrift.TException;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
@@ -105,9 +105,10 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Map<String, String> properties() {
-    Map<String, String> props = Maps.newHashMap();
-    props.putAll(this.tableMeta.getProperties());
-    return props;
+    return baseTable.properties().entrySet()
+        .stream()
+        .filter(e -> !TableConstants.HIDDEN_PROPERTIES.contains(e.getKey()))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
   @Override
@@ -147,7 +148,11 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new TracedSchemaUpdate(this, new DDLTracer(this, client));
+    return new TracedSchemaUpdate(
+        this,
+        baseTable.updateSchema(),
+        changeTable.updateSchema(),
+        new AmsTableTracer(this, null, client));
   }
 
   @Override

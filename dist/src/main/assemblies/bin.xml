@@ -46,7 +46,7 @@
             <fileMode>0644</fileMode>
         </file>
         <file>
-            <source>../ams/ams-server/src/main/resources/sql/ams-init-derby.sql</source>
+            <source>../ams/ams-server/src/main/resources/sql/0.3.0-derby.sql</source>
             <outputDirectory>conf</outputDirectory>
             <fileMode>0644</fileMode>
         </file>

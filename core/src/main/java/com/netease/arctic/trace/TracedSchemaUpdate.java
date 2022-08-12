@@ -53,15 +53,14 @@ public class TracedSchemaUpdate implements UpdateSchema {
   private Optional<UpdateSchema> changeTableUpdateSchema;
   private final TableTracer tracer;
 
-  public TracedSchemaUpdate(ArcticTable arcticTable, TableTracer tracer) {
+  public TracedSchemaUpdate(ArcticTable arcticTable, UpdateSchema baseUpdateSchema, UpdateSchema changeUpdateSchema,
+      TableTracer tracer) {
     this.arcticTable = arcticTable;
     this.tracer = tracer;
+    baseTableUpdateSchema = baseUpdateSchema;
+    changeTableUpdateSchema = Optional.ofNullable(changeUpdateSchema);
     if (arcticTable.isKeyedTable()) {
       isKeyedTable = true;
-      baseTableUpdateSchema = arcticTable.asKeyedTable().baseTable().updateSchema();
-      changeTableUpdateSchema = Optional.of(arcticTable.asKeyedTable().changeTable().updateSchema());
-    } else {
-      baseTableUpdateSchema = arcticTable.asUnkeyedTable().updateSchema();
     }
   }
 
@@ -76,8 +75,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addColumn(String name, Type type, String doc) {
     baseTableUpdateSchema.addColumn(name, type, doc);
     changeTableUpdateSchema.ifPresent(e -> e.addColumn(name, type, doc));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, type, doc,
-        DDLTracer.SchemaOperateType.ADD, null, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, type, doc,
+        AmsTableTracer.SchemaOperateType.ADD, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -86,8 +85,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
     baseTableUpdateSchema.addColumn(parent, name, type, doc);
     changeTableUpdateSchema.ifPresent(e -> e.addColumn(parent, name, type, doc));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, parent, type, doc,
-        DDLTracer.SchemaOperateType.ADD, false, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, parent, type, doc,
+        AmsTableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -96,8 +95,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addRequiredColumn(String name, Type type, String doc) {
     baseTableUpdateSchema.addRequiredColumn(name, type, doc);
     changeTableUpdateSchema.ifPresent(e -> e.addRequiredColumn(name, type, doc));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, type, doc,
-        DDLTracer.SchemaOperateType.ADD, false, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, type, doc,
+        AmsTableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -106,8 +105,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addRequiredColumn(String parent, String name, Type type, String doc) {
     baseTableUpdateSchema.addRequiredColumn(parent, name, type, doc);
     changeTableUpdateSchema.ifPresent(e -> e.addRequiredColumn(parent, name, type, doc));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, parent, type, doc,
-        DDLTracer.SchemaOperateType.ADD, false, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, parent, type, doc,
+        AmsTableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -117,8 +116,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
     Preconditions.checkArgument(!containsPk(name), "Cannot delete primary key. %s", name);
     baseTableUpdateSchema.deleteColumn(name);
     changeTableUpdateSchema.ifPresent(e -> e.deleteColumn(name));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.DROP, null, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.DROP, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -128,8 +127,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
     Preconditions.checkArgument(!containsPk(name), "Cannot rename primary key %s", name);
     baseTableUpdateSchema.renameColumn(name, newName);
     changeTableUpdateSchema.ifPresent(e -> e.renameColumn(name, newName));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.RENAME, null, newName);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.RENAME, null, newName);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -138,8 +137,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema requireColumn(String name) {
     baseTableUpdateSchema.requireColumn(name);
     changeTableUpdateSchema.ifPresent(e -> e.requireColumn(name));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.ALERT, false, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.ALERT, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -149,8 +148,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
     Preconditions.checkArgument(!containsPk(name), "Cannot make primary key optional. %s", name);
     baseTableUpdateSchema.makeColumnOptional(name);
     changeTableUpdateSchema.ifPresent(e -> e.makeColumnOptional(name));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.ALERT, true, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.ALERT, true, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -159,8 +158,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema updateColumn(String name, Type.PrimitiveType newType) {
     baseTableUpdateSchema.updateColumn(name, newType);
     changeTableUpdateSchema.ifPresent(e -> e.updateColumn(name, newType));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, newType, null,
-        DDLTracer.SchemaOperateType.ALERT, null, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, newType, null,
+        AmsTableTracer.SchemaOperateType.ALERT, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -169,8 +168,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema updateColumnDoc(String name, String doc) {
     baseTableUpdateSchema.updateColumnDoc(name, doc);
     changeTableUpdateSchema.ifPresent(e -> e.updateColumnDoc(name, doc));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, doc,
-        DDLTracer.SchemaOperateType.ALERT, null, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, doc,
+        AmsTableTracer.SchemaOperateType.ALERT, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -179,8 +178,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema moveFirst(String name) {
     baseTableUpdateSchema.moveFirst(name);
     changeTableUpdateSchema.ifPresent(e -> e.moveFirst(name));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.MOVE_FIRST, null, null);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.MOVE_FIRST, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -189,8 +188,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema moveBefore(String name, String beforeName) {
     baseTableUpdateSchema.moveBefore(name, beforeName);
     changeTableUpdateSchema.ifPresent(e -> e.moveBefore(name, beforeName));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.MOVE_BEFORE, null, beforeName);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.MOVE_BEFORE, null, beforeName);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -199,8 +198,8 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema moveAfter(String name, String afterName) {
     baseTableUpdateSchema.moveAfter(name, afterName);
     changeTableUpdateSchema.ifPresent(e -> e.moveAfter(name, afterName));
-    DDLTracer.UpdateColumn updateColumn = new DDLTracer.UpdateColumn(name, null, null, null,
-        DDLTracer.SchemaOperateType.MOVE_AFTER, null, afterName);
+    AmsTableTracer.UpdateColumn updateColumn = new AmsTableTracer.UpdateColumn(name, null, null, null,
+        AmsTableTracer.SchemaOperateType.MOVE_AFTER, null, afterName);
     tracer.updateColumn(updateColumn);
     return this;
   }

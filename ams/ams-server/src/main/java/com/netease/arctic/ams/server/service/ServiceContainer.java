@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.service;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;

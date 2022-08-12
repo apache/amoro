@@ -21,13 +21,13 @@ package com.netease.arctic.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.trace.AmsTableTracer;
-import com.netease.arctic.trace.DDLTracer;
 import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TracedAppendFiles;
 import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedOverwriteFiles;
 import com.netease.arctic.trace.TracedRewriteFiles;
 import com.netease.arctic.trace.TracedRowDelta;
+import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
@@ -170,7 +170,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    return icebergTable.updateSchema();
+    return new TracedSchemaUpdate(this, icebergTable.updateSchema(), null, new AmsTableTracer(this, null, client));
   }
 
   @Override
@@ -294,7 +294,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(transaction, new AmsTableTracer(this, client), new DDLTracer(this, client));
+      return new TracedTransaction(transaction, new AmsTableTracer(this, client));
     } else {
       return transaction;
     }

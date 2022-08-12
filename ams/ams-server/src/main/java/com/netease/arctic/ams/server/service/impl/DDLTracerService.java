@@ -1,9 +1,10 @@
 package com.netease.arctic.ams.server.service.impl;
 
-import com.netease.arctic.ams.api.DDLCommitMeta;
+import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.UpdateColumn;
 import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
+import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -12,7 +13,11 @@ import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.trace.DDLTracer;
+import com.netease.arctic.trace.AmsTableTracer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.stream.Collectors;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -24,7 +29,8 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
+
+import static com.netease.arctic.table.TableProperties.BASE_TABLE_MAX_TRANSACTION_ID;
 
 public class DDLTracerService extends IJDBCService {
 
@@ -36,17 +42,23 @@ public class DDLTracerService extends IJDBCService {
   private static final String ADD_COLUMN = " ADD COLUMN ";
   private static final String ALTER_COLUMN = " ALTER COLUMN %s ";
   private static final String MOVE_FIRST = " ALTER COLUMN %s FIRST ";
-  private static final String MOVE_AFTER_COLUMN = "ALTER COLUMN %s AFTER %s";
-  private static final String RENAME_COLUMN = "RENAME COLUMN %s TO %s ";
-  private static final String DROP_COLUMNS = "DROP COLUMN %s";
+  private static final String MOVE_AFTER_COLUMN = " ALTER COLUMN %s AFTER %s";
+  private static final String RENAME_COLUMN = " RENAME COLUMN %s TO %s ";
+  private static final String DROP_COLUMNS = " DROP COLUMN %s";
   private static final String SET_PROPERTIES = " SET TBLPROPERTIES (%s)";
   private static final String UNSET_PROPERTIES = " UNSET TBLPROPERTIES (%s)";
   private static final String IS_OPTIONAL = " DROP NOT NULL ";
   private static final String NOT_OPTIONAL = " SET NOT NULL ";
-  private static final String DOC = " COMMENT %s";
+  private static final String DOC = " COMMENT '%s'";
   private static final String TYPE = " TYPE %s ";
 
-  public void commit(DDLCommitMeta commitMeta) {
+  private static final List<String> skipProperties = new ArrayList<>();
+
+  static {
+    skipProperties.add(BASE_TABLE_MAX_TRANSACTION_ID);
+  }
+
+  public void commit(SchemaUpdateMeta commitMeta) {
     TableIdentifier tableIdentifier = commitMeta.getTableIdentifier();
     Long commitTime = System.currentTimeMillis();
     int schemaId = commitMeta.getSchemaId();
@@ -63,7 +75,7 @@ public class DDLTracerService extends IJDBCService {
       String operateType = updateColumn.getOperate();
       StringBuilder sql =
           new StringBuilder(String.format(ALTER_TABLE, TableMetadataUtil.getTableAllIdentifyName(tableIdentifier)));
-      switch (DDLTracer.SchemaOperateType.valueOf(operateType)) {
+      switch (AmsTableTracer.SchemaOperateType.valueOf(operateType)) {
         case ADD:
           String colName = updateColumn.getParent() == null ? updateColumn.getName() :
               updateColumn.getParent() + DOT + updateColumn.getName();
@@ -130,8 +142,9 @@ public class DDLTracerService extends IJDBCService {
       }
     }
     DDLInfo ddlInfo =
-        DDLInfo.of(tableIdentifier, schemaSql.toString(), schemaId, DDLType.UPDATE_SCHEMA.name(), commitTime);
+        DDLInfo.of(tableIdentifier, schemaSql.toString(), DDLType.UPDATE_SCHEMA.name(), commitTime);
     insert(ddlInfo);
+    setCurrentSchemaId(tableIdentifier, schemaId);
   }
 
   public void commitProperties(TableIdentifier tableIdentifier, Map<String, String> before, Map<String, String> after) {
@@ -142,17 +155,23 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder unsetPro = new StringBuilder();
     int c = 0;
     for (String oldPro : before.keySet()) {
+      if (skipProperties.contains(oldPro)) {
+        continue;
+      }
       if (!after.containsKey(oldPro)) {
         if (c > 0) {
           unsetPro.append(",").append("\\n");
         }
-        unsetPro.append(oldPro);
+        unsetPro.append(String.format("'%s'", oldPro));
         c++;
       }
     }
     StringBuilder setPro = new StringBuilder();
     int c1 = 0;
     for (String newPro : after.keySet()) {
+      if (skipProperties.contains(newPro)) {
+        continue;
+      }
       if (!after.get(newPro).equals(before.get(newPro))) {
         if (c1 > 0) {
           setPro.append(",").append("\\n");
@@ -169,22 +188,41 @@ public class DDLTracerService extends IJDBCService {
     }
     if (setSql.length() > 0) {
       DDLInfo ddlInfo =
-          DDLInfo.of(tableIdentifier, setSql.toString(), null, DDLType.UPDATE_PROPERTIES.name(), commitTime);
+          DDLInfo.of(tableIdentifier, setSql.toString(), DDLType.UPDATE_PROPERTIES.name(), commitTime);
       insert(ddlInfo);
     }
     if (unsetSql.length() > 0) {
       DDLInfo ddlInfo =
-          DDLInfo.of(tableIdentifier, unsetSql.toString(), null, DDLType.UPDATE_PROPERTIES.name(), commitTime);
+          DDLInfo.of(tableIdentifier, unsetSql.toString(), DDLType.UPDATE_PROPERTIES.name(), commitTime);
       insert(ddlInfo);
-      insert(ddlInfo);
+    }
+  }
+
+  public List<DDLInfo> getDDL(TableIdentifier identifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      DDLRecordMapper ddlRecordMapper = getMapper(sqlSession, DDLRecordMapper.class);
+      return ddlRecordMapper.getDDLInfos(identifier);
+    }
+  }
+
+  public void dropTableData(TableIdentifier identifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      DDLRecordMapper ddlRecordMapper = getMapper(sqlSession, DDLRecordMapper.class);
+      ddlRecordMapper.dropTableData(identifier);
     }
   }
 
   public Integer getCurrentSchemaId(TableIdentifier identifier) {
     try (SqlSession sqlSession = getSqlSession(true)) {
-      DDLRecordMapper ddlRecordMapper = getMapper(sqlSession, DDLRecordMapper.class);
-      List<Integer> ids = ddlRecordMapper.getCurrentSchemaId(identifier);
-      return ids.get(0) == null ? 0 : ids.get(0);
+      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
+      return tableMetadataMapper.getTableSchemaId(new com.netease.arctic.table.TableIdentifier(identifier));
+    }
+  }
+
+  public void setCurrentSchemaId(TableIdentifier identifier, Integer schemaId) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
+      tableMetadataMapper.updateTableSchemaId(new com.netease.arctic.table.TableIdentifier(identifier), schemaId);
     }
   }
 
@@ -206,61 +244,103 @@ public class DDLTracerService extends IJDBCService {
       LOG.info("start execute syncDDl");
       List<TableMetadata> tableMetadata = ServiceContainer.getMetaService().listTables();
       tableMetadata.forEach(meta -> {
-        if (meta.getTableIdentifier() == null) {
-          return;
+        try {
+          if (meta.getTableIdentifier() == null) {
+            return;
+          }
+          TableIdentifier tableIdentifier = new TableIdentifier();
+          tableIdentifier.catalog = meta.getTableIdentifier().getCatalog();
+          tableIdentifier.database = meta.getTableIdentifier().getDatabase();
+          tableIdentifier.tableName = meta.getTableIdentifier().getTableName();
+          ArcticCatalog catalog =
+              CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
+          com.netease.arctic.table.TableIdentifier tmp = com.netease.arctic.table.TableIdentifier.of(
+              tableIdentifier.getCatalog(),
+              tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName());
+          ArcticTable arcticTable = catalog.loadTable(tmp);
+          syncDDl(arcticTable);
+          syncProperties(meta, arcticTable);
+        } catch (Exception e) {
+          LOG.error("table {} DDLSyncTask error", meta.getTableIdentifier().toString(), e);
         }
-        TableIdentifier tableIdentifier = new TableIdentifier();
-        tableIdentifier.catalog = meta.getTableIdentifier().getCatalog();
-        tableIdentifier.database = meta.getTableIdentifier().getDatabase();
-        tableIdentifier.tableName = meta.getTableIdentifier().getTableName();
-        syncDDl(tableIdentifier);
       });
     }
 
-    public void syncDDl(TableIdentifier identifier) {
-      ArcticCatalog catalog = CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), identifier.getCatalog());
-      com.netease.arctic.table.TableIdentifier tmp = com.netease.arctic.table.TableIdentifier.of(
-          identifier.getCatalog(),
-          identifier.getDatabase(),
-          identifier.getTableName());
-      ArcticTable arcticTable = catalog.loadTable(tmp);
+    public void syncDDl(ArcticTable arcticTable) {
       Table table = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
       table.refresh();
-      int cacheSchemaId = ServiceContainer.getDdlTracerService().getCurrentSchemaId(identifier);
-      Map<Integer, Schema> allSchemas = table.schemas();
-      List<Integer> newSchemas =
-          allSchemas.keySet().stream().filter(e -> e > cacheSchemaId).sorted().collect(Collectors.toList());
-
-      Schema cacheSchema = allSchemas.get(cacheSchemaId);
-      for (int id : newSchemas) {
-        Long commitTime = System.currentTimeMillis();
-        StringBuilder sql = new StringBuilder();
-        sql.append(compareSchema(identifier, cacheSchema, allSchemas.get(id)));
-        cacheSchema = allSchemas.get(id);
-        if (sql.length() > 0) {
-          DDLInfo ddlInfo =
-              DDLInfo.of(identifier, sql.toString(), id, DDLType.UPDATE_SCHEMA.name(), commitTime);
-          ServiceContainer.getDdlTracerService().insert(ddlInfo);
-        }
+      Integer amsSchemaId = ServiceContainer.getDdlTracerService().getCurrentSchemaId(arcticTable.id()
+          .buildTableIdentifier());
+      int tableSchemaId = table.schema().schemaId();
+      if (amsSchemaId != null && amsSchemaId == tableSchemaId) {
+        return;
       }
+      Map<Integer, Schema> allSchemas = table.schemas();
+      Schema cacheSchema = amsSchemaId == null ? null : allSchemas.get(amsSchemaId);
+      Long commitTime = System.currentTimeMillis();
+      StringBuilder sql = new StringBuilder();
+      sql.append(compareSchema(arcticTable.id().toString(), cacheSchema, table.schema()));
+      if (sql.length() > 0) {
+        DDLInfo ddlInfo =
+            DDLInfo.of(
+                arcticTable.id().buildTableIdentifier(),
+                sql.toString(),
+                DDLType.UPDATE_SCHEMA.name(),
+                commitTime);
+        ServiceContainer.getDdlTracerService().insert(ddlInfo);
+      }
+      ServiceContainer.getDdlTracerService().setCurrentSchemaId(arcticTable.id().buildTableIdentifier(), tableSchemaId);
     }
 
-    @VisibleForTesting
-    private String compareSchema(TableIdentifier identifier, Schema before, Schema after) {
+    public void syncProperties(TableMetadata tableMetadata, ArcticTable arcticTable) {
+      Table table = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+      ServiceContainer.getDdlTracerService()
+          .commitProperties(arcticTable.id().buildTableIdentifier(), tableMetadata.getProperties(),
+              table.properties());
+      ServiceContainer.getMetaService().updateTableProperties(arcticTable.id(), table.properties());
+    }
+
+    public String compareSchema(String tableName, Schema before, Schema after) {
       StringBuilder rs = new StringBuilder();
-      String tableName = TableMetadataUtil.getTableAllIdentifyName(identifier);
-      for (Types.NestedField field : before.columns()) {
+      if (before == null) {
+        for (int i = 0; i < after.columns().size(); i++) {
+          Types.NestedField field = after.columns().get(i);
+          StringBuilder sb = new StringBuilder();
+          // add col
+          sb.append(String.format(ALTER_TABLE, tableName));
+          sb.append(ADD_COLUMN);
+          sb.append(field.name()).append(" ");
+          sb.append(field.type().toString()).append(" ");
+          if (field.doc() != null) {
+            sb.append(String.format(DOC, field.doc()));
+          }
+          rs.append(sb).append(";").append("\\n");
+        }
+        return rs.toString();
+      }
+
+      LinkedList<String> sortedBefore =
+          before.columns().stream().map(Types.NestedField::name).collect(Collectors.toCollection(LinkedList::new));
+      for (int i = 0; i < before.columns().size(); i++) {
+        Types.NestedField field = before.columns().get(i);
         StringBuilder sb = new StringBuilder();
         if (after.findField(field.fieldId()) == null) {
           // drop col
           sb.append(String.format(ALTER_TABLE, tableName));
           sb.append(String.format(DROP_COLUMNS, field.name()));
+          sortedBefore.remove(field.name());
         }
         if (sb.length() > 0) {
           rs.append(sb).append(";").append("\\n");
         }
       }
 
+      int maxIndex = 0;
+      for (int i = 0; i < before.columns().size(); i++) {
+        int index = after.columns().indexOf(before.columns().get(i));
+        maxIndex = Math.max(index, maxIndex);
+      }
       for (int i = 0; i < after.columns().size(); i++) {
         Types.NestedField field = after.columns().get(i);
         StringBuilder sb = new StringBuilder();
@@ -273,10 +353,15 @@ public class DDLTracerService extends IJDBCService {
           if (field.doc() != null) {
             sb.append(String.format(DOC, field.doc()));
           }
+          sortedBefore.add(i, field.name());
           if (i == 0) {
             sb.append(" FIRST");
-          } else if (i < before.columns().size()) {
-            sb.append(" AFTER ").append(before.columns().get(i - 1).name());
+            sortedBefore.removeLast();
+            sortedBefore.addFirst(field.name());
+          } else if (i < maxIndex) {
+            sb.append(" AFTER ").append(sortedBefore.get(i - 1));
+            sortedBefore.removeLast();
+            sortedBefore.add(i, field.name());
           }
         } else if (!before.findField(field.fieldId()).equals(field)) {
           sb.append(String.format(ALTER_TABLE, tableName));
@@ -310,6 +395,17 @@ public class DDLTracerService extends IJDBCService {
                 sb.append(NOT_OPTIONAL);
               }
             }
+          }
+        } else if (i != before.columns().indexOf(field) && i != sortedBefore.indexOf(field.name())) {
+          sb.append(String.format(ALTER_TABLE, tableName));
+          if (i == 0) {
+            sb.append(String.format(MOVE_FIRST, field.name()));
+            sortedBefore.remove(field.name());
+            sortedBefore.addFirst(field.name());
+          } else {
+            sb.append(String.format(MOVE_AFTER_COLUMN, field.name(), after.columns().get(i - 1).name()));
+            sortedBefore.remove(field.name());
+            sortedBefore.add(i, field.name());
           }
         }
         if (sb.length() > 0) {

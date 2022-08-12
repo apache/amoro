@@ -63,7 +63,7 @@ public interface TableTracer {
    * Replace some properties of table
    * @param updateColumn updated column info
    */
-  void updateColumn(DDLTracer.UpdateColumn updateColumn);
+  void updateColumn(AmsTableTracer.UpdateColumn updateColumn);
 
   /**
    * Replace some properties of table
