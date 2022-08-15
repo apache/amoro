@@ -43,6 +43,8 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -118,6 +120,24 @@ public class AmsTestBase {
   protected File tableDir = null;
   protected UnkeyedTable testTable;
   protected KeyedTable testKeyedTable;
+  protected static final DataFile FILE_A = DataFiles.builder(SPEC)
+      .withPath("/path/to/data-a.parquet")
+      .withFileSizeInBytes(0)
+      .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
+      .withRecordCount(2) // needs at least one record or else metrics will filter it out
+      .build();
+  protected static final DataFile FILE_B = DataFiles.builder(SPEC)
+      .withPath("/path/to/data-b.parquet")
+      .withFileSizeInBytes(0)
+      .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
+      .withRecordCount(2) // needs at least one record or else metrics will filter it out
+      .build();
+  protected static final DataFile FILE_C = DataFiles.builder(SPEC)
+      .withPath("/path/to/data-b.parquet")
+      .withFileSizeInBytes(0)
+      .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
+      .withRecordCount(2) // needs at least one record or else metrics will filter it out
+      .build();
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
