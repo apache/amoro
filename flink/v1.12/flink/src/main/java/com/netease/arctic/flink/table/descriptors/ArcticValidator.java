@@ -132,7 +132,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .withDescription("underlying arctic table name.");
 
   public static final ConfigOption<Boolean> ARCTIC_WATERMARK =
-      ConfigOptions.key("arctic.watermark")
+      ConfigOptions.key("dim-table.enable")
           .booleanType()
           .defaultValue(false)
           .withDescription("If it is true, Arctic source will generate watermark. It's only use for lookup join," +

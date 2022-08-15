@@ -189,13 +189,20 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * @param finishedSplitIds
    */
   public void checkAndNotifyReaderTriggerWatermarkTimestamp(Collection<String> finishedSplitIds) {
-    if (firstSplits == null || firstSplits.getUnfinishedCount() == 0) {
+    if (firstSplits == null) {
+      return;
+    }
+    if (firstSplits.getUnfinishedCount() == 0) {
+      notifyReaders();
       return;
     }
     if (!firstSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
       return;
     }
+    notifyReaders();
+  }
 
+  private void notifyReaders() {
     LOG.info("all splits finished, send events to readers");
     IntStream.range(0, context.currentParallelism())
         .forEach(i -> context.sendEventToSourceReader(i, StartWatermarkEvent.INSTANCE));

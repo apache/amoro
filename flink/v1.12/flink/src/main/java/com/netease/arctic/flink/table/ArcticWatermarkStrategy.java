@@ -32,15 +32,13 @@ import java.util.TimeZone;
 public class ArcticWatermarkStrategy implements WatermarkStrategy<RowData>, Serializable {
   public static final long serialVersionUID = 1L;
   private final TimeZone timeZone;
-  private final long watermarkIdleMs;
 
-  public ArcticWatermarkStrategy(TimeZone timeZone, long watermarkIdleMs) {
+  public ArcticWatermarkStrategy(TimeZone timeZone) {
     this.timeZone = timeZone;
-    this.watermarkIdleMs = watermarkIdleMs;
   }
 
   @Override
   public WatermarkGenerator<RowData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-    return new ArcticWatermarkGenerator(timeZone, watermarkIdleMs);
+    return new ArcticWatermarkGenerator(timeZone);
   }
 }

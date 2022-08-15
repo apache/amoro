@@ -22,6 +22,7 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.FlinkUtil;
 import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.SourceOutput;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;
@@ -44,7 +45,7 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
   public static final Logger LOGGER = LoggerFactory.getLogger(ArcticRecordEmitter.class);
 
   /**
-   * It signifies whether the ProcessingTimestamp need to be set into RowData.
+   * It signifies whether the Long.MIN_VALUE need to be set into RowData.
    * If it's null, RowData won't be changed.
    * If it's false, RowData would be added a field, which values LONG.MIN_VALUE.
    * If it's true, RowData would be added a field, which values Processing Time.
@@ -72,9 +73,10 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
     } else {
       TimestampData rowTime = TimestampData.fromEpochMillis(Long.MIN_VALUE);
 
-      if (generateProcessingTimestamp) {
-        rowTime = ArcticUtils.getCurrentTimestampData(timeZone);
-      }
+//      if (generateProcessingTimestamp) {
+////        rowTime = ArcticUtils.getCurrentTimestampData(timeZone);
+//        rowTime = TimestampData.fromEpochMillis(Long.MIN_VALUE+1);
+//      }
       Preconditions.checkArgument(record instanceof RowData,
           "Custom watermark strategy doesn't support %s, except RowData for now.",
           record.getClass());

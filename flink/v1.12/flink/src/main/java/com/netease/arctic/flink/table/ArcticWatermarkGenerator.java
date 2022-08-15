@@ -35,12 +35,10 @@ public class ArcticWatermarkGenerator implements WatermarkGenerator<RowData>, Se
   public static final long serialVersionUID = 1L;
   private boolean generateWatermark = false;
   private long lastTs = System.currentTimeMillis();
-  private final long watermarkIdleMs;
   private final TimeZone timeZone;
 
-  public ArcticWatermarkGenerator(TimeZone timeZone, long watermarkIdleMs) {
+  public ArcticWatermarkGenerator(TimeZone timeZone) {
     this.timeZone = timeZone;
-    this.watermarkIdleMs = watermarkIdleMs;
   }
 
   @Override

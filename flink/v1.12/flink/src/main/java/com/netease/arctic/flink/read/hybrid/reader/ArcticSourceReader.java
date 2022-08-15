@@ -23,10 +23,16 @@ import com.netease.arctic.flink.read.hybrid.enumerator.StartWatermarkEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.FlinkUtil;
+import org.apache.flink.api.common.eventtime.Watermark;
+import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
+import org.apache.flink.core.io.InputStatus;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Arctic source reader that is created by a {@link ArcticSource#createReader(SourceReaderContext)}.
@@ -42,6 +49,8 @@ public class ArcticSourceReader<T> extends
     SingleThreadMultiplexSourceReaderBase<ArcticRecordWithOffset<T>, T, ArcticSplit, ArcticSplitState> {
 
   public static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceReader.class);
+
+  public ReaderOutput<T> output;
 
   public ArcticSourceReader(
       ReaderFunction<T> readerFunction,
@@ -93,5 +102,13 @@ public class ArcticSourceReader<T> extends
     }
     LOGGER.info("receive StartWatermarkEvent");
     ((ArcticRecordEmitter) recordEmitter).startGenerateProcessingTimestamp();
+    output.emitWatermark(new Watermark(Long.MAX_VALUE));
   }
+
+  @Override
+  public InputStatus pollNext(ReaderOutput<T> output) throws Exception {
+    this.output = output;
+    return super.pollNext(output);
+  }
+
 }

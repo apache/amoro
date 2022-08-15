@@ -60,7 +60,8 @@ public class CdcSource extends DynamicTableSourceTestBase {
         for (int i = 0; i < fields.length; i++) {
           fields[i] = input.getField(i);
           if (fields[i] instanceof LocalDateTime) {
-            fields[i] = TimestampData.fromLocalDateTime(((LocalDateTime) fields[i]));
+            fields[i] = TimestampData.fromEpochMillis(System.currentTimeMillis()-1000000000);
+            System.out.println("input："+((TimestampData) fields[i]).getMillisecond());
           } else if (fields[i] instanceof String) {
             fields[i] = StringData.fromString((String) fields[i]);
           }

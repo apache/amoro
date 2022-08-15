@@ -23,20 +23,26 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.common.typeinfo.Types;
+import org.apache.flink.api.java.typeutils.RowTypeInfo;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.bridge.java.internal.StreamTableEnvironmentImpl;
+import org.apache.flink.table.api.internal.TableEnvironmentInternal;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
-import org.apache.flink.table.descriptors.Schema;
+import org.apache.flink.table.planner.utils.TestTableSourceWithTime;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.TimestampKind;
 import org.apache.flink.table.types.logical.TimestampType;
+import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
@@ -47,6 +53,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.JavaConverters;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -60,7 +67,8 @@ import java.util.concurrent.CompletableFuture;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.table.TableProperties.LOCATION;
 import static org.apache.flink.api.common.JobStatus.INITIALIZING;
-import static org.apache.flink.table.api.Expressions.$;
+import static org.apache.flink.table.planner.factories.TestValuesTableFactory.getResults;
+import static org.apache.flink.table.planner.factories.TestValuesTableFactory.registerData;
 
 public class TestJoin extends FlinkTestBase {
 
@@ -96,6 +104,7 @@ public class TestJoin extends FlinkTestBase {
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(LOCATION, tableDir.getAbsolutePath());
     table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
         " test int, id bigint, name STRING" +
         ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
@@ -155,24 +164,51 @@ public class TestJoin extends FlinkTestBase {
   }
 
   @Test
-  public void testRightEmptyLookupJoin() throws IOException {
+  public void testRightEmptyLookupJoin() throws Exception {
+    getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
-    data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000004L, "a", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000015L, "b", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000011L, "c", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000022L, "d", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000021L, "e", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000016L, "e", LocalDateTime.now()});
+    String id = registerData(DataUtil.toRowList(data));
+    sql("CREATE TABLE left_view (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
+        "with (" +
+        " 'connector' = 'values'," +
+        " 'bounded' = 'false'," +
+        " 'data-id' = '" + id + "' " +
+        " )");
 
-    DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
-        InternalTypeInfo.ofFields(
-            DataTypes.INT().getLogicalType(),
-            DataTypes.VARCHAR(100).getLogicalType(),
-            new TimestampType(true, TimestampKind.ROWTIME, 3)
-        ));
-
-    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time").rowtime());
-    getTableEnv().createTemporaryView("left_view", input);
+//    TableSchema tableSchema = TableSchema.builder()
+//        .field("id", DataTypes.BIGINT())
+//        .field("name", DataTypes.STRING())
+//        .field("op_time", DataTypes.TIMESTAMP(3))
+//        .build();
+//    RowTypeInfo returnType = new RowTypeInfo(
+//        new TypeInformation[]{Types.LONG, Types.STRING, Types.LOCAL_DATE_TIME},
+//        new String[]{"id", "name", "op_time"});
+//
+//    TestTableSourceWithTime<Row> s = new TestTableSourceWithTime<>(
+//        false,
+//        tableSchema,
+//        returnType,
+//        JavaConverters.collectionAsScalaIterableConverter(DataUtil.toRowList(data)).asScala().toSeq(),
+//        "op_time",
+//        null,
+//        null,
+//        null);
+////    DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
+////        InternalTypeInfo.ofFields(
+////            DataTypes.INT().getLogicalType(),
+////            DataTypes.VARCHAR(100).getLogicalType(),
+////            TypeConversions.fromLogicalToDataType(new TimestampType(false, TimestampKind.ROWTIME, 3))
+////                .bridgedTo(LocalDateTime.class).getLogicalType()
+////        ));
+//
+//    ((TableEnvironmentInternal) getTableEnv()).registerTableSourceInternal("left_view", s);
+//    getTableEnv().createTemporaryView("left_view", input);
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
@@ -187,15 +223,16 @@ public class TestJoin extends FlinkTestBase {
     sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
         "like %s", table);
 
-    TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
+    TableResult tableResult = exec("select u.name, u.id, dim.test, dim.name dname from left_view as u left join r " +
+        "/*+OPTIONS('streaming'='true', 'arctic.watermark'='true', 'watermark.idle.timeout'='10s')*/ for system_time as of u.op_time as dim on u.id = dim.id");
 
+//    tableResult.await();
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
       Row i = iterator.next();
       System.out.println("out:" + i);
     }
-
+//    System.out.println(getResults("rowtime_default_sink"));
     tableResult.getJobClient().ifPresent(JobClient::cancel);
   }
 
@@ -220,7 +257,7 @@ public class TestJoin extends FlinkTestBase {
         "like %s", table);
 
     TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
+        "/*+OPTIONS('streaming'='true', 'arctic.watermark'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
 
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
@@ -287,7 +324,7 @@ public class TestJoin extends FlinkTestBase {
       }
     });
     TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true', 'watermark.idle.timeout'='41s')*/ for system_time as of u.opt as dim on u.id = dim.id");
+        "/*+OPTIONS('streaming'='true', 'arctic.watermark'='true', 'watermark.idle.timeout'='41s')*/ for system_time as of u.opt as dim on u.id = dim.id");
 
     JobClient jc = tableResult.getJobClient().get();
     while (INITIALIZING.equals(jc.getJobStatus().get())) {

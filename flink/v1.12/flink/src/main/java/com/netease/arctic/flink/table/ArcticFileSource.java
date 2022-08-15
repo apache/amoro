@@ -210,8 +210,6 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
       this.watermarkStrategy = watermarkStrategy;
       return;
     }
-    long watermarkIdleMs = conf.get(WATERMARK_IDLE_TIMEOUT).toMillis();
-    this.watermarkStrategy = new ArcticWatermarkStrategy(FlinkUtil.getLocalTimeZone((Configuration) readableConfig),
-        watermarkIdleMs);
+    this.watermarkStrategy = new ArcticWatermarkStrategy(FlinkUtil.getLocalTimeZone((Configuration) readableConfig));
   }
 }
