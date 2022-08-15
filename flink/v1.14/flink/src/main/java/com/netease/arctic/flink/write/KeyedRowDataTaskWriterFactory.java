@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.io.writer.OutputFileFactory;
+import com.netease.arctic.io.writer.ChangeBaseOutputFileFactory;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SchemaUtil;
@@ -56,7 +56,7 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
    * FlinkBaseTaskWriter must using base table info to create OutputFileFactory,
    * and FlinkChangeTaskWriter must using change table info to create OutputFileFactory.
    */
-  private transient OutputFileFactory outputFileFactory;
+  private transient ChangeBaseOutputFileFactory changeBaseOutputFileFactory;
 
   public KeyedRowDataTaskWriterFactory(KeyedTable table,
                                        RowType flinkSchema,
@@ -85,23 +85,24 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
   public void initialize(int taskId, int attemptId) {
     Preconditions.checkNotNull(transactionId, "TransactionId should be set first. " +
         "Invoke setTransactionId() before this method");
-    this.outputFileFactory = createOutputFileFactory(taskId, attemptId);
+    this.changeBaseOutputFileFactory = createOutputFileFactory(taskId, attemptId);
   }
 
-  private OutputFileFactory createOutputFileFactory(int subtaskId, int attemptId) {
+  private ChangeBaseOutputFileFactory createOutputFileFactory(int subtaskId, int attemptId) {
     if (ArcticUtils.isToBase(overwrite)) {
-      return new OutputFileFactory(
+      return new ChangeBaseOutputFileFactory(
           table.baseLocation(), table.spec(), format, table.io(),
           table.baseTable().encryption(), subtaskId, attemptId, transactionId);
     }
-    return new OutputFileFactory(
+    return new ChangeBaseOutputFileFactory(
         table.changeLocation(), table.spec(), format, table.io(),
         table.changeTable().encryption(), subtaskId, attemptId, transactionId);
   }
 
   @Override
   public TaskWriter<RowData> create() {
-    Preconditions.checkNotNull(outputFileFactory,
+    Preconditions.checkNotNull(
+        changeBaseOutputFileFactory,
         "The outputFileFactory shouldn't be null if we have invoked the initialize().");
     Preconditions.checkNotNull(mask, "Mask should be set first. Invoke setMask() before this method");
 
@@ -116,7 +117,7 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
       return new FlinkBaseTaskWriter(
           format,
           appenderFactory,
-          outputFileFactory,
+          changeBaseOutputFileFactory,
           table.io(), fileSizeBytes, mask,
           schema, flinkSchema, table.spec(), table.primaryKeySpec());
     } else {
@@ -127,7 +128,7 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
       return new FlinkChangeTaskWriter(
           format,
           appenderFactory,
-          outputFileFactory,
+          changeBaseOutputFileFactory,
           table.io(), fileSizeBytes, mask,
           schema, flinkSchema, table.spec(), table.primaryKeySpec());
     }

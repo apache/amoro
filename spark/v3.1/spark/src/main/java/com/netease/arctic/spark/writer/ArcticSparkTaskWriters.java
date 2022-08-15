@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
-import  com.netease.arctic.io.writer.OutputFileFactory;
+import com.netease.arctic.io.writer.ChangeBaseOutputFileFactory;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.FileFormat;
@@ -80,10 +80,11 @@ public class ArcticSparkTaskWriters {
       FileAppenderFactory<InternalRow> appenderFactory =
           ArcticSparkInternalRowAppenderFactory.builderFor(table.baseTable(), table.baseTable().schema(), dsSchema)
               .build();
-      OutputFileFactory outputFileFactory = new OutputFileFactory(
+      ChangeBaseOutputFileFactory changeBaseOutputFileFactory = new ChangeBaseOutputFileFactory(
           table.baseLocation(), table.spec(), fileFormat, table.io(),
           table.baseTable().encryption(), partitionId, taskId, transactionId);
-      return new ArcticSparkBaseTaskWriter(fileFormat, appenderFactory, outputFileFactory, table.io(), fileSizeBytes,
+      return new ArcticSparkBaseTaskWriter(fileFormat, appenderFactory,
+          changeBaseOutputFileFactory, table.io(), fileSizeBytes,
           mask, table.baseTable().schema(), table.spec(), table.primaryKeySpec());
     }
   }
