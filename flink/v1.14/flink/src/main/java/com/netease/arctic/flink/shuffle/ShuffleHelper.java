@@ -108,11 +108,13 @@ public class ShuffleHelper implements Serializable {
 
   public int hashPartitionValue(RowData rowData) {
     partitionKey.partition(rowDataWrapper.wrap(rowData));
-    return Math.abs(partitionKey.hashCode());
+    int hashcode = Math.abs(partitionKey.hashCode());
+    return hashcode == Integer.MIN_VALUE ? Integer.MAX_VALUE : hashcode;
   }
 
   public int hashKeyValue(RowData rowData) {
     primaryKeyData.primaryKey(rowDataWrapper.wrap(rowData));
-    return Math.abs(primaryKeyData.hashCode());
+    int hashcode = Math.abs(primaryKeyData.hashCode());
+    return hashcode == Integer.MIN_VALUE ? Integer.MAX_VALUE : hashcode;
   }
 }
