@@ -35,3 +35,6 @@ jobs:
           cache: maven
       - name: Build all module with Maven
         run: mvn install -pl '!trino'
+
+      - name: Build Flink 1.14 with Maven
+        run: mvn package -pl 'com.netease.arctic:arctic-flink' -Pflink-1.14 -amd
