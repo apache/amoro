@@ -114,7 +114,6 @@ public class ShuffleHelper implements Serializable {
 
   public int hashKeyValue(RowData rowData) {
     primaryKeyData.primaryKey(rowDataWrapper.wrap(rowData));
-    int hashcode = Math.abs(primaryKeyData.hashCode());
-    return hashcode == Integer.MIN_VALUE ? Integer.MAX_VALUE : hashcode;
+    return primaryKeyData.hashCode();
   }
 }
