@@ -42,6 +42,7 @@ import org.junit.BeforeClass;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.junit.rules.TemporaryFolder;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
@@ -50,9 +51,12 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
 
-  protected static TestHiveMetastore metastore;
-  protected static HiveConf hiveConf;
-  protected static HiveMetaStoreClient metastoreClient;
+  protected static final TemporaryFolder tempFolder = new TemporaryFolder();
+
+  protected static HMSMockServer hms  ;
+ // protected static TestHiveMetastore metastore;
+  //protected static HiveConf hiveConf;
+  // protected static HiveMetaStoreClient metastoreClient;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
@@ -69,13 +73,13 @@ public class HiveTableTestBase extends TableTestBase {
   public static void startMetastore() throws Exception {
     int ref = testCount.incrementAndGet();
     if (ref == 1){
-      HiveTableTestBase.metastore = new TestHiveMetastore();
-      metastore.start();
-      HiveTableTestBase.hiveConf = metastore.hiveConf();
-      HiveTableTestBase.metastoreClient = new HiveMetaStoreClient(hiveConf);
-      String dbPath = metastore.getDatabasePath(HIVE_DB_NAME);
+      tempFolder.create();
+      HiveTableTestBase.hms = new HMSMockServer(tempFolder.newFolder("hive"));
+      hms.start();
+
+      String dbPath = hms.getDatabasePath(HIVE_DB_NAME);
       Database db = new Database(HIVE_DB_NAME, "description", dbPath, new HashMap<>());
-      metastoreClient.createDatabase(db);
+      hms.getClient().createDatabase(db);
 
       Map<String, String> storageConfig = new HashMap<>();
       storageConfig.put(
@@ -83,7 +87,7 @@ public class HiveTableTestBase extends TableTestBase {
           CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
       storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
       storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
-      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hiveConf));
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hms.hiveConf()));
 
 
       Map<String, String> authConfig = new HashMap<>();
@@ -104,11 +108,9 @@ public class HiveTableTestBase extends TableTestBase {
   public static void stopMetastore() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){
-      metastoreClient.close();
-      HiveTableTestBase.metastoreClient = null;
-
-      metastore.stop();
-      HiveTableTestBase.metastore = null;
+      hms.stop();
+      HiveTableTestBase.hms = null;
+      tempFolder.delete();
     }
   }
 
