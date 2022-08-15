@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
@@ -48,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class TestBaseOptimizePlan extends TableTestBase {
+public class TestBaseOptimizePlan extends AmsTestBase {
   protected List<DataFileInfo> baseDataFilesInfo = new ArrayList<>();
   protected List<DataFileInfo> posDeleteFilesInfo = new ArrayList<>();
 
