@@ -21,11 +21,13 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
+import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.hive.op.ReplaceHivePartitions;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
@@ -58,6 +60,12 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable,Supp
   @Override
   public String hiveLocation() {
     return null;
+  }
+
+  @Override
+  public OverwriteFiles newOverwrite() {
+    OverwriteFiles overwriteFiles = super.newOverwrite();
+    return new OverwriteHiveFiles(overwriteFiles, this, hiveClient, hiveClient);
   }
 
   @Override

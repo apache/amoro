@@ -153,7 +153,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     delegate.commit();
 
     if (table.spec().isUnpartitioned()) {
-
+      commitNonPartitionedTable();
     } else {
       commitPartitionedTable();
     }
@@ -251,6 +251,33 @@ public class OverwriteHiveFiles implements OverwriteFiles {
         throw new RuntimeException(e);
       }
     }
+  }
+
+
+  private void commitNonPartitionedTable(){
+    String newHiveLocation = null;
+    if (this.addFiles.isEmpty()){
+      newHiveLocation = createEmptyLocationForHive();
+    } else {
+      newHiveLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
+    }
+
+    final String finalLocation = newHiveLocation;
+    try {
+      transactionClient.run(c -> {
+        Table hiveTable = c.getTable(db, tableName);
+        hiveTable.getSd().setLocation(finalLocation);
+        c.alter_table(db, tableName, hiveTable);
+        return 0;
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private String createEmptyLocationForHive(){
+    // create a new empty location for hive
+    return null;
   }
 
   protected List<DataFile> applyDeleteExpr() {
