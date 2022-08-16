@@ -63,7 +63,15 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   private final SplitAssigner splitAssigner;
   private final ArcticScanContext scanContext;
   private final long snapshotDiscoveryIntervalMs;
-  private final boolean generateWatermarkTimestamp;
+  /**
+   * If true, using arctic table as build table.
+   * {@link ArcticSourceEnumerator} will notify {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}
+   * after {@link FirstSplits} having been read.
+   * Then {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader} will emit a Watermark values
+   * Long.MAX_VALUE. Advancing TemporalJoinOperator's watermark can trigger the join operation and push the results to
+   * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user arbitrary  probe side
+   */
+  private final boolean dimTable;
   /**
    * snapshotId for the last enumerated snapshot. next incremental enumeration
    * should be based off this as the starting position.
@@ -78,7 +86,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
       @Nullable ArcticSourceEnumState enumState,
-      boolean generateWatermarkTimestamp) {
+      boolean dimTable) {
     super(enumContext, splitAssigner);
     this.loader = loader;
     this.context = enumContext;
@@ -91,7 +99,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
       this.firstSplits = enumState.firstSplits();
     }
-    this.generateWatermarkTimestamp = generateWatermarkTimestamp;
+    this.dimTable = dimTable;
   }
 
   @Override
@@ -135,7 +143,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
 
   private ContinuousEnumerationResult planSplits() {
     ContinuousEnumerationResult result = doPlanSplits();
-    if (generateWatermarkTimestamp && firstSplits == null) {
+    if (dimTable && firstSplits == null) {
       firstSplits = new FirstSplits(result.splits(), context.metricGroup());
     }
     return result;
@@ -172,8 +180,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (sourceEvent instanceof SplitRequestEvent) {
       SplitRequestEvent splitRequestEvent = (SplitRequestEvent) sourceEvent;
       Collection<String> finishedSplitIds = splitRequestEvent.finishedSplitIds();
-      if (generateWatermarkTimestamp) {
-        checkAndNotifyReaderTriggerWatermarkTimestamp(finishedSplitIds);
+      if (dimTable) {
+        checkAndNotifyReader(finishedSplitIds);
       }
     } else {
       throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
@@ -188,7 +196,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    *
    * @param finishedSplitIds
    */
-  public void checkAndNotifyReaderTriggerWatermarkTimestamp(Collection<String> finishedSplitIds) {
+  public void checkAndNotifyReader(Collection<String> finishedSplitIds) {
     if (firstSplits == null || firstSplits.isHaveNotifiedReader()) {
       return;
     }
@@ -222,7 +230,6 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     splitAssigner.close();
     super.close();
   }
-
 
   @Override
   protected boolean shouldWaitForMoreSplits() {
