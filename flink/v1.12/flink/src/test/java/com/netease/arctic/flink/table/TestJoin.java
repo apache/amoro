@@ -112,7 +112,7 @@ public class TestJoin extends FlinkTestBase {
 
     tableProperties.clear();
     sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND)" +
-        " WITH ('arctic.watermark'='true')" +
+        " WITH ('dim-table.enable'='true')" +
         "like %s", table);
 
     TableSchema flinkSchema = TableSchema.builder()
@@ -157,7 +157,7 @@ public class TestJoin extends FlinkTestBase {
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
       Row i = iterator.next();
-      System.out.println("out:" + i);
+      LOG.info("out:{}, {}" , i.getKind(), i);
     }
 
     tableResult.getJobClient().ifPresent(JobClient::cancel);
@@ -224,15 +224,85 @@ public class TestJoin extends FlinkTestBase {
         "like %s", table);
 
     TableResult tableResult = exec("select u.name, u.id, dim.test, dim.name dname from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true', 'arctic.watermark'='true', 'watermark.idle.timeout'='10s')*/ for system_time as of u.op_time as dim on u.id = dim.id");
+        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.op_time as dim on u.id = dim.id");
 
-//    tableResult.await();
+    tableResult.await();
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
       Row i = iterator.next();
       System.out.println("out:" + i);
     }
-//    System.out.println(getResults("rowtime_default_sink"));
+    tableResult.getJobClient().ifPresent(JobClient::cancel);
+  }
+
+  @Test
+  public void testLookupJoin() throws Exception {
+    getEnv().getCheckpointConfig().disableCheckpointing();
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{RowKind.INSERT, 1L, "a", LocalDateTime.now().minusDays(3)});
+    data.add(new Object[]{RowKind.INSERT, 2L, "b", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 3L, "c", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 4L, "d", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[]{RowKind.INSERT, 5L, "e", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[]{RowKind.INSERT, 3L, "e", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 6L, "f", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 8L, "g", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 9L, "h", LocalDateTime.now()});
+    String id = registerData(DataUtil.toRowList(data));
+    sql("CREATE TABLE left_view (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
+        "with (" +
+        " 'connector' = 'values'," +
+        " 'bounded' = 'false'," +
+        " 'data-id' = '" + id + "' " +
+        " )");
+
+    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+
+    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
+        " test int, id bigint, name STRING" +
+        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
+    sql(sql);
+
+    TableSchema flinkSchema = TableSchema.builder()
+        .field("test", DataTypes.INT())
+        .field("id", DataTypes.BIGINT())
+        .field("name", DataTypes.STRING())
+        .build();
+    RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
+    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
+        ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
+    List<RowData> baseData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 123, 1L, StringData.fromString("john")));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 324, 2L, StringData.fromString("lily")));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 456, 3L, StringData.fromString("jake")));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 463, 4L, StringData.fromString("sam")));
+    }};
+    for (RowData record : baseData) {
+      taskWriter.write(record);
+    }
+    commit(keyedTable, taskWriter.complete(), true);
+
+    writeChange(keyedTable, rowType, 1);
+
+    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
+        "like %s", table);
+
+    TableResult tableResult = exec("select u.name, u.id, dim.test, dim.name dname from left_view as u left join r " +
+        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.op_time as dim on u.id = dim.id");
+
+    CloseableIterator<Row> iterator = tableResult.collect();
+    while (iterator.hasNext()) {
+      Row i = iterator.next();
+      System.out.println("out:" + i);
+    }
     tableResult.getJobClient().ifPresent(JobClient::cancel);
   }
 
@@ -257,7 +327,7 @@ public class TestJoin extends FlinkTestBase {
         "like %s", table);
 
     TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true', 'arctic.watermark'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
+        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
 
     CloseableIterator<Row> iterator = tableResult.collect();
     while (iterator.hasNext()) {
@@ -324,7 +394,7 @@ public class TestJoin extends FlinkTestBase {
       }
     });
     TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true', 'arctic.watermark'='true', 'watermark.idle.timeout'='41s')*/ for system_time as of u.opt as dim on u.id = dim.id");
+        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
 
     JobClient jc = tableResult.getJobClient().get();
     while (INITIALIZING.equals(jc.getJobStatus().get())) {
@@ -346,8 +416,8 @@ public class TestJoin extends FlinkTestBase {
           RowKind.INSERT, 324, 5L, StringData.fromString("john")));
       add(GenericRowData.ofKind(
           RowKind.INSERT, 324, 6L, StringData.fromString("lily")));
-      add(GenericRowData.ofKind(
-          RowKind.DELETE, 324, 3L, StringData.fromString("jake")));
+//      add(GenericRowData.ofKind(
+//          RowKind.DELETE, 324, 3L, StringData.fromString("jake1")));
       add(GenericRowData.ofKind(
           RowKind.UPDATE_BEFORE, 324, 4L, StringData.fromString("sam")));
       add(GenericRowData.ofKind(

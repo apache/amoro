@@ -46,6 +46,7 @@ public class FirstSplits implements Serializable {
   private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
+  private boolean haveNotifiedReader = false;
 
   public FirstSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
@@ -118,5 +119,13 @@ public class FirstSplits implements Serializable {
     if (unfinishedCount == 0) {
       this.splits = null;
     }
+  }
+
+  public boolean isHaveNotifiedReader() {
+    return haveNotifiedReader;
+  }
+
+  public void notifyReader() {
+    this.haveNotifiedReader = true;
   }
 }

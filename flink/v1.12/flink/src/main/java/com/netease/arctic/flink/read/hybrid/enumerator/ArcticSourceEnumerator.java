@@ -183,17 +183,13 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
 
   /**
    * Check whether all first splits have been finished or not.
-   * After all finished, enumerator will send a {@link StartWatermarkEvent} to notify all
+   * After all finished, enumerator will send a {@link InitializationFinishedEvent} to notify all
    * {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}.
    *
    * @param finishedSplitIds
    */
   public void checkAndNotifyReaderTriggerWatermarkTimestamp(Collection<String> finishedSplitIds) {
-    if (firstSplits == null) {
-      return;
-    }
-    if (firstSplits.getUnfinishedCount() == 0) {
-      notifyReaders();
+    if (firstSplits == null || firstSplits.isHaveNotifiedReader()) {
       return;
     }
     if (!firstSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
@@ -205,8 +201,9 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   private void notifyReaders() {
     LOG.info("all splits finished, send events to readers");
     IntStream.range(0, context.currentParallelism())
-        .forEach(i -> context.sendEventToSourceReader(i, StartWatermarkEvent.INSTANCE));
+        .forEach(i -> context.sendEventToSourceReader(i, InitializationFinishedEvent.INSTANCE));
     firstSplits.clear();
+    firstSplits.notifyReader();
   }
 
   @Override

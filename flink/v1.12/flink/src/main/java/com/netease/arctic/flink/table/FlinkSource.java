@@ -54,7 +54,7 @@ import java.util.Map;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.flink.FlinkSchemaUtil.toRowType;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WATERMARK;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
  * An util class create arctic source data stream.
@@ -165,11 +165,11 @@ public class FlinkSource {
         rowType = FlinkSchemaUtil.convert(scanContext.project());
       }
 
-      boolean generateWatermark = PropertyUtil.propertyAsBoolean(properties, ARCTIC_WATERMARK.key(),
-          ARCTIC_WATERMARK.defaultValue());
+      boolean dimTable = PropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+          DIM_TABLE_ENABLE.defaultValue());
       return env.fromSource(
           new ArcticSource<>(tableLoader, scanContext, rowDataReaderFunction,
-              InternalTypeInfo.of(rowType), arcticTable.name(), generateWatermark),
+              InternalTypeInfo.of(rowType), arcticTable.name(), dimTable),
           watermarkStrategy, ArcticSource.class.getName());
     }
 

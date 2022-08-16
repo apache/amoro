@@ -30,7 +30,6 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitSerializer;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
-import com.netease.arctic.flink.table.ArcticWatermarkGenerator;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.Source;
@@ -48,9 +47,7 @@ import org.slf4j.LoggerFactory;
  * <p>
  * If ArcticSource is used as a build table in lookup join, it will be implemented by temporal join.
  * Two source should use processing time as watermark.
- * ArcticSource will generate watermark after first splits planned by ArcticSourceEnumerator having been finished,
- * or {@link ArcticWatermarkGenerator} is idle reaching
- * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#WATERMARK_IDLE_TIMEOUT} when there is no data or.
+ * ArcticSource will generate watermark after first splits planned by ArcticSourceEnumerator having been finished.
  */
 public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumState>, ResultTypeQueryable<T> {
   private static final long serialVersionUID = 1L;
@@ -107,8 +104,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
     }
 
     if (scanContext.isStreaming()) {
-      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState,
-          generateWatermark);
+      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, generateWatermark);
     } else {
       return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, null);
     }

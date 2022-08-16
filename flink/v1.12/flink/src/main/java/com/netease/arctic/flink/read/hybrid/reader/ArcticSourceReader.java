@@ -19,18 +19,15 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.ArcticSource;
-import com.netease.arctic.flink.read.hybrid.enumerator.StartWatermarkEvent;
+import com.netease.arctic.flink.read.hybrid.enumerator.InitializationFinishedEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
-import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.flink.util.FlinkUtil;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
 import org.apache.flink.core.io.InputStatus;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -40,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.TimeZone;
 
 /**
  * Arctic source reader that is created by a {@link ArcticSource#createReader(SourceReaderContext)}.
@@ -56,13 +52,13 @@ public class ArcticSourceReader<T> extends
       ReaderFunction<T> readerFunction,
       Configuration config,
       SourceReaderContext context,
-      boolean generateWatermarkTimestamp) {
+      boolean generateWatermark) {
     super(
         () -> new HybridSplitReader<>(
             readerFunction,
             context
         ),
-        new ArcticRecordEmitter<>(config, context.getClass().getClassLoader(), generateWatermarkTimestamp),
+        new ArcticRecordEmitter<>(generateWatermark),
         config,
         context);
   }
@@ -97,11 +93,10 @@ public class ArcticSourceReader<T> extends
 
   @Override
   public void handleSourceEvents(SourceEvent sourceEvent) {
-    if (!(sourceEvent instanceof StartWatermarkEvent)) {
+    if (!(sourceEvent instanceof InitializationFinishedEvent)) {
       return;
     }
     LOGGER.info("receive StartWatermarkEvent");
-    ((ArcticRecordEmitter) recordEmitter).startGenerateProcessingTimestamp();
     output.emitWatermark(new Watermark(Long.MAX_VALUE));
   }
 

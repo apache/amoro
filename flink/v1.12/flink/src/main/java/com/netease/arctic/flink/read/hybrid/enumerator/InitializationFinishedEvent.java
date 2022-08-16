@@ -24,8 +24,8 @@ import org.apache.flink.api.connector.source.SourceEvent;
 /**
  * {@link ArcticSourceReader} won't set timestamp to RowData until receiving this Event.
  */
-public class StartWatermarkEvent implements SourceEvent {
+public class InitializationFinishedEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;
 
-  public static final StartWatermarkEvent INSTANCE = new StartWatermarkEvent();
+  public static final InitializationFinishedEvent INSTANCE = new InitializationFinishedEvent();
 }

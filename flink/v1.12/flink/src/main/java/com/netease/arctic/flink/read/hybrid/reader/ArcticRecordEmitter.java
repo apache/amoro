@@ -19,12 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
-import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.flink.util.FlinkUtil;
-import org.apache.flink.api.common.ExecutionConfig;
-import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.SourceOutput;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -33,9 +28,6 @@ import org.apache.flink.table.data.utils.JoinedRowData;
 import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Optional;
-import java.util.TimeZone;
 
 /**
  * Emitter that emit {@link T} to the next flink operator and update the record offset of {@link T} into split state.
@@ -46,20 +38,11 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
 
   /**
    * It signifies whether the Long.MIN_VALUE need to be set into RowData.
-   * If it's null, RowData won't be changed.
-   * If it's false, RowData would be added a field, which values LONG.MIN_VALUE.
-   * If it's true, RowData would be added a field, which values Processing Time.
    */
-  public Boolean generateProcessingTimestamp;
-  private final TimeZone timeZone;
+  public boolean populateRowTime;
 
-  public ArcticRecordEmitter(Configuration config, ClassLoader classLoader, boolean generateWatermarkTimestamp) {
-    ExecutionConfig executionConfig = new ExecutionConfig();
-
-    timeZone = FlinkUtil.getLocalTimeZone(config);
-    executionConfig.configure(config, classLoader);
-
-    this.generateProcessingTimestamp = generateWatermarkTimestamp ? false : null;
+  public ArcticRecordEmitter(boolean populateRowTime) {
+    this.populateRowTime = populateRowTime;
   }
 
   @Override
@@ -68,27 +51,19 @@ public class ArcticRecordEmitter<T> implements RecordEmitter<ArcticRecordWithOff
       SourceOutput<T> sourceOutput,
       ArcticSplitState split) throws Exception {
     T record = element.record();
-    if (generateProcessingTimestamp == null) {
+    if (!populateRowTime) {
       sourceOutput.collect(record);
     } else {
-      TimestampData rowTime = TimestampData.fromEpochMillis(Long.MIN_VALUE);
-
-//      if (generateProcessingTimestamp) {
-////        rowTime = ArcticUtils.getCurrentTimestampData(timeZone);
-//        rowTime = TimestampData.fromEpochMillis(Long.MIN_VALUE+1);
-//      }
       Preconditions.checkArgument(record instanceof RowData,
           "Custom watermark strategy doesn't support %s, except RowData for now.",
           record.getClass());
-      RowData rowData = new JoinedRowData((RowData) record, GenericRowData.of(rowTime));
+      RowData rowData = new JoinedRowData((RowData) record,
+          GenericRowData.of(TimestampData.fromEpochMillis(Long.MIN_VALUE)));
+      rowData.setRowKind(((RowData) record).getRowKind());
       sourceOutput.collect((T) rowData);
     }
     split.updateOffset(new Object[]{element.insertFileOffset(), element.insertRecordOffset(),
         element.deleteFileOffset(), element.deleteRecordOffset()});
-  }
-
-  public void startGenerateProcessingTimestamp() {
-    generateProcessingTimestamp = true;
   }
 
 }

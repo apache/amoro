@@ -131,22 +131,11 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .noDefaultValue()
           .withDescription("underlying arctic table name.");
 
-  public static final ConfigOption<Boolean> ARCTIC_WATERMARK =
+  public static final ConfigOption<Boolean> DIM_TABLE_ENABLE =
       ConfigOptions.key("dim-table.enable")
           .booleanType()
           .defaultValue(false)
-          .withDescription("If it is true, Arctic source will generate watermark. It's only use for lookup join," +
-              "and arctic source is used as build table, i.e. right table.");
-
-  public static final ConfigOption<Duration> WATERMARK_IDLE_TIMEOUT =
-      ConfigOptions.key("watermark.idle.timeout")
-          .durationType()
-          .defaultValue(Duration.ofMinutes(1))
-          .withDescription(String.format("If %s set true, source will generate watermark after %s " +
-                  "when there is no data. It's used in the cases that source has no data," +
-                  " or reader's number is greater than first splits, or some first splits are not finished," +
-                  " but some reader is idle'.",
-              ARCTIC_WATERMARK.key(), "watermark.idle.timeout"));
+          .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
   @Override
   public void validate(DescriptorProperties properties) {

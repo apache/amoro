@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.table;
 
-import com.netease.arctic.flink.util.FlinkUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
@@ -43,15 +42,13 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.PropertyUtil;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WATERMARK;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.WATERMARK_IDLE_TIMEOUT;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
  * Flink table api that generates arctic base/change file source operators.
@@ -205,11 +202,9 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   @Override
   public void applyWatermark(WatermarkStrategy<RowData> watermarkStrategy) {
     Configuration conf = Configuration.fromMap(table.properties());
-    boolean generateWatermark = conf.get(ARCTIC_WATERMARK);
+    boolean generateWatermark = conf.get(DIM_TABLE_ENABLE);
     if (!generateWatermark) {
       this.watermarkStrategy = watermarkStrategy;
-      return;
     }
-    this.watermarkStrategy = new ArcticWatermarkStrategy(FlinkUtil.getLocalTimeZone((Configuration) readableConfig));
   }
 }
