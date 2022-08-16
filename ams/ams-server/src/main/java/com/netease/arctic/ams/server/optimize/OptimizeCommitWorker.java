@@ -37,6 +37,7 @@ public class OptimizeCommitWorker implements Runnable {
     LOG.info("{} start work", workerName);
     TableIdentifier currentTable = null;
     try {
+      Thread.sleep(10000);
       while (true) {
         try {
           TableIdentifier tableIdentifier = ServiceContainer.getOptimizeService().takeTableToCommit();
@@ -46,8 +47,7 @@ public class OptimizeCommitWorker implements Runnable {
           tableItem.checkTaskExecuteTimeout();
           tableItem.commitOptimizeTasks();
         } catch (InterruptedException e) {
-          LOG.info("{} was interrupted, break", workerName);
-          break;
+          throw e;
         } catch (NoSuchObjectException e) {
           LOG.error("{} can't find table, ignore and continue", workerName, e);
         } catch (Throwable t) {
@@ -56,6 +56,8 @@ public class OptimizeCommitWorker implements Runnable {
           currentTable = null;
         }
       }
+    } catch (InterruptedException e) {
+      LOG.info("{} was interrupted", workerName);
     } finally {
       LOG.info("{} exit, current table {}", workerName, currentTable);
     }

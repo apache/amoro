@@ -75,7 +75,9 @@ public class ServiceContainer {
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
       synchronized (ServiceContainer.class) {
-        optimizeService = new OptimizeService();
+        if (optimizeService == null) {
+          optimizeService = new OptimizeService();
+        }
       }
     }
 
@@ -85,7 +87,9 @@ public class ServiceContainer {
   public static ITableExpireService getTableExpireService() {
     if (tableExpireService == null) {
       synchronized (ServiceContainer.class) {
-        tableExpireService = new TableExpireService();
+        if (tableExpireService == null) {
+          tableExpireService = new TableExpireService();
+        }
       }
     }
 
@@ -95,7 +99,9 @@ public class ServiceContainer {
   public static IOrphanFilesCleanService getOrphanFilesCleanService() {
     if (orphanFilesCleanService == null) {
       synchronized (ServiceContainer.class) {
-        orphanFilesCleanService = new OrphanFilesCleanService();
+        if (orphanFilesCleanService == null) {
+          orphanFilesCleanService = new OrphanFilesCleanService();
+        }
       }
     }
 
@@ -128,7 +134,9 @@ public class ServiceContainer {
   public static OptimizeQueueService getOptimizeQueueService() {
     if (optimizeQueueService == null) {
       synchronized (ServiceContainer.class) {
-        optimizeQueueService = new OptimizeQueueService();
+        if (optimizeQueueService == null) {
+          optimizeQueueService = new OptimizeQueueService();
+        }
       }
     }
 
@@ -138,7 +146,9 @@ public class ServiceContainer {
   public static IMetaService getMetaService() {
     if (metaService == null) {
       synchronized (ServiceContainer.class) {
-        metaService = new JDBCMetaService();
+        if (metaService == null) {
+          metaService = new JDBCMetaService();
+        }
       }
     }
 
@@ -148,7 +158,9 @@ public class ServiceContainer {
   public static IQuotaService getQuotaService() {
     if (quotaService == null) {
       synchronized (ServiceContainer.class) {
-        quotaService = new QuotaService(getTableTaskHistoryService(), getMetaService());
+        if (quotaService == null) {
+          quotaService = new QuotaService(getTableTaskHistoryService(), getMetaService());
+        }
       }
     }
 
@@ -194,7 +206,9 @@ public class ServiceContainer {
   public static ITableTaskHistoryService getTableTaskHistoryService() {
     if (tableTaskHistoryService == null) {
       synchronized (ServiceContainer.class) {
-        tableTaskHistoryService = new TableTaskHistoryService();
+        if (tableTaskHistoryService == null) {
+          tableTaskHistoryService = new TableTaskHistoryService();
+        }
       }
     }
 
@@ -204,7 +218,9 @@ public class ServiceContainer {
   public static ITableInfoService getTableInfoService() {
     if (tableInfoService == null) {
       synchronized (ServiceContainer.class) {
-        tableInfoService = new TableBaseInfoService(getMetaService());
+        if (tableInfoService == null) {
+          tableInfoService = new TableBaseInfoService(getMetaService());
+        }
       }
     }
     return tableInfoService;
@@ -213,7 +229,9 @@ public class ServiceContainer {
   public static ArcticTableMetastoreHandler getTableMetastoreHandler() {
     if (tableMetastoreHandler == null) {
       synchronized (ServiceContainer.class) {
-        tableMetastoreHandler = new ArcticTableMetastoreHandler(getMetaService());
+        if (tableMetastoreHandler == null) {
+          tableMetastoreHandler = new ArcticTableMetastoreHandler(getMetaService());
+        }
       }
     }
     return tableMetastoreHandler;
