@@ -3,7 +3,6 @@ package com.netease.arctic.hive.op;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.utils.FileUtil;
-import java.util.Map;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
@@ -13,9 +12,6 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Snapshot;
-
-import java.util.List;
-import java.util.function.Consumer;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -23,6 +19,10 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 public class ReplaceHivePartitions implements ReplacePartitions {
 
@@ -171,7 +171,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
           c.alter_table(db, tableName, tbl);
           return 0;
         });
-      } catch (TException |InterruptedException e) {
+      } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
     }
@@ -180,15 +180,15 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   private void commitPartitionedTable() {
     try {
       transactionalHMSClient.run(c -> {
-        if (!rewritePartitions.isEmpty()){
+        if (!rewritePartitions.isEmpty()) {
           c.alter_partitions(db, tableName, rewritePartitions);
         }
-        if (!newPartitions.isEmpty()){
+        if (!newPartitions.isEmpty()) {
           c.add_partitions(newPartitions);
         }
         return 0;
       });
-    } catch (TException |InterruptedException e) {
+    } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
   }
