@@ -49,8 +49,12 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.EnumerationUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Snapshot;
@@ -258,12 +262,29 @@ public class FileInfoCacheService extends IJDBCService {
       if (fromId == toId) {
         return;
       }
-      List<Snapshot> snapshots = snapshotsWithin(table, fromId, toId);
 
+      boolean isCached = false;
+      Long currentCached = null;
+      Snapshot curr = table.currentSnapshot();
+      while (curr != null) {
+        isCached = snapshotIsCached(identifier, tableType, curr.snapshotId());
+        if (isCached) {
+          currentCached = curr.snapshotId();
+          break;
+        }
+        curr = table.snapshot(curr.parentId());
+      }
+      if (!isCached) {
+        //there is snapshot expired and not in cache.need delete all cache,and cache current snapshot
+        deleteTableCache(new com.netease.arctic.table.TableIdentifier(identifier));
+        syncCurrentSnapshotFile(table, identifier, tableType);
+        return;
+      }
+      List<Snapshot> snapshots = snapshotsWithin(table, currentCached, toId);
       // generate cache info
       LOG.info("{} start sync file info", identifier);
-      ArcticTable finalTable = (ArcticTable) table;
-      finalTable.io().doAs(() -> {
+      Table finalTable = table;
+      ((ArcticTable)finalTable).io().doAs(() -> {
         syncFileInfo(finalTable, identifier, tableType, snapshots);
         return null;
       });
@@ -330,7 +351,7 @@ public class FileInfoCacheService extends IJDBCService {
   }
 
   private void syncFileInfo(
-      ArcticTable table,
+      Table table,
       TableIdentifier identifier,
       String tableType,
       List<Snapshot> snapshots) {
@@ -340,32 +361,9 @@ public class FileInfoCacheService extends IJDBCService {
       List<CacheFileInfo> fileInfos = new ArrayList<>();
       List<DataFile> addFiles = new ArrayList<>();
       List<DataFile> deleteFiles = new ArrayList<>();
-      SnapshotFileUtil.getSnapshotFiles(table, snapshot, addFiles, deleteFiles);
+      SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, snapshot, addFiles, deleteFiles);
       for (DataFile amsFile : addFiles) {
-        String partitionName = StringUtils.isEmpty(partitionToPath(amsFile.getPartition())) ?
-            null :
-            partitionToPath(amsFile.getPartition());
-        long watermark = 0L;
-        boolean isDataFile = Objects.equals(amsFile.fileType, DataFileType.INSERT_FILE.name()) ||
-            Objects.equals(amsFile.fileType, DataFileType.BASE_FILE.name());
-        if (isDataFile &&
-            table.properties() != null && table.properties().containsKey(TableProperties.TABLE_EVENT_TIME_FIELD)) {
-          watermark =
-              amsFile.getUpperBounds()
-                  .get(table.properties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
-                  .getLong();
-        }
-        String primaryKey = TableMetadataUtil.getTableAllIdentifyName(identifier) + tableType + amsFile.getPath();
-        String primaryKeyMd5 = Hashing.md5()
-            .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
-            .toString();
-        Long parentId = snapshot.parentId() == null ? -1 : snapshot.parentId();
-        CacheFileInfo cacheFileInfo = new CacheFileInfo(primaryKeyMd5, identifier, snapshot.snapshotId(),
-            parentId, null,
-            tableType, amsFile.getPath(), amsFile.getFileType(), amsFile.getFileSize(), amsFile.getMask(),
-            amsFile.getIndex(), amsFile.getSpecId(), partitionName, snapshot.timestampMillis(),
-            amsFile.getRecordCount(), snapshot.operation(), watermark);
-
+        CacheFileInfo cacheFileInfo = CacheFileInfo.convert(table, amsFile, identifier, tableType, snapshot);
         fileInfos.add(cacheFileInfo);
       }
 
@@ -404,6 +402,47 @@ public class FileInfoCacheService extends IJDBCService {
             e);
       }
     }
+  }
+
+  private void syncCurrentSnapshotFile(Table table, TableIdentifier identifier, String tableType) {
+    Set<org.apache.iceberg.DataFile> dataFiles = new HashSet<>();
+    Set<String> addedDeleteFiles = new HashSet<>();
+    Set<org.apache.iceberg.DeleteFile> deleteFiles = new HashSet<>();
+    Snapshot curr = table.currentSnapshot();
+    table.newScan().planFiles().forEach(fileScanTask -> {
+      dataFiles.add(fileScanTask.file());
+      fileScanTask.deletes().forEach(deleteFile -> {
+        if (!addedDeleteFiles.contains(deleteFile.path().toString())) {
+          deleteFiles.add(deleteFile);
+          addedDeleteFiles.add(deleteFile.path().toString());
+        }
+      });
+    });
+    List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
+    dataFiles.forEach(dataFile -> {
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
+    });
+    deleteFiles.forEach(dataFile -> {
+      DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
+      cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
+    });
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      try {
+        FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
+        cacheFileInfos.forEach(fileInfoCacheMapper::insertCache);
+        sqlSession.commit();
+      } catch (Exception e) {
+        sqlSession.rollback();
+      }
+    } catch (Exception e) {
+      LOG.error(
+          "insert table {} file {} cache error",
+          identifier,
+          JSONObject.toJSONString(cacheFileInfos),
+          e);
+    }
+
   }
 
   private List<CacheFileInfo> genFileInfo(TableCommitMeta tableCommitMeta) {
@@ -513,6 +552,13 @@ public class FileInfoCacheService extends IJDBCService {
           .append(partitionFieldDataList.get(i).getValue());
     }
     return sb.toString();
+  }
+
+  private String genMD5(TableIdentifier identifier, String tableType, String filePath) {
+    String primaryKey = TableMetadataUtil.getTableAllIdentifyName(identifier) + tableType + filePath;
+    return Hashing.md5()
+        .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
+        .toString();
   }
 
   public static class SyncAndExpireFileCacheTask {

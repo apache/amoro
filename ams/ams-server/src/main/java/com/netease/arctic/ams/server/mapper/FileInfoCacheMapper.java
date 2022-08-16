@@ -198,7 +198,7 @@ public interface FileInfoCacheMapper {
   @Select("select add_snapshot_id from " + TABLE_NAME + " where table_identifier = " +
       "#{tableIdentifier," +
       " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
-      "#{type} and add_snapshot_id = #{snapshotId}")
+      "#{type} and (add_snapshot_id = #{snapshotId} or delete_snapshot_id = #{snapshotId})")
   @Results({
       @Result(column = "add_snapshot_id", property = "id"),
       @Result(column = "parent_snapshot_id", property = "parentId"),
