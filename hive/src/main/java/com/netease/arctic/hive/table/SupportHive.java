@@ -24,7 +24,7 @@ package com.netease.arctic.hive.table;
 public interface SupportHive {
 
   /**
-   * base location of hive table location or hive partition. data file in this location could read by hive sql
+   * base path to store hive data files
    * @return path to store hive file
    */
   String hiveLocation();
