@@ -41,7 +41,9 @@ public class TableProperties {
   public static final String ENABLE_OPTIMIZE = "optimize.enable";
   public static final String ENABLE_OPTIMIZE_DEFAULT = "true";
 
+  @Deprecated
   public static final String OPTIMIZE_COMMIT_INTERVAL = "optimize.commit.interval";
+  @Deprecated
   public static final long OPTIMIZE_COMMIT_INTERVAL_DEFAULT = 60_000; // 1 min
 
   public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
