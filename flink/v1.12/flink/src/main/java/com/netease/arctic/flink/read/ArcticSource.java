@@ -62,16 +62,16 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
    * generate arctic watermark. This is only for lookup join arctic table, and arctic table is used as build table,
    * i.e. right table.
    */
-  private final boolean generateWatermark;
+  private final boolean dimTable;
 
   public ArcticSource(ArcticTableLoader loader, ArcticScanContext scanContext, ReaderFunction<T> readerFunction,
-                      TypeInformation<T> typeInformation, String tableName, boolean generateWatermark) {
+                      TypeInformation<T> typeInformation, String tableName, boolean dimTable) {
     this.loader = loader;
     this.scanContext = scanContext;
     this.readerFunction = readerFunction;
     this.typeInformation = typeInformation;
     this.tableName = tableName;
-    this.generateWatermark = generateWatermark;
+    this.dimTable = dimTable;
   }
 
   @Override
@@ -81,8 +81,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
 
   @Override
   public SourceReader<T, ArcticSplit> createReader(SourceReaderContext readerContext) throws Exception {
-    return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext,
-        generateWatermark);
+    return new ArcticSourceReader<>(readerFunction, readerContext.getConfiguration(), readerContext, dimTable);
   }
 
   @Override
@@ -104,7 +103,7 @@ public class ArcticSource<T> implements Source<T, ArcticSplit, ArcticSourceEnumS
     }
 
     if (scanContext.isStreaming()) {
-      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, generateWatermark);
+      return new ArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, enumState, dimTable);
     } else {
       return new StaticArcticSourceEnumerator(enumContext, splitAssigner, loader, scanContext, null);
     }

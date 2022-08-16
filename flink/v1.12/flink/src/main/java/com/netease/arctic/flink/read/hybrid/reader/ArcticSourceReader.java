@@ -52,13 +52,13 @@ public class ArcticSourceReader<T> extends
       ReaderFunction<T> readerFunction,
       Configuration config,
       SourceReaderContext context,
-      boolean generateWatermark) {
+      boolean populateRowTime) {
     super(
         () -> new HybridSplitReader<>(
             readerFunction,
             context
         ),
-        new ArcticRecordEmitter<>(generateWatermark),
+        new ArcticRecordEmitter<>(populateRowTime),
         config,
         context);
   }

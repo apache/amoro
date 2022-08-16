@@ -64,10 +64,6 @@ public class FirstSplits implements Serializable {
     return splits;
   }
 
-  public synchronized long getUnfinishedCount() {
-    return unfinishedCount;
-  }
-
   public synchronized void addSplitsBack(Collection<ArcticSplit> splits) {
     if (this.splits == null || CollectionUtil.isNullOrEmpty(splits)) {
       return;
