@@ -524,7 +524,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       Map<String, String> tableProperties = meta.getProperties();
       tableProperties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-
+      tableProperties.put(TableProperties.WRITE_OUTPUT_FILE_FACTORY, TableProperties.BASE_FILE_FORMAT_DEFAULT);
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
@@ -559,6 +559,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
       Map<String, String> tableProperties = meta.getProperties();
       tableProperties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+      tableProperties.put(TableProperties.WRITE_OUTPUT_FILE_FACTORY, TableProperties.BASE_FILE_FORMAT_DEFAULT);
       Table table = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
