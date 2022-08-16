@@ -30,7 +30,7 @@ import org.apache.iceberg.Table;
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
-public class UnkeyedHiveTable extends BaseUnkeyedTable {
+public class UnkeyedHiveTable extends BaseUnkeyedTable implements SupportHive {
 
   public UnkeyedHiveTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
       AmsClient client) {
@@ -40,5 +40,10 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable {
   @Override
   public Schema schema() {
     return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
+  }
+
+  @Override
+  public String hiveLocation() {
+    return null;
   }
 }
