@@ -43,7 +43,7 @@ public class KeyedHiveTable extends BaseKeyedTable {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
   }
 
-  public static class HiveBaseInternalTable extends BaseInternalTable {
+  public static class HiveBaseInternalTable extends BaseInternalTable implements SupportHive {
 
     public HiveBaseInternalTable(
         TableIdentifier tableIdentifier,
@@ -56,6 +56,11 @@ public class KeyedHiveTable extends BaseKeyedTable {
     @Override
     public Schema schema() {
       return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
+    }
+
+    @Override
+    public String hiveLocation() {
+      return null;
     }
   }
 }
