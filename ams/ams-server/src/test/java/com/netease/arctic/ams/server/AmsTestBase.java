@@ -154,8 +154,8 @@ public class AmsTestBase {
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
 
-  @ClassRule
-  public static TemporaryFolder temp = new TemporaryFolder();
+  // @ClassRule
+  // public static TemporaryFolder temp = new TemporaryFolder();
 
   @Before
   public void beforeAll() throws IOException {
@@ -218,19 +218,6 @@ public class AmsTestBase {
 
     //create
     createCatalog();
-    tableDir = temp.newFolder();
-    testTable = catalog
-        .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
-        .withPartitionSpec(SPEC)
-        .create().asUnkeyedTable();
-
-    testKeyedTable = catalog
-        .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
-        .withPartitionSpec(SPEC)
-        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
   }
 
   private static void createCatalog() {
