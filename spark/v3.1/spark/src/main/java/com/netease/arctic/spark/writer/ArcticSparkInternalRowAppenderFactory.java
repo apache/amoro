@@ -65,6 +65,7 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
 
   private StructType eqDeleteSparkType = null;
   private StructType posDeleteSparkType = null;
+  private boolean writeHive;
 
   public static ArcticSparkInternalRowAppenderFactory.Builder builderFor(
       Table table,
@@ -75,7 +76,7 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
 
   public ArcticSparkInternalRowAppenderFactory(
       Map<String, String> properties, Schema writeSchema, StructType dsSchema, PartitionSpec spec,
-      int[] equalityFieldIds, Schema eqDeleteRowSchema, Schema posDeleteRowSchema) {
+      int[] equalityFieldIds, Schema eqDeleteRowSchema, Schema posDeleteRowSchema, boolean writeHive) {
     this.properties = properties;
     this.writeSchema = writeSchema;
     this.dsSchema = dsSchema;
@@ -83,6 +84,7 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
     this.equalityFieldIds = equalityFieldIds;
     this.eqDeleteRowSchema = eqDeleteRowSchema;
     this.posDeleteRowSchema = posDeleteRowSchema;
+    this.writeHive = writeHive;
   }
 
   public static class Builder {
@@ -93,6 +95,7 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
     private int[] equalityFieldIds;
     private Schema eqDeleteRowSchema;
     private Schema posDeleteRowSchema;
+    private boolean writeHive;
 
     Builder(Table table, Schema writeSchema, StructType dsSchema) {
       this.table = table;
@@ -121,6 +124,11 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
       return this;
     }
 
+    public ArcticSparkInternalRowAppenderFactory.Builder writeHive(boolean writeHive) {
+      this.writeHive = writeHive;
+      return this;
+    }
+
     public ArcticSparkInternalRowAppenderFactory build() {
       Preconditions.checkNotNull(table, "Table must not be null");
       Preconditions.checkNotNull(writeSchema, "Write Schema must not be null");
@@ -140,7 +148,8 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
           spec,
           equalityFieldIds,
           eqDeleteRowSchema,
-          posDeleteRowSchema);
+          posDeleteRowSchema,
+          writeHive);
     }
   }
 
@@ -160,6 +169,7 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
     return posDeleteSparkType;
   }
 
+  //todo control whether need adapt hive parquet
   @Override
   public FileAppender<InternalRow> newAppender(OutputFile file, FileFormat fileFormat) {
     MetricsConfig metricsConfig = MetricsConfig.fromProperties(properties);
@@ -173,7 +183,6 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
               .schema(writeSchema)
               .overwrite()
               .build();
-
         case AVRO:
           return Avro.write(file)
               .createWriterFunc(ignored -> new SparkAvroWriter(dsSchema))
