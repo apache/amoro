@@ -1,4 +1,4 @@
-package com.netease.arctic.io;
+package com.netease.arctic.hive.io;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,9 +20,20 @@ import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ReadWriteHiveAdaptHiveParquetTest {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ReadWriteHiveAdaptHiveParquetTest.class);
+
+  @Rule
+  public TemporaryFolder folder = new TemporaryFolder();
+
+  private File temDir;
 
   public void readHiveOriginalParquetFile() {
     Schema schema = new Schema(
@@ -51,12 +62,14 @@ public class ReadWriteHiveAdaptHiveParquetTest {
 
   @Test
   public void write() throws IOException {
+    this.temDir = folder.newFolder();
+    LOG.info("Adapt write parquet path in " + temDir);
     Schema schema = new Schema(Types.NestedField.of(1, false, "t1", Types.TimestampType.withoutZone()),
         Types.NestedField.of(2, false, "t2", Types.TimestampType.withZone()),
         Types.NestedField.of(3, false, "d", Types.DecimalType.of(9, 0)));
     AdaptHiveGenericAppenderFactory adaptHiveGenericAppenderFactory = new AdaptHiveGenericAppenderFactory(schema);
     FileAppender<Record> recordFileAppender = adaptHiveGenericAppenderFactory.newAppender(Files.localOutput(new File(
-        "./src/test/resources/out.parquet")), FileFormat.PARQUET);
+        temDir, "out.parquet")), FileFormat.PARQUET);
     GenericRecord record = GenericRecord.create(schema);
     recordFileAppender.add(record.copy("t1", LocalDateTime.of(2022, 1, 1, 10, 0, 0),
         "t2", OffsetDateTime.of(LocalDateTime.of(2022, 1, 1, 10, 0, 0), ZoneOffset.UTC),
@@ -72,7 +85,7 @@ public class ReadWriteHiveAdaptHiveParquetTest {
         Types.NestedField.of(3, false, "d", Types.DecimalType.of(9, 7)));
 
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-        Files.localInput(this.getClass().getClassLoader().getResource("out.parquet").getFile()))
+        Files.localInput(new File(temDir, "out.parquet")))
         .project(schema)
         .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);

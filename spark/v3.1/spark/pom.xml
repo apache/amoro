@@ -141,6 +141,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-spark3</artifactId>
             <version>${iceberg.version}</version>

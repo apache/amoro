@@ -34,14 +34,12 @@ import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.data.FlinkAvroWriter;
 import org.apache.iceberg.flink.data.FlinkOrcWriter;
-import org.apache.iceberg.flink.data.FlinkParquetWriters;
 import org.apache.iceberg.io.DataWriter;
 import org.apache.iceberg.io.DeleteSchemaUtil;
 import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.orc.ORC;
-import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -119,7 +117,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .build();
 
         case PARQUET:
-          return AdaptHiveParquet.write(outputFile)
+          return Parquet.write(outputFile)
               .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkSchema, msgType))
               .setAll(props)
               .metricsConfig(metricsConfig)

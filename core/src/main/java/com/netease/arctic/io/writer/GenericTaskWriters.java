@@ -27,7 +27,7 @@ import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.AdaptHiveGenericAppenderFactory;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
@@ -85,7 +85,7 @@ public class GenericTaskWriters {
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
       return new GenericBaseTaskWriter(fileFormat,
-          new AdaptHiveGenericAppenderFactory(table.baseTable().schema(), table.spec()),
+          new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
           new OutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.baseTable().schema(), table.spec(), table.primaryKeySpec());
@@ -95,8 +95,8 @@ public class GenericTaskWriters {
       Preconditions.checkNotNull(transactionId);
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-      AdaptHiveGenericAppenderFactory appenderFactory =
-          new AdaptHiveGenericAppenderFactory(table.baseTable().schema(), table.spec());
+      GenericAppenderFactory appenderFactory =
+          new GenericAppenderFactory(table.baseTable().schema(), table.spec());
       appenderFactory.set(
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
           MetricsModes.Full.get().toString());
@@ -119,7 +119,7 @@ public class GenericTaskWriters {
           TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET) - 1;
       Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
       return new GenericChangeTaskWriter(fileFormat,
-          new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()),
+          new GenericAppenderFactory(changeWriteSchema, table.spec()),
           new OutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
               table.changeTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),

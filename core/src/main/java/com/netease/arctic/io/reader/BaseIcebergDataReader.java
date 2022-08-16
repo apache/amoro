@@ -30,7 +30,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.NameMappingParser;
-import org.apache.iceberg.parquet.AdaptHiveParquet;
+import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.util.Filter;
@@ -121,7 +121,7 @@ public abstract class BaseIcebergDataReader<T> {
 
   private CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(fileIO.newInputFile(task.file().path().toString()))
+    Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
         .split(task.start(), task.length())
         .project(schema)
         .createReaderFunc(getNewReaderFunction(schema, idToConstant))

@@ -44,7 +44,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.AdaptHiveGenericAppenderFactory;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
@@ -152,7 +152,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
   }
 
   private Iterable<DataFile> optimizeUnKeyedTable(CloseableIterator<Record> recordIterator) {
-    AdaptHiveGenericAppenderFactory appenderFactory = new AdaptHiveGenericAppenderFactory(table.schema(), table.spec());
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
     OutputFileFactory outputFileFactory = OutputFileFactory
