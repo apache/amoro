@@ -26,6 +26,51 @@ Flink Connector 包括：
 
 Flink Runtime Jar 存放在 `flink/v1.14/flink-runtime/target` 目录。
 
+## 准备
+下载flink和相关依赖，按需下载 Flink 1.12/1.14。以 1.12 为例：
+
+```shell
+FLINK_VERSION=1.12.7
+SCALA_VERSION=2.12
+APACHE_FLINK_URL=archive.apache.org/dist/flink
+HADOOP_VERSION=2.7.5
+
+## 下载 Flink 1.12.x 包，目前 Arctic-flink-runtime jar 包使用 scala 2.12
+wget ${APACHE_FLINK_URL}/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
+## 解压文件
+tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
+
+# 下载 hadoop 依赖
+wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
+# 下载 arctic flink connector
+wget https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.12-0.3.0.jar
+```
+
+修改 Flink 相关配置文件：
+
+```shell
+cd flink-1.12.7
+vim conf/flink-conf.yaml
+```
+修改下面的配置：
+
+```yaml
+# 需要同时运行两个流任务，增加 slot
+taskmanager.numberOfTaskSlots: 4
+# 开启 Checkpoint。只有开启 Checkpoint，写入 file 的数据才可见
+execution.checkpointing.interval: 10s
+```
+
+将依赖移到 Flink 的 lib 目录中：
+
+```shell
+# 用于创建 socket connector，以便通过 socket 输入 CDC 数据。非 quickstart 案例流程可以不添加
+cp examples/table/ChangelogSocketExample.jar lib
+
+cp ../arctic-flink-runtime-1.12-0.3.0.jar lib
+cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
+```
+
 ## Roadmap
 - [Arctic 表支持实时维表 JOIN](https://github.com/NetEase/arctic/issues/94)
 - [批模式下 MOR](https://github.com/NetEase/arctic/issues/5)
