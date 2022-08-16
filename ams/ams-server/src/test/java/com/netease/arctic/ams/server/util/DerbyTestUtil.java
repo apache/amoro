@@ -66,6 +66,7 @@ public class DerbyTestUtil extends IJDBCService {
   public static volatile SqlSessionFactory sqlSessionFactory;
   public static String path = System.getProperty("user.dir") +
       "/src/test/java/com/netease/arctic/ams/server/sql/".replace("/", File.separator);
+  public static String db = "mydb1";
 
   public void createTestTable() throws Exception {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -88,7 +89,11 @@ public class DerbyTestUtil extends IJDBCService {
         if (sqlSessionFactory == null) {
           TransactionFactory transactionFactory = new JdbcTransactionFactory();
           BasicDataSource dataSource = new BasicDataSource();
-          dataSource.setUrl("jdbc:derby:" + path + "mydb1;create=true");
+          if (new File(path + db).exists()) {
+            dataSource.setUrl("jdbc:derby:" + path + db + ";");
+          } else {
+            dataSource.setUrl("jdbc:derby:" + path + db + ";create=true");
+          }
           dataSource.setDriverClassName("org.apache.derby.jdbc.EmbeddedDriver");
           dataSource.setDefaultAutoCommit(true);
           dataSource.setMaxIdle(8);

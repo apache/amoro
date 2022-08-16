@@ -27,6 +27,7 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
@@ -91,7 +92,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
+// @RunWith(PowerMockRunner.class)
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -136,14 +137,6 @@ public class TableControllerTest {
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
-
-  static {
-    try {
-      DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
 
   @Before
   public void startMetastore() throws Exception {

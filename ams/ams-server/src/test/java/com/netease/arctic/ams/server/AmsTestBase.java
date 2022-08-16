@@ -22,10 +22,21 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.controller.LoginControllerTest;
+import com.netease.arctic.ams.server.controller.OptimizerControllerTest;
+import com.netease.arctic.ams.server.controller.TableControllerTest;
+import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
+import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
@@ -50,15 +61,17 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.assertj.core.util.Lists;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -68,7 +81,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.server.util.DerbyTestUtil.get;
@@ -76,6 +88,9 @@ import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(Suite.class)
+@Suite.SuiteClasses({OptimizerControllerTest.class, TableControllerTest.class, TerminalControllerTest.class,
+                     TestDDLTracerService.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -94,17 +109,17 @@ public class AmsTestBase {
 
   private static final File testTableBaseDir = new File("/tmp");
   private static final File testBaseDir = new File("unit_test_base_tmp");
-  protected static final MockArcticMetastoreServer ams = MockArcticMetastoreServer.getInstance();
-  protected static ArcticTableMetastoreHandler amsHandler;
-  protected static ArcticCatalog catalog;
-  protected static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";
-  protected static final String AMS_TEST_DB_NAME = "ams_test_db";
+  // protected static final MockArcticMetastoreServer ams = MockArcticMetastoreServer.getInstance();
+  public static ArcticTableMetastoreHandler amsHandler;
+  public static ArcticCatalog catalog;
+  public static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";
+  public static final String AMS_TEST_DB_NAME = "ams_test_db";
 
   protected static final TableIdentifier TABLE_ID =
-      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_table");
+      TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, "test_table");
   protected static final TableIdentifier PK_TABLE_ID =
-      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
-  protected static final Schema TABLE_SCHEMA = new Schema(
+      TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, "test_pk_table");
+  public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
@@ -117,46 +132,46 @@ public class AmsTestBase {
       .day("op_time").build();
   protected static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
       .addColumn("id").build();
-  protected File tableDir = null;
-  protected UnkeyedTable testTable;
-  protected KeyedTable testKeyedTable;
-  protected static final DataFile FILE_A = DataFiles.builder(SPEC)
+  protected static File tableDir = null;
+  public static UnkeyedTable testTable;
+  public static KeyedTable testKeyedTable;
+  public static final DataFile FILE_A = DataFiles.builder(SPEC)
       .withPath("/path/to/data-a.parquet")
       .withFileSizeInBytes(0)
       .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
-  protected static final DataFile FILE_B = DataFiles.builder(SPEC)
+  public static final DataFile FILE_B = DataFiles.builder(SPEC)
       .withPath("/path/to/data-b.parquet")
       .withFileSizeInBytes(0)
       .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
-  protected static final DataFile FILE_C = DataFiles.builder(SPEC)
+  public static final DataFile FILE_C = DataFiles.builder(SPEC)
       .withPath("/path/to/data-b.parquet")
       .withFileSizeInBytes(0)
       .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
 
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
+  @ClassRule
+  public static TemporaryFolder temp = new TemporaryFolder();
 
   @Before
   public void beforeAll() throws IOException {
-    tableDir = temp.newFolder();
-    testTable = catalog
-        .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
-        .withPartitionSpec(SPEC)
-        .create().asUnkeyedTable();
-
-    testKeyedTable = catalog
-        .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
-        .withPartitionSpec(SPEC)
-        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-        .create().asKeyedTable();
+    // tableDir = temp.newFolder();
+    // testTable = catalog
+    //     .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
+    //     .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+    //     .withPartitionSpec(SPEC)
+    //     .create().asUnkeyedTable();
+    //
+    // testKeyedTable = catalog
+    //     .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
+    //     .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+    //     .withPartitionSpec(SPEC)
+    //     .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+    //     .create().asKeyedTable();
   }
 
   @BeforeClass
@@ -199,12 +214,23 @@ public class AmsTestBase {
     com.netease.arctic.ams.server.config.Configuration configuration =
         new com.netease.arctic.ams.server.config.Configuration();
     configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
-    configuration.setString(ArcticMetaStoreConf.THRIFT_BIND_HOST, "127.0.0.1");
-    configuration.setInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT, ams.port());
     ArcticMetaStore.conf = configuration;
 
     //create
     createCatalog();
+    tableDir = temp.newFolder();
+    testTable = catalog
+        .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+        .withPartitionSpec(SPEC)
+        .create().asUnkeyedTable();
+
+    testKeyedTable = catalog
+        .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+        .withPartitionSpec(SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
   }
 
   private static void createCatalog() {

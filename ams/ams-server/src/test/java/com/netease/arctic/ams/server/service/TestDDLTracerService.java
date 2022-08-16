@@ -28,8 +28,6 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.table.ArcticTable;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -39,13 +37,18 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-@RunWith(PowerMockRunner.class)
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_CATALOG_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_DB_NAME;
+
+// @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.management.*"})
 @PrepareForTest({
     ServiceContainer.class,
@@ -54,7 +57,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
     ArcticMetaStore.class,
     CatalogMetadataService.class
 })
-public class TestDDLTracerService extends AmsTestBase {
+public class TestDDLTracerService {
 
   private static List<String> commitSqls = new ArrayList<>();
   private static final String commitTableName = "tblDDlCommit";
@@ -86,7 +89,7 @@ public class TestDDLTracerService extends AmsTestBase {
     testCommotIdentifier.catalog = AMS_TEST_CATALOG_NAME;
     testCommotIdentifier.database = AMS_TEST_DB_NAME;
     testCommotIdentifier.tableName = commitTableName;
-    testCommitTable = catalog.newTableBuilder(
+    testCommitTable = AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(testCommotIdentifier),
         schema).create();
 
@@ -94,7 +97,7 @@ public class TestDDLTracerService extends AmsTestBase {
     testSyncIdentifier.catalog = AMS_TEST_CATALOG_NAME;
     testSyncIdentifier.database = AMS_TEST_DB_NAME;
     testSyncIdentifier.tableName = syncTableName;
-    testSyncTable = catalog.newTableBuilder(
+    testSyncTable = AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(testSyncIdentifier),
         schema).create();
   }
