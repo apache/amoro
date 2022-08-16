@@ -125,7 +125,8 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    return wrapped.newOverwrite();
+    OverwriteFiles overwriteFiles = wrapped.newOverwrite();
+    return new OverwriteHiveFiles(overwriteFiles, unkeyedHiveTable, client, transactionalClient);
   }
 
   @Override
