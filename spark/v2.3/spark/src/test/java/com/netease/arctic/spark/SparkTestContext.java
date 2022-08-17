@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.spark.hive.SparkCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -111,7 +112,7 @@ public class SparkTestContext extends ExternalResource {
     }
     amsUrl = "thrift://127.0.0.1:" + ams.port();
 
-    CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
+    CatalogMeta arctic = SparkCatalogMetaTestUtil.createArcticCatalog(testArcticDir);
     catalogName = arctic.getCatalogName();
     ams.handler().createCatalog(arctic);
   }
@@ -129,8 +130,8 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.testing.memory", "471859200");
 
     sparkConfigs.put("arctic.catalog." + catalogName, ArcticCatalog.class.getName());
-    sparkConfigs.put("arctic.catalog." + catalogName + ".type", "hive");
-    sparkConfigs.put("arctic.catalog." + catalogName + ".url", amsUrl + "/" + catalogName);
+    sparkConfigs.put("arctic.catalog.type", "hive");
+    sparkConfigs.put("arctic.catalog.url", amsUrl + "/" + catalogName);
 
     sparkConfigs.putAll(additionSparkConfigs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));

@@ -40,13 +40,13 @@ statement
 
 
 colListAndPk
-  : '(' colType (',' colType)* (',' primaryKey )? ')'                 #colListWithPk
+  :'(' colTypeList (',' primaryKey )? ')'                            #colListWithPk
   | primaryKey                                                        #colListOnlyPk
   ;
 
 
 primaryKey
-  : PRIMARY KEY '(' identifier (',' identifier)* ')'
+  : PRIMARY KEY identifierList
   ;
 
 
@@ -55,7 +55,7 @@ partitionFieldList
     ;
 
 partitionField
-    : identifier                                                    #partitionColumnRef
+    : identifier                                                     #partitionColumnRef
     | colType                                                       #partitionColumnDefine
     ;
 
