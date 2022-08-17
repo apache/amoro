@@ -18,22 +18,14 @@
 
 package com.netease.arctic.hive.op;
 
-import com.google.common.base.Joiner;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.op.RewritePartitions;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
@@ -62,9 +54,9 @@ public class TestRewritePartitions extends HiveTableTestBase {
     initDataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    applyOverwrite(partitionAndLocations, overwriteFiles);
+    applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
-    assertPartitionInfo(partitionAndLocations, table);
+    assertHivePartitionLocations(partitionAndLocations, table);
 
 
 
@@ -79,9 +71,9 @@ public class TestRewritePartitions extends HiveTableTestBase {
     overwriteDataFiles.forEach(replacePartitions::addFile);
     replacePartitions.commit();
 
-    applyOverwrite(partitionAndLocations, overwriteFiles);
+    applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
-    assertPartitionInfo(partitionAndLocations, table);
+    assertHivePartitionLocations(partitionAndLocations, table);
   }
 
   @Test
@@ -103,9 +95,9 @@ public class TestRewritePartitions extends HiveTableTestBase {
     initDataFiles.forEach(rewritePartitions::addDataFile);
     rewritePartitions.commit();
 
-    applyOverwrite(partitionAndLocations, overwriteFiles);
+    applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
-    assertPartitionInfo(partitionAndLocations, table);
+    assertHivePartitionLocations(partitionAndLocations, table);
 
 
     // =================== overwrite table ========================
@@ -120,9 +112,9 @@ public class TestRewritePartitions extends HiveTableTestBase {
     overwriteDataFiles.forEach(rewritePartitions::addDataFile);
     rewritePartitions.commit();
 
-    applyOverwrite(partitionAndLocations, overwriteFiles);
+    applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
-    assertPartitionInfo(partitionAndLocations, table);
+    assertHivePartitionLocations(partitionAndLocations, table);
 
   }
 
@@ -150,60 +142,23 @@ public class TestRewritePartitions extends HiveTableTestBase {
 
     table.refresh();
 
-    assertPartitionInfo(partitionAndLocations, table);
+    assertHivePartitionLocations(partitionAndLocations, table);
     Assert.assertFalse(table.properties().containsKey("test-rewrite-partition"));
 
     tx.commitTransaction();
-    applyOverwrite(partitionAndLocations, overwriteFiles);
+    applyRewritePartitions(partitionAndLocations, overwriteFiles);
 
 
-    assertPartitionInfo(partitionAndLocations, table);
+    assertHivePartitionLocations(partitionAndLocations, table);
     Assert.assertTrue(table.properties().containsKey("test-rewrite-partition"));
     Assert.assertEquals("test-rewrite-partition-value", table.properties().get("test-rewrite-partition"));
 
   }
 
-  private static class DataFileBuilder {
-    final TableIdentifier identifier;
-    final Table hiveTable;
-    final ArcticTable table;
-
-    public DataFileBuilder(ArcticTable table) throws TException {
-      identifier = table.id();
-      this.table = table;
-      hiveTable = hms.getClient().getTable(identifier.getDatabase(), identifier.getTableName());
-    }
-
-    public DataFile build(String valuePath, String path) {
-      return DataFiles.builder(table.spec())
-          .withPath(hiveTable.getSd().getLocation() + path)
-          .withFileSizeInBytes(0)
-          .withPartitionPath(valuePath)
-          .withRecordCount(2)
-          .build();
-    }
 
 
 
-    public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles){
-      return partValueFiles.stream().map(
-          kv -> this.build(kv.getKey(), kv.getValue())
-      ).collect(Collectors.toList());
-    }
-  }
-
-  private String partitionPath(List<String> values, PartitionSpec spec) {
-    List<String> nameValues = Lists.newArrayList();
-    for (int i = 0; i < values.size(); i++) {
-      String field = spec.fields().get(i).name();
-      String value = values.get(i);
-      nameValues.add(field + "=" + value);
-    }
-    return Joiner.on("/").join(nameValues);
-  }
-
-
-  private void applyOverwrite(Map<String, String> partitionLocations,
+  private void applyRewritePartitions(Map<String, String> partitionLocations,
       List<Map.Entry<String, String>> overwriteFiles){
     overwriteFiles.forEach(kv -> {
       String partLocation = FileUtil.getFileDir(kv.getValue());
@@ -211,29 +166,6 @@ public class TestRewritePartitions extends HiveTableTestBase {
     });
   }
 
-  private void assertPartitionInfo(Map<String, String> partitionLocations, ArcticTable table) throws TException {
-    TableIdentifier identifier = table.id();
-    final String database = identifier.getDatabase();
-    final String tableName = identifier.getTableName();
 
-    List<Partition> partitions = hms.getClient().listPartitions(
-        database,
-        tableName,
-        (short) -1);
-    Assert.assertEquals("expect " + partitionLocations.size() + " partition after first rewrite partition",
-        partitionLocations.size(), partitions.size());
-
-    for (Partition p : partitions) {
-      String valuePath = partitionPath(p.getValues(), table.spec());
-      Assert.assertTrue("partition " + valuePath + " is not expected",
-          partitionLocations.containsKey(valuePath));
-
-      String locationExpect = partitionLocations.get(valuePath);
-      String actualLocation = p.getSd().getLocation();
-      Assert.assertTrue(
-          "partition location is not expected, expect " + actualLocation + " end-with " + locationExpect,
-          actualLocation.contains(locationExpect));
-    }
-  }
 
 }

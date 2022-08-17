@@ -32,21 +32,26 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 
+import static com.netease.arctic.table.TableProperties.BASE_HIVE_LOCATION_ROOT;
+
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
-public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable,SupportHive {
+public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, SupportHive {
 
   HMSClient hiveClient;
+  String tableLocation;
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
       Table icebergTable,
       ArcticFileIO arcticFileIO,
+      String tableLocation,
       AmsClient client,
       HMSClient hiveClient) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
     this.hiveClient = hiveClient;
+    this.tableLocation = tableLocation;
   }
 
   @Override
@@ -55,15 +60,20 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable,Supp
     return new ReplaceHivePartitions(replacePartitions, this, hiveClient, hiveClient);
   }
 
-
-
   @Override
-  public String hiveLocation() {
-    return null;
+  public String name() {
+    return id().getTableName();
   }
 
   @Override
-  public OverwriteFiles newOverwrite() {
+  public String hiveLocation() {
+    return properties().containsKey(BASE_HIVE_LOCATION_ROOT) ?
+        properties().get(BASE_HIVE_LOCATION_ROOT) :
+        tableLocation + "/hive";
+  }
+
+  @Override
+  public OverwriteHiveFiles newOverwrite() {
     OverwriteFiles overwriteFiles = super.newOverwrite();
     return new OverwriteHiveFiles(overwriteFiles, this, hiveClient, hiveClient);
   }
