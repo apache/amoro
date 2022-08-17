@@ -12,6 +12,6 @@ public interface TaskWriterBuilder<T> {
 
   TaskWriter<T> buildWriter(LocationKind locationKind);
 
-  SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey);
+  SortedPosDeleteWriter<T> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey);
 
 }

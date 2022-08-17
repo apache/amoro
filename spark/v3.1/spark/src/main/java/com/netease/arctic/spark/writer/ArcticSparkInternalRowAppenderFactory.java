@@ -34,6 +34,7 @@ import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.orc.ORC;
+import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -176,13 +177,23 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
     try {
       switch (fileFormat) {
         case PARQUET:
-          return Parquet.write(file)
-              .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(dsSchema, msgType))
-              .setAll(properties)
-              .metricsConfig(metricsConfig)
-              .schema(writeSchema)
-              .overwrite()
-              .build();
+          if (writeHive) {
+            return AdaptHiveParquet.write(file)
+                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(dsSchema, msgType))
+                .setAll(properties)
+                .metricsConfig(metricsConfig)
+                .schema(writeSchema)
+                .overwrite()
+                .build();
+          } else {
+            return Parquet.write(file)
+                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(dsSchema, msgType))
+                .setAll(properties)
+                .metricsConfig(metricsConfig)
+                .schema(writeSchema)
+                .overwrite()
+                .build();
+          }
         case AVRO:
           return Avro.write(file)
               .createWriterFunc(ignored -> new SparkAvroWriter(dsSchema))
@@ -228,16 +239,27 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
     try {
       switch (format) {
         case PARQUET:
-          return Parquet.writeDeletes(file.encryptingOutputFile())
-              .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
-              .overwrite()
-              .rowSchema(eqDeleteRowSchema)
-              .withSpec(spec)
-              .withPartition(partition)
-              .equalityFieldIds(equalityFieldIds)
-              .withKeyMetadata(file.keyMetadata())
-              .buildEqualityWriter();
-
+          if (writeHive) {
+            return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
+                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
+                .overwrite()
+                .rowSchema(eqDeleteRowSchema)
+                .withSpec(spec)
+                .withPartition(partition)
+                .equalityFieldIds(equalityFieldIds)
+                .withKeyMetadata(file.keyMetadata())
+                .buildEqualityWriter();
+          } else {
+            return Parquet.writeDeletes(file.encryptingOutputFile())
+                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(lazyEqDeleteSparkType(), msgType))
+                .overwrite()
+                .rowSchema(eqDeleteRowSchema)
+                .withSpec(spec)
+                .withPartition(partition)
+                .equalityFieldIds(equalityFieldIds)
+                .withKeyMetadata(file.keyMetadata())
+                .buildEqualityWriter();
+          }
         case AVRO:
           return Avro.writeDeletes(file.encryptingOutputFile())
               .createWriterFunc(ignored -> new SparkAvroWriter(lazyEqDeleteSparkType()))
@@ -267,16 +289,27 @@ public class ArcticSparkInternalRowAppenderFactory implements FileAppenderFactor
         case PARQUET:
           StructType sparkPosDeleteSchema =
               SparkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
-          return Parquet.writeDeletes(file.encryptingOutputFile())
-              .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
-              .overwrite()
-              .rowSchema(posDeleteRowSchema)
-              .withSpec(spec)
-              .withPartition(partition)
-              .withKeyMetadata(file.keyMetadata())
-              .transformPaths(path -> UTF8String.fromString(path.toString()))
-              .buildPositionWriter();
-
+          if (writeHive) {
+            return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
+                .createWriterFunc(msgType -> AdaptHiveSparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
+                .overwrite()
+                .rowSchema(posDeleteRowSchema)
+                .withSpec(spec)
+                .withPartition(partition)
+                .withKeyMetadata(file.keyMetadata())
+                .transformPaths(path -> UTF8String.fromString(path.toString()))
+                .buildPositionWriter();
+          } else {
+            return Parquet.writeDeletes(file.encryptingOutputFile())
+                .createWriterFunc(msgType -> SparkParquetWriters.buildWriter(sparkPosDeleteSchema, msgType))
+                .overwrite()
+                .rowSchema(posDeleteRowSchema)
+                .withSpec(spec)
+                .withPartition(partition)
+                .withKeyMetadata(file.keyMetadata())
+                .transformPaths(path -> UTF8String.fromString(path.toString()))
+                .buildPositionWriter();
+          }
         case AVRO:
           return Avro.writeDeletes(file.encryptingOutputFile())
               .createWriterFunc(ignored -> new SparkAvroWriter(lazyPosDeleteSparkType()))

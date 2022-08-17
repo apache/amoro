@@ -59,7 +59,6 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
 
       Assert.assertTrue(builder.buildWriter(OperateKinds.APPEND) instanceof GenericBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(OperateKinds.OVERWRITE) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.MINOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(OperateKinds.MAJOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(OperateKinds.FULL_OPTIMIZE) instanceof GenericBaseTaskWriter);
     }

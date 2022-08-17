@@ -48,6 +48,8 @@ public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
           case OVERWRITE:
           case FULL_OPTIMIZE:
             return HiveLocationKind.INSTANT;
+          case MINOR_OPTIMIZE:
+            throw new IllegalArgumentException("UnKeyed table don't support minor optimize");
         }
       } else {
         return BaseLocationKind.INSTANT;
