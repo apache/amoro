@@ -19,12 +19,12 @@
 package com.netease.arctic.hive.table;
 
 /**
- * mix-in interface to mark task use hive as base store
+ * Mix-in interface to mark task use hive as base store
  */
 public interface SupportHive {
 
   /**
-   * base location of hive table location or hive partition. data file in this location could read by hive sql
+   * Base path to store hive data files
    * @return path to store hive file
    */
   String hiveLocation();
