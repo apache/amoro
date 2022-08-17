@@ -24,7 +24,6 @@ import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
@@ -199,7 +198,17 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   }
 
   private void emit(WriteResult writeResult) {
-    output.collect(new StreamRecord<>(writeResult));
+    if (!isWriteResultEmpty(writeResult)) {
+      // Only emit a non-empty WriteResult to committer operator, thus avoiding submitting too much empty snapshots.
+      output.collect(new StreamRecord<>(writeResult));
+    }
+  }
+
+  private boolean isWriteResultEmpty(WriteResult writeResult) {
+    return writeResult == null ||
+        (writeResult.dataFiles().length == 0 &&
+            writeResult.deleteFiles().length == 0 &&
+            writeResult.referencedDataFiles().length == 0);
   }
 
   @VisibleForTesting
