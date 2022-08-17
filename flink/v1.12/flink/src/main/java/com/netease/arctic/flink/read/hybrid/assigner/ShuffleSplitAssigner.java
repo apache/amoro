@@ -109,8 +109,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
         return Optional.of(arcticSplit);
       }
     } else {
-
-      LOG.debug("Subtask {}, it's an idle subtask due to the empty queue with this subtask.", subTaskId);
+      LOG.info("Subtask {}, it's an idle subtask due to the empty queue with this subtask.", subTaskId);
       return Optional.empty();
     }
   }

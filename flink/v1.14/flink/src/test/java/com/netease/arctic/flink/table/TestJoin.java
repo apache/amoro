@@ -19,38 +19,28 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
-import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
+import org.apache.flink.api.common.JobStatus;
+import org.apache.flink.api.common.time.Deadline;
 import org.apache.flink.core.execution.JobClient;
-import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.table.api.ApiExpression;
+import org.apache.flink.runtime.testutils.CommonTestUtils;
+import org.apache.flink.shaded.guava30.com.google.common.collect.Lists;
 import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableResult;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
-import org.apache.flink.table.data.TimestampData;
-import org.apache.flink.table.planner.factories.TestValuesTableFactory;
-import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.table.types.logical.TimestampKind;
-import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -58,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -66,15 +57,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.CompletableFuture;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOCATION;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
-import static org.apache.flink.table.api.Expressions.$;
+import static org.apache.flink.table.planner.factories.TestValuesTableFactory.registerData;
 
 public class TestJoin extends FlinkTestBase {
 
@@ -97,180 +83,145 @@ public class TestJoin extends FlinkTestBase {
   }
 
   @Test
-  public void testLeftCdcLookupJoin() throws IOException {
-    String table;
+  public void testRightEmptyLookupJoin() throws Exception {
+    getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1L, "a", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.DELETE, 1L, "b", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.DELETE, 2L, "c", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.UPDATE_BEFORE, 3L, "d", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.UPDATE_AFTER, 4L, "e", LocalDateTime.now()});
-    data.add(new Object[]{RowKind.INSERT, 5L, "e", LocalDateTime.now()});
-
-    sql("CREATE TABLE left_view (id bigint, t2 string, opt timestamp(3), watermark for opt as opt) " +
+    data.add(new Object[]{RowKind.INSERT, 1000004L, "a", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000015L, "b", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000011L, "c", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000022L, "d", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000021L, "e", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 1000016L, "e", LocalDateTime.now()});
+    String id = registerData(DataUtil.toRowList(data));
+    sql("CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
         "with (" +
         " 'connector' = 'values'," +
-        " 'table-source-class' = 'com.netease.arctic.flink.table.CdcSource' " +
+        " 'bounded' = 'false'," +
+        " 'data-id' = '" + id + "' " +
         " )");
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(LOCATION, tableDir.getAbsolutePath());
-    table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
-        " test int, id bigint, name STRING" +
+        " info int, id bigint, name STRING" +
         ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
     sql(sql);
 
-    tableProperties.clear();
-    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
-        "like %s", table);
+    sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
+
+    TableResult result = exec("select u.name, u.id, dim.info, dim.name dname from `user` as u left join d " +
+        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.op_time as dim" +
+        " on u.id = dim.id");
+
+    CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING),
+        Deadline.fromNow(Duration.ofSeconds(30)));
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+    result.getJobClient().ifPresent(JobClient::cancel);
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{"a", 1000004L, null, null});
+    expected.add(new Object[]{"b", 1000015L, null, null});
+    expected.add(new Object[]{"c", 1000011L, null, null});
+    expected.add(new Object[]{"d", 1000022L, null, null});
+    expected.add(new Object[]{"e", 1000021L, null, null});
+    expected.add(new Object[]{"e", 1000016L, null, null});
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+  }
+
+  @Test
+  public void testLookupJoin() throws Exception {
+    getEnv().getCheckpointConfig().disableCheckpointing();
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{RowKind.INSERT, 1L, "a", LocalDateTime.now().minusDays(3)});
+    data.add(new Object[]{RowKind.INSERT, 2L, "b", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 3L, "c", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 4L, "d", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[]{RowKind.INSERT, 5L, "e", LocalDateTime.now().plusDays(3)});
+    data.add(new Object[]{RowKind.INSERT, 3L, "e", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 6L, "f", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 8L, "g", LocalDateTime.now()});
+    data.add(new Object[]{RowKind.INSERT, 9L, "h", LocalDateTime.now()});
+    String id = registerData(DataUtil.toRowList(data));
+    sql("CREATE TABLE `user` (id bigint, name string, op_time timestamp(3), watermark for op_time as op_time) " +
+        "with (" +
+        " 'connector' = 'values'," +
+        " 'bounded' = 'false'," +
+        " 'data-id' = '" + id + "' " +
+        " )");
+
+    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+
+    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
+        " info int, id bigint, name STRING" +
+        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
+    sql(sql);
 
     TableSchema flinkSchema = TableSchema.builder()
-        .field("test", DataTypes.INT())
+        .field("info", DataTypes.INT())
         .field("id", DataTypes.BIGINT())
         .field("name", DataTypes.STRING())
         .build();
     RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-
     KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
         ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
     TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
     List<RowData> baseData = new ArrayList<RowData>() {{
       add(GenericRowData.ofKind(
-          RowKind.INSERT, 123, 1L, StringData.fromString("john")));
+          RowKind.INSERT, 123, 1L, StringData.fromString("a")));
       add(GenericRowData.ofKind(
-          RowKind.INSERT, 324, 2L, StringData.fromString("lily")));
+          RowKind.INSERT, 324, 2L, StringData.fromString("b")));
       add(GenericRowData.ofKind(
-          RowKind.INSERT, 456, 3L, StringData.fromString("jake")));
+          RowKind.INSERT, 456, 3L, StringData.fromString("c")));
       add(GenericRowData.ofKind(
-          RowKind.INSERT, 463, 4L, StringData.fromString("sam")));
+          RowKind.INSERT, 463, 4L, StringData.fromString("d")));
     }};
     for (RowData record : baseData) {
       taskWriter.write(record);
     }
     commit(keyedTable, taskWriter.complete(), true);
 
-    CompletableFuture.runAsync(() -> {
-      long i = 2;
-      while (true) {
-        writeChange(keyedTable, rowType, i++);
-        try {
-          Thread.sleep(1000L);
-        } catch (InterruptedException ignored) {
-        }
+    writeChange(keyedTable, rowType, 1);
+
+    sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
+
+    TableResult result = exec("select u.name, u.id, dim.info, dim.name dname from `user` as u left join d " +
+        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.op_time as dim" +
+        " on u.id = dim.id");
+
+    CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING),
+        Deadline.fromNow(Duration.ofSeconds(30)));
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      for (Object[] datum : data) {
+        Row row = iterator.next();
+        actual.add(row);
       }
-    });
-
-    TableResult tableResult = exec("select u.*, dim.id, dim.test from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
-
-    CloseableIterator<Row> iterator = tableResult.collect();
-    while (iterator.hasNext()) {
-      Row i = iterator.next();
-      System.out.println(i);
     }
+    result.getJobClient().ifPresent(JobClient::cancel);
 
-    tableResult.getJobClient().ifPresent(JobClient::cancel);
-  }
-
-  @Test
-  public void testRightEmptyLookupJoin() throws IOException {
-    String table;
-
-    sql("create table left_view (id bigint, t2 string, opt AS LOCALTIMESTAMP, watermark for opt as opt," +
-        " primary key (id) not enforced) with ('connector'='datagen', 'rows-per-second'='1', 'fields.id.min'='1', " +
-        " 'fields.id.max'='10')");
-
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
-    Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
-    table = String.format("arcticCatalog.%s.%s", DB, TABLE);
-    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
-        " test int, id bigint, name STRING" +
-        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
-    sql(sql);
-
-    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
-        "like %s", table);
-
-    TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
-
-    CloseableIterator<Row> iterator = tableResult.collect();
-    while (iterator.hasNext()) {
-      Row i = iterator.next();
-      System.out.println(i);
-    }
-
-    tableResult.getJobClient().ifPresent(JobClient::cancel);
-  }
-
-  @Test
-  public void testRightContinuousInsertLookupJoin() throws IOException {
-    String table;
-
-    sql("create table left_view (id bigint, t2 string, opt AS LOCALTIMESTAMP, watermark for opt as opt," +
-        " primary key (id) not enforced) with ('connector'='datagen', 'rows-per-second'='1', 'fields.id.min'='1', " +
-        " 'fields.id.max'='10')");
-
-    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
-    Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
-    table = String.format("arcticCatalog.%s.%s", DB, TABLE);
-    String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
-        " test int, id bigint, name STRING" +
-        ", PRIMARY KEY (id) NOT ENFORCED) WITH %s", table, toWithClause(tableProperties));
-    sql(sql);
-
-    sql("create table r (op_time timestamp(3), watermark for op_time as op_time - INTERVAL '1' SECOND) " +
-        "like %s", table);
-
-    TableSchema flinkSchema = TableSchema.builder()
-        .field("test", DataTypes.INT())
-        .field("id", DataTypes.BIGINT())
-        .field("name", DataTypes.STRING())
-        .build();
-    RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
-
-    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
-        ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
-    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
-    List<RowData> baseData = new ArrayList<RowData>() {{
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 123, 1L, StringData.fromString("john")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 324, 2L, StringData.fromString("lily")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 456, 3L, StringData.fromString("jake")));
-      add(GenericRowData.ofKind(
-          RowKind.INSERT, 463, 4L, StringData.fromString("sam")));
-    }};
-    for (RowData record : baseData) {
-      taskWriter.write(record);
-    }
-    commit(keyedTable, taskWriter.complete(), true);
-
-    CompletableFuture.runAsync(() -> {
-      long i = 2;
-      while (true) {
-        writeChange(keyedTable, rowType, i++);
-        try {
-          Thread.sleep(1000L);
-        } catch (InterruptedException ignored) {
-        }
-      }
-    });
-    TableResult tableResult = exec("select u.t2, u.id, dim.test, dim.name from left_view as u left join r " +
-        "/*+OPTIONS('streaming'='true')*/ for system_time as of u.opt as dim on u.id = dim.id");
-
-    CloseableIterator<Row> iterator = tableResult.collect();
-    while (iterator.hasNext()) {
-      Row i = iterator.next();
-      System.out.println(i);
-    }
-
-    tableResult.getJobClient().ifPresent(JobClient::cancel);
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{"a", 1L, 123, "a"});
+    expected.add(new Object[]{"b", 2L, 324, "b"});
+    expected.add(new Object[]{"c", 3L, null, null});
+    expected.add(new Object[]{"d", 4L, 463, "d"});
+    expected.add(new Object[]{"e", 5L, 324, "john"});
+    expected.add(new Object[]{"e", 3L, null, null});
+    expected.add(new Object[]{"f", 6L, 324, "lily"});
+    expected.add(new Object[]{"g", 8L, null, null});
+    expected.add(new Object[]{"h", 9L, null, null});
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
   private void writeChange(KeyedTable keyedTable, RowType rowType, long tranctionId) {
@@ -281,11 +232,7 @@ public class TestJoin extends FlinkTestBase {
       add(GenericRowData.ofKind(
           RowKind.INSERT, 324, 6L, StringData.fromString("lily")));
       add(GenericRowData.ofKind(
-          RowKind.DELETE, 324, 3L, StringData.fromString("jake")));
-      add(GenericRowData.ofKind(
-          RowKind.UPDATE_BEFORE, 324, 4L, StringData.fromString("sam")));
-      add(GenericRowData.ofKind(
-          RowKind.UPDATE_AFTER, 324, 4L, StringData.fromString("abc")));
+          RowKind.DELETE, 324, 3L, StringData.fromString("jake1")));
     }};
     try {
       for (RowData record : data) {

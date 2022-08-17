@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.hybrid.reader;
+package com.netease.arctic.flink.read.hybrid.split;
 
-import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import org.apache.flink.api.connector.source.SourceSplit;
+import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.CollectionUtil;
 import org.apache.flink.util.Preconditions;
 import org.slf4j.Logger;
@@ -31,29 +31,37 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.metric.MetricConstant.INIT_END_MS;
+import static com.netease.arctic.flink.metric.MetricConstant.INIT_START_MS;
+
 /**
  * If using arctic table as build-table, FirstSplits can record the first splits planned by Enumerator.
- * After
  */
 public class FirstSplits implements Serializable {
 
   public static final long serialVersionUID = 1L;
   public static final Logger LOGGER = LoggerFactory.getLogger(FirstSplits.class);
 
+  private final MetricGroup metricGroup;
+  private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
-  private volatile boolean finished = false;
+  private boolean haveNotifiedReader = false;
 
-  public FirstSplits(Collection<ArcticSplit> splits) {
+  public FirstSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
     this.splits = splits.stream().map(SourceSplit::splitId).collect(Collectors.toMap((k) -> k, (i) -> false));
 
     unfinishedCount = this.splits.size();
     LOGGER.info("init splits at {}, size:{}", LocalDateTime.now(), unfinishedCount);
+    this.metricGroup = metricGroup;
+    if (metricGroup != null) {
+      metricGroup.gauge(INIT_START_MS, () -> startTimeMs);
+    }
   }
 
-  public boolean getFinished() {
-    return finished;
+  public Map<String, Boolean> getSplits() {
+    return splits;
   }
 
   public synchronized void addSplitsBack(Collection<ArcticSplit> splits) {
@@ -72,9 +80,9 @@ public class FirstSplits implements Serializable {
   }
 
   /**
-   * Remove finished splits. If all splits are finished, then return true, otherwise, return false.
-   * @param finishedSplitIds
-   * @return
+   * Remove finished splits.
+   *
+   * @return True if all splits are finished, otherwise false.
    */
   public synchronized boolean removeAndReturnIfAllFinished(Collection<String> finishedSplitIds) {
     if (splits == null) {
@@ -94,14 +102,26 @@ public class FirstSplits implements Serializable {
       LOGGER.debug("finish split:{} at {}", p, LocalDateTime.now());
     });
     if (unfinishedCount == 0) {
-      clear();
       LOGGER.info("finish all splits at {}", LocalDateTime.now());
+      if (metricGroup != null) {
+        metricGroup.gauge(INIT_END_MS, System::currentTimeMillis);
+      }
+      return true;
     }
-    return unfinishedCount == 0;
+    return false;
   }
 
   public synchronized void clear() {
-    this.splits = null;
-    this.finished = true;
+    if (unfinishedCount == 0) {
+      this.splits = null;
+    }
+  }
+
+  public boolean isHaveNotifiedReader() {
+    return haveNotifiedReader;
+  }
+
+  public void notifyReader() {
+    this.haveNotifiedReader = true;
   }
 }

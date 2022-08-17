@@ -83,9 +83,7 @@ public class FlinkSchemaUtil {
   }
 
   /**
-   * filter watermark due to watermark is a virtual field, not in arctic physical table.
-   * @param tableSchema
-   * @return
+   * filter watermark due to watermark is a virtual field for now, not in arctic physical table.
    */
   public static TableSchema filterWatermark(TableSchema tableSchema) {
     List<WatermarkSpec> watermarkSpecs = tableSchema.getWatermarkSpecs();

@@ -202,8 +202,8 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
   @Override
   public void applyWatermark(WatermarkStrategy<RowData> watermarkStrategy) {
     Configuration conf = Configuration.fromMap(table.properties());
-    boolean generateWatermark = conf.get(DIM_TABLE_ENABLE);
-    if (!generateWatermark) {
+    boolean dimTable = conf.get(DIM_TABLE_ENABLE);
+    if (!dimTable) {
       this.watermarkStrategy = watermarkStrategy;
     }
   }

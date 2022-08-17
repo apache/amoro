@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.flink.read.hybrid.reader.FirstSplits;
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import org.junit.Assert;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public class FirstSplitsThreadSafeTest {
   }
 
   public void round(List<String> allSplit, Collection<ArcticSplit> arcticSplits) {
-    FirstSplits firstSplits = new FirstSplits(arcticSplits);
+    FirstSplits firstSplits = new FirstSplits(arcticSplits, null);
     int n = allSplit.size();
 
     List<String> s1 = new ArrayList<>(allSplit.subList(0, (int) (2.0 / 3 * n))),
@@ -62,20 +62,20 @@ public class FirstSplitsThreadSafeTest {
     int an = as.size();
     List<ArcticSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
     List<ArcticSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
-    CompletableFuture f1 = CompletableFuture.runAsync(() ->
+    CompletableFuture<Void> f1 = CompletableFuture.runAsync(() ->
         firstSplits.removeAndReturnIfAllFinished(s1)
     );
-    CompletableFuture f2 = CompletableFuture.runAsync(() ->
+    CompletableFuture<Void> f2 = CompletableFuture.runAsync(() ->
         firstSplits.addSplitsBack(as1)
     );
-    CompletableFuture f3 = CompletableFuture.runAsync(() -> firstSplits.removeAndReturnIfAllFinished(s2));
-    CompletableFuture f4 = CompletableFuture.runAsync(() -> firstSplits.addSplitsBack(as2));
+    CompletableFuture<Void> f3 = CompletableFuture.runAsync(() -> firstSplits.removeAndReturnIfAllFinished(s2));
+    CompletableFuture<Void> f4 = CompletableFuture.runAsync(() -> firstSplits.addSplitsBack(as2));
     CompletableFuture.allOf(f1, f2, f3, f4).join();
     Assert.assertTrue(firstSplits.removeAndReturnIfAllFinished(allSplit));
   }
 
   static class TestArcticSplit extends ArcticSplit {
-    private String splitId;
+    private final String splitId;
 
     public TestArcticSplit(String splitId) {
       this.splitId = splitId;

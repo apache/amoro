@@ -16,26 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.table;
+package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import org.apache.flink.api.common.eventtime.WatermarkGenerator;
-import org.apache.flink.api.common.eventtime.WatermarkGeneratorSupplier;
-import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.table.data.RowData;
+import com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader;
+import org.apache.flink.api.connector.source.SourceEvent;
 
-import java.io.Serializable;
-import java.util.TimeZone;
+/**
+ * {@link ArcticSourceReader} won't set timestamp to RowData until receiving this Event.
+ */
+public class InitializationFinishedEvent implements SourceEvent {
+  private static final long serialVersionUID = 1L;
 
-public class ArcticWatermarkStrategy implements WatermarkStrategy<RowData>, Serializable {
-  public static final long serialVersionUID = 1L;
-  private final TimeZone timeZone;
-
-  public ArcticWatermarkStrategy(TimeZone timeZone) {
-    this.timeZone = timeZone;
-  }
-
-  @Override
-  public WatermarkGenerator<RowData> createWatermarkGenerator(WatermarkGeneratorSupplier.Context context) {
-    return new ArcticWatermarkGenerator(timeZone);
-  }
+  public static final InitializationFinishedEvent INSTANCE = new InitializationFinishedEvent();
 }

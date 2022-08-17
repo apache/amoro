@@ -130,6 +130,13 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .noDefaultValue()
           .withDescription("underlying arctic table name.");
 
+  public static final ConfigOption<Boolean> DIM_TABLE_ENABLE =
+      ConfigOptions.key("dim-table.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
+
+
   @Override
   public void validate(DescriptorProperties properties) {
     String emitMode = properties.getString(ARCTIC_EMIT_MODE);

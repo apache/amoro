@@ -102,12 +102,16 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   public DynamicTableFactory() {
   }
 
+  /**
+   * If table is create by ddl 'connector' option, not catalog.
+   * e.g. CREATE TABLE t (XXX) WITH ('connector'='arctic', ...);
+   */
   private void initCatalogInfo(Map<String, String> options) {
     if (internalCatalogName != null && internalCatalogBuilder != null) {
       return;
     }
     String metastoreUrl = options.get(METASTORE_URL.key());
-    Preconditions.checkNotNull(metastoreUrl, String.format("%s should be set", METASTORE_URL.key()));
+    Preconditions.checkNotNull(metastoreUrl, String.format("%s should be set", METASTORE_URL));
     internalCatalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
 
     internalCatalogName = options.get(ArcticValidator.ARCTIC_CATALOG.key());
@@ -214,6 +218,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(ArcticValidator.ARCTIC_CATALOG);
     options.add(ArcticValidator.ARCTIC_TABLE);
     options.add(ArcticValidator.ARCTIC_DATABASE);
+    options.add(ArcticValidator.DIM_TABLE_ENABLE);
     options.add(METASTORE_URL);
     return options;
   }

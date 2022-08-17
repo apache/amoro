@@ -19,14 +19,17 @@
 package com.netease.arctic.flink.read.hybrid.reader;
 
 import com.netease.arctic.flink.read.ArcticSource;
-import com.netease.arctic.flink.read.hybrid.enumerator.StartWatermarkEvent;
+import com.netease.arctic.flink.read.hybrid.enumerator.InitializationFinishedEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import org.apache.flink.api.common.eventtime.Watermark;
+import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
+import org.apache.flink.core.io.InputStatus;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,16 +46,19 @@ public class ArcticSourceReader<T> extends
 
   public static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceReader.class);
 
+  public ReaderOutput<T> output;
+
   public ArcticSourceReader(
       ReaderFunction<T> readerFunction,
       Configuration config,
-      SourceReaderContext context) {
+      SourceReaderContext context,
+      boolean populateRowTime) {
     super(
         () -> new HybridSplitReader<>(
             readerFunction,
             context
         ),
-        new ArcticRecordEmitter<T>(config, context.getUserCodeClassLoader().asClassLoader()),
+        new ArcticRecordEmitter<T>(populateRowTime),
         config,
         context);
   }
@@ -87,10 +93,16 @@ public class ArcticSourceReader<T> extends
 
   @Override
   public void handleSourceEvents(SourceEvent sourceEvent) {
-    if (!(sourceEvent instanceof StartWatermarkEvent)) {
+    if (!(sourceEvent instanceof InitializationFinishedEvent)) {
       return;
     }
     LOGGER.info("receive StartWatermarkEvent");
-    ((ArcticRecordEmitter) recordEmitter).startGenerateWatermark();
+    output.emitWatermark(new Watermark(Long.MAX_VALUE));
+  }
+
+  @Override
+  public InputStatus pollNext(ReaderOutput<T> output) throws Exception {
+    this.output = output;
+    return super.pollNext(output);
   }
 }

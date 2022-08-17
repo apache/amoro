@@ -20,7 +20,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
-import com.netease.arctic.flink.read.hybrid.reader.FirstSplits;
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
@@ -55,9 +55,6 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * To record the snapshotId at the first planSplits.
    * <p>
    * If its value is null, it means that we don't need to generate watermark. Won't check.
-   * If its value is an empty Collection, it means that all splits have been finished.
-   * So enumerator will push an event to all readers to start generate watermark. After that, reset it to null.
-   * If its value is a Collection with elements, it means there are some splits have not been scanned.
    */
   private transient FirstSplits firstSplits = null;
   private final ArcticTableLoader loader;
@@ -66,7 +63,15 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   private final SplitAssigner splitAssigner;
   private final ArcticScanContext scanContext;
   private final long snapshotDiscoveryIntervalMs;
-  private final boolean generateWatermark;
+  /**
+   * If true, using arctic table as build table.
+   * {@link ArcticSourceEnumerator} will notify {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}
+   * after {@link FirstSplits} having been read.
+   * Then {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader} will emit a Watermark values
+   * Long.MAX_VALUE. Advancing TemporalJoinOperator's watermark can trigger the join operation and push the results to
+   * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user arbitrary  probe side
+   */
+  private final boolean dimTable;
   /**
    * snapshotId for the last enumerated snapshot. next incremental enumeration
    * should be based off this as the starting position.
@@ -80,7 +85,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner splitAssigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nullable ArcticSourceEnumState enumState) {
+      @Nullable ArcticSourceEnumState enumState,
+      boolean dimTable) {
     super(enumContext, splitAssigner);
     this.loader = loader;
     this.context = enumContext;
@@ -91,8 +97,9 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.enumeratorPosition = new AtomicReference<>();
     if (enumState != null) {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
+      this.firstSplits = enumState.firstSplits();
     }
-    this.generateWatermark = true;
+    this.dimTable = dimTable;
   }
 
   @Override
@@ -136,8 +143,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
 
   private ContinuousEnumerationResult planSplits() {
     ContinuousEnumerationResult result = doPlanSplits();
-    if (generateWatermark && firstSplits == null) {
-      firstSplits = new FirstSplits(result.splits());
+    if (dimTable && firstSplits == null) {
+      firstSplits = new FirstSplits(result.splits(), context.metricGroup());
     }
     return result;
   }
@@ -173,8 +180,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (sourceEvent instanceof SplitRequestEvent) {
       SplitRequestEvent splitRequestEvent = (SplitRequestEvent) sourceEvent;
       Collection<String> finishedSplitIds = splitRequestEvent.finishedSplitIds();
-      if (generateWatermark) {
-        checkAndNotifyReaderTriggerWatermark(finishedSplitIds);
+      if (dimTable) {
+        checkAndNotifyReader(finishedSplitIds);
       }
     } else {
       throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
@@ -183,22 +190,28 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   }
 
   /**
-   * TODO annotation
+   * Check whether all first splits have been finished or not.
+   * After all finished, enumerator will send a {@link InitializationFinishedEvent} to notify all
+   * {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}.
    *
    * @param finishedSplitIds
    */
-  public void checkAndNotifyReaderTriggerWatermark(Collection<String> finishedSplitIds) {
-    if (firstSplits == null || firstSplits.getFinished()) {
+  public void checkAndNotifyReader(Collection<String> finishedSplitIds) {
+    if (firstSplits == null || firstSplits.isHaveNotifiedReader()) {
       return;
     }
     if (!firstSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
       return;
     }
+    notifyReaders();
+  }
 
+  private void notifyReaders() {
     LOG.info("all splits finished, send events to readers");
     IntStream.range(0, context.currentParallelism())
-        .forEach(i -> context.sendEventToSourceReader(i, StartWatermarkEvent.INSTANCE));
+        .forEach(i -> context.sendEventToSourceReader(i, InitializationFinishedEvent.INSTANCE));
     firstSplits.clear();
+    firstSplits.notifyReader();
   }
 
   @Override
@@ -207,7 +220,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     if (splitAssigner instanceof ShuffleSplitAssigner) {
       shuffleSplitRelation = ((ShuffleSplitAssigner) splitAssigner).serializePartitionIndex();
     }
-    return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation);
+    return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation,
+        firstSplits);
   }
 
   @Override
