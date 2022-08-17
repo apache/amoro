@@ -84,7 +84,7 @@ create table test_db.test_table(
 
 **0. 环境准备**
 
-使用 docker 部署可跳过。参考 [准备](flink/flink-get-started.md#_2)
+使用 docker 部署可跳过该步骤。非 docker 部署请参考 [环境准备](flink/flink-get-started.md#_2)
 
 **1.启动 Flink SQL Client**  
 

@@ -26,7 +26,7 @@ Flink Connector 包括：
 
 Flink Runtime Jar 存放在 `flink/v1.14/flink-runtime/target` 目录。
 
-## 准备
+## 环境准备
 下载flink和相关依赖，按需下载 Flink 1.12/1.14。以 1.12 为例：
 
 ```shell
