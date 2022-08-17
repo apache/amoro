@@ -57,6 +57,6 @@ public class NodeFilter<T> extends Filter<T> {
     }
 
     primaryKey.primaryKey(asStructLike.apply(record));
-    return sourceNodes.stream().anyMatch(node -> (Math.abs(primaryKey.hashCode()) & node.mask()) == node.index());
+    return sourceNodes.stream().anyMatch(node -> (primaryKey.hashCode() & node.mask()) == node.index());
   }
 }
