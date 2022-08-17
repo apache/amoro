@@ -11,8 +11,11 @@ import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.OperateKinds;
 import java.io.File;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,9 +32,13 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.data.SparkParquetReaders;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.catalyst.expressions.In;
 import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.unsafe.types.UTF8String;
 import org.junit.Assert;
 import org.junit.Test;
 import scala.collection.mutable.ArrayBuffer;
@@ -60,11 +67,6 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
 
       Assert.assertTrue(builder.buildWriter(OperateKinds.OVERWRITE) instanceof ArcticSparkBaseTaskWriter);
     }
-  }
-
-  @Test
-  public void testKeyedTableChangeWriteByLocationKind() throws IOException {
-    testWrite(testKeyedHiveTable, ChangeLocationKind.INSTANT, generateInternalRow(), "change");
   }
 
   @Test
@@ -99,6 +101,7 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
   public void testWrite(ArcticTable table, LocationKind locationKind, List<InternalRow> records, String pathFeature) throws IOException {
     ArcticSparkTaskWriterBuilder builder = ArcticSparkTaskWriterBuilder
         .buildFor(table)
+        .withDataSourceSchema(SparkSchemaUtil.convert(table.schema()))
         .withTransactionId(1);
 
     TaskWriter<InternalRow> changeWrite = builder.buildWriter(locationKind);
@@ -107,36 +110,37 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
     }
     WriteResult complete = changeWrite.complete();
     Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
-    CloseableIterable<Record> concat =
+    CloseableIterable<InternalRow> concat =
         CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
             table.schema(),
             s.path().toString())).collect(Collectors.toList()));
-    Set<Record> result = new HashSet<>();
+    Set<InternalRow> result = new HashSet<>();
     Iterators.addAll(result, concat.iterator());
     Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
   }
 
-  private CloseableIterable<Record> readParquet(Schema schema, String path) {
+  private CloseableIterable<InternalRow> readParquet(Schema schema, String path) {
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
             Files.localInput(new File(path)))
         .project(schema)
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
+        .createReaderFunc(fileSchema -> SparkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
 
-    CloseableIterable<Record> iterable = builder.build();
+    CloseableIterable<InternalRow> iterable = builder.build();
     return iterable;
   }
 
   private List<InternalRow> generateInternalRow() {
+    Instant EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC).toInstant();
     ArrayBuffer seq = new ArrayBuffer<Object>(5);
     seq = seq.$plus$eq(1);
-    seq = seq.$plus$eq("jark");
+    seq = seq.$plus$eq(UTF8String.fromString("jack"));
     seq = seq.$plus$eq(
-        LocalDateTime.of(2022, 1, 1, 10, 0, 0)
-            .atOffset(ZoneOffset.ofHours(8)).toInstant().toEpochMilli());
+        ChronoUnit.MICROS.between(EPOCH, LocalDateTime.of(2022, 1, 1, 10, 0, 0)
+            .atOffset(ZoneOffset.ofHours(8)).toInstant()));
     seq = seq.$plus$eq(
-        LocalDateTime.of(2022, 1, 1, 10, 0, 0)
-            .atOffset(ZoneOffset.ofHours(8)).toInstant().toEpochMilli());
+        ChronoUnit.MICROS.between(EPOCH, LocalDateTime.of(2022, 1, 1, 10, 0, 0)
+            .atOffset(ZoneOffset.ofHours(8)).toInstant()));
     seq = seq.$plus$eq(Decimal.apply("100"));
     InternalRow internalRow = GenericInternalRow.fromSeq(seq);
     return Lists.newArrayList(internalRow);

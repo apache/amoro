@@ -20,6 +20,7 @@ package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseKeyedTable;
@@ -51,6 +52,6 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
 
   @Override
   public String hiveLocation() {
-    return location() + "/hive_data";
+    return ((SupportHive)baseTable()).hiveLocation();
   }
 }
