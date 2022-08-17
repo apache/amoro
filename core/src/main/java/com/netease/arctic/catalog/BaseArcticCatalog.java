@@ -352,6 +352,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
           "Illegal table id:%s for catalog:%s", identifier.toString(), catalogMeta.getCatalogName());
       this.identifier = identifier;
       this.schema = schema;
+      this.partitionSpec = PartitionSpec.unpartitioned();
+      this.sortOrder = SortOrder.unsorted();
     }
 
     @Override
@@ -521,14 +523,14 @@ public class BaseArcticCatalog implements ArcticCatalog {
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-      Map<String, String> tableProperties = meta.getProperties();
-      tableProperties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      //Map<String, String> tableProperties = meta.getProperties();
+      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          return tables.create(schema, partitionSpec, tableProperties, baseLocation);
+          return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
         } catch (Exception e) {
           throw new IllegalStateException("create base table failed", e);
         }
@@ -540,7 +542,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          return tables.create(schema, partitionSpec, tableProperties, changeLocation);
+          return tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
         } catch (Exception e) {
           throw new IllegalStateException("create change table failed", e);
         }
@@ -557,8 +559,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
 
-      Map<String, String> tableProperties = meta.getProperties();
-      tableProperties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       Table table = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);

@@ -1,6 +1,5 @@
 package com.netease.arctic.hive.utils;
 
-import java.util.List;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
@@ -11,6 +10,8 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+
+import java.util.List;
 
 public class HivePartitionUtil {
 

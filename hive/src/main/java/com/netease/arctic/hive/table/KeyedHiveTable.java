@@ -21,6 +21,7 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
@@ -31,7 +32,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
  */
 public class KeyedHiveTable extends BaseKeyedTable {
 
-  HMSClient hiveClient;
+  private HMSClient hiveClient;
 
   public KeyedHiveTable(
       TableMeta tableMeta,
@@ -39,7 +40,7 @@ public class KeyedHiveTable extends BaseKeyedTable {
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
       HMSClient hiveClient,
-      BaseTable baseTable,
+      UnkeyedHiveTable baseTable,
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
     this.hiveClient = hiveClient;

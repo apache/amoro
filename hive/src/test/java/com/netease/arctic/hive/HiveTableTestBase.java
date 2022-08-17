@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive;
 
+import com.google.common.base.Joiner;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -27,16 +28,24 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Database;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.hive.TestHiveMetastore;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
@@ -140,5 +149,88 @@ public class HiveTableTestBase extends TableTestBase {
 
     hiveCatalog.dropTable(HIVE_PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
+  }
+
+
+
+
+  public static class DataFileBuilder {
+    final TableIdentifier identifier;
+    final Table hiveTable;
+    final ArcticTable table;
+
+    public DataFileBuilder(ArcticTable table) throws TException {
+      identifier = table.id();
+      this.table = table;
+      hiveTable = hms.getClient().getTable(identifier.getDatabase(), identifier.getTableName());
+    }
+
+    public DataFile build(String valuePath, String path) {
+      DataFiles.Builder builder =  DataFiles.builder(table.spec())
+          .withPath(hiveTable.getSd().getLocation() + path)
+          .withFileSizeInBytes(0)
+          .withRecordCount(2);
+
+      if (!StringUtils.isEmpty(valuePath)){
+        builder = builder.withPartitionPath(valuePath);
+      }
+      return builder.build();
+    }
+
+    public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles){
+      return partValueFiles.stream().map(
+          kv -> this.build(kv.getKey(), kv.getValue())
+      ).collect(Collectors.toList());
+    }
+  }
+
+  public static String getPartitionPath(List<String> values, PartitionSpec spec) {
+    List<String> nameValues = Lists.newArrayList();
+    for (int i = 0; i < values.size(); i++) {
+      String field = spec.fields().get(i).name();
+      String value = values.get(i);
+      nameValues.add(field + "=" + value);
+    }
+    return Joiner.on("/").join(nameValues);
+  }
+
+  /**
+   * assert hive table partition location as expected
+   * @param partitionLocations
+   * @param table
+   * @throws TException
+   */
+  public static void assertHivePartitionLocations(Map<String, String> partitionLocations, ArcticTable table) throws TException {
+    TableIdentifier identifier = table.id();
+    final String database = identifier.getDatabase();
+    final String tableName = identifier.getTableName();
+
+    List<Partition> partitions = hms.getClient().listPartitions(
+        database,
+        tableName,
+        (short) -1);
+
+    System.out.println("> assert hive partition location as expected");
+    System.out.printf("HiveTable[%s.%s] partition count: %d \n", database, tableName, partitions.size());
+    for (Partition p: partitions){
+      System.out.printf(
+          "HiveTablePartition[%s.%s  %s] location:%s \n", database, tableName,
+          Joiner.on("/").join(p.getValues()), p.getSd().getLocation());
+    }
+
+    Assert.assertEquals("expect " + partitionLocations.size() + " partition after first rewrite partition",
+        partitionLocations.size(), partitions.size());
+
+    for (Partition p : partitions) {
+      String valuePath = getPartitionPath(p.getValues(), table.spec());
+      Assert.assertTrue("partition " + valuePath + " is not expected",
+          partitionLocations.containsKey(valuePath));
+
+      String locationExpect = partitionLocations.get(valuePath);
+      String actualLocation = p.getSd().getLocation();
+      Assert.assertTrue(
+          "partition location is not expected, expect " + actualLocation + " end-with " + locationExpect,
+          actualLocation.contains(locationExpect));
+    }
   }
 }
