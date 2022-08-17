@@ -1,10 +1,10 @@
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.hive;
 
+import com.netease.arctic.spark.SparkTestContext;
 import com.netease.arctic.spark.hive.SparkHiveTestContext;
-import com.netease.arctic.spark.hive.TestMigrateHiveTable;
+import com.netease.arctic.spark.hive.TestCreateTableDDL;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -12,14 +12,15 @@ import java.io.IOException;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    TestMigrateHiveTable.class})
+    TestCreateTableDDL.class})
 public class ArcticSparkHiveMainTest {
 
   @BeforeClass
   public static void suiteSetup() throws IOException {
-    SparkTestContext.setUpTestDirAndArctic();
+    SparkHiveTestContext.setUpTestDirAndArctic();
     SparkHiveTestContext.setUpHMS();
-    SparkTestContext.setUpSparkSession();
+    SparkTestContext.cleanUpAdditionSparkConfigs();
+    SparkHiveTestContext.setUpSparkSession();
   }
   @AfterClass
   public static void suiteTeardown() {
