@@ -49,7 +49,9 @@ public class TestCreateTableDDL extends SparkTestBase {
     ArcticTable keyedTableA = loadTable(identifierA);
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "name", Types.StringType.get()));
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTableA.schema().asStruct());
     sql("desc table {0}.{1}", database, tableA);
@@ -83,7 +85,9 @@ public class TestCreateTableDDL extends SparkTestBase {
     ArcticTable keyedTableB = loadTable(identifierB);
     Types.StructType expectedSchemaB = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "name", Types.StringType.get()));
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchemaB, keyedTableB.schema().asStruct());
 
@@ -154,7 +158,9 @@ public class TestCreateTableDDL extends SparkTestBase {
     ArcticTable unKeyedTable = loadTable(identifierA);
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.optional(1, "id", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "name", Types.StringType.get()));
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, unKeyedTable.schema().asStruct());
 
@@ -182,7 +188,9 @@ public class TestCreateTableDDL extends SparkTestBase {
     ArcticTable unKeyedTableB = loadTable(identifierB);
     Types.StructType expectedSchemaB = Types.StructType.of(
         Types.NestedField.optional(1, "id", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "name", Types.StringType.get()));
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
     Assert.assertEquals("Schema should match expected",
         expectedSchemaB, unKeyedTableB.schema().asStruct());
 
