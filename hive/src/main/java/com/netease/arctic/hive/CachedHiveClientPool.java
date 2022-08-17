@@ -23,7 +23,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
-import org.apache.iceberg.ClientPool;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
@@ -33,7 +32,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key.
  */
-public class CachedHiveClientPool implements ClientPool<HiveMetaStoreClient, TException> {
+public class CachedHiveClientPool implements HMSClient {
 
   private static Cache<TableMetaStore, ArcticHiveClientPool> clientPoolCache;
 
