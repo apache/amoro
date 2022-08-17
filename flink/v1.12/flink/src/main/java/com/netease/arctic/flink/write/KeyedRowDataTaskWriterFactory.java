@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.io.writer.ChangeBaseOutputFileFactory;
+import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -91,11 +91,11 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
 
   private OutputFileFactory createOutputFileFactory(int subtaskId, int attemptId) {
     if (ArcticUtils.isToBase(overwrite)) {
-      return new ChangeBaseOutputFileFactory(
+      return new CommonOutputFileFactory(
           table.baseLocation(), table.spec(), format, table.io(),
           table.baseTable().encryption(), subtaskId, attemptId, transactionId);
     }
-    return new ChangeBaseOutputFileFactory(
+    return new CommonOutputFileFactory(
         table.changeLocation(), table.spec(), format, table.io(),
         table.changeTable().encryption(), subtaskId, attemptId, transactionId);
   }

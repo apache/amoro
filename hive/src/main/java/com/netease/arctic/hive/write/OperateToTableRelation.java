@@ -1,10 +1,10 @@
 package com.netease.arctic.hive.write;
 
-import com.netease.arctic.hive.table.TableKinds;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.OperateKinds;
 
 public interface OperateToTableRelation {
 
-  TableKinds getTableKindsFromOperateKind(ArcticTable arcticTable, OperateKinds operateKinds);
+  LocationKind getLocationKindsFromOperateKind(ArcticTable arcticTable, OperateKinds operateKinds);
 }

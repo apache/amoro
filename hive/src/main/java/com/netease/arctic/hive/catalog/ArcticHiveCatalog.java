@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
-import com.netease.arctic.hive.table.AdaptHiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
@@ -36,6 +35,10 @@ import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -49,11 +52,6 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
 /**
  * Implementation of {@link com.netease.arctic.catalog.ArcticCatalog} to support Hive table as base store.
@@ -202,8 +200,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       Map<String, String> tableProperties = meta.getProperties();
       tableProperties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      tableProperties.put(TableProperties.WRITE_OUTPUT_FILE_FACTORY,
-          AdaptHiveTableProperties.WRITE_OUTPUT_FILE_FACTORY_DEFAULT);
       tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
@@ -253,8 +249,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       Map<String, String> tableProperties = meta.getProperties();
       tableProperties.put(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      tableProperties.put(TableProperties.WRITE_OUTPUT_FILE_FACTORY,
-          AdaptHiveTableProperties.WRITE_OUTPUT_FILE_FACTORY_DEFAULT);
       Table table = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);

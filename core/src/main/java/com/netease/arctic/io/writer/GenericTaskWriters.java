@@ -85,7 +85,7 @@ public class GenericTaskWriters {
       long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
       return new GenericBaseTaskWriter(fileFormat, new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
-          new ChangeBaseOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
+          new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.baseTable().schema(), table.spec(), table.primaryKeySpec());
     }
@@ -103,7 +103,7 @@ public class GenericTaskWriters {
           org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
           MetricsModes.Full.get().toString());
       return new SortedPosDeleteWriter<>(appenderFactory,
-          new ChangeBaseOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
+          new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
               table.baseTable().encryption(), partitionId, taskId, transactionId),
           fileFormat, mask, index, partitionKey);
     }
@@ -119,7 +119,7 @@ public class GenericTaskWriters {
       Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
       return new GenericChangeTaskWriter(fileFormat,
           new GenericAppenderFactory(changeWriteSchema, table.spec()),
-          new ChangeBaseOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
+          new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
               table.changeTable().encryption(), partitionId, taskId, transactionId),
           table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
           changeAction);

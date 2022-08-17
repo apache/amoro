@@ -39,11 +39,11 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements SupportHive {
 
   @Override
   public Schema schema() {
-    return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
+    return icebergTable.schema();
   }
 
   @Override
   public String hiveLocation() {
-    return null;
+    return location() + "/hive_data";
   }
 }

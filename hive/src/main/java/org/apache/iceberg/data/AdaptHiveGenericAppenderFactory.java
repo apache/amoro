@@ -55,36 +55,25 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
   private final Schema eqDeleteRowSchema;
   private final Schema posDeleteRowSchema;
   private final Map<String, String> config = Maps.newHashMap();
-  private final boolean writeHive;
 
   public AdaptHiveGenericAppenderFactory(Schema schema) {
-    this(schema, PartitionSpec.unpartitioned(), null, null, null, false);
+    this(schema, PartitionSpec.unpartitioned(), null, null, null);
   }
 
   public AdaptHiveGenericAppenderFactory(Schema schema, PartitionSpec spec) {
-    this(schema, spec, null, null, null, false);
-  }
-
-  public AdaptHiveGenericAppenderFactory(Schema schema, boolean writeHive) {
-    this(schema, PartitionSpec.unpartitioned(), null, null, null, writeHive);
-  }
-
-  public AdaptHiveGenericAppenderFactory(Schema schema, PartitionSpec spec, boolean writeHive) {
-    this(schema, spec, null, null, null, writeHive);
+    this(schema, spec, null, null, null);
   }
 
   public AdaptHiveGenericAppenderFactory(
       Schema schema, PartitionSpec spec,
       int[] equalityFieldIds,
       Schema eqDeleteRowSchema,
-      Schema posDeleteRowSchema,
-      boolean writeHive) {
+      Schema posDeleteRowSchema) {
     this.schema = schema;
     this.spec = spec;
     this.equalityFieldIds = equalityFieldIds;
     this.eqDeleteRowSchema = eqDeleteRowSchema;
     this.posDeleteRowSchema = posDeleteRowSchema;
-    this.writeHive = writeHive;
   }
 
   public AdaptHiveGenericAppenderFactory set(String property, String value) {
@@ -173,7 +162,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .buildEqualityWriter();
 
         case PARQUET:
-          return Parquet.writeDeletes(file.encryptingOutputFile())
+          return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
               .createWriterFunc(AdaptHiveGenericParquetWriter::buildWriter)
               .withPartition(partition)
               .overwrite()
@@ -213,7 +202,7 @@ public class AdaptHiveGenericAppenderFactory implements FileAppenderFactory<Reco
               .buildPositionWriter();
 
         case PARQUET:
-          return Parquet.writeDeletes(file.encryptingOutputFile())
+          return AdaptHiveParquet.writeDeletes(file.encryptingOutputFile())
               .createWriterFunc(AdaptHiveGenericParquetWriter::buildWriter)
               .withPartition(partition)
               .overwrite()

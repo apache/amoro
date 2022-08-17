@@ -139,7 +139,8 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
   public static final String WRITE_OUTPUT_FILE_FACTORY = "write.output.file.factory.impl";
-  public static final String WRITE_OUTPUT_FILE_FACTORY_DEFAULT = "com.netease.arctic.io.writer.ChangeBaseOutputFileFactory";
+  public static final String WRITE_OUTPUT_FILE_FACTORY_DEFAULT =
+      "com.netease.arctic.io.writer.ChangeBaseOutputFileFactory";
 
   /**
    * table read related properties
