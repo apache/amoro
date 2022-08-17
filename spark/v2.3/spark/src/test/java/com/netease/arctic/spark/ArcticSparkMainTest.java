@@ -9,7 +9,7 @@ import org.junit.runners.Suite;
 
 import java.io.IOException;
 @RunWith(Suite.class)
-@Suite.SuiteClasses({})
+@Suite.SuiteClasses({TestCreateTableDDL.class})
 public class ArcticSparkMainTest {
     @BeforeClass
     public static void suiteSetup() throws IOException {

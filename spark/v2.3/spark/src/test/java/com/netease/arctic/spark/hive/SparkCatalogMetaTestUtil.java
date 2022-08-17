@@ -16,28 +16,25 @@
  * limitations under the License.
  */
 
-package com.netease.arctic;
+package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import net.minidev.json.JSONObject;
 import org.apache.hadoop.conf.Configuration;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CatalogMetaTestUtil {
+public class SparkCatalogMetaTestUtil {
   public static CatalogMeta createArcticCatalog(File arcticBaseDir) throws IOException {
     CatalogMeta meta = new CatalogMeta();
     meta.setCatalogName("arctic_default");
-    meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HADOOP);
+    meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HIVE);
     Map<String, String> storageConfig = new HashMap<>();
     storageConfig.put(
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
@@ -48,6 +45,9 @@ public class CatalogMetaTestUtil {
         encodingSite(new Configuration()));
     storageConfig.put(
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE,
+        encodingSite(new Configuration()));
+    storageConfig.put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
         encodingSite(new Configuration()));
     meta.setStorageConfigs(storageConfig);
 
