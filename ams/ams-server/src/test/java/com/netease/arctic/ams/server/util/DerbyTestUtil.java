@@ -120,7 +120,6 @@ public class DerbyTestUtil extends IJDBCService {
           configuration.addMapper(OptimizerGroupMapper.class);
           configuration.addMapper(DerbyContainerMetadataMapper.class);
           configuration.addMapper(DerbyFileInfoCacheMapper.class);
-          configuration.addMapper(DerbySnapInfoCacheMapper.class);
           configuration.addMapper(DerbyCatalogMetadataMapper.class);
           configuration.addMapper(DerbyTableMetadataMapper.class);
           configuration.addMapper(DerbyOptimizeTasksMapper.class);
