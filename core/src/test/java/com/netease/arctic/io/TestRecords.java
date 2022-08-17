@@ -18,25 +18,13 @@ public class TestRecords {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john",
-        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", "100")));
+        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     builder.add(record.copy(ImmutableMap.of("id", 2, "name", "lily",
-        "op_time", LocalDateTime.of(2022, 1, 2, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 2, 12, 0, 0), ZoneOffset.UTC),
-        "d", "101")));
+        "op_time", LocalDateTime.of(2022, 1, 2, 12, 0, 0))));
     builder.add(record.copy(ImmutableMap.of("id", 3, "name", "jake",
-        "op_time", LocalDateTime.of(2022, 1, 3, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 3, 12, 0, 0), ZoneOffset.UTC),
-        "d", "102")));
+        "op_time", LocalDateTime.of(2022, 1, 3, 12, 0, 0))));
     builder.add(record.copy(ImmutableMap.of("id", 4, "name", "sam",
-        "op_time", LocalDateTime.of(2022, 1, 4, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 4, 12, 0, 0), ZoneOffset.UTC),
-        "d", "103")));
+        "op_time", LocalDateTime.of(2022, 1, 4, 12, 0, 0))));
 
     return builder.build();
   }
@@ -46,15 +34,9 @@ public class TestRecords {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary",
-        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", "104")));
+        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     builder.add(record.copy(ImmutableMap.of("id", 6, "name", "mack",
-        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", "105")));
+        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     return builder.build();
   }
 
@@ -62,10 +44,7 @@ public class TestRecords {
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary",
-        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-        "op_time_with_zone", OffsetDateTime.of(
-            LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", "104")));
+        "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     return builder.build();
   }
 }
