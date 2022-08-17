@@ -77,12 +77,15 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
             tableLoader)) {
+      ArcticFileWriter fileWriter = (ArcticFileWriter) testHarness.getOneInputOperator();
+      Assert.assertNotNull(fileWriter.getWriter());
       // The first checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
       testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
+      Assert.assertNull(fileWriter.getWriter());
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
       Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
 
@@ -90,6 +93,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
       // The second checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-12T10:10:11.0"), 1);
+      Assert.assertNotNull(fileWriter.getWriter());
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
       testHarness.processElement(createRowData(3, "hello", "2020-10-12T10:10:11.0"), 1);
 
@@ -102,7 +106,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
   }
 
   @Test
-  public void testSnapshotTwice() throws Exception {
+  public void testSnapshotMultipleTimes() throws Exception {
     long checkpointId = 1;
     long timestamp = 1;
 

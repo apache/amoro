@@ -34,38 +34,23 @@ import org.apache.iceberg.Table;
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
 public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
+
+  private HMSClient hiveClient;
+
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      BaseTable baseTable, ChangeTable changeTable) {
+      HMSClient hiveClient,
+      UnkeyedHiveTable baseTable,
+      ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
+    this.hiveClient = hiveClient;
   }
 
   @Override
   public String hiveLocation() {
     return location() + "/hive_data";
-  }
-
-  public static class HiveBaseInternalTable extends BaseInternalTable implements SupportHive {
-
-    public HiveBaseInternalTable(
-        TableIdentifier tableIdentifier,
-        Table baseIcebergTable,
-        ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
-    }
-
-    @Override
-    public Schema schema() {
-      return icebergTable.schema();
-    }
-
-    @Override
-    public String hiveLocation() {
-      return null;
-    }
   }
 }
