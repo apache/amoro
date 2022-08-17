@@ -43,26 +43,28 @@ public interface SnapInfoCacheMapper {
       ".mybatis.Long2TsConvertor})")
   void insertCache(@Param("cacheFileInfo") CacheSnapshotInfo info);
 
-  @Select("select snapshot_id,parent_snapshot_id, commit_time from " + TABLE_NAME + " where table_identifier = " +
-      "#{tableIdentifier," +
-      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
-      "#{type} and commit_time = (select max(commit_time) from snapshot_info_cache where table_identifier = " +
-      "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and " +
-      "inner_table = #{type})")
-  @Results({
-      @Result(column = "snapshot_id", property = "id"),
-      @Result(column = "parent_snapshot_id", property = "parentId"),
-      @Result(column = "commit_time", property = "commitTime",
-          typeHandler = Long2TsConvertor.class)
-  })
-  List<SnapshotStatistics> getCurrentSnapInfo(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-                                              @Param("type") String tableType);
+  @Select("select count(1) >0 " +
+      "from " + TABLE_NAME +
+      " where inner_table=#{type} and table_identifier=#{tableIdentifier, typeHandler=com.netease" +
+      ".arctic.ams.server.mybatis.TableIdentifier2StringConverter} and snapshot_id=#{snapshotId} ")
+  Boolean snapshotIsCached(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("type") String tableType, @Param("snapshotId") Long snapshotId);
 
   @Delete("delete from " + TABLE_NAME + " where commit_time < #{expiredTime, typeHandler=com.netease.arctic.ams" +
-      ".server.mybatis.Long2TsConvertor}")
-  void expireCache(@Param("expiredTime") long expiredTime);
+      ".server.mybatis.Long2TsConvertor} and table_identifier=#{tableIdentifier, typeHandler=com.netease.arctic.ams" +
+      ".server.mybatis.TableIdentifier2StringConverter} and inner_table = #{type} and snapshot_id not in (select " +
+      "add_snapshot_id from file_info_cache where delete_snapshot_id is null and table_identifier=#{tableIdentifier, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{type})")
+  void expireCache(@Param("expiredTime") long expiredTime, @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("type") String tableType);
 
   @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
       ".ams.server.mybatis.TableIdentifier2StringConverter}")
   void deleteTableCache(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+
+  @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
+      ".ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{innerTable}")
+  void deleteInnerTableCache(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("innerTable") String innerTable);
 }

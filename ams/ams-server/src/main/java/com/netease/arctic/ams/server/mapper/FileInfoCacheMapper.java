@@ -114,6 +114,11 @@ public interface FileInfoCacheMapper {
       ".ams.server.mybatis.TableIdentifier2StringConverter}")
   void deleteTableCache(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
+  @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
+      ".ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{innerTable}")
+  void deleteInnerTableCache(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("innerTable") String innerTable);
+
   @Select("select partition_name, count(1) as file_count, sum(file_size) as size," +
           "max(commit_time) as lastCommitTime from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
@@ -180,31 +185,8 @@ public interface FileInfoCacheMapper {
   Timestamp getWatermark(@Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("innerTable") String innerTable);
 
-  @Select("select add_snapshot_id,parent_snapshot_id, commit_time from " + TABLE_NAME + " where table_identifier = " +
-      "#{tableIdentifier," +
-      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
-      "#{type} and commit_time = (select max(commit_time) from file_info_cache where table_identifier = " +
+  @Select("select max(commit_time) from " + TABLE_NAME + " where table_identifier = " +
       "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and " +
-      "inner_table = #{type})")
-  @Results({
-      @Result(column = "add_snapshot_id", property = "id"),
-      @Result(column = "parent_snapshot_id", property = "parentId"),
-      @Result(column = "commit_time", property = "commitTime",
-          typeHandler = Long2TsConvertor.class)
-  })
-  List<SnapshotStatistics> getCurrentSnapInfo(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-      @Param("type") String tableType);
-
-  @Select("select add_snapshot_id from " + TABLE_NAME + " where table_identifier = " +
-      "#{tableIdentifier," +
-      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
-      "#{type} and (add_snapshot_id = #{snapshotId} or delete_snapshot_id = #{snapshotId})")
-  @Results({
-      @Result(column = "add_snapshot_id", property = "id"),
-      @Result(column = "parent_snapshot_id", property = "parentId"),
-      @Result(column = "commit_time", property = "commitTime",
-          typeHandler = Long2TsConvertor.class)
-  })
-  List<Long> snapshotIsCached(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-      @Param("type") String tableType, @Param("snapshotId") Long snapshotId);
+      "inner_table = #{type}")
+  Long getCachedMaxTime(@Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("type") String tableType);
 }

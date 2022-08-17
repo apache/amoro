@@ -25,13 +25,14 @@ import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.TableProperties;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Objects;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Objects;
 
 public class CacheFileInfo {
 

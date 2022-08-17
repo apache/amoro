@@ -38,7 +38,6 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
-import com.netease.arctic.ams.server.mapper.derby.DerbySnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
