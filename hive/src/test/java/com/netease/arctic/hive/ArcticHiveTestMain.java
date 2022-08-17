@@ -19,6 +19,7 @@
 package com.netease.arctic.hive;
 
 import com.netease.arctic.hive.catalog.TestArcticHiveCatalog;
+import com.netease.arctic.hive.op.TestOverwriteFiles;
 import com.netease.arctic.hive.op.TestRewritePartitions;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -28,7 +29,8 @@ import org.junit.runners.Suite;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     TestArcticHiveCatalog.class,
-    TestRewritePartitions.class
+    TestRewritePartitions.class,
+    TestOverwriteFiles.class
 })
 public class ArcticHiveTestMain {
 

@@ -123,7 +123,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
       partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
     }
-    if (transactionId > 0) {
+    if (transactionId != null && transactionId > 0) {
       overwriteFiles.set("txId", transactionId + "");
     }
     overwriteFiles.commit();
