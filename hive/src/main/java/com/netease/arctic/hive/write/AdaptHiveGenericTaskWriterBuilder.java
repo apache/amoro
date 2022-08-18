@@ -188,8 +188,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
         TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET) - 1;
     Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
     FileAppenderFactory<Record> appenderFactory = HiveTableUtil.isHive(table) ?
-        new AdaptHiveGenericAppenderFactory(table.baseTable().schema(), table.spec()) :
-        new GenericAppenderFactory(table.baseTable().schema(), table.spec());
+        new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :
+        new GenericAppenderFactory(changeWriteSchema, table.spec());
     return new GenericChangeTaskWriter(fileFormat,
         appenderFactory,
         new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),

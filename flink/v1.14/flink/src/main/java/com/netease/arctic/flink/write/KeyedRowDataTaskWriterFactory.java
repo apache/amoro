@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.write;
 
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.io.writer.ChangeBaseOutputFileFactory;
+import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SchemaUtil;
@@ -56,7 +56,7 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
    * FlinkBaseTaskWriter must using base table info to create OutputFileFactory,
    * and FlinkChangeTaskWriter must using change table info to create OutputFileFactory.
    */
-  private transient ChangeBaseOutputFileFactory changeBaseOutputFileFactory;
+  private transient CommonOutputFileFactory changeBaseOutputFileFactory;
 
   public KeyedRowDataTaskWriterFactory(KeyedTable table,
                                        RowType flinkSchema,
@@ -88,13 +88,13 @@ public class KeyedRowDataTaskWriterFactory implements TaskWriterFactory<RowData>
     this.changeBaseOutputFileFactory = createOutputFileFactory(taskId, attemptId);
   }
 
-  private ChangeBaseOutputFileFactory createOutputFileFactory(int subtaskId, int attemptId) {
+  private CommonOutputFileFactory createOutputFileFactory(int subtaskId, int attemptId) {
     if (ArcticUtils.isToBase(overwrite)) {
-      return new ChangeBaseOutputFileFactory(
+      return new CommonOutputFileFactory(
           table.baseLocation(), table.spec(), format, table.io(),
           table.baseTable().encryption(), subtaskId, attemptId, transactionId);
     }
-    return new ChangeBaseOutputFileFactory(
+    return new CommonOutputFileFactory(
         table.changeLocation(), table.spec(), format, table.io(),
         table.changeTable().encryption(), subtaskId, attemptId, transactionId);
   }
