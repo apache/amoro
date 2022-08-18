@@ -289,7 +289,7 @@ public class ArcticCatalog extends AbstractCatalog {
     TableSchema tableSchema = table.getSchema();
     TableSchema.Builder b = TableSchema.builder();
 
-    tableSchema.getTableColumns().forEach(c->{
+    tableSchema.getTableColumns().forEach(c -> {
       List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
       for (WatermarkSpec w : ws) {
         if (w.getRowtimeAttribute().equals(c.getName())) {
@@ -342,9 +342,6 @@ public class ArcticCatalog extends AbstractCatalog {
       }
     });
 
-//    if (!schema.getWatermarkSpecs().isEmpty()) {
-//      throw new UnsupportedOperationException("Creating table with watermark specs is not supported yet.");
-//    }
   }
 
   @Override

@@ -18,10 +18,10 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitSerializer;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;

@@ -18,12 +18,12 @@
 
 package com.netease.arctic.flink.util;
 
+import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.write.ArcticLogWriter;
-import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.table.ArcticTable;
@@ -150,7 +150,7 @@ public class ArcticUtils {
     return toBase;
   }
 
-  public static TimestampData getCurrentTimestampData(TimeZone timeZone){
+  public static TimestampData getCurrentTimestampData(TimeZone timeZone) {
     long ts = System.currentTimeMillis();
     return TimestampData.fromEpochMillis(ts + timeZone.getOffset(ts));
   }

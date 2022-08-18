@@ -18,8 +18,8 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
+import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
