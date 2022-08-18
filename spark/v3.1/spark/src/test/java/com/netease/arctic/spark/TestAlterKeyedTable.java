@@ -34,11 +34,11 @@ import org.junit.Test;
 public class TestAlterKeyedTable extends SparkTestBase {
   private final String database = "db_def";
   private final String tableName = "testA";
-  private final TableIdentifier tableIdent = TableIdentifier.of(catalogName, database, tableName);
+  private final TableIdentifier tableIdent = TableIdentifier.of(catalogName_arctic, database, tableName);
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
+    sql("use " + catalogName_arctic);
     sql("create database if not exists " + database);
     sql("CREATE TABLE {0}.{1} \n" +
             "(id bigint, data string, ts timestamp, primary key (id)) \n" +
@@ -198,7 +198,7 @@ public class TestAlterKeyedTable extends SparkTestBase {
     sql("ALTER TABLE {0}.{1} SET TBLPROPERTIES " +
         "( ''test.props2'' = ''new-value'', ''test.props3'' = ''val3'' )", database, tableName);
 
-    ArcticTable keyedTable = loadTable(catalogName, database, tableName);
+    ArcticTable keyedTable = loadTable(catalogName_arctic, database, tableName);
     //Assert.assertEquals(3, keyedTable.properties().size());
 
     Assert.assertEquals("val1", keyedTable.properties().get("test.props1"));

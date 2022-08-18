@@ -3,8 +3,10 @@ package com.netease.arctic.spark.hive;
 import com.netease.arctic.spark.SparkTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -21,20 +23,20 @@ public class TestCreateTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
+    sql("use " + catalogName_hive);
     sql("create database if not exists " + database);
   }
 
   @After
   public void clean() {
-    sql("drop database if exists " + database + "CASCADE");
+    sql("drop database if exists " + database + " CASCADE");
   }
 
 
   @Test
-  public void testCreateKeyedTableWithPartitioned() {
+  public void testCreateKeyedTableWithPartitioned() throws TException {
     // hive style
-    TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
+    TableIdentifier identifierA = TableIdentifier.of(catalogName_hive, database, tableA);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -65,11 +67,20 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertTrue(keyedTableA.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", keyedTableA.properties().get("props.test2"));
 
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
 
     // column reference style
-    TableIdentifier identifierB = TableIdentifier.of(catalogName, database, tableB);
+    TableIdentifier identifierB = TableIdentifier.of(catalogName_hive, database, tableB);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -103,13 +114,22 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertTrue(keyedTableB.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", keyedTableB.properties().get("props.test2"));
 
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
   }
 
   @Test
-  public void testCreateKeyedTableUnPartitioned() {
-    TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
+  public void testCreateKeyedTableUnPartitioned() throws TException {
+    TableIdentifier identifierA = TableIdentifier.of(catalogName_hive, database, tableA);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -136,15 +156,24 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertTrue(keyedTable.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", keyedTable.properties().get("props.test2"));
 
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name"),
+        Lists.newArrayList());
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
   }
 
 
   @Test
-  public void testCreateUnKeyedTableWithPartitioned() {
+  public void testCreateUnKeyedTableWithPartitioned() throws TException {
     // hive style
-    TableIdentifier identifierA = TableIdentifier.of(catalogName, database, tableA);
+    TableIdentifier identifierA = TableIdentifier.of(catalogName_hive, database, tableA);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string \n " +
@@ -169,11 +198,20 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertTrue(unKeyedTable.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", unKeyedTable.properties().get("props.test2"));
 
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
 
     // column reference style
-    TableIdentifier identifierB = TableIdentifier.of(catalogName, database, tableB);
+    TableIdentifier identifierB = TableIdentifier.of(catalogName_hive, database, tableB);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -202,13 +240,23 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", unKeyedTableB.properties().get("props.test2"));
 
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogName_hive);
+
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
   }
 
   @Test
-  public void testCreateUnKeyedTableUnPartitioned() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, tableB);
+  public void testCreateUnKeyedTableUnPartitioned() throws TException {
+    TableIdentifier identifier = TableIdentifier.of(catalogName_hive, database, tableB);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -231,12 +279,21 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertTrue(unKeyedTableB.properties().containsKey("props.test2"));
     Assert.assertEquals("val2", unKeyedTableB.properties().get("props.test2"));
 
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts"),
+        Lists.newArrayList());
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifier);
   }
 
   @Test
-  public void testCreateHiveTableUnPartitioned() {
+  public void testCreateHiveTableUnPartitioned() throws TException {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -246,6 +303,15 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("use {0}", database);
     rows = sql("show tables");
     Assert.assertEquals(1, rows.size());
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts"),
+        Lists.newArrayList());
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
@@ -253,7 +319,7 @@ public class TestCreateTableDDL extends SparkTestBase {
 
 
   @Test
-  public void testCreateHiveTableWithPartitioned() {
+  public void testCreateHiveTableWithPartitioned() throws TException {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string \n" +
@@ -265,13 +331,23 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertEquals(1, rows.size());
     sql("desc {0}.{1}", database, tableB);
     assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
+
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
   }
 
   @Test
-  public void testCreateSourceTableWithPartitioned() {
+  public void testCreateSourceTableWithPartitioned() throws TException {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -288,6 +364,16 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertEquals(1, rows.size());
     sql("desc {0}.{1}", database, tableB);
     assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
+
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
@@ -295,7 +381,7 @@ public class TestCreateTableDDL extends SparkTestBase {
 
 
   @Test
-  public void testCreateSourceTableUnPartitioned() {
+  public void testCreateSourceTableUnPartitioned() throws TException {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -308,6 +394,16 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("use {0}", database);
     rows = sql("show tables");
     Assert.assertEquals(1, rows.size());
+
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts"),
+        Lists.newArrayList());
+
+    sql("use " + catalogName_hive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());

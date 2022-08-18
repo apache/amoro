@@ -19,20 +19,19 @@
 package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.spark.SparkTestBase;
+import com.netease.arctic.spark.SparkTestContext;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import java.io.IOException;
+
 import java.util.List;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestMigrateHiveTable extends SparkHiveTestContext {
+public class TestMigrateHiveTable extends SparkTestBase {
 
   private final String sourceDatabase = "db1" ;
   private final String sourceTable = "hive_table";
@@ -41,13 +40,13 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
 
   @Before
   public void setUpArcticDatabase(){
-    sql("use " + catalogName);
+    sql("use " + catalogName_arctic);
     sql("create database if not exists " + database);
   }
 
   @After
   public void cleanUpAllTables(){
-    sql("drop table {0}.{1}.{2}", catalogName, database, table);
+    sql("drop table {0}.{1}.{2}", catalogName_arctic, database, table);
     sql("drop table {0}.{1}.{2}", "spark_catalog", sourceDatabase, sourceTable);
   }
 
@@ -74,12 +73,12 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
 
     sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
         sourceDatabase, sourceTable,
-        catalogName, database, table);
+        catalogName_arctic, database, table);
 
-    rows = sql("select * from {0}.{1}.{2}", catalogName, database, table);
+    rows = sql("select * from {0}.{1}.{2}", catalogName_arctic, database, table);
     Assert.assertEquals(6, rows.size());
 
-    ArcticTable t = loadTable(catalogName, database, table);
+    ArcticTable t = loadTable(catalogName_arctic, database, table);
     UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(3, partitionFiles.size());
@@ -104,12 +103,12 @@ public class TestMigrateHiveTable extends SparkHiveTestContext {
 
     sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
         sourceDatabase, sourceTable,
-        catalogName, database, table);
+        catalogName_arctic, database, table);
 
-    rows = sql("select * from {0}.{1}.{2}", catalogName, database, table);
+    rows = sql("select * from {0}.{1}.{2}", catalogName_arctic, database, table);
     Assert.assertEquals(5, rows.size());
 
-    ArcticTable t = loadTable(catalogName, database, table);
+    ArcticTable t = loadTable(catalogName_arctic, database, table);
     UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(1, partitionFiles.size());

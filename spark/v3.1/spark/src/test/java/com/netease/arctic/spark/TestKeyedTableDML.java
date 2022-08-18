@@ -32,7 +32,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -59,7 +58,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Before
   public void before() {
-    sql("use " + catalogName);
+    sql("use " + catalogName_arctic);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -71,7 +70,7 @@ public class TestKeyedTableDML extends SparkTestBase {
         " options ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, table);
-    keyedTable = loadTable(TableIdentifier.of(catalogName, database, table)).asKeyedTable();
+    keyedTable = loadTable(TableIdentifier.of(catalogName_arctic, database, table)).asKeyedTable();
   }
 
   @After
@@ -81,7 +80,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testMergeOnRead() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
     writeBase(identifier,  baseFiles);
     writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(4) ),
@@ -104,7 +103,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testSelectChangeFiles() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
     writeChange(identifier,  ChangeAction.INSERT, Lists.newArrayList(
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(4)),
         newRecord(keyedTable, 5, "eee", quickDateWithZone(4))
@@ -116,7 +115,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testSelectDeleteAll() throws IOException {
-    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
+    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName_arctic, database, table), baseFiles);
     insertBasePosDeleteFiles(keyedTable.beginTransaction(""), dataFiles);
     rows = sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(0, rows.size());
@@ -124,7 +123,7 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testSelectDeletePart() throws IOException {
-    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName, database, table), baseFiles);
+    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogName_arctic, database, table), baseFiles);
     List<DataFile> deleteFiles = dataFiles.stream().filter(dataFile -> Objects.equals(18993,
         dataFile.partition().get(0, Object.class))).collect(Collectors.toList());
     insertBasePosDeleteFiles(keyedTable.beginTransaction(""), deleteFiles);

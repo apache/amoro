@@ -21,9 +21,7 @@ package com.netease.arctic.spark;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.Set;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,13 +32,13 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
   private final String database = "db";
   private final String table = "testA";
   private KeyedTable keyedTable;
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
 
   private String contextOverwriteMode;
 
   @Before
   public void before() {
-    sql("use " + catalogName);
+    sql("use " + catalogName_arctic);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +

@@ -32,7 +32,7 @@ public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
   private final String database = "db";
   private final String table = "testA";
   private KeyedTable keyedTable;
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
 
   private String contextOverwriteMode;
 
@@ -42,7 +42,7 @@ public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
     System.out.println("spark.sql.sources.partitionOverwriteMode = " + contextOverwriteMode);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", "STATIC");
 
-    sql("use " + catalogName);
+    sql("use " + catalogName_arctic);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +

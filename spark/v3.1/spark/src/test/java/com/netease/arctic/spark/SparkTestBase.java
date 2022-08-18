@@ -59,37 +59,4 @@ public class SparkTestBase extends SparkTestContext {
     System.out.println("==================================");
   }
 
-  public void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
-        primaryKeysBlock = false;
-      } else if (primaryKeysBlock){
-        descPrimaryKeys.add(row[0].toString());
-      }
-    }
-
-    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
-        descPrimaryKeys.stream().sorted().distinct().toArray());
-  }
-
-  public void assertPartitionResult(List<Object[]> rows, List<String> partitionKey) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Partitioning", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "Part ") && primaryKeysBlock) {
-        descPrimaryKeys.add(row[1].toString());
-      }
-    }
-
-    Assert.assertEquals(partitionKey.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
-        descPrimaryKeys.stream().sorted().distinct().toArray());
-  }
 }

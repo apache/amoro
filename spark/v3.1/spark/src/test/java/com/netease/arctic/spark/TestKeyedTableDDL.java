@@ -20,8 +20,6 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import java.util.List;
-import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -39,13 +37,13 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
+    sql("use " + catalogName_arctic);
     sql("create database if not exists " + database);
   }
 
   @Test
   public void testCreateKeyedTable() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -77,7 +75,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testCreateKeyedTableLike() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, targetTable);
+    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, targetTable);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -105,7 +103,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testCreateUnKeyedTableLike() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, targetTable);
+    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, targetTable);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +

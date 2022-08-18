@@ -29,14 +29,11 @@ public class ArcticSparkNonHiveMainTest {
 
   @BeforeClass
   public static void suiteSetup() throws IOException {
-    SparkTestContext.setUpTestDirAndArctic();
-    SparkTestContext.cleanUpAdditionSparkConfigs();
-    SparkTestContext.setUpSparkSession();
+    SparkTestContext.startAll();
   }
   @AfterClass
   public static void suiteTeardown() {
-    SparkTestContext.cleanUpAms();
-    SparkTestContext.cleanUpSparkSession();
+    SparkTestContext.stopAll();
   }
 
 }
