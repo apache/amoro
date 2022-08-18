@@ -28,7 +28,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.GenericAppenderFactory;
+import org.apache.iceberg.data.AdaptHiveGenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
@@ -138,7 +138,8 @@ public class TestMajorOptimizePlan extends TestBaseOptimizePlan {
   private List<DataFile> insertUnKeyedTableDataFile(StructLike partitionData, LocalDateTime opTime, int count) {
     List<DataFile> result = new ArrayList<>();
     for (int i = 0; i < count; i++) {
-      GenericAppenderFactory appenderFactory = new GenericAppenderFactory(testTable.schema(), testTable.spec());
+      AdaptHiveGenericAppenderFactory
+          appenderFactory = new AdaptHiveGenericAppenderFactory(testTable.schema(), testTable.spec());
       FileFormat fileFormat = FileFormat.valueOf((testTable.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       OutputFileFactory outputFileFactory = OutputFileFactory
