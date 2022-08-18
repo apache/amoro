@@ -18,11 +18,10 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.op.ArcticOperations;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
+import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
@@ -117,7 +116,7 @@ public class SparkWrite {
   private class DynamicOverwrite extends BaseBatchWrite {
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      RewritePartitions rewritePartitions = ArcticOperations.newRewritePartitions(table);
+      RewritePartitions rewritePartitions = table.newRewritePartitions();
       rewritePartitions.withTransactionId(transactionId);
 
       for (DataFile file : files(messages)) {
@@ -136,7 +135,7 @@ public class SparkWrite {
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      OverwriteBaseFiles overwriteBaseFiles = ArcticOperations.newOverwriteBaseFiles(table);
+      OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
       overwriteBaseFiles.withTransactionId(transactionId);
 
@@ -161,12 +160,12 @@ public class SparkWrite {
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriter<InternalRow> writer = ArcticSparkTaskWriters.buildFor(table)
+      TaskWriter<InternalRow> writer = ArcticSparkTaskWriterBuilder.buildFor(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .buildBaseWriter();
+          .buildWriter(BaseLocationKind.INSTANT);
 
       return new SparkInternalRowWriter(writer);
     }

@@ -16,19 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.op;
+package com.netease.arctic.hive.table;
 
-import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.LocationKind;
 
-/**
- * Factory to build arctic operations.
- */
-public class ArcticOperations {
-  public static OverwriteBaseFiles newOverwriteBaseFiles(KeyedTable keyedTable) {
-    return new OverwriteBaseFiles(keyedTable);
-  }
+public class HiveLocationKind implements LocationKind {
 
-  public static RewritePartitions newRewritePartitions(KeyedTable keyedTable) {
-    return new RewritePartitions(keyedTable.baseTable());
+  public static final LocationKind INSTANT = new HiveLocationKind();
+
+  private HiveLocationKind() {
   }
 }

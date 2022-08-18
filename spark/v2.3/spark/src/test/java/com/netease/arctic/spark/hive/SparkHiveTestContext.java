@@ -37,7 +37,7 @@ public class SparkHiveTestContext extends SparkTestContext {
     additionSparkConfigs.put("com.netease.spark.hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort()) ;
     additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
     additionSparkConfigs.put("spark.sql.com.netease.spark.hive.metastore.version", "2.3.7");
-    additionSparkConfigs.put( "arctic.sql.delegate-hive-table", "false");
+    additionSparkConfigs.put( "arctic.sql.delegate-hive-table", "true");
     //com.netease.spark.hive.metastore.client.capability.check
     additionSparkConfigs.put("com.netease.spark.hive.metastore.client.capability.check", "false");
   }

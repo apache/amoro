@@ -28,6 +28,8 @@ public class TableProperties {
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
+  public static final String BASE_HIVE_LOCATION_ROOT = "base.hive.location-root";
+
   public static final String LOCATION = "location";
 
   public static final String TABLE_CREATE_TIME = "table.create-timestamp";

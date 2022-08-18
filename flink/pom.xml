@@ -26,7 +26,7 @@
     <parent>
         <groupId>com.netease.arctic</groupId>
         <artifactId>arctic-parent</artifactId>
-        <version>0.3.0</version>
+        <version>0.3.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
@@ -46,6 +46,11 @@
                     <artifactId>asm</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
         </dependency>
 
         <!--flink-->
