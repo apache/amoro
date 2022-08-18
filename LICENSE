@@ -212,6 +212,17 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.util.StructLikeSet copied and modified to com.netease.arctic.iceberg.optimize.StructLikeSet
 * org.apache.iceberg.util.StructLikeWrapper copied and modified to com.netease.arctic.iceberg.optimize.StructLikeWrapper
 * org.apache.iceberg.util.StructProjection copied and modified to com.netease.arctic.iceberg.optimize.StructProjection
+* org.apache.iceberg.data.parquet.BaseParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetReaders
+* org.apache.iceberg.data.parquet.BaseParquetWriter copied and modified to org.apache.iceberg.data.parquet.AdaptHiveBaseParquetWriter
+* org.apache.iceberg.data.parquet.GenericParquetReaders copied and modified to org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders
+* org.apache.iceberg.data.parquet.GenericParquetWriter copied and modified to org.apache.iceberg.data.parquet.AdaptHiveGenericParquetWriter
+* org.apache.iceberg.data.GenericAppenderFactory copied and modified to org.apache.iceberg.data.AdaptHiveGenericAppenderFactory
+* org.apache.iceberg.parquet.ColumnWriter copied and modified to org.apache.iceberg.parquet.AdaptHiveColumnWriter
+* org.apache.iceberg.parquet.Parquet copied and modified to org.apache.iceberg.parquet.AdaptHiveParquet
+* org.apache.iceberg.parquet.ParquetSchemaUtil copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetSchemaUtil
+* org.apache.iceberg.parquet.ParquetWriter copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetWriter
+* org.apache.iceberg.parquet.PrimitiveWriter copied and modified to org.apache.iceberg.parquet.AdaptHivePrimitiveWriter
+* org.apache.iceberg.parquet.TypeToMessageType copied and modified to org.apache.iceberg.parquet.AdaptHiveTypeToMessageType
 
 Copyright: 2011-2019 The Apache Software Foundation
 Home page: http://iceberg.apache.org/
