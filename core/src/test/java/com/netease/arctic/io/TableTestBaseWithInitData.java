@@ -21,61 +21,25 @@ package com.netease.arctic.io;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
+import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.junit.Before;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
+
+import static com.netease.arctic.io.TestRecords.baseRecords;
+import static com.netease.arctic.io.TestRecords.changeDeleteRecords;
+import static com.netease.arctic.io.TestRecords.changeInsertRecords;
 
 public class TableTestBaseWithInitData extends TableTestBase {
-
-  public List<Record> baseRecords() {
-    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
-
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 2, "name", "lily", "op_time",
-        LocalDateTime.of(2022, 1, 2, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 3, "name", "jake", "op_time",
-        LocalDateTime.of(2022, 1, 3, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 4, "name", "sam", "op_time",
-        LocalDateTime.of(2022, 1, 4, 12, 0, 0))));
-
-    return builder.build();
-  }
-
-  public List<Record> changeInsertRecords() {
-    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
-
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 6, "name", "mack", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    return builder.build();
-  }
-
-  public List<Record> changeDeleteRecords() {
-    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    return builder.build();
-  }
 
   protected DataFile dataFileForPositionDelete;
 

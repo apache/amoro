@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.util;
 
+import java.time.Instant;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.data.GenericRowData;
@@ -41,6 +42,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.table.api.Expressions.e;
 import static org.apache.flink.table.api.Expressions.row;
 
 public class DataUtil {
@@ -84,6 +86,8 @@ public class DataUtil {
         row[i] = StringData.fromString((String) values[i]);
       } else if (values[i] instanceof LocalDateTime) {
         row[i] = TimestampData.fromLocalDateTime(((LocalDateTime) values[i]));
+      } else if (values[i] instanceof Instant) {
+        row[i] = TimestampData.fromInstant((Instant) values[i]);
       } else {
         row[i] = values[i];
       }
