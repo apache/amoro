@@ -81,10 +81,9 @@ public class OverwriteHiveFiles implements OverwriteFiles {
   @Override
   public OverwriteFiles addFile(DataFile file) {
     delegate.addFile(file);
-
-    String tableLocation = hiveTable.getSd().getLocation();
+    String hiveLocationRoot = table.hiveLocation();
     String dataFileLocation = file.path().toString();
-    if (dataFileLocation.toLowerCase().contains(tableLocation.toLowerCase())) {
+    if (dataFileLocation.toLowerCase().contains(hiveLocationRoot.toLowerCase())) {
       // only handle file in hive location
       this.addFiles.add(file);
     }
@@ -94,9 +93,9 @@ public class OverwriteHiveFiles implements OverwriteFiles {
   @Override
   public OverwriteFiles deleteFile(DataFile file) {
     delegate.deleteFile(file);
-    String tableLocation = hiveTable.getSd().getLocation();
+    String hiveLocation = table.hiveLocation();
     String dataFileLocation = file.path().toString();
-    if (dataFileLocation.toLowerCase().contains(tableLocation.toLowerCase())) {
+    if (dataFileLocation.toLowerCase().contains(hiveLocation.toLowerCase())) {
       // only handle file in hive location
       this.deleteFiles.add(file);
     }
@@ -236,12 +235,12 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     Types.StructType partitionSchema = table.spec().partitionType();
 
     Set<String> checkedPartitionValues = Sets.newHashSet();
-    Set<String> deleteFileLocations = Sets.newHashSet();
+    Set<Path> deleteFileLocations = Sets.newHashSet();
 
     for (DataFile dataFile : deleteFiles) {
       List<String> values = HivePartitionUtil.partitionValuesAsList(dataFile.partition(), partitionSchema);
       String pathValue = Joiner.on("/").join(values);
-      deleteFileLocations.add(dataFile.path().toString());
+      deleteFileLocations.add(new Path(dataFile.path().toString()));
       if (checkedPartitionValues.contains(pathValue)) {
         continue;
       }
@@ -260,14 +259,15 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     return partitions;
   }
 
-  private void checkPartitionDelete(Set<String> deleteFiles, Partition partition) {
+  private void checkPartitionDelete(Set<Path> deleteFiles, Partition partition) {
     String partitionLocation = partition.getSd().getLocation();
     List<FileStatus> files = table.io().list(partitionLocation);
     for (FileStatus f : files) {
-      String filePath = f.getPath().toString();
+      Path filePath = f.getPath();
       if (!deleteFiles.contains(filePath)) {
         throw new CannotAlterHiveLocationException(
-            "can't delete hive partition: " + partition + ", file under partition is not deleted: " + filePath);
+            "can't delete hive partition: " + partitionToString(partition) + ", file under partition is not deleted: " +
+                filePath.toString());
       }
     }
   }
@@ -316,7 +316,8 @@ public class OverwriteHiveFiles implements OverwriteFiles {
         // if exists partition to delete with same value
         // make sure location is different
         if (isPathEquals(location, deleteLocation)) {
-          throw new CannotAlterHiveLocationException("can't create new partition: " + p + ", this partition will be " +
+          throw new CannotAlterHiveLocationException("can't create new partition: " + partitionToString(p) + ", this " +
+              "partition will be " +
               "delete and re-create with same location");
         } else {
           partitions.add(p);
@@ -331,7 +332,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
           // exists same location, skip create operation
           continue;
         }
-        throw new CannotAlterHiveLocationException("can't create new partition: " + p +
+        throw new CannotAlterHiveLocationException("can't create new partition: " + partitionToString(p) +
             ", this partition exists in hive with different location: " + locationInHive);
       } catch (NoSuchObjectException e) {
         partitions.add(p);
@@ -422,5 +423,10 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     Path path1 = new Path(pathA);
     Path path2 = new Path(pathB);
     return path1.equals(path2);
+  }
+
+  private String partitionToString(Partition p) {
+    return "Partition(values: [" + Joiner.on("/").join(p.getValues()) +
+        "], location: " + p.getSd().getLocation() + ")";
   }
 }

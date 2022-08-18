@@ -1,5 +1,6 @@
 package com.netease.arctic.hive;
 
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import java.io.IOException;
@@ -25,7 +26,9 @@ public class MockDataFileBuilder {
   }
 
   public DataFile build(String valuePath, String path) {
-    String finalPath = hiveTable.getSd().getLocation() + path;
+    String hiveLocation = ((SupportHive) table).hiveLocation();
+
+    String finalPath = hiveLocation + path;
     DataFiles.Builder builder =  DataFiles.builder(table.spec())
         .withPath(finalPath)
         .withFileSizeInBytes(0)

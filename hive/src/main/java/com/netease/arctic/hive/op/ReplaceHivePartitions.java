@@ -63,7 +63,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   @Override
   public ReplacePartitions addFile(DataFile file) {
     delegate.addFile(file);
-    String tableLocation = hiveTable.getSd().getLocation();
+    String tableLocation = table.hiveLocation();
     String dataFileLocation = file.path().toString();
     if (dataFileLocation.toLowerCase().contains(tableLocation.toLowerCase())) {
       // only handle file in hive location

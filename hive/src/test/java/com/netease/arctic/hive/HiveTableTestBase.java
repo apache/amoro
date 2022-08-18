@@ -131,13 +131,13 @@ public class HiveTableTestBase extends TableTestBase {
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+        //.withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
 
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+        //.withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
