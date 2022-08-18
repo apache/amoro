@@ -74,7 +74,7 @@ create table test_db.test_table(
   name string,
   op_time timestamp,
   primary key(id)
-) partitioned by(days(op_time)) using arctic;
+) using arctic partitioned by(days(op_time));
 ```
 
 ## 实时写入与读取
