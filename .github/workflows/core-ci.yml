@@ -37,4 +37,4 @@ jobs:
         run: mvn install -pl '!trino'
 
       - name: Build Flink 1.14 with Maven
-        run: mvn clean package -pl 'com.netease.arctic:arctic-flink' -Pflink-1.14 -am
+        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.14' -Pflink-1.14 -am
