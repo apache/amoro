@@ -71,7 +71,7 @@ public class FileInfoCacheService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(FileInfoCacheService.class);
 
   public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
-    if (needFillCache(tableCommitMeta)) {
+    if (needFixCacheFromTable(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;
     }
@@ -121,8 +121,8 @@ public class FileInfoCacheService extends IJDBCService {
 
   public Long getCachedMaxTime(TableIdentifier identifier, String innerTable) {
     try (SqlSession sqlSession = getSqlSession(true)) {
-      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      return fileInfoCacheMapper.getCachedMaxTime(identifier, innerTable);
+      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+      return snapInfoCacheMapper.getCachedMaxTime(identifier, innerTable);
     }
   }
 
@@ -252,7 +252,7 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
-  private boolean needFillCache(TableCommitMeta tableCommitMeta) {
+  private boolean needFixCacheFromTable(TableCommitMeta tableCommitMeta) {
     if (CollectionUtils.isNotEmpty(tableCommitMeta.getChanges())) {
       TableChange tableChange = tableCommitMeta.getChanges().get(0);
       return !(snapshotIsCached(tableCommitMeta.getTableIdentifier(), tableChange.getInnerTable(),

@@ -184,9 +184,4 @@ public interface FileInfoCacheMapper {
           "watermark desc limit 1")
   Timestamp getWatermark(@Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("innerTable") String innerTable);
-
-  @Select("select max(commit_time) from " + TABLE_NAME + " where table_identifier = " +
-      "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and " +
-      "inner_table = #{type}")
-  Long getCachedMaxTime(@Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("type") String tableType);
 }
