@@ -69,7 +69,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     this.targetFileSize = targetFileSize;
     this.mask = mask;
     this.partitionKey = new PartitionKey(spec, schema);
-    this.primaryKey = new PrimaryKeyData(primaryKeySpec, schema);
+    this.primaryKey = primaryKeySpec == null ? null : new PrimaryKeyData(primaryKeySpec, schema);
   }
 
   @Override
@@ -100,8 +100,11 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   protected TaskWriterKey buildWriterKey(T row) {
     StructLike structLike = asStructLike(row);
     partitionKey.partition(structLike);
-    primaryKey.primaryKey(structLike);
-    DataTreeNode node = primaryKey.treeNode(mask);
+    DataTreeNode node = null;
+    if (primaryKey != null) {
+      primaryKey.primaryKey(structLike);
+      node = primaryKey.treeNode(mask);
+    }
     return new TaskWriterKey(partitionKey, node, DataFileType.BASE_FILE);
   }
 

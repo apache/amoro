@@ -50,8 +50,8 @@ jobs:
 
       - name: test for flink 1.12
         if: steps.changed-files.outputs.flink1_12 == 'true'
-        run: mvn package -pl 'com.netease.arctic:arctic-flink' -Pflink-1.12 -am
+        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.12' -Pflink-1.12 -am
 
       - name: test for flink 1.14
         if: steps.changed-files.outputs.flink1_14 == 'true'
-        run: mvn package -pl 'com.netease.arctic:arctic-flink' -Pflink-1.14 -am
+        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.14' -Pflink-1.14 -am

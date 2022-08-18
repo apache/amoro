@@ -40,7 +40,7 @@ public class GenericChangeTaskWriter extends ChangeTaskWriter<Record> {
   private final InternalRecordWrapper wrapper;
   private final ChangeAction writeAction;
 
-  GenericChangeTaskWriter(FileFormat format, FileAppenderFactory<Record> appenderFactory,
+  public GenericChangeTaskWriter(FileFormat format, FileAppenderFactory<Record> appenderFactory,
                           OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
                           long mask, Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec,
                           ChangeAction writeAction) {
