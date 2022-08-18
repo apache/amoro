@@ -51,6 +51,7 @@ CREATE TABLE user_dim (
     WATERMARK FOR opt AS opt
 ) LIKE arctic_catalog.default_db.`user`;
 
+-- 开启 Arctic 表流读和维表的配置
 SELECT order_id, price, user_id, name, age 
 FROM orders
 LEFT JOIN user_dim /*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/
@@ -59,3 +60,8 @@ ON orders.user_id = user_dim.id
 
 ```
 
+- 当 Arctic 作为维表（user 表）数据量很大时，需要一定的存量数据加载时间。在此期间，左表（orders）的数据会缓存在 Join 算子中，直到维表存量数据加载完，
+才会触发 Join 算子的关联操作并向下游输出数据。
+- 现阶段维表读 Arctic file-store 会存在一定的时间延迟，如果左表（orders）的数据是毫秒级延迟的实时数据，需要指定允许一定时间的延迟，让左表数据缓存一段时间后，再触发 Join。
+如允许 10s 的延迟：WATERMARK FOR order_time AS order_time - INTERVAL '10' SECOND，避免左表（orders）的数据比维表数据快，导致 Join 关联不上
+维表侧（user 表）的数据。
