@@ -97,8 +97,8 @@ public class SparkTestContext extends ExternalResource {
   protected static SparkSession spark = null;
   protected static MockArcticMetastoreServer ams = new MockArcticMetastoreServer();
   protected static String amsUrl;
-  protected static String catalogName_arctic;
-  protected static String catalogName_hive;
+  protected static String catalogNameArctic;
+  protected static String catalogNameHive;
   protected List<Object[]> rows;
   private static SparkTestContext sparkTestContext;
   private static int refCount = 0;
@@ -107,15 +107,7 @@ public class SparkTestContext extends ExternalResource {
 
   protected static final AtomicInteger testCount = new AtomicInteger(0);
 
-  public static SparkTestContext getSparkTestContext () {
-    if (refCount == 0) {
-      sparkTestContext = new SparkTestContext();
-    }
-    return sparkTestContext;
-  }
-
-  public static
-  void cleanUpAdditionSparkConfigs() {
+  public static void cleanUpAdditionSparkConfigs() {
     additionSparkConfigs.clear();
   }
   @BeforeClass
@@ -151,7 +143,7 @@ public class SparkTestContext extends ExternalResource {
       amsUrl = "thrift://127.0.0.1:" + ams.port();
 
       CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
-      catalogName_arctic = arctic.getCatalogName();
+      catalogNameArctic = arctic.getCatalogName();
       ams.handler().createCatalog(arctic);
   }
 
@@ -166,7 +158,7 @@ public class SparkTestContext extends ExternalResource {
 
     HiveConf entries = hms.hiveConf();
     CatalogMeta arctic_hive = HiveCatalogMetaTestUtil.createArcticCatalog(testArcticDir,entries);
-    catalogName_hive = arctic_hive.getCatalogName();
+    catalogNameHive = arctic_hive.getCatalogName();
     ams.handler().createCatalog(arctic_hive);
   }
 
@@ -182,13 +174,13 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "471859200");
 
-    sparkConfigs.put("spark.sql.catalog." + catalogName_arctic, ArcticSparkCatalog.class.getName());
-    sparkConfigs.put("spark.sql.catalog." + catalogName_arctic + ".type", "arctic");
-    sparkConfigs.put("spark.sql.catalog." + catalogName_arctic + ".url", amsUrl + "/" + catalogName_arctic);
+    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
+    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic + ".type", "arctic");
+    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
 
-    sparkConfigs.put("spark.sql.catalog." + catalogName_hive, ArcticSparkCatalog.class.getName());
-    sparkConfigs.put("spark.sql.catalog." + catalogName_hive + ".type", "hive");
-    sparkConfigs.put("spark.sql.catalog." + catalogName_hive + ".url", amsUrl + "/" + catalogName_hive);
+    sparkConfigs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
+    sparkConfigs.put("spark.sql.catalog." + catalogNameHive + ".type", "hive");
+    sparkConfigs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
 
     sparkConfigs.putAll(additionSparkConfigs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));

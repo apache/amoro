@@ -36,7 +36,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("drop database if exists db_def");
     sql("drop database if exists db_test");
     sql("drop database if exists db");
@@ -45,7 +45,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testDatabaseDDL() throws Exception {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("show databases");
     Assert.assertEquals(0, rows.size());
 
@@ -60,7 +60,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testArcticCatalogTableDDL() throws Exception {
-    TableIdentifier ident = TableIdentifier.of(catalogName_arctic, "def", "t1");
+    TableIdentifier ident = TableIdentifier.of(catalogNameArctic, "def", "t1");
     doTableCreateTest(ident);
     doTablePropertiesAlterTest(ident);
     doTableColumnAlterTest(ident);
@@ -70,7 +70,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   private void doTableCreateTest(TableIdentifier ident)   {
     sql("use " + ident.getCatalog());
-    if (catalogName_arctic.equals(ident.getCatalog())){
+    if (catalogNameArctic.equals(ident.getCatalog())){
       sql("create database " + ident.getDatabase());
     }
 

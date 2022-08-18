@@ -39,8 +39,8 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTestBase {
 
   final String database = "ddd";
   final String table = "tbl";
-  final String tablePath = catalogName_arctic + "." + database + "." + table;
-  final TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
+  final String tablePath = catalogNameArctic + "." + database + "." + table;
+  final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
   final Schema schema = new Schema(
       Types.NestedField.of(1, false, "id", Types.IntegerType.get()),
       Types.NestedField.of(2, false, "data", Types.StringType.get()),
@@ -51,13 +51,13 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTestBase {
 
   @Before
   public void setUp() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists {0} ", database);
   }
 
   @After
   public void cleanUp() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("drop table  if exists {0}.{1}", database, table);
     sql("drop database {0}", database);
   }
@@ -165,7 +165,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTestBase {
 
   @Test
   public void testV2ApiKeyedTable() throws Exception {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create table {0}.{1} (" +
         " id int, data string, ts timestamp, primary key (id) \n" +
         ") using arctic partitioned by (days(ts)) ", database, table);

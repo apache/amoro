@@ -38,7 +38,7 @@ public class TestUnKeyedTableDML extends SparkTestBase {
 
   @Before
   public void prepareTable() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create database " + database);
 
     sql(createTableTemplate, database, table);

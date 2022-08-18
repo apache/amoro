@@ -37,13 +37,13 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists " + database);
   }
 
   @Test
   public void testCreateKeyedTable() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -75,7 +75,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testCreateKeyedTableLike() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, targetTable);
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, targetTable);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -103,7 +103,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testCreateUnKeyedTableLike() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, targetTable);
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, targetTable);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +

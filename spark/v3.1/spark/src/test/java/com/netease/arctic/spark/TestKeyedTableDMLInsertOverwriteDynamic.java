@@ -32,13 +32,13 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
   private final String database = "db";
   private final String table = "testA";
   private KeyedTable keyedTable;
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, table);
+  private final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
 
   private String contextOverwriteMode;
 
   @Before
   public void before() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +

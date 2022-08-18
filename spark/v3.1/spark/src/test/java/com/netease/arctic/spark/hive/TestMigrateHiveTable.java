@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.spark.SparkTestBase;
-import com.netease.arctic.spark.SparkTestContext;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 
@@ -40,13 +39,13 @@ public class TestMigrateHiveTable extends SparkTestBase {
 
   @Before
   public void setUpArcticDatabase(){
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists " + database);
   }
 
   @After
   public void cleanUpAllTables(){
-    sql("drop table {0}.{1}.{2}", catalogName_arctic, database, table);
+    sql("drop table {0}.{1}.{2}", catalogNameArctic, database, table);
     sql("drop table {0}.{1}.{2}", "spark_catalog", sourceDatabase, sourceTable);
     sql("drop database if exists " + database);
   }
@@ -74,12 +73,12 @@ public class TestMigrateHiveTable extends SparkTestBase {
 
     sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
         sourceDatabase, sourceTable,
-        catalogName_arctic, database, table);
+        catalogNameArctic, database, table);
 
-    rows = sql("select * from {0}.{1}.{2}", catalogName_arctic, database, table);
+    rows = sql("select * from {0}.{1}.{2}", catalogNameArctic, database, table);
     Assert.assertEquals(6, rows.size());
 
-    ArcticTable t = loadTable(catalogName_arctic, database, table);
+    ArcticTable t = loadTable(catalogNameArctic, database, table);
     UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(3, partitionFiles.size());
@@ -104,12 +103,12 @@ public class TestMigrateHiveTable extends SparkTestBase {
 
     sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
         sourceDatabase, sourceTable,
-        catalogName_arctic, database, table);
+        catalogNameArctic, database, table);
 
-    rows = sql("select * from {0}.{1}.{2}", catalogName_arctic, database, table);
+    rows = sql("select * from {0}.{1}.{2}", catalogNameArctic, database, table);
     Assert.assertEquals(5, rows.size());
 
-    ArcticTable t = loadTable(catalogName_arctic, database, table);
+    ArcticTable t = loadTable(catalogNameArctic, database, table);
     UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(1, partitionFiles.size());

@@ -44,11 +44,11 @@ public class TestOptimizeWrite extends SparkTestBase {
   private final String database = "db";
   private final String sinkTable = "sink_table";
   private final String sourceTable = "source_table";
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName_arctic, database, sinkTable);
+  private final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, sinkTable);
 
   @Before
   public void before() {
-    sql("use " + catalogName_arctic);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists {0}", database);
     List<Row> rows = Lists.newArrayList(
         RowFactory.create(1, "aaa", "aaa"),

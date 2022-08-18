@@ -23,7 +23,7 @@ public class TestCreateTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("create database if not exists " + database);
   }
 
@@ -36,7 +36,7 @@ public class TestCreateTableDDL extends SparkTestBase {
   @Test
   public void testCreateKeyedTableWithPartitioned() throws TException {
     // hive style
-    TableIdentifier identifierA = TableIdentifier.of(catalogName_hive, database, tableA);
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -75,12 +75,12 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts", "dt"),
         Lists.newArrayList("ts", "dt"));
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
 
     // column reference style
-    TableIdentifier identifierB = TableIdentifier.of(catalogName_hive, database, tableB);
+    TableIdentifier identifierB = TableIdentifier.of(catalogNameHive, database, tableB);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -122,14 +122,14 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts", "dt"),
         Lists.newArrayList("ts", "dt"));
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
   }
 
   @Test
   public void testCreateKeyedTableUnPartitioned() throws TException {
-    TableIdentifier identifierA = TableIdentifier.of(catalogName_hive, database, tableA);
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
 
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -164,7 +164,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name"),
         Lists.newArrayList());
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
   }
@@ -173,7 +173,7 @@ public class TestCreateTableDDL extends SparkTestBase {
   @Test
   public void testCreateUnKeyedTableWithPartitioned() throws TException {
     // hive style
-    TableIdentifier identifierA = TableIdentifier.of(catalogName_hive, database, tableA);
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string \n " +
@@ -206,12 +206,12 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts", "dt"),
         Lists.newArrayList("ts", "dt"));
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableA);
     assertTableNotExist(identifierA);
 
     // column reference style
-    TableIdentifier identifierB = TableIdentifier.of(catalogName_hive, database, tableB);
+    TableIdentifier identifierB = TableIdentifier.of(catalogNameHive, database, tableB);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -248,7 +248,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts", "dt"),
         Lists.newArrayList("ts", "dt"));
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
 
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifierB);
@@ -256,7 +256,7 @@ public class TestCreateTableDDL extends SparkTestBase {
 
   @Test
   public void testCreateUnKeyedTableUnPartitioned() throws TException {
-    TableIdentifier identifier = TableIdentifier.of(catalogName_hive, database, tableB);
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableB);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n" +
@@ -287,7 +287,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts"),
         Lists.newArrayList());
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     assertTableNotExist(identifier);
   }
@@ -311,7 +311,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts"),
         Lists.newArrayList());
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
@@ -340,7 +340,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts", "dt"),
         Lists.newArrayList("ts", "dt"));
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
@@ -373,7 +373,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts", "dt"),
         Lists.newArrayList("ts", "dt"));
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
@@ -403,7 +403,7 @@ public class TestCreateTableDDL extends SparkTestBase {
         Lists.newArrayList("id", "name", "ts"),
         Lists.newArrayList());
 
-    sql("use " + catalogName_hive);
+    sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
