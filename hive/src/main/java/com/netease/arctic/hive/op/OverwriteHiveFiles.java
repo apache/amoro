@@ -3,9 +3,12 @@ package com.netease.arctic.hive.op;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.utils.FileUtil;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -161,7 +164,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
   public void commit() {
     if (!table.spec().isUnpartitioned()) {
       this.partitionToDelete = getDeletePartition();
-      this.partitionToCreate = getCreatePartition();
+      this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
     delegate.commit();
@@ -178,7 +181,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     return delegate.updateEvent();
   }
 
-  protected List<Partition> getCreatePartition() {
+  protected List<Partition> getCreatePartition(List<Partition> partitionToDelete) {
     if (this.addFiles.isEmpty()) {
       return Lists.newArrayList();
     }
@@ -209,6 +212,13 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles);
       partitions.add(p);
     }
+    for (String val : partitionLocationMap.keySet()) {
+      String partitionLocation = partitionLocationMap.get(val);
+      List<DataFile> dataFiles = partitionDataFileMap.get(val);
+      checkCreatePartitionDataFiles(dataFiles, partitionLocation);
+    }
+
+    partitions = filterNewPartitionNonExists(partitions, partitionToDelete);
     return partitions;
   }
 
@@ -226,20 +236,105 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     Types.StructType partitionSchema = table.spec().partitionType();
 
     Set<String> checkedPartitionValues = Sets.newHashSet();
+    Set<String> deleteFileLocations = Sets.newHashSet();
 
     for (DataFile dataFile : deleteFiles) {
       List<String> values = HivePartitionUtil.partitionValuesAsList(dataFile.partition(), partitionSchema);
       String pathValue = Joiner.on("/").join(values);
+      deleteFileLocations.add(dataFile.path().toString());
       if (checkedPartitionValues.contains(pathValue)) {
         continue;
       }
-
       try {
         Partition partition = hmsClient.run(c -> c.getPartition(db, tableName, values));
         partitions.add(partition);
-        checkedPartitionValues.add(pathValue);
       } catch (NoSuchObjectException e) {
-        checkedPartitionValues.add(pathValue);
+        // pass do nothing
+      } catch (TException | InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+      checkedPartitionValues.add(pathValue);
+    }
+
+    partitions.forEach(p -> checkPartitionDelete(deleteFileLocations, p));
+    return partitions;
+  }
+
+  private void checkPartitionDelete(Set<String> deleteFiles, Partition partition) {
+    String partitionLocation = partition.getSd().getLocation();
+    List<FileStatus> files = table.io().list(partitionLocation);
+    for (FileStatus f : files) {
+      String filePath = f.getPath().toString();
+      if (!deleteFiles.contains(filePath)) {
+        throw new CannotAlterHiveLocationException(
+            "can't delete hive partition: " + partition + ", file under partition is not deleted: " + filePath);
+      }
+    }
+  }
+
+  /**
+   * check all file with same partition key under same path
+   */
+  private void checkCreatePartitionDataFiles(List<DataFile> addFiles, String partitionLocation) {
+    Path partitionPath = new Path(partitionLocation);
+    for (DataFile df : addFiles) {
+      String fileDir = FileUtil.getFileDir(df.path().toString());
+      Path dirPath = new Path(fileDir);
+      if (!partitionPath.equals(dirPath)) {
+        throw new CannotAlterHiveLocationException(
+            "can't create new hive location: " + partitionLocation + " for data file: " + df.path().toString() +
+                " is not under partition location path"
+        );
+      }
+    }
+  }
+
+  /**
+   * filter partitionToCreate. make sure all partition non-exist in hive. or
+   * 0. partition is able to delete.
+   * 0.1 - not same location, allow to create
+   * 0.2 - same location, can't create ( delete partition will not delete files )
+   * 1. exists but location is same. skip
+   * 2. exists but location is not same, throw {@link CannotAlterHiveLocationException}
+   */
+  private List<Partition> filterNewPartitionNonExists(
+      List<Partition> partitionToCreate,
+      List<Partition> partitionToDelete) {
+    List<Partition> partitions = Lists.newArrayList();
+    Map<String, Partition> deletePartitionValueMap = Maps.newHashMap();
+    for (Partition p : partitionToDelete) {
+      String partValue = Joiner.on("/").join(p.getValues());
+      deletePartitionValueMap.put(partValue, p);
+    }
+
+    for (Partition p : partitionToCreate) {
+      String partValue = Joiner.on("/").join(p.getValues());
+      String location = p.getSd().getLocation();
+      Partition toDelete = deletePartitionValueMap.get(partValue);
+      if (toDelete != null) {
+        String deleteLocation = toDelete.getSd().getLocation();
+        // if exists partition to delete with same value
+        // make sure location is different
+        if (isPathEquals(location, deleteLocation)) {
+          throw new CannotAlterHiveLocationException("can't create new partition: " + p + ", this partition will be " +
+              "delete and re-create with same location");
+        } else {
+          partitions.add(p);
+          continue;
+        }
+      }
+
+      try {
+        Partition partitionInHive = hmsClient.run(c -> c.getPartition(db, tableName, p.getValues()));
+        String locationInHive = partitionInHive.getSd().getLocation();
+        if (isPathEquals(location, locationInHive)) {
+          // exists same location, skip create operation
+          continue;
+        }
+        throw new CannotAlterHiveLocationException("can't create new partition: " + p +
+            ", this partition exists in hive with different location: " + locationInHive);
+      } catch (NoSuchObjectException e) {
+        partitions.add(p);
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -321,5 +416,11 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private boolean isPathEquals(String pathA, String pathB) {
+    Path path1 = new Path(pathA);
+    Path path2 = new Path(pathB);
+    return path1.equals(path2);
   }
 }

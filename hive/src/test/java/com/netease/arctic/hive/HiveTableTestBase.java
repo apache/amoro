@@ -31,6 +31,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -151,38 +152,6 @@ public class HiveTableTestBase extends TableTestBase {
     AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
   }
 
-
-
-
-  public static class DataFileBuilder {
-    final TableIdentifier identifier;
-    final Table hiveTable;
-    final ArcticTable table;
-
-    public DataFileBuilder(ArcticTable table) throws TException {
-      identifier = table.id();
-      this.table = table;
-      hiveTable = hms.getClient().getTable(identifier.getDatabase(), identifier.getTableName());
-    }
-
-    public DataFile build(String valuePath, String path) {
-      DataFiles.Builder builder =  DataFiles.builder(table.spec())
-          .withPath(hiveTable.getSd().getLocation() + path)
-          .withFileSizeInBytes(0)
-          .withRecordCount(2);
-
-      if (!StringUtils.isEmpty(valuePath)){
-        builder = builder.withPartitionPath(valuePath);
-      }
-      return builder.build();
-    }
-
-    public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles){
-      return partValueFiles.stream().map(
-          kv -> this.build(kv.getKey(), kv.getValue())
-      ).collect(Collectors.toList());
-    }
-  }
 
   public static String getPartitionPath(List<String> values, PartitionSpec spec) {
     List<String> nameValues = Lists.newArrayList();

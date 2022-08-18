@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -47,7 +48,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
     );
-    DataFileBuilder dataFileBuilder = new DataFileBuilder(table);
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     ReplacePartitions replacePartitions = table.newReplacePartitions();
@@ -87,7 +88,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
     );
-    DataFileBuilder dataFileBuilder = new DataFileBuilder(table);
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     RewritePartitions rewritePartitions = table.newRewritePartitions();
@@ -128,7 +129,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
     );
-    DataFileBuilder dataFileBuilder = new DataFileBuilder(table);
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     Transaction tx = table.newTransaction();
