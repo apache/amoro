@@ -31,4 +31,29 @@
     <artifactId>arctic-flink-format-1.14</artifactId>
     <name>arctic-flink-format-1.14</name>
 
+    <properties>
+        <flink.version>1.14.5</flink.version>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-common</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+
 </project>
