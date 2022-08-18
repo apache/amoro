@@ -31,16 +31,16 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.metric.MetricConstant.INIT_END_MS;
-import static com.netease.arctic.flink.metric.MetricConstant.INIT_START_MS;
+import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP;
+import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP;
 
 /**
  * If using arctic table as build-table, FirstSplits can record the first splits planned by Enumerator.
  */
-public class FirstSplits implements Serializable {
+public class TemporalTableSplits implements Serializable {
 
   public static final long serialVersionUID = 1L;
-  public static final Logger LOGGER = LoggerFactory.getLogger(FirstSplits.class);
+  public static final Logger LOGGER = LoggerFactory.getLogger(TemporalTableSplits.class);
 
   private final MetricGroup metricGroup;
   private final long startTimeMs = System.currentTimeMillis();
@@ -48,7 +48,7 @@ public class FirstSplits implements Serializable {
   private long unfinishedCount;
   private boolean haveNotifiedReader = false;
 
-  public FirstSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
+  public TemporalTableSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
     this.splits = splits.stream().map(SourceSplit::splitId).collect(Collectors.toMap((k) -> k, (i) -> false));
 
@@ -56,7 +56,7 @@ public class FirstSplits implements Serializable {
     LOGGER.info("init splits at {}, size:{}", LocalDateTime.now(), unfinishedCount);
     this.metricGroup = metricGroup;
     if (metricGroup != null) {
-      metricGroup.gauge(INIT_START_MS, () -> startTimeMs);
+      metricGroup.gauge(TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP, () -> startTimeMs);
     }
   }
 
@@ -104,7 +104,7 @@ public class FirstSplits implements Serializable {
     if (unfinishedCount == 0) {
       LOGGER.info("finish all splits at {}", LocalDateTime.now());
       if (metricGroup != null) {
-        metricGroup.gauge(INIT_END_MS, System::currentTimeMillis);
+        metricGroup.gauge(TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP, System::currentTimeMillis);
       }
       return true;
     }

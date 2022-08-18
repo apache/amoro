@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitSerializer;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
-import com.netease.arctic.flink.read.hybrid.split.FirstSplits;
+import com.netease.arctic.flink.read.hybrid.split.TemporalTableSplits;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -137,17 +137,17 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
       }
     }
 
-    FirstSplits firstSplits = null;
+    TemporalTableSplits temporalTableSplits = null;
     if (in.readBoolean()) {
       byte[] bytes = new byte[in.readInt()];
       in.read(bytes);
       try {
-        firstSplits = InstantiationUtil.deserializeObject(bytes, FirstSplits.class.getClassLoader());
+        temporalTableSplits = InstantiationUtil.deserializeObject(bytes, TemporalTableSplits.class.getClassLoader());
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("deserialize FirstSplit error", e);
       }
     }
 
-    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation, firstSplits);
+    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation, temporalTableSplits);
   }
 }
