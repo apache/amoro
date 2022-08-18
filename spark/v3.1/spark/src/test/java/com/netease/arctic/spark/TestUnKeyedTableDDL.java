@@ -40,6 +40,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
     sql("drop database if exists db_def");
     sql("drop database if exists db_test");
     sql("drop database if exists db");
+    sql("drop database if exists arctic_db");
   }
 
   @Test

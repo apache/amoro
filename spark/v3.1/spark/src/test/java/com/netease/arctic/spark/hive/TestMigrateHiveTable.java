@@ -48,6 +48,7 @@ public class TestMigrateHiveTable extends SparkTestBase {
   public void cleanUpAllTables(){
     sql("drop table {0}.{1}.{2}", catalogName_arctic, database, table);
     sql("drop table {0}.{1}.{2}", "spark_catalog", sourceDatabase, sourceTable);
+    sql("drop database if exists " + database);
   }
 
   @Test

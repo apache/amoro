@@ -251,7 +251,6 @@
                 <configuration>
                     <includes>
                         <include>**/ArcticSparkHiveMainTest.java</include>
-                        <include>**/ArcticSparkNonHiveMainTest.java</include>
                     </includes>
                 </configuration>
             </plugin>

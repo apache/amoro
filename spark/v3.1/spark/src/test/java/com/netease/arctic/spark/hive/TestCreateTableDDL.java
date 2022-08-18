@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class TestCreateTableDDL extends SparkTestBase {
-  private final String database = "db_def";
+  private final String database = "db_hive";
   private final String tableA = "testA";
   private final String tableB = "testB";
 
@@ -29,7 +29,7 @@ public class TestCreateTableDDL extends SparkTestBase {
 
   @After
   public void clean() {
-    sql("drop database if exists " + database + " CASCADE");
+    sql("drop database if exists " + database);
   }
 
 
