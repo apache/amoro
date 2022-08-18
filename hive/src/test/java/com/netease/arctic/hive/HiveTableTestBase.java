@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive;
 
-import com.google.common.base.Joiner;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -30,20 +29,16 @@ import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Types;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -64,16 +59,22 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final TemporaryFolder tempFolder = new TemporaryFolder();
 
   protected static HMSMockServer hms  ;
- // protected static TestHiveMetastore metastore;
-  //protected static HiveConf hiveConf;
-  // protected static HiveMetaStoreClient metastoreClient;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
   protected static final TableIdentifier HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
+
+  public static final Schema HIVE_TABLE_SCHEMA = new Schema(
+      Types.NestedField.required(1, "id", Types.IntegerType.get()),
+      Types.NestedField.required(2, "name", Types.StringType.get()),
+      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone()),
+      Types.NestedField.required(4, "op_time_with_zone", Types.TimestampType.withZone()),
+      Types.NestedField.required(5, "d", Types.DecimalType.of(3, 0))
+  );
+
   protected static final PartitionSpec HIVE_SPEC =
-      PartitionSpec.builderFor(TABLE_SCHEMA).identity("name").build();
+      PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity("name").build();
 
   protected ArcticHiveCatalog hiveCatalog;
   protected UnkeyedHiveTable testHiveTable;
@@ -130,14 +131,12 @@ public class HiveTableTestBase extends TableTestBase {
     tableDir = temp.newFolder();
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
-        .newTableBuilder(HIVE_TABLE_ID, TABLE_SCHEMA)
-        //.withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
+        .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
 
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
-        .newTableBuilder(HIVE_PK_TABLE_ID, TABLE_SCHEMA)
-        //.withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
+        .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
@@ -165,9 +164,6 @@ public class HiveTableTestBase extends TableTestBase {
 
   /**
    * assert hive table partition location as expected
-   * @param partitionLocations
-   * @param table
-   * @throws TException
    */
   public static void assertHivePartitionLocations(Map<String, String> partitionLocations, ArcticTable table) throws TException {
     TableIdentifier identifier = table.id();

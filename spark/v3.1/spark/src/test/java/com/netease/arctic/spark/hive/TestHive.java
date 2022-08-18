@@ -4,6 +4,8 @@ import com.google.common.base.Joiner;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+
+import com.netease.arctic.spark.SparkTestContext;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.thrift.TException;
@@ -11,7 +13,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestHive extends SparkHiveTestContext {
+public class TestHive extends SparkTestContext {
 
 
   @BeforeClass

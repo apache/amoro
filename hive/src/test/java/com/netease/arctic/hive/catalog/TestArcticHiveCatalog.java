@@ -30,7 +30,6 @@ import org.junit.Test;
 
 public class TestArcticHiveCatalog extends HiveTableTestBase {
 
-
   @Test
   public void testCreateAndDropDatabase() {
     Assert.assertEquals(Sets.newHashSet("default", HIVE_DB_NAME), Sets.newHashSet(hiveCatalog.listDatabases()));
@@ -45,7 +44,7 @@ public class TestArcticHiveCatalog extends HiveTableTestBase {
   @Test
   public void testLoadUnkeyedTable() {
     UnkeyedTable loadTable = hiveCatalog.loadTable(HIVE_TABLE_ID).asUnkeyedTable();
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.schema().asStruct());
+    Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.spec());
     Assert.assertEquals(HIVE_TABLE_ID, loadTable.id());
   }
@@ -53,15 +52,15 @@ public class TestArcticHiveCatalog extends HiveTableTestBase {
   @Test
   public void testLoadKeyedTable() {
     KeyedTable loadTable = hiveCatalog.loadTable(HIVE_PK_TABLE_ID).asKeyedTable();
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.schema().asStruct());
+    Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.spec());
     Assert.assertEquals(HIVE_PK_TABLE_ID, loadTable.id());
     Assert.assertEquals(PRIMARY_KEY_SPEC, loadTable.primaryKeySpec());
 
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.baseTable().schema().asStruct());
+    Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.baseTable().schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.baseTable().spec());
 
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
+    Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.changeTable().spec());
   }
 }

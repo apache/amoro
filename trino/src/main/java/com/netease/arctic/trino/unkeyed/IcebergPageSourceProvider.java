@@ -109,7 +109,7 @@ import org.apache.iceberg.mapping.MappedField;
 import org.apache.iceberg.mapping.MappedFields;
 import org.apache.iceberg.mapping.NameMapping;
 import org.apache.iceberg.mapping.NameMappingParser;
-import org.apache.iceberg.parquet.ParquetSchemaUtil;
+import org.apache.iceberg.parquet.AdaptHiveParquetSchemaUtil;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.hadoop.metadata.BlockMetaData;
 import org.apache.parquet.hadoop.metadata.FileMetaData;
@@ -117,6 +117,7 @@ import org.apache.parquet.hadoop.metadata.ParquetMetadata;
 import org.apache.parquet.io.ColumnIO;
 import org.apache.parquet.io.MessageColumnIO;
 import org.apache.parquet.schema.MessageType;
+import org.joda.time.DateTimeZone;
 
 import javax.inject.Inject;
 import java.io.IOException;
@@ -127,6 +128,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -264,12 +266,12 @@ public class IcebergPageSourceProvider
     // is only columns needed by the filter.
     List<IcebergColumnHandle> deleteFilterRequiredSchema = getColumns(
         useIcebergDelete ?
-        new TrinoDeleteFilter(
-            dummyFileScanTask,
-            tableSchema,
-            ImmutableList.of(),
-            fileIO)
-            .requiredSchema() : tableSchema,
+            new TrinoDeleteFilter(
+                dummyFileScanTask,
+                tableSchema,
+                ImmutableList.of(),
+                fileIO)
+                .requiredSchema() : tableSchema,
         typeManager);
 
     PartitionSpec partitionSpec = PartitionSpecParser.fromJson(tableSchema, split.getPartitionSpecJson());
@@ -507,7 +509,8 @@ public class IcebergPageSourceProvider
           if (column.getType() == UUID && !"UUID".equals(orcColumn.getAttributes().get(ICEBERG_BINARY_TYPE))) {
             throw new TrinoException(
                 ICEBERG_BAD_DATA,
-                format("Expected ORC column for UUID data to be annotated with %s=UUID: %s",
+                format(
+                    "Expected ORC column for UUID data to be annotated with %s=UUID: %s",
                     ICEBERG_BINARY_TYPE,
                     orcColumn));
           }
@@ -768,7 +771,8 @@ public class IcebergPageSourceProvider
     try {
       FileSystem fileSystem = hdfsEnvironment.getFileSystem(identity, path, configuration);
       FSDataInputStream inputStream = hdfsEnvironment.doAs(identity, () -> fileSystem.open(path));
-      dataSource = new HdfsParquetDataSource(new ParquetDataSourceId(path.toString()),
+      dataSource = new HdfsParquetDataSource(
+          new ParquetDataSourceId(path.toString()),
           fileSize,
           inputStream,
           fileFormatDataSourceStats,
@@ -777,10 +781,10 @@ public class IcebergPageSourceProvider
       ParquetMetadata parquetMetadata = hdfsEnvironment.doAs(identity, () -> MetadataReader.readFooter(theDataSource));
       FileMetaData fileMetaData = parquetMetadata.getFileMetaData();
       MessageType fileSchema = fileMetaData.getSchema();
-      if (nameMapping.isPresent() && !ParquetSchemaUtil.hasIds(fileSchema)) {
+      if (nameMapping.isPresent() && !AdaptHiveParquetSchemaUtil.hasIds(fileSchema)) {
         // NameMapping conversion is necessary because MetadataReader converts all column names to lowercase and
         // NameMapping is case sensitive
-        fileSchema = ParquetSchemaUtil.applyNameMapping(fileSchema, convertToLowercase(nameMapping.get()));
+        fileSchema = AdaptHiveParquetSchemaUtil.applyNameMapping(fileSchema, convertToLowercase(nameMapping.get()));
       }
 
       // Mapping from Iceberg field ID to Parquet fields.
@@ -827,7 +831,7 @@ public class IcebergPageSourceProvider
           blocks,
           blockStarts.build(),
           dataSource,
-          UTC,
+          DateTimeZone.forID(TimeZone.getDefault().getID()),
           memoryContext,
           options);
 
