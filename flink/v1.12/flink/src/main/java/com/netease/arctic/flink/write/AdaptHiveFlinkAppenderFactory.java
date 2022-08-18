@@ -39,6 +39,7 @@ import org.apache.iceberg.io.FileAppender;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.orc.ORC;
+import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
@@ -116,7 +117,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .build();
 
         case PARQUET:
-          return Parquet.write(outputFile)
+          return AdaptHiveParquet.write(outputFile)
               .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkSchema, msgType))
               .setAll(props)
               .metricsConfig(metricsConfig)
@@ -163,7 +164,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
               .buildEqualityWriter();
 
         case PARQUET:
-          return Parquet.writeDeletes(outputFile.encryptingOutputFile())
+          return AdaptHiveParquet.writeDeletes(outputFile.encryptingOutputFile())
               .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(lazyEqDeleteFlinkSchema(), msgType))
               .withPartition(partition)
               .overwrite()
@@ -203,7 +204,7 @@ public class AdaptHiveFlinkAppenderFactory implements FileAppenderFactory<RowDat
 
         case PARQUET:
           RowType flinkPosDeleteSchema = FlinkSchemaUtil.convert(DeleteSchemaUtil.posDeleteSchema(posDeleteRowSchema));
-          return Parquet.writeDeletes(outputFile.encryptingOutputFile())
+          return AdaptHiveParquet.writeDeletes(outputFile.encryptingOutputFile())
               .createWriterFunc(msgType -> AdaptHiveFlinkParquetWriters.buildWriter(flinkPosDeleteSchema, msgType))
               .withPartition(partition)
               .overwrite()
