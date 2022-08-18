@@ -21,6 +21,7 @@ package com.netease.arctic.flink.write;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.ArcticTable;
+import java.util.List;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -34,8 +35,6 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 public class ArcticFileWriterTest extends FlinkTestBase {
 

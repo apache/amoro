@@ -292,7 +292,8 @@ public abstract class ArcticDeleteFilter<T> {
         Parquet.ReadBuilder builder = Parquet.read(input)
             .project(deleteSchema)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
+            .createReaderFunc(fileSchema ->
+                GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
 
         return builder.build();
 

@@ -20,6 +20,7 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
+import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -159,12 +160,12 @@ public class SparkWrite {
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriter<InternalRow> writer = ArcticSparkTaskWriters.buildFor(table)
+      TaskWriter<InternalRow> writer = ArcticSparkTaskWriterBuilder.buildFor(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .buildBaseWriter();
+          .buildWriter(BaseLocationKind.INSTANT);
 
       return new SparkInternalRowWriter(writer);
     }
