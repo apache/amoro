@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.write;
+package com.netease.arctic.flink.write;
 
-import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.write.AdaptHiveOperateToTableRelation;
+import com.netease.arctic.hive.write.AdaptHiveOutputFileFactory;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
-import com.netease.arctic.io.writer.GenericBaseTaskWriter;
-import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.io.writer.TaskWriterBuilder;
@@ -33,65 +32,67 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.utils.SchemaUtil;
+import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.MetadataColumns;
-import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.data.AdaptHiveGenericAppenderFactory;
-import org.apache.iceberg.data.GenericAppenderFactory;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.encryption.EncryptionManager;
+import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.sink.FlinkAppenderFactory;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Locale;
 
-/**
- * Builder to create writers for {@link KeyedTable} writting {@link Record}.
- */
-public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Record> {
+public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
 
-  private ArcticTable table;
-
+  private final ArcticTable table;
   private Long transactionId;
   private int partitionId = 0;
-  private int taskId = 0;
-  private ChangeAction changeAction = ChangeAction.INSERT;
+  private long taskId = 0;
+  private RowType flinkSchema;
+  private int mask;
 
-  private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
+  private FlinkTaskWriterBuilder(ArcticTable table) {
     this.table = table;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withTransactionId(long transactionId) {
+  public FlinkTaskWriterBuilder withTransactionId(long transactionId) {
     this.transactionId = transactionId;
     return this;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withPartitionId(int partitionId) {
+  public FlinkTaskWriterBuilder withPartitionId(int partitionId) {
     this.partitionId = partitionId;
     return this;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withTaskId(int taskId) {
+  public FlinkTaskWriterBuilder withTaskId(long taskId) {
     this.taskId = taskId;
     return this;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withChangeAction(ChangeAction changeAction) {
-    this.changeAction = changeAction;
+  public FlinkTaskWriterBuilder withFlinkSchema(RowType flinkSchema) {
+    this.flinkSchema = flinkSchema;
+    return this;
+  }
+
+  public FlinkTaskWriterBuilder withMask(int mask) {
+    this.mask = mask;
     return this;
   }
 
   @Override
-  public TaskWriter<Record> buildWriter(WriteOperationKind writeOperationKind) {
+  public TaskWriter<RowData> buildWriter(WriteOperationKind writeOperationKind) {
     LocationKind locationKind = AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
         table,
         writeOperationKind);
@@ -99,7 +100,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   @Override
-  public TaskWriter<Record> buildWriter(LocationKind locationKind) {
+  public TaskWriter<RowData> buildWriter(LocationKind locationKind) {
     if (locationKind == ChangeLocationKind.INSTANT) {
       return buildChangeWriter();
     } else if (locationKind == BaseLocationKind.INSTANT || locationKind == HiveLocationKind.INSTANT) {
@@ -109,38 +110,13 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     }
   }
 
-  public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-    if (table.isUnkeyedTable()) {
-      throw new IllegalArgumentException("UnKeyed table UnSupport position delete");
-    }
-    KeyedTable table = (KeyedTable) this.table;
-    Preconditions.checkNotNull(transactionId);
-    FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.BASE_FILE_FORMAT,
-        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-    GenericAppenderFactory appenderFactory =
-        new GenericAppenderFactory(table.baseTable().schema(), table.spec());
-    appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
-        MetricsModes.Full.get().toString());
-    appenderFactory.set(
-        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
-        MetricsModes.Full.get().toString());
-    return new SortedPosDeleteWriter<>(appenderFactory,
-        new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-            table.baseTable().encryption(), partitionId, taskId, transactionId),
-        fileFormat, mask, index, partitionKey);
-  }
-
-  private GenericBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
+  private FlinkBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
     Preconditions.checkNotNull(transactionId);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
     long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
         TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-    long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
 
     String baseLocation;
     EncryptionManager encryptionManager;
@@ -159,46 +135,63 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
       schema = table.schema();
     }
 
+    Schema selectSchema = TypeUtil.reassignIds(
+        FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), schema);
+
     OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
         new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId) :
         new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<Record> appenderFactory = HiveTableUtil.isHive(table) ?
-        new AdaptHiveGenericAppenderFactory(schema, table.spec()) :
-        new GenericAppenderFactory(schema, table.spec());
-    return new GenericBaseTaskWriter(fileFormat, appenderFactory,
+    FileAppenderFactory<RowData> appenderFactory = HiveTableUtil.isHive(table) ?
+        new AdaptHiveFlinkAppenderFactory(schema, flinkSchema, table.properties(), table.spec()) :
+        new FlinkAppenderFactory(
+            schema, flinkSchema, table.properties(), table.spec());
+    return new FlinkBaseTaskWriter(
+        fileFormat,
+        appenderFactory,
         outputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), primaryKeySpec);
+        table.io(), fileSizeBytes, mask,
+        selectSchema, flinkSchema, table.spec(), primaryKeySpec);
   }
 
-  private GenericChangeTaskWriter buildChangeWriter() {
+  private TaskWriter<RowData> buildChangeWriter() {
     if (table.isUnkeyedTable()) {
       throw new IllegalArgumentException("UnKeyed table UnSupport change writer");
     }
-    KeyedTable table = (KeyedTable) this.table;
 
-    Preconditions.checkNotNull(transactionId);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
-        TableProperties.CHANGE_FILE_FORMAT,
-        TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
+        TableProperties.BASE_FILE_FORMAT,
+        TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
     long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
         TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-    long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET) - 1;
-    Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
-    FileAppenderFactory<Record> appenderFactory = HiveTableUtil.isHive(table) ?
-        new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :
-        new GenericAppenderFactory(changeWriteSchema, table.spec());
-    return new GenericChangeTaskWriter(fileFormat,
+
+    KeyedTable keyedTable = table.asKeyedTable();
+    Schema selectSchema = TypeUtil.reassignIds(
+        FlinkSchemaUtil.convert(FlinkSchemaUtil.toSchema(flinkSchema)), keyedTable.baseTable().schema());
+    Schema changeSchemaWithMeta = SchemaUtil.changeWriteSchema(keyedTable.baseTable().schema());
+    RowType flinkSchemaWithMeta = FlinkSchemaUtil.convert(changeSchemaWithMeta);
+
+    OutputFileFactory outputFileFactory = new CommonOutputFileFactory(keyedTable.changeLocation(),
+        keyedTable.spec(), fileFormat, keyedTable.io(), keyedTable.baseTable().encryption(), partitionId,
+        taskId, transactionId);
+    FlinkAppenderFactory appenderFactory = new FlinkAppenderFactory(
+        changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
+    return new FlinkChangeTaskWriter(
+        fileFormat,
         appenderFactory,
-        new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
-            table.changeTable().encryption(), partitionId, taskId, transactionId),
-        table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
-        changeAction);
+        outputFileFactory,
+        keyedTable.io(), fileSizeBytes, mask,
+        selectSchema, flinkSchema, keyedTable.spec(), keyedTable.primaryKeySpec());
   }
 
-  public static AdaptHiveGenericTaskWriterBuilder builderFor(ArcticTable table) {
-    return new AdaptHiveGenericTaskWriterBuilder(table);
+  @Override
+  public SortedPosDeleteWriter<RowData> buildBasePosDeleteWriter(
+      long mask, long index, StructLike partitionKey) {
+    throw new UnsupportedOperationException("flink not support position delete");
+  }
+
+  public static FlinkTaskWriterBuilder buildFor(ArcticTable table) {
+    return new FlinkTaskWriterBuilder(table);
   }
 }

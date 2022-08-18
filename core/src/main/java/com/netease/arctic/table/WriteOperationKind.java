@@ -1,6 +1,6 @@
 package com.netease.arctic.table;
 
-public enum OperateKinds {
+public enum WriteOperationKind {
   APPEND,
   OVERWRITE,
   MINOR_OPTIMIZE,

@@ -25,7 +25,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.OperateKinds;
+import com.netease.arctic.table.WriteOperationKind;
 
 public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
 
@@ -33,10 +33,10 @@ public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
 
   @Override
   public LocationKind getLocationKindsFromOperateKind(
-      ArcticTable arcticTable, OperateKinds operateKinds) {
+      ArcticTable arcticTable, WriteOperationKind writeOperationKind) {
     if (arcticTable.isKeyedTable()) {
       if (arcticTable instanceof KeyedHiveTable) {
-        switch (operateKinds) {
+        switch (writeOperationKind) {
           case APPEND:
             return ChangeLocationKind.INSTANT;
           case MINOR_OPTIMIZE:
@@ -47,7 +47,7 @@ public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
             return HiveLocationKind.INSTANT;
         }
       } else {
-        switch (operateKinds) {
+        switch (writeOperationKind) {
           case APPEND:
             return ChangeLocationKind.INSTANT;
           case MINOR_OPTIMIZE:
@@ -59,7 +59,7 @@ public class AdaptHiveOperateToTableRelation implements OperateToTableRelation {
       }
     } else {
       if (arcticTable instanceof UnkeyedHiveTable) {
-        switch (operateKinds) {
+        switch (writeOperationKind) {
           case APPEND:
           case MAJOR_OPTIMIZE:
             return BaseLocationKind.INSTANT;

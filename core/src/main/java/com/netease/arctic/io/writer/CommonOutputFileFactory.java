@@ -29,7 +29,7 @@ import org.apache.iceberg.io.OutputFile;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Factory responsible for generating data file names for {@link com.netease.arctic.table.KeyedTable}.
+ * Factory responsible for generating data file names for change and base location
  * <p>
  * File name pattern:${tree_node_id}-${file_type}-${transaction_id}-${partition_id}-${task_id}-{count}
  * <ul>

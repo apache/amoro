@@ -32,7 +32,7 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.OperateKinds;
+import com.netease.arctic.table.WriteOperationKind;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -84,10 +84,10 @@ public class ArcticSparkTaskWriterBuilder implements TaskWriterBuilder<InternalR
   }
 
   @Override
-  public TaskWriter<InternalRow> buildWriter(OperateKinds operateKinds) {
+  public TaskWriter<InternalRow> buildWriter(WriteOperationKind writeOperationKind) {
     LocationKind locationKind = AdaptHiveOperateToTableRelation.INSTANT.getLocationKindsFromOperateKind(
         table,
-        operateKinds);
+        writeOperationKind);
     return buildWriter(locationKind);
   }
 

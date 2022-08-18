@@ -20,12 +20,12 @@ package com.netease.arctic.hive.write;
 
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.OperateKinds;
+import com.netease.arctic.table.WriteOperationKind;
 
 /**
- * Resolve the relation between {@link OperateKinds} and {@link LocationKind}
+ * Resolve the relation between {@link WriteOperationKind} and {@link LocationKind}
  */
 public interface OperateToTableRelation {
 
-  LocationKind getLocationKindsFromOperateKind(ArcticTable arcticTable, OperateKinds operateKinds);
+  LocationKind getLocationKindsFromOperateKind(ArcticTable arcticTable, WriteOperationKind writeOperationKind);
 }

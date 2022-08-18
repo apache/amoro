@@ -27,7 +27,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.OperateKinds;
+import com.netease.arctic.table.WriteOperationKind;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -61,11 +61,11 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
 
-      Assert.assertTrue(builder.buildWriter(OperateKinds.APPEND) instanceof GenericChangeTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.OVERWRITE) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.MINOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.MAJOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.FULL_OPTIMIZE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.APPEND) instanceof GenericChangeTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.MINOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof GenericBaseTaskWriter);
     }
     {
       AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
@@ -75,10 +75,10 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
 
-      Assert.assertTrue(builder.buildWriter(OperateKinds.APPEND) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.OVERWRITE) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.MAJOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
-      Assert.assertTrue(builder.buildWriter(OperateKinds.FULL_OPTIMIZE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.APPEND) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.OVERWRITE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.MAJOR_OPTIMIZE) instanceof GenericBaseTaskWriter);
+      Assert.assertTrue(builder.buildWriter(WriteOperationKind.FULL_OPTIMIZE) instanceof GenericBaseTaskWriter);
     }
   }
 

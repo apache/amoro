@@ -46,7 +46,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *            -| change
  *            -| base
  *            -| hive_data
- *                  -| ${timestamp_uuid}
+ *                  -| txid=${txid}
  *
  * For UnKeyed adapt hive with partitions the dir construct is :
  *    ${table_location}
@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *            -| hive_data
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
- *                            -| txid=${txid}
+ *                            -| ${timestamp_uuid}
  *
  * For Keyed adapt hive without partitions the dir construct is :
  *    ${table_location}
@@ -73,9 +73,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final long taskId;
   private final long transactionId;
 
-  private final String unPartitionTableTmpDir = System.currentTimeMillis() + "_" + UUID.randomUUID();
+  private final String unKeyedTmpDir = System.currentTimeMillis() + "_" + UUID.randomUUID();
 
-  private final String partitionTableTmpDir;
+  private final String keyedTmpDir;
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
@@ -96,7 +96,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId;
-    partitionTableTmpDir = "txid=" + transactionId;
+    keyedTmpDir = "txid=" + transactionId;
   }
 
 
@@ -112,17 +112,26 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     }
   }
 
-  private String fileLocation(StructLike partitionData, String fileName) {
+  private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {
     if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s/%s", baseLocation, unPartitionTableTmpDir, fileName);
+      if (key.getTreeNode() == null) {
+        return String.format("%s/%s/%s", baseLocation, unKeyedTmpDir, fileName);
+      } else {
+        return String.format("%s/%s/%s", baseLocation, keyedTmpDir, fileName);
+      }
     } else {
-      return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
-          partitionTableTmpDir, fileName);
+      if (key.getTreeNode() == null) {
+        return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
+            unKeyedTmpDir, fileName);
+      } else {
+        return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
+            keyedTmpDir, fileName);
+      }
     }
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {
-    String fileLocation = fileLocation(key.getPartitionKey(), generateFilename(key));
+    String fileLocation = fileLocation(key.getPartitionKey(), generateFilename(key), key);
     OutputFile outputFile = io.newOutputFile(fileLocation);
     return encryptionManager.encrypt(outputFile);
   }
