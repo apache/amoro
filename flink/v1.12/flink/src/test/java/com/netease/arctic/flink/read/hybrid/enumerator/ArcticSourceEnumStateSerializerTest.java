@@ -22,6 +22,7 @@ import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssignerTest;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
+import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.junit.Assert;
 import org.junit.Test;
@@ -44,12 +45,13 @@ public class ArcticSourceEnumStateSerializerTest extends ShuffleSplitAssignerTes
 
     List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
     shuffleSplitAssigner.onDiscoveredSplits(splitList);
+    TemporalJoinSplits splits = new TemporalJoinSplits(splitList, null);
 
     ArcticSourceEnumState expect = new ArcticSourceEnumState(
         shuffleSplitAssigner.state(),
         null,
         shuffleSplitAssigner.serializePartitionIndex(),
-        null);
+        splits);
 
     ArcticSourceEnumStateSerializer arcticSourceEnumStateSerializer = new ArcticSourceEnumStateSerializer();
     byte[] ser = arcticSourceEnumStateSerializer.serialize(expect);
@@ -81,5 +83,8 @@ public class ArcticSourceEnumStateSerializerTest extends ShuffleSplitAssignerTes
     }
 
     Assert.assertEquals(splitList.size(), actualSplits.size());
+
+    TemporalJoinSplits temporalJoinSplits = actual.temporalJoinSplits();
+    Assert.assertEquals(expect.temporalJoinSplits(), temporalJoinSplits);
   }
 }

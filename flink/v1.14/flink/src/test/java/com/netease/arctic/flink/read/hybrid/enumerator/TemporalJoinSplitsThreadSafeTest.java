@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
-import com.netease.arctic.flink.read.hybrid.split.TemporalTableSplits;
+import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,10 +32,10 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class TemporalTableSplitsThreadSafeTest {
+public class TemporalJoinSplitsThreadSafeTest {
 
   @Test
-  public void testFirstSplits() {
+  public void testTemporalJoinSplits() {
     List<String> allSplit = new LinkedList<>();
     for (int i = 0; i < 100; i++) {
       allSplit.add(UUID.randomUUID().toString());
@@ -49,7 +49,7 @@ public class TemporalTableSplitsThreadSafeTest {
   }
 
   public void round(List<String> allSplit, Collection<ArcticSplit> arcticSplits) {
-    TemporalTableSplits temporalTableSplits = new TemporalTableSplits(arcticSplits, null);
+    TemporalJoinSplits temporalJoinSplits = new TemporalJoinSplits(arcticSplits, null);
     int n = allSplit.size();
 
     List<String> s1 = new ArrayList<>(allSplit.subList(0, (int) (2.0 / 3 * n))),
@@ -63,15 +63,15 @@ public class TemporalTableSplitsThreadSafeTest {
     List<ArcticSplit> as1 = new ArrayList<>(as.subList(0, (int) (2.0 / 3 * an)));
     List<ArcticSplit> as2 = new ArrayList<>(as.subList((int) (1.0 / 3 * an), an));
     CompletableFuture<Void> f1 = CompletableFuture.runAsync(() ->
-        temporalTableSplits.removeAndReturnIfAllFinished(s1)
+        temporalJoinSplits.removeAndReturnIfAllFinished(s1)
     );
     CompletableFuture<Void> f2 = CompletableFuture.runAsync(() ->
-        temporalTableSplits.addSplitsBack(as1)
+        temporalJoinSplits.addSplitsBack(as1)
     );
-    CompletableFuture<Void> f3 = CompletableFuture.runAsync(() -> temporalTableSplits.removeAndReturnIfAllFinished(s2));
-    CompletableFuture<Void> f4 = CompletableFuture.runAsync(() -> temporalTableSplits.addSplitsBack(as2));
+    CompletableFuture<Void> f3 = CompletableFuture.runAsync(() -> temporalJoinSplits.removeAndReturnIfAllFinished(s2));
+    CompletableFuture<Void> f4 = CompletableFuture.runAsync(() -> temporalJoinSplits.addSplitsBack(as2));
     CompletableFuture.allOf(f1, f2, f3, f4).join();
-    Assert.assertTrue(temporalTableSplits.removeAndReturnIfAllFinished(allSplit));
+    Assert.assertTrue(temporalJoinSplits.removeAndReturnIfAllFinished(allSplit));
   }
 
   static class TestArcticSplit extends ArcticSplit {

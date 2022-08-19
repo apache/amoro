@@ -63,7 +63,7 @@ public class ArcticSourceEnumState {
   }
 
   @Nullable
-  public TemporalJoinSplits firstSplits() {
+  public TemporalJoinSplits temporalJoinSplits() {
     return temporalJoinSplits;
   }
 }

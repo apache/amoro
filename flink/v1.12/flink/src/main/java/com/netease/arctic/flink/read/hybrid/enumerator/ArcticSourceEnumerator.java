@@ -97,7 +97,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.enumeratorPosition = new AtomicReference<>();
     if (enumState != null) {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
-      this.temporalJoinSplits = enumState.firstSplits();
+      this.temporalJoinSplits = enumState.temporalJoinSplits();
     }
     this.dimTable = dimTable;
   }

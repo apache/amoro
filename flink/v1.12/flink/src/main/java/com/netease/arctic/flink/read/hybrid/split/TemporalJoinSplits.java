@@ -29,13 +29,14 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_END_TIMESTAMP;
 import static com.netease.arctic.flink.metric.MetricConstant.TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP;
 
 /**
- * If using arctic table as build-table, FirstSplits can record the first splits planned by Enumerator.
+ * If using arctic table as build-table, TemporalJoinSplits can record the first splits planned by Enumerator.
  */
 public class TemporalJoinSplits implements Serializable {
 
@@ -124,4 +125,22 @@ public class TemporalJoinSplits implements Serializable {
   public void notifyReader() {
     this.haveNotifiedReader = true;
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TemporalJoinSplits that = (TemporalJoinSplits) o;
+    return startTimeMs == that.startTimeMs &&
+        unfinishedCount == that.unfinishedCount &&
+        haveNotifiedReader == that.haveNotifiedReader &&
+        Objects.equals(metricGroup, that.metricGroup) &&
+        Objects.equals(splits, that.splits);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(metricGroup, startTimeMs, splits, unfinishedCount, haveNotifiedReader);
+  }
+
 }

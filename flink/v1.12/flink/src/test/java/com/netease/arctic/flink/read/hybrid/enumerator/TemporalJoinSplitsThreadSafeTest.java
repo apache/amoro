@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class TemporalJoinSplitsThreadSafeTest {
 
   @Test
-  public void testFirstSplits() {
+  public void testTemporalJoinSplits() {
     List<String> allSplit = new LinkedList<>();
     for (int i = 0; i < 100; i++) {
       allSplit.add(UUID.randomUUID().toString());

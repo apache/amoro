@@ -85,11 +85,11 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
       }
     }
 
-    out.writeBoolean(enumState.firstSplits() != null);
-    if (enumState.firstSplits() != null) {
-      byte[] firstSplits = InstantiationUtil.serializeObject(enumState.firstSplits());
-      out.writeInt(firstSplits.length);
-      out.write(firstSplits);
+    out.writeBoolean(enumState.temporalJoinSplits() != null);
+    if (enumState.temporalJoinSplits() != null) {
+      byte[] temporalJoinSplits = InstantiationUtil.serializeObject(enumState.temporalJoinSplits());
+      out.writeInt(temporalJoinSplits.length);
+      out.write(temporalJoinSplits);
     }
 
     byte[] result = out.getCopyOfBuffer();

@@ -22,7 +22,7 @@ import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
-import com.netease.arctic.flink.read.hybrid.split.TemporalTableSplits;
+import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
@@ -56,7 +56,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * <p>
    * If its value is null, it means that we don't need to generate watermark. Won't check.
    */
-  private transient TemporalTableSplits temporalTableSplits = null;
+  private transient TemporalJoinSplits temporalJoinSplits = null;
   private final ArcticTableLoader loader;
   private final SplitEnumeratorContext<ArcticSplit> context;
   private final ContinuousSplitPlanner continuousSplitPlanner;
@@ -66,7 +66,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   /**
    * If true, using arctic table as build table.
    * {@link ArcticSourceEnumerator} will notify {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}
-   * after {@link TemporalTableSplits} having been read.
+   * after {@link TemporalJoinSplits} having been read.
    * Then {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader} will emit a Watermark values
    * Long.MAX_VALUE. Advancing TemporalJoinOperator's watermark can trigger the join operation and push the results to
    * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user arbitrary  probe side
@@ -97,7 +97,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.enumeratorPosition = new AtomicReference<>();
     if (enumState != null) {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
-      this.temporalTableSplits = enumState.firstSplits();
+      this.temporalJoinSplits = enumState.temporalJoinSplits();
     }
     this.dimTable = dimTable;
   }
@@ -143,8 +143,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
 
   private ContinuousEnumerationResult planSplits() {
     ContinuousEnumerationResult result = doPlanSplits();
-    if (dimTable && temporalTableSplits == null) {
-      temporalTableSplits = new TemporalTableSplits(result.splits(), context.metricGroup());
+    if (dimTable && temporalJoinSplits == null) {
+      temporalJoinSplits = new TemporalJoinSplits(result.splits(), context.metricGroup());
     }
     return result;
   }
@@ -197,10 +197,10 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * @param finishedSplitIds
    */
   public void checkAndNotifyReader(Collection<String> finishedSplitIds) {
-    if (temporalTableSplits == null || temporalTableSplits.isHaveNotifiedReader()) {
+    if (temporalJoinSplits == null || temporalJoinSplits.isHaveNotifiedReader()) {
       return;
     }
-    if (!temporalTableSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
+    if (!temporalJoinSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
       return;
     }
     notifyReaders();
@@ -210,8 +210,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     LOG.info("all splits finished, send events to readers");
     IntStream.range(0, context.currentParallelism())
         .forEach(i -> context.sendEventToSourceReader(i, InitializationFinishedEvent.INSTANCE));
-    temporalTableSplits.clear();
-    temporalTableSplits.notifyReader();
+    temporalJoinSplits.clear();
+    temporalJoinSplits.notifyReader();
   }
 
   @Override
@@ -221,7 +221,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       shuffleSplitRelation = ((ShuffleSplitAssigner) splitAssigner).serializePartitionIndex();
     }
     return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation,
-        temporalTableSplits);
+        temporalJoinSplits);
   }
 
   @Override

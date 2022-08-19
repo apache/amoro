@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitSerializer;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
-import com.netease.arctic.flink.read.hybrid.split.TemporalTableSplits;
+import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -85,11 +85,11 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
       }
     }
 
-    out.writeBoolean(enumState.firstSplits() != null);
-    if (enumState.firstSplits() != null) {
-      byte[] firstSplits = InstantiationUtil.serializeObject(enumState.firstSplits());
-      out.writeInt(firstSplits.length);
-      out.write(firstSplits);
+    out.writeBoolean(enumState.temporalJoinSplits() != null);
+    if (enumState.temporalJoinSplits() != null) {
+      byte[] temporalJoinSplits = InstantiationUtil.serializeObject(enumState.temporalJoinSplits());
+      out.writeInt(temporalJoinSplits.length);
+      out.write(temporalJoinSplits);
     }
 
     byte[] result = out.getCopyOfBuffer();
@@ -137,17 +137,17 @@ public class ArcticSourceEnumStateSerializer implements SimpleVersionedSerialize
       }
     }
 
-    TemporalTableSplits temporalTableSplits = null;
+    TemporalJoinSplits temporalJoinSplits = null;
     if (in.readBoolean()) {
       byte[] bytes = new byte[in.readInt()];
       in.read(bytes);
       try {
-        temporalTableSplits = InstantiationUtil.deserializeObject(bytes, TemporalTableSplits.class.getClassLoader());
+        temporalJoinSplits = InstantiationUtil.deserializeObject(bytes, TemporalJoinSplits.class.getClassLoader());
       } catch (ClassNotFoundException e) {
         throw new RuntimeException("deserialize FirstSplit error", e);
       }
     }
 
-    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation, temporalTableSplits);
+    return new ArcticSourceEnumState(pendingSplits, enumeratorOffset, shuffleSplitRelation, temporalJoinSplits);
   }
 }
