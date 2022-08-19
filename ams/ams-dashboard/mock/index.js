@@ -107,6 +107,48 @@ module.exports = {
       "hwtesrtrt1"]
     })
   },
+  'GET /ams/v1/catalogs/trino_online_env/databases/arctic100wdynamic/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'arctic_spark_test3'
+        },
+        {
+          name: 'arctic_test'
+        }
+      ]
+    })
+  },
+  'GET /ams/v1/catalogs/trino_online_env/databases/arctic100wfileSize/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'arctic_5555'
+        },
+        {
+          name: 'arctic_666'
+        }
+      ]
+    })
+  },
+  'GET /ams/v1/catalogs/local_catalog/databases/db/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'arctic_7777'
+        },
+        {
+          name: 'arctic_8888'
+        }
+      ]
+    })
+  },
   'GET /api/v1/as/db/t1/detail': (req, res) => {
     res.json({
       code: 200,

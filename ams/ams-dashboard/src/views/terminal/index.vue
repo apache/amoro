@@ -11,6 +11,7 @@
                   v-model:value="curCatalog"
                   style="width: 200px"
                   :options="catalogOptions"
+                  @change="changeUseCatalog"
                   >
                 </a-select>
               </div>
@@ -102,7 +103,6 @@ import { CheckCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-
 import { message } from 'ant-design-vue'
 import { getCatalogList } from '@/services/table.service'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
-import { useI18n } from 'vue-i18n'
 
 interface ISessionInfo {
   sessionId: number
@@ -125,7 +125,6 @@ export default defineComponent({
     LoadingOutlined
   },
   setup() {
-    const { t } = useI18n()
     const placeholder = reactive(usePlaceholder())
     const loading = ref<boolean>(false)
     const sqlEditorRef = ref<any>(null)
@@ -147,6 +146,8 @@ export default defineComponent({
     const sqlResultHeight = ref<number>(476)
 
     const bgcMap: IMap<string> = shallowReactive(debugResultBgcMap)
+    const storageSqlSourceKey = 'easylake-sql-source'
+    const storageUseCatalogKey = 'easylake-use-catalog'
 
     watch(
       () => readOnly,
@@ -177,13 +178,19 @@ export default defineComponent({
         })
       })
       if (catalogOptions.length) {
-        curCatalog.value = catalogOptions[0].value
+        const val = getValueFromStorageByKey(storageUseCatalogKey)
+        const index = catalogOptions.findIndex(ele => ele.value === val)
+        curCatalog.value = index > -1 ? val : catalogOptions[0].value
       }
     }
 
     const getShortcuts = async() => {
       const res: string[] = await getShortcutsList()
       shortcuts.push(...(res || []))
+    }
+
+    const changeUseCatalog = () => {
+      saveValueToStorage(storageUseCatalogKey, curCatalog.value)
     }
 
     const handleFull = () => {
@@ -292,13 +299,13 @@ export default defineComponent({
     const getLastSqlInfo = async() => {
       try {
         if (sqlEditorRef.value) {
-          sqlSource.value = ''
+          sqlSource.value = getValueFromStorageByKey(storageSqlSourceKey)
         }
         loading.value = true
         const res = await getLastDebugInfo()
         sessionId.value = res.sessionId
         if (res.sessionId > 0) {
-          if (sqlEditorRef.value) {
+          if (sqlEditorRef.value && !sqlSource.value) {
             sqlSource.value = res.sql || ''
           }
           runStatus.value = 'Running'
@@ -343,8 +350,18 @@ export default defineComponent({
       window.removeEventListener('mouseup', dragMounseUp)
     }
 
+    const saveValueToStorage = (key: string, value: string) => {
+      localStorage.setItem(key, value)
+    }
+
+    const getValueFromStorageByKey = (key: string) => {
+      return localStorage.getItem(key) || ''
+    }
+
     onBeforeUnmount(() => {
       clearTimeout(logInterval.value)
+      saveValueToStorage(storageSqlSourceKey, sqlSource.value)
+      console.log('onBeforeUnmount', sqlSource.value)
     })
 
     onMounted(() => {
@@ -375,7 +392,8 @@ export default defineComponent({
       generateCode,
       getPopupContainer,
       sqlResultHeight,
-      dragMounseDown
+      dragMounseDown,
+      changeUseCatalog
     }
   }
 })

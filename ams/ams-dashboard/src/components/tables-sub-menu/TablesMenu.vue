@@ -110,6 +110,8 @@ export default defineComponent({
       databaseList: [] as IMap<string>[],
       tableList: [] as IMap<string>[]
     })
+    const storageTableKey = 'easylake-menu-catalog-db-table'
+    const storageCataDBTable = JSON.parse(localStorage.getItem(storageTableKey) || '{}')
 
     const placeholder = reactive(usePlaceholder())
 
@@ -167,6 +169,11 @@ export default defineComponent({
     }
     const handleClickTable = (item: IMap<string>) => {
       state.tableName = item.label
+      localStorage.setItem(storageTableKey, JSON.stringify({
+        catalog: state.curCatalog,
+        database: state.database,
+        tableName: item.label
+      }))
       const path = item.type === 'HIVE' ? '/hive-tables' : '/tables'
       const pathQuery = {
         path,
@@ -195,7 +202,7 @@ export default defineComponent({
         }))
         if (state.catalogOptions.length) {
           const query = route.query
-          state.curCatalog = (query?.catalog)?.toString() || state.catalogOptions[0].value
+          state.curCatalog = storageCataDBTable.catalog || (query?.catalog)?.toString() || state.catalogOptions[0].value
         }
         getAllDatabaseList()
       }).finally(() => {
@@ -217,7 +224,8 @@ export default defineComponent({
           label: ele
         }))
         if (state.databaseList.length && !isSearch) {
-          state.database = state.databaseList[0].id
+          const index = state.databaseList.findIndex(ele => ele.id === storageCataDBTable.database)
+          state.database = index > -1 ? storageCataDBTable.database : (route.query?.db)?.toString() || state.databaseList[0].id || ''
           getAllTableList()
         }
       }).finally(() => {
@@ -246,6 +254,9 @@ export default defineComponent({
       })
     }
     onBeforeMount(() => {
+      const { database, tableName } = storageCataDBTable
+      state.database = database
+      state.tableName = tableName
       getCatalogOps()
     })
 
