@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.ops;
+package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
-import com.netease.arctic.hive.utils.HiveTableUtils;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -43,33 +43,33 @@ public class HiveSchemaUpdate extends KeyedSchemaUpdate {
 
   private ArcticTable arcticTable;
   private Table baseTable;
-  private CachedHiveClientPool hiveClientPool;
+  private HMSClient hiveClient;
 
-  public HiveSchemaUpdate(KeyedTable keyedTable, CachedHiveClientPool hiveClientPool) {
+  public HiveSchemaUpdate(KeyedTable keyedTable, HMSClient hiveClient) {
     super(keyedTable);
     this.arcticTable = keyedTable;
     this.baseTable = keyedTable.baseTable();
-    this.hiveClientPool = hiveClientPool;
+    this.hiveClient = hiveClient;
   }
 
   @Override
   public void commit() {
-    syncSchemaToHive();
     super.commit();
+    syncSchemaToHive();
   }
 
   private void syncSchemaToHive() {
-    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtils.loadHmsTable(hiveClientPool, arcticTable);
+    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable);
     if (tbl == null) {
       tbl = newHmsTable(arcticTable);
     }
     tbl.setSd(storageDescriptor(baseTable.schema()));
-    HiveTableUtils.persistTable(hiveClientPool, tbl);
+    HiveTableUtil.persistTable(hiveClient, tbl);
   }
 
   private StorageDescriptor storageDescriptor(Schema schema) {
     final StorageDescriptor storageDescriptor = new StorageDescriptor();
-    storageDescriptor.setCols(HiveSchemaUtil.hivePartitionFields(schema, baseTable.spec()));
+    storageDescriptor.setCols(HiveSchemaUtil.hiveTableFields(schema, baseTable.spec()));
     SerDeInfo serDeInfo = new SerDeInfo();
     storageDescriptor.setSerdeInfo(serDeInfo);
     return storageDescriptor;

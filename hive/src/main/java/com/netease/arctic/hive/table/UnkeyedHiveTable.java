@@ -23,6 +23,7 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.hive.op.ReplaceHivePartitions;
+import com.netease.arctic.hive.op.HiveSchemaUpdate;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
@@ -31,6 +32,7 @@ import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.UpdateSchema;
 
 import static com.netease.arctic.table.TableProperties.BASE_HIVE_LOCATION_ROOT;
 
@@ -84,8 +86,8 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
     return new HiveOperationTransaction(this, transaction, hiveClient);
   }
 
-  @Override
-  public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(this, hiveClientPool);
-  }
+  // @Override
+  // public UpdateSchema updateSchema() {
+  //   return new HiveSchemaUpdate(this, hiveClient);
+  // }
 }

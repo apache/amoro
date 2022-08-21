@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
+import java.util.ArrayList;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -69,4 +70,19 @@ public class HiveSchemaUtil {
     return org.apache.iceberg.hive.HiveSchemaUtil.convert(TypeUtil.select(schema, spec.identitySourceIds()));
   }
 
+  public static boolean compareSchema(Schema schema, PartitionSpec spec, List<FieldSchema> hiveSchema) {
+    List<FieldSchema> convertFields = hiveTableFields(schema, spec);
+    convertFields.forEach(fieldSchema -> {
+      fieldSchema.setName(fieldSchema.getName().toLowerCase());
+    });
+    if (convertFields.size() != hiveSchema.size()) {
+      return false;
+    }
+    for (FieldSchema fieldSchema : hiveSchema) {
+      if (!convertFields.contains(fieldSchema)) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
