@@ -1,5 +1,4 @@
 ams:
-  arctic.ams.cluster.name: default
   arctic.ams.server-host: 127.0.0.1
   arctic.ams.thrift.port: 1260
   arctic.ams.http.port: 1630
@@ -18,6 +17,11 @@ ams:
   #arctic.ams.mybatis.ConnectionUserName: {user}
   #arctic.ams.mybatis.ConnectionPassword: {password}
   #arctic.ams.database.type: mysql
+
+  #HA config
+  #arctic.ams.ha.enable: true
+  #arctic.ams.cluster.name: default
+  #arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
 # extension properties for like system
 extension_properties:

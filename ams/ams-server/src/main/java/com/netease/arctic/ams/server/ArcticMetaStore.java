@@ -80,7 +80,7 @@ public class ArcticMetaStore {
   public static Configuration conf;
   private static JSONObject yamlConfig;
   private static TServer server;
-  private static List<Thread> residentThreads = new ArrayList<>();
+  private static final List<Thread> residentThreads = new ArrayList<>();
 
   public static void main(String[] args) throws Throwable {
     try {
@@ -89,9 +89,9 @@ public class ArcticMetaStore {
       JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
       if (systemConfig.getBooleanValue(ArcticMetaStoreConf.HA_ENABLE.key())) {
         String zkAddress = systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key());
-        String nameSpace = systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key());
-        HighAvailabilityServices haService = HighAvailabilityServices.getInstance(zkAddress, nameSpace);
-        haService.addListener(genHAListener(zkAddress, nameSpace));
+        String cluster = systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key());
+        HighAvailabilityServices haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
+        haService.addListener(genHAListener(zkAddress, cluster));
         haService.leaderLatch();
       } else {
         startMetaStore(initSystemConfig());

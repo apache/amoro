@@ -104,10 +104,10 @@ public class ArcticMetaStoreConf {
           .defaultValue("")
           .withDescription("Bind host on which to run the ams thrift service.");
   public static final ConfigOption<String> ZOOKEEPER_SERVER =
-      ConfigOptions.key("arctic.ams.zookeeper")
+      ConfigOptions.key("arctic.ams.zookeeper.server")
           .stringType()
           .defaultValue("")
-          .withDescription("Bind host on which to run the ams thrift service.");
+          .withDescription("zookeeper server uri.");
   public static final ConfigOption<Boolean> USE_THRIFT_COMPACT_PROTOCOL =
       ConfigOptions.key("arctic.ams.thrift.compact.protocol.enabled")
           .booleanType()

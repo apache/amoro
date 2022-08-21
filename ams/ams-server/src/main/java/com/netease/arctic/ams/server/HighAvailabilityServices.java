@@ -17,12 +17,10 @@ public class HighAvailabilityServices {
 
   private final LeaderLatch leaderLatch;
   private static volatile HighAvailabilityServices instance;
-  private static String namespace;
   private static final List<LeaderLatchListener> listeners = new ArrayList<>();
 
   private HighAvailabilityServices(String zkServerAddress, String namespace) {
     ZookeeperUtils zkService = new ZookeeperUtils(zkServerAddress);
-    this.namespace = namespace;
     String lockPath = AmsHAProperties.getLeaderPath(namespace);
     try {
       zkService.create(lockPath);
