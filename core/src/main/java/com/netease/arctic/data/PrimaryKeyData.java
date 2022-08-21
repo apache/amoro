@@ -124,7 +124,8 @@ public class PrimaryKeyData implements StructLike, Serializable {
 
   @Override
   public int hashCode() {
-    return Arrays.hashCode(primaryTuple);
+    int hashcode = Math.abs(Arrays.hashCode(primaryTuple));
+    return hashcode == Integer.MIN_VALUE ? Integer.MAX_VALUE : hashcode;
   }
 
   public DataTreeNode treeNode(long mask) {

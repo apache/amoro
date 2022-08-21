@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
@@ -215,7 +216,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public RewritePartitions newRewritePartitions() {
-    return new RewritePartitions(this);
+    return new KeyedPartitionRewrite(this);
   }
 
   public static class BaseInternalTable extends BaseUnkeyedTable implements BaseTable {

@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.reader.BaseIcebergDataReader;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -30,7 +31,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
-import org.apache.iceberg.flink.data.FlinkParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.parquet.ParquetValueReader;
@@ -65,7 +65,7 @@ public class FlinkArcticDataReader extends BaseIcebergDataReader<RowData> implem
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema, Map<Integer, ?> idToConstant) {
-    return fileSchema -> FlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema -> AdaptHiveFlinkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override

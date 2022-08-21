@@ -28,30 +28,31 @@
 
 ### 结构优化配置
 
-| 配置名称                            | 默认值             | 描述                                     |
-| ---------------------------------- | ---------------- | ----------------------------------       |
-| optimize.enable                    | true             | 是否开启结构优化                  |
-| optimize.group                     | default          | 结构优化所属的组                  |
-| optimize.quota                     | 0.1              | 表所能占用的结构优化资源量          |
-| optimize.num-retries               | 5                | 结构优化失败时的重试次数            |
-| optimize.commit.interval           | 60000（1分钟）    | 结构优化的最短提交间隔              |
-| optimize.small-file-size-bytes-threshold | 16777216（16MB）| 结构优化时判断是否为小文件的阈值 |
-| optimize.major.trigger.max-interval      | 86400000（1天）               | 触发 major optimize 的最长时间间隔  |
-| optimize.major.trigger.delete-file-size-bytes       | 67108864（64MB）   | 触发 major optimize 的最大 delete 文件大小 |
-| optimize.major.trigger.small-file-count             | 12                | 触发 major optimize 的小文件数数量 |
-| optimize.minor.trigger.max-interval                 | 3600000（1小时）    | 触发 minor optimize 的最长时间间隔 |
-| optimize.minor.trigger.delete-file-count            | 12                | 触发 minor optimize 的最大 delete 文件个数 |
-| optimize.major.max-task-file-size-byte              | 1073741824（1GB）  | major optimize 最大的任务大小 |
+| 配置名称                                          | 默认值             | 描述                                |
+|-----------------------------------------------| ---------------- |-----------------------------------|
+| optimize.enable                               | true             | 是否开启结构优化                          |
+| optimize.group                                | default          | 结构优化所属的组                          |
+| optimize.quota                                | 0.1              | 表所能占用的结构优化资源量                     |
+| optimize.num-retries                          | 5                | 结构优化失败时的重试次数                      |
+| optimize.commit.interval                      | 60000（1分钟）    | 结构优化的最短提交间隔                       |
+| optimize.small-file-size-bytes-threshold      | 16777216（16MB）| 结构优化时判断是否为小文件的阈值                  |
+| optimize.major.trigger.max-interval           | 86400000（1天）               | 触发 major optimize 的最长时间间隔         |
+| optimize.major.trigger.delete-file-size-bytes | 67108864（64MB）   | 触发 major optimize 的 delete 文件大小阈值 |
+| optimize.major.trigger.small-file-count       | 12                | 触发 major optimize 的小文件数数量         |
+| optimize.minor.trigger.max-interval           | 3600000（1小时）    | 触发 minor optimize 的最长时间间隔         |
+| optimize.minor.trigger.delete-file-count      | 12                | 触发 minor optimize 的 delete 文件个数阈值 |
+| optimize.major.max-task-file-size-bytes       | 1073741824（1GB）  | major optimize 最大的任务大小            |
 
 ### 数据清理相关参数
 
-| 配置名称                                     | 默认值             | 描述                                     |
-| ------------------------------------------- | ---------------- | ----------------------------------       |
-| table-expire.enable                         | true             | 是否开启的表过期数据自动清理                  |
-| change.data.ttl.minutes                     | 10080（7天）      | Changestore 数据的过期时间                 |
-| snapshot.base.keep.minutes                  | 720（12小时）     | Basestore 历史快照的保留时间                |
-| clean-orphan-file.enable                    | false            | 是否开启游离文件自动清理                     |
-| clean-orphan-file.min-existing-time-minutes | 2880（2天）       | 清理游离文件时为了防止错误清理正在写入的文件，判断文件最低的存在时间          |
+| 配置名称                                        | 默认值       | 描述                                 |
+|---------------------------------------------|-----------|------------------------------------|
+| table-expire.enable                         | true      | 是否开启的表过期数据自动清理                     |
+| change.data.ttl.minutes                     | 10080（7天） | Changestore 数据的过期时间                |
+| snapshot.change.keep.minutes                | 10080（7天） | Changestore 历史快照的保留时间              |
+| snapshot.base.keep.minutes                  | 720（12小时） | Basestore 历史快照的保留时间                |
+| clean-orphan-file.enable                    | false     | 是否开启游离文件自动清理                       |
+| clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 清理游离文件时为了防止错误清理正在写入的文件，判断文件最低的存在时间 |
 
 ### Logstore相关配置
 
