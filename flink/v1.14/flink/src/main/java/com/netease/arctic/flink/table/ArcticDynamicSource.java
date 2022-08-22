@@ -32,6 +32,7 @@ import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
 import org.apache.flink.table.connector.source.abilities.SupportsFilterPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
+import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.expressions.ResolvedExpression;
@@ -60,7 +61,7 @@ import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE_DE
  * Flink table api that generates source operators.
  */
 public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushDown,
-    SupportsLimitPushDown, SupportsWatermarkPushDown {
+    SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSource.class);
 
@@ -218,6 +219,22 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       return ((SupportsFilterPushDown) arcticDynamicSource).applyFilters(filters);
     } else {
       return Result.of(Collections.emptyList(), filters);
+    }
+  }
+
+  @Override
+  public boolean supportsNestedProjection() {
+    if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
+      return ((SupportsProjectionPushDown) arcticDynamicSource).supportsNestedProjection();
+    } else {
+      return false;
+    }
+  }
+
+  @Override
+  public void applyProjection(int[][] projectedFields) {
+    if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
+      ((SupportsProjectionPushDown) arcticDynamicSource).applyProjection(projectedFields);
     }
   }
 

@@ -214,6 +214,14 @@
             <version>${hive.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -259,7 +267,6 @@
                 <configuration>
                     <includes>
                         <include>**/ArcticSparkHiveMainTest.java</include>
-                        <include>**/ArcticSparkNonHiveMainTest.java</include>
                     </includes>
                 </configuration>
             </plugin>
