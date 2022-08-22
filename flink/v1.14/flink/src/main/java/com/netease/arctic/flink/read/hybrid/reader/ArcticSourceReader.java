@@ -107,9 +107,10 @@ public class ArcticSourceReader<T> extends
   }
 
   private void emitWatermarkIfNeeded() {
-    if (this.output == null || maxWatermarkToBeEmitted) {
+    if (this.output == null || !maxWatermarkToBeEmitted) {
       return;
     }
+    LOGGER.info("emit watermark");
     output.emitWatermark(new Watermark(Long.MAX_VALUE));
     maxWatermarkToBeEmitted = false;
   }
@@ -120,4 +121,5 @@ public class ArcticSourceReader<T> extends
     emitWatermarkIfNeeded();
     return super.pollNext(output);
   }
+
 }

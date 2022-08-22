@@ -106,8 +106,7 @@ public class ArcticSourceReader<T> extends
   }
 
   private void emitWatermarkIfNeeded() {
-    LOGGER.info("emitWatermarkIfNeeded, output:{}, need:{}", output, maxWatermarkToBeEmitted);
-    if (this.output == null || maxWatermarkToBeEmitted) {
+    if (this.output == null || !maxWatermarkToBeEmitted) {
       return;
     }
     LOGGER.info("emit watermark");
