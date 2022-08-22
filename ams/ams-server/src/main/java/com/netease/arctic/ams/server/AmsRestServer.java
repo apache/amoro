@@ -118,12 +118,10 @@ public class AmsRestServer {
         get(
             "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
             TableController::getTableTransactions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
             TableController::getTransactionDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", TableController::getTablePartitions);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
             TableController::getPartitionFileListInfo);
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
