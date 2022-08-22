@@ -254,6 +254,10 @@ public class CreateTableTransaction implements Transaction {
     }
 
     @Override
+    public void setSnapshotSummary(String key, String value) {
+    }
+
+    @Override
     public void updateColumn(UpdateColumn updateColumn) {
 
     }

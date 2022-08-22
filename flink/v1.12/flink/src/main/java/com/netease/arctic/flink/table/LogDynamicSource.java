@@ -33,12 +33,15 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Types;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
@@ -113,15 +116,20 @@ public class LogDynamicSource extends KafkaDynamicSource {
 
     final FlinkKafkaConsumer<RowData> kafkaConsumer;
 
-    KafkaDeserializationSchemaWrapper<RowData> deserializationSchemaWrapper =
+    final KafkaDeserializationSchemaWrapper<RowData> deserializationSchemaWrapper =
         new KafkaDeserializationSchemaWrapper<>(valueDeserialization);
+    Schema projectedSchema = schema;
+    if (projectedFields != null) {
+      final List<Types.NestedField> columns = schema.columns();
+      projectedSchema = new Schema(Arrays.stream(projectedFields).mapToObj(columns::get).collect(Collectors.toList()));
+    }
     if (topics != null) {
       kafkaConsumer =
           new LogKafkaConsumer(
               topics,
               deserializationSchemaWrapper,
               properties,
-              schema,
+              projectedSchema,
               tableOptions);
     } else {
       kafkaConsumer =
@@ -129,7 +137,7 @@ public class LogDynamicSource extends KafkaDynamicSource {
               topicPattern,
               deserializationSchemaWrapper,
               properties,
-              schema,
+              projectedSchema,
               tableOptions);
     }
 

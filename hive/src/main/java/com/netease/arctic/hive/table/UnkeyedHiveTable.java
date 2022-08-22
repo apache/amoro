@@ -19,26 +19,68 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.hive.CachedHiveClientPool;
-import com.netease.arctic.hive.utils.HiveSchemaUtil;
+import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.op.HiveOperationTransaction;
+import com.netease.arctic.hive.op.OverwriteHiveFiles;
+import com.netease.arctic.hive.op.ReplaceHivePartitions;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.Schema;
+import org.apache.iceberg.OverwriteFiles;
+import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
+
+import static com.netease.arctic.table.TableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
-public class UnkeyedHiveTable extends BaseUnkeyedTable {
+public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, SupportHive {
 
-  public UnkeyedHiveTable(TableIdentifier tableIdentifier, Table icebergTable, ArcticFileIO arcticFileIO,
-      AmsClient client) {
+  HMSClient hiveClient;
+  String tableLocation;
+
+  public UnkeyedHiveTable(
+      TableIdentifier tableIdentifier,
+      Table icebergTable,
+      ArcticFileIO arcticFileIO,
+      String tableLocation,
+      AmsClient client,
+      HMSClient hiveClient) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
+    this.hiveClient = hiveClient;
+    this.tableLocation = tableLocation;
   }
 
   @Override
-  public Schema schema() {
-    return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
+  public ReplacePartitions newReplacePartitions() {
+    ReplacePartitions replacePartitions = super.newReplacePartitions();
+    return new ReplaceHivePartitions(replacePartitions, this, hiveClient, hiveClient);
+  }
+
+  @Override
+  public String name() {
+    return id().getTableName();
+  }
+
+  @Override
+  public String hiveLocation() {
+    return properties().containsKey(BASE_HIVE_LOCATION_ROOT) ?
+        properties().get(BASE_HIVE_LOCATION_ROOT) :
+        tableLocation + "/hive";
+  }
+
+  @Override
+  public OverwriteHiveFiles newOverwrite() {
+    OverwriteFiles overwriteFiles = super.newOverwrite();
+    return new OverwriteHiveFiles(overwriteFiles, this, hiveClient, hiveClient);
+  }
+
+  @Override
+  public Transaction newTransaction() {
+    Transaction transaction = super.newTransaction();
+    return new HiveOperationTransaction(this, transaction, hiveClient);
   }
 }

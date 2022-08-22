@@ -202,6 +202,11 @@ public class TracedTransaction implements Transaction {
     }
 
     @Override
+    public void setSnapshotSummary(String key, String value) {
+      tracer.setSnapshotSummary(key, value);
+    }
+
+    @Override
     public void updateColumn(UpdateColumn updateColumn) {
       tracer.updateColumn(updateColumn);
     }

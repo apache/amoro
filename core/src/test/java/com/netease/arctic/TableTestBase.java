@@ -73,7 +73,7 @@ public class TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_table");
   protected static final TableIdentifier PK_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
-  protected static final Schema TABLE_SCHEMA = new Schema(
+  public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())

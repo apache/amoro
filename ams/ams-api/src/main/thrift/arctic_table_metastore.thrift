@@ -46,7 +46,8 @@ struct TableCommitMeta {
     3: list<TableChange> changes;
     4: i64 commitTime;
     5: map<string, string> properties;
-    6: SchemaUpdateMeta schemaUpdateMeta;
+    6: CommitMetaProducer commitMetaProducer;
+    7: SchemaUpdateMeta schemaUpdateMeta;
 }
 
 struct UpdateColumn {
@@ -64,8 +65,6 @@ struct SchemaUpdateMeta {
     2: list<UpdateColumn> updateColumns;
 }
 
-
-
 struct TableMeta {
     1:arctic_commons.TableIdentifier tableIdentifier;
     2:PrimaryKeySpec keySpec;
@@ -77,7 +76,10 @@ struct PrimaryKeySpec {
   1: list<string> fields;
 }
 
-
+enum CommitMetaProducer {
+    OPTIMIZE,
+    INGESTION
+}
 
 /**
 * replace TableContainer、ArcticTableItem

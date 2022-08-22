@@ -61,6 +61,14 @@ public interface TableTracer {
   void replaceProperties(Map<String, String> newProperties);
 
   /**
+   * Set a summary property in the snapshot produced by this update.
+   *
+   * @param key a String property name
+   * @param value a String property value
+   */
+  void setSnapshotSummary(String key, String value);
+
+  /**
    * update column of table
    * @param updateColumn updated column info
    */
