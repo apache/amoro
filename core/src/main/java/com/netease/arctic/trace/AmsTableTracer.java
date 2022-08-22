@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
-import com.netease.arctic.data.UpdateColumn;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
@@ -33,7 +32,6 @@ import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
@@ -292,16 +290,6 @@ public class AmsTableTracer implements TableTracer {
     commit.setIsOptional(updateColumn.getOptional() == null ? null : updateColumn.getOptional().toString());
     commit.setNewName(updateColumn.getNewName());
     return commit;
-  }
-
-  public enum SchemaOperateType {
-    ADD,
-    DROP,
-    ALERT,
-    RENAME,
-    MOVE_BEFORE,
-    MOVE_AFTER,
-    MOVE_FIRST
   }
 
   public enum PropertiesOPType {

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.trace;
 
-import com.netease.arctic.data.UpdateColumn;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;
@@ -47,7 +46,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema addColumn(String name, Type type, String doc) {
     updateSchema.addColumn(name, type, doc);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, type, doc,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, type, doc,
         AmsTableTracer.SchemaOperateType.ADD, null, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -56,7 +55,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
     updateSchema.addColumn(parent, name, type, doc);
-    UpdateColumn updateColumn = new UpdateColumn(name, parent, type, doc,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, parent, type, doc,
         AmsTableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -65,7 +64,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema addRequiredColumn(String name, Type type, String doc) {
     updateSchema.addRequiredColumn(name, type, doc);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, type, doc,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, type, doc,
         AmsTableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -74,7 +73,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema addRequiredColumn(String parent, String name, Type type, String doc) {
     updateSchema.addRequiredColumn(parent, name, type, doc);
-    UpdateColumn updateColumn = new UpdateColumn(name, parent, type, doc,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, parent, type, doc,
         AmsTableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -83,7 +82,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema deleteColumn(String name) {
     updateSchema.deleteColumn(name);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.DROP, null, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -92,7 +91,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema renameColumn(String name, String newName) {
     updateSchema.renameColumn(name, newName);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.RENAME, null, newName);
     tracer.updateColumn(updateColumn);
     return this;
@@ -101,7 +100,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema requireColumn(String name) {
     updateSchema.requireColumn(name);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.ALERT, false, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -110,7 +109,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema makeColumnOptional(String name) {
     updateSchema.makeColumnOptional(name);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.ALERT, true, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -119,7 +118,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema updateColumn(String name, Type.PrimitiveType newType) {
     updateSchema.updateColumn(name, newType);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, newType, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, newType, null,
         AmsTableTracer.SchemaOperateType.ALERT, null, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -128,7 +127,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema updateColumnDoc(String name, String doc) {
     updateSchema.updateColumnDoc(name, doc);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, doc,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, doc,
         AmsTableTracer.SchemaOperateType.ALERT, null, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -137,7 +136,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema moveFirst(String name) {
     updateSchema.moveFirst(name);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.MOVE_FIRST, null, null);
     tracer.updateColumn(updateColumn);
     return this;
@@ -146,7 +145,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema moveBefore(String name, String beforeName) {
     updateSchema.moveBefore(name, beforeName);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.MOVE_BEFORE, null, beforeName);
     tracer.updateColumn(updateColumn);
     return this;
@@ -155,7 +154,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema moveAfter(String name, String afterName) {
     updateSchema.moveAfter(name, afterName);
-    UpdateColumn updateColumn = new UpdateColumn(name, null, null, null,
+    TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
         AmsTableTracer.SchemaOperateType.MOVE_AFTER, null, afterName);
     tracer.updateColumn(updateColumn);
     return this;

@@ -18,10 +18,9 @@
 
 package com.netease.arctic.trace;
 
-import com.netease.arctic.data.UpdateColumn;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.Schema;
+import org.apache.iceberg.types.Type;
 
 import java.util.Map;
 
@@ -78,4 +77,69 @@ public interface TableTracer {
    * Commit table changes.
    */
   void commit();
+
+  class UpdateColumn {
+    private final String parent;
+    private final String name;
+    private final Type type;
+    private final String doc;
+    private final AmsTableTracer.SchemaOperateType operate;
+    private final Boolean isOptional;
+    private final String newName;
+
+    public UpdateColumn(
+        String name,
+        String parent,
+        Type type,
+        String doc,
+        AmsTableTracer.SchemaOperateType operate,
+        Boolean isOptional,
+        String newName) {
+      this.parent = parent;
+      this.name = name;
+      this.type = type;
+      this.doc = doc;
+      this.operate = operate;
+      this.isOptional = isOptional;
+      this.newName = newName;
+    }
+
+    public String getParent() {
+      return parent;
+    }
+
+    public String getName() {
+      return name;
+    }
+
+    public Type getType() {
+      return type;
+    }
+
+    public String getDoc() {
+      return doc;
+    }
+
+    public AmsTableTracer.SchemaOperateType getOperate() {
+      return operate;
+    }
+
+    public Boolean getOptional() {
+      return isOptional;
+    }
+
+    public String getNewName() {
+      return newName;
+    }
+  }
+
+  enum SchemaOperateType {
+    ADD,
+    DROP,
+    ALERT,
+    RENAME,
+    MOVE_BEFORE,
+    MOVE_AFTER,
+    MOVE_FIRST
+  }
 }

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.trace;
 
-import com.netease.arctic.data.UpdateColumn;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
