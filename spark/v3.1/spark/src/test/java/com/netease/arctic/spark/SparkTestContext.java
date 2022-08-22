@@ -28,11 +28,15 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.spark.hive.HMSMockServer;
+import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
@@ -53,7 +57,9 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
 import org.glassfish.jersey.internal.guava.Sets;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -90,39 +97,69 @@ public class SparkTestContext extends ExternalResource {
   protected static SparkSession spark = null;
   protected static MockArcticMetastoreServer ams = new MockArcticMetastoreServer();
   protected static String amsUrl;
-  protected static String catalogName;
+  protected static String catalogNameArctic;
+  protected static String catalogNameHive;
   protected List<Object[]> rows;
-
   private static SparkTestContext sparkTestContext;
-
   private static int refCount = 0;
+  static final File hmsDir = new File(testBaseDir, "hive");
+  protected static final HMSMockServer hms = new HMSMockServer(hmsDir);
 
-  public static SparkTestContext getSparkTestContext () {
-    if (refCount == 0) {
-      sparkTestContext = new SparkTestContext();
+  protected static final AtomicInteger testCount = new AtomicInteger(0);
+
+  public static void cleanUpAdditionSparkConfigs() {
+    additionSparkConfigs.clear();
+  }
+  @BeforeClass
+  public static void startAll() throws IOException {
+    int ref = testCount.incrementAndGet();
+    if (ref == 1) {
+      setUpTestDirAndArctic();
+      setUpHMS();
+      setUpSparkSession();
     }
-    return sparkTestContext;
   }
 
-  public static
-  void cleanUpAdditionSparkConfigs() {
-    additionSparkConfigs.clear();
+  @AfterClass
+  public static void stopAll() {
+    int ref = testCount.decrementAndGet();
+    if (ref == 0) {
+      cleanUpAms();
+      cleanUpHive();
+      cleanUpSparkSession();
+      cleanUpAdditionSparkConfigs();
+    }
   }
 
   public static void setUpTestDirAndArctic() throws IOException {
-    System.out.println("======================== start AMS  ========================= ");
-    FileUtils.deleteQuietly(testBaseDir);
-    testBaseDir.mkdirs();
+      System.out.println("======================== start AMS  ========================= ");
+      FileUtils.deleteQuietly(testBaseDir);
+      testBaseDir.mkdirs();
 
-    AmsClientPools.cleanAll();
-    if (!ams.isStarted()) {
-      ams.start();
-    }
-    amsUrl = "thrift://127.0.0.1:" + ams.port();
+      AmsClientPools.cleanAll();
+      if (!ams.isStarted()) {
+        ams.start();
+      }
+      amsUrl = "thrift://127.0.0.1:" + ams.port();
 
-    CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
-    catalogName = arctic.getCatalogName();
-    ams.handler().createCatalog(arctic);
+      CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
+      catalogNameArctic = arctic.getCatalogName();
+      ams.handler().createCatalog(arctic);
+  }
+
+  public static void setUpHMS() throws IOException {
+    System.out.println("======================== start hive metastore ========================= ");
+    hms.start();
+    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort()) ;
+    additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
+    additionSparkConfigs.put("spark.sql.hive.metastore.version", "2.3.7");
+    //hive.metastore.client.capability.check
+    additionSparkConfigs.put("hive.metastore.client.capability.check", "false");
+
+    HiveConf entries = hms.hiveConf();
+    CatalogMeta arctic_hive = HiveCatalogMetaTestUtil.createArcticCatalog(testArcticDir,entries);
+    catalogNameHive = arctic_hive.getCatalogName();
+    ams.handler().createCatalog(arctic_hive);
   }
 
 
@@ -137,9 +174,13 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "471859200");
 
-    sparkConfigs.put("spark.sql.catalog." + catalogName, ArcticSparkCatalog.class.getName());
-    sparkConfigs.put("spark.sql.catalog." + catalogName + ".type", "arctic");
-    sparkConfigs.put("spark.sql.catalog." + catalogName + ".url", amsUrl + "/" + catalogName);
+    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
+    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic + ".type", "arctic");
+    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
+
+    sparkConfigs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
+    sparkConfigs.put("spark.sql.catalog." + catalogNameHive + ".type", "hive");
+    sparkConfigs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
 
     sparkConfigs.putAll(additionSparkConfigs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));
@@ -162,6 +203,11 @@ public class SparkTestContext extends ExternalResource {
     System.out.println("======================== clean up AMS  ========================= ");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
+  }
+
+  public static void cleanUpHive() {
+    System.out.println("======================== stop hive metastore ========================= ");
+    hms.stop();
   }
 
   public static void cleanUpSparkSession(){
@@ -349,4 +395,61 @@ public class SparkTestContext extends ExternalResource {
   protected static Timestamp quickTs(int day) {
     return Timestamp.valueOf(quickDateWithZone(day).toLocalDateTime());
   }
+
+
+  public void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
+    boolean primaryKeysBlock = false;
+    List<String> descPrimaryKeys = Lists.newArrayList();
+    for (Object[] row : rows) {
+      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
+        primaryKeysBlock = true;
+      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
+        primaryKeysBlock = false;
+      } else if (primaryKeysBlock){
+        descPrimaryKeys.add(row[0].toString());
+      }
+    }
+
+    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
+    Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
+        descPrimaryKeys.stream().sorted().distinct().toArray());
+  }
+
+  public void assertPartitionResult(List<Object[]> rows, List<String> partitionKey) {
+    boolean primaryKeysBlock = false;
+    List<String> descPrimaryKeys = Lists.newArrayList();
+    for (Object[] row : rows) {
+      if (StringUtils.equalsIgnoreCase("# Partitioning", row[0].toString())) {
+        primaryKeysBlock = true;
+      } else if (StringUtils.startsWith(row[0].toString(), "Part ") && primaryKeysBlock) {
+        descPrimaryKeys.add(row[1].toString());
+      }
+    }
+
+    Assert.assertEquals(partitionKey.size(), descPrimaryKeys.size());
+    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+        descPrimaryKeys.stream().sorted().distinct().toArray());
+  }
+
+  public void assertHiveDesc(List<Object[]> rows, List<String> cols, List<String> partitionKey){
+    boolean colsBlock = true;
+    boolean partitionBlock = false;
+    List<String> descCols = Lists.newArrayList();
+    List<String> descPartitionKey = Lists.newArrayList();
+    for (Object[] row : rows){
+      if (StringUtils.startsWith(row[0].toString(), "# Partition Infor")){
+        partitionBlock = true;
+        colsBlock = false;
+      }else if (colsBlock){
+        descCols.add(row[0].toString());
+      } else if (partitionBlock && !StringUtils.startsWith(row[0].toString(), "#")) {
+        descPartitionKey.add(row[0].toString());
+      }
+    }
+    Assert.assertArrayEquals(cols.stream().sorted().distinct().toArray(),
+        descCols.stream().sorted().distinct().toArray());
+    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+        descPartitionKey.stream().sorted().distinct().toArray());
+  }
+
 }
