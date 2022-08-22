@@ -113,7 +113,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     // It denotes create table by ddl 'connector' option, not through arcticCatalog.db.tableName
     if (actualBuilder == null || actualCatalogName == null) {
-      String metastoreUrl = options.get(METASTORE_URL);
+      String metastoreUrl = options.get(METASTORE_URL.key());
       Preconditions.checkNotNull(metastoreUrl, String.format("%s should be set", METASTORE_URL));
       actualBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
 
