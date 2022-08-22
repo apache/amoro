@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.read.FlinkKafkaConsumer;
+import com.netease.arctic.flink.util.Projection;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
@@ -33,6 +34,7 @@ import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.DataStreamScanProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
+import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsReadingMetadata;
 import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
 import org.apache.flink.table.data.GenericMapData;
@@ -55,6 +57,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -65,7 +68,7 @@ import java.util.stream.Stream;
  */
 @Internal
 public class KafkaDynamicSource
-    implements ScanTableSource, SupportsReadingMetadata, SupportsWatermarkPushDown {
+    implements ScanTableSource, SupportsReadingMetadata, SupportsProjectionPushDown, SupportsWatermarkPushDown {
 
   // --------------------------------------------------------------------------------------------
   // Mutable attributes
@@ -80,6 +83,11 @@ public class KafkaDynamicSource
    * Metadata that is appended at the end of a physical source row.
    */
   protected List<String> metadataKeys;
+
+  /**
+   * Field index paths of all fields that must be present in the physically produced data.
+   */
+  protected int[] projectedFields;
 
   /**
    * Watermark strategy that is used to generate per-partition watermark.
@@ -198,6 +206,7 @@ public class KafkaDynamicSource
     // Mutable attributes
     this.producedDataType = physicalDataType;
     this.metadataKeys = Collections.emptyList();
+    this.projectedFields = null;
     this.watermarkStrategy = null;
     // Kafka-specific attributes
     Preconditions.checkArgument(
@@ -231,7 +240,9 @@ public class KafkaDynamicSource
         createDeserialization(context, valueDecodingFormat, valueProjection, null);
 
     final TypeInformation<RowData> producedTypeInfo =
-        context.createTypeInformation(producedDataType);
+        context.createTypeInformation(Optional.ofNullable(projectedFields)
+            .map(Projection::of)
+            .map(p -> p.project(producedDataType)).orElse(producedDataType));
 
     final FlinkKafkaConsumer<RowData> kafkaConsumer =
         createKafkaConsumer(keyDeserialization, valueDeserialization, producedTypeInfo);
@@ -294,6 +305,23 @@ public class KafkaDynamicSource
   }
 
   @Override
+  public boolean supportsNestedProjection() {
+    // TODO: support nested projection
+    return false;
+  }
+
+  @Override
+  public void applyProjection(int[][] projectFields) {
+    this.projectedFields = new int[projectFields.length];
+    for (int i = 0; i < projectFields.length; i++) {
+      Preconditions.checkArgument(
+          projectFields[i].length == 1,
+          "Don't support nested projection now.");
+      this.projectedFields[i] = projectFields[i][0];
+    }
+  }
+
+  @Override
   public void applyWatermark(WatermarkStrategy<RowData> watermarkStrategy) {
     this.watermarkStrategy = watermarkStrategy;
   }
@@ -318,6 +346,7 @@ public class KafkaDynamicSource
             sourceName);
     copy.producedDataType = producedDataType;
     copy.metadataKeys = metadataKeys;
+    copy.projectedFields = projectedFields;
     copy.watermarkStrategy = watermarkStrategy;
     return copy;
   }
@@ -351,6 +380,7 @@ public class KafkaDynamicSource
         Objects.equals(specificStartupOffsets, that.specificStartupOffsets) &&
         startupTimestampMillis == that.startupTimestampMillis &&
         Objects.equals(upsertMode, that.upsertMode) &&
+        Arrays.equals(projectedFields, that.projectedFields) &&
         Objects.equals(watermarkStrategy, that.watermarkStrategy);
   }
 
@@ -372,6 +402,7 @@ public class KafkaDynamicSource
         specificStartupOffsets,
         startupTimestampMillis,
         upsertMode,
+        projectedFields,
         watermarkStrategy);
   }
 
