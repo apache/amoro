@@ -27,6 +27,7 @@ import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedOverwriteFiles;
 import com.netease.arctic.trace.TracedRewriteFiles;
 import com.netease.arctic.trace.TracedRowDelta;
+import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
@@ -169,7 +170,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    return icebergTable.updateSchema();
+    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client));
   }
 
   @Override

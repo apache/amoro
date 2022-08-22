@@ -1,9 +1,11 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.utils.FileUtil;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -61,7 +63,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   @Override
   public ReplacePartitions addFile(DataFile file) {
     delegate.addFile(file);
-    String tableLocation = hiveTable.getSd().getLocation();
+    String tableLocation = table.hiveLocation();
     String dataFileLocation = file.path().toString();
     if (dataFileLocation.toLowerCase().contains(tableLocation.toLowerCase())) {
       // only handle file in hive location
@@ -139,6 +141,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       partitionDataFileMap.get(value).add(d);
       partitionValueMap.put(value, partitionValues);
     }
+    partitionLocationMap.forEach((k, v) -> checkDataFileInSameLocation(v, partitionDataFileMap.get(k)));
 
     for (String val : partitionValueMap.keySet()) {
       List<String> values = partitionValueMap.get(val);
@@ -187,6 +190,20 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  private void checkDataFileInSameLocation(String partitionLocation, List<DataFile> files) {
+    Path partitionPath = new Path(partitionLocation);
+    for (DataFile df : files) {
+      String fileDir = FileUtil.getFileDir(df.path().toString());
+      Path dirPath = new Path(fileDir);
+      if (!partitionPath.equals(dirPath)) {
+        throw new CannotAlterHiveLocationException(
+            "can't create new hive location: " + partitionLocation + " for data file: " + df.path().toString() +
+                " is not under partition location path"
+        );
+      }
     }
   }
 

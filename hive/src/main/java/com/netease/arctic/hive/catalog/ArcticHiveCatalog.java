@@ -257,6 +257,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(TableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
+      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
 
       Table table = tableMetaStore.doAs(() -> {
         try {

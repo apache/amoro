@@ -240,10 +240,10 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   }
 
   private static void syncField(Types.NestedField newField,
-                                Types.NestedField oldField,
-                                UpdateSchema us,
-                                String fieldPrefix,
-                                Collection<Add> adds) {
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     if (oldField == null && newField == null) {
       return;
     }
@@ -290,10 +290,10 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   }
 
   private static void updateField(Types.NestedField newField,
-                                  Types.NestedField oldField,
-                                  UpdateSchema us,
-                                  String fieldPrefix,
-                                  Collection<Add> adds) {
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     String oldFullFieldName = getFullName(fieldPrefix, oldField.name());
     if (!Objects.equals(newField.doc(), oldField.doc())) {
       us.updateColumnDoc(oldFullFieldName, newField.doc());
@@ -319,10 +319,10 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   }
 
   private static void updateNestedField(Types.NestedField newField,
-                                        Types.NestedField oldField,
-                                        UpdateSchema us,
-                                        String fieldPrefix,
-                                        Collection<Add> adds) {
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     if (oldField.type().isMapType()) {
       updateMapField(newField, oldField, us, fieldPrefix, adds);
       return;
@@ -335,10 +335,10 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   }
 
   private static void updateNestedField(Type.NestedType newType,
-                                        Type.NestedType oldType,
-                                        UpdateSchema us,
-                                        String fieldPrefix,
-                                        Collection<Add> adds) {
+      Type.NestedType oldType,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     if (Objects.equals(newType, oldType)) {
       return;
     }
@@ -356,10 +356,10 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   }
 
   private static void updateMapField(Types.NestedField newField,
-                                     Types.NestedField oldField,
-                                     UpdateSchema us,
-                                     String fieldPrefix,
-                                     Collection<Add> adds) {
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix,
+      Collection<Add> adds) {
     Types.MapType newType = newField.type().asMapType();
     Types.MapType oldType = oldField.type().asMapType();
 
@@ -381,9 +381,9 @@ public class KeyedSchemaUpdate implements UpdateSchema {
   }
 
   private static void updatePrimativeFieldType(Types.NestedField newField,
-                                               Types.NestedField oldField,
-                                               UpdateSchema us,
-                                               String fieldPrefix) {
+      Types.NestedField oldField,
+      UpdateSchema us,
+      String fieldPrefix) {
     String fullName = getFullName(fieldPrefix, oldField.name());
     if (!Objects.equals(newField.type(), oldField.type())) {
       us.updateColumn(fullName, newField.type().asPrimitiveType());
