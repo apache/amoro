@@ -62,7 +62,7 @@ struct PrimaryKeySpec {
 
 enum CommitMetaProducer {
     OPTIMIZE,
-    WRITE
+    INGESTION
 }
 
 /**
