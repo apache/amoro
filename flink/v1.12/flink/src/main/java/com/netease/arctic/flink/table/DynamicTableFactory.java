@@ -137,7 +137,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String readMode = PropertyUtil.propertyAsString(arcticTable.properties(),
         ArcticValidator.ARCTIC_READ_MODE, ArcticValidator.ARCTIC_READ_MODE_DEFAULT);
 
-    TableSchema tableSchema = com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema(catalogTable.getSchema());
+    boolean dimTable = PropertyUtil.propertyAsBoolean(arcticTable.properties(),
+        ArcticValidator.DIM_TABLE_ENABLE.key(), ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
+    TableSchema tableSchema = com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema(catalogTable.getSchema(),
+        dimTable);
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         LOG.info("build file reader");
