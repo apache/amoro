@@ -59,6 +59,7 @@ public class TracedDeleteFiles implements DeleteFiles {
   @Override
   public DeleteFiles set(String property, String value) {
     deleteFiles.set(property, value);
+    tracer.setSnapshotSummary(property, value);
     return this;
   }
 

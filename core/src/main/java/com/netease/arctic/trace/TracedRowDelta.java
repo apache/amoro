@@ -86,6 +86,7 @@ public class TracedRowDelta implements RowDelta {
   @Override
   public RowDelta set(String property, String value) {
     rowDelta.set(property, value);
+    tracer.setSnapshotSummary(property, value);
     return this;
   }
 
