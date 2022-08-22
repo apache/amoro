@@ -59,7 +59,7 @@ CREATE TABLE `snapshot_info_cache` (
      `inner_table` varchar(64) NOT NULL,
      `commit_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
      PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `optimize_file`
 (
