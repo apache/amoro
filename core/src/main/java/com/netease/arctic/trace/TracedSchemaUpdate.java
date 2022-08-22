@@ -47,7 +47,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addColumn(String name, Type type, String doc) {
     updateSchema.addColumn(name, type, doc);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, type, doc,
-        AmsTableTracer.SchemaOperateType.ADD, null, null);
+        TableTracer.SchemaOperateType.ADD, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -56,7 +56,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
     updateSchema.addColumn(parent, name, type, doc);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, parent, type, doc,
-        AmsTableTracer.SchemaOperateType.ADD, false, null);
+        TableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -65,7 +65,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addRequiredColumn(String name, Type type, String doc) {
     updateSchema.addRequiredColumn(name, type, doc);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, type, doc,
-        AmsTableTracer.SchemaOperateType.ADD, false, null);
+        TableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -74,7 +74,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema addRequiredColumn(String parent, String name, Type type, String doc) {
     updateSchema.addRequiredColumn(parent, name, type, doc);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, parent, type, doc,
-        AmsTableTracer.SchemaOperateType.ADD, false, null);
+        TableTracer.SchemaOperateType.ADD, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -83,7 +83,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema deleteColumn(String name) {
     updateSchema.deleteColumn(name);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.DROP, null, null);
+        TableTracer.SchemaOperateType.DROP, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -92,7 +92,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema renameColumn(String name, String newName) {
     updateSchema.renameColumn(name, newName);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.RENAME, null, newName);
+        TableTracer.SchemaOperateType.RENAME, null, newName);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -101,7 +101,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema requireColumn(String name) {
     updateSchema.requireColumn(name);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.ALERT, false, null);
+        TableTracer.SchemaOperateType.ALERT, false, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -110,7 +110,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema makeColumnOptional(String name) {
     updateSchema.makeColumnOptional(name);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.ALERT, true, null);
+        TableTracer.SchemaOperateType.ALERT, true, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -119,7 +119,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema updateColumn(String name, Type.PrimitiveType newType) {
     updateSchema.updateColumn(name, newType);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, newType, null,
-        AmsTableTracer.SchemaOperateType.ALERT, null, null);
+        TableTracer.SchemaOperateType.ALERT, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -128,7 +128,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema updateColumnDoc(String name, String doc) {
     updateSchema.updateColumnDoc(name, doc);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, doc,
-        AmsTableTracer.SchemaOperateType.ALERT, null, null);
+        TableTracer.SchemaOperateType.ALERT, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -137,7 +137,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema moveFirst(String name) {
     updateSchema.moveFirst(name);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.MOVE_FIRST, null, null);
+        TableTracer.SchemaOperateType.MOVE_FIRST, null, null);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -146,7 +146,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema moveBefore(String name, String beforeName) {
     updateSchema.moveBefore(name, beforeName);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.MOVE_BEFORE, null, beforeName);
+        TableTracer.SchemaOperateType.MOVE_BEFORE, null, beforeName);
     tracer.updateColumn(updateColumn);
     return this;
   }
@@ -155,7 +155,7 @@ public class TracedSchemaUpdate implements UpdateSchema {
   public UpdateSchema moveAfter(String name, String afterName) {
     updateSchema.moveAfter(name, afterName);
     TableTracer.UpdateColumn updateColumn = new TableTracer.UpdateColumn(name, null, null, null,
-        AmsTableTracer.SchemaOperateType.MOVE_AFTER, null, afterName);
+        TableTracer.SchemaOperateType.MOVE_AFTER, null, afterName);
     tracer.updateColumn(updateColumn);
     return this;
   }

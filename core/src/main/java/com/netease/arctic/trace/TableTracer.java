@@ -92,7 +92,7 @@ public interface TableTracer {
         String parent,
         Type type,
         String doc,
-        AmsTableTracer.SchemaOperateType operate,
+        SchemaOperateType operate,
         Boolean isOptional,
         String newName) {
       this.parent = parent;
@@ -120,7 +120,7 @@ public interface TableTracer {
       return doc;
     }
 
-    public AmsTableTracer.SchemaOperateType getOperate() {
+    public SchemaOperateType getOperate() {
       return operate;
     }
 

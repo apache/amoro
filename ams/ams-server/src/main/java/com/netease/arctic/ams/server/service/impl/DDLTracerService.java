@@ -14,6 +14,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.trace.AmsTableTracer;
+import com.netease.arctic.trace.TableTracer;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -72,7 +73,7 @@ public class DDLTracerService extends IJDBCService {
       String operateType = updateColumn.getOperate();
       StringBuilder sql =
           new StringBuilder(String.format(ALTER_TABLE, TableMetadataUtil.getTableAllIdentifyName(tableIdentifier)));
-      switch (AmsTableTracer.SchemaOperateType.valueOf(operateType)) {
+      switch (TableTracer.SchemaOperateType.valueOf(operateType)) {
         case ADD:
           String colName = updateColumn.getParent() == null ? updateColumn.getName() :
               updateColumn.getParent() + DOT + updateColumn.getName();

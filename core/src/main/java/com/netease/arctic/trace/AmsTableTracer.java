@@ -291,9 +291,4 @@ public class AmsTableTracer implements TableTracer {
     commit.setNewName(updateColumn.getNewName());
     return commit;
   }
-
-  public enum PropertiesOPType {
-    SET,
-    UNSET
-  }
 }
