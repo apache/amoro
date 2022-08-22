@@ -40,7 +40,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,8 +78,7 @@ public class TestJoin extends FlinkTestBase {
     sql("DROP TABLE IF EXISTS arcticCatalog." + DB + "." + TABLE);
   }
 
-  @Timeout(180)
-  @Test
+  @Test(timeout = 180000)
   public void testRightEmptyLookupJoin() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
@@ -134,8 +132,7 @@ public class TestJoin extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
-  @Timeout(180)
-  @Test
+  @Test(timeout = 180000)
   public void testLookupJoin() throws Exception {
     getEnv().getCheckpointConfig().disableCheckpointing();
     List<Object[]> data = new LinkedList<>();
