@@ -55,6 +55,7 @@ public class TracedAppendFiles implements AppendFiles {
   @Override
   public AppendFiles set(String property, String value) {
     appendFiles.set(property, value);
+    tracer.setSnapshotSummary(property, value);
     return this;
   }
 
