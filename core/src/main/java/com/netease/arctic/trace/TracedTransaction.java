@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.data.UpdateColumn;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
@@ -201,13 +202,8 @@ public class TracedTransaction implements Transaction {
     }
 
     @Override
-    public void updateColumn(AmsTableTracer.UpdateColumn updateColumn) {
+    public void updateColumn(UpdateColumn updateColumn) {
       tracer.updateColumn(updateColumn);
-    }
-
-    @Override
-    public void newSchema(Schema schema) {
-      tracer.newSchema(schema);
     }
   }
 

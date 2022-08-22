@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.data.UpdateColumn;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
@@ -60,16 +61,10 @@ public interface TableTracer {
   void replaceProperties(Map<String, String> newProperties);
 
   /**
-   * Replace some properties of table
+   * update column of table
    * @param updateColumn updated column info
    */
-  void updateColumn(AmsTableTracer.UpdateColumn updateColumn);
-
-  /**
-   * Replace some properties of table
-   * @param schema new schema
-   */
-  void newSchema(Schema schema);
+  void updateColumn(UpdateColumn updateColumn);
 
   /**
    * Commit table changes.

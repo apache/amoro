@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
+import com.netease.arctic.data.UpdateColumn;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
@@ -64,7 +65,6 @@ public class AmsTableTracer implements TableTracer {
   private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
   private final List<UpdateColumn> updateColumns = new ArrayList<>();
-  private Schema schema;
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
@@ -156,11 +156,11 @@ public class AmsTableTracer implements TableTracer {
       });
       update = true;
     }
-    if (updateColumns.size() > 0) {
-      int schemaId = schema.schemaId();
+    if (updateColumns.size() > 0 && Constants.INNER_TABLE_BASE.equals(innerTable)) {
+      table.refresh();
+      int schemaId = table.schema().schemaId();
       SchemaUpdateMeta ddlCommitMeta = new SchemaUpdateMeta();
       ddlCommitMeta.setSchemaId(schemaId);
-      ddlCommitMeta.setTableIdentifier(table.id().buildTableIdentifier());
       List<com.netease.arctic.ams.api.UpdateColumn> commitUpdateColumns =
           updateColumns.stream().map(AmsTableTracer::covert).collect(Collectors.toList());
       ddlCommitMeta.setUpdateColumns(commitUpdateColumns);
@@ -190,11 +190,6 @@ public class AmsTableTracer implements TableTracer {
   @Override
   public void updateColumn(UpdateColumn updateColumn) {
     updateColumns.add(updateColumn);
-  }
-
-  @Override
-  public void newSchema(Schema schema) {
-    this.schema = schema;
   }
 
   public void setAction(String action) {
@@ -301,60 +296,5 @@ public class AmsTableTracer implements TableTracer {
   public enum PropertiesOPType {
     SET,
     UNSET
-  }
-
-  public static class UpdateColumn {
-    private final String parent;
-    private final String name;
-    private final Type type;
-    private final String doc;
-    private final AmsTableTracer.SchemaOperateType operate;
-    private final Boolean isOptional;
-    private final String newName;
-
-    public UpdateColumn(
-        String name,
-        String parent,
-        Type type,
-        String doc,
-        AmsTableTracer.SchemaOperateType operate,
-        Boolean isOptional,
-        String newName) {
-      this.parent = parent;
-      this.name = name;
-      this.type = type;
-      this.doc = doc;
-      this.operate = operate;
-      this.isOptional = isOptional;
-      this.newName = newName;
-    }
-
-    public String getParent() {
-      return parent;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public Type getType() {
-      return type;
-    }
-
-    public String getDoc() {
-      return doc;
-    }
-
-    public AmsTableTracer.SchemaOperateType getOperate() {
-      return operate;
-    }
-
-    public Boolean getOptional() {
-      return isOptional;
-    }
-
-    public String getNewName() {
-      return newName;
-    }
   }
 }

@@ -20,7 +20,6 @@ package com.netease.arctic;
 
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;

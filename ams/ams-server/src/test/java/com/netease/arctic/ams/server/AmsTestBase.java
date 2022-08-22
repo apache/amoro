@@ -47,26 +47,12 @@ import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.ibatis.session.SqlSessionFactory;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
-import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.types.Types;
 import org.assertj.core.util.Lists;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.mockito.stubbing.Answer;
@@ -81,7 +67,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.server.util.DerbyTestUtil.get;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -90,7 +75,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({OptimizerControllerTest.class, TableControllerTest.class, TerminalControllerTest.class,
-                     TestDDLTracerService.class})
+                     TestDDLTracerService.class,LoginControllerTest.class, TestExpiredFileClean.class,
+                     TestMajorOptimizeCommit.class, TestMajorOptimizePlan.class, TestMinorOptimizeCommit.class,
+                     TestMinorOptimizePlan.class, TestOrphanFileClean.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -109,70 +96,10 @@ public class AmsTestBase {
 
   private static final File testTableBaseDir = new File("/tmp");
   private static final File testBaseDir = new File("unit_test_base_tmp");
-  // protected static final MockArcticMetastoreServer ams = MockArcticMetastoreServer.getInstance();
   public static ArcticTableMetastoreHandler amsHandler;
   public static ArcticCatalog catalog;
   public static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";
   public static final String AMS_TEST_DB_NAME = "ams_test_db";
-
-  protected static final TableIdentifier TABLE_ID =
-      TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, "test_table");
-  protected static final TableIdentifier PK_TABLE_ID =
-      TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, "test_pk_table");
-  public static final Schema TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
-  );
-  protected static final Schema POS_DELETE_SCHEMA = new Schema(
-      MetadataColumns.DELETE_FILE_PATH,
-      MetadataColumns.DELETE_FILE_POS
-  );
-  protected static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
-      .day("op_time").build();
-  protected static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
-      .addColumn("id").build();
-  protected static File tableDir = null;
-  public static UnkeyedTable testTable;
-  public static KeyedTable testKeyedTable;
-  public static final DataFile FILE_A = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-a.parquet")
-      .withFileSizeInBytes(0)
-      .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
-  public static final DataFile FILE_B = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
-      .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
-  public static final DataFile FILE_C = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
-      .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
-
-  // @ClassRule
-  // public static TemporaryFolder temp = new TemporaryFolder();
-
-  @Before
-  public void beforeAll() throws IOException {
-    // tableDir = temp.newFolder();
-    // testTable = catalog
-    //     .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
-    //     .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
-    //     .withPartitionSpec(SPEC)
-    //     .create().asUnkeyedTable();
-    //
-    // testKeyedTable = catalog
-    //     .newTableBuilder(PK_TABLE_ID, TABLE_SCHEMA)
-    //     .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
-    //     .withPartitionSpec(SPEC)
-    //     .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
-    //     .create().asKeyedTable();
-  }
 
   @BeforeClass
   public static void beforeAllTest() throws Exception {

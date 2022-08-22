@@ -49,7 +49,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class TestBaseOptimizePlan extends AmsTestBase {
+public class TestBaseOptimizePlan extends TableTestBase {
   protected List<DataFileInfo> baseDataFilesInfo = new ArrayList<>();
   protected List<DataFileInfo> posDeleteFilesInfo = new ArrayList<>();
 

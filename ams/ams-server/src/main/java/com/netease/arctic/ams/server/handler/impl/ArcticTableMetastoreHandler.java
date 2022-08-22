@@ -166,7 +166,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   }
 
   @Override
-  public void tableCommit(TableCommitMeta commit) throws MetaException, TException {
+  public void tableCommit(TableCommitMeta commit) throws TException {
     if (commit == null) {
       throw new NoSuchObjectException("table commit meta should not be null");
     }
@@ -177,7 +177,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
       metaService.updateTableProperties(identifier, commit.getProperties());
     }
     if (commit.getSchemaUpdateMeta() != null) {
-      ddlTracerService.commit(commit.getSchemaUpdateMeta());
+      ddlTracerService.commit(commit.getTableIdentifier(), commit.getSchemaUpdateMeta());
     }
     try {
       fileInfoCacheService.commitCacheFileInfo(commit);

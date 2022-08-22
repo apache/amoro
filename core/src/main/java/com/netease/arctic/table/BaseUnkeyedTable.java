@@ -170,7 +170,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new TracedSchemaUpdate(this, icebergTable.updateSchema(), null, new AmsTableTracer(this, null, client));
+    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client));
   }
 
   @Override

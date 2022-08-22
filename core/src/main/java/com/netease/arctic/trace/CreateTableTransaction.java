@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.data.UpdateColumn;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -253,12 +254,7 @@ public class CreateTableTransaction implements Transaction {
     }
 
     @Override
-    public void updateColumn(AmsTableTracer.UpdateColumn updateColumn) {
-
-    }
-
-    @Override
-    public void newSchema(Schema schema) {
+    public void updateColumn(UpdateColumn updateColumn) {
 
     }
   }

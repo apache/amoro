@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
@@ -71,7 +72,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Schema schema() {
-    TracedSchemaUpdate.syncSchema(this);
+    KeyedSchemaUpdate.syncSchema(this);
     return baseTable.schema();
   }
 
@@ -150,11 +151,10 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new TracedSchemaUpdate(
-        this,
-        baseTable.updateSchema(),
-        changeTable.updateSchema(),
-        new AmsTableTracer(this, null, client));
+    if (PrimaryKeySpec.noPrimaryKey().equals(primaryKeySpec())) {
+      return baseTable().updateSchema();
+    }
+    return new KeyedSchemaUpdate(this);
   }
 
   @Override

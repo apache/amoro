@@ -41,7 +41,6 @@ import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     ServiceContainer.class,
     JDBCSqlSessionFactoryProvider.class

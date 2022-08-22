@@ -61,8 +61,7 @@ struct UpdateColumn {
 
 struct SchemaUpdateMeta {
     1: i32 schemaId;
-    2: arctic_commons.TableIdentifier tableIdentifier;
-    3: list<UpdateColumn> updateColumns;
+    2: list<UpdateColumn> updateColumns;
 }
 
 

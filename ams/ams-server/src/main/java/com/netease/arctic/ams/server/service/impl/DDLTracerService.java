@@ -56,8 +56,7 @@ public class DDLTracerService extends IJDBCService {
     skipProperties.add(BASE_TABLE_MAX_TRANSACTION_ID);
   }
 
-  public void commit(SchemaUpdateMeta commitMeta) {
-    TableIdentifier tableIdentifier = commitMeta.getTableIdentifier();
+  public void commit(TableIdentifier tableIdentifier, SchemaUpdateMeta commitMeta) {
     Long commitTime = System.currentTimeMillis();
     int schemaId = commitMeta.getSchemaId();
     ArcticCatalog catalog =

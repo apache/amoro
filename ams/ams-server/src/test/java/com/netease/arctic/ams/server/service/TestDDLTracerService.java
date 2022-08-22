@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -83,15 +84,19 @@ public class TestDDLTracerService {
         Types.NestedField.required(3, "alterCol", Types.FloatType.get()),
         Types.NestedField.required(4, "oldCol", Types.TimestampType.withoutZone()),
         Types.NestedField.required(5, "afterCol", Types.IntegerType.get()),
-        Types.NestedField.required(6, "firstCol", Types.IntegerType.get())
+        Types.NestedField.required(6, "firstCol", Types.IntegerType.get()),
+        Types.NestedField.required(7, "id", Types.IntegerType.get())
     );
+   PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(schema)
+        .addColumn("id").build();
+
     testCommotIdentifier = new TableIdentifier();
     testCommotIdentifier.catalog = AMS_TEST_CATALOG_NAME;
     testCommotIdentifier.database = AMS_TEST_DB_NAME;
     testCommotIdentifier.tableName = commitTableName;
     testCommitTable = AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(testCommotIdentifier),
-        schema).create();
+        schema).withPrimaryKeySpec(PRIMARY_KEY_SPEC).create();
 
     testSyncIdentifier = new TableIdentifier();
     testSyncIdentifier.catalog = AMS_TEST_CATALOG_NAME;
@@ -99,7 +104,7 @@ public class TestDDLTracerService {
     testSyncIdentifier.tableName = syncTableName;
     testSyncTable = AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(testSyncIdentifier),
-        schema).create();
+        schema).withPrimaryKeySpec(PRIMARY_KEY_SPEC).create();
   }
 
   @Test
@@ -204,13 +209,13 @@ public class TestDDLTracerService {
     TableMetadata tableMetadata = new TableMetadata();
     Map<String, String> properties = new HashMap<>();
     properties.put("key1", "val1");
-    testSyncTable.asUnkeyedTable().updateProperties().set("key1", "val1").commit();
+    testSyncTable.asKeyedTable().updateProperties().set("key1", "val1").commit();
     service.dropTableData(testSyncIdentifier);
     properties.putAll(testSyncTable.properties());
     tableMetadata.setProperties(properties);
 
-    testSyncTable.asUnkeyedTable().updateProperties().set("key2", "val2").commit();
-    testSyncTable.asUnkeyedTable().updateProperties().remove("key1").commit();
+    testSyncTable.asKeyedTable().updateProperties().set("key2", "val2").commit();
+    testSyncTable.asKeyedTable().updateProperties().remove("key1").commit();
 
     //test commit
     List<DDLInfo> commitDdlInfos = ServiceContainer.getDdlTracerService().getDDL(testSyncIdentifier);
@@ -234,32 +239,32 @@ public class TestDDLTracerService {
   }
 
   private void addColumn(ArcticTable table, String tableName, List<String> sqls) {
-    table.asUnkeyedTable().updateSchema().addColumn("addCol", Types.IntegerType.get(), "addCol doc").commit();
+    table.asKeyedTable().updateSchema().addColumn("addCol", Types.IntegerType.get(), "addCol doc").commit();
     sqls.add("ALTER TABLE " + tableName + "  ADD COLUMN addCol int  COMMENT 'addCol doc'");
   }
 
   private void dropColumn(ArcticTable table, String tableName, List<String> sqls) {
-    table.asUnkeyedTable().updateSchema().deleteColumn("dropCol").commit();
+    table.asKeyedTable().updateSchema().deleteColumn("dropCol").commit();
     sqls.add("ALTER TABLE " + tableName + "  DROP COLUMN dropCol");
   }
 
   private void alterColumn(ArcticTable table, String tableName, List<String> sqls) {
-    table.asUnkeyedTable().updateSchema().updateColumn("alterCol", Types.DoubleType.get()).commit();
+    table.asKeyedTable().updateSchema().updateColumn("alterCol", Types.DoubleType.get()).commit();
     sqls.add("ALTER TABLE " + tableName + "  ALTER COLUMN alterCol  TYPE double");
   }
 
   private void renameColumn(ArcticTable table, String tableName, List<String> sqls) {
-    table.asUnkeyedTable().updateSchema().renameColumn("oldCol", "newCol").commit();
+    table.asKeyedTable().updateSchema().renameColumn("oldCol", "newCol").commit();
     sqls.add("ALTER TABLE " + tableName + "  RENAME COLUMN oldCol TO newCol");
   }
 
   private void moveAfterColumn(ArcticTable table, String tableName, List<String> sqls) {
-    table.asUnkeyedTable().updateSchema().moveAfter("afterCol", "beforeCol").commit();
+    table.asKeyedTable().updateSchema().moveAfter("afterCol", "beforeCol").commit();
     sqls.add("ALTER TABLE " + tableName + "  ALTER COLUMN afterCol AFTER beforeCol");
   }
 
   private void moveFirstColumn(ArcticTable table, String tableName, List<String> sqls) {
-    table.asUnkeyedTable().updateSchema().moveFirst("firstCol").commit();
+    table.asKeyedTable().updateSchema().moveFirst("firstCol").commit();
     sqls.add("ALTER TABLE " + tableName + "  ALTER COLUMN firstCol FIRST");
   }
 }
