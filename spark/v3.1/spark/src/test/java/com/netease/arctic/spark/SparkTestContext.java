@@ -27,8 +27,8 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -100,8 +100,6 @@ public class SparkTestContext extends ExternalResource {
   protected static String catalogNameArctic;
   protected static String catalogNameHive;
   protected List<Object[]> rows;
-  private static SparkTestContext sparkTestContext;
-  private static int refCount = 0;
   static final File hmsDir = new File(testBaseDir, "hive");
   protected static final HMSMockServer hms = new HMSMockServer(hmsDir);
 
