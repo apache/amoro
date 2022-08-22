@@ -66,6 +66,7 @@ public class TracedRewriteFiles implements RewriteFiles {
   @Override
   public RewriteFiles set(String property, String value) {
     rewriteFiles.set(property, value);
+    tracer.setSnapshotSummary(property, value);
     return this;
   }
 

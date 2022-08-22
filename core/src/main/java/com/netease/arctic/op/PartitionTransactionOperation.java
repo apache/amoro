@@ -27,6 +27,9 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.util.StructLikeMap;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Abstract transaction operation on {@link BaseTable} which will change
  * max transaction id map
@@ -36,9 +39,16 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
   KeyedTable keyedTable;
   private Transaction tx;
 
+  protected final Map<String, String> properties;
 
   public PartitionTransactionOperation(KeyedTable baseTable) {
     this.keyedTable = baseTable;
+    this.properties = new HashMap<>();
+  }
+
+  public PartitionTransactionOperation set(String key, String value) {
+    this.properties.put(key, value);
+    return this;
   }
 
   /**

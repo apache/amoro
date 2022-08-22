@@ -199,6 +199,11 @@ public class TracedTransaction implements Transaction {
     public void replaceProperties(Map<String, String> newProperties) {
       tracer.replaceProperties(newProperties);
     }
+
+    @Override
+    public void setSnapshotSummary(String key, String value) {
+      tracer.setSnapshotSummary(key, value);
+    }
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {
