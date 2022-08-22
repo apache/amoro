@@ -47,6 +47,22 @@ struct TableCommitMeta {
     4: i64 commitTime;
     5: map<string, string> properties;
     6: CommitMetaProducer commitMetaProducer;
+    7: SchemaUpdateMeta schemaUpdateMeta;
+}
+
+struct UpdateColumn {
+    1: string name;
+    2: optional string parent;
+    3: optional string type;
+    4: optional string doc;
+    5: string operate;
+    6: optional string isOptional;
+    7: optional string newName;
+}
+
+struct SchemaUpdateMeta {
+    1: i32 schemaId;
+    2: list<UpdateColumn> updateColumns;
 }
 
 struct TableMeta {

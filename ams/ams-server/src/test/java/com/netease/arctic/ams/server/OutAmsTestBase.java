@@ -1,0 +1,49 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *  *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *  *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.ams.server;
+
+import com.netease.arctic.ams.server.controller.LoginControllerTest;
+import com.netease.arctic.ams.server.controller.OptimizerControllerTest;
+import com.netease.arctic.ams.server.controller.TableControllerTest;
+import com.netease.arctic.ams.server.controller.TerminalControllerTest;
+import com.netease.arctic.ams.server.optimize.TestBaseOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
+import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
+import com.netease.arctic.ams.server.service.TestDDLTracerService;
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
+
+@RunWith(Suite.class)
+@Suite.SuiteClasses({LoginControllerTest.class, TestExpiredFileClean.class,
+                     TestMajorOptimizeCommit.class, TestMajorOptimizePlan.class, TestMinorOptimizeCommit.class,
+                     TestMinorOptimizePlan.class, TestOrphanFileClean.class})
+@PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
+                  "com.amazonaws.http.conn.ssl.*",
+                  "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*",
+                  "javax.xml.parsers.*"})
+public class OutAmsTestBase {
+
+}

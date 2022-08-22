@@ -55,7 +55,6 @@ import java.util.stream.Collectors;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class
 })
