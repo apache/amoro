@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.hive;
 
 
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.spark.SparkTestContext;
 
 import java.io.File;
