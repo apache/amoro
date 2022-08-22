@@ -22,8 +22,8 @@ import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
-import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.KeyedTable;
@@ -72,6 +72,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user arbitrary  probe side
    */
   private final boolean dimTable;
+  private volatile boolean sourceEventBeforeFirstPlan = false;
   /**
    * snapshotId for the last enumerated snapshot. next incremental enumeration
    * should be based off this as the starting position.
@@ -145,6 +146,10 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     ContinuousEnumerationResult result = doPlanSplits();
     if (dimTable && temporalJoinSplits == null) {
       temporalJoinSplits = new TemporalJoinSplits(result.splits(), context.metricGroup());
+      // the first SourceEvent may be faster than plan splits
+      if (result.isEmpty() && sourceEventBeforeFirstPlan) {
+        notifyReaders();
+      }
     }
     return result;
   }
@@ -197,10 +202,13 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * @param finishedSplitIds
    */
   public void checkAndNotifyReader(Collection<String> finishedSplitIds) {
-    if (temporalJoinSplits == null || temporalJoinSplits.isHaveNotifiedReader()) {
+    if (temporalJoinSplits == null) {
+      sourceEventBeforeFirstPlan = true;
       return;
     }
-    if (!temporalJoinSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
+
+    if (temporalJoinSplits.isHaveNotifiedReader() ||
+        !temporalJoinSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
       return;
     }
     notifyReaders();
