@@ -255,6 +255,11 @@ public class CreateTableTransaction implements Transaction {
     @Override
     public void setSnapshotSummary(String key, String value) {
     }
+
+    @Override
+    public void updateColumn(UpdateColumn updateColumn) {
+
+    }
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {
