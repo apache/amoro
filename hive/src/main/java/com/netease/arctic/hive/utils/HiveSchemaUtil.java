@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.utils;
 
-import java.util.ArrayList;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
