@@ -560,6 +560,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
 
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
       Table table = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
