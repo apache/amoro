@@ -251,6 +251,10 @@ public class CreateTableTransaction implements Transaction {
     @Override
     public void replaceProperties(Map<String, String> newProperties) {
     }
+
+    @Override
+    public void setSnapshotSummary(String key, String value) {
+    }
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {

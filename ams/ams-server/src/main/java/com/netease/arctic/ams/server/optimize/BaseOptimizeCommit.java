@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -27,6 +28,7 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
@@ -148,6 +150,7 @@ public class BaseOptimizeCommit {
       // commit minor optimize content
       if (CollectionUtils.isNotEmpty(minorAddFiles) || CollectionUtils.isNotEmpty(minorDeleteFiles)) {
         OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(arcticTable.asKeyedTable());
+        overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
         AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
         minorAddFiles.forEach(contentFile -> {
           if (contentFile instanceof DataFile) {
@@ -176,6 +179,7 @@ public class BaseOptimizeCommit {
 
         if (CollectionUtils.isNotEmpty(deletedPosDeleteFiles)) {
           RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
+          rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
           rewriteFiles.rewriteFiles(Collections.emptySet(), deletedPosDeleteFiles,
               Collections.emptySet(), Collections.emptySet());
           try {
@@ -230,12 +234,14 @@ public class BaseOptimizeCommit {
         }
         if (deleteDeleteFiles.isEmpty()) {
           OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
+          overwriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
           deleteDataFiles.forEach(overwriteFiles::deleteFile);
           addDataFiles.forEach(overwriteFiles::addFile);
           overwriteFiles.commit();
         } else {
           RewriteFiles rewriteFiles = baseArcticTable.newRewrite()
               .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
+          rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
           rewriteFiles.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, addDeleteFiles);
           rewriteFiles.commit();
         }

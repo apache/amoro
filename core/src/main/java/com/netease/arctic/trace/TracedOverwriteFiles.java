@@ -91,6 +91,7 @@ public class TracedOverwriteFiles implements OverwriteFiles {
   @Override
   public OverwriteFiles set(String property, String value) {
     overwriteFiles.set(property, value);
+    tracer.setSnapshotSummary(property, value);
     return this;
   }
 

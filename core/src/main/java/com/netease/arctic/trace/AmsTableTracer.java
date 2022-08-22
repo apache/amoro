@@ -19,6 +19,7 @@
 package com.netease.arctic.trace;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -35,10 +36,12 @@ import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +61,7 @@ public class AmsTableTracer implements TableTracer {
 
   private String action;
   private Map<String, String> properties;
+  private final Map<String, String> snapshotSummary = new HashMap<>();
   private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
 
@@ -123,6 +127,10 @@ public class AmsTableTracer implements TableTracer {
     TableCommitMeta commitMeta = new TableCommitMeta();
     commitMeta.setTableIdentifier(table.id().buildTableIdentifier());
     commitMeta.setAction(action);
+    String commitMetaSource = PropertyUtil.propertyAsString(snapshotSummary,
+        com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER,
+        com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
+    commitMeta.setCommitMetaProducer(CommitMetaProducer.valueOf(commitMetaSource));
     commitMeta.setCommitTime(System.currentTimeMillis());
     boolean update = false;
     boolean threw = false;
@@ -174,6 +182,11 @@ public class AmsTableTracer implements TableTracer {
   @Override
   public void replaceProperties(Map<String, String> newProperties) {
     this.properties = newProperties;
+  }
+
+  @Override
+  public void setSnapshotSummary(String key, String value) {
+    snapshotSummary.put(key, value);
   }
 
   public void setAction(String action) {
