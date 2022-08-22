@@ -48,10 +48,7 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
 
   @Override
   public UpdateSchema updateSchema() {
-    if (PrimaryKeySpec.noPrimaryKey().equals(primaryKeySpec())) {
-      return baseTable().updateSchema();
-    }
-    return new HiveSchemaUpdate(this, hiveClient);
+    return new HiveSchemaUpdate(this, hiveClient, super.updateSchema());
   }
 
   @Override

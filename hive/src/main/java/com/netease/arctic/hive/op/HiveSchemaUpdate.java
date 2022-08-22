@@ -21,78 +21,140 @@ package com.netease.arctic.hive.op;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import org.apache.hadoop.hive.metastore.TableType;
-import org.apache.hadoop.hive.metastore.api.SerDeInfo;
-import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
+import java.util.Collection;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.HashMap;
+import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.types.Type;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
  */
-public class HiveSchemaUpdate extends KeyedSchemaUpdate {
-  private static final Logger LOG = LoggerFactory.getLogger(HiveSchemaUpdate.class);
-
+public class HiveSchemaUpdate implements UpdateSchema {
   private ArcticTable arcticTable;
   private Table baseTable;
   private HMSClient hiveClient;
+  private UpdateSchema updateSchema;
 
-  public HiveSchemaUpdate(KeyedTable keyedTable, HMSClient hiveClient) {
-    super(keyedTable);
-    this.arcticTable = keyedTable;
-    this.baseTable = keyedTable.baseTable();
+  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClient hiveClient, UpdateSchema updateSchema) {
+    this.arcticTable = arcticTable;
+    if (arcticTable.isKeyedTable()) {
+      this.baseTable = arcticTable.asKeyedTable().baseTable();
+    } else {
+      this.baseTable = arcticTable.asUnkeyedTable();
+    }
     this.hiveClient = hiveClient;
+    this.updateSchema = updateSchema;
+  }
+
+  @Override
+  public Schema apply() {
+    return this.updateSchema.apply();
   }
 
   @Override
   public void commit() {
-    super.commit();
+    this.updateSchema.commit();
+    if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable) == null) {
+      throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
+    }
+    baseTable.refresh();
     syncSchemaToHive();
   }
 
   private void syncSchemaToHive() {
     org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable);
     if (tbl == null) {
-      tbl = newHmsTable(arcticTable);
+      throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
-    tbl.setSd(storageDescriptor(baseTable.schema()));
+    tbl.setSd(HiveSchemaUtil.storageDescriptor(baseTable.schema(), baseTable.spec()));
     HiveTableUtil.persistTable(hiveClient, tbl);
   }
 
-  private StorageDescriptor storageDescriptor(Schema schema) {
-    final StorageDescriptor storageDescriptor = new StorageDescriptor();
-    storageDescriptor.setCols(HiveSchemaUtil.hiveTableFields(schema, baseTable.spec()));
-    SerDeInfo serDeInfo = new SerDeInfo();
-    storageDescriptor.setSerdeInfo(serDeInfo);
-    return storageDescriptor;
+  @Override
+  public UpdateSchema allowIncompatibleChanges() {
+    throw new UnsupportedOperationException("hive table not support allowIncompatibleChanges");
   }
 
-  private org.apache.hadoop.hive.metastore.api.Table newHmsTable(ArcticTable arcticTable) {
-    final long currentTimeMillis = System.currentTimeMillis();
+  @Override
+  public UpdateSchema addColumn(String name, Type type, String doc) {
+    this.updateSchema.addColumn(name, type, doc);
+    return this;
+  }
 
-    org.apache.hadoop.hive.metastore.api.Table newTable =
-        new org.apache.hadoop.hive.metastore.api.Table(arcticTable.id().getTableName(),
-        arcticTable.id().getDatabase(),
-        System.getProperty("user.name"),
-        (int) currentTimeMillis / 1000,
-        (int) currentTimeMillis / 1000,
-        Integer.MAX_VALUE,
-        null,
-        Collections.emptyList(),
-        new HashMap<>(),
-        null,
-        null,
-        TableType.EXTERNAL_TABLE.toString());
+  @Override
+  public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
+    this.updateSchema.addColumn(parent, name, type, doc);
+    return this;
+  }
 
-    newTable.getParameters().put("EXTERNAL", "TRUE"); // using the external table type also requires this
-    return newTable;
+  @Override
+  public UpdateSchema addRequiredColumn(String name, Type type, String doc) {
+    throw new UnsupportedOperationException("hive table not support addRequiredColumn");
+  }
+
+  @Override
+  public UpdateSchema addRequiredColumn(String parent, String name, Type type, String doc) {
+    throw new UnsupportedOperationException("hive table not support addRequiredColumn");
+  }
+
+  @Override
+  public UpdateSchema renameColumn(String name, String newName) {
+    this.updateSchema.renameColumn(name, newName);
+    return this;
+  }
+
+  @Override
+  public UpdateSchema updateColumn(String name, Type.PrimitiveType newType) {
+    this.updateSchema.updateColumn(name, newType);
+    return this;
+  }
+
+  @Override
+  public UpdateSchema updateColumnDoc(String name, String newDoc) {
+    this.updateSchema.updateColumnDoc(name, newDoc);
+    return this;
+  }
+
+  @Override
+  public UpdateSchema makeColumnOptional(String name) {
+    throw new UnsupportedOperationException("hive table not support makeColumnOptional");
+  }
+
+  @Override
+  public UpdateSchema requireColumn(String name) {
+    throw new UnsupportedOperationException("hive table not support requireColumn");
+  }
+
+  @Override
+  public UpdateSchema deleteColumn(String name) {
+    throw new UnsupportedOperationException("hive table not support deleteColumn");
+  }
+
+  @Override
+  public UpdateSchema moveFirst(String name) {
+    throw new UnsupportedOperationException("hive table not support moveFirst");
+  }
+
+  @Override
+  public UpdateSchema moveBefore(String name, String beforeName) {
+    throw new UnsupportedOperationException("hive table not support moveBefore");
+  }
+
+  @Override
+  public UpdateSchema moveAfter(String name, String afterName) {
+    throw new UnsupportedOperationException("hive table not support moveAfter");
+  }
+
+  @Override
+  public UpdateSchema unionByNameWith(Schema newSchema) {
+    throw new UnsupportedOperationException("hive table not support unionByNameWith");
+  }
+
+  @Override
+  public UpdateSchema setIdentifierFields(Collection<String> names) {
+    throw new UnsupportedOperationException("hive table not support setIdentifierFields");
   }
 }
