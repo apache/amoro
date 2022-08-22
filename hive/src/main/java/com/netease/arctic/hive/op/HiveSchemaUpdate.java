@@ -23,11 +23,12 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import java.util.Collection;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Type;
+
+import java.util.Collection;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
