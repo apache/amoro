@@ -56,7 +56,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
    * <p>
    * If its value is null, it means that we don't need to generate watermark. Won't check.
    */
-  private transient TemporalJoinSplits temporalJoinSplits = null;
+  private volatile transient TemporalJoinSplits temporalJoinSplits = null;
   private final ArcticTableLoader loader;
   private final SplitEnumeratorContext<ArcticSplit> context;
   private final ContinuousSplitPlanner continuousSplitPlanner;

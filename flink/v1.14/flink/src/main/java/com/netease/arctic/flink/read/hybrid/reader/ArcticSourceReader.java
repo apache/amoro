@@ -47,6 +47,11 @@ public class ArcticSourceReader<T> extends
   public static final Logger LOGGER = LoggerFactory.getLogger(ArcticSourceReader.class);
 
   public ReaderOutput<T> output;
+  /**
+   * SourceEvents may be received before this#pollNext.
+   */
+  private volatile boolean maxWatermarkToBeEmitted = false;
+
 
   public ArcticSourceReader(
       ReaderFunction<T> readerFunction,
@@ -97,12 +102,22 @@ public class ArcticSourceReader<T> extends
       return;
     }
     LOGGER.info("receive StartWatermarkEvent");
+    maxWatermarkToBeEmitted = true;
+    emitWatermarkIfNeeded();
+  }
+
+  private void emitWatermarkIfNeeded() {
+    if (this.output == null || maxWatermarkToBeEmitted) {
+      return;
+    }
     output.emitWatermark(new Watermark(Long.MAX_VALUE));
+    maxWatermarkToBeEmitted = false;
   }
 
   @Override
   public InputStatus pollNext(ReaderOutput<T> output) throws Exception {
     this.output = output;
+    emitWatermarkIfNeeded();
     return super.pollNext(output);
   }
 }
