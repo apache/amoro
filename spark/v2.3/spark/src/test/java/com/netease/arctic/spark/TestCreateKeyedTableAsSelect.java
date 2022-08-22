@@ -19,10 +19,9 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
 
     @Before
     public void prepare() {
-        sql("use " + catalogName);
         sql("create database if not exists " + database);
         sql("create table {0}.{1} ( \n" +
-                " id int , data string, pt string ) using arctic \n" +
+                " id int , data string, pt string , primary key(id)) using arctic \n" +
                 " partitioned by (pt) \n" , database, sourceTable);
 
         sql("insert overwrite {0}.{1} values \n" +
@@ -45,7 +44,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
 
     @Test
     public void testPrimaryKeyCTAS() {
-        sql("create table {0}.{1} primary key(id) using arctic  AS SELECT * from {2}.{3}.{4}",
+        sql("create table {0}.{1} primary key(id) using arctic AS SELECT * from {2}.{3}.{4}",
                 database, table, catalogName, database, sourceTable);
         assertTableExist(identifier);
         sql("desc table {0}.{1}", database, table);

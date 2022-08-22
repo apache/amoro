@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-spark</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.0</version>
+        <version>0.3.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -141,6 +141,20 @@
         </dependency>
 
         <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.iceberg</groupId>
             <artifactId>iceberg-spark3</artifactId>
             <version>${iceberg.version}</version>
@@ -200,6 +214,12 @@
             <version>${hive.version}</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -245,7 +265,6 @@
                 <configuration>
                     <includes>
                         <include>**/ArcticSparkHiveMainTest.java</include>
-                        <include>**/ArcticSparkNonHiveMainTest.java</include>
                     </includes>
                 </configuration>
             </plugin>

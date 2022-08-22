@@ -124,6 +124,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
       partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
     }
+    if (transactionId != null && transactionId > 0) {
+      overwriteFiles.set("txId", transactionId + "");
+    }
 
     if (MapUtils.isNotEmpty(properties)) {
       properties.forEach(overwriteFiles::set);
