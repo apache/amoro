@@ -19,13 +19,25 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
 import com.netease.arctic.ams.server.model.BaseMajorCompactRecord;
 import com.netease.arctic.ams.server.model.CompactRangeType;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.iceberg.types.Types;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class AmsUtils {
   public static TableIdentifier toTableIdentifier(com.netease.arctic.table.TableIdentifier tableIdentifier) {
@@ -101,4 +113,43 @@ public class AmsUtils {
     return path == null ? null : new File(path).getName();
   }
 
+  public static List<AMSColumnInfo> transforHiveSchemaToAMSColumnInfos(List<FieldSchema> fields) {
+    return fields.stream()
+        .map(f -> {
+          AMSColumnInfo columnInfo = new AMSColumnInfo();
+          columnInfo.setField(f.getName());
+          columnInfo.setType(f.getType());
+          columnInfo.setComment(f.getComment());
+          return columnInfo;
+        }).collect(Collectors.toList());
+  }
+
+  public static Map<String, String> getNotDeprecatedAndNotInternalStaticFields(Class<?> clazz)
+      throws IllegalAccessException {
+
+    List<Field> fields = Arrays.stream(clazz.getDeclaredFields())
+        // filter out the non-static fields
+        .filter(f -> Modifier.isStatic(f.getModifiers()))
+        .filter(f -> f.getAnnotation(Deprecated.class) == null)
+        // collect to list
+        .collect(Collectors.toList());
+
+    Map<String, String> result = new HashMap<>();
+    for (Field field : fields) {
+      result.put(field.getName(), field.get(null) + "");
+    }
+    return result;
+  }
+
+  public static String getStackTrace(Throwable throwable) {
+    StringWriter sw = new StringWriter();
+    PrintWriter printWriter = new PrintWriter(sw);
+
+    try {
+      throwable.printStackTrace(printWriter);
+      return sw.toString();
+    } finally {
+      printWriter.close();
+    }
+  }
 }

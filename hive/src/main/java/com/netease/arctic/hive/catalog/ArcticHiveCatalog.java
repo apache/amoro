@@ -171,11 +171,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     protected void doCreateCheck() {
       super.doCreateCheck();
       try {
-        org.apache.hadoop.hive.metastore.api.Table hiveTable =
-            hiveClientPool.run(client -> client.getTable(identifier.getDatabase(),
-            identifier.getTableName()));
-        if (hiveTable != null) {
-          throw new IllegalArgumentException("Table is already existed in hive meta store:" + identifier);
+        if (!(properties.containsKey(TableProperties.UPGRADE_ENABLE) &&
+            properties.get(TableProperties.UPGRADE_ENABLE).equals("true"))) {
+          org.apache.hadoop.hive.metastore.api.Table hiveTable =
+              hiveClientPool.run(client -> client.getTable(identifier.getDatabase(),
+                  identifier.getTableName()));
+          if (hiveTable != null) {
+            throw new IllegalArgumentException("Table is already existed in hive meta store:" + identifier);
+          }
         }
       } catch (org.apache.hadoop.hive.metastore.api.NoSuchObjectException noSuchObjectException) {
         // ignore this exception
@@ -228,11 +231,13 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       try {
         hiveClientPool.run(client -> {
-          org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
-          hiveTable.setSd(storageDescriptor(tableLocation,
-              FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
-                  TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-          client.createTable(hiveTable);
+          if (!client.tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName())) {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
+            hiveTable.setSd(storageDescriptor(tableLocation,
+                FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
+                    TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            client.createTable(hiveTable);
+          }
           return null;
         });
       } catch (TException | InterruptedException e) {
@@ -259,11 +264,13 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       });
       try {
         hiveClientPool.run(client -> {
-          org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
-          hiveTable.setSd(storageDescriptor(tableLocation,
-              FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
-                  TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-          client.createTable(hiveTable);
+          if (client.tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName())) {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
+            hiveTable.setSd(storageDescriptor(tableLocation,
+                FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
+                    TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            client.createTable(hiveTable);
+          }
           return null;
         });
       } catch (TException | InterruptedException e) {

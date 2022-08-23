@@ -180,6 +180,34 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
     });
   }
 
+  @Override
+  public boolean mkdirs(String path) {
+    return tableMetaStore.doAs(() -> {
+      Path filePath = new Path(path);
+      FileSystem fs = getFs(filePath);
+      try {
+        return fs.mkdirs(filePath);
+      } catch (IOException e) {
+        LOG.error("Failed to mkdirs: path {}, exception {}", filePath, e);
+        throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
+      }
+    });
+  }
+
+  @Override
+  public boolean rename(String oldPath, String newPath) {
+    return tableMetaStore.doAs(() -> {
+      Path srcPath = new Path(oldPath);
+      Path dtsPath = new Path(newPath);
+      FileSystem fs = getFs(srcPath);
+      try {
+        return fs.rename(srcPath, dtsPath);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to rename: from " + oldPath + " to " + newPath, e);
+      }
+    });
+  }
+
   private FileSystem getFs(Path path) {
     return Util.getFs(path, conf());
   }
