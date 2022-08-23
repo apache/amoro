@@ -16,15 +16,23 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.hive;
+package com.netease.arctic.hive;
 
+import java.io.File;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.metastore.*;
+import org.apache.hadoop.hive.metastore.HiveMetaStore;
+import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import org.apache.hadoop.hive.metastore.IHMSHandler;
+import org.apache.hadoop.hive.metastore.RetryingHMSHandler;
+import org.apache.hadoop.hive.metastore.TSetIpAddressProcessor;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.common.DynMethods;
 import org.apache.iceberg.hadoop.Util;
@@ -36,11 +44,6 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.Random;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class HMSMockServer {
 
@@ -64,13 +67,13 @@ public class HMSMockServer {
       .buildStatic();
 
   // Hive3 introduces background metastore tasks (MetastoreTaskThread) for performing various cleanup duties. These
-  // threads are scheduled and executed in a static thread pool (org.apache.hadoop.com.netease.spark.hive.metastore.ThreadPool).
+  // threads are scheduled and executed in a static thread pool (org.apache.hadoop.hive.metastore.ThreadPool).
   // This thread pool is shut down normally as part of the JVM shutdown hook, but since we're creating and tearing down
   // multiple metastore instances within the same JVM, we have to call this cleanup method manually, otherwise
   // threads from our previous test suite will be stuck in the pool with stale config, and keep on being scheduled.
   // This can lead to issues, e.g. accidental Persistence Manager closure by ScheduledQueryExecutionsMaintTask.
   private static final DynMethods.StaticMethod METASTORE_THREADS_SHUTDOWN = DynMethods.builder("shutdown")
-      .impl("org.apache.hadoop.com.netease.spark.hive.metastore.ThreadPool")
+      .impl("org.apache.hadoop.hive.metastore.ThreadPool")
       .orNoop()
       .buildStatic();
 
@@ -115,7 +118,7 @@ public class HMSMockServer {
    */
   public void start(int poolSize) {
     try {
-      LOG.info("com.netease.spark.hive local dir: " + hiveLocalDir.getAbsolutePath());
+      LOG.info("hive local dir: " + hiveLocalDir.getAbsolutePath());
       FileUtils.deleteQuietly(hiveLocalDir);
 
       File derbyLogFile = new File(hiveLocalDir, "derby.log");
@@ -161,6 +164,10 @@ public class HMSMockServer {
       baseHandler.shutdown();
     }
     METASTORE_THREADS_SHUTDOWN.invoke();
+
+    if (client != null){
+      client.close();
+    }
 
     LOG.info("-------------------------------------------------------------------------");
     LOG.info("    HiveMetastoreServer finished");
@@ -254,8 +261,8 @@ public class HMSMockServer {
     newHiveConf.set(HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
     newHiveConf.setBoolVar(HiveConf.ConfVars.HIVE_IN_TEST, true);
     newHiveConf.set("datanucleus.schema.autoCreateTables", "true");
-    newHiveConf.set("com.netease.spark.hive.metastore.client.capability.check", "false");
-    newHiveConf.set("iceberg.com.netease.spark.hive.client-pool-size", "2");
+    newHiveConf.set("hive.metastore.client.capability.check", "false");
+    newHiveConf.set("iceberg.hive.client-pool-size", "2");
     return newHiveConf;
   }
 

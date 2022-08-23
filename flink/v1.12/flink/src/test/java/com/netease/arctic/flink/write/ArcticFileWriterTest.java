@@ -21,6 +21,7 @@ package com.netease.arctic.flink.write;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.ArcticTable;
+import java.util.List;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
@@ -34,8 +35,6 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
-
-import java.util.List;
 
 public class ArcticFileWriterTest extends FlinkTestBase {
 
@@ -78,12 +77,15 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     try (
         OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
             tableLoader)) {
+      ArcticFileWriter fileWriter = (ArcticFileWriter) testHarness.getOneInputOperator();
+      Assert.assertNotNull(fileWriter.getWriter());
       // The first checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
       testHarness.processElement(createRowData(3, "hello", "2020-10-13T10:10:11.0"), 1);
 
       testHarness.prepareSnapshotPreBarrier(checkpointId);
+      Assert.assertNull(fileWriter.getWriter());
       Assert.assertEquals(1, testHarness.extractOutputValues().size());
       Assert.assertEquals(3, testHarness.extractOutputValues().get(0).dataFiles().length);
 
@@ -91,6 +93,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
       // The second checkpoint
       testHarness.processElement(createRowData(1, "hello", "2020-10-12T10:10:11.0"), 1);
+      Assert.assertNotNull(fileWriter.getWriter());
       testHarness.processElement(createRowData(2, "hello", "2020-10-12T10:10:11.0"), 1);
       testHarness.processElement(createRowData(3, "hello", "2020-10-12T10:10:11.0"), 1);
 
@@ -103,7 +106,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
   }
 
   @Test
-  public void testSnapshotTwice() throws Exception {
+  public void testSnapshotMultipleTimes() throws Exception {
     long checkpointId = 1;
     long timestamp = 1;
 

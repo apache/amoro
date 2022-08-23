@@ -20,6 +20,7 @@ package com.netease.arctic.trace;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.TableTestBase;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.TableChange;
@@ -80,6 +81,22 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
+  public void testTraceAppendFilesByOptimize() {
+    testTable.newAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(1, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    validateCommitMeta(commitMeta, DataOperations.APPEND, new org.apache.iceberg.DataFile[]{FILE_A, FILE_B},
+        new org.apache.iceberg.DataFile[]{});
+  }
+
+  @Test
   public void testTraceFastAppend() {
     testTable.newFastAppend()
         .appendFile(FILE_A)
@@ -107,6 +124,22 @@ public class TableTracerTest extends TableTestBase {
     List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
     Assert.assertEquals(1, TableCommitMetas.size());
     TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    validateCommitMeta(commitMeta, DataOperations.APPEND, new org.apache.iceberg.DataFile[]{FILE_A, FILE_B},
+        new org.apache.iceberg.DataFile[]{});
+  }
+
+  @Test
+  public void testTraceFastAppendByOptimize() {
+    testTable.newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(1, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(commitMeta, DataOperations.APPEND, new org.apache.iceberg.DataFile[]{FILE_A, FILE_B},
         new org.apache.iceberg.DataFile[]{});
   }
@@ -156,6 +189,28 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
+  public void testTraceOverwriteByOptimize() {
+    testTable.newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+
+    testTable.newOverwrite()
+        .deleteFile(FILE_A)
+        .deleteFile(FILE_B)
+        .addFile(FILE_C)
+        .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(2, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[]{FILE_C},
+        new org.apache.iceberg.DataFile[]{FILE_A, FILE_B});
+  }
+
+  @Test
   public void testTraceRewrite() {
     testTable.newFastAppend()
         .appendFile(FILE_A)
@@ -196,6 +251,26 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
+  public void testTraceRewriteByOptimize() {
+    testTable.newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+
+    testTable.newRewrite()
+        .rewriteFiles(Sets.newHashSet(FILE_A, FILE_B), Sets.newHashSet(FILE_C))
+        .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(2, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
+    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[]{FILE_C},
+        new org.apache.iceberg.DataFile[]{FILE_A, FILE_B});
+  }
+
+  @Test
   public void testMultipleOperationInTx() {
     Transaction transaction = testTable.newTransaction();
     transaction.newAppend()
@@ -217,6 +292,38 @@ public class TableTracerTest extends TableTestBase {
     List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
     Assert.assertEquals(1, TableCommitMetas.size());
     TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertEquals(2, commitMeta.getChanges().size());
+    validateTableChange(snapshots.get(0), commitMeta.getChanges().get(0),
+        new org.apache.iceberg.DataFile[]{FILE_A, FILE_B}, new org.apache.iceberg.DataFile[]{});
+    validateTableChange(snapshots.get(1), commitMeta.getChanges().get(1),
+        new org.apache.iceberg.DataFile[]{FILE_C}, new org.apache.iceberg.DataFile[]{FILE_A});
+  }
+
+  @Test
+  public void testMultipleOperationInTxByOptimize() {
+    Transaction transaction = testTable.newTransaction();
+    transaction.newAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
+        .commit();
+
+    transaction.newOverwrite()
+        .deleteFile(FILE_A)
+        .addFile(FILE_C)
+        .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
+        .commit();
+
+    Assert.assertFalse(AMS.handler().getTableCommitMetas().containsKey(TABLE_ID.buildTableIdentifier()));
+
+    transaction.commitTransaction();
+
+    List<Snapshot> snapshots = Lists.newArrayList(testTable.snapshots());
+    Assert.assertEquals(2, snapshots.size());
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(1, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     Assert.assertEquals(2, commitMeta.getChanges().size());
     validateTableChange(snapshots.get(0), commitMeta.getChanges().get(0),
         new org.apache.iceberg.DataFile[]{FILE_A, FILE_B}, new org.apache.iceberg.DataFile[]{});

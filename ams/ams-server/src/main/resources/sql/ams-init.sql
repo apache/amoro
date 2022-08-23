@@ -48,7 +48,7 @@ CREATE TABLE `file_info_cache`
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `watermark`          timestamp  NULL DEFAULT NULL,
     PRIMARY KEY (`primary_key_md5`),
-    KEY                  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
+    KEY  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `optimize_file`
@@ -184,8 +184,7 @@ CREATE TABLE `snapshot_info_cache`
     `action`             varchar(64)          DEFAULT NULL,
     `inner_table`        varchar(64)          NOT NULL,
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`),
-    KEY                  `table_index` (`table_identifier`)
+    PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `table_metadata`
@@ -209,6 +208,7 @@ CREATE TABLE `table_metadata`
     `krb_conf`        text,
     `krb_principal`   text,
     `current_tx_id`   bigint(20) DEFAULT NULL,
+    `cur_schema_id`   int(11) DEFAULT NULL,
     PRIMARY KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
@@ -259,5 +259,13 @@ CREATE TABLE `api_tokens` (
     PRIMARY KEY (`id`) USING BTREE,
     UNIQUE KEY `account_unique` (`apikey`) USING BTREE COMMENT 'account unique'
 ) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC COMMENT='Openapi  secret';
+
+CREATE TABLE `ddl_record`
+(
+    `table_identifier` varchar(256) NOT NULL,
+    `ddl`        mediumtext,
+    `ddl_type`        varchar(256) NOT NULL,
+    `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
