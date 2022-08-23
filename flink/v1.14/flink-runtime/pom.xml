@@ -30,6 +30,10 @@
 
     <artifactId>arctic-flink-runtime-1.14</artifactId>
 
+    <properties>
+        <flink.version>1.14.5</flink.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>com.netease.arctic</groupId>

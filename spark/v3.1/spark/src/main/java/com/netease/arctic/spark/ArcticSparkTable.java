@@ -172,13 +172,13 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
 
     // use only name in order to correctly invalidate Spark cache
     ArcticSparkTable that = (ArcticSparkTable) other;
-    return arcticTable.name().equals(that.arcticTable.name());
+    return arcticTable.id().equals(that.arcticTable.id());
   }
 
   @Override
   public int hashCode() {
     // use only name in order to correctly invalidate Spark cache
-    return arcticTable.name().hashCode();
+    return arcticTable.id().hashCode();
   }
 
   @Override
