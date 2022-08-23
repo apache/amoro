@@ -182,7 +182,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step3: set max transaction id
     if (keyedTable.spec().isUnpartitioned()) {
       long maxTransactionId = partitionMaxTxId.get(partitionData);
-      partitionMaxTxId.put(partitionData, Math.max(maxTransactionId, this.maxTransactionId.getOrDefault(partitionData,0L)));
+      partitionMaxTxId.put(partitionData, Math.max(maxTransactionId,
+          this.maxTransactionId.getOrDefault(partitionData, 0L)));
     } else {
       this.maxTransactionId.forEach((pd, txId) -> {
         if (partitionMaxTxId.containsKey(pd)) {
@@ -200,7 +201,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       return;
     }
     try (CloseableIterable<CombinedScanTask> combinedScanTasks
-        = keyedTable.newScan().filter(deleteExpression).planTasks()) {
+             = keyedTable.newScan().filter(deleteExpression).planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(
           t -> {
             t.dataTasks().forEach(ft -> deleteFiles.add(ft.file()));
