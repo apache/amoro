@@ -182,7 +182,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step3: set max transaction id
     if (keyedTable.spec().isUnpartitioned()) {
       long maxTransactionId = partitionMaxTxId.get(partitionData);
-      partitionMaxTxId.put(partitionData, Math.max(maxTransactionId, this.maxTransactionId.get(partitionData)));
+      partitionMaxTxId.put(partitionData, Math.max(maxTransactionId, this.maxTransactionId.getOrDefault(partitionData,0L)));
     } else {
       this.maxTransactionId.forEach((pd, txId) -> {
         if (partitionMaxTxId.containsKey(pd)) {

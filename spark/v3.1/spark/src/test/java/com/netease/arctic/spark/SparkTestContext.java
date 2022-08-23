@@ -27,11 +27,14 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.HMSMockServer;
+import com.netease.arctic.hive.write.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.io.FileUtils;
@@ -40,13 +43,16 @@ import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
@@ -74,6 +80,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -448,6 +455,32 @@ public class SparkTestContext extends ExternalResource {
         descCols.stream().sorted().distinct().toArray());
     Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
         descPartitionKey.stream().sorted().distinct().toArray());
+  }
+
+  public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records) throws IOException {
+    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
+        .builderFor(table)
+        .withTransactionId(1);
+
+    TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
+    for (Record record: records) {
+      changeWrite.write(record);
+    }
+    DataFile[] dataFiles = changeWrite.complete().dataFiles();
+    if(table.isKeyedTable()) {
+      KeyedTable keyedTable = table.asKeyedTable();
+      OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
+      Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
+      overwriteBaseFiles.withTransactionId(keyedTable.beginTransaction(System.currentTimeMillis() + ""));
+      overwriteBaseFiles.commit();
+    } else if (table.isUnkeyedTable()) {
+      UnkeyedTable unkeyedTable = table.asUnkeyedTable();
+      OverwriteFiles overwriteFiles = unkeyedTable.newOverwrite();
+      Arrays.stream(dataFiles).forEach(overwriteFiles::addFile);
+      overwriteFiles.commit();
+    }else {
+      throw new IllegalStateException("Table is neither keyed nor unkeyed");
+    }
   }
 
 }
