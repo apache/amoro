@@ -49,7 +49,7 @@ public class TestMigrateNonHiveTable extends SparkTestBase {
 
   @Test
   public void testMigrateNoBucketParquetTable() {
-    sql("use " + catalogName);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists " + database);
 
     sql("use spark_catalog");
@@ -71,12 +71,12 @@ public class TestMigrateNonHiveTable extends SparkTestBase {
 
     sql("migrate {0}.{1} to arctic {2}.{3}.{4} ",
         sourceDatabase, sourceTable,
-        catalogName, database, table);
+        catalogNameArctic, database, table);
 
-    rows = sql("select * from {0}.{1}.{2}", catalogName, database, table);
+    rows = sql("select * from {0}.{1}.{2}", catalogNameArctic, database, table);
     Assert.assertEquals(8, rows.size());
 
-    ArcticTable t = loadTable(catalogName, database, table);
+    ArcticTable t = loadTable(catalogNameArctic, database, table);
     UnkeyedTable unkey = t.asUnkeyedTable();
     StructLikeMap<List<DataFile>> partitionFiles = partitionFiles(unkey);
     Assert.assertEquals(2, partitionFiles.size());

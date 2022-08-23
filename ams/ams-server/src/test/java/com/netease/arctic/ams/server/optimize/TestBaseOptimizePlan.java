@@ -20,13 +20,13 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
-import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;

@@ -74,7 +74,7 @@ create table test_db.test_table(
   name string,
   op_time timestamp,
   primary key(id)
-) partitioned by(days(op_time)) using arctic;
+) using arctic partitioned by(days(op_time));
 ```
 
 ## 实时写入与读取
@@ -82,12 +82,18 @@ create table test_db.test_table(
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
+**0. 环境准备**
+
+使用 docker 部署可跳过该步骤。非 docker 部署请参考 [环境准备](flink/flink-get-started.md#_2)
+
 **1.启动 Flink SQL Client**  
-f#
+
 使用以下命令进入 arctic_flink 容器。
 ```shell
 docker exec -it arctic_flink /bin/bash
 ```
+
+**环境准备**
 
 启动 Flink SQL Client:
 ```shell

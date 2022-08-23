@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.service;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
@@ -27,6 +28,7 @@ import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
@@ -70,6 +72,8 @@ public class ServiceContainer {
   private static volatile ITableInfoService tableInfoService;
 
   private static volatile ArcticTableMetastoreHandler tableMetastoreHandler;
+
+  private static volatile DDLTracerService ddlTracerService;
 
   private static volatile RuntimeDataExpireService runtimeDataExpireService;
 
@@ -242,6 +246,18 @@ public class ServiceContainer {
       }
     }
     return adaptHiveService;
+  }
+
+  public static DDLTracerService getDdlTracerService() {
+    if (ddlTracerService == null) {
+      synchronized (ServiceContainer.class) {
+        if (ddlTracerService == null) {
+          ddlTracerService = new DDLTracerService();
+        }
+      }
+    }
+
+    return ddlTracerService;
   }
 
   @VisibleForTesting

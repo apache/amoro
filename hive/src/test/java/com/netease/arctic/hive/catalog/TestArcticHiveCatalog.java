@@ -30,11 +30,6 @@ import org.junit.Test;
 
 public class TestArcticHiveCatalog extends HiveTableTestBase {
 
-  protected static final Schema HIVE_TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
-  );
-
   @Test
   public void testCreateAndDropDatabase() {
     Assert.assertEquals(Sets.newHashSet("default", HIVE_DB_NAME), Sets.newHashSet(hiveCatalog.listDatabases()));
@@ -65,7 +60,7 @@ public class TestArcticHiveCatalog extends HiveTableTestBase {
     Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.baseTable().schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.baseTable().spec());
 
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
+    Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.changeTable().spec());
   }
 }

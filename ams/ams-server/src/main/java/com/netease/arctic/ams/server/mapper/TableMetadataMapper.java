@@ -189,4 +189,20 @@ public interface TableMetadataMapper {
       @Result(property = "currentTxId", column = "current_tx_id")
   })
   TableMetadata loadTableMetaInLock(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+
+  @Update("update " + TABLE_NAME + " set " +
+      "cur_schema_id = #{schemaId} where " +
+      "catalog_name = #{tableIdentifier.catalog} and " +
+      "db_name = #{tableIdentifier.database} and " +
+      "table_name = #{tableIdentifier.tableName}")
+  void updateTableSchemaId(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("schemaId") Integer schemaId);
+
+  @Select("select cur_schema_id from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and " +
+      "db_name = #{tableIdentifier.database} and " +
+      "table_name = #{tableIdentifier.tableName}")
+  Integer getTableSchemaId(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier);
 }

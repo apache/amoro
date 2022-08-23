@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
@@ -54,7 +55,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
 /**
  * @Description: OptimizerController Test
  */
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
       JDBCSqlSessionFactoryProvider.class,
       ArcticMetaStore.class
@@ -62,14 +62,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class OptimizerControllerTest {
 
-  static {
-    try {
-      deleteDerby();
-      mockDerby();
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
   @Test
   public void testGetOptimizers() {
 

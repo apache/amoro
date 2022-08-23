@@ -88,7 +88,7 @@ public class AdaptHiveService {
 
   public void hiveDataMigration(ArcticTable arcticTable, ArcticHiveCatalog ac, TableIdentifier tableIdentifier)
       throws Exception {
-    String hiveDataLocation = arcticTable.location() + "/hive_data";
+    String hiveDataLocation = arcticTable.location() + "/hive";
     arcticTable.io().mkdirs(hiveDataLocation);
     HiveMetaStore hiveMetaStore = HiveMetaStore.getHiveMetaStore(ac);
     HiveTable hiveTable = hiveMetaStore.getHiveTable(tableIdentifier);

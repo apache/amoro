@@ -22,20 +22,33 @@ import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.iceberg.PendingUpdate;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.util.StructLikeMap;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Abstract transaction operation on {@link BaseTable} which will change
  * max transaction id map
  */
-public abstract class PartitionTransactionOperation {
+public abstract class PartitionTransactionOperation implements PendingUpdate<StructLikeMap<Long>> {
 
   KeyedTable keyedTable;
+  private Transaction tx;
+
+  protected final Map<String, String> properties;
 
   public PartitionTransactionOperation(KeyedTable baseTable) {
     this.keyedTable = baseTable;
+    this.properties = new HashMap<>();
+  }
+
+  public PartitionTransactionOperation set(String key, String value) {
+    this.properties.put(key, value);
+    return this;
   }
 
   /**
@@ -47,10 +60,16 @@ public abstract class PartitionTransactionOperation {
    */
   protected abstract StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId);
 
-  public void commit() {
-    Transaction tx = keyedTable.baseTable().newTransaction();
+  @Override
+  public StructLikeMap<Long> apply() {
+    return apply(tx, keyedTable.partitionMaxTransactionId());
+  }
 
-    StructLikeMap<Long> partitionMaxTxId = apply(tx, keyedTable.partitionMaxTransactionId());
+
+  public void commit() {
+    this.tx = keyedTable.baseTable().newTransaction();
+
+    StructLikeMap<Long> partitionMaxTxId = apply();
 
     String propertyValue = TablePropertyUtil.encodePartitionMaxTxId(keyedTable.spec(), partitionMaxTxId);
     UpdateProperties updateProperties = tx.updateProperties();

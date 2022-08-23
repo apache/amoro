@@ -21,8 +21,6 @@ package com.netease.arctic.spark;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,15 +36,16 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
+    sql("use " + catalogNameArctic);
     sql("drop database if exists db_def");
     sql("drop database if exists db_test");
     sql("drop database if exists db");
+    sql("drop database if exists arctic_db");
   }
 
   @Test
   public void testDatabaseDDL() throws Exception {
-    sql("use " + catalogName);
+    sql("use " + catalogNameArctic);
     sql("show databases");
     Assert.assertEquals(0, rows.size());
 
@@ -61,7 +60,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   @Test
   public void testArcticCatalogTableDDL() throws Exception {
-    TableIdentifier ident = TableIdentifier.of(catalogName, "def", "t1");
+    TableIdentifier ident = TableIdentifier.of(catalogNameArctic, "def", "t1");
     doTableCreateTest(ident);
     doTablePropertiesAlterTest(ident);
     doTableColumnAlterTest(ident);
@@ -71,7 +70,7 @@ public class TestUnKeyedTableDDL extends SparkTestBase {
 
   private void doTableCreateTest(TableIdentifier ident)   {
     sql("use " + ident.getCatalog());
-    if (catalogName.equals(ident.getCatalog())){
+    if (catalogNameArctic.equals(ident.getCatalog())){
       sql("create database " + ident.getDatabase());
     }
 
