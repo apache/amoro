@@ -187,7 +187,7 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
       return new KeyedSparkWriteBuilder(arcticTable.asKeyedTable(), info);
     } else if (arcticTable.isUnkeyedTable()) {
       return new UnkeyedSparkWriteBuilder(arcticTable.asUnkeyedTable(), info);
-    }else {
+    } else {
       throw new IllegalStateException("un-support type of arctic table: " + arcticTable.getClass().getName());
     }
   }

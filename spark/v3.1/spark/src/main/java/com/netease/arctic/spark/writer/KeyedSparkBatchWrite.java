@@ -20,7 +20,7 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
-import com.netease.arctic.table.BaseLocationKind;
+import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -51,8 +51,6 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-
-
 public class KeyedSparkBatchWrite {
   private final KeyedTable table;
   private final StructType dsSchema;
@@ -78,9 +76,15 @@ public class KeyedSparkBatchWrite {
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
+    private boolean isOverwrite;
+
+    BaseBatchWrite(boolean isOverwrite) {
+      this.isOverwrite = isOverwrite;
+    }
+
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, transactionId);
+      return new WriterFactory(table, dsSchema, transactionId, this.isOverwrite);
     }
 
     @Override
@@ -101,6 +105,11 @@ public class KeyedSparkBatchWrite {
   }
 
   private class BatchAppend extends BaseBatchWrite {
+
+    BatchAppend() {
+      super(false);
+    }
+
     @Override
     public void commit(WriterCommitMessage[] messages) {
       AppendFiles append = table.baseTable().newAppend();
@@ -114,6 +123,11 @@ public class KeyedSparkBatchWrite {
   }
 
   private class DynamicOverwrite extends BaseBatchWrite {
+
+    DynamicOverwrite() {
+      super(true);
+    }
+
     @Override
     public void commit(WriterCommitMessage[] messages) {
       RewritePartitions rewritePartitions = table.newRewritePartitions();
@@ -130,6 +144,7 @@ public class KeyedSparkBatchWrite {
     private final Expression overwriteExpr;
 
     private OverwriteByFilter(Expression overwriteExpr) {
+      super(true);
       this.overwriteExpr = overwriteExpr;
     }
 
@@ -152,22 +167,24 @@ public class KeyedSparkBatchWrite {
     private final StructType dsSchema;
     private final long transactionId;
 
-    WriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+    private boolean isOverwrite;
+
+    WriterFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean isOverwrite) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
+      this.isOverwrite = isOverwrite;
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      TaskWriter<InternalRow> writer = ArcticSparkTaskWriterBuilder.buildFor(table)
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .buildWriter(BaseLocationKind.INSTANT);
-
-      return new SparkInternalRowWriter(writer);
+          .newBaseWriter(this.isOverwrite);
+      return new InternalRowDataWriter(writer);
     }
   }
 

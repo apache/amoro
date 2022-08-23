@@ -26,10 +26,10 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.io.IOException;
 
-public class SparkInternalRowWriter implements DataWriter<InternalRow> {
+public class InternalRowDataWriter implements DataWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
 
-  public SparkInternalRowWriter(TaskWriter<InternalRow> writer) {
+  public InternalRowDataWriter(TaskWriter<InternalRow> writer) {
     this.writer = writer;
   }
 
