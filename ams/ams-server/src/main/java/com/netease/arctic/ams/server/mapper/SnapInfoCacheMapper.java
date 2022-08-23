@@ -35,12 +35,12 @@ public interface SnapInfoCacheMapper {
   String TABLE_NAME = "snapshot_info_cache";
 
   @Insert("insert into " + TABLE_NAME + " (table_identifier, snapshot_id, parent_snapshot_id, action," +
-      " inner_table, commit_time)" +
-      " values(#{cacheFileInfo.tableIdentifier," +
-      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}," +
+      " inner_table, producer, commit_time) values(" +
+      "#{cacheFileInfo.tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
+      ".TableIdentifier2StringConverter}," +
       " #{cacheFileInfo.snapshotId}, #{cacheFileInfo.parentSnapshotId}, #{cacheFileInfo.action}," +
-      " #{cacheFileInfo.innerTable}, #{cacheFileInfo.commitTime, typeHandler=com.netease.arctic.ams.server" +
-      ".mybatis.Long2TsConvertor})")
+      " #{cacheFileInfo.innerTable}, #{cacheFileInfo.producer}," +
+      " #{cacheFileInfo.commitTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor})")
   void insertCache(@Param("cacheFileInfo") CacheSnapshotInfo info);
 
   @Select("select count(1) >0 " +

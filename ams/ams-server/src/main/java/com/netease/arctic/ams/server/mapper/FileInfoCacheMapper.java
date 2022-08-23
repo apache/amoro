@@ -42,12 +42,13 @@ public interface FileInfoCacheMapper {
   String TABLE_NAME = "file_info_cache";
 
   @Insert("insert into " + TABLE_NAME + " (table_identifier, add_snapshot_id, parent_snapshot_id, delete_snapshot_id," +
-      " inner_table, file_path, primary_key_md5, file_type, file_size, file_mask, file_index, spec_id, record_count, " +
-      "action, partition_name, commit_time, watermark) values(#{cacheFileInfo.tableIdentifier, typeHandler=com" +
-      ".netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}, " +
+      " inner_table, file_path, primary_key_md5, file_type, producer, file_size, file_mask, file_index, spec_id, " +
+      "record_count,action, partition_name, commit_time, watermark) values(" +
+      "#{cacheFileInfo.tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
+      ".TableIdentifier2StringConverter}, " +
       "#{cacheFileInfo.addSnapshotId}, #{cacheFileInfo.parentSnapshotId}, #{cacheFileInfo" +
       ".deleteSnapshotId}, #{cacheFileInfo.innerTable}, #{cacheFileInfo.filePath}, #{cacheFileInfo.primaryKeyMd5}, " +
-      "#{cacheFileInfo.fileType}, " +
+      "#{cacheFileInfo.fileType}, #{cacheFileInfo.producer}, " +
       "#{cacheFileInfo.fileSize}, #{cacheFileInfo.fileMask}, #{cacheFileInfo.fileIndex}, #{cacheFileInfo.specId}, " +
       "#{cacheFileInfo.recordCount}, #{cacheFileInfo.action}, #{cacheFileInfo.partitionName}, #{cacheFileInfo" +
       ".commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}, #{cacheFileInfo" +
@@ -61,8 +62,8 @@ public interface FileInfoCacheMapper {
   @Select(
         "select add_snapshot_id, count(1) as cnt, sum(file_size) as size, commit_time from " + TABLE_NAME + " where " +
             "table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-            ".TableIdentifier2StringConverter} and producer!='OPTIMIZE' group by add_snapshot_id, commit_time order by " +
-            "commit_time desc")
+            ".TableIdentifier2StringConverter} and producer!='OPTIMIZE' group by add_snapshot_id, commit_time order " +
+            "by commit_time desc")
   @Results({
           @Result(column = "add_snapshot_id", property = "transactionId"),
           @Result(column = "cnt", property = "fileCount"),
