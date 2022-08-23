@@ -32,6 +32,7 @@ import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
+import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
@@ -381,13 +382,13 @@ public class TableControllerTest {
     return transactions;
   }
 
-  private List<DataFileInfo> mockDataFileInfos() {
-    List<DataFileInfo> dataFileInfos = new ArrayList<>();
-    DataFileInfo dataFileInfo = new DataFileInfo();
+  private List<AMSDataFileInfo> mockDataFileInfos() {
+    List<AMSDataFileInfo> dataFileInfos = new ArrayList<>();
+    AMSDataFileInfo dataFileInfo = new AMSDataFileInfo();
     dataFileInfo.setPath("/home/");
     dataFileInfo.setPartition("id");
     dataFileInfo.setType("BASE_FILE");
-    dataFileInfo.setSize(100L);
+    dataFileInfo.setFileSize(100L);
     dataFileInfo.setCommitTime(1656855463563L);
     dataFileInfos.add(dataFileInfo);
     return dataFileInfos;

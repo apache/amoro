@@ -45,16 +45,6 @@
             <outputDirectory>conf</outputDirectory>
             <fileMode>0644</fileMode>
         </file>
-        <file>
-            <source>../ams/ams-server/src/main/resources/sql/ams-init-derby.sql</source>
-            <outputDirectory>conf</outputDirectory>
-            <fileMode>0644</fileMode>
-        </file>
-        <file>
-            <source>../ams/ams-server/src/main/resources/sql/ams-init.sql</source>
-            <outputDirectory>conf</outputDirectory>
-            <fileMode>0644</fileMode>
-        </file>
     </files>
     <fileSets>
         <fileSet>
@@ -65,6 +55,16 @@
         <fileSet>
             <directory>src/main/arctic-bin/conf</directory>
             <outputDirectory>conf</outputDirectory>
+            <fileMode>0555</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>../ams/ams-server/src/main/resources/sql/mysql</directory>
+            <outputDirectory>conf/mysql</outputDirectory>
+            <fileMode>0555</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>../ams/ams-server/src/main/resources/sql/derby</directory>
+            <outputDirectory>conf/derby</outputDirectory>
             <fileMode>0555</fileMode>
         </fileSet>
         <fileSet>

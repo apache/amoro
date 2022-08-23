@@ -32,6 +32,7 @@ import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.mapper.FileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
+import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.CacheSnapshotInfo;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
@@ -46,6 +47,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -405,6 +407,7 @@ public class FileInfoCacheService extends IJDBCService {
             String partitionName = partitionToPath(datafile.getPartition());
             cacheFileInfo.setPartitionName(StringUtils.isEmpty(partitionName) ? null : partitionName);
             cacheFileInfo.setCommitTime(tableCommitMeta.getCommitTime());
+            cacheFileInfo.setProducer(tableCommitMeta.getCommitMetaProducer().name());
             rs.add(cacheFileInfo);
           });
         }
@@ -435,6 +438,8 @@ public class FileInfoCacheService extends IJDBCService {
     cache.setAction(snapshot.operation());
     cache.setInnerTable(tableType);
     cache.setCommitTime(snapshot.timestampMillis());
+    cache.setProducer(snapshot.summary()
+        .getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
     return cache;
   }
 
@@ -449,6 +454,7 @@ public class FileInfoCacheService extends IJDBCService {
         cache.setAction(tableCommitMeta.getAction());
         cache.setInnerTable(tableChange.getInnerTable());
         cache.setCommitTime(tableCommitMeta.getCommitTime());
+        cache.setProducer(tableCommitMeta.getCommitMetaProducer().name());
         rs.add(cache);
       });
     }
@@ -462,7 +468,7 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
-  public List<DataFileInfo> getDatafilesInfo(TableIdentifier tableIdentifier, Long transactionId) {
+  public List<AMSDataFileInfo> getDatafilesInfo(TableIdentifier tableIdentifier, Long transactionId) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       return fileInfoCacheMapper.getDatafilesInfo(tableIdentifier, transactionId);

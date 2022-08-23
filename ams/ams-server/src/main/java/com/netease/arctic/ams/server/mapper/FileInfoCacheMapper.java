@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
@@ -60,7 +61,7 @@ public interface FileInfoCacheMapper {
   @Select(
         "select add_snapshot_id, count(1) as cnt, sum(file_size) as size, commit_time from " + TABLE_NAME + " where " +
             "table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-            ".TableIdentifier2StringConverter} and action!='replace' group by add_snapshot_id, commit_time order by " +
+            ".TableIdentifier2StringConverter} and producer!='OPTIMIZE' group by add_snapshot_id, commit_time order by " +
             "commit_time desc")
   @Results({
           @Result(column = "add_snapshot_id", property = "transactionId"),
@@ -71,18 +72,20 @@ public interface FileInfoCacheMapper {
   })
   List<TransactionsOfTable> getTransactions(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
-  @Select("select file_path, partition_name, file_type, file_size, commit_time from " + TABLE_NAME +
+  @Select("select file_path, partition_name, file_type, file_size, commit_time, case delete_snapshot_id when null " +
+          "then 'remove' else 'add' end as operation from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
           ".TableIdentifier2StringConverter} and add_snapshot_id = #{transactionId} order by commit_time desc")
   @Results({
           @Result(column = "file_path", property = "path"),
           @Result(column = "partition_name", property = "partition"),
           @Result(column = "file_type", property = "type"),
-          @Result(column = "file_size", property = "size"),
+          @Result(column = "file_size", property = "fileSize"),
+          @Result(column = "operation", property = "operation"),
           @Result(column = "commit_time", property = "commitTime",
                   typeHandler = Long2TsConvertor.class)
   })
-  List<DataFileInfo> getDatafilesInfo(
+  List<AMSDataFileInfo> getDatafilesInfo(
           @Param("tableIdentifier") TableIdentifier tableIdentifier,
           @Param("transactionId") Long transactionId);
 
@@ -122,8 +125,8 @@ public interface FileInfoCacheMapper {
   @Select("select partition_name, count(1) as file_count, sum(file_size) as size," +
           "max(commit_time) as lastCommitTime from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
-          ".ams.server.mybatis.TableIdentifier2StringConverter} group by partition_name " +
-          "order by partition_name desc")
+          ".ams.server.mybatis.TableIdentifier2StringConverter} and delete_snapshot_id is not null group by " +
+          "partition_name order by partition_name desc")
   @Results({
           @Result(column = "partition_name", property = "partition"),
           @Result(column = "file_count", property = "fileCount"),

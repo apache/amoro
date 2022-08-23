@@ -30,6 +30,7 @@ public class AMSDataFileInfo {
   String size;
   long commitTime; // 13-bit timestamp
   String file;
+  String operation;
 
   public long getFileSize() {
     return fileSize;
@@ -81,11 +82,11 @@ public class AMSDataFileInfo {
     return this.file;
   }
 
-  public AMSDataFileInfo(DataFileInfo dataFileInfo) {
-    setPath(dataFileInfo.getPath());
-    setType(dataFileInfo.getType());
-    setPartition(dataFileInfo.getPartition());
-    setFileSize(dataFileInfo.getSize());
-    setCommitTime(dataFileInfo.getCommitTime());
+  public String getOperation() {
+    return operation;
+  }
+
+  public void setOperation(String operation) {
+    this.operation = operation;
   }
 }

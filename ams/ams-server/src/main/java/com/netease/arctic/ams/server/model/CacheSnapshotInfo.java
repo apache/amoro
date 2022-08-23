@@ -26,6 +26,7 @@ public class CacheSnapshotInfo {
   private Long parentSnapshotId;
   private String action;
   private String innerTable;
+  private String producer;
   private Long commitTime;
 
 
@@ -67,6 +68,14 @@ public class CacheSnapshotInfo {
 
   public void setInnerTable(String innerTable) {
     this.innerTable = innerTable;
+  }
+
+  public String getProducer() {
+    return producer;
+  }
+
+  public void setProducer(String producer) {
+    this.producer = producer;
   }
 
   public Long getCommitTime() {
