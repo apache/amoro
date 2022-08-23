@@ -41,7 +41,8 @@ public interface DDLRecordMapper {
   void insert(@Param("ddlInfo") DDLInfo ddlInfo);
 
   @Select("select table_identifier, ddl, ddl_type, commit_time from " + TABLE_NAME + " where table_identifier = " +
-      "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
+      "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} " +
+      " order by commit_time desc")
   @Results({
       @Result(property = "tableIdentifier", column = "table_identifier", typeHandler =
           TableIdentifier2StringConverter.class),
