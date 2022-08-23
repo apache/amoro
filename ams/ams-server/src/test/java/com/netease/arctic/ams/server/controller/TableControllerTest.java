@@ -32,6 +32,7 @@ import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
+import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
@@ -44,6 +45,7 @@ import com.netease.arctic.ams.server.optimize.OptimizeService;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
@@ -100,6 +102,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     PartitionSpec.class,
     FileInfoCacheService.class,
     CatalogMetadataService.class,
+    DDLTracerService.class,
     OptimizeManagerHandler.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
@@ -275,6 +278,19 @@ public class TableControllerTest {
     });
   }
 
+  @Test
+  public void testGetOperations() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
+      String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations", catalogName, database, table);
+      final okhttp3.Response resp = client.get(url, x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+  }
+
   private void mockService(String catalog, String db, String table)
       throws Exception {
     // need to mock out since FileSystem.create calls UGI, which occasionally has issues on some
@@ -320,6 +336,12 @@ public class TableControllerTest {
     CatalogMetadataService catalogMetadataService = mock(CatalogMetadataService.class);
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
     when(catalogMetadataService.getCatalogs()).thenReturn(mockCatalogMetas());
+
+    DDLTracerService ddlTracerService = mock(DDLTracerService.class);
+    when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
+    when(ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier()))
+        .thenReturn(mockDDLTracer());
+
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {
@@ -403,6 +425,18 @@ public class TableControllerTest {
     List<PartitionFileBaseInfo> partitionFileBaseInfos = new ArrayList<>();
     partitionFileBaseInfos.add(new PartitionFileBaseInfo("1", "BASE_FILE", 1656855463563L, "dt", "/home", 100L));
     return partitionFileBaseInfos;
+  }
+
+  private List<DDLInfo> mockDDLTracer() {
+    List<DDLInfo> ddlInfos = new ArrayList<>();
+    DDLInfo ddlInfo = new DDLInfo();
+    ddlInfo.setTableIdentifier(TableIdentifier.of("test", "test", "test")
+            .buildTableIdentifier());
+    ddlInfo.setDdl("create table test (id string, name string)");
+    ddlInfo.setDdlType(DDLTracerService.DDLType.UPDATE_SCHEMA.toString());
+    ddlInfo.setCommitTime(1656855463563L);
+    ddlInfos.add(ddlInfo);
+    return ddlInfos;
   }
 
   private List<CatalogMeta> mockCatalogMetas() {
