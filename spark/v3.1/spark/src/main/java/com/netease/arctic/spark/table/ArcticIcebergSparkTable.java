@@ -24,10 +24,10 @@ import org.apache.iceberg.spark.source.SparkTable;
 
 import java.util.Map;
 
-public class ArcticUnkeyedSparkTable extends SparkTable {
+public class ArcticIcebergSparkTable extends SparkTable {
   private final UnkeyedTable unkeyedTable;
 
-  public ArcticUnkeyedSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
+  public ArcticIcebergSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
     super(unkeyedTable, refreshEagerly);
     this.unkeyedTable = unkeyedTable;
   }

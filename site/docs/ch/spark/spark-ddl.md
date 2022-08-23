@@ -77,7 +77,7 @@ AS SELECT ...
 ???+note "REPLACE TABLE ... AS SELECT 语法在当前版本只支持无主键表"
 
 ``` 
-CREATE TABLE arctic_catalog.db.sample
+REPLACE TABLE arctic_catalog.db.sample
 USING arctic
 AS SELECT ...
 ```
