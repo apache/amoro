@@ -7,7 +7,6 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
@@ -15,11 +14,9 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class TestKeyedMergeOnRead extends SparkTestContext {
+public class TestHiveTableMergeOnRead extends SparkTestBase {
   private final String database = "db";
   private final String table = "testA";
   private KeyedTable keyedTable;
@@ -51,7 +48,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         " partitioned by ( dt ) \n", database, table);
     keyedTable = loadTable(identifier).asKeyedTable();
 
-    testWrite(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
         newRecord(keyedTable, 1, "aaa", "2021-1-1"),
         newRecord(keyedTable, 2, "bbb", "2021-1-1"),
         newRecord(keyedTable, 3, "ccc", "2021-1-1"),
@@ -59,7 +56,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         newRecord(keyedTable, 5, "eee", "2021-1-2"),
         newRecord(keyedTable, 6, "fff", "2021-1-2")
     ));
-    testWrite(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
         newRecord(keyedTable, 7, "aaa_hive", "2021-1-1"),
         newRecord(keyedTable, 8, "bbb_hive", "2021-1-1"),
         newRecord(keyedTable, 9, "ccc_hive", "2021-1-2"),
@@ -76,7 +73,6 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         (short) -1);
     Assert.assertEquals(2, partitions.size());
     sql("use spark_catalog");
-    sql("SET noUserSpecifiedNumPartition=false");
     sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
@@ -91,7 +87,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         ") using arctic \n" +
         " partitioned by ( dt ) \n", database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
-    testWrite(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
         newRecord(unkeyedTable.schema(), 1, "aaa", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 2, "bbb", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 3, "ccc", "2021-1-1"),
@@ -99,7 +95,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         newRecord(unkeyedTable.schema(), 5, "eee", "2021-1-2"),
         newRecord(unkeyedTable.schema(), 6, "fff", "2021-1-2")
     ));
-    testWrite(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
         newRecord(unkeyedTable.schema(), 7, "aaa_hive", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 8, "bbb_hive", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 9, "ccc_hive", "2021-1-2"),
@@ -115,7 +111,6 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         (short) -1);
     Assert.assertEquals(2, partitions.size());
     sql("use spark_catalog");
-    sql("SET noUserSpecifiedNumPartition=false");
     sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
@@ -130,7 +125,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         " primary key (id) \n" +
         ") using arctic \n" , database, table);
     keyedTable = loadTable(identifier).asKeyedTable();
-    testWrite(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
         newRecord(keyedTable, 1, "aaa", "2021-1-1"),
         newRecord(keyedTable, 2, "bbb", "2021-1-1"),
         newRecord(keyedTable, 3, "ccc", "2021-1-1"),
@@ -138,7 +133,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         newRecord(keyedTable, 5, "eee", "2021-1-2"),
         newRecord(keyedTable, 6, "fff", "2021-1-2")
     ));
-    testWrite(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
         newRecord(keyedTable, 7, "aaa_hive", "2021-1-1"),
         newRecord(keyedTable, 8, "bbb_hive", "2021-1-1"),
         newRecord(keyedTable, 9, "ccc_hive", "2021-1-2"),
@@ -149,7 +144,6 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
     sql("use spark_catalog");
-    sql("SET noUserSpecifiedNumPartition=false");
     sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
@@ -163,7 +157,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         " dt string \n" +
         ") using arctic \n" , database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
-    testWrite(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
         newRecord(unkeyedTable.schema(), 1, "aaa", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 2, "bbb", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 3, "ccc", "2021-1-1"),
@@ -171,7 +165,7 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
         newRecord(unkeyedTable.schema(), 5, "eee", "2021-1-2"),
         newRecord(unkeyedTable.schema(), 6, "fff", "2021-1-2")
     ));
-    testWrite(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
+    writeHive(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
         newRecord(unkeyedTable.schema(), 7, "aaa_hive", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 8, "bbb_hive", "2021-1-1"),
         newRecord(unkeyedTable.schema(), 9, "ccc_hive", "2021-1-2"),
@@ -181,7 +175,6 @@ public class TestKeyedMergeOnRead extends SparkTestContext {
     Assert.assertEquals(10, rows.size());
     assertContainIdSet(rows, 0, 1,2,3,4,5,6,7,8,9,10);
     sql("use spark_catalog");
-    sql("SET noUserSpecifiedNumPartition=false");
     sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
