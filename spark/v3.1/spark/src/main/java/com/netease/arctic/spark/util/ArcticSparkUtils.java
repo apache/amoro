@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.util;
 
-import com.netease.arctic.spark.ArcticSparkTable;
+import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
