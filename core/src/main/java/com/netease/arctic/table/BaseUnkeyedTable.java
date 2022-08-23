@@ -31,6 +31,7 @@ import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
@@ -58,6 +59,7 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
+import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
@@ -321,5 +323,20 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
       return ((HasTableOperations) icebergTable).operations();
     }
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public StructLikeMap<Map<String, String>> partitionProperty() {
+    String s = properties().get(TableProperties.TABLE_PARTITION_PROPERTIES);
+    if (s != null) {
+      return TablePropertyUtil.decodePartitionProperties(spec(), s);
+    } else {
+      return StructLikeMap.create(spec().partitionType());
+    }
+  }
+
+  @Override
+  public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
+    return new PartitionPropertiesUpdate(this, transaction);
   }
 }
