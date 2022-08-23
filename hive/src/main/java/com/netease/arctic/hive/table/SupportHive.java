@@ -16,19 +16,16 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.op;
-
-import com.netease.arctic.table.KeyedTable;
+package com.netease.arctic.hive.table;
 
 /**
- * Factory to build arctic operations.
+ * Mix-in interface to mark task use hive as base store
  */
-public class ArcticOperations {
-  public static OverwriteBaseFiles newOverwriteBaseFiles(KeyedTable keyedTable) {
-    return new OverwriteBaseFiles(keyedTable);
-  }
+public interface SupportHive {
 
-  public static RewritePartitions newRewritePartitions(KeyedTable keyedTable) {
-    return new RewritePartitions(keyedTable.baseTable());
-  }
+  /**
+   * Base path to store hive data files
+   * @return path to store hive file
+   */
+  String hiveLocation();
 }

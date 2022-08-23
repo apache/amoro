@@ -24,6 +24,8 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedSchemaUpdate;
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScan;
@@ -177,6 +179,45 @@ public class BaseKeyedTable implements KeyedTable {
     return name();
   }
 
+  @Override
+  public Map<String, Long> maxTransactionId() {
+    String s = baseTable.properties().get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    if (s != null) {
+      try {
+        Map<String, Long> results = Maps.newHashMap();
+        Map map = new ObjectMapper().readValue(s, Map.class);
+        for (Object key : map.keySet()) {
+          results.put(key.toString(), Long.parseLong(map.get(key).toString()));
+        }
+        return results;
+      } catch (JsonProcessingException e) {
+        throw new UnsupportedOperationException("Failed to get " + TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, e);
+      }
+    } else {
+      return Collections.emptyMap();
+    }
+  }
+
+  @Override
+  public StructLikeMap<Long> partitionMaxTransactionId() {
+    String s = baseTable.properties().get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    if (s != null) {
+      return TablePropertyUtil.decodePartitionMaxTxId(spec(), s);
+    } else {
+      return StructLikeMap.create(spec().partitionType());
+    }
+  }
+
+  @Override
+  public OverwriteBaseFiles newOverwriteBaseFiles() {
+    return new OverwriteBaseFiles(this);
+  }
+
+  @Override
+  public RewritePartitions newRewritePartitions() {
+    return new RewritePartitions(this);
+  }
+
   public static class BaseInternalTable extends BaseUnkeyedTable implements BaseTable {
 
     public BaseInternalTable(
@@ -185,34 +226,6 @@ public class BaseKeyedTable implements KeyedTable {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
     }
 
-    @Override
-    public Map<String, Long> maxTransactionId() {
-      String s = properties().get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-      if (s != null) {
-        try {
-          Map<String, Long> results = Maps.newHashMap();
-          Map map = new ObjectMapper().readValue(s, Map.class);
-          for (Object key : map.keySet()) {
-            results.put(key.toString(), Long.parseLong(map.get(key).toString()));
-          }
-          return results;
-        } catch (JsonProcessingException e) {
-          throw new UnsupportedOperationException("Failed to get " + TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, e);
-        }
-      } else {
-        return Collections.emptyMap();
-      }
-    }
-
-    @Override
-    public StructLikeMap<Long> partitionMaxTransactionId() {
-      String s = properties().get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-      if (s != null) {
-        return TablePropertyUtil.decodePartitionMaxTxId(spec(), s);
-      } else {
-        return StructLikeMap.create(spec().partitionType());
-      }
-    }
   }
 
   public static class ChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {

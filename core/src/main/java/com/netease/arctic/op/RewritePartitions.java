@@ -19,6 +19,7 @@
 package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
+import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.StructLike;
@@ -37,8 +38,8 @@ public class RewritePartitions extends PartitionTransactionOperation {
   private List<DataFile> addFiles = Lists.newArrayList();
   private Long transactionId;
   
-  public RewritePartitions(BaseTable baseTable) {
-    super(baseTable);
+  public RewritePartitions(KeyedTable keyedTable) {
+    super(keyedTable);
   }
 
   public RewritePartitions addDataFile(DataFile dataFile) {

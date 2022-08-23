@@ -97,11 +97,6 @@ public class BaseOptimizeCommit {
 
             minorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), minorAddFiles));
 
-            // if minor optimize, insert files as base new files
-            task.getOptimizeTask().getInsertFiles().stream()
-                .map(SerializationUtil::toInternalTableFile)
-                .forEach(minorAddFiles::add);
-
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
             if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
