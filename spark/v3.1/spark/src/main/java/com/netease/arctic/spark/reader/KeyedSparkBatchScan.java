@@ -53,8 +53,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
-  private static final Logger LOG = LoggerFactory.getLogger(SparkBatchScan.class);
+public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {
+  private static final Logger LOG = LoggerFactory.getLogger(KeyedSparkBatchScan.class);
 
   private final KeyedTable table;
   private final boolean caseSensitive;
@@ -67,7 +67,7 @@ class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
   private StructType readSchema = null;
   private List<CombinedScanTask> tasks = null;
 
-  SparkBatchScan(
+  KeyedSparkBatchScan(
       KeyedTable table, boolean caseSensitive,
       Schema expectedSchema, List<Expression> filters, CaseInsensitiveStringMap options) {
     this.table = table;
@@ -150,7 +150,7 @@ class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
       return false;
     }
 
-    SparkBatchScan that = (SparkBatchScan) o;
+    KeyedSparkBatchScan that = (KeyedSparkBatchScan) o;
     return table.name().equals(that.table.name()) &&
         readSchema().equals(that.readSchema()) && // compare Spark schemas to ignore field ids
         filterExpressions.toString().equals(that.filterExpressions.toString()) &&

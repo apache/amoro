@@ -1,6 +1,7 @@
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkTable}
+import com.netease.arctic.spark.ArcticSparkCatalog
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.table.KeyedTable
 import org.apache.iceberg.spark.Spark3Util
 import org.apache.iceberg.spark.Spark3Util.CatalogAndIdentifier

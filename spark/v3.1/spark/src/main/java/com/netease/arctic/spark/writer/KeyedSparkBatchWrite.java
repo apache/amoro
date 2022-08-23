@@ -53,13 +53,13 @@ import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFA
 
 
 
-public class SparkWrite {
+public class KeyedSparkBatchWrite {
   private final KeyedTable table;
   private final StructType dsSchema;
 
   private final long transactionId;
 
-  SparkWrite(KeyedTable table, StructType dsSchema) {
+  KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);

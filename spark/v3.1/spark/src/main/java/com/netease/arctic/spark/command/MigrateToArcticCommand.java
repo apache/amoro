@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.command;
 
 import com.netease.arctic.spark.ArcticSparkCatalog;
-import com.netease.arctic.spark.table.ArcticUnkeyedSparkTable;
+import com.netease.arctic.spark.table.ArcticIcebergSparkTable;
 import com.netease.arctic.spark.util.ArcticSparkUtils;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.conf.Configuration;
@@ -28,7 +28,6 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.TableMigrationUtil;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.apache.iceberg.hadoop.Util;
@@ -206,9 +205,9 @@ public class MigrateToArcticCommand implements ArcticSparkCommand {
       table = targetCatalog.createTable(
           targetIdentifier, schema, partitions, properties
       );
-      if (table instanceof ArcticUnkeyedSparkTable) {
+      if (table instanceof ArcticIcebergSparkTable) {
         threw = false;
-        return ((ArcticUnkeyedSparkTable) table).table();
+        return ((ArcticIcebergSparkTable) table).table();
       }
       throw new IllegalStateException("target table must be un-keyed table");
     } catch (TableAlreadyExistsException e) {

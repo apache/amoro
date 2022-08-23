@@ -16,14 +16,13 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.table;
 
-
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
-import com.netease.arctic.spark.table.ArcticUnkeyedSparkTable;
-import com.netease.arctic.spark.writer.SparkWriteBuilder;
+import com.netease.arctic.spark.writer.KeyedSparkWriteBuilder;
+import com.netease.arctic.spark.writer.UnkeyedSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -55,7 +54,7 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
       TableCapability.OVERWRITE_BY_FILTER,
       TableCapability.OVERWRITE_DYNAMIC);
 
-  private final KeyedTable arcticTable;
+  private final ArcticTable arcticTable;
   private final StructType requestedSchema;
   private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
@@ -63,16 +62,18 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
 
   public static Table ofArcticTable(ArcticTable table) {
     if (table.isUnkeyedTable()) {
-      return new ArcticUnkeyedSparkTable(table.asUnkeyedTable(), false);
+      if (!(table instanceof SupportHive)) {
+        return new ArcticIcebergSparkTable(table.asUnkeyedTable(), false);
+      }
     }
-    return new ArcticSparkTable(table.asKeyedTable(), false);
+    return new ArcticSparkTable(table, false);
   }
 
-  public ArcticSparkTable(KeyedTable arcticTable, boolean refreshEagerly) {
+  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly) {
     this(arcticTable, null, refreshEagerly);
   }
 
-  public ArcticSparkTable(KeyedTable arcticTable, StructType requestedSchema, boolean refreshEagerly) {
+  public ArcticSparkTable(ArcticTable arcticTable, StructType requestedSchema, boolean refreshEagerly) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
     this.refreshEagerly = refreshEagerly;
@@ -111,7 +112,6 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
         this.lazyTableSchema = SparkSchemaUtil.convert(tableSchema);
       }
     }
-
 
     return lazyTableSchema;
   }
@@ -183,7 +183,12 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
 
   @Override
   public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
-    return new SparkWriteBuilder(arcticTable, info);
+    if (arcticTable.isKeyedTable()) {
+      return new KeyedSparkWriteBuilder(arcticTable.asKeyedTable(), info);
+    } else if (arcticTable.isUnkeyedTable()) {
+      return new UnkeyedSparkWriteBuilder(arcticTable.asUnkeyedTable(), info);
+    }else {
+      throw new IllegalStateException("un-support type of arctic table: " + arcticTable.getClass().getName());
+    }
   }
-
 }
