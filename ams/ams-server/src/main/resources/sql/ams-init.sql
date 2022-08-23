@@ -184,8 +184,7 @@ CREATE TABLE `snapshot_info_cache`
     `action`             varchar(64)          DEFAULT NULL,
     `inner_table`        varchar(64)          NOT NULL,
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`),
-    KEY                  `table_index` (`table_identifier`)
+    PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `table_metadata`
