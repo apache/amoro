@@ -51,16 +51,6 @@ CREATE TABLE `file_info_cache`
     KEY  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE `snapshot_info_cache` (
-     `table_identifier` varchar(64) NOT NULL,
-     `snapshot_id` bigint(20) NOT NULL,
-     `parent_snapshot_id` bigint(20) NOT NULL,
-     `action` varchar(64) DEFAULT NULL,
-     `inner_table` varchar(64) NOT NULL,
-     `commit_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-     PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
-
 CREATE TABLE `optimize_file`
 (
     `id`            bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'Auto increment id',
@@ -194,8 +184,7 @@ CREATE TABLE `snapshot_info_cache`
     `action`             varchar(64)          DEFAULT NULL,
     `inner_table`        varchar(64)          NOT NULL,
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`),
-    KEY                  `table_index` (`table_identifier`)
+    PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `table_metadata`
