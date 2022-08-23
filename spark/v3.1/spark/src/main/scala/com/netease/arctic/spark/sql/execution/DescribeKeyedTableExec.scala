@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.ArcticSparkTable
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
