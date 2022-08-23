@@ -42,9 +42,9 @@ export function getTableList(params: {
 
 // get tables detail
 export function getTableDetail(
-  { catalog = '' as string, db = '' as string, table = '' as string }
+  { catalog = '' as string, db = '' as string, table = '' as string, token = '' as string }
 ) {
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`)
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`, { params: { token } })
 }
 
 export function getHiveTableDetail(
@@ -66,10 +66,11 @@ export function getPartitionTable(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
 }
 
 // get partions
@@ -80,10 +81,11 @@ export function getPartitions(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
 }
 // get partions-files
 export function getPartitionFiles(
@@ -94,10 +96,11 @@ export function getPartitionFiles(
     partition: string | null,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, partition, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize } })
+  const { catalog, db, table, partition, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize, token } })
 }
 // get Transactions
 export function getTransactions(
@@ -107,10 +110,11 @@ export function getTransactions(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions`, { params: { page, pageSize, token } })
 }
 
 // get TransactionId detail
@@ -122,10 +126,11 @@ export function getDetailByTransactionId(
     transactionId: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, transactionId, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions/${transactionId}/detail`, { params: { page, pageSize } })
+  const { catalog, db, table, transactionId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions/${transactionId}/detail`, { params: { page, pageSize, token } })
 }
 // get operations
 export function getOperations(
@@ -135,10 +140,11 @@ export function getOperations(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
 // get optimizes
 export function getOptimizes(
@@ -148,10 +154,11 @@ export function getOptimizes(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimize`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimize`, { params: { page, pageSize, token } })
 }
 
 export function upgradeHiveTable(

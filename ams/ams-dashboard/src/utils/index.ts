@@ -174,3 +174,16 @@ export function debounce (func: any, timeout = 300) {
 export function getUUid() {
   return Math.random().toString(36).substr(2)
 }
+
+/**
+ * get url query
+ */
+export const getQueryString = (name: string, url?: string) => {
+  const reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i')
+  const paramsUrl = url ? new URL(url) : window.location
+  const r = paramsUrl.search.substr(1).match(reg)
+  if (r != null) {
+    return decodeURIComponent(r[2])
+  }
+  return null
+}
