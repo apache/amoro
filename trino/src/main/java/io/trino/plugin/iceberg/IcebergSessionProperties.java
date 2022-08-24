@@ -53,6 +53,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static io.airlift.units.DataSize.Unit.GIGABYTE;
 import static io.trino.plugin.base.session.PropertyMetadataUtil.dataSizeProperty;
 import static io.trino.plugin.base.session.PropertyMetadataUtil.durationProperty;
 import static io.trino.spi.StandardErrorCode.INVALID_SESSION_PROPERTY;
@@ -221,6 +222,11 @@ public final class IcebergSessionProperties
             PARQUET_WRITER_BATCH_SIZE,
             "Parquet: Maximum number of rows passed to the writer in each batch",
             parquetWriterConfig.getBatchSize(),
+            false))
+        .add(dataSizeProperty(
+            TARGET_MAX_FILE_SIZE,
+            "Target maximum size of written files; the actual size may be larger",
+            DataSize.of(1, GIGABYTE),
             false))
         .add(durationProperty(
             DYNAMIC_FILTERING_WAIT_TIMEOUT,
