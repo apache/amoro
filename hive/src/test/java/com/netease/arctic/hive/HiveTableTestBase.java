@@ -152,7 +152,6 @@ public class HiveTableTestBase extends TableTestBase {
 
     testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_table")
         .create().asUnkeyedTable();
 
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
@@ -163,7 +162,6 @@ public class HiveTableTestBase extends TableTestBase {
 
     testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
-        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_pk_table")
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
   }

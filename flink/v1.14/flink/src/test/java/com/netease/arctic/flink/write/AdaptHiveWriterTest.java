@@ -181,7 +181,7 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
 
   private CloseableIterable<RowData> readParquet(Schema schema, String path){
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-            Files.localInput(new File(path)))
+            Files.localInput(path))
         .project(schema)
         .createReaderFunc(fileSchema -> AdaptHiveFlinkParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
