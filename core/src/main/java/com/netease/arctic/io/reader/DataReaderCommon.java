@@ -4,6 +4,7 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.MetadataColumns;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.TypeUtil;
@@ -43,6 +44,19 @@ public class DataReaderCommon {
           Types.StringType.get(),
           ChangeAction.INSERT.toString()));
     }
+    return idToConstant;
+  }
+
+  protected static Map<Integer, ?> getIdToConstant(FileScanTask task, Schema projectedSchema,
+                                                   BiFunction<Type, Object, Object> convertConstant) {
+    Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
+    Map<Integer, Object> idToConstant = new HashMap<>();
+    if (!partitionSchema.columns().isEmpty()) {
+      idToConstant.putAll(PartitionUtil.constantsMap(task, convertConstant));
+    }
+    idToConstant.put(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId(),
+        convertConstant.apply(Types.StringType.get(), task.file().path().toString()));
+
     return idToConstant;
   }
 
