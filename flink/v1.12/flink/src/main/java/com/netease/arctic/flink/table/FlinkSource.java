@@ -160,7 +160,7 @@ public class FlinkSource {
 
       RowType rowType;
       if (projectedSchema != null) {
-        rowType = toRowType(projectedSchema);
+        rowType = toRowType(filterWatermark(projectedSchema));
       } else {
         rowType = FlinkSchemaUtil.convert(scanContext.project());
       }
