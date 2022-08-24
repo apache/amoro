@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSPartitionField;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
@@ -58,7 +57,7 @@ public class MetaService {
     serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
             TableProperties.TABLE_CREATE_TIME_DEFAULT));
 
-    ServerTableProperties.HIDDEN_EXPOSED.forEach(serverTableMeta.getProperties()::remove);
+    TableProperties.PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
 
     serverTableMeta.setBaseLocation(at.location());
     serverTableMeta.setPartitionColumnList(at
