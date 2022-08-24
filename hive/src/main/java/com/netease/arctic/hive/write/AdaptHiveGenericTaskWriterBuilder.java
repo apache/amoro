@@ -185,7 +185,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
         TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
     long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-        TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET) - 1;
+        TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
     Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
     FileAppenderFactory<Record> appenderFactory = HiveTableUtil.isHive(table) ?
         new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :

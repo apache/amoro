@@ -4,7 +4,10 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
+import com.netease.arctic.op.UpdatePartitionProperties;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -13,6 +16,8 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -22,32 +27,36 @@ import org.apache.thrift.TException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 public class ReplaceHivePartitions implements ReplacePartitions {
 
-  final ReplacePartitions delegate;
-  final HMSClient hmsClient;
+  private final Transaction transaction;
+  private final boolean insideTransaction;
+  private final ReplacePartitions delegate;
 
-  final HMSClient transactionalHMSClient;
+  private final HMSClient hmsClient;
+  private final HMSClient transactionalHMSClient;
 
-  final UnkeyedHiveTable table;
+  private final UnkeyedHiveTable table;
+  private final List<DataFile> addFiles = Lists.newArrayList();
+  private final String db;
+  private final String tableName;
+  private final Table hiveTable;
 
-  final List<DataFile> addFiles = Lists.newArrayList();
-
-  final String db;
-  final String tableName;
-
-  final Table hiveTable;
-
-  List<Partition> rewritePartitions = Lists.newArrayList();
-  List<Partition> newPartitions = Lists.newArrayList();
+  private final Map<StructLike, Partition> rewritePartitions = Maps.newHashMap();
+  private final Map<StructLike, Partition> newPartitions = Maps.newHashMap();
+  private String unpartitionTableLocation;
 
   public ReplaceHivePartitions(
-      ReplacePartitions delegate,
+      Transaction transaction,
+      boolean insideTransaction,
       UnkeyedHiveTable table,
       HMSClient client,
       HMSClient transactionalClient) {
-    this.delegate = delegate;
+    this.transaction = transaction;
+    this.insideTransaction = insideTransaction;
+    this.delegate = transaction.newReplacePartitions();
     this.hmsClient = client;
     this.transactionalHMSClient = transactionalClient;
     this.table = table;
@@ -103,18 +112,44 @@ public class ReplaceHivePartitions implements ReplacePartitions {
 
   @Override
   public void commit() {
-    if (!addFiles.isEmpty() && !table.spec().isUnpartitioned()) {
-      applyHivePartitions();
-    }
-
-    delegate.commit();
     if (!addFiles.isEmpty()) {
+      if (table.spec().isUnpartitioned()) {
+        generateUnpartitionTableLocation();
+      } else {
+        applyHivePartitions();
+      }
+
+      delegate.commit();
+      setHiveLocations();
+      if (!insideTransaction) {
+        transaction.commitTransaction();
+      }
+
       if (table.spec().isUnpartitioned()) {
         commitUnPartitionedTable();
       } else {
         commitPartitionedTable();
       }
     }
+  }
+
+  private void setHiveLocations() {
+    UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
+    if (table.spec().isUnpartitioned() && unpartitionTableLocation != null) {
+      updatePartitionProperties.set(
+          TablePropertyUtil.EMPTY_STRUCT,
+          TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
+    } else {
+      rewritePartitions.forEach((partitionData, partition) -> {
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partition.getSd().getLocation());
+      });
+      newPartitions.forEach((partitionData, partition) -> {
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partition.getSd().getLocation());
+      });
+    }
+    updatePartitionProperties.commit();
   }
 
   @Override
@@ -151,10 +186,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       try {
         Partition partition = hmsClient.run(c -> c.getPartition(db, tableName, values));
         rewriteHivePartitions(partition, location, dataFiles);
-        rewritePartitions.add(partition);
+        rewritePartitions.put(dataFiles.get(0).partition(), partition);
       } catch (NoSuchObjectException e) {
         Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles);
-        newPartitions.add(p);
+        newPartitions.put(dataFiles.get(0).partition(), p);
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -181,10 +216,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     try {
       transactionalHMSClient.run(c -> {
         if (!rewritePartitions.isEmpty()) {
-          c.alter_partitions(db, tableName, rewritePartitions);
+          c.alter_partitions(db, tableName, rewritePartitions.values().stream().collect(Collectors.toList()));
         }
         if (!newPartitions.isEmpty()) {
-          c.add_partitions(newPartitions);
+          c.add_partitions(newPartitions.values().stream().collect(Collectors.toList()));
         }
         return 0;
       });
@@ -205,6 +240,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
         );
       }
     }
+  }
+
+  private void generateUnpartitionTableLocation() {
+    unpartitionTableLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
   }
 
   private static void rewriteHivePartitions(Partition partition, String location, List<DataFile> dataFiles) {

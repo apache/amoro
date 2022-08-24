@@ -13,6 +13,7 @@ import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.TableTracer;
 import org.apache.ibatis.session.SqlSession;
@@ -51,11 +52,6 @@ public class DDLTracerService extends IJDBCService {
   private static final String DOC = " COMMENT '%s'";
   private static final String TYPE = " TYPE %s ";
 
-  private static final List<String> skipProperties = new ArrayList<>();
-
-  static {
-    skipProperties.add(BASE_TABLE_MAX_TRANSACTION_ID);
-  }
 
   public void commit(TableIdentifier tableIdentifier, SchemaUpdateMeta commitMeta) {
     Long commitTime = System.currentTimeMillis();
@@ -153,7 +149,7 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder unsetPro = new StringBuilder();
     int c = 0;
     for (String oldPro : before.keySet()) {
-      if (skipProperties.contains(oldPro)) {
+      if (TableProperties.PROTECTED_PROPERTIES.contains(oldPro)) {
         continue;
       }
       if (!after.containsKey(oldPro)) {
@@ -167,7 +163,7 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder setPro = new StringBuilder();
     int c1 = 0;
     for (String newPro : after.keySet()) {
-      if (skipProperties.contains(newPro)) {
+      if (TableProperties.PROTECTED_PROPERTIES.contains(newPro)) {
         continue;
       }
       if (!after.get(newPro).equals(before.get(newPro))) {
