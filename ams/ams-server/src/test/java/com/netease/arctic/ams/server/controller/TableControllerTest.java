@@ -30,6 +30,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
+import com.netease.arctic.ams.server.controller.response.PageResult;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.DDLInfo;
@@ -39,6 +40,7 @@ import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
+import com.netease.arctic.ams.server.model.TableOperation;
 import com.netease.arctic.ams.server.model.TableStatistics;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
@@ -285,9 +287,17 @@ public class TableControllerTest {
       app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
       String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations", catalogName, database, table);
       final okhttp3.Response resp = client.get(url, x -> {});
-      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      OkResponse<PageResult> result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       assert result.getCode() == 200;
+      assert result.getResult().getTotal() == 3;
+      assert result.getResult().getList().size() == 3;
+      
+      url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations?page=1&pageSize=2", catalogName, database, table);
+      final okhttp3.Response resp1 = client.get(url, x -> {});
+      OkResponse<PageResult> result1 = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      assert result1.getCode() == 200;
+      assert result1.getResult().getTotal() == 3;
+      assert result1.getResult().getList().size() == 2;
     });
   }
 
@@ -436,6 +446,25 @@ public class TableControllerTest {
     ddlInfo.setDdlType(DDLTracerService.DDLType.UPDATE_SCHEMA.toString());
     ddlInfo.setCommitTime(1656855463563L);
     ddlInfos.add(ddlInfo);
+
+    DDLInfo ddlInfo1 = new DDLInfo();
+    ddlInfo1.setTableIdentifier(TableIdentifier.of("test", "test", "test")
+            .buildTableIdentifier());
+    ddlInfo1.setDdl("alter table db_name.table_name set tblproperties (\n"
+            + "    'comment' = 'A table comment.');");
+    ddlInfo1.setDdlType(DDLTracerService.DDLType.UPDATE_PROPERTIES.toString());
+    ddlInfo1.setCommitTime(1656855463563L);
+    ddlInfos.add(ddlInfo1);
+
+    DDLInfo ddlInfo2 = new DDLInfo();
+    ddlInfo2.setTableIdentifier(TableIdentifier.of("test", "test", "test")
+            .buildTableIdentifier());
+    ddlInfo2.setDdl("alter table db_name.table_name set tblproperties (\n"
+            + "    'comment' = 'A table comment.');");
+    ddlInfo2.setDdlType(DDLTracerService.DDLType.UPDATE_SCHEMA.toString());
+    ddlInfo2.setCommitTime(1656855463563L);
+    ddlInfos.add(ddlInfo2);
+
     return ddlInfos;
   }
 
