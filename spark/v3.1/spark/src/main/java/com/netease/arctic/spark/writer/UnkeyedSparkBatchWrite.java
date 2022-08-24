@@ -18,12 +18,12 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.op.OverwriteBaseFiles;
-import com.netease.arctic.op.RewritePartitions;
+
 import com.netease.arctic.spark.io.TaskWriters;
-import com.netease.arctic.table.KeyedTable;
-import org.apache.iceberg.AppendFiles;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.OverwriteFiles;
+import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -51,20 +51,14 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-public class KeyedSparkBatchWrite {
-  private final KeyedTable table;
+public class UnkeyedSparkBatchWrite {
+
+  private final UnkeyedTable table;
   private final StructType dsSchema;
 
-  private final long transactionId;
-
-  KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
+  public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
     this.table = table;
     this.dsSchema = dsSchema;
-    this.transactionId = table.beginTransaction(null);
-  }
-
-  BatchWrite asBatchAppend() {
-    return new BatchAppend();
   }
 
   BatchWrite asDynamicOverwrite() {
@@ -84,7 +78,7 @@ public class KeyedSparkBatchWrite {
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, transactionId, this.isOverwrite);
+      return new WriterFactory(table, dsSchema, this.isOverwrite);
     }
 
     @Override
@@ -104,24 +98,6 @@ public class KeyedSparkBatchWrite {
     }
   }
 
-  private class BatchAppend extends BaseBatchWrite {
-
-    BatchAppend() {
-      super(false);
-    }
-
-    @Override
-    public void commit(WriterCommitMessage[] messages) {
-      AppendFiles append = table.baseTable().newAppend();
-
-      for (DataFile file : files(messages)) {
-        append.appendFile(file);
-      }
-
-      append.commit();
-    }
-  }
-
   private class DynamicOverwrite extends BaseBatchWrite {
 
     DynamicOverwrite() {
@@ -130,13 +106,11 @@ public class KeyedSparkBatchWrite {
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      RewritePartitions rewritePartitions = table.newRewritePartitions();
-      rewritePartitions.withTransactionId(transactionId);
-
+      ReplacePartitions replacePartitions = table.newReplacePartitions();
       for (DataFile file : files(messages)) {
-        rewritePartitions.addDataFile(file);
+        replacePartitions.addFile(file);
       }
-      rewritePartitions.commit();
+      replacePartitions.commit();
     }
   }
 
@@ -150,36 +124,30 @@ public class KeyedSparkBatchWrite {
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
-      overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-      overwriteBaseFiles.withTransactionId(transactionId);
-
+      OverwriteFiles overwriteFiles = table.newOverwrite();
+      overwriteFiles.overwriteByRowFilter(overwriteExpr);
       for (DataFile file : files(messages)) {
-        overwriteBaseFiles.addFile(file);
+        overwriteFiles.addFile(file);
       }
-
-      overwriteBaseFiles.commit();
+      overwriteFiles.commit();
     }
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
-    private final KeyedTable table;
+    private final UnkeyedTable table;
     private final StructType dsSchema;
-    private final long transactionId;
 
     private boolean isOverwrite;
 
-    WriterFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean isOverwrite) {
+    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite) {
       this.table = table;
       this.dsSchema = dsSchema;
-      this.transactionId = transactionId;
       this.isOverwrite = isOverwrite;
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
-          .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
@@ -196,4 +164,5 @@ public class KeyedSparkBatchWrite {
     }
     return ImmutableList.of();
   }
+
 }
