@@ -101,7 +101,7 @@ public class ArcticSourceReader<T> extends
     if (!(sourceEvent instanceof InitializationFinishedEvent)) {
       return;
     }
-    LOGGER.info("receive StartWatermarkEvent");
+    LOGGER.info("receive InitializationFinishedEvent");
     maxWatermarkToBeEmitted = true;
     emitWatermarkIfNeeded();
   }

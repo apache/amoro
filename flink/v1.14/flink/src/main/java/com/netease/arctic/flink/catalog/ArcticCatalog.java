@@ -80,6 +80,10 @@ import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 public class ArcticCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
 
+  /**
+   * To distinguish 'CREATE TABLE LIKE' by checking stack
+   * {@link org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable}
+   */
   public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
 
   private final InternalCatalogBuilder catalogBuilder;

@@ -66,7 +66,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   /**
    * If true, using arctic table as build table.
    * {@link ArcticSourceEnumerator} will notify {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}
-   * after {@link TemporalJoinSplits} having been read.
+   * after ArcticReaders have finished reading all {@link TemporalJoinSplits}.
    * Then {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader} will emit a Watermark values
    * Long.MAX_VALUE. Advancing TemporalJoinOperator's watermark can trigger the join operation and push the results to
    * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user arbitrary  probe side
