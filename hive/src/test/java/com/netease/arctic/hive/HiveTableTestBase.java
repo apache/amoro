@@ -32,11 +32,17 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
@@ -188,6 +194,10 @@ public class HiveTableTestBase extends TableTestBase {
     return Joiner.on("/").join(nameValues);
   }
 
+  public static StructLike getPartitionData(String partitionPath, PartitionSpec spec) {
+    return DataFiles.data(spec, partitionPath);
+  }
+
   /**
    * assert hive table partition location as expected
    */
@@ -212,6 +222,13 @@ public class HiveTableTestBase extends TableTestBase {
     Assert.assertEquals("expect " + partitionLocations.size() + " partition after first rewrite partition",
         partitionLocations.size(), partitions.size());
 
+    UnkeyedTable unkeyedTable;
+    if (table.isKeyedTable()) {
+      unkeyedTable = table.asKeyedTable().baseTable();
+    } else {
+      unkeyedTable = table.asUnkeyedTable();
+    }
+    StructLikeMap<Map<String, String>> partitionProperties = unkeyedTable.partitionProperty();
     for (Partition p : partitions) {
       String valuePath = getPartitionPath(p.getValues(), table.spec());
       Assert.assertTrue("partition " + valuePath + " is not expected",
@@ -222,6 +239,9 @@ public class HiveTableTestBase extends TableTestBase {
       Assert.assertTrue(
           "partition location is not expected, expect " + actualLocation + " end-with " + locationExpect,
           actualLocation.contains(locationExpect));
+      Map<String, String> properties = partitionProperties.get(getPartitionData(valuePath, table.spec()));
+      Assert.assertEquals("partition properties is not expected", actualLocation,
+          properties.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
     }
   }
 }
