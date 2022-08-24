@@ -111,7 +111,7 @@ public class BaseKeyedTable implements KeyedTable {
   public Map<String, String> properties() {
     return baseTable.properties().entrySet()
         .stream()
-        .filter(e -> !TableConstants.HIDDEN_PROPERTIES.contains(e.getKey()))
+        .filter(e -> !TableProperties.PROTECTED_PROPERTIES.contains(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 

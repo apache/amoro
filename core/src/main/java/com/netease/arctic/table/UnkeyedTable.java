@@ -18,6 +18,7 @@
 
 package com.netease.arctic.table;
 
+import com.netease.arctic.op.UpdatePartitionProperties;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.util.StructLikeMap;

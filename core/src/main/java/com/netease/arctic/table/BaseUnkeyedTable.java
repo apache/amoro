@@ -20,6 +20,8 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.PartitionPropertiesUpdate;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TracedAppendFiles;
@@ -141,7 +143,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Map<String, String> properties() {
     return icebergTable.properties().entrySet()
         .stream()
-        .filter(e -> !TableConstants.HIDDEN_PROPERTIES.contains(e.getKey()))
+        .filter(e -> !TableProperties.PROTECTED_PROPERTIES.contains(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
@@ -327,7 +329,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public StructLikeMap<Map<String, String>> partitionProperty() {
-    String s = properties().get(TableProperties.TABLE_PARTITION_PROPERTIES);
+    String s = icebergTable.properties().get(TableProperties.TABLE_PARTITION_PROPERTIES);
     if (s != null) {
       return TablePropertyUtil.decodePartitionProperties(spec(), s);
     } else {

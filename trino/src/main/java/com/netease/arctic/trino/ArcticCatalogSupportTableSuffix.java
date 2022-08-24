@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
@@ -58,6 +59,7 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
@@ -332,6 +334,16 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public TableOperations operations() {
       return table.operations();
+    }
+
+    @Override
+    public StructLikeMap<Map<String, String>> partitionProperty() {
+      return table.partitionProperty();
+    }
+
+    @Override
+    public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
+      return table.updatePartitionProperties(transaction);
     }
   }
 }

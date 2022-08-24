@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.table;
+package com.netease.arctic.op;
 
 import org.apache.iceberg.PendingUpdate;
 import org.apache.iceberg.StructLike;

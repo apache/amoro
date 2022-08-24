@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.table;
+package com.netease.arctic.op;
 
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
@@ -73,6 +75,9 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     Set<String> properties = removeProperties.get(partitionData);
     if (properties != null) {
       properties.remove(key);
+      if (properties.isEmpty()) {
+        removeProperties.remove(partitionData);
+      }
     }
     return this;
   }
@@ -107,7 +112,8 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     } else {
       updateProperties = transaction.updateProperties();
     }
-    updateProperties.set(TableProperties.TABLE_PARTITION_PROPERTIES,
+    updateProperties.set(
+        TableProperties.TABLE_PARTITION_PROPERTIES,
         TablePropertyUtil.encodePartitionProperties(table.spec(), result));
     updateProperties.commit();
   }
