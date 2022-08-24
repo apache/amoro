@@ -1,11 +1,13 @@
 package com.netease.arctic.spark;
 
+import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -62,10 +64,13 @@ public class TestHiveTableMergeOnRead extends SparkTestBase {
         newRecord(keyedTable, 9, "ccc_hive", "2021-1-2"),
         newRecord(keyedTable, 10, "ddd_hive", "2021-1-2")
     ));
+    writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
+        newRecord(keyedTable, 1, "aaa", "2021-1-1")
+    ));
 
     sql("select * from {0}.{1} order by id", database, table);
-    Assert.assertEquals(10, rows.size());
-    assertContainIdSet(rows, 0, 1,2,3,4,5,6,7,8,9,10);
+    Assert.assertEquals(9, rows.size());
+    assertContainIdSet(rows, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,
@@ -103,7 +108,7 @@ public class TestHiveTableMergeOnRead extends SparkTestBase {
     ));
     sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(10, rows.size());
-    assertContainIdSet(rows, 0, 1,2,3,4,5,6,7,8,9,10);
+    assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,
@@ -117,15 +122,16 @@ public class TestHiveTableMergeOnRead extends SparkTestBase {
   }
 
   @Test
-  public void testMergeOnReadKeyedUnPartition() throws IOException{
+  public void testMergeOnReadKeyedUnPartition() throws IOException {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
         " dt string , \n" +
         " primary key (id) \n" +
-        ") using arctic \n" , database, table);
+        ") using arctic \n", database, table);
     keyedTable = loadTable(identifier).asKeyedTable();
-    writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
+
+    List<DataFile> dataFiles = writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
         newRecord(keyedTable, 1, "aaa", "2021-1-1"),
         newRecord(keyedTable, 2, "bbb", "2021-1-1"),
         newRecord(keyedTable, 3, "ccc", "2021-1-1"),
@@ -133,15 +139,19 @@ public class TestHiveTableMergeOnRead extends SparkTestBase {
         newRecord(keyedTable, 5, "eee", "2021-1-2"),
         newRecord(keyedTable, 6, "fff", "2021-1-2")
     ));
+
     writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
         newRecord(keyedTable, 7, "aaa_hive", "2021-1-1"),
         newRecord(keyedTable, 8, "bbb_hive", "2021-1-1"),
         newRecord(keyedTable, 9, "ccc_hive", "2021-1-2"),
         newRecord(keyedTable, 10, "ddd_hive", "2021-1-2")
     ));
+    writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
+        newRecord(keyedTable, 1, "aaa", "2021-1-1")
+    ));
     sql("select * from {0}.{1} order by id", database, table);
-    Assert.assertEquals(10, rows.size());
-    assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+    Assert.assertEquals(9, rows.size());
+    assertContainIdSet(rows, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
     sql("use spark_catalog");
     sql("select * from {0}.{1}", database, table);
@@ -150,12 +160,12 @@ public class TestHiveTableMergeOnRead extends SparkTestBase {
   }
 
   @Test
-  public void testMergeOnReadUnkeyedUnpartition() throws IOException{
+  public void testMergeOnReadUnkeyedUnpartition() throws IOException {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
         " dt string \n" +
-        ") using arctic \n" , database, table);
+        ") using arctic \n", database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
     writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
         newRecord(unkeyedTable.schema(), 1, "aaa", "2021-1-1"),
@@ -173,7 +183,7 @@ public class TestHiveTableMergeOnRead extends SparkTestBase {
     ));
     sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(10, rows.size());
-    assertContainIdSet(rows, 0, 1,2,3,4,5,6,7,8,9,10);
+    assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     sql("use spark_catalog");
     sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(4, rows.size());

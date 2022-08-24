@@ -216,14 +216,14 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
 
   private static class RowReader implements PartitionReader<InternalRow> {
 
-    ArcticSparkDataReader reader;
+    ArcticSparkKeyedDataReader reader;
     Iterator<KeyedTableScanTask> scanTasks;
     KeyedTableScanTask currentScanTask;
     CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
     InternalRow current;
 
     RowReader(ArcticInputPartition task) {
-      reader = new ArcticSparkDataReader(
+      reader = new ArcticSparkKeyedDataReader(
           task.io, task.tableSchema, task.expectedSchema, task.keySpec,
           null, task.caseSensitive
       );

@@ -21,6 +21,7 @@ package com.netease.arctic.spark.reader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.reader.BaseArcticDataReader;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
+import com.netease.arctic.spark.util.ArcticSparkUtils;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
@@ -42,9 +43,9 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkDataReader extends BaseArcticDataReader<InternalRow> {
+public class ArcticSparkKeyedDataReader extends BaseArcticDataReader<InternalRow> {
 
-  public ArcticSparkDataReader(
+  public ArcticSparkKeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -52,35 +53,7 @@ public class ArcticSparkDataReader extends BaseArcticDataReader<InternalRow> {
       String nameMapping,
       boolean caseSensitive) {
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
-        ArcticSparkDataReader::convertConstant, false);
-  }
-
-  protected static Object convertConstant(Type type, Object value) {
-    if (value == null) {
-      return null;
-    }
-
-    switch (type.typeId()) {
-      case DECIMAL:
-        return Decimal.apply((BigDecimal) value);
-      case STRING:
-        if (value instanceof Utf8) {
-          Utf8 utf8 = (Utf8) value;
-          return UTF8String.fromBytes(utf8.getBytes(), 0, utf8.getByteLength());
-        }
-        return UTF8String.fromString(value.toString());
-      case FIXED:
-        if (value instanceof byte[]) {
-          return value;
-        } else if (value instanceof GenericData.Fixed) {
-          return ((GenericData.Fixed) value).bytes();
-        }
-        return ByteBuffers.toByteArray((ByteBuffer) value);
-      case BINARY:
-        return ByteBuffers.toByteArray((ByteBuffer) value);
-      default:
-    }
-    return value;
+        ArcticSparkUtils::convertConstant, false);
   }
 
   @Override
