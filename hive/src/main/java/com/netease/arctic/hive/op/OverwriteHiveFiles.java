@@ -364,8 +364,8 @@ public class OverwriteHiveFiles implements OverwriteFiles {
           // exists same location, skip create operation
           continue;
         }
-        throw new CannotAlterHiveLocationException("can't create new partition: "
-            + partitionToString(entry.getValue()) +
+        throw new CannotAlterHiveLocationException("can't create new partition: " +
+            partitionToString(entry.getValue()) +
             ", this partition exists in hive with different location: " + locationInHive);
       } catch (NoSuchObjectException e) {
         partitions.put(entry.getKey(), entry.getValue());
