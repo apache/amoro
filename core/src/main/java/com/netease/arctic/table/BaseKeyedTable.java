@@ -232,7 +232,7 @@ public class BaseKeyedTable implements KeyedTable {
 
     @Override
     public Map<String, String> properties() {
-      return icebergTable.properties();
+      return Maps.newHashMap(icebergTable.properties());
     }
   }
 
