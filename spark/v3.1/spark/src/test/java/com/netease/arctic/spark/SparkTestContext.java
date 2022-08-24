@@ -27,19 +27,29 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.HMSMockServer;
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.write.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.OverwriteFiles;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
@@ -74,6 +84,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -108,6 +119,7 @@ public class SparkTestContext extends ExternalResource {
   public static void cleanUpAdditionSparkConfigs() {
     additionSparkConfigs.clear();
   }
+
   @BeforeClass
   public static void startAll() throws IOException {
     int ref = testCount.incrementAndGet();
@@ -130,32 +142,32 @@ public class SparkTestContext extends ExternalResource {
   }
 
   public static void setUpTestDirAndArctic() throws IOException {
-      System.out.println("======================== start AMS  ========================= ");
-      FileUtils.deleteQuietly(testBaseDir);
-      testBaseDir.mkdirs();
+    System.out.println("======================== start AMS  ========================= ");
+    FileUtils.deleteQuietly(testBaseDir);
+    testBaseDir.mkdirs();
 
-      AmsClientPools.cleanAll();
-      if (!ams.isStarted()) {
-        ams.start();
-      }
-      amsUrl = "thrift://127.0.0.1:" + ams.port();
+    AmsClientPools.cleanAll();
+    if (!ams.isStarted()) {
+      ams.start();
+    }
+    amsUrl = "thrift://127.0.0.1:" + ams.port();
 
-      CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
-      catalogNameArctic = arctic.getCatalogName();
-      ams.handler().createCatalog(arctic);
+    CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
+    catalogNameArctic = arctic.getCatalogName();
+    ams.handler().createCatalog(arctic);
   }
 
   public static void setUpHMS() throws IOException {
     System.out.println("======================== start hive metastore ========================= ");
     hms.start();
-    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort()) ;
+    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
     additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
     additionSparkConfigs.put("spark.sql.hive.metastore.version", "2.3.7");
     //hive.metastore.client.capability.check
     additionSparkConfigs.put("hive.metastore.client.capability.check", "false");
 
     HiveConf entries = hms.hiveConf();
-    CatalogMeta arctic_hive = HiveCatalogMetaTestUtil.createArcticCatalog(testArcticDir,entries);
+    CatalogMeta arctic_hive = HiveCatalogMetaTestUtil.createArcticCatalog(testArcticDir, entries);
     catalogNameHive = arctic_hive.getCatalogName();
     ams.handler().createCatalog(arctic_hive);
   }
@@ -208,7 +220,7 @@ public class SparkTestContext extends ExternalResource {
     hms.stop();
   }
 
-  public static void cleanUpSparkSession(){
+  public static void cleanUpSparkSession() {
     System.out.println("======================== clean up spark session  ========================= ");
     spark.stop();
     spark.close();
@@ -403,7 +415,7 @@ public class SparkTestContext extends ExternalResource {
         primaryKeysBlock = true;
       } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
         primaryKeysBlock = false;
-      } else if (primaryKeysBlock){
+      } else if (primaryKeysBlock) {
         descPrimaryKeys.add(row[0].toString());
       }
     }
@@ -429,16 +441,16 @@ public class SparkTestContext extends ExternalResource {
         descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 
-  public void assertHiveDesc(List<Object[]> rows, List<String> cols, List<String> partitionKey){
+  public void assertHiveDesc(List<Object[]> rows, List<String> cols, List<String> partitionKey) {
     boolean colsBlock = true;
     boolean partitionBlock = false;
     List<String> descCols = Lists.newArrayList();
     List<String> descPartitionKey = Lists.newArrayList();
-    for (Object[] row : rows){
-      if (StringUtils.startsWith(row[0].toString(), "# Partition Infor")){
+    for (Object[] row : rows) {
+      if (StringUtils.startsWith(row[0].toString(), "# Partition Infor")) {
         partitionBlock = true;
         colsBlock = false;
-      }else if (colsBlock){
+      } else if (colsBlock) {
         descCols.add(row[0].toString());
       } else if (partitionBlock && !StringUtils.startsWith(row[0].toString(), "#")) {
         descPartitionKey.add(row[0].toString());
@@ -448,6 +460,70 @@ public class SparkTestContext extends ExternalResource {
         descCols.stream().sorted().distinct().toArray());
     Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
         descPartitionKey.stream().sorted().distinct().toArray());
+  }
+
+  public List<DataFile> writeHive(ArcticTable table, LocationKind locationKind, List<Record> records) throws IOException {
+    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
+        .builderFor(table)
+        .withTransactionId(1);
+
+    TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
+    for (Record record : records) {
+      changeWrite.write(record);
+    }
+    DataFile[] dataFiles = changeWrite.complete().dataFiles();
+    if (table.isKeyedTable()) {
+      KeyedTable keyedTable = table.asKeyedTable();
+      OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
+      Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
+      overwriteBaseFiles.withTransactionId(keyedTable.beginTransaction(System.currentTimeMillis() + ""));
+      overwriteBaseFiles.commit();
+    } else if (table.isUnkeyedTable()) {
+      UnkeyedTable unkeyedTable = table.asUnkeyedTable();
+      OverwriteFiles overwriteFiles = unkeyedTable.newOverwrite();
+      Arrays.stream(dataFiles).forEach(overwriteFiles::addFile);
+      overwriteFiles.commit();
+    } else {
+      throw new IllegalStateException("Table is neither keyed nor unkeyed");
+    }
+    return Arrays.asList(dataFiles);
+  }
+
+  public void adaptHiveInsertPosDeleteFiles(long transactionId, List<DataFile> dataFiles, ArcticTable table) throws IOException {
+    Map<StructLike, List<DataFile>> dataFilesPartitionMap =
+        new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
+    List<DeleteFile> deleteFiles = new ArrayList<>();
+    for (Map.Entry<StructLike, List<DataFile>> dataFilePartitionMap : dataFilesPartitionMap.entrySet()) {
+      StructLike partition = dataFilePartitionMap.getKey();
+      List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
+      Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
+          .collect(Collectors.groupingBy(dataFile ->
+              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+      for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
+        DataTreeNode key = nodeFilePartitionMap.getKey();
+        List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
+
+        // write pos delete
+        SortedPosDeleteWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder
+            .builderFor(table)
+            .withTransactionId(transactionId).buildBasePosDeleteWriter(key.getMask(), key.getIndex(), partition);
+        for (DataFile nodeFile : nodeFiles) {
+          writer.delete(nodeFile.path(), 0);
+        }
+        deleteFiles.addAll(writer.complete());
+      }
+    }
+    if (table.isKeyedTable()) {
+      RowDelta rowDelta = table.asKeyedTable().baseTable().newRowDelta();
+      deleteFiles.forEach(rowDelta::addDeletes);
+      rowDelta.commit();
+    } else if (table.isUnkeyedTable()) {
+      RowDelta rowDelta = table.asUnkeyedTable().newRowDelta();
+      deleteFiles.forEach(rowDelta::addDeletes);
+      rowDelta.commit();
+    } else {
+      throw new IllegalStateException("Table is neither keyed nor unkeyed");
+    }
   }
 
 }

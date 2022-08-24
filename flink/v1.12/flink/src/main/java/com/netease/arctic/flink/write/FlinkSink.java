@@ -284,7 +284,7 @@ public class FlinkSink {
         } else {
           writeFileSplit = PropertyUtil.propertyAsInt(table.properties(),
               TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-              TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET);
+              TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
         }
 
         return new RoundRobinShuffleRulePolicy(helper, writeOperatorParallelism,
@@ -321,7 +321,7 @@ public class FlinkSink {
 
     int minFileSplitCount = PropertyUtil
         .propertyAsInt(arcticTable.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-            TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET);
+            TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
 
     boolean upsert = arcticTable.isKeyedTable() && PropertyUtil.propertyAsBoolean(arcticTable.properties(),
         TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);

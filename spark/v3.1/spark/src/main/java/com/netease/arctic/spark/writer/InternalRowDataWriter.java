@@ -41,7 +41,7 @@ public class InternalRowDataWriter implements DataWriter<InternalRow> {
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
-    return new KeyedSparkBatchWrite.TaskCommit(result.dataFiles());
+    return new SparkWriterUtils.TaskCommit(result.dataFiles());
   }
 
   @Override

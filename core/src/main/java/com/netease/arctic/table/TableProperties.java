@@ -18,6 +18,9 @@
 
 package com.netease.arctic.table;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Reserved Arctic table properties list.
  */
@@ -25,6 +28,22 @@ public class TableProperties {
 
   private TableProperties() {
   }
+
+  /**
+   * Protected properties which should not be exposed to user.
+   */
+  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
+
+  static {
+    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    PROTECTED_PROPERTIES.add(TableProperties.TABLE_CREATE_TIME);
+    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+  }
+
+  public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
+
+  public static final String PARTITION_PROPERTIES_KEY_HIVE_LOCATION = "hive-location";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
@@ -115,7 +134,7 @@ public class TableProperties {
   public static final int BASE_FILE_INDEX_HASH_BUCKET_DEFAULT = 4;
 
   public static final String CHANGE_FILE_INDEX_HASH_BUCKET = "change.file-index.hash-bucket";
-  public static final int CHANGE_FILE_INDEX_HASH_MOD_BUCKET = 4;
+  public static final int CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT = 4;
 
   public static final String WRITE_TARGET_FILE_SIZE_BYTES =
       org.apache.iceberg.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;

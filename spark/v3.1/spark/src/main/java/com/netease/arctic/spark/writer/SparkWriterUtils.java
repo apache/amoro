@@ -16,22 +16,25 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.table;
+package com.netease.arctic.spark.writer;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.stream.Collectors;
+import org.apache.iceberg.DataFile;
+import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
-public class TableConstants {
 
-  public static final String PROPERTY_KEY_CREATE_TYPE = "_hidden.arctic.table.create_type";
-  public static final String PROPERTY_VALUE_CREATE_TYPE_NEW = "create";
-  public static final String PROPERTY_VALUE_CREATE_TYPE_UPGRADE = "upgrade";
+public class SparkWriterUtils {
 
-  public static final Set<String> HIDDEN_PROPERTIES = Collections.unmodifiableSet(
-      Arrays.stream(new String[] {
-          PROPERTY_KEY_CREATE_TYPE
-      }).collect(Collectors.toSet())
-  );
+
+  public static class TaskCommit implements WriterCommitMessage {
+    private final DataFile[] taskFiles;
+
+    TaskCommit(DataFile[] taskFiles) {
+      this.taskFiles = taskFiles;
+    }
+
+    DataFile[] files() {
+      return taskFiles;
+    }
+  }
+
 }
