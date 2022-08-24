@@ -151,7 +151,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     }
 
     KeyedSparkBatchScan that = (KeyedSparkBatchScan) o;
-    return table.name().equals(that.table.name()) &&
+    return table.id().equals(that.table.id()) &&
         readSchema().equals(that.readSchema()) && // compare Spark schemas to ignore field ids
         filterExpressions.toString().equals(that.filterExpressions.toString()) &&
         Objects.equals(snapshotId, that.snapshotId) &&
@@ -163,7 +163,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
   @Override
   public int hashCode() {
     return Objects.hash(
-        table.name(), readSchema(), filterExpressions.toString(), snapshotId, startSnapshotId, endSnapshotId,
+        table.id(), readSchema(), filterExpressions.toString(), snapshotId, startSnapshotId, endSnapshotId,
         asOfTimestamp);
   }
 
