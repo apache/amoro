@@ -356,6 +356,8 @@ public class ArcticMetaStore {
     config.setString(
         ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME,
         systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
+
+    //mysql config
     if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
       config.setString(
           ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD,
@@ -364,6 +366,19 @@ public class ArcticMetaStore {
           ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME,
           systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key()));
     }
+
+    //HA config
+    if (systemConfig.containsKey(ArcticMetaStoreConf.HA_ENABLE.key()) &&
+        systemConfig.getBoolean(ArcticMetaStoreConf.HA_ENABLE.key())) {
+      config.setBoolean(ArcticMetaStoreConf.HA_ENABLE, true);
+      config.setString(
+          ArcticMetaStoreConf.CLUSTER_NAME,
+          systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key()));
+      config.setString(
+          ArcticMetaStoreConf.ZOOKEEPER_SERVER,
+          systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key()));
+    }
+
     //extension properties
     String extensionPro = yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG) == null ? "" :
         yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG);
