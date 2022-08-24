@@ -51,7 +51,7 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-public class KeyedSparkBatchWrite {
+public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite {
   private final KeyedTable table;
   private final StructType dsSchema;
 
@@ -63,16 +63,24 @@ public class KeyedSparkBatchWrite {
     this.transactionId = table.beginTransaction(null);
   }
 
-  BatchWrite asBatchAppend() {
+  @Override
+  public BatchWrite asBatchAppend() {
     return new BatchAppend();
   }
 
-  BatchWrite asDynamicOverwrite() {
+  @Override
+  public BatchWrite asDynamicOverwrite() {
     return new DynamicOverwrite();
   }
 
-  BatchWrite asOverwriteByFilter(Expression overwriteExpr) {
+  @Override
+  public BatchWrite asOverwriteByFilter(Expression overwriteExpr) {
     return new OverwriteByFilter(overwriteExpr);
+  }
+
+  @Override
+  public BatchWrite asUpsertWrite() {
+    return null;
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -191,7 +199,7 @@ public class KeyedSparkBatchWrite {
   private static Iterable<DataFile> files(WriterCommitMessage[] messages) {
     if (messages.length > 0) {
       return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
-          ImmutableList.copyOf(((SparkWriterUtils.TaskCommit) message).files()) :
+          ImmutableList.copyOf(((WriteTaskCommit) message).files()) :
           ImmutableList.of()));
     }
     return ImmutableList.of();

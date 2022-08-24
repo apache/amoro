@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -6,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,25 +17,31 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.table;
 
-import org.apache.iceberg.DataFile;
-import org.apache.spark.sql.connector.write.WriterCommitMessage;
+import org.apache.spark.sql.connector.catalog.Table;
+import org.apache.spark.sql.types.StructType;
+
+/**
+ * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
+ */
+public interface SupportsUpsert extends Table {
+
+  String UPSERT_OP_COLUMN_NAME = "_arctic_upsert_op";
+  String UPSERT_OP_VALUE_INSERT = "I";
+  String UPSERT_OP_VALUE_DELETE = "D";
 
 
-public class SparkWriterUtils {
+
+  IdentifierScanBuilder newScanBuilder();
+
+  boolean requireAdditionIdentifierColumns();
 
 
-  public static class TaskCommit implements WriterCommitMessage {
-    private final DataFile[] taskFiles;
-
-    TaskCommit(DataFile[] taskFiles) {
-      this.taskFiles = taskFiles;
-    }
-
-    DataFile[] files() {
-      return taskFiles;
-    }
-  }
-
+  /**
+   * will table handle insert as upsert
+   *
+   * @return true if table require insert as upsert
+   */
+  boolean appendAsUpsert();
 }
