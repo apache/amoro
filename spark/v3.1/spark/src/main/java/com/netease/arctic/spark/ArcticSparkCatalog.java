@@ -359,7 +359,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (StringUtils.isBlank(catalogUrl)) {
       throw new IllegalArgumentException("lack required properties: url");
     }
-    catalog = CatalogLoader.load(catalogUrl, null);
+    catalog = CatalogLoader.load(catalogUrl, Maps.newHashMap());
   }
 
   @Override

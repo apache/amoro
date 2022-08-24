@@ -371,6 +371,13 @@ public class TableMetaStore implements Serializable {
     configuration.set(CommonConfigurationKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH_ALLOWED_KEY, "true");
     //Enforce configuration resolve resources
     configuration.get(CommonConfigurationKeysPublic.FS_DEFAULT_NAME_KEY);
+
+    //Avoid check hive version
+    configuration.set("hive.metastore.schema.verification", "false");
+
+    //It will encounter error(Required table missing : "DBS" in Catalog "" Schema "") when there is not this param
+    configuration.set("datanucleus.schema.autoCreateAll", "true");
+
     return configuration;
   }
 

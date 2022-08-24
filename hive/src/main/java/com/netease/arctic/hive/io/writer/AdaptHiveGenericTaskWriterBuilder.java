@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.write;
+package com.netease.arctic.hive.io.writer;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.HiveLocationKind;
@@ -133,7 +133,6 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   private GenericBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
-    Preconditions.checkNotNull(transactionId);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));

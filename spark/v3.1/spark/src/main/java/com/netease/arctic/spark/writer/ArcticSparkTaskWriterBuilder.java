@@ -18,11 +18,11 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.hive.io.writer.AdaptHiveOperateToTableRelation;
+import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.hive.write.AdaptHiveOperateToTableRelation;
-import com.netease.arctic.hive.write.AdaptHiveOutputFileFactory;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;

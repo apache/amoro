@@ -33,7 +33,6 @@ import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.HdfsConfig;
 import io.trino.plugin.hive.HdfsConfiguration;
 import io.trino.plugin.hive.HdfsEnvironment;
-import io.trino.plugin.hive.HiveConfig;
 import io.trino.plugin.hive.NamenodeStats;
 import io.trino.plugin.hive.authentication.HdfsAuthentication;
 import io.trino.plugin.hive.metastore.MetastoreConfig;
@@ -95,7 +94,7 @@ public class ArcticModule implements Module {
 
     configBinder(binder).bindConfig(MetastoreConfig.class);
     configBinder(binder).bindConfig(IcebergConfig.class);
-    configBinder(binder).bindConfig(HiveConfig.class);
+    // configBinder(binder).bindConfig(HiveConfig.class);
     newSetBinder(binder, SessionPropertiesProvider.class).addBinding()
         .to(IcebergSessionProperties.class)
         .in(Scopes.SINGLETON);

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive;
+package com.netease.arctic.trino.arctic;
 
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
@@ -24,13 +24,18 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import io.trino.testing.QueryRunner;
+import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
@@ -40,25 +45,21 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.thrift.TException;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.hive.TestHiveMetastore;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.rules.TemporaryFolder;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-public class HiveTableTestBase extends TableTestBase {
+public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
@@ -66,9 +67,6 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final TemporaryFolder tempFolder = new TemporaryFolder();
 
   protected static HMSMockServer hms  ;
- // protected static TestHiveMetastore metastore;
-  //protected static HiveConf hiveConf;
-  // protected static HiveMetaStoreClient metastoreClient;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
@@ -98,12 +96,12 @@ public class HiveTableTestBase extends TableTestBase {
   protected UnkeyedHiveTable testUnPartitionHiveTable;
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
 
-  @BeforeClass
-  public static void startMetastore() throws Exception {
+
+  protected static void startMetastore() throws Exception {
     int ref = testCount.incrementAndGet();
     if (ref == 1){
       tempFolder.create();
-      HiveTableTestBase.hms = new HMSMockServer(tempFolder.newFolder("hive"));
+      hms = new HMSMockServer(tempFolder.newFolder("hive"));
       hms.start();
 
       String dbPath = hms.getDatabasePath(HIVE_DB_NAME);
@@ -133,20 +131,20 @@ public class HiveTableTestBase extends TableTestBase {
     }
   }
 
-  @AfterClass
-  public static void stopMetastore() {
+
+  protected static void stopMetastore() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){
       hms.stop();
-      HiveTableTestBase.hms = null;
+      hms = null;
       tempFolder.delete();
     }
   }
 
-  @Before
-  public void setupTables() throws Exception {
+
+  protected void setupTables() throws Exception {
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
-    tableDir = temp.newFolder();
+    File tableDir = tmp.newFolder();
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
@@ -173,8 +171,8 @@ public class HiveTableTestBase extends TableTestBase {
         .create().asKeyedTable();
   }
 
-  @After
-  public void clearTable() {
+
+  protected void clearTable() {
     hiveCatalog.dropTable(HIVE_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(HIVE_TABLE_ID.buildTableIdentifier());
 
@@ -187,9 +185,6 @@ public class HiveTableTestBase extends TableTestBase {
     hiveCatalog.dropTable(UN_PARTITION_HIVE_PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_PK_TABLE_ID.buildTableIdentifier());
   }
-
-
-
 
   public static class DataFileBuilder {
     final TableIdentifier identifier;

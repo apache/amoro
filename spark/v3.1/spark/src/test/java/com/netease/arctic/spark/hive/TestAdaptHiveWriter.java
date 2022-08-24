@@ -90,7 +90,7 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
   public void testKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, generateInternalRow(), "hive_data");
+    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, generateInternalRow(), "hive");
   }
 
   @Test
@@ -109,7 +109,7 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
   public void testUnKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testHiveTable, HiveLocationKind.INSTANT, generateInternalRow(), "hive_data");
+    testWrite(testHiveTable, HiveLocationKind.INSTANT, generateInternalRow(), "hive");
   }
 
   public void testWrite(ArcticTable table, LocationKind locationKind, List<InternalRow> records, String pathFeature) throws IOException {

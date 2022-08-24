@@ -20,7 +20,7 @@ package com.netease.arctic.hive.io;
 
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.hive.write.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.table.ArcticTable;
@@ -94,7 +94,22 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
 
   @Test
   public void testKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive_data");
+    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
+  }
+
+  @Test
+  public void testUnPartitionKeyedTableChangeWriteByLocationKind() throws IOException {
+    testWrite(testUnPartitionKeyedHiveTable, ChangeLocationKind.INSTANT, HiveTestRecords.changeInsertRecords(), "change");
+  }
+
+  @Test
+  public void testUnPartitionKeyedTableBaseWriteByLocationKind() throws IOException {
+    testWrite(testUnPartitionKeyedHiveTable, BaseLocationKind.INSTANT, HiveTestRecords.baseRecords(), "base");
+  }
+
+  @Test
+  public void testUnPartitionKeyedTableHiveWriteByLocationKind() throws IOException {
+    testWrite(testUnPartitionKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
   }
 
   @Test
@@ -113,7 +128,26 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
 
   @Test
   public void testUnKeyedTableHiveWriteByLocationKind() throws IOException {
-    testWrite(testHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive_data");
+    testWrite(testHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
+  }
+
+  @Test
+  public void testUnPartitionUnKeyedTableChangeWriteByLocationKind() throws IOException {
+    try {
+      testWrite(testUnPartitionHiveTable, ChangeLocationKind.INSTANT, HiveTestRecords.changeInsertRecords(), "change");
+    }catch (Exception e){
+      Assert.assertTrue(e instanceof IllegalArgumentException);
+    }
+  }
+
+  @Test
+  public void testUnPartitionUnKeyedTableBaseWriteByLocationKind() throws IOException {
+    testWrite(testUnPartitionHiveTable, BaseLocationKind.INSTANT, HiveTestRecords.baseRecords(), "base");
+  }
+
+  @Test
+  public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
+    testWrite(testUnPartitionHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
   }
 
   public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
