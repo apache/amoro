@@ -83,7 +83,7 @@ public abstract class BaseIcebergDataReader<T> {
     }
   }
 
-  public CloseableIterable<T> readData(ArcticFileScanTask task) {
+  public CloseableIterable<T> readData(FileScanTask task) {
 
     Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(task, projectedSchema, convertConstant);
 

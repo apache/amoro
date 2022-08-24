@@ -15,6 +15,7 @@ import java.io.IOException;
 @Suite.SuiteClasses({
     TestCreateTableDDL.class,
     TestMigrateHiveTable.class,
+    TestHiveTableMergeOnRead.class,
     TestAlterKeyedTable.class,
     TestKeyedTableDDL.class,
     TestKeyedTableDML.class,
