@@ -48,21 +48,6 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
   }
 
   @Test
-  public void testKeyedRename() throws TException {
-    String testRenamedCol = "testRenamed";
-    testKeyedHiveTable.updateSchema().renameColumn("op_time", testRenamedCol).commit();
-    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_pk_hive_table");
-    boolean isExpect = false;
-    for (FieldSchema fieldSchema : fieldSchemas) {
-      if (fieldSchema.getName().equalsIgnoreCase(testRenamedCol) && fieldSchema.getType().equals("timestamp")) {
-        isExpect = true;
-      }
-    }
-    Assert.assertTrue(isExpect);
-    Assert.assertTrue(HiveSchemaUtil.compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
-  }
-
-  @Test
   public void testKeyedUpdate() throws TException {
     String testUpdateCol = "testUpdate";
     String testDoc = "test Doc";
@@ -90,21 +75,6 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
     for (FieldSchema fieldSchema : fieldSchemas) {
       if (fieldSchema.getName().equalsIgnoreCase(testAddCol) && fieldSchema.getComment().equalsIgnoreCase(testDoc) &&
           fieldSchema.getType().equals("int")) {
-        isExpect = true;
-      }
-    }
-    Assert.assertTrue(isExpect);
-    Assert.assertTrue(HiveSchemaUtil.compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
-  }
-
-  @Test
-  public void testUnKeyedRename() throws TException {
-    String testRenamedCol = "testRenamed";
-    testHiveTable.updateSchema().renameColumn("op_time", testRenamedCol).commit();
-    List<FieldSchema> fieldSchemas = hms.getClient().getFields(HIVE_DB_NAME, "test_hive_table");
-    boolean isExpect = false;
-    for (FieldSchema fieldSchema : fieldSchemas) {
-      if (fieldSchema.getName().equalsIgnoreCase(testRenamedCol) && fieldSchema.getType().equals("timestamp")) {
         isExpect = true;
       }
     }
