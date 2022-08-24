@@ -160,13 +160,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public UpdateProperties updateProperties() {
-    UpdateProperties updateProperties = new UpdateKeyedTableProperties(this, tableMeta);
-    if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TrackerOperations.UPDATE_PROPERTIES, client);
-      return new TracedUpdateProperties(updateProperties, tracer);
-    } else {
-      return updateProperties;
-    }
+    return new UpdateKeyedTableProperties(this, tableMeta);
   }
 
   @Override
