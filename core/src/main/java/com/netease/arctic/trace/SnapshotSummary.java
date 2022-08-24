@@ -16,22 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.table;
+package com.netease.arctic.trace;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Set;
-import java.util.stream.Collectors;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 
-public class TableConstants {
-
-  public static final String PROPERTY_KEY_CREATE_TYPE = "_hidden.arctic.table.create_type";
-  public static final String PROPERTY_VALUE_CREATE_TYPE_NEW = "create";
-  public static final String PROPERTY_VALUE_CREATE_TYPE_UPGRADE = "upgrade";
-
-  public static final Set<String> HIDDEN_PROPERTIES = Collections.unmodifiableSet(
-      Arrays.stream(new String[] {
-          PROPERTY_KEY_CREATE_TYPE
-      }).collect(Collectors.toSet())
-  );
+public class SnapshotSummary {
+  public static final String SNAPSHOT_PRODUCER = "snapshot.producer";
+  public static final String SNAPSHOT_PRODUCER_DEFAULT = CommitMetaProducer.INGESTION.name();
 }

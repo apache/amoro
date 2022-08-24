@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.io;
 
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.BaseTaskWriter;

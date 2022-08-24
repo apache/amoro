@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -34,8 +34,9 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Locale;
 
-public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
-  private final KeyedTable table;
+public class UnkeyedSparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
+
+  private final UnkeyedTable table;
   private final CaseInsensitiveStringMap options;
   private final String overwriteMode;
   private boolean overwriteDynamic = false;
@@ -44,7 +45,7 @@ public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite
 
   private StructType dsSchema = null;
 
-  public SparkWriteBuilder(KeyedTable table, LogicalWriteInfo info) {
+  public UnkeyedSparkWriteBuilder(UnkeyedTable table, LogicalWriteInfo info) {
     this.table = table;
     this.options = info.options();
     this.overwriteMode = options.containsKey("overwrite-mode") ?
@@ -75,7 +76,7 @@ public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite
 
   @Override
   public BatchWrite buildForBatch() {
-    SparkWrite write = new SparkWrite(table, dsSchema);
+    UnkeyedSparkBatchWrite write = new UnkeyedSparkBatchWrite(table, dsSchema);
     if (overwriteByFilter) {
       return write.asOverwriteByFilter(overwriteExpr);
     } else if (overwriteDynamic) {

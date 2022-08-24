@@ -16,23 +16,25 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.config;
+package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.DataFile;
+import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
-import java.util.HashSet;
-import java.util.Set;
 
-public class ServerTableProperties {
+public class SparkWriterUtils {
 
-  /**
-   * Hidden properties which not shown on ams
-   */
-  public static final Set<String> HIDDEN_EXPOSED = new HashSet<>();
 
-  static {
-    HIDDEN_EXPOSED.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    HIDDEN_EXPOSED.add(TableProperties.LOCATION);
-    HIDDEN_EXPOSED.add(TableProperties.TABLE_CREATE_TIME);
+  public static class TaskCommit implements WriterCommitMessage {
+    private final DataFile[] taskFiles;
+
+    TaskCommit(DataFile[] taskFiles) {
+      this.taskFiles = taskFiles;
+    }
+
+    DataFile[] files() {
+      return taskFiles;
+    }
   }
+
 }

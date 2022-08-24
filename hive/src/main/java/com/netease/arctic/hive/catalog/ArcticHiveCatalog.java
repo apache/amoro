@@ -255,6 +255,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(TableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
+      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
 
       Table table = tableMetaStore.doAs(() -> {
         try {
@@ -309,9 +310,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       SerDeInfo serDeInfo = new SerDeInfo();
       switch (format) {
         case PARQUET:
-          storageDescriptor.setOutputFormat("org.apache.hadoop.mapred.FileOutputFormat");
-          storageDescriptor.setInputFormat("org.apache.hadoop.mapred.FileInputFormat");
-          serDeInfo.setSerializationLib("org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe");
+          storageDescriptor.setOutputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat");
+          storageDescriptor.setInputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat");
+          serDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe");
           break;
         default:
           throw new IllegalArgumentException("Unsupported hive table file format:" + format);

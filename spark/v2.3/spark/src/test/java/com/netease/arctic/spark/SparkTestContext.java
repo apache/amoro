@@ -85,17 +85,6 @@ public class SparkTestContext extends ExternalResource {
   protected static String catalogName;
   protected List<Object[]> rows;
 
-  private static SparkTestContext sparkTestContext;
-
-  private static int refCount = 0;
-
-  public static SparkTestContext getSparkTestContext () {
-    if (refCount == 0) {
-      sparkTestContext = new SparkTestContext();
-    }
-    return sparkTestContext;
-  }
-
   public static
   void cleanUpAdditionSparkConfigs() {
     additionSparkConfigs.clear();

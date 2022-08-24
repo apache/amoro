@@ -60,16 +60,14 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +89,6 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -137,16 +134,8 @@ public class TableControllerTest {
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
 
-  static {
-    try {
-      DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  @Before
-  public void startMetastore() throws Exception {
+  @BeforeClass
+  public static void startMetastore() throws Exception {
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -174,9 +163,10 @@ public class TableControllerTest {
     ams.handler().createTableMeta(tableMeta);
   }
 
-  @After
-  public void stopMetastore() throws IOException, SQLException {
+  @AfterClass
+  public static void stopMetastore() throws IOException, SQLException {
     AmsClientPools.cleanAll();
+    ams.stopAndCleanUp();
   }
 
   @Test

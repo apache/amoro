@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.optimize
 
-import com.netease.arctic.spark.ArcticSparkTable
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{ArcticExpressionUtils, Expression}

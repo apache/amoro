@@ -53,8 +53,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
-  private static final Logger LOG = LoggerFactory.getLogger(SparkBatchScan.class);
+public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {
+  private static final Logger LOG = LoggerFactory.getLogger(KeyedSparkBatchScan.class);
 
   private final KeyedTable table;
   private final boolean caseSensitive;
@@ -67,7 +67,7 @@ class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
   private StructType readSchema = null;
   private List<CombinedScanTask> tasks = null;
 
-  SparkBatchScan(
+  KeyedSparkBatchScan(
       KeyedTable table, boolean caseSensitive,
       Schema expectedSchema, List<Expression> filters, CaseInsensitiveStringMap options) {
     this.table = table;
@@ -150,8 +150,8 @@ class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
       return false;
     }
 
-    SparkBatchScan that = (SparkBatchScan) o;
-    return table.name().equals(that.table.name()) &&
+    KeyedSparkBatchScan that = (KeyedSparkBatchScan) o;
+    return table.id().equals(that.table.id()) &&
         readSchema().equals(that.readSchema()) && // compare Spark schemas to ignore field ids
         filterExpressions.toString().equals(that.filterExpressions.toString()) &&
         Objects.equals(snapshotId, that.snapshotId) &&
@@ -163,7 +163,7 @@ class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
   @Override
   public int hashCode() {
     return Objects.hash(
-        table.name(), readSchema(), filterExpressions.toString(), snapshotId, startSnapshotId, endSnapshotId,
+        table.id(), readSchema(), filterExpressions.toString(), snapshotId, startSnapshotId, endSnapshotId,
         asOfTimestamp);
   }
 
@@ -216,14 +216,14 @@ class SparkBatchScan implements Scan, Batch, SupportsReportStatistics {
 
   private static class RowReader implements PartitionReader<InternalRow> {
 
-    ArcticSparkDataReader reader;
+    ArcticSparkKeyedDataReader reader;
     Iterator<KeyedTableScanTask> scanTasks;
     KeyedTableScanTask currentScanTask;
     CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
     InternalRow current;
 
     RowReader(ArcticInputPartition task) {
-      reader = new ArcticSparkDataReader(
+      reader = new ArcticSparkKeyedDataReader(
           task.io, task.tableSchema, task.expectedSchema, task.keySpec,
           null, task.caseSensitive
       );

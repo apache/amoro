@@ -71,7 +71,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final int partitionId;
   private final long taskId;
-  private final long transactionId;
+  private final Long transactionId;
 
   private final String unKeyedTmpDir = System.currentTimeMillis() + "_" + UUID.randomUUID();
 
@@ -87,7 +87,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,
-      long transactionId) {
+      Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
     this.format = format;
