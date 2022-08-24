@@ -18,43 +18,23 @@
 
 package com.netease.arctic.spark.writer;
 
-import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.io.WriteResult;
-import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.connector.write.DataWriter;
+import org.apache.iceberg.DataFile;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
-import java.io.IOException;
 
-public class InternalRowDataWriter implements DataWriter<InternalRow> {
-  final TaskWriter<InternalRow> writer;
+public class SparkWriterUtils {
 
-  public InternalRowDataWriter(TaskWriter<InternalRow> writer) {
-    this.writer = writer;
-  }
 
-  @Override
-  public void write(InternalRow record) throws IOException {
-    writer.write(record);
-  }
+  public static class TaskCommit implements WriterCommitMessage {
+    private final DataFile[] taskFiles;
 
-  @Override
-  public WriterCommitMessage commit() throws IOException {
-    WriteResult result = writer.complete();
-    return new SparkWriterUtils.TaskCommit(result.dataFiles());
-  }
+    TaskCommit(DataFile[] taskFiles) {
+      this.taskFiles = taskFiles;
+    }
 
-  @Override
-  public void abort() throws IOException {
-    if (this.writer != null) {
-      this.writer.abort();
+    DataFile[] files() {
+      return taskFiles;
     }
   }
 
-  @Override
-  public void close() throws IOException {
-    if (this.writer != null) {
-      writer.close();
-    }
-  }
 }
