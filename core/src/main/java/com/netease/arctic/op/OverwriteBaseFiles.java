@@ -22,6 +22,7 @@ import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.OverwriteFiles;
@@ -126,6 +127,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     if (transactionId != null && transactionId > 0) {
       overwriteFiles.set("txId", transactionId + "");
     }
+
+    if (MapUtils.isNotEmpty(properties)) {
+      properties.forEach(overwriteFiles::set);
+    }
     overwriteFiles.commit();
 
     // step2: RowDelta/Rewrite pos-delete files
@@ -146,6 +151,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
         addDeleteFiles.forEach(rowDelta::addDeletes);
+        if (MapUtils.isNotEmpty(properties)) {
+          properties.forEach(rowDelta::set);
+        }
         rowDelta.commit();
       } else {
         RewriteFiles rewriteFiles = transaction.newRewrite();
@@ -164,6 +172,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         }
         rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),
             Collections.emptySet(), new HashSet<>(addDeleteFiles));
+        if (MapUtils.isNotEmpty(properties)) {
+          properties.forEach(rewriteFiles::set);
+        }
         rewriteFiles.commit();
       }
     }

@@ -19,6 +19,8 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HiveTableTestBase;
+import com.netease.arctic.hive.MockDataFileBuilder;
+import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -47,7 +49,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
     );
-    DataFileBuilder dataFileBuilder = new DataFileBuilder(table);
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     ReplacePartitions replacePartitions = table.newReplacePartitions();
@@ -57,8 +59,6 @@ public class TestRewritePartitions extends HiveTableTestBase {
     applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
     assertHivePartitionLocations(partitionAndLocations, table);
-
-
 
     // =================== overwrite table ========================
     overwriteFiles = Lists.newArrayList(
@@ -87,7 +87,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
     );
-    DataFileBuilder dataFileBuilder = new DataFileBuilder(table);
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     RewritePartitions rewritePartitions = table.newRewritePartitions();
@@ -98,7 +98,6 @@ public class TestRewritePartitions extends HiveTableTestBase {
     applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
     assertHivePartitionLocations(partitionAndLocations, table);
-
 
     // =================== overwrite table ========================
     overwriteFiles = Lists.newArrayList(
@@ -115,7 +114,6 @@ public class TestRewritePartitions extends HiveTableTestBase {
     applyRewritePartitions(partitionAndLocations, overwriteFiles);
     //assert hive partition equal with expect.
     assertHivePartitionLocations(partitionAndLocations, table);
-
   }
 
   @Test
@@ -128,7 +126,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
     );
-    DataFileBuilder dataFileBuilder = new DataFileBuilder(table);
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     Transaction tx = table.newTransaction();
@@ -148,24 +146,39 @@ public class TestRewritePartitions extends HiveTableTestBase {
     tx.commitTransaction();
     applyRewritePartitions(partitionAndLocations, overwriteFiles);
 
-
     assertHivePartitionLocations(partitionAndLocations, table);
     Assert.assertTrue(table.properties().containsKey("test-rewrite-partition"));
     Assert.assertEquals("test-rewrite-partition-value", table.properties().get("test-rewrite-partition"));
+  }
 
+  /**
+   * failed then add file of same partition with different location
+   */
+  @Test
+  public void testExceptionAddFileWithDifferentLocation() throws TException {
+    UnkeyedTable table = testHiveTable;
+
+    List<Map.Entry<String, String>> overwriteFiles = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
+        Maps.immutableEntry("name=aaa", "/test_path/partition2/data-a2.parquet"),
+        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
+    );
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
+    List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
+
+    ReplacePartitions replacePartitions = table.newReplacePartitions();
+    initDataFiles.forEach(replacePartitions::addFile);
+
+    Assert.assertThrows(CannotAlterHiveLocationException.class, replacePartitions::commit);
   }
 
 
-
-
-  private void applyRewritePartitions(Map<String, String> partitionLocations,
-      List<Map.Entry<String, String>> overwriteFiles){
+  private void applyRewritePartitions(
+      Map<String, String> partitionLocations,
+      List<Map.Entry<String, String>> overwriteFiles) {
     overwriteFiles.forEach(kv -> {
       String partLocation = FileUtil.getFileDir(kv.getValue());
       partitionLocations.put(kv.getKey(), partLocation);
     });
   }
-
-
-
 }

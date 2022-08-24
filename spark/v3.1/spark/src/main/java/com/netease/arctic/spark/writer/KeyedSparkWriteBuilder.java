@@ -34,7 +34,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.Locale;
 
-public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
+public class KeyedSparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
   private final KeyedTable table;
   private final CaseInsensitiveStringMap options;
   private final String overwriteMode;
@@ -44,7 +44,7 @@ public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite
 
   private StructType dsSchema = null;
 
-  public SparkWriteBuilder(KeyedTable table, LogicalWriteInfo info) {
+  public KeyedSparkWriteBuilder(KeyedTable table, LogicalWriteInfo info) {
     this.table = table;
     this.options = info.options();
     this.overwriteMode = options.containsKey("overwrite-mode") ?
@@ -75,7 +75,7 @@ public class SparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite
 
   @Override
   public BatchWrite buildForBatch() {
-    SparkWrite write = new SparkWrite(table, dsSchema);
+    KeyedSparkBatchWrite write = new KeyedSparkBatchWrite(table, dsSchema);
     if (overwriteByFilter) {
       return write.asOverwriteByFilter(overwriteExpr);
     } else if (overwriteDynamic) {

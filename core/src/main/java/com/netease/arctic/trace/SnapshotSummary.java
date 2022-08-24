@@ -16,32 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.table;
+package com.netease.arctic.trace;
 
-import com.netease.arctic.table.UnkeyedTable;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.spark.source.SparkTable;
+import com.netease.arctic.ams.api.CommitMetaProducer;
 
-import java.util.Map;
-
-public class ArcticUnkeyedSparkTable extends SparkTable {
-  private final UnkeyedTable unkeyedTable;
-
-  public ArcticUnkeyedSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
-    super(unkeyedTable, refreshEagerly);
-    this.unkeyedTable = unkeyedTable;
-  }
-
-  @Override
-  public UnkeyedTable table() {
-    return unkeyedTable;
-  }
-
-  @Override
-  public Map<String, String> properties() {
-    Map<String, String> properties = Maps.newHashMap();
-    properties.putAll(super.properties());
-    properties.put("provider", "arctic");
-    return properties;
-  }
+public class SnapshotSummary {
+  public static final String SNAPSHOT_PRODUCER = "snapshot.producer";
+  public static final String SNAPSHOT_PRODUCER_DEFAULT = CommitMetaProducer.INGESTION.name();
 }
