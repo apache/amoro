@@ -25,10 +25,9 @@ import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
-import org.apache.flink.util.Preconditions;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * An util that converts flink table schema.
@@ -61,27 +60,8 @@ public class FlinkSchemaUtil {
     if (!addWatermark) {
       return tableSchema;
     }
-    TableSchema.Builder builder = new TableSchema.Builder();
-
-    tableSchema
-        .getTableColumns()
-        .forEach(
-            tableColumn -> {
-              if (!tableColumn.isPhysical()) {
-                return;
-              }
-              builder.field(tableColumn.getName(), tableColumn.getType());
-            });
-    tableSchema
-        .getPrimaryKey()
-        .ifPresent(
-            uniqueConstraint ->
-                builder.primaryKey(
-                    uniqueConstraint.getName(),
-                    uniqueConstraint.getColumns().toArray(new String[0])));
-
-    tableSchema.getWatermarkSpecs()
-            .forEach(builder::watermark);
+    TableSchema.Builder builder = filter(tableSchema, TableColumn::isPhysical);
+    tableSchema.getWatermarkSpecs().forEach(builder::watermark);
     return builder.build();
   }
 
@@ -94,20 +74,30 @@ public class FlinkSchemaUtil {
       return tableSchema;
     }
 
+    Function<TableColumn, Boolean> filter = (tableColumn) -> {
+      boolean isWatermark = false;
+      for (WatermarkSpec spec : watermarkSpecs) {
+        if (spec.getRowtimeAttribute().equals(tableColumn.getName())) {
+          isWatermark = true;
+          break;
+        }
+      }
+      return !isWatermark;
+    };
+    return filter(tableSchema, filter).build();
+  }
+
+  /**
+   * If filter result is true, keep the column; otherwise, remove the column.
+   */
+  public static TableSchema.Builder filter(TableSchema tableSchema, Function<TableColumn, Boolean> filter) {
     TableSchema.Builder builder = TableSchema.builder();
 
     tableSchema
         .getTableColumns()
         .forEach(
             tableColumn -> {
-              boolean isWatermark = false;
-              for (WatermarkSpec spec : watermarkSpecs) {
-                if (spec.getRowtimeAttribute().equals(tableColumn.getName())) {
-                  isWatermark = true;
-                  break;
-                }
-              }
-              if (isWatermark) {
+              if (!filter.apply(tableColumn)) {
                 return;
               }
               builder.field(tableColumn.getName(), tableColumn.getType());
@@ -119,7 +109,7 @@ public class FlinkSchemaUtil {
                 builder.primaryKey(
                     uniqueConstraint.getName(),
                     uniqueConstraint.getColumns().toArray(new String[0])));
-    return builder.build();
+    return builder;
   }
 
   public static RowType toRowType(TableSchema tableSchema) {

@@ -159,15 +159,20 @@ public class FlinkSource {
           arcticTable.io()
       );
 
+      boolean dimTable = PropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+          DIM_TABLE_ENABLE.defaultValue());
       RowType rowType;
       if (projectedSchema != null) {
-        rowType = toRowType(filterWatermark(projectedSchema));
+        // If dim table is enabled, we reserve a RowTime field in Emitter.
+        if (dimTable) {
+          rowType = toRowType(projectedSchema);
+        } else {
+          rowType = toRowType(filterWatermark(projectedSchema));
+        }
       } else {
         rowType = FlinkSchemaUtil.convert(scanContext.project());
       }
 
-      boolean dimTable = PropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
-          DIM_TABLE_ENABLE.defaultValue());
       return env.fromSource(
           new ArcticSource<>(tableLoader, scanContext, rowDataReaderFunction,
               InternalTypeInfo.of(rowType), arcticTable.name(), dimTable),
