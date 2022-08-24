@@ -230,6 +230,10 @@ public class BaseKeyedTable implements KeyedTable {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
     }
 
+    @Override
+    public Map<String, String> properties() {
+      return icebergTable.properties();
+    }
   }
 
   public static class ChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {
