@@ -103,8 +103,8 @@ public class HiveSchemaUpdate implements UpdateSchema {
 
   @Override
   public UpdateSchema renameColumn(String name, String newName) {
-    this.updateSchema.renameColumn(name, newName);
-    return this;
+    throw new UnsupportedOperationException("not support renameColumn now, there will be error when hive stored as " +
+        "parquet and we rename the column");
   }
 
   @Override
