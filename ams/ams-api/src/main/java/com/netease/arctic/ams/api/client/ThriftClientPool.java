@@ -121,6 +121,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
                 logger.warn("transport open fail service: host={}, port={}",
                     serviceInfo.getHost(), serviceInfo.getPort());
               }
+              Thread.sleep(2000);
             }
             if (!transport.isOpen()) {
               throw new ConnectionFailException(
@@ -231,7 +232,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
           if (attempt > 1) {
             // if attempt > 1, it means the server is maybe restarting, so we should wait a while
-            Thread.sleep(500);
+            logger.warn("server is restarting, wait a while");
+            Thread.sleep(2000);
           }
           pool.clear();
           client = pool.borrowObject();

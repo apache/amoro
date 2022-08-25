@@ -600,7 +600,7 @@ public class ArcticMetaStore {
       public void isLeader() {
         LOG.info("i am leader");
         try {
-          ZookeeperService zkService = new ZookeeperService(zkServerAddress);
+          ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
           String masterPath = AmsHAProperties.getMasterPath(namespace);
           zkService.create(masterPath);
           JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);

@@ -38,7 +38,7 @@ public class TestHighAvailabilityServices {
     String testCluster = "testCluster";
     String testCatalog = "testCatalog";
     int socketTimeout = 1111;
-    ZookeeperService zkService = new ZookeeperService(MockZookeeperServer.getUri());
+    ZookeeperService zkService = ZookeeperService.getInstance(MockZookeeperServer.getUri());
     String masterPath = AmsHAProperties.getMasterPath(testCluster);
     zkService.create(masterPath);
 

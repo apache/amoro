@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 
 public class ZookeeperUtils {
   private final CuratorFramework zkClient;
+  private static volatile ZookeeperUtils instance;
 
   public ZookeeperUtils(String zkServerAddress) {
     ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
@@ -20,6 +21,17 @@ public class ZookeeperUtils {
         .retryPolicy(retryPolicy)
         .build();
     zkClient.start();
+  }
+
+  public static ZookeeperUtils getInstance(String zkServerAddress) {
+    if (instance == null) {
+      synchronized (ZookeeperUtils.class) {
+        if (instance == null) {
+          instance = new ZookeeperUtils(zkServerAddress);
+        }
+      }
+    }
+    return instance;
   }
 
   public CuratorFramework getZkClient() {

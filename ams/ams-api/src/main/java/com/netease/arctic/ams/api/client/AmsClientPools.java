@@ -29,9 +29,7 @@ public class AmsClientPools {
   }
 
   private static ThriftClientPool<ArcticTableMetastore.Client> buildClientPool(String url) {
-    ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(url);
     PoolConfig poolConfig = new PoolConfig();
-    poolConfig.setTimeout(arcticThriftUrl.socketTimeout());
     poolConfig.setFailover(true);
     poolConfig.setMinIdle(CLIENT_POOL_MIN);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
@@ -50,6 +48,6 @@ public class AmsClientPools {
             return false;
           }
           return true;
-        }, new PoolConfig());
+        }, poolConfig);
   }
 }

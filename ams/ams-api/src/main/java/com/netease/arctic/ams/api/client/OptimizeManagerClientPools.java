@@ -21,7 +21,9 @@ package com.netease.arctic.ams.api.client;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.OptimizeManager;
+import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
 
@@ -40,15 +42,20 @@ public class OptimizeManagerClientPools {
   }
 
   private static ThriftClientPool<OptimizeManager.Client> buildClient(String url) {
-    ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(url);
     PoolConfig poolConfig = new PoolConfig();
-    poolConfig.setTimeout(arcticThriftUrl.socketTimeout());
     poolConfig.setFailover(true);
     poolConfig.setMinIdle(CLIENT_POOL_MIN);
     poolConfig.setMaxIdle(CLIENT_POOL_MAX);
     return new ThriftClientPool<>(url,
         s -> new OptimizeManager.Client(
-            new TMultiplexedProtocol(new TBinaryProtocol(s), "OptimizeManager")), c -> true, new PoolConfig());
+            new TMultiplexedProtocol(new TBinaryProtocol(s), "OptimizeManager")), c -> {
+      try {
+        ((OptimizeManager.Client) c).ping();
+      } catch (TException e) {
+        return false;
+      }
+      return true;
+    }, poolConfig);
   }
 
 }

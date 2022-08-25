@@ -71,7 +71,7 @@ public class ArcticThriftUrl {
           zkServerAddress = m.group(1);
           cluster = m.group(2);
         }
-        ZookeeperService zkService = new ZookeeperService(zkServerAddress);
+        ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
         AmsServerInfo serverInfo = null;
         try {
           serverInfo = JSONObject.parseObject(

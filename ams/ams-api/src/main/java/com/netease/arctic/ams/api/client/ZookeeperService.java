@@ -9,21 +9,37 @@ import org.apache.zookeeper.data.Stat;
 import java.nio.charset.StandardCharsets;
 
 public class ZookeeperService {
-  private final CuratorFramework zkClient;
 
-  public ZookeeperService(String zkServerAddress) {
+  private CuratorFramework zkClient;
+  private String zkServerAddress;
+  private static volatile ZookeeperService instance;
+
+  private ZookeeperService(String zkServerAddress) {
+    this.zkServerAddress = zkServerAddress;
+    this.zkClient = newClient();
+  }
+
+  private CuratorFramework newClient() {
     ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3, 5000);
-    this.zkClient = CuratorFrameworkFactory.builder()
+    CuratorFramework client = CuratorFrameworkFactory.builder()
         .connectString(zkServerAddress)
         .sessionTimeoutMs(5000)
         .connectionTimeoutMs(5000)
         .retryPolicy(retryPolicy)
         .build();
-    zkClient.start();
+    client.start();
+    return client;
   }
 
-  public CuratorFramework getZkClient() {
-    return this.zkClient;
+  public static ZookeeperService getInstance(String zkServerAddress) {
+    if (instance == null) {
+      synchronized (ZookeeperService.class) {
+        if (instance == null) {
+          instance = new ZookeeperService(zkServerAddress);
+        }
+      }
+    }
+    return instance;
   }
 
   public boolean exist(String path) throws Exception {
