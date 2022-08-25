@@ -27,7 +27,7 @@ const props = defineProps<{ fields: DetailColumnItem[], loading: boolean }>()
 const fieldsColumns = shallowReactive([
   { dataIndex: 'field', title: t('field'), ellipsis: true },
   { dataIndex: 'type', title: t('type'), ellipsis: true },
-  { dataIndex: 'description', title: t('description'), ellipsis: true },
+  { dataIndex: 'comment', title: t('description'), ellipsis: true },
   { dataIndex: 'primaryKey', title: t('primaryKey'), scopedSlots: { customRender: 'primaryKey' } }
 ])
 

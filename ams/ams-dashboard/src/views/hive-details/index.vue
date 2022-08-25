@@ -28,7 +28,7 @@ import { computed, defineComponent, onBeforeUnmount, onMounted, reactive, ref, t
 import UDetails from './components/Details.vue'
 import errorMsg from './components/ErrorMsg.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { IField, upgradeStatusMap } from '@/types/common.type'
+import { DetailColumnItem, upgradeStatusMap } from '@/types/common.type'
 import { getHiveTableDetail, getUpgradeStatus } from '@/services/table.service'
 
 export default defineComponent({
@@ -52,8 +52,8 @@ export default defineComponent({
       errorMessage: '',
       isSecondaryNav: false,
       tableName: 'tableName',
-      partitionColumnList: [] as IField[],
-      schema: [] as IField[]
+      partitionColumnList: [] as DetailColumnItem[],
+      schema: [] as DetailColumnItem[]
     })
 
     const goBack = () => {

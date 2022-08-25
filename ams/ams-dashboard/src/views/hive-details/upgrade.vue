@@ -45,12 +45,12 @@ import { LeftOutlined } from '@ant-design/icons-vue'
 import schemaField from './components/Field.vue'
 import partitionField from './components/Partition.vue'
 import otherProperties from './components/Properties.vue'
-import { IField, PartitionColumnItem, DetailColumnItem, IMap } from '@/types/common.type'
+import { DetailColumnItem, IMap } from '@/types/common.type'
 import { getHiveTableDetail, upgradeHiveTable } from '@/services/table.service'
 
 const loading = ref<boolean>(false)
 const field = reactive<DetailColumnItem[]>([])
-const partitionFields = reactive<IField[]>([])
+const partitionFields = reactive<DetailColumnItem[]>([])
 const propertiesObj = reactive<IMap<string>>({})
 const pkName = reactive<IMap<string>[]>([])
 
@@ -82,7 +82,7 @@ async function getDetails() {
       ...params.value
     })
     const { partitionColumnList = [], schema, properties } = result;
-    (partitionColumnList || []).forEach((ele: PartitionColumnItem) => {
+    (partitionColumnList || []).forEach((ele: DetailColumnItem) => {
       partitionFields.push(ele)
     });
     (schema || []).forEach((ele: DetailColumnItem) => {
