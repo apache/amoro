@@ -208,7 +208,6 @@ CREATE TABLE `table_metadata`
     `krb_conf`        text,
     `krb_principal`   text,
     `current_tx_id`   bigint(20) DEFAULT NULL,
-    `cur_schema_id`   int(11) DEFAULT NULL,
     PRIMARY KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
