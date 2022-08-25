@@ -19,7 +19,6 @@
 package com.netease.arctic.trino.unkeyed;
 
 import com.google.common.collect.ImmutableList;
-import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import com.netease.arctic.trino.TableNameResolve;
 import io.airlift.units.Duration;

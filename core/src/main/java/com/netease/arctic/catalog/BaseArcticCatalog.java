@@ -310,7 +310,9 @@ public class BaseArcticCatalog implements ArcticCatalog {
               storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE))) {
         String coreSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE);
         String hdfsSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE);
+        String hiveSite = storageConfigs.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE);
         builder.withBase64CoreSite(coreSite)
+            .withBase64MetaStoreSite(hiveSite)
             .withBase64HdfsSite(hdfsSite);
       }
     }

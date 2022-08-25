@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive;
+package com.netease.arctic.trino.arctic;
 
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
@@ -24,41 +24,42 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import io.trino.testing.QueryRunner;
+import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
+import java.util.stream.Collectors;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.StructLikeMap;
-import org.apache.thrift.TException;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-
-import java.util.HashMap;
-import java.util.Map;
 import org.junit.rules.TemporaryFolder;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-public class HiveTableTestBase extends TableTestBase {
+public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
@@ -95,12 +96,12 @@ public class HiveTableTestBase extends TableTestBase {
   protected UnkeyedHiveTable testUnPartitionHiveTable;
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
 
-  @BeforeClass
-  public static void startMetastore() throws Exception {
+
+  protected static void startMetastore() throws Exception {
     int ref = testCount.incrementAndGet();
     if (ref == 1){
       tempFolder.create();
-      HiveTableTestBase.hms = new HMSMockServer(tempFolder.newFolder("hive"));
+      hms = new HMSMockServer(tempFolder.newFolder("hive"));
       hms.start();
 
       String dbPath = hms.getDatabasePath(HIVE_DB_NAME);
@@ -130,44 +131,48 @@ public class HiveTableTestBase extends TableTestBase {
     }
   }
 
-  @AfterClass
-  public static void stopMetastore() {
+
+  protected static void stopMetastore() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){
       hms.stop();
-      HiveTableTestBase.hms = null;
+      hms = null;
       tempFolder.delete();
     }
   }
 
-  @Before
-  public void setupTables() throws Exception {
+
+  protected void setupTables() throws Exception {
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
-    tableDir = temp.newFolder();
+    File tableDir = tmp.newFolder();
 
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
 
     testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_table")
         .create().asUnkeyedTable();
 
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_table")
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
     testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/un_partition_pk_table")
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
   }
 
-  @After
-  public void clearTable() {
+
+  protected void clearTable() {
     hiveCatalog.dropTable(HIVE_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(HIVE_TABLE_ID.buildTableIdentifier());
 
@@ -181,6 +186,35 @@ public class HiveTableTestBase extends TableTestBase {
     AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_PK_TABLE_ID.buildTableIdentifier());
   }
 
+  public static class DataFileBuilder {
+    final TableIdentifier identifier;
+    final Table hiveTable;
+    final ArcticTable table;
+
+    public DataFileBuilder(ArcticTable table) throws TException {
+      identifier = table.id();
+      this.table = table;
+      hiveTable = hms.getClient().getTable(identifier.getDatabase(), identifier.getTableName());
+    }
+
+    public DataFile build(String valuePath, String path) {
+      DataFiles.Builder builder =  DataFiles.builder(table.spec())
+          .withPath(hiveTable.getSd().getLocation() + path)
+          .withFileSizeInBytes(0)
+          .withRecordCount(2);
+
+      if (!StringUtils.isEmpty(valuePath)){
+        builder = builder.withPartitionPath(valuePath);
+      }
+      return builder.build();
+    }
+
+    public List<DataFile> buildList(List<Map.Entry<String, String>> partValueFiles){
+      return partValueFiles.stream().map(
+          kv -> this.build(kv.getKey(), kv.getValue())
+      ).collect(Collectors.toList());
+    }
+  }
 
   public static String getPartitionPath(List<String> values, PartitionSpec spec) {
     List<String> nameValues = Lists.newArrayList();
@@ -192,12 +226,11 @@ public class HiveTableTestBase extends TableTestBase {
     return Joiner.on("/").join(nameValues);
   }
 
-  public static StructLike getPartitionData(String partitionPath, PartitionSpec spec) {
-    return DataFiles.data(spec, partitionPath);
-  }
-
   /**
    * assert hive table partition location as expected
+   * @param partitionLocations
+   * @param table
+   * @throws TException
    */
   public static void assertHivePartitionLocations(Map<String, String> partitionLocations, ArcticTable table) throws TException {
     TableIdentifier identifier = table.id();
@@ -220,13 +253,6 @@ public class HiveTableTestBase extends TableTestBase {
     Assert.assertEquals("expect " + partitionLocations.size() + " partition after first rewrite partition",
         partitionLocations.size(), partitions.size());
 
-    UnkeyedTable unkeyedTable;
-    if (table.isKeyedTable()) {
-      unkeyedTable = table.asKeyedTable().baseTable();
-    } else {
-      unkeyedTable = table.asUnkeyedTable();
-    }
-    StructLikeMap<Map<String, String>> partitionProperties = unkeyedTable.partitionProperty();
     for (Partition p : partitions) {
       String valuePath = getPartitionPath(p.getValues(), table.spec());
       Assert.assertTrue("partition " + valuePath + " is not expected",
@@ -237,9 +263,6 @@ public class HiveTableTestBase extends TableTestBase {
       Assert.assertTrue(
           "partition location is not expected, expect " + actualLocation + " end-with " + locationExpect,
           actualLocation.contains(locationExpect));
-      Map<String, String> properties = partitionProperties.get(getPartitionData(valuePath, table.spec()));
-      Assert.assertEquals("partition properties is not expected", actualLocation,
-          properties.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
     }
   }
 }
