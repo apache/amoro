@@ -163,6 +163,20 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
+  public boolean rename(String src, String dts) {
+    return tableMetaStore.doAs(() -> {
+      Path srcPath = new Path(src);
+      Path dtsPath = new Path(dts);
+      FileSystem fs = getFs(srcPath);
+      try {
+        return fs.rename(srcPath, dtsPath);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
+      }
+    });
+  }
+
+  @Override
   public <T> T doAs(Callable<T> callable) {
     return tableMetaStore.doAs(callable);
   }

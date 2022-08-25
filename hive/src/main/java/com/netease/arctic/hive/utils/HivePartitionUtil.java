@@ -18,6 +18,9 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.table.ArcticTable;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
@@ -28,7 +31,9 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 
+import java.util.Collections;
 import java.util.List;
 
 public class HivePartitionUtil {
@@ -71,5 +76,35 @@ public class HivePartitionUtil {
       p.setPrivileges(privilegeSet.deepCopy());
     }
     return p;
+  }
+
+  public static Partition getPartition(HMSClient hmsClient,
+                                       ArcticTable arcticTable,
+                                       List<String> partitionValues,
+                                       String partitionLocation) {
+    String db = arcticTable.id().getDatabase();
+    String tableName = arcticTable.id().getTableName();
+    Table hiveTable;
+    try {
+      hiveTable = hmsClient.run(c -> c.getTable(db, tableName));
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
+    try {
+      return hmsClient.run(client -> {
+        Partition partition;
+        try {
+          partition = client.getPartition(db, tableName, partitionValues);
+          return partition;
+        } catch (NoSuchObjectException noSuchObjectException) {
+          partition = newPartition(hiveTable, partitionValues, partitionLocation, Collections.emptyList());
+          client.add_partition(partition);
+          return partition;
+        }
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

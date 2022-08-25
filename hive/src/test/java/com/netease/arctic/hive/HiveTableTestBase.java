@@ -39,26 +39,32 @@ import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.types.Types;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import org.junit.rules.TemporaryFolder;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
 public class HiveTableTestBase extends TableTestBase {
+  public static final Logger LOG = LoggerFactory.getLogger(HiveTableTestBase.class);
+
   protected static final String HIVE_DB_NAME = "hivedb";
   protected static final String HIVE_CATALOG_NAME = "hive_catalog";
   protected static final AtomicInteger testCount = new AtomicInteger(0);
@@ -82,7 +88,7 @@ public class HiveTableTestBase extends TableTestBase {
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone()),
       Types.NestedField.required(4, "op_time_with_zone", Types.TimestampType.withZone()),
-      Types.NestedField.required(5, "d", Types.DecimalType.of(3, 0))
+      Types.NestedField.required(5, "d", Types.DecimalType.of(10, 0))
   );
 
   protected static final PartitionSpec HIVE_SPEC =

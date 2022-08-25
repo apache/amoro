@@ -42,7 +42,7 @@ public class BaseOptimizeTask extends OptimizeTask {
 
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
   private int isDeletePosDelete;
-  private int isAdaptHive;
+
 
   public BaseOptimizeTask() {
   }
@@ -152,14 +152,6 @@ public class BaseOptimizeTask extends OptimizeTask {
     this.isDeletePosDelete = isDeletePosDelete;
   }
 
-  public int getIsAdaptHive() {
-    return isAdaptHive;
-  }
-
-  public void setIsAdaptHive(int isAdaptHive) {
-    this.isAdaptHive = isAdaptHive;
-  }
-
   public long getPosDeleteFileSize() {
     return posDeleteFileSize;
   }
@@ -194,7 +186,6 @@ public class BaseOptimizeTask extends OptimizeTask {
         ", createTime=" + createTime +
         ", maxChangeTransactionId=" + maxChangeTransactionId +
         ", isDeletePosDelete=" + isDeletePosDelete +
-        ", isAdaptHive=" + isAdaptHive +
         "} " + superToString();
   }
 

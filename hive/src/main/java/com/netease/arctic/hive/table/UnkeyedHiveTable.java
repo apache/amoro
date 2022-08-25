@@ -27,7 +27,6 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
@@ -70,6 +69,11 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
     return properties().containsKey(BASE_HIVE_LOCATION_ROOT) ?
         properties().get(BASE_HIVE_LOCATION_ROOT) :
         tableLocation + "/hive";
+  }
+
+  @Override
+  public HMSClient getHMSClient() {
+    return hiveClient;
   }
 
   @Override

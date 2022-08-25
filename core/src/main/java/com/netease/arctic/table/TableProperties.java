@@ -79,6 +79,9 @@ public class TableProperties {
   public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
   public static final long MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 86_400_000; // 1 day
 
+  public static final String FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.full.major.trigger.max-interval";
+  public static final long FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = -1; // default not trigger
+
   public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.minor.trigger.max-interval";
   public static final long MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 3600_000; // 1h
 
@@ -118,10 +121,6 @@ public class TableProperties {
 
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
-
-  // adapt hive
-  public static final String ADAPT_HIVE_METASTORE = "adapt.hive.enable";
-  public static final boolean ADAPT_HIVE_METASTORE_DEFAULT = false;
 
   /**
    * table write related properties

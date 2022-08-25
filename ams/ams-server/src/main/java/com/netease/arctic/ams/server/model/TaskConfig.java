@@ -26,19 +26,16 @@ public class TaskConfig {
   private final OptimizeType optimizeType;
   private final String partition;
   @Nullable
-  private final String optimizeLocation;
-  @Nullable
   private final Long maxTransactionId;
   private final String group;
   private final String historyId;
   private final long createTime;
 
-  public TaskConfig(String partition, @Nullable String optimizeLocation, @Nullable Long maxTransactionId,
+  public TaskConfig(String partition, @Nullable Long maxTransactionId,
                     String group, String historyId,
                     OptimizeType optimizeType, long createTime) {
     this.optimizeType = optimizeType;
     this.partition = partition;
-    this.optimizeLocation = optimizeLocation;
     this.maxTransactionId = maxTransactionId;
     this.group = group;
     this.historyId = historyId;
@@ -51,11 +48,6 @@ public class TaskConfig {
 
   public String getPartition() {
     return partition;
-  }
-
-  @org.jetbrains.annotations.Nullable
-  public String getOptimizeLocation() {
-    return optimizeLocation;
   }
 
   @org.jetbrains.annotations.Nullable

@@ -32,6 +32,7 @@ public class ExecutorFactory {
       case Minor:
         return new MinorExecutor(nodeTask, table, startTime, config);
       case Major:
+      case FullMajor:
         return new MajorExecutor(nodeTask, table, startTime, config);
       default:
         LOG.error("not support optimize type: {}", nodeTask.getOptimizeType());

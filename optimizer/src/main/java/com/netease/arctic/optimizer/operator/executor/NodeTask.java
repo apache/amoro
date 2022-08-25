@@ -46,7 +46,6 @@ public class NodeTask {
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
-  private String optimizeLocation;
   private OptimizeTaskId taskId;
   private TableIdentifier tableIdentifier;
   private int attemptId;
@@ -149,14 +148,6 @@ public class NodeTask {
 
   public void setAttemptId(int attemptId) {
     this.attemptId = attemptId;
-  }
-
-  public String getOptimizeLocation() {
-    return optimizeLocation;
-  }
-
-  public void setOptimizeLocation(String optimizeLocation) {
-    this.optimizeLocation = optimizeLocation;
   }
 
   public OptimizeType getOptimizeType() {

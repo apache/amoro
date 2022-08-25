@@ -259,6 +259,33 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
+  public void persistTargetFiles() {
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      InternalTableFilesMapper internalTableFilesMapper =
+          getMapper(sqlSession, InternalTableFilesMapper.class);
+
+      try {
+        internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
+        optimizeRuntime.getTargetFiles().forEach(file -> {
+          ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
+          if (contentFile.content() == FileContent.DATA) {
+            internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
+                DataFileType.BASE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+          } else {
+            internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
+                DataFileType.POS_DELETE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+          }
+        });
+      } catch (Exception e) {
+        LOG.error("Update the internal table files failed.", e);
+        sqlSession.rollback(true);
+        throw e;
+      }
+
+      sqlSession.commit(true);
+    }
+  }
+
   private TableTaskHistory constructTableTaskHistory(long currentTime) {
     TableTaskHistory tableTaskHistory = new TableTaskHistory();
     tableTaskHistory.setTableIdentifier(new TableIdentifier(optimizeTask.getTableIdentifier()));

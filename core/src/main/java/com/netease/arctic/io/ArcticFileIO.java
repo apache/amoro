@@ -74,4 +74,13 @@ public interface ArcticFileIO extends FileIO {
    * @return true if the location is an empty directory
    */
   boolean isEmptyDirectory(String location);
+
+  /**
+   * Rename Path src to Path dst
+   *
+   * @param src path to be renamed
+   * @param dts new path after rename
+   * @return true if rename is successful
+   */
+  boolean rename(String src, String dts);
 }

@@ -60,14 +60,13 @@ import java.util.stream.Collectors;
 public class MajorOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MajorOptimizePlan.class);
 
-  // partition -> small file
-  protected final Map<String, List<DataFile>> partitionSmallFiles = new HashMap<>();
-  // partitions are merge pos-delete
-  protected final Set<String> mergePosDeletePartition = new HashSet<>();
+  // partition -> need optimize files
+  // for keyed table, the files are small files in iceberg base store
+  // for unKeyed unSupport hive table, the files are small files in iceberg base store
+  // for unKeyed support hive table, the files are all files in iceberg base store
+  protected final Map<String, List<DataFile>> partitionNeedOptimizeFiles = new HashMap<>();
   // files in locations don't need to major optimize
   protected final Set<String> excludeLocations = new HashSet<>();
-  // partition -> optimize file target path
-  protected final Map<String, String> partitionOptimizeLocation = new HashMap<>();
 
   public MajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
@@ -91,18 +90,27 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   public boolean partitionNeedPlan(String partitionToPath) {
     long current = System.currentTimeMillis();
 
-    // check major optimize interval（for keyed table is full major, unKeyed table is major）
-    if (checkMajorOptimizeInterval(current, partitionToPath)) {
+    // check position delete file total size
+    if (checkPosDeleteTotalSize(partitionToPath)) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 
-    // check position delete file total size
-    if (checkPosDeleteTotalSize(partitionToPath)) {
+    // check full major optimize interval
+    if (checkFullMajorOptimizeInterval(current, partitionToPath)) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
       return true;
     }
 
     // check small data file count
-    if (checkSmallFileCount(partitionToPath)) {
+    if (checkSmallFileCount(partitionToPath, partitionNeedOptimizeFiles.get(partitionToPath))) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
+      return true;
+    }
+
+    // check major optimize interval
+    if (checkMajorOptimizeInterval(current, partitionToPath)) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       return true;
     }
 
@@ -112,19 +120,17 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   protected List<BaseOptimizeTask> collectTask(String partition) {
     List<BaseOptimizeTask> result;
-    // init table/partition target location
-    generatePartitionLocation(partition);
     if (arcticTable.isUnkeyedTable()) {
-      List<DataFile> fileList = partitionSmallFiles.computeIfAbsent(partition, e -> new ArrayList<>());
+      List<DataFile> fileList = partitionNeedOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
-      partitionSmallFiles.put(partition, Collections.emptyList());
+      partitionNeedOptimizeFiles.put(partition, Collections.emptyList());
       partitionFileTree.get(partition).initFiles();
     } else {
       FileTree treeRoot = partitionFileTree.get(partition);
       result = collectKeyedTableTasks(partition, treeRoot);
       // init files
-      partitionSmallFiles.put(partition, Collections.emptyList());
+      partitionNeedOptimizeFiles.put(partition, Collections.emptyList());
       partitionPosDeleteFiles.put(partition, Collections.emptyList());
       partitionFileTree.get(partition).initFiles();
     }
@@ -137,24 +143,22 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     return baseTableChanged();
   }
 
-  public boolean isDeletePosDelete(String partition) {
-    return mergePosDeletePartition.contains(partition);
-  }
-
-  public boolean isAdaptHive(String partition) {
-    return false;
-  }
-
-  protected void generatePartitionLocation(String partition) {
-  }
-
   protected boolean checkPosDeleteTotalSize(String partitionToPath) {
-    long posDeleteSize = posDeleteFileList.stream().mapToLong(DataFileInfo::getSize).sum();
-    if (posDeleteSize >= PropertyUtil.propertyAsLong(arcticTable.properties(),
+    long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
+        0 : partitionPosDeleteFiles.get(partitionToPath).stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
+    return posDeleteSize >= PropertyUtil.propertyAsLong(arcticTable.properties(),
         TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES,
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT)) {
-      mergePosDeletePartition.add(partitionToPath);
-      return true;
+        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT);
+  }
+
+  protected boolean checkFullMajorOptimizeInterval(long current, String partitionToPath) {
+    long fullMajorOptimizeInterval = PropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
+        TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
+
+    if (fullMajorOptimizeInterval != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+      long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullMajorOptimizeTime(partitionToPath);
+      return current - lastFullMajorOptimizeTime >= fullMajorOptimizeInterval;
     }
 
     return false;
@@ -164,26 +168,17 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     if (current - tableOptimizeRuntime.getLatestMajorOptimizeTime(partitionToPath) >=
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
             TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT)) {
-      if (arcticTable.isKeyedTable()) {
-        // for keyed table, if no pos-delete, no need to optimize
-        if (CollectionUtils.isEmpty(partitionPosDeleteFiles.get(partitionToPath))) {
-          return false;
-        }
-        mergePosDeletePartition.add(partitionToPath);
-      } else {
-        long fileCount = partitionSmallFiles.get(partitionToPath) == null ?
-            0 : partitionSmallFiles.get(partitionToPath).size();
-        // for unKeyed table, no need to optimize until have 2 files at least
-        return fileCount >= 2;
-      }
-      return true;
+      long fileCount = partitionNeedOptimizeFiles.get(partitionToPath) == null ?
+          0 : partitionNeedOptimizeFiles.get(partitionToPath).size();
+
+      // no need to optimize until have 2 files at least
+      return fileCount >= 2;
     }
 
     return false;
   }
 
-  protected boolean checkSmallFileCount(String partitionToPath) {
-    List<DataFile> dataFileList = partitionSmallFiles.get(partitionToPath);
+  protected boolean checkSmallFileCount(String partition, List<DataFile> dataFileList) {
     if (CollectionUtils.isNotEmpty(dataFileList)) {
       // file count
       return dataFileList.size() >= PropertyUtil.propertyAsInt(arcticTable.properties(),
@@ -192,6 +187,19 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     }
 
     return false;
+  }
+
+  protected void fillPartitionNeedOptimizeFiles(String partition, ContentFile<?> contentFile) {
+    // fill partition need optimize file map
+    // add small files in iceberg base store and not in hive store
+    boolean isSmallFile = contentFile.fileSizeInBytes() < PropertyUtil.propertyAsLong(arcticTable.properties(),
+            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
+            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    if (isSmallFile && canInclude(contentFile.path().toString())) {
+      List<DataFile> files = partitionNeedOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
+      files.add((DataFile) contentFile);
+      partitionNeedOptimizeFiles.put(partition, files);
+    }
   }
 
   private boolean baseTableChanged() {
@@ -235,11 +243,6 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     baseFileList.addAll(ImmutableList.copyOf(baseTableFileList));
     baseFileList.addAll(ImmutableList.copyOf(posDeleteFileList));
     List<ContentFile<?>> baseOptimizeFiles = baseFileList.stream().map(dataFileInfo -> {
-      // if file in exclude locations, don't need to optimize
-      if (canExclude(dataFileInfo.getPath())) {
-        return null;
-      }
-
       PartitionSpec partitionSpec = baseTable.specs().get((int) dataFileInfo.getSpecId());
       String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
 
@@ -267,14 +270,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
           partitionPosDeleteFiles.put(partition, files);
         }
 
-        // fill partition small file map
-        if (contentFile.content() == FileContent.DATA &&
-            dataFileInfo.getSize() < PropertyUtil.propertyAsLong(arcticTable.properties(),
-            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-                TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)) {
-          List<DataFile> files = partitionSmallFiles.computeIfAbsent(partition, e -> new ArrayList<>());
-          files.add((DataFile) contentFile);
-          partitionSmallFiles.put(partition, files);
+        if (contentFile.content() == FileContent.DATA) {
+          fillPartitionNeedOptimizeFiles(partition, contentFile);
         }
 
         addCnt.getAndIncrement();
@@ -290,8 +287,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, partitionOptimizeLocation.get(partition),
-        null, group, historyId, OptimizeType.Major, createTime);
+    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+        null, group, historyId, partitionOptimizeType.get(partition), createTime);
 
     long taskSize =
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
@@ -313,19 +310,16 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, partitionOptimizeLocation.get(partition),
-        null, group, historyId, OptimizeType.Major, createTime);
+    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+        null, group, historyId, partitionOptimizeType.get(partition), createTime);
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
-    boolean isFilterSmallFiles = !mergePosDeletePartition.contains(partition);
-    long smallFileSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
-    treeRoot.splitSubTree(subTrees, new CanSplitFileTree(isFilterSmallFiles, smallFileSize));
+    boolean isMajor = partitionOptimizeType.get(partition) == OptimizeType.Major;
+    treeRoot.splitSubTree(subTrees, new CanSplitFileTree(isMajor, partitionNeedOptimizeFiles.get(partition)));
     for (FileTree subTree : subTrees) {
       List<DataFile> baseFiles = new ArrayList<>();
-      subTree.collectBaseFiles(baseFiles, isFilterSmallFiles, smallFileSize);
+      subTree.collectBaseFiles(baseFiles, isMajor, partitionNeedOptimizeFiles.get(partition));
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
@@ -337,7 +331,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
                 baseFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node()))
             .collect(Collectors.toList());
         // if only one base file and no position delete file, skip
-        if (CollectionUtils.isEmpty(posDeleteFiles) && baseFiles.size() <= 1) {
+        if (canSkip(posDeleteFiles, baseFiles)) {
           continue;
         }
         collector.add(buildOptimizeTask(sourceNodes,
@@ -348,23 +342,27 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     return collector;
   }
 
-  private boolean canExclude(String filePath) {
+  protected boolean canSkip(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+    return CollectionUtils.isEmpty(posDeleteFiles) && baseFiles.size() <= 1;
+  }
+
+  protected boolean canInclude(String filePath) {
     for (String exclude : excludeLocations) {
       if (filePath.contains(exclude)) {
-        return true;
+        return false;
       }
     }
-    return false;
+    return true;
   }
 
   static class CanSplitFileTree implements Predicate<FileTree> {
 
-    private final boolean isFilterSmallFiles;
-    private final long smallFileSize;
+    private final boolean isMajor;
+    private final List<DataFile> needOptimizeFiles;
 
-    public CanSplitFileTree(boolean isFilterSmallFiles, long smallFileSize) {
-      this.isFilterSmallFiles = isFilterSmallFiles;
-      this.smallFileSize = smallFileSize;
+    public CanSplitFileTree(boolean isMajor, List<DataFile> needOptimizeFiles) {
+      this.isMajor = isMajor;
+      this.needOptimizeFiles = needOptimizeFiles;
     }
 
     /**
@@ -381,9 +379,9 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         return false;
       }
       List<DataFile> baseFiles = fileTree.getBaseFiles();
-      if (isFilterSmallFiles) {
+      if (isMajor) {
         baseFiles = baseFiles.stream()
-            .filter(dataFile -> dataFile.fileSizeInBytes() < smallFileSize).collect(Collectors.toList());
+            .filter(needOptimizeFiles::contains).collect(Collectors.toList());
       }
       return baseFiles.isEmpty();
     }

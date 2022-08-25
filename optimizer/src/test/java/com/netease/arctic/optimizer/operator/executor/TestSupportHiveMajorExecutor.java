@@ -36,100 +36,116 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-public class TestMajorExecutor extends TestBaseOptimizeBase {
+public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBase {
   @Test
   public void testMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
-    NodeTask nodeTask = constructNodeTask(testKeyedTable, OptimizeType.Major);
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testKeyedHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedHiveTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(240, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(testKeyedHiveTable.baseLocation()));
+    });
+  }
+
+  @Test
+  public void testNoPosDeleteMajorExecutor() throws Exception {
+    insertTableBaseDataFiles(testKeyedHiveTable, 2, baseDataFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testKeyedHiveTable, OptimizeType.Major);
+    String[] arg = new String[0];
+    OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
+    optimizerConfig.setOptimizerId("UnitTest");
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedHiveTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
+    result.getTargetFiles().forEach(dataFile -> {
+      Assert.assertEquals(250, dataFile.recordCount());
+      Assert.assertTrue(dataFile.path().toString().contains(testKeyedHiveTable.baseLocation()));
     });
   }
 
   @Test
   public void testFullMajorExecutor() throws Exception {
-      insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
-      NodeTask nodeTask = constructNodeTask(testKeyedTable, OptimizeType.FullMajor);
-      String[] arg = new String[0];
-      OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
-      optimizerConfig.setOptimizerId("UnitTest");
-      MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
-      OptimizeTaskResult<DataFile> result = majorExecutor.execute();
-      Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
-      result.getTargetFiles().forEach(dataFile -> {
-        Assert.assertEquals(240, dataFile.recordCount());
-        Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
-      });
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testKeyedHiveTable, OptimizeType.FullMajor);
+    String[] arg = new String[0];
+    OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
+    optimizerConfig.setOptimizerId("UnitTest");
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedHiveTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
+    result.getTargetFiles().forEach(dataFile -> {
+      Assert.assertEquals(240, dataFile.recordCount());
+      Assert.assertTrue(dataFile.path().toString().contains(testKeyedHiveTable.hiveLocation()));
+    });
   }
 
   @Test
   public void testUnKeyedTableMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testTable, 1, baseDataFilesInfo);
-    NodeTask nodeTask = constructNodeTask(testTable, OptimizeType.Major);
+    insertTableBaseDataFiles(testHiveTable, 1, baseDataFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testTable, System.currentTimeMillis(), optimizerConfig);
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testHiveTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(1000, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testTable.location()));
+      Assert.assertTrue(dataFile.path().toString().contains(testHiveTable.location()));
     });
   }
 
   @Test
   public void testUnKeyedTableFullMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testTable, 1, baseDataFilesInfo);
-    NodeTask nodeTask = constructNodeTask(testTable, OptimizeType.FullMajor);
+    insertTableBaseDataFiles(testHiveTable, 1, baseDataFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testHiveTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testTable, System.currentTimeMillis(), optimizerConfig);
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testHiveTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(1000, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testTable.location()));
+      Assert.assertTrue(dataFile.path().toString().contains(testHiveTable.hiveLocation()));
     });
   }
 
   @Test
   public void testNoPartitionTableMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
-    NodeTask nodeTask = constructNodeTask(testNoPartitionTable, OptimizeType.Major);
+    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testUnPartitionKeyedHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testUnPartitionKeyedHiveTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(240, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(testUnPartitionKeyedHiveTable.baseLocation()));
     });
   }
 
   @Test
   public void testNoPartitionTableFullMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
-    NodeTask nodeTask = constructNodeTask(testNoPartitionTable, OptimizeType.FullMajor);
+    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    NodeTask nodeTask = constructNodeTask(testUnPartitionKeyedHiveTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
+    MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testUnPartitionKeyedHiveTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(240, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(testUnPartitionKeyedHiveTable.hiveLocation()));
     });
   }
 

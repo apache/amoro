@@ -86,6 +86,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
       if (deleteFileList.size() >= PropertyUtil.propertyAsInt(arcticTable.properties(),
           TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT,
           TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT)) {
+        partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
         return true;
       }
     }
@@ -94,6 +95,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     if (current - tableOptimizeRuntime.getLatestMinorOptimizeTime(partitionToPath) >=
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
             TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT)) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
       return true;
     }
     LOG.debug("{} ==== don't need {} optimize plan, skip partition {}", tableId(), getOptimizeType(), partitionToPath);
@@ -230,7 +232,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null, changeTableMaxTransactionId.get(partition),
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
         group, historyId, OptimizeType.Minor, createTime);
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();

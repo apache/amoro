@@ -36,8 +36,9 @@ public class TableOptimizeRuntime {
   private long currentChangeSnapshotId = INVALID_SNAPSHOT_ID;
   private TableOptimizeInfo.OptimizeStatus optimizeStatus = TableOptimizeInfo.OptimizeStatus.Idle;
   private long optimizeStatusStartTime = -1;
-  // only record full major optimize time
+
   private final Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
+  private final Map<String, Long> latestFullMinorOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskHistoryId;
   private volatile boolean isRunning;
@@ -70,11 +71,19 @@ public class TableOptimizeRuntime {
   }
 
   public void putLatestMajorOptimizeTime(String partition, long time) {
-
     Long oldValue = latestMajorOptimizeTime.putIfAbsent(partition, time);
     if (oldValue != null) {
       if (time > oldValue) {
         latestMajorOptimizeTime.put(partition, time);
+      }
+    }
+  }
+
+  public void putLatestFullMajorOptimizeTime(String partition, long time) {
+    Long oldValue = latestFullMinorOptimizeTime.putIfAbsent(partition, time);
+    if (oldValue != null) {
+      if (time > oldValue) {
+        latestFullMinorOptimizeTime.put(partition, time);
       }
     }
   }
@@ -101,6 +110,11 @@ public class TableOptimizeRuntime {
     return time == null ? -1 : time;
   }
 
+  public long getLatestFullMajorOptimizeTime(String partition) {
+    Long time = latestFullMinorOptimizeTime.get(partition);
+    return time == null ? -1 : time;
+  }
+
   public void putLatestMinorOptimizeTime(String partition, long time) {
     Long oldValue = latestMinorOptimizeTime.putIfAbsent(partition, time);
     if (oldValue != null) {
@@ -119,6 +133,9 @@ public class TableOptimizeRuntime {
     Set<String> result = new HashSet<>();
     if (MapUtils.isNotEmpty(latestMajorOptimizeTime)) {
       result.addAll(latestMajorOptimizeTime.keySet());
+    }
+    if (MapUtils.isNotEmpty(latestFullMinorOptimizeTime)) {
+      result.addAll(latestFullMinorOptimizeTime.keySet());
     }
     if (MapUtils.isNotEmpty(latestMinorOptimizeTime)) {
       result.addAll(latestMinorOptimizeTime.keySet());
@@ -160,6 +177,7 @@ public class TableOptimizeRuntime {
         ", optimizeStatus=" + optimizeStatus +
         ", optimizeStatusStartTime=" + optimizeStatusStartTime +
         ", latestMajorOptimizeTime=" + latestMajorOptimizeTime +
+        ", latestFullMinorOptimizeTime=" + latestFullMinorOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskHistoryId='" + latestTaskHistoryId + '\'' +
         ", isRunning=" + isRunning +

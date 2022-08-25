@@ -39,13 +39,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class TestMinorOptimizePlan extends TestBaseOptimizePlan {
+public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
   protected List<DataFileInfo> changeInsertFilesInfo = new ArrayList<>();
   protected List<DataFileInfo> changeDeleteFilesInfo = new ArrayList<>();
 
   @Test
   public void testMinorOptimize() throws IOException {
-    insertBasePosDeleteFiles(2);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
     insertChangeDeleteFiles(3);
     insertChangeDataFiles(4);
 
@@ -69,10 +69,10 @@ public class TestMinorOptimizePlan extends TestBaseOptimizePlan {
         .withTransactionId(transactionId).buildChangeWriter();
 
     List<DataFile> changeDeleteFiles = new ArrayList<>();
-    // delete 1000 records in 2 partitions(2022-1-1\2022-1-2)
+    // delete 1000 records in 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length)) {
+      for (Record record : baseRecords(i, length, testKeyedTable.schema())) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
@@ -88,16 +88,16 @@ public class TestMinorOptimizePlan extends TestBaseOptimizePlan {
         .collect(Collectors.toList());
   }
 
-  protected void insertChangeDataFiles(long transactionId) throws IOException {
+  protected List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
     GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
         .withChangeAction(ChangeAction.INSERT)
         .withTransactionId(transactionId).buildChangeWriter();
 
     List<DataFile> changeInsertFiles = new ArrayList<>();
-    // write 1000 records to 2 partitions(2022-1-1\2022-1-2)
+    // write 1000 records to 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length)) {
+      for (Record record : baseRecords(i, length, testKeyedTable.schema())) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
@@ -111,5 +111,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizePlan {
     changeInsertFilesInfo = changeInsertFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, testKeyedTable))
         .collect(Collectors.toList());
+
+    return changeInsertFiles;
   }
 }

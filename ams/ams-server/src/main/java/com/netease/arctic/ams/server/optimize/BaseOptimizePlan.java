@@ -70,6 +70,8 @@ public abstract class BaseOptimizePlan {
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
   // partition -> position delete file
   protected final Map<String, List<DeleteFile>> partitionPosDeleteFiles = new LinkedHashMap<>();
+  // partition -> optimize type(FullMajor or Major or Minor)
+  protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
   // We store current partitions, for the next plans to decide if any partition reach the max plan interval,
   // if not, the new added partitions will be ignored by mistake.
   // After plan files, current partitions of table will be set.
@@ -170,7 +172,7 @@ public abstract class BaseOptimizePlan {
     return results;
   }
 
-  public BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
+  protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
                                             List<DataFile> insertFiles,
                                             List<DataFile> deleteFiles,
                                             List<DataFile> baseFiles,
@@ -248,25 +250,20 @@ public abstract class BaseOptimizePlan {
     if (taskConfig.getMaxTransactionId() != null) {
       optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
     }
-    if (taskConfig.getOptimizeType() == OptimizeType.Major &&
-        ((MajorOptimizePlan) this).isDeletePosDelete(taskConfig.getPartition())) {
+    if (taskConfig.getOptimizeType() == OptimizeType.FullMajor) {
       optimizeTask.setIsDeletePosDelete(1);
-    }
-    if (taskConfig.getOptimizeType() == OptimizeType.Major &&
-        ((MajorOptimizePlan) this).isAdaptHive(taskConfig.getPartition())) {
-      optimizeTask.setIsAdaptHive(1);
     }
 
     // table ams url
     Map<String, String> properties = new HashMap<>();
     properties.put("all-file-cnt", (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
-    // set optimize location
-    if (taskConfig.getOptimizeLocation() != null) {
-      properties.put("optimizeLocation", taskConfig.getOptimizeLocation());
-    }
     optimizeTask.setProperties(properties);
     return optimizeTask;
+  }
+
+  public Map<String, OptimizeType> getPartitionOptimizeType() {
+    return partitionOptimizeType;
   }
 
   public boolean baseTableCacheAll() {

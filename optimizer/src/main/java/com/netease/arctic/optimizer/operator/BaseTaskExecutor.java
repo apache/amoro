@@ -257,10 +257,6 @@ public class BaseTaskExecutor implements Serializable {
             fileCnt, nodeTask, task);
         throw new IllegalStateException("check file cnt error");
       }
-
-      if (properties.get("optimizeLocation") != null) {
-        nodeTask.setOptimizeLocation(properties.get("optimizeLocation"));
-      }
     }
 
     return nodeTask;

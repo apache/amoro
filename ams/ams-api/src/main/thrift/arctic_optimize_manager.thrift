@@ -63,7 +63,8 @@ enum JobType {
 
 enum OptimizeType {
     Minor,
-    Major
+    Major,
+    FullMajor
 }
 
 
