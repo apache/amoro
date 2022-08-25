@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.reader;
 
-import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Binder;
@@ -41,7 +41,7 @@ import java.util.List;
 public class SparkScanBuilder implements ScanBuilder, SupportsPushDownFilters, SupportsPushDownRequiredColumns {
   private static final Filter[] NO_FILTERS = new Filter[0];
 
-  private final KeyedTable table;
+  private final ArcticTable table;
   private final CaseInsensitiveStringMap options;
 
   private Schema schema = null;
@@ -50,8 +50,7 @@ public class SparkScanBuilder implements ScanBuilder, SupportsPushDownFilters, S
   private List<Expression> filterExpressions = null;
   private Filter[] pushedFilters = NO_FILTERS;
 
-
-  public SparkScanBuilder(SparkSession spark, KeyedTable table, CaseInsensitiveStringMap options) {
+  public SparkScanBuilder(SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options) {
     this.table = table;
     this.options = options;
     this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
@@ -116,7 +115,13 @@ public class SparkScanBuilder implements ScanBuilder, SupportsPushDownFilters, S
 
   @Override
   public Scan build() {
-    return new SparkBatchScan(table, caseSensitive, lazySchema(), filterExpressions, options);
+    if (table.isKeyedTable()) {
+      return new KeyedSparkBatchScan(table.asKeyedTable(), caseSensitive, lazySchema(), filterExpressions, options);
+    } else if (table.isUnkeyedTable()) {
+      return new UnkeyedSparkBatchScan(table.asUnkeyedTable(), caseSensitive, lazySchema(), filterExpressions, options);
+    } else {
+      throw new IllegalStateException("Unable to build scan for table: " + table.id().toString() + ", unknown table " +
+          "type");
+    }
   }
-
 }

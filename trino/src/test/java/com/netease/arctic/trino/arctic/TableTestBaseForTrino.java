@@ -59,13 +59,14 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import org.junit.rules.TemporaryFolder;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 
 public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
 
-  protected static File tableDir = new File("./arctic_unit_test");
+  protected static TemporaryFolder tmp = new TemporaryFolder();
 
   protected static final MockArcticMetastoreServer AMS = MockArcticMetastoreServer.getInstance();
 
@@ -111,11 +112,9 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
   protected KeyedTable testKeyedTable;
 
   protected void setupTables() throws Exception {
-    if (tableDir.exists()){
-      FileUtils.deleteDirectory(tableDir);
-    }
     testCatalog = CatalogLoader.load(AMS.getUrl());
 
+    File tableDir = tmp.newFolder();
     testTable = testCatalog
         .newTableBuilder(TABLE_ID, TABLE_SCHEMA)
         .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/table")

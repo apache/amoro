@@ -94,6 +94,7 @@ public interface KeyedTable extends ArcticTable {
    * get max transactionId of each partition. use {@link #partitionMaxTransactionId()} instead.
    *
    * @return map of max transactionId of each partition
+   * @deprecated use {@link UnkeyedTable#partitionProperty()} instead.
    */
   @Deprecated
   Map<String, Long> maxTransactionId();
@@ -102,7 +103,9 @@ public interface KeyedTable extends ArcticTable {
    * get max transactionId of each partition
    *
    * @return map of max transactionId of each partition
+   * @deprecated use {@link UnkeyedTable#partitionProperty()} instead.
    */
+  @Deprecated
   StructLikeMap<Long> partitionMaxTransactionId();
 
   @Override
@@ -118,4 +121,5 @@ public interface KeyedTable extends ArcticTable {
   RewritePartitions newRewritePartitions();
 
   OverwriteBaseFiles newOverwriteBaseFiles();
+
 }

@@ -20,6 +20,7 @@ package com.netease.arctic.table;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.CommonConfigurationKeysPublic;
@@ -360,6 +361,13 @@ public class TableMetaStore implements Serializable {
     configuration.set(CommonConfigurationKeys.IPC_CLIENT_FALLBACK_TO_SIMPLE_AUTH_ALLOWED_KEY, "true");
     //Enforce configuration resolve resources
     configuration.get(CommonConfigurationKeysPublic.FS_DEFAULT_NAME_KEY);
+
+    //Avoid check hive version
+    configuration.set("hive.metastore.schema.verification", "false");
+
+    //It will encounter error(Required table missing : "DBS" in Catalog "" Schema "") when there is not this param
+    configuration.set("datanucleus.schema.autoCreateAll", "true");
+
     return configuration;
   }
 
@@ -417,7 +425,8 @@ public class TableMetaStore implements Serializable {
     }
 
     public Builder withBase64MetaStoreSite(String encodedMetaStoreSite) {
-      this.metaStoreSite = Base64.getDecoder().decode(encodedMetaStoreSite);
+      this.metaStoreSite = StringUtils.isBlank(encodedMetaStoreSite) ? null :
+          Base64.getDecoder().decode(encodedMetaStoreSite);
       return this;
     }
 
@@ -432,7 +441,8 @@ public class TableMetaStore implements Serializable {
     }
 
     public Builder withBase64HdfsSite(String encodedHdfsSite) {
-      this.hdfsSite = Base64.getDecoder().decode(encodedHdfsSite);
+      this.hdfsSite = StringUtils.isBlank(encodedHdfsSite) ? null :
+          Base64.getDecoder().decode(encodedHdfsSite);
       return this;
     }
 
@@ -447,7 +457,8 @@ public class TableMetaStore implements Serializable {
     }
 
     public Builder withBase64CoreSite(String encodedCoreSite) {
-      this.coreSite = Base64.getDecoder().decode(encodedCoreSite);
+      this.coreSite = StringUtils.isBlank(encodedCoreSite) ? null :
+          Base64.getDecoder().decode(encodedCoreSite);
       return this;
     }
 

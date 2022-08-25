@@ -23,6 +23,8 @@ import com.netease.arctic.catalog.CatalogLoader;
 import io.trino.spi.classloader.ThreadContextClassLoader;
 import javax.inject.Inject;
 
+import java.util.Collections;
+
 /**
  * A factory to generate {@link ArcticCatalog}
  */
@@ -44,7 +46,7 @@ public class DefaultArcticCatalogFactory implements ArcticCatalogFactory {
           try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
             this.arcticCatalog =
                 new ArcticCatalogSupportTableSuffix(
-                    CatalogLoader.load(arcticConfig.getCatalogUrl(), null));
+                    CatalogLoader.load(arcticConfig.getCatalogUrl(), Collections.emptyMap()));
           }
         }
       }
