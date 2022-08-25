@@ -20,7 +20,7 @@ package com.netease.arctic.spark.table;
 
 import org.apache.spark.sql.connector.read.ScanBuilder;
 
-public interface IdentifierScanBuilder extends ScanBuilder {
+public interface SupportsExtendIdentColumns extends ScanBuilder {
 
-  IdentifierScanBuilder withIdentifierColumns();
+  SupportsExtendIdentColumns withIdentifierColumns();
 }

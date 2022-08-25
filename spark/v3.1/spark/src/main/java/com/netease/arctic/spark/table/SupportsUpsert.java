@@ -20,7 +20,6 @@
 package com.netease.arctic.spark.table;
 
 import org.apache.spark.sql.connector.catalog.Table;
-import org.apache.spark.sql.types.StructType;
 
 /**
  * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
@@ -33,7 +32,7 @@ public interface SupportsUpsert extends Table {
 
 
 
-  IdentifierScanBuilder newScanBuilder();
+  SupportsExtendIdentColumns newScanBuilder();
 
   boolean requireAdditionIdentifierColumns();
 

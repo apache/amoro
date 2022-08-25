@@ -20,7 +20,8 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val r = asTableRelation(table)
       val upsert = r.table.asUpsertWrite
       val query = createUpsertQuery(r, upsert, condition)
-      val options = Map.empty[String, String] ++ (WriteMode.WRITE_MODE_KEY, WriteMode.UPSERT.mode)
+//      val options = Map.empty[String, String] ++ (WriteMode.WRITE_MODE_KEY, WriteMode.UPSERT.mode)
+      val options = Map.empty()
       AppendData.byPosition(r, query, options)
   }
 
