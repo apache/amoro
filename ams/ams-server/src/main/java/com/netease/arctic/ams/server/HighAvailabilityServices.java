@@ -1,5 +1,7 @@
 package com.netease.arctic.ams.server;
 
+import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.client.AmsServerInfo;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
 import com.netease.arctic.ams.server.utils.ZookeeperUtils;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
@@ -18,9 +20,12 @@ public class HighAvailabilityServices {
   private final LeaderLatch leaderLatch;
   private static volatile HighAvailabilityServices instance;
   private static final List<LeaderLatchListener> listeners = new ArrayList<>();
+  private static ZookeeperUtils zkService;
+  private final String namespace;
 
   private HighAvailabilityServices(String zkServerAddress, String namespace) {
-    ZookeeperUtils zkService = new ZookeeperUtils(zkServerAddress);
+    this.namespace = namespace;
+    zkService = new ZookeeperUtils(zkServerAddress);
     String lockPath = AmsHAProperties.getLeaderPath(namespace);
     try {
       zkService.create(lockPath);
@@ -51,5 +56,18 @@ public class HighAvailabilityServices {
     listeners.forEach(leaderLatch::addListener);
     leaderLatch.start();
     leaderLatch.await();
+  }
+
+  public AmsServerInfo getNodeInfo(String host, int port) {
+    AmsServerInfo amsServerInfo = new AmsServerInfo();
+    amsServerInfo.setHost(host);
+    amsServerInfo.setThriftBindPort(port);
+    return amsServerInfo;
+  }
+
+  public AmsServerInfo getMaster() throws Exception {
+    return JSONObject.parseObject(
+        zkService.getData(AmsHAProperties.getMasterPath(namespace)),
+        AmsServerInfo.class);
   }
 }

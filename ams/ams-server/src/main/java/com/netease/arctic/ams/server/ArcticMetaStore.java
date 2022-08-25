@@ -82,8 +82,14 @@ public class ArcticMetaStore {
   private static JSONObject yamlConfig;
   private static TServer server;
   private static final List<Thread> residentThreads = new ArrayList<>();
+  private static HighAvailabilityServices haService = null;
+  private static AtomicBoolean isLeader = new AtomicBoolean(false);
 
   public static void main(String[] args) throws Throwable {
+    tryStartServer();
+  }
+
+  public static void tryStartServer() throws Throwable {
     try {
       String configPath = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()) + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
@@ -91,7 +97,7 @@ public class ArcticMetaStore {
       if (systemConfig.getBooleanValue(ArcticMetaStoreConf.HA_ENABLE.key())) {
         String zkAddress = systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key());
         String cluster = systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key());
-        HighAvailabilityServices haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
+        haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
         haService.addListener(genHAListener(zkAddress, cluster));
         haService.leaderLatch();
       } else {
@@ -164,6 +170,7 @@ public class ArcticMetaStore {
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
       syncAndExpiredFileInfoCache(server);
       startSyncDDl(server);
+      checkLeader();
       server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
@@ -182,6 +189,11 @@ public class ArcticMetaStore {
   public static void failover() {
     stopMetaStore();
     AmsRestServer.stopRestServer();
+    // try {
+    //   tryStartServer();
+    // } catch (Throwable t) {
+    //   LOG.error("ams try restart error", t);
+    // }
   }
 
   private static void startMetaStoreThreads(
@@ -344,6 +356,32 @@ public class ArcticMetaStore {
           Thread.sleep(60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+        }
+      }
+    });
+    t.start();
+  }
+
+  private static void checkLeader() {
+    Thread t = new Thread(() -> {
+      while (true) {
+        try {
+          Thread.sleep(2 * 1000);
+        } catch (InterruptedException e) {
+          LOG.warn("notLeader thread was interrupted: " + e.getMessage());
+        }
+        try {
+          if (haService != null && isLeader.get() &&
+              !haService.getMaster().equals(haService.getNodeInfo(conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
+                  conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)))) {
+            LOG.info("there is not leader, the leader is " + JSONObject.toJSONString(haService.getMaster()));
+            failover();
+            isLeader.set(false);
+          }
+        } catch (Exception e) {
+          LOG.error("check leader error", e);
+          failover();
+          isLeader.set(false);
         }
       }
     });
@@ -570,6 +608,7 @@ public class ArcticMetaStore {
           serverInfo.setHost(systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST.key()));
           serverInfo.setThriftBindPort(systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
           zkService.setData(masterPath, JSONObject.toJSONString(serverInfo));
+          isLeader.set(true);
           startMetaStore(initSystemConfig());
         } catch (Throwable throwable) {
           failover();
