@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.sql.catalyst.plans.MigrateToArcticLogicalPlan
+import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.catalyst.analysis.ResolvedTable
 import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.execution.SparkPlan
@@ -37,8 +38,11 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy {
       var optionsMap: Map[String, String] = options
       if (options.contains("primary.keys")) {
         propertiesMap += ("primary.keys" -> options("primary.keys"))
-        optionsMap += ("overwrite-mode" -> "dynamic")
       }
+      if(propertiesMap.contains("primary.keys")) {
+        optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
+      }
+
       val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
       CreateTableAsSelectExec(catalog, ident, parts, query, planLater(query),
         propertiesMap, writeOptions, ifNotExists) :: Nil

@@ -24,7 +24,7 @@ public enum WriteMode {
   APPEND("append"),
   UPSERT("upsert");
 
-  public static String WRITE_MODE_KEY = "write-mode";
+  public static final String WRITE_MODE_KEY = "write-mode";
 
   public final String mode;
   WriteMode(String mode) {
@@ -33,7 +33,7 @@ public enum WriteMode {
 
   public static WriteMode getWriteMode(String mode) {
     for (WriteMode m : values()) {
-      if (m.mode.equals(mode)) {
+      if (m.mode.equalsIgnoreCase(mode)) {
         return m;
       }
     }

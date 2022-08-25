@@ -20,7 +20,6 @@ package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.spark.table.SupportsExtendIdentColumns;
 import com.netease.arctic.table.ArcticTable;
-import java.util.stream.Collectors;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.ValidationException;
@@ -42,6 +41,8 @@ import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
 import java.util.List;
+import java.util.stream.Collectors;
+
 
 public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns, SupportsPushDownFilters,
     SupportsPushDownRequiredColumns {
@@ -132,9 +133,19 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
   @Override
   public Scan build() {
     if (table.isKeyedTable()) {
-      return new KeyedSparkBatchScan(table.asKeyedTable(), caseSensitive, lazySchemaWithRowIdent(), filterExpressions, options);
+      return new KeyedSparkBatchScan(
+          table.asKeyedTable(),
+          caseSensitive,
+          lazySchemaWithRowIdent(),
+          filterExpressions,
+          options);
     } else if (table.isUnkeyedTable()) {
-      return new UnkeyedSparkBatchScan(table.asUnkeyedTable(), caseSensitive, lazySchemaWithRowIdent(), filterExpressions, options);
+      return new UnkeyedSparkBatchScan(
+          table.asUnkeyedTable(),
+          caseSensitive,
+          lazySchemaWithRowIdent(),
+          filterExpressions,
+          options);
     } else {
       throw new IllegalStateException("Unable to build scan for table: " + table.id().toString() + ", unknown table " +
           "type");
@@ -143,7 +154,7 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
 
   @Override
   public SupportsExtendIdentColumns withIdentifierColumns() {
-    if (table.isUnkeyedTable()){
+    if (table.isUnkeyedTable()) {
       this.metaColumns.addAll(UnkeyedSparkBatchScan.rowIdColumns);
     } else if (table.isKeyedTable()) {
       this.metaColumns.addAll(table.asKeyedTable().primaryKeySpec().fieldNames());

@@ -26,8 +26,6 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -39,7 +37,6 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
 
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
@@ -92,11 +89,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
 
     @Override
-    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, transactionId, this.isOverwrite);
-    }
-
-    @Override
     public void abort(WriterCommitMessage[] messages) {
       Map<String, String> props = table.properties();
       Tasks.foreach(files(messages))
@@ -120,6 +112,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
 
     @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new ChangeWriteFactory(table, dsSchema, transactionId);
+    }
+
+    @Override
     public void commit(WriterCommitMessage[] messages) {
       AppendFiles append = table.changeTable().newAppend();
       for (DataFile file : files(messages)) {
@@ -133,6 +130,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     DynamicOverwrite() {
       super(true);
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new BaseWriterFactory(table, dsSchema, transactionId);
     }
 
     @Override
@@ -156,6 +158,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
 
     @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new BaseWriterFactory(table, dsSchema, transactionId);
+    }
+
+    @Override
     public void commit(WriterCommitMessage[] messages) {
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
@@ -175,23 +182,36 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
 
     @Override
-    public void commit(WriterCommitMessage[] messages) {
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new ChangeWriteFactory(table, dsSchema, transactionId);
+    }
 
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
+      for (DataFile file : files(messages)) {
+        append.appendFile(file);
+      }
+      append.commit();
     }
   }
 
-  private static class WriterFactory implements DataWriterFactory, Serializable {
-    private final KeyedTable table;
-    private final StructType dsSchema;
-    private final long transactionId;
+  private abstract static class AbstractWriterFactory implements DataWriterFactory, Serializable {
+    protected final KeyedTable table;
+    protected final StructType dsSchema;
+    protected final long transactionId;
 
-    private boolean isOverwrite;
-
-    WriterFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean isOverwrite) {
+    AbstractWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
-      this.isOverwrite = isOverwrite;
+    }
+  }
+
+  private static class BaseWriterFactory extends AbstractWriterFactory {
+
+    BaseWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, transactionId);
     }
 
     @Override
@@ -201,9 +221,26 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .newBaseWriter(this.isOverwrite);
-      return new InternalRowDataWriter(writer);
+          .newBaseWriter(true);
+      return new SimpleInternalRowDataWriter(writer);
     }
   }
 
+  private static class ChangeWriteFactory extends AbstractWriterFactory {
+
+    ChangeWriteFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, transactionId);
+    }
+
+    @Override
+    public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(dsSchema)
+          .newChangeWriter();
+      return new SimpleInternalRowDataWriter(writer);
+    }
+  }
 }

@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.table.ArcticTable;
-import java.util.Locale;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -35,9 +34,13 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
 
   public interface ArcticWrite {
+
     BatchWrite asBatchAppend();
+
     BatchWrite asDynamicOverwrite();
+
     BatchWrite asOverwriteByFilter(Expression overwriteExpr);
+
     BatchWrite asUpsertWrite();
   }
 
@@ -45,19 +48,18 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
 
   protected Expression overwriteExpr = null;
 
-
   private WriteMode writeMode = WriteMode.APPEND;
   private final ArcticWrite write;
 
   public ArcticSparkWriteBuilder(ArcticTable table, LogicalWriteInfo info) {
     this.options = info.options();
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
-      this.writeMode = WriteMode.valueOf(options.get(WriteMode.WRITE_MODE_KEY).toUpperCase(Locale.ROOT));
+      this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
     }
 
-    if (table.isKeyedTable()){
+    if (table.isKeyedTable()) {
       write = new KeyedSparkBatchWrite(table.asKeyedTable(), info.schema());
-    }else {
+    } else {
       write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info.schema());
     }
   }
@@ -96,5 +98,4 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
         throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
     }
   }
-
 }

@@ -76,20 +76,10 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   @Override
   public BatchWrite asUpsertWrite() {
-    return null;
+    return new UpsertWrite();
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
-    private boolean isOverwrite;
-
-    BaseBatchWrite(boolean isOverwrite) {
-      this.isOverwrite = isOverwrite;
-    }
-
-    @Override
-    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, this.isOverwrite);
-    }
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
@@ -109,8 +99,10 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   }
 
   private class AppendWrite extends BaseBatchWrite {
-    AppendWrite() {
-      super(false);
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new WriterFactory(table, dsSchema, false);
     }
 
     @Override
@@ -125,8 +117,9 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private class DynamicOverwrite extends BaseBatchWrite {
 
-    DynamicOverwrite() {
-      super(true);
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new WriterFactory(table, dsSchema, true);
     }
 
     @Override
@@ -143,8 +136,12 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     private final Expression overwriteExpr;
 
     private OverwriteByFilter(Expression overwriteExpr) {
-      super(true);
       this.overwriteExpr = overwriteExpr;
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new WriterFactory(table, dsSchema, true);
     }
 
     @Override
@@ -155,6 +152,19 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         overwriteFiles.addFile(file);
       }
       overwriteFiles.commit();
+    }
+  }
+
+  private class UpsertWrite extends BaseBatchWrite {
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new DeltaUpsertWriteFactory(table, dsSchema);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      // TODO: issue #173 - implement upsert commit
+      throw new UnsupportedOperationException("Upsert write is not supported");
     }
   }
 
@@ -177,7 +187,20 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
           .newBaseWriter(this.isOverwrite);
-      return new InternalRowDataWriter(writer);
+      return new SimpleInternalRowDataWriter(writer);
+    }
+  }
+
+  private static class DeltaUpsertWriteFactory extends WriterFactory {
+
+    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema) {
+      super(table, dsSchema, false);
+    }
+
+    @Override
+    public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      // TODO: issues-173 - support upsert data writer
+      return null;
     }
   }
 }
