@@ -22,6 +22,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
@@ -53,6 +54,7 @@ public class CachedHiveClientPool implements HMSClient, Serializable {
   }
 
   private ArcticHiveClientPool clientPool() {
+    tableMetaStore.getHiveSiteLocation().ifPresent(HiveConf::setHiveSiteLocation);
     return clientPoolCache.get(tableMetaStore, k -> new ArcticHiveClientPool(tableMetaStore, clientPoolSize));
   }
 

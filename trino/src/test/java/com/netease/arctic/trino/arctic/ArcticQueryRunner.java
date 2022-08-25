@@ -90,7 +90,6 @@ public final class ArcticQueryRunner
                 queryRunner.installPlugin(new ArcticPlugin());
                 Map<String, String> icebergProperties = new HashMap<>(this.icebergProperties.buildOrThrow());
                 queryRunner.createCatalog(ARCTIC_CATALOG, "arctic", icebergProperties);
-
                 return queryRunner;
             }
             catch (Exception e) {

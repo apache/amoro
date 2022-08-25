@@ -18,8 +18,8 @@
 
 package com.netease.arctic.spark.io;
 
+import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.write.AdaptHiveOutputFileFactory;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.table.ArcticTable;
