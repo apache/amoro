@@ -136,7 +136,9 @@ public class TaskWriters {
   }
 
   private void preconditions() {
-    Preconditions.checkState(transactionId != null, "Transaction id is not set");
+    if (table.isKeyedTable()) {
+      Preconditions.checkState(transactionId != null, "Transaction id is not set");
+    }
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");
     Preconditions.checkState(dsSchema != null, "Data source schema is not set");

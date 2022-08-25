@@ -27,13 +27,14 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Cache {@link ArcticHiveClientPool} with {@link TableMetaStore} key.
  */
-public class CachedHiveClientPool implements HMSClient {
+public class CachedHiveClientPool implements HMSClient, Serializable {
 
   private static Cache<TableMetaStore, ArcticHiveClientPool> clientPoolCache;
 
