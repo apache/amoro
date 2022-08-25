@@ -204,6 +204,11 @@ public class TracedTransaction implements Transaction {
     public void setSnapshotSummary(String key, String value) {
       tracer.setSnapshotSummary(key, value);
     }
+
+    @Override
+    public void updateColumn(UpdateColumn updateColumn) {
+      tracer.updateColumn(updateColumn);
+    }
   }
 
   class TransactionTable implements Table, HasTableOperations, Serializable {

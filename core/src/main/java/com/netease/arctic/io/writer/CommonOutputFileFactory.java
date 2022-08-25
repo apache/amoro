@@ -49,13 +49,13 @@ public class CommonOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final int partitionId;
   private final long taskId;
-  private final long transactionId;
+  private final Long transactionId;
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
   public CommonOutputFileFactory(String baseLocation, PartitionSpec partitionSpec,
                            FileFormat format, ArcticFileIO io, EncryptionManager encryptionManager,
-                           int partitionId, long taskId, long transactionId) {
+                           int partitionId, long taskId, Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
     this.format = format;

@@ -31,18 +31,21 @@ import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
 import com.netease.arctic.ams.server.model.BaseMajorCompactRecord;
 import com.netease.arctic.ams.server.model.CatalogMeta;
+import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
+import com.netease.arctic.ams.server.model.TableOperation;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.service.ITableInfoService;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -75,6 +78,7 @@ public class TableController extends RestBaseController {
   private static IOptimizeService optimizeService = ServiceContainer.getOptimizeService();
   private static FileInfoCacheService fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
   private static CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
+  private static DDLTracerService ddlTracerService = ServiceContainer.getDdlTracerService();
 
   /**
    * get table detail.
@@ -316,6 +320,22 @@ public class TableController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get partition file list", ""));
       return;
     }
+  }
+
+  /* get  operations of some table*/
+  public static void getTableOperations(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+
+    Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
+    Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
+    Integer offset = (page - 1) * pageSize;
+
+    List<DDLInfo> ddlInfos = ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier());
+    PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfos,
+            offset, pageSize, TableOperation::buildFromDDLInfo);
+    ctx.json(OkResponse.of(amsPageResult));
   }
 
   /**

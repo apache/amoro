@@ -30,9 +30,7 @@ import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.DistributionHashMode;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -290,7 +288,7 @@ public class FlinkSink {
           writeFileSplit = PropertyUtil.propertyAsInt(
               table.properties(),
               TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-              TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET);
+              TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
         }
 
         return new RoundRobinShuffleRulePolicy(helper, writeOperatorParallelism,
@@ -330,7 +328,7 @@ public class FlinkSink {
 
     int minFileSplitCount = PropertyUtil
         .propertyAsInt(arcticTable.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
-            TableProperties.CHANGE_FILE_INDEX_HASH_MOD_BUCKET);
+            TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
 
     boolean upsert = arcticTable.isKeyedTable() && PropertyUtil.propertyAsBoolean(arcticTable.properties(),
         TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);

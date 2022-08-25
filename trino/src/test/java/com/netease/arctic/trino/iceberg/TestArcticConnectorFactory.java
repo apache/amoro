@@ -22,7 +22,6 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.TypeLiteral;
 import com.netease.arctic.trino.ArcticConnector;
-import com.netease.arctic.trino.ArcticModule;
 import com.netease.arctic.trino.ArcticTransactionManager;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.bootstrap.LifeCycleManager;

@@ -21,6 +21,7 @@ package com.netease.arctic.trace;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.Constants;
+import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.table.ArcticTable;
@@ -34,7 +35,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.exceptions.CommitFailedException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -64,6 +64,7 @@ public class AmsTableTracer implements TableTracer {
   private final Map<String, String> snapshotSummary = new HashMap<>();
   private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
+  private final List<UpdateColumn> updateColumns = new ArrayList<>();
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
@@ -133,7 +134,6 @@ public class AmsTableTracer implements TableTracer {
     commitMeta.setCommitMetaProducer(CommitMetaProducer.valueOf(commitMetaSource));
     commitMeta.setCommitTime(System.currentTimeMillis());
     boolean update = false;
-    boolean threw = false;
 
     if (defaultTableChange != null) {
       Table traceTable;
@@ -160,10 +160,20 @@ public class AmsTableTracer implements TableTracer {
       });
       update = true;
     }
+    if (updateColumns.size() > 0 && Constants.INNER_TABLE_BASE.equals(innerTable)) {
+      table.refresh();
+      int schemaId = table.schema().schemaId();
+      SchemaUpdateMeta ddlCommitMeta = new SchemaUpdateMeta();
+      ddlCommitMeta.setSchemaId(schemaId);
+      List<com.netease.arctic.ams.api.UpdateColumn> commitUpdateColumns =
+          updateColumns.stream().map(AmsTableTracer::covert).collect(Collectors.toList());
+      ddlCommitMeta.setUpdateColumns(commitUpdateColumns);
+      commitMeta.setSchemaUpdateMeta(ddlCommitMeta);
+      update = true;
+    }
     if (this.properties != null) {
       commitMeta.setProperties(this.properties);
       update = true;
-      threw = true;
     }
     if (!update) {
       return;
@@ -173,15 +183,17 @@ public class AmsTableTracer implements TableTracer {
       client.tableCommit(commitMeta);
     } catch (Throwable t) {
       LOG.warn("trace table commit failed", t);
-      if (threw) {
-        throw new CommitFailedException(t, "commit table change failed");
-      }
     }
   }
 
   @Override
   public void replaceProperties(Map<String, String> newProperties) {
     this.properties = newProperties;
+  }
+
+  @Override
+  public void updateColumn(UpdateColumn updateColumn) {
+    updateColumns.add(updateColumn);
   }
 
   @Override
@@ -266,5 +278,17 @@ public class AmsTableTracer implements TableTracer {
         return Optional.empty();
       }
     }
+  }
+
+  private static com.netease.arctic.ams.api.UpdateColumn covert(UpdateColumn updateColumn) {
+    com.netease.arctic.ams.api.UpdateColumn commit = new com.netease.arctic.ams.api.UpdateColumn();
+    commit.setName(updateColumn.getName());
+    commit.setParent(updateColumn.getParent());
+    commit.setType(updateColumn.getType() == null ? null : updateColumn.getType().toString());
+    commit.setDoc(updateColumn.getDoc());
+    commit.setOperate(updateColumn.getOperate().name());
+    commit.setIsOptional(updateColumn.getOptional() == null ? null : updateColumn.getOptional().toString());
+    commit.setNewName(updateColumn.getNewName());
+    return commit;
   }
 }

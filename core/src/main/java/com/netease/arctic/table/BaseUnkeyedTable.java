@@ -20,6 +20,8 @@ package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.PartitionPropertiesUpdate;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TracedAppendFiles;
@@ -27,9 +29,11 @@ import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedOverwriteFiles;
 import com.netease.arctic.trace.TracedRewriteFiles;
 import com.netease.arctic.trace.TracedRowDelta;
+import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.trace.TrackerOperations;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
@@ -57,6 +61,7 @@ import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
+import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
@@ -138,7 +143,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Map<String, String> properties() {
     return icebergTable.properties().entrySet()
         .stream()
-        .filter(e -> !TableConstants.HIDDEN_PROPERTIES.contains(e.getKey()))
+        .filter(e -> !TableProperties.PROTECTED_PROPERTIES.contains(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
@@ -169,7 +174,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    return icebergTable.updateSchema();
+    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client));
   }
 
   @Override
@@ -320,5 +325,20 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
       return ((HasTableOperations) icebergTable).operations();
     }
     throw new UnsupportedOperationException();
+  }
+
+  @Override
+  public StructLikeMap<Map<String, String>> partitionProperty() {
+    String s = icebergTable.properties().get(TableProperties.TABLE_PARTITION_PROPERTIES);
+    if (s != null) {
+      return TablePropertyUtil.decodePartitionProperties(spec(), s);
+    } else {
+      return StructLikeMap.create(spec().partitionType());
+    }
+  }
+
+  @Override
+  public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
+    return new PartitionPropertiesUpdate(this, transaction);
   }
 }

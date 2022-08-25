@@ -30,20 +30,24 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
+import com.netease.arctic.ams.server.controller.response.PageResult;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
+import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
+import com.netease.arctic.ams.server.model.TableOperation;
 import com.netease.arctic.ams.server.model.TableStatistics;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
@@ -60,16 +64,14 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +93,6 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -103,6 +104,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     PartitionSpec.class,
     FileInfoCacheService.class,
     CatalogMetadataService.class,
+    DDLTracerService.class,
     OptimizeManagerHandler.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
@@ -137,16 +139,8 @@ public class TableControllerTest {
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
 
-  static {
-    try {
-      DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-  }
-
-  @Before
-  public void startMetastore() throws Exception {
+  @BeforeClass
+  public static void startMetastore() throws Exception {
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
@@ -174,9 +168,10 @@ public class TableControllerTest {
     ams.handler().createTableMeta(tableMeta);
   }
 
-  @After
-  public void stopMetastore() throws IOException, SQLException {
+  @AfterClass
+  public static void stopMetastore() throws IOException, SQLException {
     AmsClientPools.cleanAll();
+    ams.stopAndCleanUp();
   }
 
   @Test
@@ -285,6 +280,27 @@ public class TableControllerTest {
     });
   }
 
+  @Test
+  public void testGetOperations() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
+      String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations", catalogName, database, table);
+      final okhttp3.Response resp = client.get(url, x -> {});
+      OkResponse<PageResult> result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      assert result.getCode() == 200;
+      assert result.getResult().getTotal() == 3;
+      assert result.getResult().getList().size() == 3;
+      
+      url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations?page=1&pageSize=2", catalogName, database, table);
+      final okhttp3.Response resp1 = client.get(url, x -> {});
+      OkResponse<PageResult> result1 = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      assert result1.getCode() == 200;
+      assert result1.getResult().getTotal() == 3;
+      assert result1.getResult().getList().size() == 2;
+    });
+  }
+
   private void mockService(String catalog, String db, String table)
       throws Exception {
     // need to mock out since FileSystem.create calls UGI, which occasionally has issues on some
@@ -330,6 +346,12 @@ public class TableControllerTest {
     CatalogMetadataService catalogMetadataService = mock(CatalogMetadataService.class);
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
     when(catalogMetadataService.getCatalogs()).thenReturn(mockCatalogMetas());
+
+    DDLTracerService ddlTracerService = mock(DDLTracerService.class);
+    when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
+    when(ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier()))
+        .thenReturn(mockDDLTracer());
+
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {
@@ -413,6 +435,37 @@ public class TableControllerTest {
     List<PartitionFileBaseInfo> partitionFileBaseInfos = new ArrayList<>();
     partitionFileBaseInfos.add(new PartitionFileBaseInfo("1", "BASE_FILE", 1656855463563L, "dt", "/home", 100L));
     return partitionFileBaseInfos;
+  }
+
+  private List<DDLInfo> mockDDLTracer() {
+    List<DDLInfo> ddlInfos = new ArrayList<>();
+    DDLInfo ddlInfo = new DDLInfo();
+    ddlInfo.setTableIdentifier(TableIdentifier.of("test", "test", "test")
+            .buildTableIdentifier());
+    ddlInfo.setDdl("create table test (id string, name string)");
+    ddlInfo.setDdlType(DDLTracerService.DDLType.UPDATE_SCHEMA.toString());
+    ddlInfo.setCommitTime(1656855463563L);
+    ddlInfos.add(ddlInfo);
+
+    DDLInfo ddlInfo1 = new DDLInfo();
+    ddlInfo1.setTableIdentifier(TableIdentifier.of("test", "test", "test")
+            .buildTableIdentifier());
+    ddlInfo1.setDdl("alter table db_name.table_name set tblproperties (\n"
+            + "    'comment' = 'A table comment.');");
+    ddlInfo1.setDdlType(DDLTracerService.DDLType.UPDATE_PROPERTIES.toString());
+    ddlInfo1.setCommitTime(1656855463563L);
+    ddlInfos.add(ddlInfo1);
+
+    DDLInfo ddlInfo2 = new DDLInfo();
+    ddlInfo2.setTableIdentifier(TableIdentifier.of("test", "test", "test")
+            .buildTableIdentifier());
+    ddlInfo2.setDdl("alter table db_name.table_name set tblproperties (\n"
+            + "    'comment' = 'A table comment.');");
+    ddlInfo2.setDdlType(DDLTracerService.DDLType.UPDATE_SCHEMA.toString());
+    ddlInfo2.setCommitTime(1656855463563L);
+    ddlInfos.add(ddlInfo2);
+
+    return ddlInfos;
   }
 
   private List<CatalogMeta> mockCatalogMetas() {
