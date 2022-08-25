@@ -5,6 +5,9 @@ import org.apache.parquet.format.LogicalType;
 import org.apache.parquet.format.SchemaElement;
 import org.apache.parquet.schema.LogicalTypeAnnotation;
 
+/**
+ * Copy from hive-apache package, because include hive-apache will cause class conflict
+ */
 public final class ParquetMetadataConverterUtil {
   private ParquetMetadataConverterUtil() {
 

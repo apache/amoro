@@ -94,7 +94,7 @@ public class ArcticModule implements Module {
 
     configBinder(binder).bindConfig(MetastoreConfig.class);
     configBinder(binder).bindConfig(IcebergConfig.class);
-    // configBinder(binder).bindConfig(HiveConfig.class);
+
     newSetBinder(binder, SessionPropertiesProvider.class).addBinding()
         .to(IcebergSessionProperties.class)
         .in(Scopes.SINGLETON);

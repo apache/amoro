@@ -14,6 +14,9 @@
 
 package org.apache.parquet.io;
 
+/**
+ * Copy from hive-apache package, because include hive-apache will cause class conflict
+ */
 public final class ColumnIOUtil {
   private ColumnIOUtil() {
 
