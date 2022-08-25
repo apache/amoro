@@ -18,7 +18,10 @@
 
 package com.netease.arctic.spark.writer;
 
+import java.util.Arrays;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 public class WriteTaskCommit implements WriterCommitMessage {
@@ -30,5 +33,14 @@ public class WriteTaskCommit implements WriterCommitMessage {
 
   DataFile[] files() {
     return taskFiles;
+  }
+
+  public static Iterable<DataFile> files(WriterCommitMessage[] messages) {
+    if (messages.length > 0) {
+      return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
+          ImmutableList.copyOf(((WriteTaskCommit) message).files()) :
+          ImmutableList.of()));
+    }
+    return ImmutableList.of();
   }
 }

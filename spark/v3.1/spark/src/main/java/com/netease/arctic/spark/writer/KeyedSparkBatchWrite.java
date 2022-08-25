@@ -42,6 +42,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 
+import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -65,7 +66,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   @Override
   public BatchWrite asBatchAppend() {
-    return new BatchAppend();
+    return new AppendWrite();
   }
 
   @Override
@@ -80,7 +81,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   @Override
   public BatchWrite asUpsertWrite() {
-    return null;
+    return new UpsertWrite();
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -112,20 +113,18 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
   }
 
-  private class BatchAppend extends BaseBatchWrite {
+  private class AppendWrite extends BaseBatchWrite {
 
-    BatchAppend() {
+    AppendWrite() {
       super(false);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      AppendFiles append = table.baseTable().newAppend();
-
+      AppendFiles append = table.changeTable().newAppend();
       for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
-
       append.commit();
     }
   }
@@ -170,6 +169,17 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
   }
 
+  private class UpsertWrite extends BaseBatchWrite {
+    UpsertWrite() {
+      super(true);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+
+    }
+  }
+
   private static class WriterFactory implements DataWriterFactory, Serializable {
     private final KeyedTable table;
     private final StructType dsSchema;
@@ -196,12 +206,4 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
   }
 
-  private static Iterable<DataFile> files(WriterCommitMessage[] messages) {
-    if (messages.length > 0) {
-      return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
-          ImmutableList.copyOf(((WriteTaskCommit) message).files()) :
-          ImmutableList.of()));
-    }
-    return ImmutableList.of();
-  }
 }

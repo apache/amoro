@@ -40,18 +40,17 @@ import org.apache.spark.sql.types.StructType;
 
 import java.util.Locale;
 
-
 public class TaskWriters {
-  private ArcticTable table;
+  private final ArcticTable table;
   private Long transactionId;
   private int partitionId = 0;
   private long taskId = 0;
   private StructType dsSchema;
 
-  private boolean isHiveTable;
-  private FileFormat fileFormat;
-  private long fileSize;
-  private long mask;
+  private final boolean isHiveTable;
+  private final FileFormat fileFormat;
+  private final long fileSize;
+  private final long mask;
 
   protected TaskWriters(ArcticTable table) {
     this.table = table;
@@ -133,6 +132,10 @@ public class TaskWriters {
     return new ArcticSparkBaseTaskWriter(fileFormat, appenderFactory,
         outputFileFactory,
         table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
+  }
+
+  public void newChangeWriter() {
+    preconditions();
   }
 
   private void preconditions() {
