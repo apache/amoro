@@ -47,7 +47,7 @@ public class TemporalJoinSplits implements Serializable {
   private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
-  private boolean haveNotifiedReader = false;
+  private boolean hasNotifiedReader = false;
 
   public TemporalJoinSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");
@@ -118,12 +118,12 @@ public class TemporalJoinSplits implements Serializable {
     }
   }
 
-  public boolean isHaveNotifiedReader() {
-    return haveNotifiedReader;
+  public boolean hasNotifiedReader() {
+    return hasNotifiedReader;
   }
 
   public void notifyReader() {
-    this.haveNotifiedReader = true;
+    this.hasNotifiedReader = true;
   }
 
   @Override
@@ -133,14 +133,14 @@ public class TemporalJoinSplits implements Serializable {
     TemporalJoinSplits that = (TemporalJoinSplits) o;
     return startTimeMs == that.startTimeMs &&
         unfinishedCount == that.unfinishedCount &&
-        haveNotifiedReader == that.haveNotifiedReader &&
+        hasNotifiedReader == that.hasNotifiedReader &&
         Objects.equals(metricGroup, that.metricGroup) &&
         Objects.equals(splits, that.splits);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(metricGroup, startTimeMs, splits, unfinishedCount, haveNotifiedReader);
+    return Objects.hash(metricGroup, startTimeMs, splits, unfinishedCount, hasNotifiedReader);
   }
 
 }

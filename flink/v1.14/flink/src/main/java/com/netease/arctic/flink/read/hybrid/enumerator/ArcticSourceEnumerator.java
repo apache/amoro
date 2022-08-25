@@ -207,7 +207,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       return;
     }
 
-    if (temporalJoinSplits.isHaveNotifiedReader() ||
+    if (temporalJoinSplits.hasNotifiedReader() ||
         !temporalJoinSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
       return;
     }
