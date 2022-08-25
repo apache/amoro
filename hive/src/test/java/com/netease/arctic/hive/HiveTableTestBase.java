@@ -29,6 +29,7 @@ import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -71,6 +72,11 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final TableIdentifier HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
 
+  protected static final TableIdentifier UN_PARTITION_HIVE_TABLE_ID =
+      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_hive_table");
+  protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
+      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
+
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
@@ -85,6 +91,9 @@ public class HiveTableTestBase extends TableTestBase {
   protected ArcticHiveCatalog hiveCatalog;
   protected UnkeyedHiveTable testHiveTable;
   protected KeyedHiveTable testKeyedHiveTable;
+
+  protected UnkeyedHiveTable testUnPartitionHiveTable;
+  protected KeyedHiveTable testUnPartitionKeyedHiveTable;
 
   @BeforeClass
   public static void startMetastore() throws Exception {
@@ -141,9 +150,18 @@ public class HiveTableTestBase extends TableTestBase {
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
 
+    testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
+        .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
+        .create().asUnkeyedTable();
+
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
+        .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
   }
@@ -151,10 +169,16 @@ public class HiveTableTestBase extends TableTestBase {
   @After
   public void clearTable() {
     hiveCatalog.dropTable(HIVE_TABLE_ID, true);
-    AMS.handler().getTableCommitMetas().remove(TABLE_ID.buildTableIdentifier());
+    AMS.handler().getTableCommitMetas().remove(HIVE_TABLE_ID.buildTableIdentifier());
+
+    hiveCatalog.dropTable(UN_PARTITION_HIVE_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_TABLE_ID.buildTableIdentifier());
 
     hiveCatalog.dropTable(HIVE_PK_TABLE_ID, true);
-    AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
+    AMS.handler().getTableCommitMetas().remove(HIVE_PK_TABLE_ID.buildTableIdentifier());
+
+    hiveCatalog.dropTable(UN_PARTITION_HIVE_PK_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(UN_PARTITION_HIVE_PK_TABLE_ID.buildTableIdentifier());
   }
 
 

@@ -32,6 +32,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
     // setupAMS();
+    tmp.create();
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
