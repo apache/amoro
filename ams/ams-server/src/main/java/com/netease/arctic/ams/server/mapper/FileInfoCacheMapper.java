@@ -71,7 +71,7 @@ public interface FileInfoCacheMapper {
           @Result(column = "commit_time", property = "commitTime",
                   typeHandler = Long2TsConvertor.class)
   })
-  List<TransactionsOfTable> getTransactions(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+  List<TransactionsOfTable> getTxExcludeOptimize(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
   @Select("select file_path, partition_name, file_type, file_size, commit_time, case delete_snapshot_id when null " +
           "then 'remove' else 'add' end as operation from " + TABLE_NAME +

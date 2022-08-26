@@ -461,10 +461,10 @@ public class FileInfoCacheService extends IJDBCService {
     return rs;
   }
 
-  public List<TransactionsOfTable> getTransactions(TableIdentifier tableIdentifier) {
+  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier tableIdentifier) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      return fileInfoCacheMapper.getTransactions(tableIdentifier);
+      return fileInfoCacheMapper.getTxExcludeOptimize(tableIdentifier);
     }
   }
 

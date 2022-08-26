@@ -210,7 +210,7 @@ public class TableController extends RestBaseController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     try {
-      List<TransactionsOfTable> transactionsOfTables = fileInfoCacheService.getTransactions(
+      List<TransactionsOfTable> transactionsOfTables = fileInfoCacheService.getTxExcludeOptimize(
               AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
       Integer offset = (page - 1) * pageSize;
       PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,

@@ -329,7 +329,7 @@ public class TableControllerTest {
         .thenReturn(1000L);
     when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE))
         .thenReturn(1000L);
-    when(fileInfoCacheService.getTransactions(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
+    when(fileInfoCacheService.getTxExcludeOptimize(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
         .thenReturn(mockTableTransactions());
     when(fileInfoCacheService.getDatafilesInfo(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), 1L))
         .thenReturn(mockDataFileInfos());
