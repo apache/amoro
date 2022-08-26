@@ -64,6 +64,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -425,6 +426,7 @@ public class TableController extends RestBaseController {
   public static void getTableList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
+    String keywords = ctx.queryParam("keywords");
 
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
@@ -448,6 +450,9 @@ public class TableController extends RestBaseController {
         tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.getName()));
       }
     }
+    List<String> tables = tableIdentifiers.stream().map(TableIdentifier::getTableName)
+            .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
+            .collect(Collectors.toList());
     ctx.json(OkResponse.of(tables));
   }
 
@@ -456,10 +461,15 @@ public class TableController extends RestBaseController {
    */
   public static void getDatabaseList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
+    String keywords = ctx.queryParam("keywords");
+
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticCatalog ac = CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
-    ctx.json(OkResponse.of(ac.listDatabases()));
+    List<String> dbList = ac.listDatabases().stream()
+            .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
+            .collect(Collectors.toList());
+    ctx.json(OkResponse.of(dbList));
   }
 
   /**
