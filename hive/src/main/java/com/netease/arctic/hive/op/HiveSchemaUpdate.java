@@ -89,9 +89,9 @@ public class HiveSchemaUpdate implements UpdateSchema {
     if (!baseTable.spec().isUnpartitioned()) {
       List<Integer> colIds = Lists.newArrayList();
       baseTable.schema().columns().forEach(col -> colIds.add(col.fieldId()));
-      int parFieldMaxIndex = 0;
+      int parFieldMaxIndex = Integer.MAX_VALUE;
       for (PartitionField partitionField : baseTable.spec().fields()) {
-        parFieldMaxIndex = Math.max(colIds.indexOf(partitionField.sourceId()), parFieldMaxIndex);
+        parFieldMaxIndex = Math.min(colIds.indexOf(partitionField.sourceId()), parFieldMaxIndex);
       }
       this.updateSchema.moveBefore(name, baseTable.schema().findColumnName(colIds.get(parFieldMaxIndex)));
     }
