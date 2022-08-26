@@ -53,7 +53,7 @@ import java.io.IOException;
 public class ArcticSparkHiveMainTest {
 
   @BeforeClass
-  public static void suiteSetup() throws IOException {
+  public static void suiteSetup() throws IOException, ClassNotFoundException {
     SparkTestContext.startAll();
   }
 

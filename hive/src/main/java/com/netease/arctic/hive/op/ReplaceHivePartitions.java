@@ -216,7 +216,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     try {
       transactionalHMSClient.run(c -> {
         if (!rewritePartitions.isEmpty()) {
-          c.alter_partitions(db, tableName, rewritePartitions.values().stream().collect(Collectors.toList()));
+          c.alter_partitions(db, tableName, rewritePartitions.values().stream().collect(Collectors.toList()), null);
         }
         if (!newPartitions.isEmpty()) {
           c.add_partitions(newPartitions.values().stream().collect(Collectors.toList()));
