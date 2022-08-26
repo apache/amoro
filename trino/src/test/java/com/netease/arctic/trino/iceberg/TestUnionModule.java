@@ -96,7 +96,7 @@ public class TestUnionModule implements Module {
         //############# IcebergModule
         configBinder(binder).bindConfig(MetastoreConfig.class);
         configBinder(binder).bindConfig(IcebergConfig.class);
-        configBinder(binder).bindConfig(HiveConfig.class);
+
         newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(IcebergSessionProperties.class).in(Scopes.SINGLETON);
         binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
 

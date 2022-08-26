@@ -57,7 +57,6 @@ import static com.google.common.base.Throwables.throwIfInstanceOf;
 import static com.netease.arctic.ArcticErrorCode.ARCTIC_BAD_DATA;
 import static io.trino.plugin.iceberg.IcebergErrorCode.ICEBERG_BAD_DATA;
 import static java.util.Objects.requireNonNull;
-import static org.apache.iceberg.MetadataColumns.FILE_PATH;
 
 /**
  * ConnectorPageSource for Keyed Table
