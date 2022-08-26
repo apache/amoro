@@ -109,29 +109,31 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     UnkeyedTable baseTable = keyedTable.baseTable();
 
     // step1: overwrite data files
-    OverwriteFiles overwriteFiles = transaction.newOverwrite();
-    if (baseTable.currentSnapshot() != null) {
-      overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
-    }
-    for (DataFile d : this.addFiles) {
-      overwriteFiles.addFile(d);
-      partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
-      partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
-    }
-    // 为什么？
-    for (DataFile d : this.deleteFiles) {
-      overwriteFiles.deleteFile(d);
-      partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
-      partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
-    }
-    if (transactionId != null && transactionId > 0) {
-      overwriteFiles.set("txId", transactionId + "");
-    }
+    if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
+      OverwriteFiles overwriteFiles = transaction.newOverwrite();
+      if (baseTable.currentSnapshot() != null) {
+        overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
+      }
+      for (DataFile d : this.addFiles) {
+        overwriteFiles.addFile(d);
+        partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+        partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
+      }
+      // 为什么？
+      for (DataFile d : this.deleteFiles) {
+        overwriteFiles.deleteFile(d);
+        partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+        partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
+      }
+      if (transactionId != null && transactionId > 0) {
+        overwriteFiles.set("txId", transactionId + "");
+      }
 
-    if (MapUtils.isNotEmpty(properties)) {
-      properties.forEach(overwriteFiles::set);
+      if (MapUtils.isNotEmpty(properties)) {
+        properties.forEach(overwriteFiles::set);
+      }
+      overwriteFiles.commit();
     }
-    overwriteFiles.commit();
 
     // step2: RowDelta/Rewrite pos-delete files
     if (CollectionUtils.isNotEmpty(addDeleteFiles) || CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
