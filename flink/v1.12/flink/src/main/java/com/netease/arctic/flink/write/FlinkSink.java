@@ -32,7 +32,6 @@ import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
-import org.apache.flink.shaded.guava18.com.google.common.collect.Lists;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -44,10 +43,8 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.DistributionMode;
-import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.flink.sink.RowDataTaskWriterFactory;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
@@ -58,8 +55,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
@@ -68,14 +63,10 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
-import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
-import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT;
 import static org.apache.flink.table.factories.FactoryUtil.SINK_PARALLELISM;
 
 /**
@@ -344,37 +335,7 @@ public class FlinkSink {
                                                                     boolean overwrite,
                                                                     RowType flinkSchema,
                                                                     List<String> equalityFieldColumns) {
-    if (arcticTable.isKeyedTable()) {
-      return new KeyedRowDataTaskWriterFactory(arcticTable.asKeyedTable(), flinkSchema, overwrite);
-    }
-
-    // Find out the equality field id list based on the user-provided equality field column names.
-    List<Integer> equalityFieldIds = Lists.newArrayList();
-    if (equalityFieldColumns != null && equalityFieldColumns.size() > 0) {
-      for (String column : equalityFieldColumns) {
-        org.apache.iceberg.types.Types.NestedField field = arcticTable.schema().findField(column);
-        Preconditions.checkNotNull(field, "Missing required equality field column '%s' in table schema %s",
-            column, arcticTable.schema());
-        equalityFieldIds.add(field.fieldId());
-      }
-    }
-
-    long targetFileSize = getTargetFileSizeBytes(arcticTable.properties());
-    FileFormat fileFormat = getFileFormat(arcticTable.properties());
-    return new RowDataTaskWriterFactory(
-        arcticTable.asUnkeyedTable(), flinkSchema, targetFileSize,
-        fileFormat, equalityFieldIds);
-  }
-
-  private static FileFormat getFileFormat(Map<String, String> properties) {
-    String formatString = properties.getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
-    return FileFormat.valueOf(formatString.toUpperCase(Locale.ENGLISH));
-  }
-
-  private static long getTargetFileSizeBytes(Map<String, String> properties) {
-    return PropertyUtil.propertyAsLong(properties,
-        WRITE_TARGET_FILE_SIZE_BYTES,
-        WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    return new ArcticRowDataTaskWriterFactory(arcticTable, flinkSchema, overwrite);
   }
 
   public static OneInputStreamOperator<WriteResult, Void> createFileCommitter(ArcticTable arcticTable,

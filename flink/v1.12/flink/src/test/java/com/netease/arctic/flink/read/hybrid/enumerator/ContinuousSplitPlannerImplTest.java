@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.write.KeyedRowDataTaskWriterFactory;
+import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
@@ -119,8 +119,8 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
   }
 
   protected TaskWriter<RowData> createTaskWriter(boolean base) {
-    KeyedRowDataTaskWriterFactory taskWriterFactory =
-        new KeyedRowDataTaskWriterFactory(testKeyedTable, ROW_TYPE, base);
+    ArcticRowDataTaskWriterFactory taskWriterFactory =
+        new ArcticRowDataTaskWriterFactory(testKeyedTable, ROW_TYPE, base);
     taskWriterFactory.setTransactionId(TRANSACTION_ID.getAndIncrement());
     taskWriterFactory.setMask(3);
     taskWriterFactory.initialize(0, 0);

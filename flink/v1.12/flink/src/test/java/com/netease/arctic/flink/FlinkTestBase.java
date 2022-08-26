@@ -18,8 +18,8 @@
 
 package com.netease.arctic.flink;
 
-import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator;
+import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -76,7 +76,7 @@ import java.util.concurrent.ExecutionException;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-public class FlinkTestBase extends TableTestBase {
+public class FlinkTestBase extends HiveTableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
   @ClassRule
   public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
@@ -142,10 +142,10 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  public void config() {
+  public void config(String catalog) {
     props = Maps.newHashMap();
     props.put("type", ArcticCatalogValidator.CATALOG_TYPE_VALUE_ARCTIC);
-    props.put(ArcticCatalogValidator.METASTORE_URL, metastoreUrl + "/" + TEST_CATALOG_NAME);
+    props.put(ArcticCatalogValidator.METASTORE_URL, metastoreUrl + "/" + catalog);
   }
 
   protected StreamTableEnvironment getTableEnv() {

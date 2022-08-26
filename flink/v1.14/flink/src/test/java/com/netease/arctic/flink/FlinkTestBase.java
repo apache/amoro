@@ -18,8 +18,8 @@
 
 package com.netease.arctic.flink;
 
-import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -27,13 +27,6 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.state.StateBackend;
@@ -72,11 +65,19 @@ import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.IDENTIFIER;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-public class FlinkTestBase extends TableTestBase {
+public class FlinkTestBase extends HiveTableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
   @ClassRule
   public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
@@ -142,10 +143,10 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  public void config() {
+  public void config(String catalog) {
     props = Maps.newHashMap();
     props.put("type", IDENTIFIER);
-    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl + "/" + TEST_CATALOG_NAME);
+    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl + "/" + catalog);
   }
 
   protected StreamTableEnvironment getTableEnv() {
