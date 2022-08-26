@@ -51,9 +51,10 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 
 public class AmsRestServer {
   public static final Logger LOG = LoggerFactory.getLogger("AmsRestServer");
+  public static Javalin app;
 
   public static void startRestServer(Integer port) {
-    Javalin app = Javalin.create(config -> {
+    app = Javalin.create(config -> {
       config.addStaticFiles(staticFiles -> {
         staticFiles.hostedPath = "/";
         // change to host files on a subpath, like '/assets'
@@ -217,6 +218,12 @@ public class AmsRestServer {
     app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(),ctx -> {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
     });
+  }
+  
+  public static void stopRestServer() {
+    if (app != null) {
+      app.stop();
+    }
   }
 
   private static final String[] urlWhiteList = {

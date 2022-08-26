@@ -76,10 +76,21 @@ public class ArcticMetaStore {
 
   public static Configuration conf;
   private static JSONObject yamlConfig;
+  private static ArcticMetaStore amsInstance;
+  
+  private Thread syncDDLThread;
+  private Thread syncAndExpiredFileInfoCacheThread;
+  private TServer server;
+  
+  private volatile boolean stopped = false;
+
+  public static ArcticMetaStore getInstance() {
+    return amsInstance;
+  }
 
   public static void main(String[] args) throws Throwable {
     try {
-      String configPath = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()) + "/conf/config.yaml";
+      String configPath = getArcticHome() + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
       startMetaStore(initSystemConfig());
     } catch (Throwable t) {
@@ -87,8 +98,22 @@ public class ArcticMetaStore {
       throw t;
     }
   }
+  
+  private static String getArcticHome() {
+    String arcticHome = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key());
+    if (arcticHome != null) {
+      return arcticHome;
+    }
+    return System.getProperty(ArcticMetaStoreConf.ARCTIC_HOME.key());
+  }
 
   public static void startMetaStore(Configuration conf) throws Throwable {
+    synchronized (ArcticMetaStore.class) {
+      if (amsInstance != null) {
+        throw new IllegalStateException("ArcticMetaStore has already been started.");
+      }
+      amsInstance = new ArcticMetaStore();
+    }
     try {
       ArcticMetaStore.conf = conf;
       long maxMessageSize = conf.getLong(ArcticMetaStoreConf.SERVER_MAX_MESSAGE_SIZE);
@@ -132,7 +157,7 @@ public class ArcticMetaStore {
           .protocolFactory(protocolFactory)
           .inputProtocolFactory(inputProtoFactory)
           .workerThreads(maxWorkerThreads);
-      TServer server = new TThreadedSelectorServer(args);
+      amsInstance.server = new TThreadedSelectorServer(args);
       LOG.info("Started the new meta server on port [" + port + "]...");
       LOG.info("Options.minWorkerThreads = " + minWorkerThreads);
       LOG.info("Options.maxWorkerThreads = " + maxWorkerThreads);
@@ -146,14 +171,38 @@ public class ArcticMetaStore {
       initContainerConfig();
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
-      signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
-      syncAndExpiredFileInfoCache(server);
-      startSyncDDl(server);
-      server.serve();
+      signalOtherThreadsToStart(amsInstance.server, metaStoreThreadsLock, startCondition, startedServing);
+      amsInstance.syncAndExpiredFileInfoCache(amsInstance.server);
+      amsInstance.startSyncDDl(amsInstance.server);
+      amsInstance.server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
       throw t;
+    } finally {
+      if (amsInstance != null) {
+        amsInstance.shutDown();
+      }
     }
+  }
+  
+  public boolean isStarted() {
+    return server != null && server.isServing();
+  }
+  
+  public void shutDown() {
+    ThreadPool.shutdown();
+    this.stopped = true;
+    if (syncDDLThread != null) {
+      syncDDLThread.interrupt();
+    }
+    if (syncAndExpiredFileInfoCacheThread != null) {
+      syncAndExpiredFileInfoCacheThread.interrupt();
+    }
+    if (server != null) {
+      server.stop();
+    }
+    AmsRestServer.stopRestServer();
+    amsInstance = null;
   }
 
   private static void startMetaStoreThreads(
@@ -263,9 +312,9 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
-  private static void syncAndExpiredFileInfoCache(final TServer server) {
-    Thread t = new Thread(() -> {
-      while (true) {
+  private void syncAndExpiredFileInfoCache(final TServer server) {
+    syncAndExpiredFileInfoCacheThread = new Thread(() -> {
+      while (!stopped) {
         while (server.isServing()) {
           try {
             FileInfoCacheService.SyncAndExpireFileCacheTask task =
@@ -278,21 +327,23 @@ public class ArcticMetaStore {
             Thread.sleep(5 * 60 * 1000);
           } catch (InterruptedException e) {
             LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+            break;
           }
         }
         try {
           Thread.sleep(60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+          break;
         }
       }
     });
-    t.start();
+    syncAndExpiredFileInfoCacheThread.start();
   }
 
-  private static void startSyncDDl(final TServer server) {
-    Thread t = new Thread(() -> {
-      while (true) {
+  private void startSyncDDl(final TServer server) {
+    syncDDLThread = new Thread(() -> {
+      while (!stopped) {
         while (server.isServing()) {
           try {
             DDLTracerService.DDLSyncTask task =
@@ -305,24 +356,32 @@ public class ArcticMetaStore {
             Thread.sleep(5 * 60 * 1000);
           } catch (InterruptedException e) {
             LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+            break;
           }
         }
         try {
           Thread.sleep(60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+          break;
         }
       }
     });
-    t.start();
+    syncDDLThread.start();
   }
 
   private static Configuration initSystemConfig() {
     JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
     Configuration config = new Configuration();
-    config.setString(ArcticMetaStoreConf.ARCTIC_HOME, System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    config.setString(ArcticMetaStoreConf.ARCTIC_HOME, getArcticHome());
+    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
+    if (systemThriftPort == null) {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    } else {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT, Integer.parseInt(systemThriftPort));
+    }
     config.setString(
         ArcticMetaStoreConf.THRIFT_BIND_HOST, systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST.key()));
     config.setInteger(
