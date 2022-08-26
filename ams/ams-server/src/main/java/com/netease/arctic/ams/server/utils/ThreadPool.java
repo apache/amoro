@@ -42,6 +42,7 @@ public class ThreadPool {
   private static ScheduledExecutorService commitPool;
   private static ScheduledExecutorService expirePool;
   private static ScheduledExecutorService orphanPool;
+  private static ScheduledExecutorService supportHiveSyncPool;
   private static ScheduledExecutorService optimizerMonitorPool;
   private static ThreadPoolExecutor syncFileInfoCachePool;
   private static ScheduledExecutorService tableRuntimeDataExpirePool;
@@ -53,7 +54,8 @@ public class ThreadPool {
     ORPHAN,
     SYNC_FILE_INFO_CACHE,
     OPTIMIZER_MONITOR,
-    TABLE_RUNTIME_DATA_EXPIRE
+    TABLE_RUNTIME_DATA_EXPIRE,
+    HIVE_SYNC
   }
 
   public static synchronized ThreadPool initialize(Configuration conf) {
@@ -89,6 +91,12 @@ public class ThreadPool {
     orphanPool = Executors.newScheduledThreadPool(
         conf.getInteger(ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE),
         orphanThreadFactory);
+
+    ThreadFactory supportHiveSyncFactory = new ThreadFactoryBuilder().setDaemon(false)
+        .setNameFormat("Support Hive Sync Worker %d").build();
+    supportHiveSyncPool = Executors.newScheduledThreadPool(
+        conf.getInteger(ArcticMetaStoreConf.SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE),
+        supportHiveSyncFactory);
 
     ThreadFactory optimizerMonitorThreadFactory = new ThreadFactoryBuilder().setDaemon(false)
         .setNameFormat("Metastore Scheduled Optimizer Monitor Worker %d").build();
@@ -131,6 +139,8 @@ public class ThreadPool {
         return optimizerMonitorPool;
       case TABLE_RUNTIME_DATA_EXPIRE:
         return tableRuntimeDataExpirePool;
+      case HIVE_SYNC:
+        return supportHiveSyncPool;
       default:
         throw new RuntimeException("ThreadPool not support this type: " + type);
     }
@@ -147,6 +157,7 @@ public class ThreadPool {
       expirePool.shutdown();
       orphanPool.shutdown();
       syncFileInfoCachePool.shutdown();
+      supportHiveSyncPool.shutdown();
       self = null;
     }
   }

@@ -108,7 +108,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testUnKeyedTableFullMajorOptimize() {
     testTable.updateProperties()
-        .set(TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
     insertUnKeyedTableDataFiles();
 

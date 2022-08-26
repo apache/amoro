@@ -153,8 +153,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   protected boolean checkFullMajorOptimizeInterval(long current, String partitionToPath) {
     long fullMajorOptimizeInterval = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
-        TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
+        TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL,
+        TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
 
     if (fullMajorOptimizeInterval != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
       long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullMajorOptimizeTime(partitionToPath);

@@ -171,7 +171,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
   @Test
   public void testKeyedTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
     insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
@@ -265,7 +265,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
   @Test
   public void testUnKeyedTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testHiveTable.updateProperties()
-        .set(TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
     insertTableBaseDataFiles(testHiveTable, 1, baseDataFilesInfo);
 
@@ -360,7 +360,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
   @Test
   public void testUnPartitionTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testUnPartitionKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
     insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 

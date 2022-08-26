@@ -20,6 +20,7 @@ package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
@@ -106,5 +107,55 @@ public class HivePartitionUtil {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static void addPartition(HMSClient hmsClient,
+                                  ArcticTable arcticTable,
+                                  List<String> partitionValues,
+                                  String partitionLocation) {
+    String db = arcticTable.id().getDatabase();
+    String tableName = arcticTable.id().getTableName();
+    Table hiveTable;
+    try {
+      hiveTable = hmsClient.run(c -> c.getTable(db, tableName));
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+
+    try {
+      hmsClient.run(client -> {
+        Partition partition = newPartition(hiveTable, partitionValues, partitionLocation, Collections.emptyList());
+        client.add_partition(partition);
+        return partition;
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void dropPartition(HMSClient hmsClient,
+                                   ArcticTable arcticTable,
+                                   Partition hivePartition) {
+    try {
+      hmsClient.run(client -> {
+        PartitionDropOptions options = PartitionDropOptions.instance()
+            .deleteData(false)
+            .ifExists(true)
+            .purgeData(false)
+            .returnResults(false);
+        return client.dropPartition(arcticTable.id().getDatabase(),
+            arcticTable.id().getTableName(), hivePartition.getValues(), options);
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void updatePartitionLocation(HMSClient hmsClient,
+                                             ArcticTable arcticTable,
+                                             Partition hivePartition,
+                                             String newLocation) {
+    dropPartition(hmsClient, arcticTable, hivePartition);
+    addPartition(hmsClient, arcticTable, hivePartition.getValues(), newLocation);
   }
 }
