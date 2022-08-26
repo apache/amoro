@@ -77,7 +77,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @Suite.SuiteClasses({OptimizerControllerTest.class, TableControllerTest.class, TerminalControllerTest.class,
                      TestDDLTracerService.class,LoginControllerTest.class, TestExpiredFileClean.class,
                      TestMajorOptimizeCommit.class, TestMajorOptimizePlan.class, TestMinorOptimizeCommit.class,
-                     TestMinorOptimizePlan.class, TestOrphanFileClean.class})
+                     TestMinorOptimizePlan.class, TestOrphanFileClean.class, OptimizeIntegrationTest.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
