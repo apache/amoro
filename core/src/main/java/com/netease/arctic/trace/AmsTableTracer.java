@@ -171,7 +171,7 @@ public class AmsTableTracer implements TableTracer {
       commitMeta.setSchemaUpdateMeta(ddlCommitMeta);
       update = true;
     }
-    if (this.properties != null) {
+    if (this.properties != null && Constants.INNER_TABLE_BASE.equals(innerTable)) {
       commitMeta.setProperties(this.properties);
       update = true;
     }
