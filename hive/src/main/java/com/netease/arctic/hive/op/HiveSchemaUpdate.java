@@ -24,8 +24,6 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
-import java.util.ArrayList;
-import java.util.List;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -33,6 +31,7 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Type;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
