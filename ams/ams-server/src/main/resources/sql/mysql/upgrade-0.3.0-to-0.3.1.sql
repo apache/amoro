@@ -17,5 +17,7 @@ CREATE TABLE `ddl_record`
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE `snapshot_info_cache` ADD COLUMN `producer` varchar(64) NOT NULL DEFAULT 'INGESTION';
+ALTER TABLE `snapshot_info_cache` ADD COLUMN `file_size` bigint(20) NOT NULL DEFAULT 0;
+ALTER TABLE `snapshot_info_cache` ADD COLUMN `file_count` int(11) NOT NULL DEFAULT 0;
 ALTER TABLE `file_info_cache` ADD COLUMN `producer` varchar(64) NOT NULL DEFAULT 'INGESTION';
 ALTER TABLE `table_metadata` ADD COLUMN `cur_schema_id` int(11) DEFAULT NULL;

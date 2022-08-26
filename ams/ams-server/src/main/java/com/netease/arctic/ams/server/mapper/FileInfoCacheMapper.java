@@ -59,20 +59,6 @@ public interface FileInfoCacheMapper {
       "#{cache.primaryKeyMd5}")
   void updateCache(@Param("cache") CacheFileInfo cache);
 
-  @Select(
-        "select add_snapshot_id, count(1) as cnt, sum(file_size) as size, commit_time from " + TABLE_NAME + " where " +
-            "table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-            ".TableIdentifier2StringConverter} and producer!='OPTIMIZE' group by add_snapshot_id, commit_time order " +
-            "by commit_time desc")
-  @Results({
-          @Result(column = "add_snapshot_id", property = "transactionId"),
-          @Result(column = "cnt", property = "fileCount"),
-          @Result(column = "size", property = "fileSize"),
-          @Result(column = "commit_time", property = "commitTime",
-                  typeHandler = Long2TsConvertor.class)
-  })
-  List<TransactionsOfTable> getTxExcludeOptimize(@Param("tableIdentifier") TableIdentifier tableIdentifier);
-
   @Select("select file_path, partition_name, file_type, file_size, commit_time, case delete_snapshot_id when " +
           "#{transactionId} then 'remove' else 'add' end as operation from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +

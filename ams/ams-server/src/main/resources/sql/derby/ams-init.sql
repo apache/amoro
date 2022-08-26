@@ -50,6 +50,8 @@ CREATE TABLE snapshot_info_cache (
     action varchar(64) DEFAULT NULL,
     inner_table varchar(64) NOT NULL,
     producer varchar(64) NOT NULL DEFAULT 'INGESTION',
+    file_size bigint DEFAULT NULL,
+    file_count bigint DEFAULT NULL,
     commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (table_identifier,inner_table,snapshot_id)
     );

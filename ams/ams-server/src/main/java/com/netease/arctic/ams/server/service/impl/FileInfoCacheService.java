@@ -292,7 +292,14 @@ public class FileInfoCacheService extends IJDBCService {
         cacheFileInfo.setPrimaryKeyMd5(primaryKeyMd5);
         fileInfos.add(cacheFileInfo);
       }
-      CacheSnapshotInfo snapshotInfo = syncSnapInfo(identifier, tableType, snapshot);
+
+      long fileSize = 0L;
+      int fileCount = 0;
+      for (DataFile file : addFiles) {
+        fileSize += file.getFileSize();
+        fileCount++;
+      }
+      CacheSnapshotInfo snapshotInfo = syncSnapInfo(identifier, tableType, snapshot, fileSize, fileCount);
       //remove snapshot to release memory of snapshot, because there is too much cache in BaseSnapshot
       iterator.remove();
 
@@ -347,7 +354,13 @@ public class FileInfoCacheService extends IJDBCService {
       cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
     });
 
-    CacheSnapshotInfo snapshotInfo = syncSnapInfo(identifier, tableType, curr);
+    long fileSize = 0L;
+    int fileCount = 0;
+    for (CacheFileInfo file : cacheFileInfos) {
+      fileSize += file.getFileSize();
+      fileCount++;
+    }
+    CacheSnapshotInfo snapshotInfo = syncSnapInfo(identifier, tableType, curr, fileSize, fileCount);
     try (SqlSession sqlSession = getSqlSession(false)) {
       try {
         FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
@@ -430,7 +443,8 @@ public class FileInfoCacheService extends IJDBCService {
     return rs;
   }
 
-  private CacheSnapshotInfo syncSnapInfo(TableIdentifier identifier, String tableType, Snapshot snapshot) {
+  private CacheSnapshotInfo syncSnapInfo(TableIdentifier identifier, String tableType, Snapshot snapshot,
+      long fileSize, int fileCount) {
     CacheSnapshotInfo cache = new CacheSnapshotInfo();
     cache.setTableIdentifier(identifier);
     cache.setSnapshotId(snapshot.snapshotId());
@@ -440,6 +454,8 @@ public class FileInfoCacheService extends IJDBCService {
     cache.setCommitTime(snapshot.timestampMillis());
     cache.setProducer(snapshot.summary()
         .getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT));
+    cache.setFileSize(fileSize);
+    cache.setFileCount(fileCount);
     return cache;
   }
 
@@ -455,6 +471,14 @@ public class FileInfoCacheService extends IJDBCService {
         cache.setInnerTable(tableChange.getInnerTable());
         cache.setCommitTime(tableCommitMeta.getCommitTime());
         cache.setProducer(tableCommitMeta.getCommitMetaProducer().name());
+        long fileSize = 0L;
+        int fileCount = 0;
+        for (DataFile file : tableChange.getAddFiles()) {
+          fileSize += file.getFileSize();
+          fileCount++;
+        }
+        cache.setFileSize(fileSize);
+        cache.setFileCount(fileCount);
         rs.add(cache);
       });
     }
@@ -463,8 +487,8 @@ public class FileInfoCacheService extends IJDBCService {
 
   public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier tableIdentifier) {
     try (SqlSession sqlSession = getSqlSession(true)) {
-      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      return fileInfoCacheMapper.getTxExcludeOptimize(tableIdentifier);
+      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+      return snapInfoCacheMapper.getTxExcludeOptimize(tableIdentifier);
     }
   }
 

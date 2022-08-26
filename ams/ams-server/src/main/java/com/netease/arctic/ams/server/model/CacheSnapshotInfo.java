@@ -28,6 +28,8 @@ public class CacheSnapshotInfo {
   private String innerTable;
   private String producer;
   private Long commitTime;
+  private Long fileSize;
+  private Integer fileCount;
 
 
   public TableIdentifier getTableIdentifier() {
@@ -84,5 +86,21 @@ public class CacheSnapshotInfo {
 
   public void setCommitTime(Long commitTime) {
     this.commitTime = commitTime;
+  }
+
+  public Long getFileSize() {
+    return fileSize;
+  }
+
+  public void setFileSize(Long fileSize) {
+    this.fileSize = fileSize;
+  }
+
+  public Integer getFileCount() {
+    return fileCount;
+  }
+
+  public void setFileCount(Integer fileCount) {
+    this.fileCount = fileCount;
   }
 }
