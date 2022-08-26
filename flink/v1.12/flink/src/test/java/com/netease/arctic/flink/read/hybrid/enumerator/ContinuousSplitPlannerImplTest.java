@@ -19,7 +19,6 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.write.KeyedRowDataTaskWriterFactory;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;

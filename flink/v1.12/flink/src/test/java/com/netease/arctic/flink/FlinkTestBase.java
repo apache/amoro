@@ -20,7 +20,7 @@ package com.netease.arctic.flink;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator;
-import com.netease.arctic.flink.write.KeyedRowDataTaskWriterFactory;
+import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -147,10 +147,10 @@ public class FlinkTestBase extends TableTestBase {
     }
   }
 
-  public void config() {
+  public void config(String catalog) {
     props = Maps.newHashMap();
     props.put("type", ArcticCatalogValidator.CATALOG_TYPE_VALUE_ARCTIC);
-    props.put(ArcticCatalogValidator.METASTORE_URL, metastoreUrl + "/" + TEST_CATALOG_NAME);
+    props.put(ArcticCatalogValidator.METASTORE_URL, metastoreUrl + "/" + catalog);
   }
 
   protected StreamTableEnvironment getTableEnv() {
@@ -291,8 +291,8 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
                                                              boolean base) {
-    KeyedRowDataTaskWriterFactory taskWriterFactory =
-        new KeyedRowDataTaskWriterFactory(keyedTable, rowType, base);
+    ArcticRowDataTaskWriterFactory taskWriterFactory =
+        new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setTransactionId(transactionId);
     taskWriterFactory.setMask(3);
     taskWriterFactory.initialize(0, 0);

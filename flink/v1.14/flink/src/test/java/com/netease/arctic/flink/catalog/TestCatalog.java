@@ -39,11 +39,10 @@ public class TestCatalog  extends FlinkTestBase {
 
   private static final String DB = PK_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
-  private static final String TOPIC = String.join(".", TEST_CATALOG_NAME, DB, TABLE);
 
   public void before() {
     super.before();
-    super.config();
+    super.config(TEST_CATALOG_NAME);
   }
 
   @Test

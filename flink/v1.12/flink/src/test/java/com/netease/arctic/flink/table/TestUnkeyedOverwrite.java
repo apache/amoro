@@ -31,13 +31,20 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+
+@RunWith(Parameterized.class)
 public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TestUnkeyedOverwrite.class);
@@ -52,14 +59,32 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TABLE_ID.getDatabase();
 
+  private String catalog;
+  private String db;
+
+  @Parameterized.Parameter
+  public boolean isHive;
+
+  @Parameterized.Parameters(name = "isHive = {0}")
+  public static Collection<Boolean> parameters() {
+    return Arrays.asList(false, true);
+  }
+
   public void before() {
     super.before();
-    super.config();
+    if (isHive) {
+      catalog = HIVE_CATALOG_NAME;
+      db = HIVE_DB_NAME;
+    } else {
+      catalog = TEST_CATALOG_NAME;
+      db = DB;
+    }
+    super.config(catalog);
   }
 
   @After
   public void after() {
-    sql("DROP TABLE IF EXISTS arcticCatalog." + DB + "." + TABLE);
+    sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
   }
 
   @Test
@@ -83,16 +108,13 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     getTableEnv().createTemporaryView("input", input);
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
-    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + DB + "." + TABLE + "(" +
-        " id INT, name STRING)" +
-        " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
-        ")");
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+        " id INT, name STRING)");
 
-    sql("insert overwrite arcticCatalog." + DB + "." + TABLE + " select * from input");
+    sql("insert overwrite arcticCatalog." + db + "." + TABLE + " select * from input");
 
     Assert.assertEquals(
-        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + DB + "." + TABLE));
+        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE));
   }
 
   @Test
@@ -124,19 +146,16 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
 
-    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + DB + "." + TABLE + "(" +
-        " id INT, name STRING, dt STRING) PARTITIONED BY (dt)" +
-        " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
-        ")");
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+        " id INT, name STRING, dt STRING) PARTITIONED BY (dt)");
 
-    sql("insert into arcticCatalog." + DB + "." + TABLE +
+    sql("insert into arcticCatalog." + db + "." + TABLE +
         " select * from input");
-    sql("insert overwrite arcticCatalog." + DB + "." + TABLE +
+    sql("insert overwrite arcticCatalog." + db + "." + TABLE +
         " PARTITION (dt='2022-05-18') select id, name from input where dt = '2022-05-19'");
 
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + DB + "." + TABLE +
+        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE +
             " where dt='2022-05-18'"));
   }
 

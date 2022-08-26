@@ -143,7 +143,7 @@ public class HiveTableTestBase extends TableTestBase {
   }
 
   @Before
-  public void setupTables() throws Exception {
+  public void setupHiveTables() throws Exception {
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
     tableDir = temp.newFolder();
 
@@ -169,7 +169,7 @@ public class HiveTableTestBase extends TableTestBase {
   }
 
   @After
-  public void clearTable() {
+  public void clearHiveTable() {
     hiveCatalog.dropTable(HIVE_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(HIVE_TABLE_ID.buildTableIdentifier());
 
