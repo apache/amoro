@@ -85,6 +85,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public void createDatabase(String catalogName, String database) throws TException {
+    LOG.info("handle create database: {}.{}", catalogName, database);
     CatalogMeta c = catalogMetadataService.getCatalog(catalogName);
     if (c == null) {
       throw new NoSuchObjectException("can't find catalog with name: " + catalogName);
@@ -97,6 +98,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public void dropDatabase(String catalogName, String database) throws TException {
+    LOG.info("handle drop database: {}.{}", catalogName, database);
     CatalogMeta c = catalogMetadataService.getCatalog(catalogName);
     if (c == null) {
       throw new NoSuchObjectException("can't find catalog with name: " + catalogName);
@@ -110,6 +112,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   @Override
   public void createTableMeta(TableMeta tableMeta)
       throws TException {
+    LOG.info("handle create table meta: {}", tableMeta);
     if (tableMeta == null) {
       throw new NoSuchObjectException("table meta should not be null");
     }
@@ -125,13 +128,13 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public List<TableMeta> listTables(String catalogName, String database) throws NoSuchObjectException, TException {
-    LOG.info("ams start load tables");
+    LOG.debug("ams start load tables");
     long start = System.currentTimeMillis();
     List<TableMetadata> metadataList = metaService.getTables(catalogName, database);
     List<TableMeta> collect = metadataList.stream()
         .map(TableMetadata::buildTableMeta)
         .collect(Collectors.toList());
-    LOG.info("finish load and build arctic table meta {}, cost {} ms", metadataList.size(),
+    LOG.debug("finish load and build arctic table meta {}, cost {} ms", metadataList.size(),
         System.currentTimeMillis() - start);
     return collect;
   }
@@ -152,6 +155,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   @Override
   public void removeTable(TableIdentifier tableIdentifier, boolean deleteData)
       throws TException {
+    LOG.info("handle remove table {}", tableIdentifier);
     if (tableIdentifier == null) {
       throw new NoSuchObjectException("table identifier should not be null");
     }
@@ -167,6 +171,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public void tableCommit(TableCommitMeta commit) throws TException {
+    LOG.info("handle table commit {}", commit);
     if (commit == null) {
       throw new NoSuchObjectException("table commit meta should not be null");
     }
@@ -188,6 +193,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) throws TException {
+    LOG.info("handle allocate transaction id {}", tableIdentifier);
     if (tableIdentifier == null) {
       throw new NoSuchObjectException("table identifier should not be null");
     }
