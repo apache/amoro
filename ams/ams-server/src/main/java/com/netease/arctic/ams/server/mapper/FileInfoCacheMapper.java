@@ -73,10 +73,11 @@ public interface FileInfoCacheMapper {
   })
   List<TransactionsOfTable> getTxExcludeOptimize(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
-  @Select("select file_path, partition_name, file_type, file_size, commit_time, case delete_snapshot_id when null " +
-          "then 'remove' else 'add' end as operation from " + TABLE_NAME +
+  @Select("select file_path, partition_name, file_type, file_size, commit_time, case delete_snapshot_id when " +
+          "#{transactionId} then 'remove' else 'add' end as operation from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-          ".TableIdentifier2StringConverter} and add_snapshot_id = #{transactionId} order by commit_time desc")
+          ".TableIdentifier2StringConverter} and (add_snapshot_id = #{transactionId} or delete_snapshot_id = " +
+          "#{transactionId}) order by commit_time desc")
   @Results({
           @Result(column = "file_path", property = "path"),
           @Result(column = "partition_name", property = "partition"),
