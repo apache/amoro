@@ -18,11 +18,11 @@
 
 package com.netease.arctic.optimizer.operator;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.OptimizeManagerClients;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

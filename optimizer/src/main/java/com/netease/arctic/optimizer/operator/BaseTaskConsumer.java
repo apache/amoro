@@ -77,9 +77,6 @@ public class BaseTaskConsumer implements Serializable {
       return optimizeManager.pollTask(config.getQueueId(), jobId, attemptId + "", timeout);
     } catch (NoSuchObjectException e) {
       return null;
-    } catch (Throwable t) {
-      LOG.error("failed to poll task", t);
-      throw t;
     }
   }
 }
