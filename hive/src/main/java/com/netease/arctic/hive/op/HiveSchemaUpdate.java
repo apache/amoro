@@ -18,7 +18,6 @@
 
 package com.netease.arctic.hive.op;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -29,10 +28,9 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.Types;
 
 import java.util.Collection;
-import java.util.List;
-import org.apache.iceberg.types.Types;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.

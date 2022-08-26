@@ -71,22 +71,6 @@ public class HiveSchemaUtil {
     return org.apache.iceberg.hive.HiveSchemaUtil.convert(TypeUtil.select(schema, spec.identitySourceIds()));
   }
 
-  public static boolean compareSchema(Schema schema, PartitionSpec spec, List<FieldSchema> hiveSchema) {
-    List<FieldSchema> convertFields = hiveTableFields(schema, spec);
-    convertFields.forEach(fieldSchema -> {
-      fieldSchema.setName(fieldSchema.getName().toLowerCase());
-    });
-    if (convertFields.size() != hiveSchema.size()) {
-      return false;
-    }
-    for (FieldSchema fieldSchema : hiveSchema) {
-      if (!convertFields.contains(fieldSchema)) {
-        return false;
-      }
-    }
-    return true;
-  }
-
   public static StorageDescriptor storageDescriptor(Schema schema, PartitionSpec partitionSpec) {
     final StorageDescriptor storageDescriptor = new StorageDescriptor();
     storageDescriptor.setCols(HiveSchemaUtil.hiveTableFields(schema, partitionSpec));

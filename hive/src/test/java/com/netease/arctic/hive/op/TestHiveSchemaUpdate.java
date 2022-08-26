@@ -21,6 +21,8 @@ package com.netease.arctic.hive.op;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.junit.Assert;
@@ -44,7 +46,7 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
-    Assert.assertTrue(HiveSchemaUtil.compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
+    Assert.assertTrue(compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
   }
 
   @Test
@@ -62,7 +64,7 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
-    Assert.assertTrue(HiveSchemaUtil.compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
+    Assert.assertTrue(compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
   }
 
   @Test
@@ -79,7 +81,7 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
-    Assert.assertTrue(HiveSchemaUtil.compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+    Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
   }
 
   @Test
@@ -97,6 +99,22 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
-    Assert.assertTrue(HiveSchemaUtil.compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+    Assert.assertTrue(compareSchema(testHiveTable.schema(), testHiveTable.spec(), fieldSchemas));
+  }
+
+  boolean compareSchema(Schema schema, PartitionSpec spec, List<FieldSchema> hiveSchema) {
+    List<FieldSchema> convertFields = HiveSchemaUtil.hiveTableFields(schema, spec);
+    convertFields.forEach(fieldSchema -> {
+      fieldSchema.setName(fieldSchema.getName().toLowerCase());
+    });
+    if (convertFields.size() != hiveSchema.size()) {
+      return false;
+    }
+    for (FieldSchema fieldSchema : hiveSchema) {
+      if (!convertFields.contains(fieldSchema)) {
+        return false;
+      }
+    }
+    return true;
   }
 }
