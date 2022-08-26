@@ -190,11 +190,6 @@ public class ArcticMetaStore {
   public static void failover() {
     stopMetaStore();
     AmsRestServer.stopRestServer();
-    // try {
-    //   tryStartServer();
-    // } catch (Throwable t) {
-    //   LOG.error("ams try restart error", t);
-    // }
   }
 
   private static void startMetaStoreThreads(

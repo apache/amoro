@@ -62,22 +62,6 @@ public class MockZookeeperServer {
     client.start();
   }
 
-  // @BeforeClass
-  // public static void setUpBeforeClass() throws Exception {
-  //   server = new TestingServer(2181, true);
-  //   server.start();
-  //
-  //   client = CuratorFrameworkFactory.newClient("127.0.0.1",
-  //       new ExponentialBackoffRetry(1000, 3));
-  //   client.start();
-  // }
-
-  // @AfterClass
-  // public static void tearDownAfterClass() throws IOException {
-  //   server.stop();
-  //   client.close();
-  // }
-
   @Test
   public void testFoobar() throws Exception {
     System.out.println("client: " + client);
