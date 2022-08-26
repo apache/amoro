@@ -47,11 +47,6 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
   }
 
   @Override
-  public UpdateSchema updateSchema() {
-    return new HiveSchemaUpdate(this, hiveClient, super.updateSchema());
-  }
-
-  @Override
   public String hiveLocation() {
     return ((SupportHive)baseTable()).hiveLocation();
   }

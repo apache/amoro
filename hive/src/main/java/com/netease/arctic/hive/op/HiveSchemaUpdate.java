@@ -18,11 +18,15 @@
 
 package com.netease.arctic.hive.op;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import java.util.ArrayList;
+import java.util.List;
+import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
@@ -82,6 +86,16 @@ public class HiveSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema addColumn(String name, Type type, String doc) {
     this.updateSchema.addColumn(name, type, doc);
+    //It is strictly required that all non-partitioned columns precede partitioned columns in the schema.
+    if (!baseTable.spec().isUnpartitioned()) {
+      List<Integer> colIds = Lists.newArrayList();
+      baseTable.schema().columns().forEach(col -> colIds.add(col.fieldId()));
+      int parFieldMaxIndex = 0;
+      for (PartitionField partitionField : baseTable.spec().fields()) {
+        parFieldMaxIndex = Math.max(colIds.indexOf(partitionField.sourceId()), parFieldMaxIndex);
+      }
+      this.updateSchema.moveBefore(name, baseTable.schema().findColumnName(colIds.get(parFieldMaxIndex)));
+    }
     return this;
   }
 
