@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.write;
+package com.netease.arctic.hive.io.writer;
 
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;

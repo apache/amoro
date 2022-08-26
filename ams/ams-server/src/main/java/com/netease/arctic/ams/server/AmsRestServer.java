@@ -115,14 +115,15 @@ public class AmsRestServer {
         /**  table controller **/
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", TableController::getTableDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", TableController::getOptimizeInfo);
-        get(
-            "/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
-            TableController::getTableTransactions);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
+                TableController::getTableTransactions);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail",
-            TableController::getTransactionDetail);
+                TableController::getTransactionDetail);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", TableController::getTablePartitions);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
-            TableController::getPartitionFileListInfo);
+                TableController::getPartitionFileListInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
+
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
@@ -226,19 +227,19 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-      "/ams/v1/login",
-      "/",
-      "/overview",
-      "/introduce",
-      "/table",
-      "/optimize",
-      "/login",
-      "/terminal",
-      "/index.html",
-      "/favicon.ico",
-      "/js/*",
-      "/img/*",
-      "/css/*"
+    "/ams/v1/login",
+    "/",
+    "/overview",
+    "/introduce",
+    "/table",
+    "/optimize",
+    "/login",
+    "/terminal",
+    "/index.html",
+    "/favicon.ico",
+    "/js/*",
+    "/img/*",
+    "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {

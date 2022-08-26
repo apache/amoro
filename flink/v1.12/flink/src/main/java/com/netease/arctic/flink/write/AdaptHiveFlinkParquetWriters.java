@@ -26,6 +26,7 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.ArrayType;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.MapType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.RowType.RowField;
@@ -51,11 +52,14 @@ import org.apache.parquet.schema.Type;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
+
+import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
 
 public class AdaptHiveFlinkParquetWriters {
   private AdaptHiveFlinkParquetWriters() {
@@ -183,7 +187,12 @@ public class AdaptHiveFlinkParquetWriters {
         case INT64:
           return ParquetValueWriters.longs(desc);
         case INT96:
-          return new TimestampInt96Writer(desc);
+          LogicalTypeRoot typeRoot = logicalType.getTypeRoot();
+          if (typeRoot == TIMESTAMP_WITHOUT_TIME_ZONE) {
+            return new TimestampInt96Writer(desc);
+          } else {
+            return new TimestampTZInt96Writer(desc);
+          }
         case FLOAT:
           return ParquetValueWriters.floats(desc);
         case DOUBLE:
@@ -191,6 +200,42 @@ public class AdaptHiveFlinkParquetWriters {
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
+    }
+  }
+
+  private static class TimestampTZInt96Writer extends AdaptHivePrimitiveWriter<TimestampData> {
+
+    private static final long JULIAN_DAY_OF_EPOCH = 2440588L;
+    private static final long MICROS_PER_DAY = 86400000000L;
+    private static final long MILLIS_IN_DAY = TimeUnit.DAYS.toMillis(1);
+    private static final long NANOS_PER_MILLISECOND = TimeUnit.MILLISECONDS.toNanos(1);
+
+    public TimestampTZInt96Writer(ColumnDescriptor descriptor) {
+      super(descriptor);
+    }
+
+    /**
+     * Writes nano timestamps to parquet int96
+     */
+    void writeBinary(int repetitionLevel, int julianDay, long nanosOfDay) {
+      ByteBuffer buf = ByteBuffer.allocate(12);
+      buf.order(ByteOrder.LITTLE_ENDIAN);
+      buf.putLong(nanosOfDay);
+      buf.putInt(julianDay);
+      buf.flip();
+      column.writeBinary(repetitionLevel, Binary.fromConstantByteBuffer(buf));
+    }
+
+    void writeInstant(int repetitionLevel, Instant instant) {
+      long timestamp = instant.toEpochMilli();
+      int julianDay = (int) (timestamp / MILLIS_IN_DAY + 2440588L);
+      long nanosOfDay = timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND + instant.getNano() % NANOS_PER_MILLISECOND;
+      writeBinary(repetitionLevel, julianDay, nanosOfDay);
+    }
+
+    @Override
+    public void write(int repetitionLevel, TimestampData value) {
+      writeInstant(repetitionLevel, value.toInstant());
     }
   }
 
@@ -226,7 +271,7 @@ public class AdaptHiveFlinkParquetWriters {
 
     @Override
     public void write(int repetitionLevel, TimestampData value) {
-      writeInstant(repetitionLevel, value.toInstant());
+      writeInstant(repetitionLevel, value.toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
     }
   }
 

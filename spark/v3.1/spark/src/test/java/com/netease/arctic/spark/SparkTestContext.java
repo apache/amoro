@@ -29,7 +29,7 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.write.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.op.OverwriteBaseFiles;
