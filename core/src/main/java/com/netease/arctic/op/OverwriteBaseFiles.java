@@ -34,17 +34,21 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map
  */
 public class OverwriteBaseFiles extends PartitionTransactionOperation {
+
+  public static final String PROPERTIES_TRANSACTION_ID = "txId";
 
   private final List<DataFile> deleteFiles;
   private final List<DataFile> addFiles;
@@ -52,6 +56,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final List<DeleteFile> addDeleteFiles;
   private Expression deleteExpression = Expressions.alwaysFalse();
   private final StructLikeMap<Long> maxTransactionId;
+  private final Map<String, String> summary = Maps.newHashMap();
 
   private Long transactionId;
 
@@ -101,6 +106,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
+  public OverwriteBaseFiles set(String property, String value) {
+    summary.put(property, value);
+    return this;
+  }
+
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
@@ -118,14 +128,17 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
       partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
     }
-    // 为什么？
+
     for (DataFile d : this.deleteFiles) {
       overwriteFiles.deleteFile(d);
       partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
       partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
     }
     if (transactionId != null && transactionId > 0) {
-      overwriteFiles.set("txId", transactionId + "");
+      overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
+    }
+    if (properties != null) {
+      properties.forEach(overwriteFiles::set);
     }
 
     if (MapUtils.isNotEmpty(properties)) {
@@ -145,7 +158,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
-        // 为什么？
+
         for (DataFile d : this.deleteFiles) {
           partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
@@ -165,7 +178,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
           partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
-        // 为什么？
+
         for (DataFile d : this.deleteFiles) {
           partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));

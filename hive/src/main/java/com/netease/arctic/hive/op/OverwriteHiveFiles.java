@@ -4,6 +4,7 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
@@ -39,9 +40,13 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
+
 public class OverwriteHiveFiles implements OverwriteFiles {
 
   private static final Logger LOG = LoggerFactory.getLogger(OverwriteHiveFiles.class);
+
+  public static final String PROPERTIES_VALIDATE_LOCATION = "validate-location";
 
   private final Transaction transaction;
   private final boolean insideTransaction;
@@ -60,8 +65,11 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   private Map<StructLike, Partition> partitionToDelete = Maps.newHashMap();
   private Map<StructLike, Partition> partitionToCreate = Maps.newHashMap();
+  private final Map<StructLike, Partition> partitionToAlter = Maps.newHashMap();
   private String unpartitionTableLocation;
   private long txId = -1;
+  private boolean validateLocation = true;
+  private int commitTimestamp; // in seconds
 
   public OverwriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
       HMSClient hmsClient, HMSClient transactionClient) {
@@ -144,8 +152,12 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   @Override
   public OverwriteFiles set(String property, String value) {
-    if ("txId".equals(property)) {
+    if (PROPERTIES_TRANSACTION_ID.equals(property)) {
       this.txId = Long.parseLong(value);
+    }
+
+    if (PROPERTIES_VALIDATE_LOCATION.equals(property)) {
+      this.validateLocation = Boolean.parseBoolean(value);
     }
 
     delegate.set(property, value);
@@ -171,6 +183,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   @Override
   public void commit() {
+    commitTimestamp = (int) (System.currentTimeMillis() / 1000);
     if (table.spec().isUnpartitioned()) {
       generateUnpartitionTableLocation();
     } else {
@@ -179,7 +192,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     }
 
     delegate.commit();
-    setHiveLocations();
+    setPartitionProperties();
     if (!insideTransaction) {
       transaction.commitTransaction();
     }
@@ -191,20 +204,31 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     }
   }
 
-  private void setHiveLocations() {
+  private void setPartitionProperties() {
     UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
     if (table.spec().isUnpartitioned()) {
       updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
           TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
+      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
+          TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
     } else {
       partitionToDelete.forEach((partitionData, partition) -> {
         if (!partitionToCreate.containsKey(partitionData)) {
           updatePartitionProperties.remove(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+          updatePartitionProperties.remove(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
         }
       });
       partitionToCreate.forEach((partitionData, partition) -> {
         updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            commitTimestamp + "");
+      });
+      partitionToAlter.forEach((partitionData, partition) -> {
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partition.getSd().getLocation());
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            commitTimestamp + "");
       });
     }
     updatePartitionProperties.commit();
@@ -244,7 +268,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       List<DataFile> dataFiles = partitionDataFileMap.get(val);
 
       checkCreatePartitionDataFiles(dataFiles, location);
-      Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles);
+      Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles, commitTimestamp);
       createPartitions.put(dataFiles.get(0).partition(), p);
     }
 
@@ -286,7 +310,9 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       checkedPartitionValues.add(pathValue);
     }
 
-    deletePartitions.values().forEach(p -> checkPartitionDelete(deleteFileLocations, p));
+    if (validateLocation) {
+      deletePartitions.values().forEach(p -> checkPartitionDelete(deleteFileLocations, p));
+    }
     return deletePartitions;
   }
 
@@ -346,7 +372,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
         String deleteLocation = toDelete.getSd().getLocation();
         // if exists partition to delete with same value
         // make sure location is different
-        if (isPathEquals(location, deleteLocation)) {
+        if (isPathEquals(location, deleteLocation) && validateLocation) {
           throw new CannotAlterHiveLocationException("can't create new partition: " +
               partitionToString(entry.getValue()) + ", this " +
               "partition will be " +
@@ -361,7 +387,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
         Partition partitionInHive = hmsClient.run(c -> c.getPartition(db, tableName, entry.getValue().getValues()));
         String locationInHive = partitionInHive.getSd().getLocation();
         if (isPathEquals(location, locationInHive)) {
-          // exists same location, skip create operation
+          partitionToAlter.put(entry.getKey(), partitionInHive);
           continue;
         }
         throw new CannotAlterHiveLocationException("can't create new partition: " +
@@ -399,7 +425,18 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
     if (!partitionToCreate.isEmpty()) {
       try {
-        transactionClient.run(c -> c.add_partitions(partitionToCreate.values().stream().collect(Collectors.toList())));
+        transactionClient.run(c -> c.add_partitions(Lists.newArrayList(partitionToCreate.values())));
+      } catch (TException | InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    if (!partitionToAlter.isEmpty()) {
+      try {
+        transactionClient.run(c ->  {
+          c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()));
+          return null;
+        });
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -421,6 +458,8 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       transactionClient.run(c -> {
         Table hiveTable = c.getTable(db, tableName);
         hiveTable.getSd().setLocation(finalLocation);
+        HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
+            .forEach((key, value) -> hiveTable.getParameters().put(key, value));
         c.alter_table(db, tableName, hiveTable);
         return 0;
       });
@@ -431,7 +470,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   private String createEmptyLocationForHive() {
     // create a new empty location for hive
-    String newLocation = null;
+    String newLocation;
     if (txId > 0) {
       newLocation = table.hiveLocation() + "/txId=" + txId;
     } else {

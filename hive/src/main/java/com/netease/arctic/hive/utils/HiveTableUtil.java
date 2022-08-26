@@ -20,10 +20,30 @@ package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+
+import java.util.List;
+import java.util.Map;
 
 public class HiveTableUtil {
 
   public static boolean isHive(ArcticTable arcticTable) {
     return arcticTable instanceof SupportHive;
+  }
+
+  public static Map<String, String> generateTableProperties(int accessTimeInSeconds, List<DataFile> files) {
+    Map<String, String> properties = Maps.newHashMap();
+    long totalSize = files.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
+    long numRows = files.stream().map(DataFile::recordCount).reduce(0L, Long::sum);
+    properties.put("transient_lastDdlTime", accessTimeInSeconds + "");
+    properties.put("totalSize", totalSize + "");
+    properties.put("numRows", numRows + "");
+    properties.put("numFiles", files.size() + "");
+    return properties;
+  }
+
+  public static String hiveRootLocation(String tableLocation) {
+    return tableLocation + "/hive_data";
   }
 }

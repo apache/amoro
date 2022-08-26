@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.io;
 
+import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.write.AdaptHiveGenericTaskWriterBuilder;
@@ -127,16 +128,13 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
     }
     WriteResult complete = changeWrite.complete();
     Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
-    CloseableIterable<Record> concat =
-        CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
-            table.schema(),
-            s.path().toString())).collect(Collectors.toList()));
-    Set<Record> result = new HashSet<>();
-    Iterators.addAll(result, concat.iterator());
-    Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
+    Set<Record> readRecords = Sets.newHashSet();
+    Arrays.stream(complete.dataFiles()).map(s -> readRecords.addAll(readParquet(
+        table.schema(), s.path().toString())));
+    Assert.assertEquals(Sets.newHashSet(records), readRecords);
   }
 
-  private CloseableIterable<Record> readParquet(Schema schema, String path){
+  private Set<Record> readParquet(Schema schema, String path){
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
             Files.localInput(new File(path)))
         .project(schema)
@@ -144,6 +142,6 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
         .caseSensitive(false);
 
     CloseableIterable<Record> iterable = builder.build();
-    return iterable;
+    return Sets.newHashSet(iterable.iterator());
   }
 }

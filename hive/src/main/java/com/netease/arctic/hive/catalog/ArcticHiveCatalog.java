@@ -27,10 +27,10 @@ import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseKeyedTable;
-import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -44,6 +44,8 @@ import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.mapping.MappingUtil;
+import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -200,11 +202,13 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
-      String hiveLocation = tableLocation + "/hive";
+      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
 
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
       meta.putToProperties(TableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
+      meta.putToProperties(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+          NameMappingParser.toJson(MappingUtil.create(schema)));
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
@@ -251,11 +255,13 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
-      String hiveLocation = tableLocation + "/hive";
+      String hiveLocation = HiveTableUtil.hiveRootLocation(baseLocation);
 
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(TableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      meta.putToProperties(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+          NameMappingParser.toJson(MappingUtil.create(schema)));
 
       Table table = tableMetaStore.doAs(() -> {
         try {

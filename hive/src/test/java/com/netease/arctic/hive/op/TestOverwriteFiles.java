@@ -170,10 +170,14 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     Assert.assertTrue(
         "table location to new path",
         hiveTable.getSd().getLocation().endsWith("/test_path/hive_data_location"));
-    Assert.assertEquals("table partition properties is error",
+    Assert.assertEquals("table partition properties hive location is error",
         hiveTable.getSd().getLocation(),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
             .get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+    Assert.assertEquals("table partition properties transient_lastDdlTime is error",
+        hiveTable.getParameters().get("transient_lastDdlTime"),
+        table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
     // =================== test delete all files and add no file to un-partitioned table ===================
     overwriteFiles = table.newOverwrite();
@@ -190,11 +194,14 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     Assert.assertTrue(
         "table location change to hive location",
         hiveLocation.startsWith(table.hiveLocation()));
-    Assert.assertEquals("table partition properties is error",
+    Assert.assertEquals("table partition property hive location is error",
         hiveTable.getSd().getLocation(),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
             .get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
-    System.out.println(hiveLocation);
+    Assert.assertEquals("table partition property transient_lastDdlTime is error",
+        hiveTable.getParameters().get("transient_lastDdlTime"),
+        table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
     hiveCatalog.dropTable(identifier, true);
     AMS.handler().getTableCommitMetas().remove(identifier.buildTableIdentifier());

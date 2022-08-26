@@ -64,7 +64,7 @@ public class HiveTableTestBase extends TableTestBase {
 
   protected static final TemporaryFolder tempFolder = new TemporaryFolder();
 
-  protected static HMSMockServer hms  ;
+  protected static HMSMockServer hms;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
@@ -185,14 +185,6 @@ public class HiveTableTestBase extends TableTestBase {
         tableName,
         (short) -1);
 
-    System.out.println("> assert hive partition location as expected");
-    System.out.printf("HiveTable[%s.%s] partition count: %d \n", database, tableName, partitions.size());
-    for (Partition p: partitions){
-      System.out.printf(
-          "HiveTablePartition[%s.%s  %s] location:%s \n", database, tableName,
-          Joiner.on("/").join(p.getValues()), p.getSd().getLocation());
-    }
-
     Assert.assertEquals("expect " + partitionLocations.size() + " partition after first rewrite partition",
         partitionLocations.size(), partitions.size());
 
@@ -214,8 +206,11 @@ public class HiveTableTestBase extends TableTestBase {
           "partition location is not expected, expect " + actualLocation + " end-with " + locationExpect,
           actualLocation.contains(locationExpect));
       Map<String, String> properties = partitionProperties.get(getPartitionData(valuePath, table.spec()));
-      Assert.assertEquals("partition properties is not expected", actualLocation,
+      Assert.assertEquals("partition property hive location is not expected", actualLocation,
           properties.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+      Assert.assertEquals("partition property transient_lastDdlTime is not expected",
+          p.getParameters().get("transient_lastDdlTime"),
+          properties.get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
     }
   }
 }
