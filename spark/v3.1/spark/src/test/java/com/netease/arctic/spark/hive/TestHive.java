@@ -17,7 +17,7 @@ public class TestHive extends SparkTestContext {
 
 
   @BeforeClass
-  public static void setup() throws IOException {
+  public static void setup() throws IOException, ClassNotFoundException {
     setUpTestDirAndArctic();
     setUpHMS();
     setUpSparkSession();
