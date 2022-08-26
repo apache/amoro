@@ -32,6 +32,7 @@ import org.apache.iceberg.types.Type;
 
 import java.util.Collection;
 import java.util.List;
+import org.apache.iceberg.types.Types;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
@@ -87,13 +88,18 @@ public class HiveSchemaUpdate implements UpdateSchema {
     this.updateSchema.addColumn(name, type, doc);
     //It is strictly required that all non-partitioned columns precede partitioned columns in the schema.
     if (!baseTable.spec().isUnpartitioned()) {
-      List<Integer> colIds = Lists.newArrayList();
-      baseTable.schema().columns().forEach(col -> colIds.add(col.fieldId()));
-      int parFieldMaxIndex = Integer.MAX_VALUE;
+      int parFieldMinIndex = Integer.MAX_VALUE;
+      Types.NestedField firstParField = null;
       for (PartitionField partitionField : baseTable.spec().fields()) {
-        parFieldMaxIndex = Math.min(colIds.indexOf(partitionField.sourceId()), parFieldMaxIndex);
+        Types.NestedField sourceField = baseTable.schema().findField(partitionField.sourceId());
+        if (baseTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
+          parFieldMinIndex = baseTable.schema().columns().indexOf(sourceField);
+          firstParField = sourceField;
+        }
       }
-      this.updateSchema.moveBefore(name, baseTable.schema().findColumnName(colIds.get(parFieldMaxIndex)));
+      if (firstParField != null) {
+        this.updateSchema.moveBefore(name, firstParField.name());
+      }
     }
     return this;
   }
