@@ -55,6 +55,7 @@ public class TemporalJoinSplits implements Serializable {
 
     unfinishedCount = this.splits.size();
     LOGGER.info("init splits at {}, size:{}", LocalDateTime.now(), unfinishedCount);
+    LOGGER.info("hasNotifiedReader {}", hasNotifiedReader);
     this.metricGroup = metricGroup;
     if (metricGroup != null) {
       metricGroup.gauge(TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP, () -> startTimeMs);
