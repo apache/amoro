@@ -162,8 +162,10 @@ public class SparkTestContext extends ExternalResource {
     hms.start();
     additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
     additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
-    String hiveVersion = SparkTestContext.class.getClassLoader().
-          loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient").getPackage().getImplementationVersion();
+    String hiveVersion = SparkTestContext.class.getClassLoader()
+        .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
+        .getPackage()
+        .getImplementationVersion();
     additionSparkConfigs.put("spark.sql.hive.metastore.version", hiveVersion);
     additionSparkConfigs.put("spark.sql.hive.metastore.jars", "maven");
     //hive.metastore.client.capability.check
