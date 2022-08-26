@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
@@ -37,7 +38,9 @@ public class OptimizeCommitWorker implements Runnable {
     LOG.info("{} start work", workerName);
     TableIdentifier currentTable = null;
     try {
-      Thread.sleep(10000);
+      while (!ArcticMetaStore.getInstance().isStarted()) {
+        Thread.sleep(1000);
+      }
       while (true) {
         try {
           TableIdentifier tableIdentifier = ServiceContainer.getOptimizeService().takeTableToCommit();
