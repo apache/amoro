@@ -35,6 +35,7 @@ import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
+import com.netease.arctic.ams.server.optimize.OptimizeCommitWorker;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.DerbyService;
@@ -170,7 +171,7 @@ public class ArcticMetaStore {
         }
 
         startOptimizeCheck(conf.getLong(ArcticMetaStoreConf.OPTIMIZE_CHECK_STATUS_INTERVAL));
-        startOptimizeCommit();
+        startOptimizeCommit(conf.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE));
         startExpiredClean();
         startOrphanClean();
         monitorOptimizerStatus();
@@ -222,12 +223,10 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
-  private static void startOptimizeCommit() {
-    ThreadPool.getPool(ThreadPool.Type.COMMIT).scheduleWithFixedDelay(
-        ServiceContainer.getOptimizeService()::checkOptimizeCommitTasks,
-        3 * 1000L,
-        60 * 1000L,
-        TimeUnit.MILLISECONDS);
+  private static void startOptimizeCommit(int parallel) {
+    for (int i = 0; i < parallel; i++) {
+      ThreadPool.getPool(ThreadPool.Type.COMMIT).execute(new OptimizeCommitWorker(i));
+    }
   }
 
   private static void startExpiredClean() {

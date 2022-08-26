@@ -18,14 +18,18 @@
 
 package com.netease.arctic.spark.util;
 
-import com.netease.arctic.spark.ArcticSparkTable;
+import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import org.apache.avro.generic.GenericData;
+import org.apache.avro.util.Utf8;
 import org.apache.iceberg.DistributionMode;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.Spark3Util;
+import org.apache.iceberg.types.Type;
+import org.apache.iceberg.util.ByteBuffers;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.CatalogPlugin;
@@ -35,9 +39,13 @@ import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.connector.iceberg.distributions.Distribution;
 import org.apache.spark.sql.connector.iceberg.distributions.Distributions;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.unsafe.types.UTF8String;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -131,5 +139,33 @@ public class ArcticSparkUtils {
     int numBucket = PropertyUtil.propertyAsInt(arcticSparkTable.properties(),
         TableProperties.BASE_FILE_INDEX_HASH_BUCKET, TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
     return Expressions.bucket(numBucket, primaryKeySpec.fieldNames().toArray(new String[0]));
+  }
+
+  public static Object convertConstant(Type type, Object value) {
+    if (value == null) {
+      return null;
+    }
+
+    switch (type.typeId()) {
+      case DECIMAL:
+        return Decimal.apply((BigDecimal) value);
+      case STRING:
+        if (value instanceof Utf8) {
+          Utf8 utf8 = (Utf8) value;
+          return UTF8String.fromBytes(utf8.getBytes(), 0, utf8.getByteLength());
+        }
+        return UTF8String.fromString(value.toString());
+      case FIXED:
+        if (value instanceof byte[]) {
+          return value;
+        } else if (value instanceof GenericData.Fixed) {
+          return ((GenericData.Fixed) value).bytes();
+        }
+        return ByteBuffers.toByteArray((ByteBuffer) value);
+      case BINARY:
+        return ByteBuffers.toByteArray((ByteBuffer) value);
+      default:
+    }
+    return value;
   }
 }

@@ -312,9 +312,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       SerDeInfo serDeInfo = new SerDeInfo();
       switch (format) {
         case PARQUET:
-          storageDescriptor.setOutputFormat("org.apache.hadoop.mapred.FileOutputFormat");
-          storageDescriptor.setInputFormat("org.apache.hadoop.mapred.FileInputFormat");
-          serDeInfo.setSerializationLib("org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe");
+          storageDescriptor.setOutputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat");
+          storageDescriptor.setInputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat");
+          serDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe");
           break;
         default:
           throw new IllegalArgumentException("Unsupported hive table file format:" + format);

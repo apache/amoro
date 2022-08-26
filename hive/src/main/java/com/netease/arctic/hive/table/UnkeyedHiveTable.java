@@ -58,8 +58,8 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    ReplacePartitions replacePartitions = super.newReplacePartitions();
-    return new ReplaceHivePartitions(replacePartitions, this, hiveClient, hiveClient);
+    return new ReplaceHivePartitions(icebergTable.newTransaction(),
+        false, this, hiveClient, hiveClient);
   }
 
   @Override
@@ -76,8 +76,7 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
 
   @Override
   public OverwriteHiveFiles newOverwrite() {
-    OverwriteFiles overwriteFiles = super.newOverwrite();
-    return new OverwriteHiveFiles(overwriteFiles, this, hiveClient, hiveClient);
+    return new OverwriteHiveFiles(super.newTransaction(), false,this, hiveClient, hiveClient);
   }
 
   @Override

@@ -18,14 +18,12 @@
 
 package com.netease.arctic.trino.keyed;
 
-import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.TypeConverter;
 import io.trino.plugin.iceberg.delete.TrinoRow;
-import io.trino.spi.TrinoException;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileIO;
@@ -39,7 +37,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 /**
  * KeyedDeleteFilter is used to do MOR for Keyed Table

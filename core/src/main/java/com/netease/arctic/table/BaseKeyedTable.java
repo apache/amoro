@@ -111,7 +111,7 @@ public class BaseKeyedTable implements KeyedTable {
   public Map<String, String> properties() {
     return baseTable.properties().entrySet()
         .stream()
-        .filter(e -> !TableConstants.HIDDEN_PROPERTIES.contains(e.getKey()))
+        .filter(e -> !TableProperties.PROTECTED_PROPERTIES.contains(e.getKey()))
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
   }
 
@@ -230,6 +230,10 @@ public class BaseKeyedTable implements KeyedTable {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
     }
 
+    @Override
+    public Map<String, String> properties() {
+      return Maps.newHashMap(icebergTable.properties());
+    }
   }
 
   public static class ChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {
