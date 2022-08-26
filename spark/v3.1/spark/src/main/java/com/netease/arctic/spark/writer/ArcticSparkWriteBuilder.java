@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -29,60 +29,73 @@ import org.apache.spark.sql.connector.write.SupportsDynamicOverwrite;
 import org.apache.spark.sql.connector.write.SupportsOverwrite;
 import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.sources.Filter;
-import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.Locale;
+public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
 
-public class UnkeyedSparkWriteBuilder implements WriteBuilder, SupportsDynamicOverwrite, SupportsOverwrite {
+  public interface ArcticWrite {
 
-  private final UnkeyedTable table;
-  private final CaseInsensitiveStringMap options;
-  private final String overwriteMode;
-  private boolean overwriteDynamic = false;
-  private boolean overwriteByFilter = false;
-  private Expression overwriteExpr = null;
+    BatchWrite asBatchAppend();
 
-  private StructType dsSchema = null;
+    BatchWrite asDynamicOverwrite();
 
-  public UnkeyedSparkWriteBuilder(UnkeyedTable table, LogicalWriteInfo info) {
-    this.table = table;
+    BatchWrite asOverwriteByFilter(Expression overwriteExpr);
+
+    BatchWrite asUpsertWrite();
+  }
+
+  protected final CaseInsensitiveStringMap options;
+
+  protected Expression overwriteExpr = null;
+
+  private WriteMode writeMode = WriteMode.APPEND;
+  private final ArcticWrite write;
+
+  public ArcticSparkWriteBuilder(ArcticTable table, LogicalWriteInfo info) {
     this.options = info.options();
-    this.overwriteMode = options.containsKey("overwrite-mode") ?
-        options.get("overwrite-mode").toLowerCase(Locale.ROOT) : null;
-    this.overwriteDynamic = "dynamic".equals(overwriteMode);
-    this.dsSchema = info.schema();
+    if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
+      this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
+    }
+
+    if (table.isKeyedTable()) {
+      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info.schema());
+    } else {
+      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info.schema());
+    }
   }
 
   @Override
   public WriteBuilder overwriteDynamicPartitions() {
-    Preconditions.checkState(!overwriteByFilter, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
-    this.overwriteDynamic = true;
+    Preconditions.checkState(overwriteExpr == null, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
+    writeMode = WriteMode.OVERWRITE_DYNAMIC;
     return this;
   }
 
   @Override
   public WriteBuilder overwrite(Filter[] filters) {
     this.overwriteExpr = SparkFilters.convert(filters);
+    String overwriteMode = options.getOrDefault("overwrite-mode", "null");
     if (overwriteExpr == Expressions.alwaysTrue() && "dynamic".equals(overwriteMode)) {
-      // use the write option to override truncating the table. use dynamic overwrite instead.
-      this.overwriteDynamic = true;
+      writeMode = WriteMode.OVERWRITE_DYNAMIC;
     } else {
-      Preconditions.checkState(!overwriteDynamic, "Cannot overwrite dynamically and by filter: %s", overwriteExpr);
-      this.overwriteByFilter = true;
+      writeMode = WriteMode.OVERWRITE_BY_FILTER;
     }
     return this;
   }
 
   @Override
   public BatchWrite buildForBatch() {
-    UnkeyedSparkBatchWrite write = new UnkeyedSparkBatchWrite(table, dsSchema);
-    if (overwriteByFilter) {
-      return write.asOverwriteByFilter(overwriteExpr);
-    } else if (overwriteDynamic) {
-      return write.asDynamicOverwrite();
-    } else {
-      throw new UnsupportedOperationException("support insert overwrite only");
+    switch (writeMode) {
+      case APPEND:
+        return write.asBatchAppend();
+      case OVERWRITE_BY_FILTER:
+        return write.asOverwriteByFilter(overwriteExpr);
+      case OVERWRITE_DYNAMIC:
+        return write.asDynamicOverwrite();
+      case UPSERT:
+        return write.asUpsertWrite();
+      default:
+        throw new UnsupportedOperationException("unsupported write mode: " + writeMode);
     }
   }
 }
