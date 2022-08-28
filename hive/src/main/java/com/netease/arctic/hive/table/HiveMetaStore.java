@@ -50,6 +50,7 @@ public class HiveMetaStore implements Closeable {
   }
 
   private HiveMetaStore(TableMetaStore tableMetaStore, int clientPoolSize) {
+    tableMetaStore.getHiveSiteLocation().ifPresent(HiveConf::setHiveSiteLocation);
     this.clients = new ArcticHiveClientPool(tableMetaStore, clientPoolSize);
   }
 
@@ -84,59 +85,6 @@ public class HiveMetaStore implements Closeable {
     } else {
       throw new RuntimeException("Failed to get tables of database " + database, e);
     }
-  }
-
-  public List<String> getAllHiveDatabases() {
-    try {
-      return clients.run(HiveMetaStoreClient::getAllDatabases);
-    } catch (MetaException e) {
-      reGetAllHiveDatabases(e);
-    } catch (TException e) {
-      throw new RuntimeException("Failed to get databases", e);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new RuntimeException("Interrupted in call to getAllDatabases", e);
-    }
-    throw new RuntimeException("Failed to get databases");
-  }
-
-  private void reGetAllHiveDatabases(MetaException e) {
-    if (e.getMessage().contains("Got exception: org.apache.thrift.transport.TTransportException")) {
-      try {
-        clients.run(client -> {
-          client.close();
-          client.reconnect();
-          return client.getAllDatabases();
-        });
-      } catch (TException ex) {
-        throw new RuntimeException("Failed to get databases", e);
-      } catch (InterruptedException ex) {
-        Thread.currentThread().interrupt();
-        throw new RuntimeException("Interrupted in call to getAllDatabases", e);
-      }
-    } else {
-      throw new RuntimeException("Failed to get databases", e);
-    }
-  }
-
-  public void createHiveTable(HiveTable hiveTable) {
-    Table table = hiveTable.getTable();
-    try {
-      clients.run(c -> {
-        c.createTable(table);
-        return null;
-      });
-    } catch (AlreadyExistsException e) {
-      throw new RuntimeException("Hive table already exists: " + hiveTable.getTableName());
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException("Create hive table error: " + e);
-    }
-  }
-
-  public void createHiveTable(String database, String tableName, List<FieldSchema> columns,
-                              List<FieldSchema> partitionCols, String owner) {
-    HiveTable htl = HiveTable.of(buildHiveTable(database, tableName, columns, partitionCols, owner));
-    createHiveTable(htl);
   }
 
   public static Table buildHiveTable(String database, String tableName, List<FieldSchema> columns,
@@ -264,21 +212,6 @@ public class HiveMetaStore implements Closeable {
   @Override
   public void close() {
     clients.close();
-  }
-
-  public void createHiveDatabase(TableIdentifier identifier) {
-    Database database = new Database();
-    database.setName(identifier.getDatabase());
-    try {
-      clients.run(client -> {
-        client.createDatabase(database);
-        return null;
-      });
-    } catch (AlreadyExistsException e) {
-      throw new RuntimeException("Hive database already exists: " + identifier.getDatabase());
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException("Create hive database error: " + e);
-    }
   }
 
   private static HiveMetaStore buildHiveMetaStore(ArcticHiveCatalog arcticHiveCatalog) throws MalformedURLException {

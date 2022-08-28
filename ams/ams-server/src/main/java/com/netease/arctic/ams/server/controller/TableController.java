@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
@@ -235,7 +236,8 @@ public class TableController extends RestBaseController {
         .forEach(
             key -> keyValues
                 .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
-    ctx.json(OkResponse.of(tableProperties));
+    ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
+    ctx.json(OkResponse.of(keyValues));
   }
 
   /**
@@ -432,28 +434,29 @@ public class TableController extends RestBaseController {
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticCatalog ac = CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     List<TableIdentifier> tableIdentifiers = ac.listTables(db);
-    LinkedHashSet<TableMeta> tables = new LinkedHashSet<>();
+    LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
+    List<TableMeta> tables = new ArrayList<>();
     if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
       HiveMetaStore hiveMetaStore = HiveMetaStore.getHiveMetaStore((ArcticHiveCatalog)ac);
       List<String> hiveTables = hiveMetaStore.getAllHiveTables(db);
       for (String hiveTable : hiveTables) {
-        tables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.getName()));
+        tempTables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.toString()));
       }
       for (TableIdentifier tableIdentifier : tableIdentifiers) {
-        TableMeta tableMeta = new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.getName());
-        if (tables.contains(tableMeta)) {
+        TableMeta tableMeta = new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.toString());
+        if (tempTables.contains(tableMeta)) {
           tables.add(tableMeta);
+          tempTables.remove(tableMeta);
         }
       }
+      tables.addAll(tempTables);
     } else {
       for (TableIdentifier tableIdentifier : tableIdentifiers) {
-        tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.getName()));
+        tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.toString()));
       }
     }
-    List<String> tables = tableIdentifiers.stream().map(TableIdentifier::getTableName)
-            .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(tables));
+    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isEmpty(keywords) ||
+        t.getName().contains(keywords)).collect(Collectors.toList())));
   }
 
   /**

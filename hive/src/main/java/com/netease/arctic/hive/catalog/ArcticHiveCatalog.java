@@ -30,7 +30,6 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseKeyedTable;
-import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
@@ -271,7 +270,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       });
       try {
         hiveClientPool.run(client -> {
-          if (client.tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName())) {
+          if (!client.tableExists(tableIdentifier.getDatabase(), tableIdentifier.getTableName())) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
             hiveTable.setSd(storageDescriptor(
                 hiveLocation,

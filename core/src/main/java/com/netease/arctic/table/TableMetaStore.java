@@ -209,15 +209,7 @@ public class TableMetaStore implements Serializable {
               confCachePath.toFile().mkdirs();
             }
           }
-
-          String krbConfFile = saveConfInPath(confCachePath, KRB_CONF_FILE_NAME, krbConf);
-          String keyTabFile = saveConfInPath(confCachePath, KEY_TAB_FILE_NAME, krbKeyTab);
-          System.clearProperty(HADOOP_USER_PROPERTY);
-          System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
-          sun.security.krb5.Config.refresh();
-          UserGroupInformation.setConfiguration(getConfiguration());
-          KerberosName.resetDefaultRealm();
-          ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(krbPrincipal, keyTabFile);
+          constructUgi();
           LOG.info("{} complete init ugi with {}", threadName, authMethod);
         }
       } catch (IOException | KrbException e) {
@@ -264,6 +256,12 @@ public class TableMetaStore implements Serializable {
               }
             }
 
+            if (!ugi.getAuthenticationMethod().toString().equals(authMethod) ||
+                !ugi.getUserName().equals(krbPrincipal)) {
+              LOG.info("current ugi is not equal target ugi need to reconstruct new ugi");
+              constructUgi();
+            }
+
             ugi.checkTGTAndReloginFromKeytab();
           } catch (Exception e) {
             throw new RuntimeException("Re-login from keytab failed", e);
@@ -284,6 +282,17 @@ public class TableMetaStore implements Serializable {
       }
     }
     return ugi;
+  }
+
+  private void constructUgi() throws IOException, KrbException {
+    String krbConfFile = saveConfInPath(confCachePath, KRB_CONF_FILE_NAME, krbConf);
+    String keyTabFile = saveConfInPath(confCachePath, KEY_TAB_FILE_NAME, krbKeyTab);
+    System.clearProperty(HADOOP_USER_PROPERTY);
+    System.setProperty(KRB5_CONF_PROPERTY, krbConfFile);
+    sun.security.krb5.Config.refresh();
+    UserGroupInformation.setConfiguration(getConfiguration());
+    KerberosName.resetDefaultRealm();
+    ugi = UserGroupInformation.loginUserFromKeytabAndReturnUGI(krbPrincipal, keyTabFile);
   }
 
   public <T> T doAs(Callable<T> callable) {

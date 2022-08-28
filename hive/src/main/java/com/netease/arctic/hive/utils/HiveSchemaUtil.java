@@ -90,6 +90,7 @@ public class HiveSchemaUtil {
   public static Schema hiveTableSchemaToIceberg(HiveTable hiveTable, Collection<String> primaryKeyColumnNames) {
     Table table = hiveTable.getTable();
     List<FieldSchema> tableFields = Lists.newArrayList(table.getSd().getCols());
+    tableFields.addAll(table.getPartitionKeys());
     List<Types.NestedField> columns = Lists.newArrayList();
     int filedStartId = PARTITION_COLUMN_START_ID + table.getPartitionKeysSize();
     final AtomicInteger fieldIdGenerator = new AtomicInteger(filedStartId);

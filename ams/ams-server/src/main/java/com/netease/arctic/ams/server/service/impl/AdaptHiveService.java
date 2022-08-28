@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.server.model.UpgradeHiveMeta;
@@ -75,7 +93,7 @@ public class AdaptHiveService {
         hiveDataMigration(arcticTable, ac, tableIdentifier);
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.getName());
       } catch (Throwable t) {
-        LOG.error("Failed to upgrade hive table to arctic");
+        LOG.error("Failed to upgrade hive table to arctic ", t);
         runningInfoCache.get(tableIdentifier).setErrorMessage(AmsUtils.getStackTrace(t));
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.getName());
       }
@@ -83,24 +101,38 @@ public class AdaptHiveService {
   }
 
   public UpgradeRunningInfo getUpgradeRunningInfo(TableIdentifier tableIdentifier) {
-    return runningInfoCache.get(tableIdentifier);
+    UpgradeRunningInfo upgradeRunningInfo = runningInfoCache.get(tableIdentifier);
+    if (upgradeRunningInfo != null) {
+      return upgradeRunningInfo;
+    } else {
+      return new UpgradeRunningInfo(UpgradeStatus.NONE.toString());
+    }
   }
 
   public void hiveDataMigration(ArcticTable arcticTable, ArcticHiveCatalog ac, TableIdentifier tableIdentifier)
       throws Exception {
-    String hiveDataLocation = arcticTable.location() + "/hive";
-    arcticTable.io().mkdirs(hiveDataLocation);
     HiveMetaStore hiveMetaStore = HiveMetaStore.getHiveMetaStore(ac);
     HiveTable hiveTable = hiveMetaStore.getHiveTable(tableIdentifier);
+    String hiveDataLocation = hiveTable.getTableLocation() + "/hive";
+    arcticTable.io().mkdirs(hiveDataLocation);
+    String newPath = null;
     if (hiveTable.getHivePartitionKeys().isEmpty()) {
-      for (FileStatus fileStatus : arcticTable.io().list(arcticTable.location())) {
-        if (!fileStatus.isDirectory()) {
-          String newPath = null;
-          if (hiveTable.getHivePartitionKeys().isEmpty()) {
-            newPath = hiveDataLocation + "/" + System.currentTimeMillis() + UUID.randomUUID();
+      newPath = hiveDataLocation + "/" + System.currentTimeMillis() + "_" + UUID.randomUUID();
+      arcticTable.io().mkdirs(newPath);
+      for (FileStatus fileStatus : arcticTable.io().list(hiveTable.getTableLocation())) {
+        if (hiveTable.getHivePartitionKeys().isEmpty()) {
+          if (!fileStatus.isDirectory()) {
+            arcticTable.io().rename(fileStatus.getPath().toString(), newPath);
           }
-          arcticTable.io().rename(fileStatus.getPath().toString(), newPath);
         }
+      }
+
+      try {
+        HiveUtils.alterTableLocation(HiveMetaStore.getHiveMetaStore(ac), arcticTable.id(), newPath);
+        LOG.info("table{" + arcticTable.name() + "} alter hive table location " + hiveDataLocation + " success");
+      } catch (IOException e) {
+        LOG.warn("table{" + arcticTable.name() + "} alter hive table location failed", e);
+        throw new RuntimeException(e);
       }
     } else {
       List<String> partitions = HiveUtils.getHivePartitions(hiveMetaStore, tableIdentifier);
@@ -109,6 +141,7 @@ public class AdaptHiveService {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
         String newLoaction = hiveDataLocation + "/" + partition + "/" + DEFAULT_TXID;
+        arcticTable.io().mkdirs(newLoaction);
         for (FileStatus fileStatus : arcticTable.io().list(oldLocation)) {
           if (!fileStatus.isDirectory()) {
             arcticTable.io().rename(fileStatus.getPath().toString(), newLoaction);
@@ -117,13 +150,10 @@ public class AdaptHiveService {
         HiveUtils.alterPartition(hiveMetaStore, tableIdentifier, partition, newLoaction);
       }
     }
-    appendAllHiveFilesIntoBaseTable(ac, arcticTable, hiveMetaStore, hiveTable, true);
-    try {
-      HiveUtils.alterTableLocation(HiveMetaStore.getHiveMetaStore(ac), arcticTable.id(), hiveDataLocation);
-      LOG.info("table{" + arcticTable.name() + "} alter hive table location " + hiveDataLocation + " success");
-    } catch (IOException e) {
-      LOG.warn("table{" + arcticTable.name() + "} alter hive table location failed", e);
-      throw new RuntimeException(e);
+    if (arcticTable.isKeyedTable()) {
+      appendAllHiveFilesIntoBaseTable(ac, arcticTable, hiveMetaStore, hiveTable, true);
+    } else {
+      appendAllHiveFilesIntoBaseTable(ac, arcticTable, hiveMetaStore, hiveTable, false);
     }
   }
 

@@ -24,7 +24,6 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 public class SparkWriterUtils {
 
-
   public static class TaskCommit implements WriterCommitMessage {
     private final DataFile[] taskFiles;
 

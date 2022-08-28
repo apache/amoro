@@ -161,7 +161,7 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY = "primary-key";
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String WRITE_DISTRIBUTION_HASH_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
+  public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
   /**
    * table read related properties
@@ -175,7 +175,7 @@ public class TableProperties {
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String READ_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String READ_DISTRIBUTION_HASH_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
+  public static final String READ_DISTRIBUTION_HASH_MODE_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
 
   public static final String SPLIT_SIZE = org.apache.iceberg.TableProperties.SPLIT_SIZE;
   public static final long SPLIT_SIZE_DEFAULT = 134217728; // 128 MB
@@ -203,5 +203,4 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-
 }

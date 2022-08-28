@@ -43,9 +43,11 @@ import com.netease.arctic.ams.server.model.TableBasicInfo;
 import com.netease.arctic.ams.server.model.TableOperation;
 import com.netease.arctic.ams.server.model.TableStatistics;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
+import com.netease.arctic.ams.server.model.UpgradeHiveMeta;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
@@ -55,11 +57,15 @@ import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.table.HiveMetaStore;
+import com.netease.arctic.hive.table.HiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import io.javalin.testtools.JavalinTest;
 import org.apache.commons.io.FileUtils;
+import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -69,9 +75,11 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +101,7 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
+@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -105,7 +114,10 @@ import static org.powermock.api.mockito.PowerMockito.when;
     FileInfoCacheService.class,
     CatalogMetadataService.class,
     DDLTracerService.class,
-    OptimizeManagerHandler.class
+    OptimizeManagerHandler.class,
+    AdaptHiveService.class,
+    OptimizeManagerHandler.class,
+    HiveMetaStore.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class TableControllerTest {
@@ -198,7 +210,8 @@ public class TableControllerTest {
   }
 
   @Test
-  public void testGetTableList() {
+  public void testGetTableList() throws Exception {
+    mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
       app.get("/{catalog}/{db}/", TableController::getTableList);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/", x -> {});
@@ -214,6 +227,45 @@ public class TableControllerTest {
     JavalinTest.test((app, client) -> {
       app.get("/{catalog}/{db}/{table}/", TableController::getTableDetail);
       final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+  }
+
+  @Test
+  public void getHiveTableDetail() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      app.get("/{catalog}/{db}/{table}/", TableController::getHiveTableDetail);
+      final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+  }
+
+  @Test
+  public void testUpgradeHive() {
+    JavalinTest.test((app, client) -> {
+      JSONObject requestJson = new JSONObject();
+      UpgradeHiveMeta upgradeHiveMeta = mockUpgradeHiveMeta();
+      requestJson.put("sql", "create database arctic_test;");
+      app.post("/{catalog}/", ctx -> TerminalController.executeSql(ctx));
+      final okhttp3.Response resp1 = client.post("/" + catalogName + "/", requestJson, x -> {
+      });
+      OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+  }
+
+  @Test
+  public void testGetUpgradeHiveTableProperties() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      app.get("/", TableController::getUpgradeHiveTableProperties);
+      final okhttp3.Response resp = client.get("/", x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
@@ -308,6 +360,7 @@ public class TableControllerTest {
     mockStatic(ServiceContainer.class);
     mockStatic(CatalogUtil.class);
     mockStatic(MetaService.class);
+    mockStatic(HiveMetaStore.class);
 
     ArcticCatalog arcticCatalog = mock(ArcticCatalog.class);
     when(CatalogUtil.getArcticCatalog(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
@@ -346,12 +399,21 @@ public class TableControllerTest {
     CatalogMetadataService catalogMetadataService = mock(CatalogMetadataService.class);
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
     when(catalogMetadataService.getCatalogs()).thenReturn(mockCatalogMetas());
-
     DDLTracerService ddlTracerService = mock(DDLTracerService.class);
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     when(ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier()))
         .thenReturn(mockDDLTracer());
-
+    when(catalogMetadataService.getCatalog(catalog)).thenReturn(mockCatalogMeta(catalog));
+    HiveMetaStore hiveMetaStore = mock(HiveMetaStore.class);
+    ArcticHiveCatalog arcticHiveCatalog = mock(ArcticHiveCatalog.class);
+    when(CatalogUtil.getArcticCatalog(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
+        ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT), catalog)).
+        thenReturn(arcticHiveCatalog);
+    when(HiveMetaStore.getHiveMetaStore(arcticHiveCatalog)).thenReturn(hiveMetaStore);
+    HiveTable hiveTable = mock(HiveTable.class);
+    when(hiveMetaStore.getHiveTable(TableIdentifier.of(catalog, db, table))).thenReturn(hiveTable);
+    when(hiveTable.getTableSchema()).thenReturn((mockHiveTableSchema()));
+    when(hiveTable.getHivePartitionKeys()).thenReturn((mockHivePartitionKeys()));
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {
@@ -491,5 +553,36 @@ public class TableControllerTest {
         storageConfig, authConfig, catalogProperties);
     catalogMetas.add(catalogMeta);
     return catalogMetas;
+  }
+
+  private CatalogMeta mockCatalogMeta(String catalog) {
+    for (CatalogMeta catalogMeta : mockCatalogMetas()) {
+      if (catalogMeta.getCatalogName().equals(catalog)) {
+        return catalogMeta;
+      }
+    }
+    return null;
+  }
+
+  private List<FieldSchema> mockHiveTableSchema() {
+    List<FieldSchema> schema = new ArrayList<>();
+    schema.add(new FieldSchema("id", "string", null));
+    schema.add(new FieldSchema("name", "string", null));
+    schema.add(new FieldSchema("age", "int", "sample"));
+    return schema;
+  }
+
+  private List<FieldSchema> mockHivePartitionKeys() {
+    List<FieldSchema> schema = new ArrayList<>();
+    schema.add(new FieldSchema("dt", "string", null));
+    return schema;
+  }
+
+  private UpgradeHiveMeta mockUpgradeHiveMeta() {
+    List<UpgradeHiveMeta.PrimaryKeyField> pkList = new ArrayList<>();
+    pkList.add(new UpgradeHiveMeta.PrimaryKeyField("id"));
+    Map<String, String> properties = new HashMap<>();
+    properties.put("test", "test");
+    return new UpgradeHiveMeta(properties, pkList);
   }
 }
