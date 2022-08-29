@@ -31,6 +31,7 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.hadoop.conf.Configuration;
@@ -134,6 +135,7 @@ public class AutoSyncHiveTest extends HiveTableTestBase {
     Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("p3"),
         FileUtil.getFileDir(newFiles.get(0).path().toString()), newFiles,
         (int) (System.currentTimeMillis() / 1000));
+    newPartition.getParameters().remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
     hms.getClient().add_partition(newPartition);
     testTable.refresh();
     Assert.assertEquals(
