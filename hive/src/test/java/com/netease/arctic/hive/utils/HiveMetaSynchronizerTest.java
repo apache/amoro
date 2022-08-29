@@ -137,7 +137,7 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     fs.rename(new Path(partition2FilePath), new Path(partition2FilePath + ".bak"));
     Partition hivePartition2 = hms.getClient().getPartition(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(),
         Lists.newArrayList("p2"));
-    hivePartition2.putToParameters("transient_lastDdlTime", String.valueOf(System.currentTimeMillis() / 1000));
+    hivePartition2.putToParameters("transient_lastDdlTime", String.valueOf(1000));
     hms.getClient().alter_partition(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(), hivePartition2);
     HiveMetaSynchronizer.syncHiveDataToArctic(testHiveTable, new TestHMSClient());
     Assert.assertEquals(4, Iterables.size(testHiveTable.snapshots()));
