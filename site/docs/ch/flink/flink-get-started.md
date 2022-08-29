@@ -15,10 +15,11 @@ Flink Connector 包括：
 
 版本说明：
 
-| Connector Version | Flink Version     | Dependent Iceberg Version |  下载 |
-| ----------------- | ----------------- |  ----------------- |  ----------------- |
-| 0.3.0             | 1.12.x            | 0.12.0            | [flink-1.12-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.12-0.3.0.jar)|
-| 0.3.0             | 1.14.x            | 0.12.0            | [flink-1.14-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.14-0.3.0.jar)|
+| Connector Version | Flink Version | Dependent Iceberg Version | 下载                                                                                                                         |
+| ----------------- |---------------|  ----------------- |----------------------------------------------------------------------------------------------------------------------------|
+| 0.3.0             | 1.12.x        | 0.12.0            | [flink-1.12-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.12-0.3.0.jar) |
+| 0.3.0             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.14-0.3.0.jar) |
+| 0.3.0             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-flink-runtime-1.15-0.3.0.jar) |
 
 对 Arctic 工程自行编译也可以获取该 runtime jar
 
@@ -27,7 +28,7 @@ Flink Connector 包括：
 Flink Runtime Jar 存放在 `flink/v1.14/flink-runtime/target` 目录。
 
 ## 环境准备
-下载flink和相关依赖，按需下载 Flink 1.12/1.14。以 1.12 为例：
+下载flink和相关依赖，按需下载 Flink 1.12/1.14/1.15。以 1.12 为例：
 
 ```shell
 FLINK_VERSION=1.12.7

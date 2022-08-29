@@ -18,16 +18,14 @@
 
 package com.netease.arctic.spark.writer;
 
-
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -39,9 +37,9 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
 
+import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -51,7 +49,7 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-public class UnkeyedSparkBatchWrite {
+public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite {
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
@@ -61,25 +59,27 @@ public class UnkeyedSparkBatchWrite {
     this.dsSchema = dsSchema;
   }
 
-  BatchWrite asDynamicOverwrite() {
+  @Override
+  public BatchWrite asBatchAppend() {
+    return new AppendWrite();
+  }
+
+  @Override
+  public BatchWrite asDynamicOverwrite() {
     return new DynamicOverwrite();
   }
 
-  BatchWrite asOverwriteByFilter(Expression overwriteExpr) {
+  @Override
+  public BatchWrite asOverwriteByFilter(Expression overwriteExpr) {
     return new OverwriteByFilter(overwriteExpr);
   }
 
+  @Override
+  public BatchWrite asUpsertWrite() {
+    return new UpsertWrite();
+  }
+
   private abstract class BaseBatchWrite implements BatchWrite {
-    private boolean isOverwrite;
-
-    BaseBatchWrite(boolean isOverwrite) {
-      this.isOverwrite = isOverwrite;
-    }
-
-    @Override
-    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, this.isOverwrite);
-    }
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
@@ -98,10 +98,28 @@ public class UnkeyedSparkBatchWrite {
     }
   }
 
+  private class AppendWrite extends BaseBatchWrite {
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new WriterFactory(table, dsSchema, false);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles appendFiles = table.newAppend();
+      for (DataFile file : files(messages)) {
+        appendFiles.appendFile(file);
+      }
+      appendFiles.commit();
+    }
+  }
+
   private class DynamicOverwrite extends BaseBatchWrite {
 
-    DynamicOverwrite() {
-      super(true);
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new WriterFactory(table, dsSchema, true);
     }
 
     @Override
@@ -118,8 +136,12 @@ public class UnkeyedSparkBatchWrite {
     private final Expression overwriteExpr;
 
     private OverwriteByFilter(Expression overwriteExpr) {
-      super(true);
       this.overwriteExpr = overwriteExpr;
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new WriterFactory(table, dsSchema, true);
     }
 
     @Override
@@ -130,6 +152,19 @@ public class UnkeyedSparkBatchWrite {
         overwriteFiles.addFile(file);
       }
       overwriteFiles.commit();
+    }
+  }
+
+  private class UpsertWrite extends BaseBatchWrite {
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new DeltaUpsertWriteFactory(table, dsSchema);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      // TODO: issue #173 - implement upsert commit
+      throw new UnsupportedOperationException("Upsert write is not supported");
     }
   }
 
@@ -152,17 +187,20 @@ public class UnkeyedSparkBatchWrite {
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
           .newBaseWriter(this.isOverwrite);
-      return new InternalRowDataWriter(writer);
+      return new SimpleInternalRowDataWriter(writer);
     }
   }
 
-  private static Iterable<DataFile> files(WriterCommitMessage[] messages) {
-    if (messages.length > 0) {
-      return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
-          ImmutableList.copyOf(((SparkWriterUtils.TaskCommit) message).files()) :
-          ImmutableList.of()));
-    }
-    return ImmutableList.of();
-  }
+  private static class DeltaUpsertWriteFactory extends WriterFactory {
 
+    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema) {
+      super(table, dsSchema, false);
+    }
+
+    @Override
+    public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      // TODO: issues-173 - support upsert data writer
+      return null;
+    }
+  }
 }
