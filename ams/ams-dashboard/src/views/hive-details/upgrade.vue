@@ -56,6 +56,7 @@ const pkName = reactive<IMap<string>[]>([])
 
 const emit = defineEmits<{
  (e: 'goBack'): void
+ (e: 'refresh'): void
 }>()
 
 const router = useRouter()
@@ -125,13 +126,8 @@ async function upgradeTable() {
       pkList: pkName,
       properties: propertiesObj
     })
-    // success
-    router.replace({
-      path: '/tables',
-      query: {
-        ...route.query
-      }
-    })
+    goBack()
+    emit('refresh')
   } catch (error) {
     // failed
     goBack()

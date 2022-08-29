@@ -5,7 +5,7 @@
         <span class="table-name g-text-nowrap">{{tableName}}</span>
         <div class="right-btn">
           <a-button type="primary" :disabled="status === upgradeStatus.upgrading" @click="upgradeTable">{{displayStatus}}</a-button>
-          <p v-if="status === upgradeStatus.failed" @click="showErrorMsg = true" class="fail-msg">Last Upgrading Failed</p>
+          <p v-if="status === upgradeStatus.failed" @click="showErrorMsg = true" class="fail-msg">{{$t('lastUpgradingFailed')}}</p>
         </div>
       </div>
       <div class="content">
@@ -18,7 +18,7 @@
     </div>
     <u-loading v-if="loading" />
     <!-- upgrade table secondary page -->
-    <router-view v-else @goBack="goBack"></router-view>
+    <router-view v-if="isSecondaryNav" @goBack="goBack" @refresh="refresh"></router-view>
     <error-msg v-if="showErrorMsg" :msg="errorMessage" @cancle="showErrorMsg = false" />
   </div>
 </template>
@@ -30,6 +30,7 @@ import errorMsg from './components/ErrorMsg.vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DetailColumnItem, upgradeStatusMap } from '@/types/common.type'
 import { getHiveTableDetail, getUpgradeStatus } from '@/services/table.service'
+import { useI18n } from 'vue-i18n'
 
 export default defineComponent({
   name: 'Tables',
@@ -42,6 +43,11 @@ export default defineComponent({
     const statusInterval = ref<number>()
     const router = useRouter()
     const route = useRoute()
+    const { t } = useI18n()
+
+    const isSecondaryNav = computed(() => {
+      return !!(route.path.indexOf('upgrade') > -1)
+    })
 
     const state = reactive({
       loading: false,
@@ -50,14 +56,12 @@ export default defineComponent({
       status: '', // failed、upgrading、success、none
       displayStatus: '',
       errorMessage: '',
-      isSecondaryNav: false,
       tableName: 'tableName',
       partitionColumnList: [] as DetailColumnItem[],
       schema: [] as DetailColumnItem[]
     })
 
     const goBack = () => {
-      state.isSecondaryNav = false
       router.back()
     }
 
@@ -80,14 +84,14 @@ export default defineComponent({
         })
         const { status, errorMessage } = result
         state.status = status
-        state.displayStatus = status === upgradeStatusMap.upgrading ? 'upgrading' : 'upgrade'
+        state.displayStatus = status === upgradeStatusMap.upgrading ? t('upgrading') : t('upgrade')
         state.errorMessage = errorMessage || ''
         if (status === upgradeStatusMap.upgrading) {
           statusInterval.value = setTimeout(() => {
             getTableUpgradeStatus(true)
           }, 1500)
         } else {
-          if (status === upgradeStatusMap.failed) {
+          if (status === upgradeStatusMap.none) {
             getHiveTableDetails()
           } else if (status === upgradeStatusMap.success) {
             router.replace({
@@ -96,6 +100,8 @@ export default defineComponent({
                 ...route.query
               }
             })
+          } else if (status === upgradeStatusMap.failed) {
+            getHiveTableDetails()
           }
         }
       } finally {
@@ -127,7 +133,6 @@ export default defineComponent({
 
     const init = async() => {
       await getTableUpgradeStatus()
-      getHiveTableDetails()
     }
 
     const upgradeTable = () => {
@@ -137,6 +142,9 @@ export default defineComponent({
           ...route.query
         }
       })
+    }
+    const refresh = () => {
+      init()
     }
 
     watch(
@@ -149,13 +157,6 @@ export default defineComponent({
       }
     )
 
-    watch(
-      () => route.path,
-      () => {
-        state.isSecondaryNav = !!(route.path.indexOf('upgrade') > -1)
-      }, { immediate: true }
-    )
-
     onBeforeUnmount(() => {
       clearTimeout(statusInterval.value)
     })
@@ -166,9 +167,11 @@ export default defineComponent({
 
     return {
       ...toRefs(state),
+      isSecondaryNav,
       upgradeStatus,
       upgradeTable,
-      goBack
+      goBack,
+      refresh
     }
   }
 })

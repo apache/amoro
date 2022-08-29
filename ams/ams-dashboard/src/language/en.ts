@@ -125,5 +125,6 @@ export default {
   otherProperties: 'Other Properties',
   errorMessage: 'Error Message',
   copySuccess: 'Copy Success',
-  duplicateKey: 'duplicate key'
+  duplicateKey: 'duplicate key',
+  lastUpgradingFailed: 'Last Upgrading Failed'
 }
