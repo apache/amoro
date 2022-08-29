@@ -47,7 +47,10 @@ public class TemporalJoinSplits implements Serializable {
   private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
-  private boolean hasNotifiedReader = false;
+  /**
+   * transient because it is necessary to notify reader again after failover.
+   */
+  private transient boolean hasNotifiedReader = false;
 
   public TemporalJoinSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
     Preconditions.checkNotNull(splits, "plan splits should not be null");

@@ -47,6 +47,9 @@ public class TemporalJoinSplits implements Serializable {
   private final long startTimeMs = System.currentTimeMillis();
   private Map<String, Boolean> splits;
   private long unfinishedCount;
+  /**
+   * transient because it is necessary to notify reader again after failover.
+   */
   private transient boolean hasNotifiedReader = false;
 
   public TemporalJoinSplits(Collection<ArcticSplit> splits, MetricGroup metricGroup) {
@@ -55,7 +58,6 @@ public class TemporalJoinSplits implements Serializable {
 
     unfinishedCount = this.splits.size();
     LOGGER.info("init splits at {}, size:{}", LocalDateTime.now(), unfinishedCount);
-    LOGGER.info("hasNotifiedReader {}", hasNotifiedReader);
     this.metricGroup = metricGroup;
     if (metricGroup != null) {
       metricGroup.gauge(TEMPORAL_TABLE_INITIALIZATION_START_TIMESTAMP, () -> startTimeMs);
