@@ -214,17 +214,14 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    * Whether to emit the WriteResult.
    *
    * @param writeResult the WriteResult to emit
-   * @return true if the WriteResult should be emitted,
+   * @return true if the WriteResult should be emitted, or the WriteResult isn't empty,
    *         false only if the WriteResult is empty and the submitEmptySnapshot is false.
    */
   private boolean shouldEmit(WriteResult writeResult) {
-    if (submitEmptySnapshot) {
-      return true;
-    }
-    return writeResult != null &&
+    return submitEmptySnapshot || (writeResult != null &&
         (!ArrayUtils.isEmpty(writeResult.dataFiles()) ||
             !ArrayUtils.isEmpty(writeResult.deleteFiles()) ||
-            !ArrayUtils.isEmpty(writeResult.referencedDataFiles()));
+            !ArrayUtils.isEmpty(writeResult.referencedDataFiles())));
   }
 
   @VisibleForTesting
