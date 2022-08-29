@@ -26,8 +26,6 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -39,9 +37,9 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Map;
 
+import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_MIN_RETRY_WAIT_MS;
@@ -51,7 +49,7 @@ import static org.apache.iceberg.TableProperties.COMMIT_NUM_RETRIES_DEFAULT;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT;
 
-public class KeyedSparkBatchWrite {
+public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite {
   private final KeyedTable table;
   private final StructType dsSchema;
 
@@ -63,16 +61,24 @@ public class KeyedSparkBatchWrite {
     this.transactionId = table.beginTransaction(null);
   }
 
-  BatchWrite asBatchAppend() {
-    return new BatchAppend();
+  @Override
+  public BatchWrite asBatchAppend() {
+    return new AppendWrite();
   }
 
-  BatchWrite asDynamicOverwrite() {
+  @Override
+  public BatchWrite asDynamicOverwrite() {
     return new DynamicOverwrite();
   }
 
-  BatchWrite asOverwriteByFilter(Expression overwriteExpr) {
+  @Override
+  public BatchWrite asOverwriteByFilter(Expression overwriteExpr) {
     return new OverwriteByFilter(overwriteExpr);
+  }
+
+  @Override
+  public BatchWrite asUpsertWrite() {
+    return new UpsertWrite();
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -80,11 +86,6 @@ public class KeyedSparkBatchWrite {
 
     BaseBatchWrite(boolean isOverwrite) {
       this.isOverwrite = isOverwrite;
-    }
-
-    @Override
-    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, transactionId, this.isOverwrite);
     }
 
     @Override
@@ -104,20 +105,23 @@ public class KeyedSparkBatchWrite {
     }
   }
 
-  private class BatchAppend extends BaseBatchWrite {
+  private class AppendWrite extends BaseBatchWrite {
 
-    BatchAppend() {
+    AppendWrite() {
       super(false);
     }
 
     @Override
-    public void commit(WriterCommitMessage[] messages) {
-      AppendFiles append = table.baseTable().newAppend();
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new ChangeWriteFactory(table, dsSchema, transactionId);
+    }
 
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
       for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
-
       append.commit();
     }
   }
@@ -126,6 +130,11 @@ public class KeyedSparkBatchWrite {
 
     DynamicOverwrite() {
       super(true);
+    }
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new BaseWriterFactory(table, dsSchema, transactionId);
     }
 
     @Override
@@ -149,6 +158,11 @@ public class KeyedSparkBatchWrite {
     }
 
     @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new BaseWriterFactory(table, dsSchema, transactionId);
+    }
+
+    @Override
     public void commit(WriterCommitMessage[] messages) {
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
@@ -162,18 +176,42 @@ public class KeyedSparkBatchWrite {
     }
   }
 
-  private static class WriterFactory implements DataWriterFactory, Serializable {
-    private final KeyedTable table;
-    private final StructType dsSchema;
-    private final long transactionId;
+  private class UpsertWrite extends BaseBatchWrite {
+    UpsertWrite() {
+      super(true);
+    }
 
-    private boolean isOverwrite;
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new ChangeWriteFactory(table, dsSchema, transactionId);
+    }
 
-    WriterFactory(KeyedTable table, StructType dsSchema, long transactionId, boolean isOverwrite) {
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
+      for (DataFile file : files(messages)) {
+        append.appendFile(file);
+      }
+      append.commit();
+    }
+  }
+
+  private abstract static class AbstractWriterFactory implements DataWriterFactory, Serializable {
+    protected final KeyedTable table;
+    protected final StructType dsSchema;
+    protected final long transactionId;
+
+    AbstractWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
-      this.isOverwrite = isOverwrite;
+    }
+  }
+
+  private static class BaseWriterFactory extends AbstractWriterFactory {
+
+    BaseWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, transactionId);
     }
 
     @Override
@@ -183,17 +221,26 @@ public class KeyedSparkBatchWrite {
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .newBaseWriter(this.isOverwrite);
-      return new InternalRowDataWriter(writer);
+          .newBaseWriter(true);
+      return new SimpleInternalRowDataWriter(writer);
     }
   }
 
-  private static Iterable<DataFile> files(WriterCommitMessage[] messages) {
-    if (messages.length > 0) {
-      return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
-          ImmutableList.copyOf(((SparkWriterUtils.TaskCommit) message).files()) :
-          ImmutableList.of()));
+  private static class ChangeWriteFactory extends AbstractWriterFactory {
+
+    ChangeWriteFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, transactionId);
     }
-    return ImmutableList.of();
+
+    @Override
+    public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(dsSchema)
+          .newChangeWriter();
+      return new SimpleInternalRowDataWriter(writer);
+    }
   }
 }
