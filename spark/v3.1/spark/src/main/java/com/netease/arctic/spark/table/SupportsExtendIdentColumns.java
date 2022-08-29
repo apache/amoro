@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,21 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.sql.execution
+package com.netease.arctic.spark.table;
 
-import com.netease.arctic.spark.sql.catalyst.plans.MigrateToArcticLogicalPlan
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.{SparkSession, Strategy}
+import org.apache.spark.sql.connector.read.ScanBuilder;
 
-case class ExtendedArcticCommandStrategy(spark: SparkSession) extends Strategy {
+public interface SupportsExtendIdentColumns extends ScanBuilder {
 
-  override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case MigrateToArcticLogicalPlan(command) =>
-      println("create migrate to arctic command logical")
-      MigrateToArcticExec(command)::Nil
-
-    case _ => Nil
-  }
-
+  SupportsExtendIdentColumns withIdentifierColumns();
 }

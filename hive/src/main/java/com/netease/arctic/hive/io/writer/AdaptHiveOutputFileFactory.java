@@ -77,6 +77,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private final String keyedTmpDir;
 
+  private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
+
   private final AtomicLong fileCount = new AtomicLong(0);
 
   public AdaptHiveOutputFileFactory(
@@ -107,8 +109,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
               transactionId, partitionId, taskId, fileCount.incrementAndGet()));
     } else {
       return format.addExtension(
-          String.format("%s-%05d-%d-%010d",
-              key.getFileType().shortName(), partitionId, taskId, fileCount.incrementAndGet()));
+          String.format("%s-%05d-%d-%s-%010d",
+              key.getFileType().shortName(), partitionId, taskId, unKeyedTableNameUUID, fileCount.incrementAndGet()));
     }
   }
 
