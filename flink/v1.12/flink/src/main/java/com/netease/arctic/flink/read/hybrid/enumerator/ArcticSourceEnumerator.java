@@ -147,8 +147,10 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     super.addReader(subtaskId);
     // If temporalJoinSplits.getSplits() is null, it means reader is added after notified.
     // It may happen when task failover.
-    if (dimTable && temporalJoinSplits != null && temporalJoinSplits.getSplits() == null) {
-      context.sendEventToSourceReader(subtaskId, InitializationFinishedEvent.INSTANCE);
+    if (context.registeredReaders().size() == context.currentParallelism() &&
+        dimTable && temporalJoinSplits != null && temporalJoinSplits.getSplits() == null) {
+      context.registeredReaders().keySet().forEach(
+          index -> context.sendEventToSourceReader(index, InitializationFinishedEvent.INSTANCE));
     }
   }
 
