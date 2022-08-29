@@ -24,6 +24,7 @@ import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import org.apache.ibatis.io.ResolverUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.ibatis.session.TransactionIsolationLevel;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -42,7 +43,12 @@ public abstract class IJDBCService {
   }
 
   public SqlSession getSqlSession(boolean autoCommit) {
-    return getSqlSessionFactory().openSession(autoCommit);
+    if (autoCommit) {
+      return this.getSqlSessionFactory().openSession(true);
+    } else {
+      // when openSession with TransactionIsolationLevel, autoCommit is always set to false
+      return this.getSqlSessionFactory().openSession(TransactionIsolationLevel.READ_COMMITTED);
+    }
   }
 
   public <T> T getMapper(SqlSession sqlSession, Class<T> type) {
