@@ -26,10 +26,10 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.io.IOException;
 
-public class InternalRowDataWriter implements DataWriter<InternalRow> {
+public class SimpleInternalRowDataWriter implements DataWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
 
-  public InternalRowDataWriter(TaskWriter<InternalRow> writer) {
+  public SimpleInternalRowDataWriter(TaskWriter<InternalRow> writer) {
     this.writer = writer;
   }
 
@@ -41,7 +41,7 @@ public class InternalRowDataWriter implements DataWriter<InternalRow> {
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
-    return new SparkWriterUtils.TaskCommit(result.dataFiles());
+    return new WriteTaskCommit(result.dataFiles());
   }
 
   @Override
