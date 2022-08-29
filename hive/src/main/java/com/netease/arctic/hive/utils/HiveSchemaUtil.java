@@ -19,8 +19,9 @@
 package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.table.HiveTable;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.SerDeInfo;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.iceberg.PartitionSpec;
@@ -106,5 +107,13 @@ public class HiveSchemaUtil {
       }
     });
     return new Schema(columns);
+  }
+
+  public static StorageDescriptor storageDescriptor(Schema schema, PartitionSpec partitionSpec) {
+    final StorageDescriptor storageDescriptor = new StorageDescriptor();
+    storageDescriptor.setCols(HiveSchemaUtil.hiveTableFields(schema, partitionSpec));
+    SerDeInfo serDeInfo = new SerDeInfo();
+    storageDescriptor.setSerdeInfo(serDeInfo);
+    return storageDescriptor;
   }
 }

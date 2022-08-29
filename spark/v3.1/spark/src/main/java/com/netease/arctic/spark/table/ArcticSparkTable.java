@@ -20,8 +20,7 @@ package com.netease.arctic.spark.table;
 
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
-import com.netease.arctic.spark.writer.KeyedSparkWriteBuilder;
-import com.netease.arctic.spark.writer.UnkeyedSparkWriteBuilder;
+import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Schema;
@@ -45,7 +44,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.Table, SupportsRead, SupportsWrite {
+public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite {
   private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,
@@ -147,17 +146,6 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
   }
 
   @Override
-  public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
-    SparkScanBuilder scanBuilder = new SparkScanBuilder(sparkSession(), arcticTable, options);
-
-    if (requestedSchema != null) {
-      scanBuilder.pruneColumns(requestedSchema);
-    }
-
-    return scanBuilder;
-  }
-
-  @Override
   public String toString() {
     return arcticTable.toString();
   }
@@ -182,13 +170,26 @@ public class ArcticSparkTable implements org.apache.spark.sql.connector.catalog.
   }
 
   @Override
-  public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
-    if (arcticTable.isKeyedTable()) {
-      return new KeyedSparkWriteBuilder(arcticTable.asKeyedTable(), info);
-    } else if (arcticTable.isUnkeyedTable()) {
-      return new UnkeyedSparkWriteBuilder(arcticTable.asUnkeyedTable(), info);
-    } else {
-      throw new IllegalStateException("un-support type of arctic table: " + arcticTable.getClass().getName());
+  public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
+    SparkScanBuilder scanBuilder = new SparkScanBuilder(sparkSession(), arcticTable, options);
+
+    if (requestedSchema != null) {
+      scanBuilder.pruneColumns(requestedSchema);
     }
+
+    return scanBuilder;
+  }
+
+  @Override
+  public WriteBuilder newWriteBuilder(LogicalWriteInfo info) {
+    return new ArcticSparkWriteBuilder(arcticTable, info);
+  }
+
+
+  //@Override
+  public boolean appendAsUpsert() {
+    return arcticTable.isKeyedTable() &&
+        Boolean.parseBoolean(arcticTable.properties().getOrDefault(
+                TableProperties.UPSERT_ENABLED, "false"));
   }
 }

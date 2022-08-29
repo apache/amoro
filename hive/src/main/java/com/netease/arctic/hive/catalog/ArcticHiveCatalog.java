@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
@@ -239,6 +240,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
                 hiveLocation,
                 FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
                     TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            setProToHive(hiveTable);
             client.createTable(hiveTable);
           }
           return null;
@@ -276,6 +278,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
                 hiveLocation,
                 FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
                     TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            setProToHive(hiveTable);
             client.createTable(hiveTable);
           }
           return null;
@@ -353,5 +356,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         LOG.warn("Failed to drop hive table while rolling back create table operation", e);
       }
     }
+
+
+    private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable) {
+      Map<String, String> parameters = new HashMap<>();
+      parameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
+      parameters.put(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
+      hiveTable.setParameters(parameters);
+    }
   }
+
 }

@@ -18,12 +18,47 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HiveTableUtil {
 
+  private static final Logger LOG = LoggerFactory.getLogger(HiveTableUtil.class);
+
   public static boolean isHive(ArcticTable arcticTable) {
     return arcticTable instanceof SupportHive;
+  }
+
+  public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
+      HMSClient hiveClient, ArcticTable arcticTable) {
+    try {
+      return hiveClient.run(client -> client.getTable(
+          arcticTable.id().getDatabase(),
+          arcticTable.id().getTableName()));
+    } catch (NoSuchObjectException nte) {
+      LOG.trace("Table not found {}", arcticTable.id().toString(), nte);
+      return null;
+    } catch (TException e) {
+      throw new RuntimeException(String.format("Metastore operation failed for %s", arcticTable.id().toString()), e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted during commit", e);
+    }
+  }
+
+  public static void persistTable(HMSClient hiveClient, org.apache.hadoop.hive.metastore.api.Table tbl) {
+    try {
+      hiveClient.run(client -> {
+        client.alter_table(tbl.getDbName(), tbl.getTableName(), tbl);
+        return null;
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

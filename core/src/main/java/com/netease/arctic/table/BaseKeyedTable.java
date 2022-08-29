@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class BaseKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
-  private final AmsClient client;
+  protected final AmsClient client;
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;

@@ -1,3 +1,4 @@
+
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -6,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,21 +17,30 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.sql.execution
+package com.netease.arctic.spark.table;
 
-import com.netease.arctic.spark.sql.catalyst.plans.MigrateToArcticLogicalPlan
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.{SparkSession, Strategy}
+import org.apache.spark.sql.connector.catalog.Table;
 
-case class ExtendedArcticCommandStrategy(spark: SparkSession) extends Strategy {
+/**
+ * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
+ */
+public interface SupportsUpsert extends Table {
 
-  override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case MigrateToArcticLogicalPlan(command) =>
-      println("create migrate to arctic command logical")
-      MigrateToArcticExec(command)::Nil
+  String UPSERT_OP_COLUMN_NAME = "_arctic_upsert_op";
+  String UPSERT_OP_VALUE_INSERT = "I";
+  String UPSERT_OP_VALUE_DELETE = "D";
 
-    case _ => Nil
-  }
 
+
+  SupportsExtendIdentColumns newScanBuilder();
+
+  boolean requireAdditionIdentifierColumns();
+
+
+  /**
+   * will table handle insert as upsert
+   *
+   * @return true if table require insert as upsert
+   */
+  boolean appendAsUpsert();
 }
