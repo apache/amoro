@@ -63,7 +63,7 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
     }
 
     // check small data file count
-    if (checkSmallFileCount(partitionToPath, partitionNeedOptimizeFiles.get(partitionToPath))) {
+    if (checkSmallFileCount(partitionToPath, partitionNeedOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()))) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       if (CollectionUtils.isEmpty(partitionPosDeleteFiles.get(partitionToPath))) {
         supportHivePartitions.add(partitionToPath);

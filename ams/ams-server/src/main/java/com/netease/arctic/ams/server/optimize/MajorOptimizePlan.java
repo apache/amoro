@@ -103,7 +103,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     }
 
     // check small data file count
-    if (checkSmallFileCount(partitionToPath, partitionNeedOptimizeFiles.get(partitionToPath))) {
+    if (checkSmallFileCount(partitionToPath, partitionNeedOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()))) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       return true;
     }

@@ -697,7 +697,7 @@ public class TableOptimizeItem extends IJDBCService {
     // check current base table snapshot whether changed when minor optimize
     if (isMinorOptimizing()) {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
-          UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable())) {
+          UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
         clearOptimizeTasks();
         tableOptimizeRuntime.setRunning(false);

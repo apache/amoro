@@ -23,11 +23,13 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.io.writer.GenericChangeTaskWriter;
-import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.ChangeLocationKind;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,8 +48,8 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testMinorOptimize() throws IOException {
     insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
-    insertChangeDeleteFiles(3);
-    insertChangeDataFiles(4);
+    insertChangeDeleteFiles(testKeyedTable,3);
+    insertChangeDataFiles(testKeyedTable,4);
 
     List<DataFileInfo> changeTableFilesInfo = new ArrayList<>(changeInsertFilesInfo);
     changeTableFilesInfo.addAll(changeDeleteFilesInfo);
@@ -63,53 +65,55 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(0, tasks.get(0).getIsDeletePosDelete());
   }
 
-  protected void insertChangeDeleteFiles(long transactionId) throws IOException {
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+  protected void insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
+    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withChangeAction(ChangeAction.DELETE)
-        .withTransactionId(transactionId).buildChangeWriter();
+        .withTransactionId(transactionId)
+        .buildWriter(ChangeLocationKind.INSTANT);
 
     List<DataFile> changeDeleteFiles = new ArrayList<>();
     // delete 1000 records in 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length, testKeyedTable.schema())) {
+      for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
       changeDeleteFiles.addAll(Arrays.asList(result.dataFiles()));
     }
-    AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
+    AppendFiles baseAppend = arcticTable.asKeyedTable().changeTable().newAppend();
     changeDeleteFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
     long commitTime = System.currentTimeMillis();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, testKeyedTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, arcticTable))
         .collect(Collectors.toList());
   }
 
-  protected List<DataFile> insertChangeDataFiles(long transactionId) throws IOException {
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+  protected List<DataFile> insertChangeDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
+    TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withChangeAction(ChangeAction.INSERT)
-        .withTransactionId(transactionId).buildChangeWriter();
+        .withTransactionId(transactionId)
+        .buildWriter(ChangeLocationKind.INSTANT);
 
     List<DataFile> changeInsertFiles = new ArrayList<>();
     // write 1000 records to 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length, testKeyedTable.schema())) {
+      for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
       changeInsertFiles.addAll(Arrays.asList(result.dataFiles()));
     }
-    AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
+    AppendFiles baseAppend = arcticTable.asKeyedTable().changeTable().newAppend();
     changeInsertFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
     long commitTime = System.currentTimeMillis();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, arcticTable))
         .collect(Collectors.toList());
 
     return changeInsertFiles;
