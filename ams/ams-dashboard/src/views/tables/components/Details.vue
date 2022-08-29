@@ -83,7 +83,7 @@ const params = computed(() => {
 watch(
   () => route.query,
   (val) => {
-    val?.catalog && route.path === '/table' && getTableDetails()
+    val?.catalog && route.path === '/tables' && getTableDetails()
   }
 )
 
