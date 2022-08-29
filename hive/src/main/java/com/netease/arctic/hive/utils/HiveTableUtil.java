@@ -80,6 +80,6 @@ public class HiveTableUtil {
   }
 
   public static String hiveRootLocation(String tableLocation) {
-    return tableLocation + "/hive_data";
+    return tableLocation + "/hive";
   }
 }
