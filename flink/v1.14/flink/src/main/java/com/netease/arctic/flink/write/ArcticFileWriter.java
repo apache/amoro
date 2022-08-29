@@ -24,6 +24,7 @@ import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
@@ -59,6 +60,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final int minFileSplitCount;
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
+  private final boolean submitEmptySnapshot;
 
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
@@ -77,13 +79,18 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       TaskWriterFactory<RowData> taskWriterFactory,
       int minFileSplitCount,
       ArcticTableLoader tableLoader,
-      boolean upsert) {
+      boolean upsert,
+      boolean submitEmptySnapshot) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
     this.tableLoader = tableLoader;
     this.upsert = upsert;
+    this.submitEmptySnapshot = submitEmptySnapshot;
+    LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
+        minFileSplitCount, upsert, submitEmptySnapshot);
   }
+
 
   @Override
   public void open() {
@@ -198,17 +205,27 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   }
 
   private void emit(WriteResult writeResult) {
-    if (!isWriteResultEmpty(writeResult)) {
+    if (shouldEmit(writeResult)) {
       // Only emit a non-empty WriteResult to committer operator, thus avoiding submitting too much empty snapshots.
       output.collect(new StreamRecord<>(writeResult));
     }
   }
 
-  private boolean isWriteResultEmpty(WriteResult writeResult) {
-    return writeResult == null ||
-        (writeResult.dataFiles().length == 0 &&
-            writeResult.deleteFiles().length == 0 &&
-            writeResult.referencedDataFiles().length == 0);
+  /**
+   * Whether to emit the WriteResult.
+   *
+   * @param writeResult the WriteResult to emit
+   * @return true if the WriteResult should be emitted,
+   *         false only if the WriteResult is empty and the submitEmptySnapshot is false.
+   */
+  private boolean shouldEmit(WriteResult writeResult) {
+    if (submitEmptySnapshot) {
+      return true;
+    }
+    return writeResult != null &&
+        (!ArrayUtils.isEmpty(writeResult.dataFiles()) ||
+            !ArrayUtils.isEmpty(writeResult.deleteFiles()) ||
+            !ArrayUtils.isEmpty(writeResult.referencedDataFiles()));
   }
 
   @VisibleForTesting
