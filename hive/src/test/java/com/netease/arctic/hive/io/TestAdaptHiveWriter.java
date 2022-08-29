@@ -48,7 +48,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class AdaptHiveWriterTest extends HiveTableTestBase {
+public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
   public void testWriteTypeFromOperateKind(){
