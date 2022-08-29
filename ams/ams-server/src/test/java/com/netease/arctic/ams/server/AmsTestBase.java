@@ -34,9 +34,12 @@ import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
+import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
@@ -57,9 +60,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import java.io.File;
 import java.io.IOException;
@@ -77,7 +80,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @Suite.SuiteClasses({OptimizerControllerTest.class, TableControllerTest.class, TerminalControllerTest.class,
                      TestDDLTracerService.class,LoginControllerTest.class, TestExpiredFileClean.class,
                      TestMajorOptimizeCommit.class, TestMajorOptimizePlan.class, TestMinorOptimizeCommit.class,
-                     TestMinorOptimizePlan.class, TestOrphanFileClean.class})
+                     TestMinorOptimizePlan.class, TestOrphanFileClean.class, TestSupportHiveMajorOptimizePlan.class,
+                     TestSupportHiveMajorOptimizeCommit.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -124,14 +128,17 @@ public class AmsTestBase {
     mockStatic(CatalogMetadataService.class);
 
     //mock service
-    CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
-    when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
-    JDBCMetaService metaService = new JDBCMetaService();
-    when(ServiceContainer.getMetaService()).thenReturn(metaService);
     DDLTracerService ddlTracerService = new DDLTracerService();
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     FileInfoCacheService fileInfoCacheService = new FileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
+    ArcticTransactionService transactionService = new ArcticTransactionService();
+    when(ServiceContainer.getArcticTransactionService()).thenReturn(transactionService);
+    CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
+    when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
+    JDBCMetaService metaService = new JDBCMetaService();
+    when(ServiceContainer.getMetaService()).thenReturn(metaService);
+
 
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());

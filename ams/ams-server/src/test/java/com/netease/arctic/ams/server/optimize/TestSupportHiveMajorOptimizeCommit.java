@@ -24,19 +24,13 @@ import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,26 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({
-    JDBCSqlSessionFactoryProvider.class
-})
-@PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
-    "com.amazonaws.http.conn.ssl.*", "org.*", "com.netease.arctic.hive.*", "com.netease.arctic.catalog.*",
-    "com.netease.arctic.table.*", "com.netease.arctic.ams.api.*", "com.netease.arctic.io.*",
-    "com.netease.arctic.hive.HiveTableTestBase",
-    "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
 public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOptimizeBase {
-
-  @Before
-  public void mock() {
-    mockStatic(JDBCSqlSessionFactoryProvider.class);
-    when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
-  }
-
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveHasPosDeleteCommit() throws Exception {
     insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
