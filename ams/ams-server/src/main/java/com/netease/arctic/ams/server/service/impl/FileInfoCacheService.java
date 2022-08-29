@@ -127,6 +127,9 @@ public class FileInfoCacheService extends IJDBCService {
   }
 
   public Boolean snapshotIsCached(TableIdentifier identifier, String innerTable, Long snapshotId) {
+    if (snapshotId == -1) {
+      return true;
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
       return snapInfoCacheMapper.snapshotIsCached(identifier, innerTable, snapshotId);
