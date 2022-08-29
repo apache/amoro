@@ -28,18 +28,11 @@ import java.util.stream.Collectors;
 
 public class HiveTableProperties {
 
-  public static final String ICEBERG_CATALOG = "iceberg.catalog";
-  public static final String ICEBERG_CATALOG_LOCATION_BASED_TABLE = "location_based_table";
-
   private static final String HIVE_PROPERTY_NAME_PREFIX = "arctic.";
 
   public static final String ARCTIC_TABLE_FLAG = "arctic.enable";
 
-  public static final String ARCTIC_SERVER_NAME = "arctic.server.name";
-
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
-
-  public static final String ARCTIC_HIVE_EXTERNAL_TABLE = "arctic.hive.external";
 
   public static final String ARCTIC_CATALOG_NAME = "arctic.catalog.name";
 
@@ -47,8 +40,6 @@ public class HiveTableProperties {
       Arrays.stream(new String[]{
           ARCTIC_TABLE_FLAG,
           ARCTIC_TABLE_PRIMARY_KEYS,
-          ARCTIC_SERVER_NAME,
-          ARCTIC_HIVE_EXTERNAL_TABLE,
           ARCTIC_CATALOG_NAME
       }).collect(Collectors.toSet()));
 

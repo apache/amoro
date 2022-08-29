@@ -24,7 +24,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
-import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.table.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
