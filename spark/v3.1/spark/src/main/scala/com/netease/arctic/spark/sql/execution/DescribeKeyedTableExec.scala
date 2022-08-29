@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.ArcticSparkTable
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.table.KeyedTable
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.encoders.RowEncoder
@@ -28,6 +28,7 @@ import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
 import org.apache.spark.sql.types.{MetadataBuilder, StringType, StructField, StructType}
 
 import scala.collection.JavaConverters.mapAsScalaMapConverter
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ArrayBuffer
 
 case class DescribeKeyedTableExec(table: Table,
@@ -58,7 +59,7 @@ case class DescribeKeyedTableExec(table: Table,
         if (!table.primaryKeySpec.primaryKeyExisted()) {
           rows += toCatalystRow("Not keyed table", "", "")
         } else {
-          table.primaryKeySpec().primaryKeyStruct().fields().forEach( k => {
+          table.primaryKeySpec().primaryKeyStruct().fields().toSeq.foreach( k => {
             rows += toCatalystRow(k.name(), k.`type`().toString, "")
           })
         }

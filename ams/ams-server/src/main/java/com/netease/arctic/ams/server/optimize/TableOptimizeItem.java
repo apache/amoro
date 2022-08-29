@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.OptimizeRangeType;
+import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.OptimizeType;
@@ -77,6 +78,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
 
@@ -92,6 +94,7 @@ public class TableOptimizeItem extends IJDBCService {
   private final ReentrantLock tasksLock = new ReentrantLock();
   private final ReentrantLock tableLock = new ReentrantLock();
   private final ReentrantLock tasksCommitLock = new ReentrantLock();
+  private final AtomicBoolean waitCommit = new AtomicBoolean(false);
 
   private final Map<OptimizeTaskId, OptimizeTaskItem> optimizeTasks = new LinkedHashMap<>();
 
@@ -148,6 +151,40 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
+   * if all tasks are Prepared
+   *
+   * @return true if tasks is not empty and all Prepared
+   */
+  public boolean allTasksPrepared() {
+    if (!optimizeTasks.isEmpty()) {
+      return optimizeTasks.values().stream().allMatch(t -> t.getOptimizeStatus() == OptimizeStatus.Prepared);
+    } else {
+      return false;
+    }
+  }
+
+  /**
+   * try trigger commit if all tasks are Prepared.
+   */
+  public void tryTriggerCommit() {
+    tasksLock.lock();
+    try {
+      if (waitCommit.get()) {
+        return;
+      }
+      if (!allTasksPrepared()) {
+        return;
+      }
+      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(tableIdentifier);
+      if (success) {
+        waitCommit.set(true);
+      }
+    } finally {
+      tasksLock.unlock();
+    }
+  }
+
+  /**
    * Get table identifier.
    * @return TableIdentifier
    */
@@ -194,16 +231,6 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public double getQuotaCache() {
     return quotaCache;
-  }
-
-  /**
-   * Get Optimize commit interval.
-   * @return interval of milliseconds
-   */
-  public long getCommitInterval() {
-    return PropertyUtil
-        .propertyAsLong(getArcticTable(false).properties(), TableProperties.OPTIMIZE_COMMIT_INTERVAL,
-            TableProperties.OPTIMIZE_COMMIT_INTERVAL_DEFAULT);
   }
 
   private void tryRefresh(boolean force) {
@@ -270,6 +297,7 @@ public class TableOptimizeItem extends IJDBCService {
         }
         optimizeTaskItem.onPrepared(optimizeTaskStat.getReportTime(),
             targetFiles, targetFileSize, optimizeTaskStat.getCostTime());
+        tryTriggerCommit();
         break;
       default:
         throw new IllegalArgumentException("unsupported status: " + optimizeTaskStat.getStatus());
@@ -632,6 +660,7 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public Map<String, List<OptimizeTaskItem>> getOptimizeTasksToCommit() {
     tasksLock.lock();
+    waitCommit.set(false);
     try {
       Map<String, List<OptimizeTaskItem>> collector = new HashMap<>();
       for (OptimizeTaskItem optimizeTaskItem : optimizeTasks.values()) {

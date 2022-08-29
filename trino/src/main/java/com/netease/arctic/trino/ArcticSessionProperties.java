@@ -25,7 +25,6 @@ import io.airlift.units.Duration;
 import io.trino.orc.OrcWriteValidation.OrcWriteValidationMode;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.hive.HiveCompressionCodec;
-import io.trino.plugin.hive.HiveConfig;
 import io.trino.plugin.hive.parquet.ParquetReaderConfig;
 import io.trino.plugin.hive.parquet.ParquetWriterConfig;
 import io.trino.plugin.iceberg.IcebergConfig;
@@ -83,8 +82,7 @@ public final class ArcticSessionProperties
       IcebergConfig icebergConfig,
       ArcticConfig arcticConfig,
       ParquetReaderConfig parquetReaderConfig,
-      ParquetWriterConfig parquetWriterConfig,
-      HiveConfig hiveConfig) {
+      ParquetWriterConfig parquetWriterConfig) {
     sessionProperties = ImmutableList.<PropertyMetadata<?>>builder()
         //                .add(enumProperty(
         //                        COMPRESSION_CODEC,
@@ -132,11 +130,11 @@ public final class ArcticSessionProperties
         //                        "Read only required fields from a struct",
         //                        icebergConfig.isProjectionPushdownEnabled(),
         //                        false))
-        .add(dataSizeProperty(
-            TARGET_MAX_FILE_SIZE,
-            "Target maximum size of written files; the actual size may be larger",
-            hiveConfig.getTargetMaxFileSize(),
-            false))
+        // .add(dataSizeProperty(
+        //     TARGET_MAX_FILE_SIZE,
+        //     "Target maximum size of written files; the actual size may be larger",
+        //     hiveConfig.getTargetMaxFileSize(),
+        //     false))
         .add(booleanProperty(SYNC_HIVE, "sync hive data to arctic", false, false))
         .add(durationProperty(
             EXPIRE_SNAPSHOTS_MIN_RETENTION,

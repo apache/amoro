@@ -55,12 +55,12 @@ import java.util.Map;
 
 public class HiveOperationTransaction implements Transaction {
 
-  private UnkeyedHiveTable unkeyedHiveTable;
-  private Transaction wrapped;
-  private HMSClient client;
-  private TransactionalHMSClient transactionalClient;
+  private final UnkeyedHiveTable unkeyedHiveTable;
+  private final Transaction wrapped;
+  private final HMSClient client;
+  private final TransactionalHMSClient transactionalClient;
 
-  private TransactionalTable transactionalTable;
+  private final TransactionalTable transactionalTable;
 
   public HiveOperationTransaction(
       UnkeyedHiveTable unkeyedHiveTable,
@@ -125,8 +125,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    OverwriteFiles overwriteFiles = wrapped.newOverwrite();
-    return new OverwriteHiveFiles(overwriteFiles, unkeyedHiveTable, client, transactionalClient);
+    return new OverwriteHiveFiles(wrapped, true, unkeyedHiveTable, client, transactionalClient);
   }
 
   @Override
@@ -136,8 +135,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    ReplacePartitions r = wrapped.newReplacePartitions();
-    return new ReplaceHivePartitions(r, unkeyedHiveTable, client, transactionalClient);
+    return new ReplaceHivePartitions(wrapped, true, unkeyedHiveTable, client, transactionalClient);
   }
 
   @Override
