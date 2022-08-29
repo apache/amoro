@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service;
 
+import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
@@ -26,10 +27,15 @@ import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.trace.SnapshotSummary;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -38,20 +44,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class TestFileInfoCacheService {
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_CATALOG_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_DB_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.catalog;
+
+public class TestFileInfoCacheService extends TableTestBase {
 
   TableIdentifier tableIdentifier = new TableIdentifier("test", "test", "test");
   Random random = new Random();
-
-  @Before
-  public void setUp() {
-    ServiceContainer.getFileInfoCacheService()
-        .deleteTableCache(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
-  }
 
   @Test
   public void testAppendCommit() throws MetaException {
@@ -162,10 +172,95 @@ public class TestFileInfoCacheService {
     Assert.assertEquals(snapshotId1, transactionsOfTables.get(0).getTransactionId());
     Assert.assertEquals(snapshotId, transactionsOfTables.get(1).getTransactionId());
 
-    List<DataFileInfo> dataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(tableIdentifier,
+    List<DataFileInfo> dataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
+        tableIdentifier,
         "base");
     Assert.assertEquals(dataFiles1.size(), dataFileInfos.size());
     Assert.assertEquals(dataFiles1.get(0).getPath(), dataFileInfos.get(0).getPath());
+  }
+
+  @Test
+  public void testUnkeyedTableSyncFileCache() {
+    com.netease.arctic.table.TableIdentifier tableId =
+        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME,
+            "file_sync_test_unkeyed_table");
+    UnkeyedTable fileSyncUnkeyedTable = catalog
+        .newTableBuilder(
+            tableId,
+            TABLE_SCHEMA).withPartitionSpec(SPEC).create().asUnkeyedTable();
+    testSyncFileCache(fileSyncUnkeyedTable, tableId);
+  }
+
+  @Test
+  public void testKeyedTableSyncFileCache() {
+    com.netease.arctic.table.TableIdentifier tableId =
+        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME,
+            "file_sync_test_keyed_table");
+    KeyedTable fileSyncKeyedTable = catalog
+        .newTableBuilder(
+            tableId,
+            TABLE_SCHEMA).withPrimaryKeySpec(PRIMARY_KEY_SPEC).withPartitionSpec(SPEC).create().asKeyedTable();
+    testSyncFileCache(fileSyncKeyedTable.baseTable(), tableId);
+  }
+
+  public void testSyncFileCache(UnkeyedTable fileSyncUnkeyedTable, com.netease.arctic.table.TableIdentifier tableId) {
+    fileSyncUnkeyedTable.newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+    List<DataFileInfo> commitDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
+        fileSyncUnkeyedTable.id().buildTableIdentifier(),
+        "base");
+    List<TransactionsOfTable> commitSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+        fileSyncUnkeyedTable.id().buildTableIdentifier());
+    ServiceContainer.getFileInfoCacheService().deleteTableCache(tableId);
+    List<DataFileInfo> cacheDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
+        fileSyncUnkeyedTable.id().buildTableIdentifier(),
+        "base");
+    Assert.assertEquals(0, cacheDataFileInfos.size());
+    ServiceContainer.getFileInfoCacheService()
+        .syncTableFileInfo(fileSyncUnkeyedTable.id().buildTableIdentifier(), "base");
+    List<DataFileInfo> syncDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
+        fileSyncUnkeyedTable.id().buildTableIdentifier(),
+        "base");
+    List<TransactionsOfTable> syncSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+        fileSyncUnkeyedTable.id().buildTableIdentifier());
+    Assert.assertEquals(commitDataFileInfos.size(), syncDataFileInfos.size());
+    for (DataFileInfo commitDataFileInfo : commitDataFileInfos) {
+      boolean isCached = false;
+      for (DataFileInfo syncDataFileInfo : syncDataFileInfos) {
+        if (commitDataFileInfo.getPath().equals(syncDataFileInfo.getPath())) {
+          isCached = true;
+          break;
+        }
+      }
+      Assert.assertTrue(isCached);
+    }
+    Assert.assertEquals(commitSnapInfos.size(), syncSnapInfos.size());
+    for (int i = 0; i < commitSnapInfos.size(); i++) {
+      Assert.assertEquals(commitSnapInfos.get(i).getTransactionId(), syncSnapInfos.get(i).getTransactionId());
+    }
+
+    fileSyncUnkeyedTable.newOverwrite()
+        .deleteFile(FILE_A)
+        .deleteFile(FILE_B)
+        .addFile(FILE_C)
+        .commit();
+    List<TransactionsOfTable> overwriteCommitSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+        fileSyncUnkeyedTable.id().buildTableIdentifier());
+    ServiceContainer.getFileInfoCacheService().deleteTableCache(tableId);
+    ServiceContainer.getFileInfoCacheService()
+        .syncTableFileInfo(fileSyncUnkeyedTable.id().buildTableIdentifier(), "base");
+    List<DataFileInfo> overwriteSyncDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
+        fileSyncUnkeyedTable.id().buildTableIdentifier(),
+        "base");
+    List<TransactionsOfTable> overwriteSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+        fileSyncUnkeyedTable.id().buildTableIdentifier());
+    Assert.assertEquals(1, overwriteSyncDataFileInfos.size());
+    Assert.assertEquals(FILE_C.path(), overwriteSyncDataFileInfos.get(0).getPath());
+    Assert.assertEquals(1, overwriteSnapInfos.size());
+    Assert.assertEquals(overwriteCommitSnapInfos.get(0).getTransactionId(),
+        overwriteSnapInfos.get(0).getTransactionId());
   }
 
   private DataFile genDatafile() {
@@ -174,27 +269,12 @@ public class TestFileInfoCacheService {
     dataFile.setFileType("INSERT_FILE");
     dataFile.setIndex(0);
     dataFile.setMask(0);
-    dataFile.setPath("/tmp/test"+ random.nextInt() +".file");
+    dataFile.setPath("/tmp/test" + random.nextInt() + ".file");
     Map<String, ByteBuffer> upperBounds = new HashMap<>();
     byte[] bytes = ByteBuffer.allocate(Long.SIZE / Byte.SIZE).putLong(1000L).array();
     upperBounds.put("eventTime", ByteBuffer.wrap(bytes));
     dataFile.setUpperBounds(upperBounds);
     dataFile.setPartition(new ArrayList<>());
     return dataFile;
-  }
-
-  public static void checkCache(ArcticTable testTable, List<DataFileInfo> actual) {
-    ServiceContainer.getFileInfoCacheService().syncTableFileInfo(
-        testTable.id().buildTableIdentifier(),
-        "base");
-    ServiceContainer.getFileInfoCacheService().syncTableFileInfo(
-        testTable.id().buildTableIdentifier(),
-        "change");
-    List<TransactionsOfTable> transactionsOfTables =
-        ServiceContainer.getFileInfoCacheService().getTransactions(testTable.id().buildTableIdentifier());
-    List<DataFileInfo> except = new ArrayList<>();
-    transactionsOfTables.forEach(transaction -> except.addAll(ServiceContainer.getFileInfoCacheService()
-        .getDatafilesInfo(testTable.id().buildTableIdentifier(), transaction.getTransactionId())));
-    Assert.assertEquals(actual, except);
   }
 }
