@@ -63,7 +63,7 @@ public class AdaptHiveService {
 
   private static final int CORE_POOL_SIZE = 5;
   private static final long QUEUE_CAPACITY = 5;
-  private static ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> runningInfoCache = new ConcurrentHashMap<>();
+  private static ConcurrentHashMap<TableIdentifier, UpgradeRunningInfo> runningInfoCache = new ConcurrentHashMap<>(10);
   private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
       QUEUE_CAPACITY, TimeUnit.SECONDS, new LinkedBlockingDeque<>(5));
   private static final String DEFAULT_TXID = "txid=0";
@@ -73,7 +73,9 @@ public class AdaptHiveService {
   private static final int FILE_TYPE_ID = -5;
 
 
-  public void upgradeHiveTable(ArcticHiveCatalog ac, TableIdentifier tableIdentifier, UpgradeHiveMeta upgradeHiveMeta) {
+  public Object upgradeHiveTable(ArcticHiveCatalog ac, TableIdentifier tableIdentifier,
+                                 UpgradeHiveMeta upgradeHiveMeta) {
+    LOG.info("Start to upgrade hive table to arctic" + tableIdentifier.toString());
     executor.submit(() -> {
       runningInfoCache.put(tableIdentifier, new UpgradeRunningInfo());
       boolean upgradeHive = false;
@@ -90,14 +92,19 @@ public class AdaptHiveService {
             .withPartitionSpec(hiveTable.getPartitionKeys())
             .withPrimaryKeySpec(hiveTable.getPrimaryKeys())
             .create();
+        upgradeHive = true;
         hiveDataMigration(arcticTable, ac, tableIdentifier);
-        runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.getName());
+        runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
       } catch (Throwable t) {
         LOG.error("Failed to upgrade hive table to arctic ", t);
+        if (upgradeHive) {
+          ac.dropTable(tableIdentifier, false);
+        }
         runningInfoCache.get(tableIdentifier).setErrorMessage(AmsUtils.getStackTrace(t));
-        runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.getName());
+        runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
       }
     });
+    return null;
   }
 
   public UpgradeRunningInfo getUpgradeRunningInfo(TableIdentifier tableIdentifier) {
@@ -140,14 +147,14 @@ public class AdaptHiveService {
       for (int i = 0; i < partitionLocations.size(); i++) {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
-        String newLoaction = hiveDataLocation + "/" + partition + "/" + DEFAULT_TXID;
-        arcticTable.io().mkdirs(newLoaction);
+        String newLocation = hiveDataLocation + "/" + partition + "/" + DEFAULT_TXID;
+        arcticTable.io().mkdirs(newLocation);
         for (FileStatus fileStatus : arcticTable.io().list(oldLocation)) {
           if (!fileStatus.isDirectory()) {
-            arcticTable.io().rename(fileStatus.getPath().toString(), newLoaction);
+            arcticTable.io().rename(fileStatus.getPath().toString(), newLocation);
           }
         }
-        HiveUtils.alterPartition(hiveMetaStore, tableIdentifier, partition, newLoaction);
+        HiveUtils.alterPartition(hiveMetaStore, tableIdentifier, partition, newLocation);
       }
     }
     if (arcticTable.isKeyedTable()) {

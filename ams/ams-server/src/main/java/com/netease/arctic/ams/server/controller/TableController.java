@@ -191,7 +191,7 @@ public class TableController extends RestBaseController {
       List<AMSColumnInfo> partitionColumnInfos =
           AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getHivePartitionKeys());
       hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
-          hiveTable.getHiveTableProperties(), hiveTable.getCreateTime());
+          new HashMap<>(), hiveTable.getCreateTime());
     } catch (Exception e) {
       LOG.error("Failed to get hive table info", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get hive table info", ""));

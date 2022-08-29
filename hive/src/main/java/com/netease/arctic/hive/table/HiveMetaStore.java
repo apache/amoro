@@ -171,7 +171,8 @@ public class HiveMetaStore implements Closeable {
     return clients.run(action);
   }
 
-  public void addHiveParameters(HiveTable hiveTable, Map<String, String> parameters) {
+  public void addHiveParameters(TableIdentifier tableIdentifier, Map<String, String> parameters) {
+    HiveTable hiveTable = getHiveTable(tableIdentifier);
     Map<String, String> hiveParameters = hiveTable.getTable().getParameters();
     if (hiveParameters == null) {
       hiveParameters = Maps.newHashMap();

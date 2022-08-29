@@ -246,15 +246,23 @@ public class TableControllerTest {
   }
 
   @Test
-  public void testUpgradeHive() {
+  public void testUpgradeHive() throws Exception {
+    mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      JSONObject requestJson = new JSONObject();
       UpgradeHiveMeta upgradeHiveMeta = mockUpgradeHiveMeta();
-      requestJson.put("sql", "create database arctic_test;");
-      app.post("/{catalog}/", ctx -> TerminalController.executeSql(ctx));
-      final okhttp3.Response resp1 = client.post("/" + catalogName + "/", requestJson, x -> {
-      });
+      String requestJson = JSONObject.toJSONString(upgradeHiveMeta);
+      app.post("/{catalog}/{db}/{table}/", TableController::upgradeHiveTable);
+      final okhttp3.Response resp1 = client.post("/" + catalogName + "/" + database + "/" + table + "/",
+          requestJson, x -> {});
       OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+
+    JavalinTest.test((app, client) -> {
+      app.get("/{catalog}/{db}/{table}/", TableController::getUpgradeStatus);
+      final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });
@@ -414,6 +422,10 @@ public class TableControllerTest {
     when(hiveMetaStore.getHiveTable(TableIdentifier.of(catalog, db, table))).thenReturn(hiveTable);
     when(hiveTable.getTableSchema()).thenReturn((mockHiveTableSchema()));
     when(hiveTable.getHivePartitionKeys()).thenReturn((mockHivePartitionKeys()));
+    AdaptHiveService adaptHiveService = mock(AdaptHiveService.class);
+    when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
+    when(adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
+        mockUpgradeHiveMeta())).thenReturn(null);
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {

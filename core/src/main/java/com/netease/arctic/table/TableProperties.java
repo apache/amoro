@@ -37,7 +37,6 @@ public class TableProperties {
   static {
     PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
     PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
-    PROTECTED_PROPERTIES.add(TableProperties.TABLE_CREATE_TIME);
     PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
   }
 

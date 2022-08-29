@@ -58,6 +58,7 @@ public class MetaService {
             TableProperties.TABLE_CREATE_TIME_DEFAULT));
 
     TableProperties.PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
+    serverTableMeta.getProperties().remove(TableProperties.TABLE_CREATE_TIME);
 
     serverTableMeta.setBaseLocation(at.location());
     serverTableMeta.setPartitionColumnList(at
