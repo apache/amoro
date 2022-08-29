@@ -1,12 +1,12 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.FileStatus;
@@ -208,26 +208,26 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
     if (table.spec().isUnpartitioned()) {
       updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
-          TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
       updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
-          TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
     } else {
       partitionToDelete.forEach((partitionData, partition) -> {
         if (!partitionToCreate.containsKey(partitionData)) {
-          updatePartitionProperties.remove(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
-          updatePartitionProperties.remove(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+          updatePartitionProperties.remove(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+          updatePartitionProperties.remove(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
         }
       });
       partitionToCreate.forEach((partitionData, partition) -> {
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
             commitTimestamp + "");
       });
       partitionToAlter.forEach((partitionData, partition) -> {
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
             commitTimestamp + "");
       });
     }
@@ -387,7 +387,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
         Partition partitionInHive = hmsClient.run(c -> c.getPartition(db, tableName, entry.getValue().getValues()));
         String locationInHive = partitionInHive.getSd().getLocation();
         if (isPathEquals(location, locationInHive)) {
-          partitionToAlter.put(entry.getKey(), partitionInHive);
+          partitionToAlter.put(entry.getKey(), entry.getValue());
           continue;
         }
         throw new CannotAlterHiveLocationException("can't create new partition: " +
@@ -434,7 +434,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     if (!partitionToAlter.isEmpty()) {
       try {
         transactionClient.run(c ->  {
-          c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()));
+          c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
           return null;
         });
       } catch (TException | InterruptedException e) {

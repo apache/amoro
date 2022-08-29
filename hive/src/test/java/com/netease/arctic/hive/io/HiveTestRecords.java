@@ -37,16 +37,16 @@ public class HiveTestRecords {
     GenericRecord record = GenericRecord.create(HIVE_TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 3, "name", "jake",
+    builder.add(record.copy(ImmutableMap.of("id", 3,
         "op_time", LocalDateTime.of(2022, 1, 3, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 3, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("102"))));
-    builder.add(record.copy(ImmutableMap.of("id", 4, "name", "sam",
+        "d", new BigDecimal("102"), "name", "jake")));
+    builder.add(record.copy(ImmutableMap.of("id", 4,
         "op_time", LocalDateTime.of(2022, 1, 4, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 4, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("103"))));
+        "d", new BigDecimal("103"), "name", "sam")));
 
     return builder.build();
   }
@@ -55,16 +55,16 @@ public class HiveTestRecords {
     GenericRecord record = GenericRecord.create(HIVE_TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john",
+    builder.add(record.copy(ImmutableMap.of("id", 1,
         "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("100"))));
-    builder.add(record.copy(ImmutableMap.of("id", 2, "name", "lily",
+        "d", new BigDecimal("100"), "name", "john")));
+    builder.add(record.copy(ImmutableMap.of("id", 2,
         "op_time", LocalDateTime.of(2022, 1, 2, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 2, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("101"))));
+        "d", new BigDecimal("101"), "name", "lily")));
     return builder.build();
   }
 
@@ -72,37 +72,37 @@ public class HiveTestRecords {
     GenericRecord record = GenericRecord.create(HIVE_TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary",
+    builder.add(record.copy(ImmutableMap.of("id", 5,
         "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("104"))));
-    builder.add(record.copy(ImmutableMap.of("id", 6, "name", "mack",
+        "d", new BigDecimal("104"), "name", "mary")));
+    builder.add(record.copy(ImmutableMap.of("id", 6,
         "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("105"))));
+        "d", new BigDecimal("105"), "name", "mack")));
     return builder.build();
   }
 
   public static List<Record> changeDeleteRecords() {
     GenericRecord record = GenericRecord.create(HIVE_TABLE_SCHEMA);
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary",
+    builder.add(record.copy(ImmutableMap.of("id", 5,
         "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("104"))));
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john",
+        "d", new BigDecimal("104"), "name", "mary")));
+    builder.add(record.copy(ImmutableMap.of("id", 1,
         "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("100"))));
-    builder.add(record.copy(ImmutableMap.of("id", 3, "name", "jake",
+        "d", new BigDecimal("100"), "name", "john")));
+    builder.add(record.copy(ImmutableMap.of("id", 3,
         "op_time", LocalDateTime.of(2022, 1, 3, 12, 0, 0),
         "op_time_with_zone", OffsetDateTime.of(
             LocalDateTime.of(2022, 1, 3, 12, 0, 0), ZoneOffset.UTC),
-        "d", new BigDecimal("102"))));
+        "d", new BigDecimal("102"), "name", "jake")));
     return builder.build();
   }
 }

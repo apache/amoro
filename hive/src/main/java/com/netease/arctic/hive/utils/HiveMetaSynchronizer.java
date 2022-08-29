@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -48,6 +49,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.crypto.Data;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -79,12 +81,12 @@ public class HiveMetaSynchronizer {
         if (icebergField == null) {
           updateSchema.addColumn(hiveField.name(), hiveField.type(), hiveField.doc());
           update = true;
-          LOG.info("Sync new hive column {} to arctic", hiveField);
+          LOG.info("Table {} sync new hive column {} to arctic", table.id(), hiveField);
         } else if (!icebergField.type().equals(hiveField.type()) ||
             !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
           updateSchema.updateColumn(icebergField.name(), icebergField.type().asPrimitiveType(), hiveField.doc());
           update = true;
-          LOG.info("Sync updated hive column {} to arctic", icebergField);
+          LOG.info("Table {} sync updated hive column {} to arctic", table.id(), icebergField);
         }
       }
       if (update) {
@@ -113,7 +115,7 @@ public class HiveMetaSynchronizer {
             hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
         String hiveTransientTime =  hiveTable.getParameters().get("transient_lastDdlTime");
         String arcticTransientTime = baseStore.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
         if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
           List<DataFile> hiveDataFiles = TableMigrationUtil.listPartition(Maps.newHashMap(),
               hiveTable.getSd().getLocation(),
@@ -146,7 +148,7 @@ public class HiveMetaSynchronizer {
           String hiveTransientTime =  hivePartition.getParameters().get("transient_lastDdlTime");
           String arcticTransientTime = baseStore.partitionProperty().containsKey(partitionData) ?
               baseStore.partitionProperty().get(partitionData)
-                  .get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
+                  .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
           if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
             List<DataFile> hiveDataFiles = TableMigrationUtil.listPartition(
                 buildPartitionValueMap(hivePartition.getValues(), table.spec()),
@@ -156,15 +158,26 @@ public class HiveMetaSynchronizer {
                 table.spec(), ((ArcticHadoopFileIO)table.io()).getTableMetaStore().getConfiguration(),
                 MetricsConfig.fromProperties(table.properties()), NameMappingParser.fromJson(
                     table.properties().get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING)));
-            //TODO identify new partition is created by hive or arctic
             if (filesMap.get(partitionData) != null) {
               filesToDelete.addAll(filesMap.get(partitionData));
+              filesToAdd.addAll(hiveDataFiles);
+            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null) {
+              // make sure new partition is not created by arctic
+              filesToAdd.addAll(hiveDataFiles);
             }
-            filesToAdd.addAll(hiveDataFiles);
+
           }
         }
-        //TODO identify dropped partition is dropped by hive or arctic
-        icebergPartitions.forEach(partition -> filesToDelete.addAll(filesMap.get(partition)));
+
+        icebergPartitions.forEach(partition -> {
+          List<DataFile> dataFiles = Lists.newArrayList(filesMap.get(partition));
+          if (dataFiles.size() > 0) {
+            // make sure dropped partition with no files
+            if (!table.io().exists(dataFiles.get(0).path().toString())) {
+              filesToDelete.addAll(filesMap.get(partition));
+            }
+          }
+        });
         overwriteTable(table, filesToDelete, filesToAdd);
       }
     } catch (TException | InterruptedException e) {
@@ -182,7 +195,7 @@ public class HiveMetaSynchronizer {
 
   private static void overwriteTable(ArcticTable table, List<DataFile> filesToDelete, List<DataFile> filesToAdd) {
     if (filesToDelete.size() > 0 || filesToAdd.size() > 0) {
-      LOG.info("Sync hive data change to arctic, delete files: {}, add files {}",
+      LOG.info("Table {} sync hive data change to arctic, delete files: {}, add files {}", table.id(),
           filesToDelete.stream().map(DataFile::path).collect(Collectors.toList()),
           filesToAdd.stream().map(DataFile::path).collect(Collectors.toList()));
       if (table.isKeyedTable()) {

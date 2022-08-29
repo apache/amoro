@@ -20,29 +20,35 @@ package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
 import com.netease.arctic.hive.op.HiveSchemaUpdate;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.hive.op.ReplaceHivePartitions;
+import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ReplacePartitions;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.util.PropertyUtil;
 
-import static com.netease.arctic.table.TableProperties.BASE_HIVE_LOCATION_ROOT;
+import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
 /**
  * Implementation of {@link com.netease.arctic.table.UnkeyedTable} with Hive table as base store.
  */
 public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, SupportHive {
 
-  HMSClient hiveClient;
-  String tableLocation;
+  private final HMSClient hiveClient;
+  private final String tableLocation;
+
+  private boolean syncHiveChange = true;
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
@@ -51,9 +57,35 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
       String tableLocation,
       AmsClient client,
       HMSClient hiveClient) {
+    this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, true);
+  }
+
+  public UnkeyedHiveTable(
+      TableIdentifier tableIdentifier,
+      Table icebergTable,
+      ArcticFileIO arcticFileIO,
+      String tableLocation,
+      AmsClient client,
+      HMSClient hiveClient,
+      boolean syncHiveChange) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
+    this.syncHiveChange = syncHiveChange;
+    syncHiveSchemaToArctic();
+    syncHiveDataToArctic();
+  }
+
+  @Override
+  public void refresh() {
+    super.refresh();
+    syncHiveSchemaToArctic();
+    syncHiveDataToArctic();
+  }
+
+  @Override
+  public Schema schema() {
+    return super.schema();
   }
 
   @Override
@@ -76,7 +108,7 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
 
   @Override
   public OverwriteHiveFiles newOverwrite() {
-    return new OverwriteHiveFiles(super.newTransaction(), false,this, hiveClient, hiveClient);
+    return new OverwriteHiveFiles(super.newTransaction(), false, this, hiveClient, hiveClient);
   }
 
   @Override
@@ -88,5 +120,23 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   @Override
   public UpdateSchema updateSchema() {
     return new HiveSchemaUpdate(this, hiveClient, super.updateSchema());
+  }
+
+  private void syncHiveSchemaToArctic() {
+    if (syncHiveChange && PropertyUtil.propertyAsBoolean(
+        properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
+      HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
+    }
+  }
+
+  private void syncHiveDataToArctic() {
+    if (syncHiveChange && PropertyUtil.propertyAsBoolean(
+        properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
+      HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
+    }
   }
 }

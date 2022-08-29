@@ -1,5 +1,6 @@
 package com.netease.arctic.hive.op;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
@@ -7,7 +8,6 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -173,11 +173,11 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     Assert.assertEquals("table partition properties hive location is error",
         hiveTable.getSd().getLocation(),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
     Assert.assertEquals("table partition properties transient_lastDdlTime is error",
         hiveTable.getParameters().get("transient_lastDdlTime"),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
     // =================== test delete all files and add no file to un-partitioned table ===================
     overwriteFiles = table.newOverwrite();
@@ -197,11 +197,11 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     Assert.assertEquals("table partition property hive location is error",
         hiveTable.getSd().getLocation(),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
     Assert.assertEquals("table partition property transient_lastDdlTime is error",
         hiveTable.getParameters().get("transient_lastDdlTime"),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
     hiveCatalog.dropTable(identifier, true);
     AMS.handler().getTableCommitMetas().remove(identifier.buildTableIdentifier());

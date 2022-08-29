@@ -29,7 +29,6 @@ import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -229,10 +228,10 @@ public class HiveTableTestBase extends TableTestBase {
           actualLocation.contains(locationExpect));
       Map<String, String> properties = partitionProperties.get(getPartitionData(valuePath, table.spec()));
       Assert.assertEquals("partition property hive location is not expected", actualLocation,
-          properties.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+          properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
       Assert.assertEquals("partition property transient_lastDdlTime is not expected",
           p.getParameters().get("transient_lastDdlTime"),
-          properties.get(TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
+          properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
     }
   }
 }

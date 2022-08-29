@@ -23,31 +23,28 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Collection;
+import java.util.Locale;
 
 /**
  * Schema evolution API implementation for {@link KeyedTable}.
  */
 public class HiveSchemaUpdate implements UpdateSchema {
-  private ArcticTable arcticTable;
-  private Table baseTable;
-  private HMSClient hiveClient;
-  private UpdateSchema updateSchema;
+  private final ArcticTable arcticTable;
+  private final HMSClient hiveClient;
+  private final UpdateSchema updateSchema;
 
   public HiveSchemaUpdate(ArcticTable arcticTable, HMSClient hiveClient, UpdateSchema updateSchema) {
     this.arcticTable = arcticTable;
-    if (arcticTable.isKeyedTable()) {
-      this.baseTable = arcticTable.asKeyedTable().baseTable();
-    } else {
-      this.baseTable = arcticTable.asUnkeyedTable();
-    }
     this.hiveClient = hiveClient;
     this.updateSchema = updateSchema;
   }
@@ -63,7 +60,6 @@ public class HiveSchemaUpdate implements UpdateSchema {
     if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable) == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
-    baseTable.refresh();
     syncSchemaToHive();
   }
 
@@ -72,7 +68,9 @@ public class HiveSchemaUpdate implements UpdateSchema {
     if (tbl == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
-    tbl.setSd(HiveSchemaUtil.storageDescriptor(baseTable.schema(), baseTable.spec()));
+    tbl.setSd(HiveTableUtil.storageDescriptor(arcticTable.schema(), arcticTable.spec(), tbl.getSd().getLocation(),
+        FileFormat.valueOf(PropertyUtil.propertyAsString(arcticTable.properties(), TableProperties.DEFAULT_FILE_FORMAT,
+            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
     HiveTableUtil.persistTable(hiveClient, tbl);
   }
 
@@ -85,13 +83,13 @@ public class HiveSchemaUpdate implements UpdateSchema {
   public UpdateSchema addColumn(String name, Type type, String doc) {
     this.updateSchema.addColumn(name, type, doc);
     //It is strictly required that all non-partitioned columns precede partitioned columns in the schema.
-    if (!baseTable.spec().isUnpartitioned()) {
+    if (!arcticTable.spec().isUnpartitioned()) {
       int parFieldMinIndex = Integer.MAX_VALUE;
       Types.NestedField firstParField = null;
-      for (PartitionField partitionField : baseTable.spec().fields()) {
-        Types.NestedField sourceField = baseTable.schema().findField(partitionField.sourceId());
-        if (baseTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
-          parFieldMinIndex = baseTable.schema().columns().indexOf(sourceField);
+      for (PartitionField partitionField : arcticTable.spec().fields()) {
+        Types.NestedField sourceField = arcticTable.schema().findField(partitionField.sourceId());
+        if (arcticTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
+          parFieldMinIndex = arcticTable.schema().columns().indexOf(sourceField);
           firstParField = sourceField;
         }
       }

@@ -1,12 +1,12 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.Path;
@@ -138,20 +138,20 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
     if (table.spec().isUnpartitioned() && unpartitionTableLocation != null) {
       updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
-          TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
       updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
-          TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
     } else {
       rewritePartitions.forEach((partitionData, partition) -> {
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
             commitTimestamp + "");
       });
       newPartitions.forEach((partitionData, partition) -> {
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
-        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
             commitTimestamp + "");
       });
     }
