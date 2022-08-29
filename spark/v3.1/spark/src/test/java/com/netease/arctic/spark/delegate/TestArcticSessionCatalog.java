@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,8 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.delegate;
 
+import com.netease.arctic.spark.ArcticSparkSessionCatalog;
+import com.netease.arctic.spark.SparkTestContext;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -28,17 +30,11 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 
-/**
- * test base class for normal spark tests.
- *
- * test base class contain no code expect beforeClass && afterClass
- */
-public class SparkTestBase extends SparkTestContext {
+public class TestArcticSessionCatalog extends SparkTestContext {
 
   @Rule
   public TestName testName = new TestName();
   protected long begin ;
-
 
   @BeforeClass
   public static void startAll() throws IOException, ClassNotFoundException {
@@ -47,7 +43,12 @@ public class SparkTestBase extends SparkTestContext {
     Map<String, String> hiveConfigs = setUpHMS();
     configs.putAll(arcticConfigs);
     configs.putAll(hiveConfigs);
+
+    configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
+    configs.put("spark.sql.catalog.spark_catalog.url", amsUrl + "/" + catalogNameHive);
+
     setUpSparkSession(configs);
+
   }
 
   @AfterClass
@@ -73,5 +74,4 @@ public class SparkTestBase extends SparkTestContext {
     System.out.println("  Test End: " + testName.getMethodName() + ", total cost: " + cost + " ms");
     System.out.println("==================================");
   }
-
 }

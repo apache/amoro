@@ -50,7 +50,7 @@ public class HMSMockServer {
   public static final Logger LOG = LoggerFactory.getLogger(HMSMockServer.class);
 
   private static final String DEFAULT_DATABASE_NAME = "default";
-  private static final int DEFAULT_POOL_SIZE = 5;
+  private static final int DEFAULT_POOL_SIZE = 500;
 
 
 
