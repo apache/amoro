@@ -130,8 +130,10 @@ public class HiveMetaSynchronizer {
           overwriteTable(table, deleteFiles, hiveDataFiles);
         }
       } else {
+        // list all hive partitions.
         List<Partition> hivePartitions = hiveClient.run(client -> client.listPartitions(table.id().getDatabase(),
             table.id().getTableName(), Short.MAX_VALUE));
+        // group arctic files by partition.
         ListMultimap<StructLike, DataFile> filesGroupedByPartition
             = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
         TableScan tableScan = baseStore.newScan();
@@ -149,6 +151,8 @@ public class HiveMetaSynchronizer {
           String arcticTransientTime = baseStore.partitionProperty().containsKey(partitionData) ?
               baseStore.partitionProperty().get(partitionData)
                   .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME) : null;
+          // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
+          // find out if the partition is changed.
           if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
             List<DataFile> hiveDataFiles = TableMigrationUtil.listPartition(
                 buildPartitionValueMap(hivePartition.getValues(), table.spec()),
@@ -161,8 +165,8 @@ public class HiveMetaSynchronizer {
             if (filesMap.get(partitionData) != null) {
               filesToDelete.addAll(filesMap.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
-            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null) {
               // make sure new partition is not created by arctic
+            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null) {
               filesToAdd.addAll(hiveDataFiles);
             }
 

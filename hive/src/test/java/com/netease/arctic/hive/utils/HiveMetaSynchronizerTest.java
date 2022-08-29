@@ -22,6 +22,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
@@ -108,6 +109,7 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("p3"),
         FileUtil.getFileDir(newFiles.get(0).path().toString()), newFiles,
         (int) (System.currentTimeMillis() / 1000));
+    newPartition.getParameters().remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
     hms.getClient().add_partition(newPartition);
     HiveMetaSynchronizer.syncHiveDataToArctic(testHiveTable, new TestHMSClient());
     Assert.assertEquals(2, Iterables.size(testHiveTable.snapshots()));
@@ -120,6 +122,7 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     //test drop hive partition
     hms.getClient().dropPartition(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(),
         Lists.newArrayList("p1"));
+    testHiveTable.io().deleteFile(partition1FilePath);
     HiveMetaSynchronizer.syncHiveDataToArctic(testHiveTable, new TestHMSClient());
     Assert.assertEquals(3, Iterables.size(testHiveTable.snapshots()));
     partitions = hms.getClient()
