@@ -22,9 +22,14 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+import java.util.Map;
 
 public class HiveTableUtil {
 
@@ -33,6 +38,7 @@ public class HiveTableUtil {
   public static boolean isHive(ArcticTable arcticTable) {
     return arcticTable instanceof SupportHive;
   }
+
 
   public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
       HMSClient hiveClient, ArcticTable arcticTable) {
@@ -60,5 +66,20 @@ public class HiveTableUtil {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static Map<String, String> generateTableProperties(int accessTimeInSeconds, List<DataFile> files) {
+    Map<String, String> properties = Maps.newHashMap();
+    long totalSize = files.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
+    long numRows = files.stream().map(DataFile::recordCount).reduce(0L, Long::sum);
+    properties.put("transient_lastDdlTime", accessTimeInSeconds + "");
+    properties.put("totalSize", totalSize + "");
+    properties.put("numRows", numRows + "");
+    properties.put("numFiles", files.size() + "");
+    return properties;
+  }
+
+  public static String hiveRootLocation(String tableLocation) {
+    return tableLocation + "/hive_data";
   }
 }

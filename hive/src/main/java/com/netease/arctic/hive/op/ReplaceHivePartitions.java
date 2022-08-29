@@ -4,6 +4,7 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
@@ -12,7 +13,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Snapshot;
@@ -27,7 +27,6 @@ import org.apache.thrift.TException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 public class ReplaceHivePartitions implements ReplacePartitions {
 
@@ -47,6 +46,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   private final Map<StructLike, Partition> rewritePartitions = Maps.newHashMap();
   private final Map<StructLike, Partition> newPartitions = Maps.newHashMap();
   private String unpartitionTableLocation;
+  private int commitTimestamp; // in seconds
 
   public ReplaceHivePartitions(
       Transaction transaction,
@@ -113,6 +113,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   @Override
   public void commit() {
     if (!addFiles.isEmpty()) {
+      commitTimestamp = (int) (System.currentTimeMillis() / 1000);
       if (table.spec().isUnpartitioned()) {
         generateUnpartitionTableLocation();
       } else {
@@ -120,7 +121,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       }
 
       delegate.commit();
-      setHiveLocations();
+      setPartitionProperties();
       if (!insideTransaction) {
         transaction.commitTransaction();
       }
@@ -133,20 +134,25 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     }
   }
 
-  private void setHiveLocations() {
+  private void setPartitionProperties() {
     UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
     if (table.spec().isUnpartitioned() && unpartitionTableLocation != null) {
-      updatePartitionProperties.set(
-          TablePropertyUtil.EMPTY_STRUCT,
+      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
           TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
+      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
+          TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
     } else {
       rewritePartitions.forEach((partitionData, partition) -> {
         updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            commitTimestamp + "");
       });
       newPartitions.forEach((partitionData, partition) -> {
         updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
             partition.getSd().getLocation());
+        updatePartitionProperties.set(partitionData, TableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            commitTimestamp + "");
       });
     }
     updatePartitionProperties.commit();
@@ -185,10 +191,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
 
       try {
         Partition partition = hmsClient.run(c -> c.getPartition(db, tableName, values));
-        rewriteHivePartitions(partition, location, dataFiles);
+        HivePartitionUtil.rewriteHivePartitions(partition, location, dataFiles, commitTimestamp);
         rewritePartitions.put(dataFiles.get(0).partition(), partition);
       } catch (NoSuchObjectException e) {
-        Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles);
+        Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles, commitTimestamp);
         newPartitions.put(dataFiles.get(0).partition(), p);
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
@@ -203,6 +209,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
         transactionalHMSClient.run(c -> {
           Table tbl = c.getTable(db, tableName);
           tbl.getSd().setLocation(newDataLocation);
+          HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
+              .forEach((key, value) -> hiveTable.getParameters().put(key, value));
           c.alter_table(db, tableName, tbl);
           return 0;
         });
@@ -216,10 +224,10 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     try {
       transactionalHMSClient.run(c -> {
         if (!rewritePartitions.isEmpty()) {
-          c.alter_partitions(db, tableName, rewritePartitions.values().stream().collect(Collectors.toList()), null);
+          c.alter_partitions(db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
         }
         if (!newPartitions.isEmpty()) {
-          c.add_partitions(newPartitions.values().stream().collect(Collectors.toList()));
+          c.add_partitions(Lists.newArrayList(newPartitions.values()));
         }
         return 0;
       });
@@ -244,16 +252,5 @@ public class ReplaceHivePartitions implements ReplacePartitions {
 
   private void generateUnpartitionTableLocation() {
     unpartitionTableLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
-  }
-
-  private static void rewriteHivePartitions(Partition partition, String location, List<DataFile> dataFiles) {
-    partition.getSd().setLocation(location);
-    int lastAccessTime = (int) (System.currentTimeMillis() / 1000);
-    partition.setLastAccessTime(lastAccessTime);
-    int files = dataFiles.size();
-    long totalSize = dataFiles.stream().map(ContentFile::fileSizeInBytes).reduce(0L, Long::sum);
-    partition.putToParameters("transient_lastDdlTime", lastAccessTime + "");
-    partition.putToParameters("totalSize", totalSize + "");
-    partition.putToParameters("numFiles", files + "");
   }
 }

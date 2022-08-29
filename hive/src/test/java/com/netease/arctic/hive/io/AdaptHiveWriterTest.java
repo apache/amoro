@@ -18,9 +18,10 @@
 
 package com.netease.arctic.hive.io;
 
+import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HiveTableTestBase;
-import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.table.ArcticTable;
@@ -28,14 +29,6 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.WriteOperationKind;
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
@@ -44,9 +37,14 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
 
 public class AdaptHiveWriterTest extends HiveTableTestBase {
 
@@ -161,16 +159,13 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
     }
     WriteResult complete = changeWrite.complete();
     Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
-    CloseableIterable<Record> concat =
-        CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
-            table.schema(),
-            s.path().toString())).collect(Collectors.toList()));
-    Set<Record> result = new HashSet<>();
-    Iterators.addAll(result, concat.iterator());
-    Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
+    Set<Record> readRecords = Sets.newHashSet();
+    Arrays.stream(complete.dataFiles()).map(s -> readRecords.addAll(readParquet(
+        table.schema(), s.path().toString())));
+    Assert.assertEquals(Sets.newHashSet(records), readRecords);
   }
 
-  private CloseableIterable<Record> readParquet(Schema schema, String path){
+  private Set<Record> readParquet(Schema schema, String path){
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
             Files.localInput(path))
         .project(schema)
@@ -178,6 +173,6 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
         .caseSensitive(false);
 
     CloseableIterable<Record> iterable = builder.build();
-    return iterable;
+    return Sets.newHashSet(iterable.iterator());
   }
 }

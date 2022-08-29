@@ -1,7 +1,6 @@
 package com.netease.arctic.hive;
 
 import com.netease.arctic.table.TableMetaStore;
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.iceberg.hive.HiveClientPool;
 import org.slf4j.Logger;
