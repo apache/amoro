@@ -1,0 +1,86 @@
+ams:
+  arctic.ams.server-host: 127.0.0.1
+  arctic.ams.thrift.port: 1260 # useless in test, System.getProperty("arctic.ams.thrift.port") is used
+  arctic.ams.http.port: 1630
+  arctic.ams.optimize.check.thread.pool-size: 1
+  arctic.ams.optimize.commit.thread.pool-size: 1
+  arctic.ams.expire.thread.pool-size: 1
+  arctic.ams.orphan.clean.thread.pool-size: 1
+  arctic.ams.file.sync.thread.pool-size: 1
+  # derby config.sh
+  arctic.ams.mybatis.ConnectionDriverClassName: org.apache.derby.jdbc.EmbeddedDriver
+  arctic.ams.mybatis.ConnectionURL: jdbc:derby:/tmp/arctic_integration/derby;create=true
+  arctic.ams.database.type: derby
+  # mysql config.sh
+#  arctic.ams.mybatis.ConnectionURL: jdbc:mysql://localhost:3306/arctic_opensource_local?useUnicode=true&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false
+#  arctic.ams.mybatis.ConnectionDriverClassName: com.mysql.jdbc.Driver
+#  arctic.ams.mybatis.ConnectionUserName: ndc
+#  arctic.ams.mybatis.ConnectionPassword: ndc
+#  arctic.ams.database.type: mysql
+
+# extension properties for like system
+extension_properties:
+#test.properties: test
+
+catalogs:
+# arctic catalog config. now can't delete catalog by config file
+  - name: local_catalog
+    # arctic catalog type, now just support hadoop
+    type: hadoop
+    # file system config.sh
+    storage_config:
+      storage.type: hdfs
+      core-site:
+      hdfs-site:
+      hive-site:
+    # auth config.sh now support SIMPLE and KERBEROS
+    auth_config:
+      type: SIMPLE
+      hadoop_username: root
+    properties:
+      warehouse.dir: /tmp/arctic_integration/warehouse
+#  - name: ...
+#    type: hadoop
+#    storage_config:
+#      storage.type: hdfs
+#      core-site: /etc/hadoop/conf/core-site.xml
+#      hdfs-site: /etc/hadoop/conf/hdfs-site.xml
+#      hive-site: /etc/hadoop/conf/hive-site.xml
+#    auth_config:
+#      type: KERBEROS
+#      principal: user/admin@EXAMPLE.COM
+#      keytab: /etc/user.keytab
+#      krb5: /etc/user.conf
+#    properties:
+#      warehouse.dir: hdfs://default/default/warehouse
+
+containers:
+  # arctic optimizer container config.sh
+  - name: localContainer
+    type: local
+    properties:
+      hadoop_home: /opt/hadoop
+      # java_home: /opt/java
+#  - name: flinkContainer
+#    type: flink
+#    properties:
+#      FLINK_HOME: /opt/flink/        #flink install home
+#      HADOOP_CONF_DIR: /etc/hadoop/conf/       #hadoop config dir
+#      HADOOP_USER_NAME: hadoop       #hadoop user submit on yarn
+#      JVM_ARGS: -Djava.security.krb5.conf=/opt/krb5.conf       #flink launch jvm args, like kerberos config when ues kerberos
+#      FLINK_CONF_DIR: /etc/hadoop/conf/        #flink config dir
+
+
+
+optimize_group:
+  - name: default
+    # container name, should equal with the name that containers config.sh
+    container: localContainer
+    properties:
+      # unit MB
+      memory: 1024
+#  - name: flinkOp
+#    container: flinkContainer
+#    properties:
+#      taskmanager.memory: 1024
+#      jobmanager.memory: 1024
