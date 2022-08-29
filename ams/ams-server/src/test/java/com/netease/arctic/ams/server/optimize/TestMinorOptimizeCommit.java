@@ -157,10 +157,6 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
     List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
-    Set<StructLike> partitionData = new HashSet<>();
-    for (List<DeleteFile> resultFile : resultFiles) {
-      partitionData.addAll(resultFile.stream().map(ContentFile::partition).collect(Collectors.toList()));
-    }
     AtomicInteger i = new AtomicInteger();
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
