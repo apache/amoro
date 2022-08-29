@@ -22,8 +22,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.junit.ClassRule;
-import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,9 +61,6 @@ public class KafkaTestBase {
   public Properties standardProps;
 
   public KafkaTestEnvironment kafkaServer;
-
-  @ClassRule
-  public TemporaryFolder tempFolder = new TemporaryFolder();
 
   public Properties secureProps = new Properties();
 

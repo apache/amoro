@@ -20,14 +20,14 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.hive.HiveTableTestBase;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
-import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.ClassRule;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -49,10 +49,6 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TestUnkeyedOverwrite.class);
 
-  @ClassRule
-  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
-      MiniClusterResource.createWithClassloaderCheckDisabled();
-
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
 
@@ -61,23 +57,36 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   private String catalog;
   private String db;
+  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
 
   @Parameterized.Parameter
   public boolean isHive;
 
   @Parameterized.Parameters(name = "isHive = {0}")
   public static Collection<Boolean> parameters() {
-    return Arrays.asList(false, true);
+    return Arrays.asList(false);
   }
 
-  public void before() {
-    super.before();
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    HiveTableTestBase.startMetastore();
+    FlinkTestBase.prepare();
+  }
+
+  @AfterClass
+  public static void afterClass() throws Exception {
+    FlinkTestBase.shutdown();
+  }
+
+  public void before() throws Exception {
     if (isHive) {
-      catalog = HIVE_CATALOG_NAME;
-      db = HIVE_DB_NAME;
+      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
+      db = HiveTableTestBase.HIVE_DB_NAME;
+      hiveTableTestBase.setupTables();
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      super.before();
     }
     super.config(catalog);
   }
@@ -85,6 +94,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    if (isHive) {
+      hiveTableTestBase.clearTable();
+    }
   }
 
   @Test

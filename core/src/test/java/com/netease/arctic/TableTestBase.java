@@ -150,7 +150,7 @@ public class TableTestBase {
     this.before();
   }
 
-  public void before() {
+  public void before() throws Exception {
     // implement for sub case
   }
 

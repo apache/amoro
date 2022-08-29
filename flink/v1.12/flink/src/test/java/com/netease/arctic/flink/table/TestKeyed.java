@@ -19,8 +19,8 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -37,6 +37,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -70,46 +71,51 @@ public class TestKeyed extends FlinkTestBase {
 
   private static final String DB = PK_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   private String catalog;
   private String db;
   private String topic;
+  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
 
   @Parameterized.Parameter
   public boolean isHive;
 
   @Parameterized.Parameters(name = "isHive = {0}")
   public static Collection<Boolean> parameters() {
-    return Arrays.asList(false, true);
+    return Arrays.asList(false);
   }
 
-  public void before() {
-    super.before();
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    HiveTableTestBase.startMetastore();
+    FlinkTestBase.prepare();
+  }
+
+  @AfterClass
+  public static void afterClass() throws Exception {
+    FlinkTestBase.shutdown();
+  }
+
+  public void before() throws Exception {
     if (isHive) {
-      catalog = HIVE_CATALOG_NAME;
-      db = HIVE_DB_NAME;
+      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
+      db = HiveTableTestBase.HIVE_DB_NAME;
+      hiveTableTestBase.setupTables();
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      super.before();
     }
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
   }
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
-  }
-
-  @AfterClass
-  public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
-  }
-
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    if (isHive) {
+      hiveTableTestBase.clearTable();
+    }
   }
 
   @Test
@@ -144,8 +150,8 @@ public class TestKeyed extends FlinkTestBase {
         " (" +
         " id INT," +
         " name STRING," +
-        " op_time TIMESTAMP," +
         " op_time_tz TIMESTAMP WITH LOCAL TIME ZONE," +
+        " op_time TIMESTAMP," +
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) " +
         " WITH (" +
@@ -156,10 +162,10 @@ public class TestKeyed extends FlinkTestBase {
     sql("insert into arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.emit.mode'='file'" +
-        ")*/ select * from input");
+        ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
-        sql("select * from arcticCatalog." + db + "." + TABLE +
+        sql("select id, name, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
             ")*/" +
