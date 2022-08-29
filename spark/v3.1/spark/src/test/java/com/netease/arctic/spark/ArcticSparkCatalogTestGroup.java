@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,9 +19,13 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.spark.hive.TestCreateTableDDL;
+import com.netease.arctic.spark.hive.TestHiveTableMergeOnRead;
+import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteDynamic;
+import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteStatic;
 import com.netease.arctic.spark.hive.TestMigrateHiveTable;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
 import com.netease.arctic.spark.source.TestUnKeyedTableDataFrameAPI;
+import java.io.IOException;
 import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.AfterClass;
@@ -29,8 +33,9 @@ import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
-import java.io.IOException;
-
+/**
+ * Test suite for the arctic-spark library. all tests share same ams and hms and spark session
+ */
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     TestKeyedHiveInsertOverwriteDynamic.class,
@@ -52,7 +57,7 @@ import java.io.IOException;
     TestKeyedTableDataFrameAPI.class,
     TestUnKeyedTableDataFrameAPI.class,
     TestCreateKeyedTableAsSelect.class})
-public class ArcticSparkHiveMainTest {
+public class ArcticSparkCatalogTestGroup {
 
   @BeforeClass
   public static void suiteSetup() throws IOException, ClassNotFoundException {
@@ -61,13 +66,13 @@ public class ArcticSparkHiveMainTest {
     Map<String, String> hiveConfigs = SparkTestContext.setUpHMS();
     configs.putAll(arcticConfigs);
     configs.putAll(hiveConfigs);
-    // SparkTestContext.setUpSparkSession(configs);
+    SparkTestContext.setUpSparkSession(configs);
   }
 
   @AfterClass
   public static void suiteTeardown() {
     SparkTestContext.cleanUpAms();
     SparkTestContext.cleanUpHive();
-    // SparkTestContext.cleanUpSparkSession();
+    SparkTestContext.cleanUpSparkSession();
   }
 }

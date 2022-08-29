@@ -23,11 +23,14 @@ import com.netease.arctic.spark.SparkTestContext;
 import java.io.IOException;
 import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestName;
 
 public class TestArcticSessionCatalog extends SparkTestContext {
@@ -46,9 +49,9 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
     configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
     configs.put("spark.sql.catalog.spark_catalog.url", amsUrl + "/" + catalogNameHive);
+    configs.put("arctic.sql.delegate-hive-table", "false");
 
     setUpSparkSession(configs);
-
   }
 
   @AfterClass
@@ -73,5 +76,19 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     System.out.println("==================================");
     System.out.println("  Test End: " + testName.getMethodName() + ", total cost: " + cost + " ms");
     System.out.println("==================================");
+  }
+
+  private String database = "default";
+  private String table = "test";
+
+  @Test
+  public void testCatalogEnable() throws IOException, TException {
+    sql("create table {0} ( id int, data string) using arctic", table);
+    hms.getClient().getTable("default", table);
+    // Assert.assertNotNull(hiveTableA);
+  }
+
+  private void enableHiveDelegate() {
+    sql("set `arctic.sql.delegate-hive-table` = true");
   }
 }
