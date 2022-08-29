@@ -43,8 +43,7 @@ import java.util.stream.Collectors;
 
 public class HiveTable {
   private static final Set<String> IGNORE_ARCTIC_PROPERTIES =
-      Sets.newHashSet(HiveTableProperties.ARCTIC_TABLE_FLAG, HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS,
-          HiveTableProperties.ARCTIC_SERVER_NAME);
+      Sets.newHashSet(HiveTableProperties.ARCTIC_TABLE_FLAG, HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS);
   private final Table table;
   private List<String> primaryKeys;
   private Map<String, String> tableProperties;

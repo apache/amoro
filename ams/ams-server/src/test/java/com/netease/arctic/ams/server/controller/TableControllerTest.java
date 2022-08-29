@@ -101,7 +101,6 @@ import static org.powermock.api.mockito.PowerMockito.mock;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -116,7 +115,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
     DDLTracerService.class,
     OptimizeManagerHandler.class,
     AdaptHiveService.class,
-    OptimizeManagerHandler.class,
     HiveMetaStore.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
@@ -234,7 +232,7 @@ public class TableControllerTest {
   }
 
   @Test
-  public void getHiveTableDetail() throws Exception {
+  public void testGetHiveTableDetail() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
       app.get("/{catalog}/{db}/{table}/", TableController::getHiveTableDetail);
@@ -426,6 +424,8 @@ public class TableControllerTest {
     when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     when(adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),
         mockUpgradeHiveMeta())).thenReturn(null);
+    when(MetaService.getServerTableMeta(arcticHiveCatalog, TableIdentifier.of(catalog, db, table)))
+        .thenReturn(mockServerTableMeta(catalog, db, table));
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {
