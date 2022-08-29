@@ -125,7 +125,6 @@ class ArcticExtendSparkSqlAstBuilder(delegate: ParserInterface)
       case Some(query) =>
         val propertiesMap = buildProperties(primaryForCtas, properties)
         var writeOptions: Map[String, String] = Map.empty
-        writeOptions += ("overwrite-mode" -> "dynamic")
         CreateTableAsSelectStatement(
           table, query, partitioning, bucketSpec, propertiesMap, provider, options, location, comment,
           writeOptions, serdeInfo, external = external, ifNotExists = ifNotExists)

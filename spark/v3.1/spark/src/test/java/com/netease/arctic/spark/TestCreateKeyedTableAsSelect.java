@@ -20,7 +20,6 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -30,18 +29,16 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.List;
-
 public class TestCreateKeyedTableAsSelect extends SparkTestBase {
 
   private final String database = "db_def";
   private final String table = "testA";
   private final String sourceTable = "test_table";
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
 
   @Before
   public void prepare() {
-    sql("use " + catalogName);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists " + database);
     sql("create table {0}.{1} ( \n" +
         " id int , data string, pt string ) using arctic \n" +
@@ -68,7 +65,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
   @Test
   public void testPrimaryKeyCTAS() {
     sql("create table {0}.{1} primary key(id) using arctic  AS SELECT * from {2}.{3}.{4}",
-        database, table, catalogName, database, sourceTable);
+        database, table, catalogNameArctic, database, sourceTable);
     assertTableExist(identifier);
     sql("desc table {0}.{1}", database, table);
     assertDescResult(rows, Lists.newArrayList("id"));

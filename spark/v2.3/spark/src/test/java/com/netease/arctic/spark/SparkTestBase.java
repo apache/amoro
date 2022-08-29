@@ -70,4 +70,22 @@ public class SparkTestBase extends SparkTestContext {
     Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
             descPrimaryKeys.stream().sorted().distinct().toArray());
   }
+
+  public void assertPartitionResult(List<Object[]> rows, List<String> partitionKey) {
+    boolean primaryKeysBlock = false;
+    List<String> descPrimaryKeys = Lists.newArrayList();
+    for (Object[] row : rows) {
+      if (StringUtils.equalsIgnoreCase("# Partition Information", row[0].toString())) {
+        primaryKeysBlock = true;
+      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
+        primaryKeysBlock = true;
+      } else if (primaryKeysBlock){
+        descPrimaryKeys.add(row[0].toString());
+      }
+    }
+
+    Assert.assertEquals(partitionKey.size(), descPrimaryKeys.size());
+    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+        descPrimaryKeys.stream().sorted().distinct().toArray());
+  }
 }

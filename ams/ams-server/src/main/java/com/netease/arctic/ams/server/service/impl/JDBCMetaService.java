@@ -55,11 +55,13 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public static final Map<Key, TableMetaStore> TABLE_META_STORE_CACHE = new ConcurrentHashMap<>();
   private final FileInfoCacheService fileInfoCacheService;
   private final ArcticTransactionService transactionService;
+  private final DDLTracerService ddlTracerService;
 
   public JDBCMetaService() {
     super();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.transactionService = ServiceContainer.getArcticTransactionService();
+    this.ddlTracerService = ServiceContainer.getDdlTracerService();
   }
 
   @Override
@@ -124,6 +126,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
 
         fileInfoCacheService.deleteTableCache(tableIdentifier);
         transactionService.delete(tableIdentifier.buildTableIdentifier());
+        ddlTracerService.dropTableData(tableIdentifier.buildTableIdentifier());
       } catch (Exception e) {
         LOG.error("The internal table service drop table failed.");
         sqlSession.rollback(true);
@@ -146,6 +149,9 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       properties.remove("krb_conf");
       properties.remove("krb_principal");
       TableMetadata oldTableMetaData = loadTableMetadata(tableIdentifier);
+      ServiceContainer.getDdlTracerService().commitProperties(tableIdentifier.buildTableIdentifier(),
+          oldTableMetaData.getProperties(),
+          properties);
       tableMetadataMapper.updateTableProperties(tableIdentifier, properties);
       String oldQueueName = oldTableMetaData.getProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
           TableProperties.OPTIMIZE_GROUP_DEFAULT);

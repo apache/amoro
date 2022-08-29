@@ -22,6 +22,7 @@ import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.TableProperties;
+import java.time.ZoneId;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.ApiExpression;
@@ -90,21 +91,28 @@ public class TestKeyed extends FlinkTestBase {
   @Test
   public void testSinkSourceFile() throws IOException {
     List<Object[]> data = new LinkedList<>();
-    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0")});
-    data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0")});
-    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+                          LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0"),
+                          LocalDateTime.parse("2022-06-17T10:08:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0"),
+                          LocalDateTime.parse("2022-06-18T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+                          LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+                          LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+                          LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
     DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
         InternalTypeInfo.ofFields(
             DataTypes.INT().getLogicalType(),
             DataTypes.VARCHAR(100).getLogicalType(),
-            DataTypes.TIMESTAMP().getLogicalType()
+            DataTypes.TIMESTAMP().getLogicalType(),
+            DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE().getLogicalType()
         ));
 
-    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"));
+    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"), $("op_time_tz"));
     getTableEnv().createTemporaryView("input", input);
 
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
@@ -113,6 +121,7 @@ public class TestKeyed extends FlinkTestBase {
         " id INT," +
         " name STRING," +
         " op_time TIMESTAMP," +
+        " op_time_tz TIMESTAMP WITH LOCAL TIME ZONE," +
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) " +
         " WITH (" +
@@ -133,10 +142,14 @@ public class TestKeyed extends FlinkTestBase {
             "");
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0")});
-    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+                              LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+                              LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+                              LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+                              LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
     Assert.assertEquals(DataUtil.toRowSet(expected), new HashSet<>(actual));
   }

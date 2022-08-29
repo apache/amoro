@@ -30,7 +30,6 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
-import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
