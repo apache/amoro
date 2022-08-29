@@ -65,11 +65,11 @@ Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
 
 Arctic support multiple processing engines as below:
 
-| Processing Engine | Version           |
-| ----------------- | ----------------- |
-| Flink             | 1.12.x and 1.14.x |
-| Spark             | 3.1+              |
-| Trino             | 380               |
+| Processing Engine | Version                   |
+| ----------------- |---------------------------|
+| Flink             | 1.12.x, 1.14.x and 1.15.x |
+| Spark             | 3.1+                      |
+| Trino             | 380                       |
 
 ## Quickstart
 
