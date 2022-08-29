@@ -29,6 +29,9 @@ import org.apache.thrift.protocol.TMultiplexedProtocol;
 
 import java.util.Collections;
 
+/**
+ * Client pool cache for different ams optimize server, sharing in jvm.
+ */
 public class OptimizeManagerClientPools {
   private static final int CLIENT_POOL_MIN = 1;
   private static final int CLIENT_POOL_MAX = 5;

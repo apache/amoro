@@ -28,6 +28,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 
+/**
+ * Provides mock zookeeper server.
+ */
 public class MockZookeeperServer {
 
   private static TestingServer server;

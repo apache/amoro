@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
 
-  private final Logger logger = LoggerFactory.getLogger(getClass());
+  private static final Logger LOG = LoggerFactory.getLogger("ThriftClientPool");
 
   private final ThriftClientFactory clientFactory;
 
@@ -53,6 +53,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   private final PoolConfig poolConfig;
   // for thrift connects
   private static final int retries = 5;
+
+  private static final int retryInterval = 2000;
 
   /**
    * Construct a new pool using default config
@@ -104,7 +106,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         try {
           transport.open();
         } catch (TTransportException e) {
-          logger.warn("transport open fail service: host={}, port={}",
+          LOG.warn("transport open fail service: host={}, port={}",
               serviceInfo.getHost(), serviceInfo.getPort());
           if (poolConfig.isFailover()) {
             for (int i = 0; i < 5; i++) {
@@ -113,15 +115,15 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
                 serviceInfo.setHost(arcticThriftUrl.host());
                 serviceInfo.setPort(arcticThriftUrl.port());
                 transport = getTransport(serviceInfo); // while break here
-                logger.info("failover to next service host={}, port={}",
+                LOG.info("failover to next service host={}, port={}",
                     serviceInfo.getHost(), serviceInfo.getPort());
                 transport.open();
                 break;
               } catch (TTransportException e2) {
-                logger.warn("transport open fail service: host={}, port={}",
+                LOG.warn("transport open fail service: host={}, port={}",
                     serviceInfo.getHost(), serviceInfo.getPort());
               }
-              Thread.sleep(2000);
+              Thread.sleep(retryInterval);
             }
             if (!transport.isOpen()) {
               throw new ConnectionFailException(
@@ -136,7 +138,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         ThriftClient<T> client = new ThriftClient<>(clientFactory.createClient(transport),
             pool, serviceInfo);
 
-        logger.debug("create new object for pool {}", client);
+        LOG.debug("create new object for pool {}", client);
         return client;
       }
 
@@ -192,7 +194,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   }
 
   private List<ServiceInfo> removeFailService(List<ServiceInfo> list, ServiceInfo serviceInfo) {
-    logger.info("remove service from current service list: host={}, port={}",
+    LOG.info("remove service from current service list: host={}, port={}",
         serviceInfo.getHost(), serviceInfo.getPort());
     return list.stream() //
         .filter(si -> !serviceInfo.equals(si)) //
@@ -232,8 +234,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
           if (attempt > 1) {
             // if attempt > 1, it means the server is maybe restarting, so we should wait a while
-            logger.warn("server is restarting, wait a while");
-            Thread.sleep(2000);
+            LOG.warn("server is restarting, wait a while");
+            Thread.sleep(retryInterval);
           }
           pool.clear();
           client = pool.borrowObject();

@@ -8,6 +8,9 @@ import org.apache.zookeeper.data.Stat;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Provides ZooKeeper clients and operations.
+ */
 public class ZookeeperService {
 
   private CuratorFramework zkClient;
