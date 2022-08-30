@@ -44,7 +44,7 @@ CREATE TABLE container_metadata (
 );
 
 CREATE TABLE snapshot_info_cache (
-    table_identifier varchar(64) NOT NULL,
+    table_identifier varchar(256) NOT NULL,
     snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     action varchar(64) DEFAULT NULL,
@@ -137,7 +137,7 @@ CREATE TABLE table_metadata (
 
 CREATE TABLE file_info_cache (
     primary_key_md5 varchar(64) NOT NULL,
-    table_identifier varchar(64) NOT NULL,
+    table_identifier varchar(256) NOT NULL,
     add_snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     delete_snapshot_id bigint DEFAULT NULL,

@@ -208,7 +208,7 @@ public class TestSupportHiveMajorOptimizeBase implements TestOptimizeBase {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (int i = start; i < start + length; i++) {
-      builder.add(record.copy(ImmutableMap.of("id", i, "name", "name" + i % 2 + 1,
+      builder.add(record.copy(ImmutableMap.of("id", i, "name", "name" + 1,
           "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
           "op_time_with_zone", LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).atOffset(ZoneOffset.UTC),
           "d", new BigDecimal(i))));

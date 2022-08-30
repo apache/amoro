@@ -73,7 +73,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveMajorOptimi
         new TableOptimizeRuntime(testHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
-    Assert.assertEquals(2, tasks.size());
+    Assert.assertEquals(1, tasks.size());
     Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
     Assert.assertEquals(0, tasks.get(0).getPosDeleteFiles().size());
@@ -92,7 +92,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveMajorOptimi
         new TableOptimizeRuntime(testHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
-    Assert.assertEquals(2, tasks.size());
+    Assert.assertEquals(1, tasks.size());
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
     Assert.assertEquals(0, tasks.get(0).getPosDeleteFiles().size());

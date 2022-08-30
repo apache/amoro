@@ -28,12 +28,12 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -210,8 +210,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testHiveTable, tasks.get(0).getTaskId().getType());
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
-      List<DataFile> targetFiles = new ArrayList<>();
-      resultFiles.values().forEach(targetFiles::addAll);
+      ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
+      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(baseFile.path().toString());
+      TreeNode treeNode = new TreeNode(fileMeta.node().getMask(), fileMeta.node().getIndex());
+      List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
@@ -258,8 +260,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testHiveTable, tasks.get(0).getTaskId().getType());
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
-      List<DataFile> targetFiles = new ArrayList<>();
-      resultFiles.values().forEach(targetFiles::addAll);
+      ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
+      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(baseFile.path().toString());
+      TreeNode treeNode = new TreeNode(fileMeta.node().getMask(), fileMeta.node().getIndex());
+      List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
