@@ -58,7 +58,8 @@ public interface SnapInfoCacheMapper {
       ".server.mybatis.TableIdentifier2StringConverter} and inner_table = #{type} and snapshot_id not in (select " +
       "add_snapshot_id from file_info_cache where delete_snapshot_id is null and table_identifier=#{tableIdentifier, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{type})")
-  void expireCache(@Param("expiredTime") long expiredTime, @Param("tableIdentifier") TableIdentifier tableIdentifier,
+  void expireCache(
+      @Param("expiredTime") long expiredTime, @Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("type") String tableType);
 
   @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
@@ -67,13 +68,16 @@ public interface SnapInfoCacheMapper {
 
   @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
       ".ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{innerTable}")
-  void deleteInnerTableCache(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+  void deleteInnerTableCache(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("innerTable") String innerTable);
 
   @Select("select max(commit_time) from " + TABLE_NAME + " where table_identifier = " +
       "#{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and " +
       "inner_table = #{type}")
-  Timestamp getCachedMaxTime(@Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("type") String tableType);
+  Timestamp getCachedMaxTime(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("type") String tableType);
 
   @Select(
       "select snapshot_id, file_count as cnt, file_size as size, commit_time from " + TABLE_NAME + " where " +
