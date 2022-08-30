@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.io.writer;
 
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
@@ -73,9 +74,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final long taskId;
   private final Long transactionId;
 
-  private final String unKeyedTmpDir = System.currentTimeMillis() + "_" + UUID.randomUUID();
-
-  private final String keyedTmpDir;
+  private final String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
 
   private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
 
@@ -98,7 +97,6 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId;
-    keyedTmpDir = "txid=" + transactionId;
   }
 
 
@@ -115,21 +113,13 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   }
 
   private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {
-    if (partitionSpec.isUnpartitioned()) {
-      if (key.getTreeNode() == null) {
-        return String.format("%s/%s/%s", baseLocation, unKeyedTmpDir, fileName);
-      } else {
-        return String.format("%s/%s/%s", baseLocation, keyedTmpDir, fileName);
-      }
+    String dir;
+    if (key.getTreeNode() == null) {
+      dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, unKeyedTmpDir);
     } else {
-      if (key.getTreeNode() == null) {
-        return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
-            unKeyedTmpDir, fileName);
-      } else {
-        return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
-            keyedTmpDir, fileName);
-      }
+      dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId);
     }
+    return String.format("%s/%s", dir, fileName);
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {
