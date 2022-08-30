@@ -67,6 +67,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
@@ -148,10 +149,12 @@ public class FlinkSink {
         ArcticFileWriter fileWriter,
         OneInputStreamOperator<WriteResult, Void> committer,
         int writeOperatorParallelism,
-        MetricsGenerator metricsGenerator) {
+        MetricsGenerator metricsGenerator,
+        String arcticEmitMode) {
       SingleOutputStreamOperator writerStream = input
           .transform(ArcticWriter.class.getName(), TypeExtractor.createTypeInfo(WriteResult.class),
               new ArcticWriter<>(logWriter, fileWriter, metricsGenerator))
+          .name(String.format("ArcticWriter %s(%s)", table.name(), arcticEmitMode))
           .setParallelism(writeOperatorParallelism);
 
       if (committer != null) {
@@ -217,7 +220,8 @@ public class FlinkSink {
           fileWriter,
           createFileCommitter(table, tableLoader, overwrite, arcticEmitMode),
           writeOperatorParallelism,
-          metricsGenerator);
+          metricsGenerator,
+          arcticEmitMode);
     }
 
     private void initTableIfNeeded() {
@@ -332,12 +336,16 @@ public class FlinkSink {
 
     boolean upsert = arcticTable.isKeyedTable() && PropertyUtil.propertyAsBoolean(arcticTable.properties(),
         TableProperties.UPSERT_ENABLED, TableProperties.UPSERT_ENABLED_DEFAULT);
+    boolean submitEmptySnapshot = PropertyUtil.propertyAsBoolean(
+        arcticTable.properties(), SUBMIT_EMPTY_SNAPSHOTS.key(), SUBMIT_EMPTY_SNAPSHOTS.defaultValue());
+
     return new ArcticFileWriter(
         shufflePolicy,
         createTaskWriterFactory(arcticTable, overwrite, flinkSchema, equalityColumns),
         minFileSplitCount,
         tableLoader,
-        upsert);
+        upsert,
+        submitEmptySnapshot);
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(

@@ -34,18 +34,42 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.util.List;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
+
+@RunWith(Parameterized.class)
 public class ArcticFileWriterTest extends FlinkTestBase {
 
   public static final long TARGET_FILE_SIZE = 128 * 1024 * 1024;
   public ArcticTableLoader tableLoader;
+  private final boolean submitEmptySnapshots;
+
+  @Parameterized.Parameters(name = "submitEmptySnapshots = {0}")
+  public static Object[][] parameters() {
+    return new Object[][] {
+        {false},
+        {true}
+    };
+  }
+
+  public ArcticFileWriterTest(boolean submitEmptySnapshots) {
+    this.submitEmptySnapshots = submitEmptySnapshots;
+  }
 
   public static OneInputStreamOperatorTestHarness<RowData, WriteResult> createArcticStreamWriter(
       ArcticTableLoader tableLoader) throws Exception {
+    return createArcticStreamWriter(tableLoader, true);
+  }
+
+  public static OneInputStreamOperatorTestHarness<RowData, WriteResult> createArcticStreamWriter(
+      ArcticTableLoader tableLoader, boolean submitEmptySnapshots) throws Exception {
     tableLoader.open();
     ArcticTable arcticTable = tableLoader.loadArcticTable();
+    arcticTable.properties().put(SUBMIT_EMPTY_SNAPSHOTS.key(), String.valueOf(submitEmptySnapshots));
 
     ArcticFileWriter streamWriter = FlinkSink.createFileWriter(arcticTable,
         null,
@@ -232,6 +256,28 @@ public class ArcticFileWriterTest extends FlinkTestBase {
       // testHarness.extractOutputValues() calculates the cumulative value
       Assert.assertEquals(2, testHarness.extractOutputValues().size());
       Assert.assertEquals(3, testHarness.extractOutputValues().get(1).dataFiles().length);
+    }
+  }
+
+  @Test
+  public void testEmitEmptyResults() throws Exception {
+
+    tableLoader = ArcticTableLoader.of(PK_TABLE_ID, catalogBuilder);
+    long checkpointId = 1L;
+    long excepted = submitEmptySnapshots ? 1 : 0;
+    try (
+        OneInputStreamOperatorTestHarness<RowData, WriteResult> testHarness = createArcticStreamWriter(
+            tableLoader, submitEmptySnapshots)) {
+      // The first checkpoint
+
+      testHarness.prepareSnapshotPreBarrier(checkpointId);
+      Assert.assertEquals(excepted, testHarness.extractOutputValues().size());
+
+      checkpointId = checkpointId + 1;
+
+      // The second checkpoint
+      testHarness.prepareSnapshotPreBarrier(checkpointId);
+      Assert.assertEquals(excepted, testHarness.extractOutputValues().size());
     }
   }
 

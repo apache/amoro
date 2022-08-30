@@ -43,7 +43,6 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticHadoopFileIO.class);
   private final TableMetaStore tableMetaStore;
 
   public ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
@@ -188,7 +187,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
       try {
         return fs.mkdirs(filePath);
       } catch (IOException e) {
-        LOG.error("Failed to mkdirs: path {}, exception {}", filePath, e);
         throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
       }
     });
@@ -206,6 +204,10 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         throw new UncheckedIOException("Failed to rename: from " + oldPath + " to " + newPath, e);
       }
     });
+  }
+
+  public TableMetaStore getTableMetaStore() {
+    return tableMetaStore;
   }
 
   private FileSystem getFs(Path path) {

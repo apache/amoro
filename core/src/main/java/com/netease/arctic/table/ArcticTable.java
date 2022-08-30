@@ -21,6 +21,8 @@ package com.netease.arctic.table;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.UpdateSchema;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -69,6 +71,20 @@ public interface ArcticTable extends Serializable {
    * Refresh the current table metadata.
    */
   void refresh();
+
+  /**
+   * Create a new {@link UpdateSchema} to alter the columns of this table and commit the change.
+   *
+   * @return a new {@link UpdateSchema}
+   */
+  UpdateSchema updateSchema();
+
+  /**
+   * Create a new {@link UpdateProperties} to update table properties and commit the changes.
+   *
+   * @return a new {@link UpdateProperties}
+   */
+  UpdateProperties updateProperties();
 
   /**
    * Returns true if this table is an {@link UnkeyedTable}

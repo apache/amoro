@@ -42,11 +42,7 @@ public class TableProperties {
 
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
-  public static final String PARTITION_PROPERTIES_KEY_HIVE_LOCATION = "hive-location";
-
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
-
-  public static final String BASE_HIVE_LOCATION_ROOT = "base.hive.location-root";
 
   public static final String LOCATION = "location";
 
