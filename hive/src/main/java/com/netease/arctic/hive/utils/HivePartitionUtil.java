@@ -26,8 +26,9 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
@@ -50,34 +51,53 @@ public class HivePartitionUtil {
     return values;
   }
 
+  public static StructLike buildPartitionData(List<String> partitionValues, PartitionSpec spec) {
+    StringBuilder pathBuilder = new StringBuilder();
+    for (int i = 0; i < spec.partitionType().fields().size(); i++) {
+      Types.NestedField field = spec.partitionType().fields().get(i);
+      pathBuilder.append(field.name()).append("=").append(partitionValues.get(i));
+      if (i > 0) {
+        pathBuilder.append("/");
+      }
+    }
+    return DataFiles.data(spec, pathBuilder.toString());
+  }
+
   public static Partition newPartition(
       Table hiveTable,
       List<String> values,
       String location,
-      List<DataFile> dataFiles) {
+      List<DataFile> dataFiles,
+      int createTimeInSeconds) {
     StorageDescriptor tableSd = hiveTable.getSd();
     PrincipalPrivilegeSet privilegeSet = hiveTable.getPrivileges();
-    int lastAccessTime = (int) (System.currentTimeMillis() / 1000);
     Partition p = new Partition();
     p.setValues(values);
     p.setDbName(hiveTable.getDbName());
     p.setTableName(hiveTable.getTableName());
-    p.setCreateTime(lastAccessTime);
-    p.setLastAccessTime(lastAccessTime);
+    p.setCreateTime(createTimeInSeconds);
+    p.setLastAccessTime(createTimeInSeconds);
     StorageDescriptor sd = tableSd.deepCopy();
     sd.setLocation(location);
     p.setSd(sd);
 
-    int files = dataFiles.size();
-    long totalSize = dataFiles.stream().map(ContentFile::fileSizeInBytes).reduce(0L, Long::sum);
-    p.putToParameters("transient_lastDdlTime", lastAccessTime + "");
-    p.putToParameters("totalSize", totalSize + "");
-    p.putToParameters("numFiles", files + "");
+    HiveTableUtil.generateTableProperties(createTimeInSeconds, dataFiles)
+        .forEach((key, value) -> p.putToParameters(key, value));
+
     if (privilegeSet != null) {
       p.setPrivileges(privilegeSet.deepCopy());
     }
     return p;
   }
+
+  public static void rewriteHivePartitions(Partition partition, String location, List<DataFile> dataFiles,
+      int accessTimestamp) {
+    partition.getSd().setLocation(location);
+    partition.setLastAccessTime(accessTimestamp);
+    HiveTableUtil.generateTableProperties(accessTimestamp, dataFiles)
+        .forEach(partition::putToParameters);
+  }
+
 
   public static Partition getPartition(HMSClient hmsClient,
                                        ArcticTable arcticTable,

@@ -84,7 +84,6 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
 
   @Override
   public StructLikeMap<Map<String, String>> apply() {
-    table.refresh();
     StructLikeMap<Map<String, String>> partitionProperties = table.partitionProperty();
     setProperties.forEach((partitionData, properties) -> {
       Map<String, String> oldProperties = partitionProperties.get(partitionData);

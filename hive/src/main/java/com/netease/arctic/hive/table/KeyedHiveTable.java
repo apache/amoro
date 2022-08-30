@@ -21,11 +21,12 @@ package com.netease.arctic.hive.table;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.hive.HMSClient;
-import com.netease.arctic.hive.op.HiveSchemaUpdate;
+import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.util.PropertyUtil;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
@@ -44,11 +45,39 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
     this.hiveClient = hiveClient;
+    syncHiveSchemaToArctic();
+    syncHiveDataToArctic();
   }
+
+  @Override
+  public void refresh() {
+    super.refresh();
+    syncHiveSchemaToArctic();
+    syncHiveDataToArctic();
+  }
+
 
   @Override
   public String hiveLocation() {
     return ((SupportHive)baseTable()).hiveLocation();
+  }
+
+  private void syncHiveSchemaToArctic() {
+    if (PropertyUtil.propertyAsBoolean(
+        properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
+      HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
+    }
+  }
+
+  private void syncHiveDataToArctic() {
+    if (PropertyUtil.propertyAsBoolean(
+        properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
+      HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
+    }
   }
 
   @Override
