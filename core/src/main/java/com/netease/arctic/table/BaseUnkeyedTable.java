@@ -141,10 +141,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public Map<String, String> properties() {
-    return icebergTable.properties().entrySet()
-        .stream()
-        .filter(e -> !TableProperties.PROTECTED_PROPERTIES.contains(e.getKey()))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return icebergTable.properties();
   }
 
   @Override
