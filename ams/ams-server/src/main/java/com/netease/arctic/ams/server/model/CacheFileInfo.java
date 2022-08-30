@@ -19,12 +19,12 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.ams.api.DataFile;
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.trace.SnapshotSummary;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
@@ -42,9 +42,9 @@ public class CacheFileInfo {
   private Long deleteSnapshotId;
   private String innerTable;
   private String filePath;
-  // primaryKeyMd5 = md5(TableMetadataUtil.getTableAllIdentifyName(tableIdentifier)+innerTable+filePath)
   private String primaryKeyMd5;
   private String fileType;
+  private String producer;
   private Long fileSize;
   private Long fileMask;
   private Long fileIndex;
@@ -63,7 +63,7 @@ public class CacheFileInfo {
       String primaryKeyMd5, TableIdentifier tableIdentifier, Long addSnapshotId,
       Long parentSnapshotId, Long deleteSnapshotId, String innerTable,
       String filePath, String fileType, Long fileSize, Long fileMask, Long fileIndex, Long specId,
-      String partitionName, Long commitTime, Long recordCount, String action, Long watermark) {
+      String partitionName, Long commitTime, Long recordCount, String action, Long watermark, String producer) {
     this.primaryKeyMd5 = primaryKeyMd5;
     this.tableIdentifier = tableIdentifier;
     this.addSnapshotId = addSnapshotId;
@@ -81,22 +81,11 @@ public class CacheFileInfo {
     this.recordCount = recordCount;
     this.action = action;
     this.watermark = watermark;
-  }
-
-  public DataFileInfo toDataFileInfo() {
-    DataFileInfo dataFileInfo = new DataFileInfo();
-    dataFileInfo.setCommitTime(commitTime);
-    dataFileInfo.setPath(filePath);
-    dataFileInfo.setPartition(partitionName);
-    dataFileInfo.setSize(fileSize);
-    dataFileInfo.setType(fileType);
-
-    return dataFileInfo;
+    this.producer = producer;
   }
 
   public static CacheFileInfo convert(
-      Table table, DataFile amsFile, TableIdentifier identifier, String tableType,
-      Snapshot snapshot) {
+      Table table, DataFile amsFile, TableIdentifier identifier, String tableType, Snapshot snapshot) {
     long watermark = 0L;
     boolean isDataFile = Objects.equals(amsFile.fileType, DataFileType.INSERT_FILE.name()) ||
         Objects.equals(amsFile.fileType, DataFileType.BASE_FILE.name());
@@ -116,11 +105,13 @@ public class CacheFileInfo {
         .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
         .toString();
     Long parentId = snapshot.parentId() == null ? -1 : snapshot.parentId();
+    String producer =
+        snapshot.summary().getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
     return new CacheFileInfo(primaryKeyMd5, identifier, snapshot.snapshotId(),
         parentId, null,
         tableType, amsFile.getPath(), amsFile.getFileType(), amsFile.getFileSize(), amsFile.getMask(),
         amsFile.getIndex(), amsFile.getSpecId(), partitionName, snapshot.timestampMillis(),
-        amsFile.getRecordCount(), snapshot.operation(), watermark);
+        amsFile.getRecordCount(), snapshot.operation(), watermark, producer);
   }
 
   private static String partitionToPath(List<PartitionFieldData> partitionFieldDataList) {
@@ -213,6 +204,14 @@ public class CacheFileInfo {
 
   public void setFileType(String fileType) {
     this.fileType = fileType;
+  }
+
+  public String getProducer() {
+    return producer;
+  }
+
+  public void setProducer(String producer) {
+    this.producer = producer;
   }
 
   public Long getFileSize() {

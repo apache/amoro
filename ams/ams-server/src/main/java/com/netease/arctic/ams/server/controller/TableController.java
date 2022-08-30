@@ -296,7 +296,7 @@ public class TableController extends RestBaseController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     try {
-      List<TransactionsOfTable> transactionsOfTables = fileInfoCacheService.getTransactions(
+      List<TransactionsOfTable> transactionsOfTables = fileInfoCacheService.getTxExcludeOptimize(
               AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
       Integer offset = (page - 1) * pageSize;
       PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
@@ -322,11 +322,11 @@ public class TableController extends RestBaseController {
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
     try {
-      List<DataFileInfo> dataFileInfo = fileInfoCacheService.getDatafilesInfo(
+      List<AMSDataFileInfo> dataFileInfo = fileInfoCacheService.getDatafilesInfo(
               AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Long.valueOf(transactionId));
       Integer offset = (page - 1) * pageSize;
       PageResult<DataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(dataFileInfo,
-              offset, pageSize, AMSDataFileInfo::new);
+              offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
       return;
     } catch (Exception e) {
