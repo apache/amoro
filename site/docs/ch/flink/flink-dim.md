@@ -28,15 +28,7 @@ CREATE TABLE IF NOT EXISTS arctic_catalog.default_db.`user` (
     PRIMARY KEY (id) NOT ENFORCED
 );
 
--- 创建一张主表，如果有指定 watermark 的需求，则可以自由指定，如下所示：
-CREATE TABLE orders (
-    order_id    STRING,
-    price       DECIMAL(32,2),
-    user_id     INT,
-    order_time  TIMESTAMP(3),
-    WATERMARK FOR order_time AS order_time
-) WITH (/* ... */);
--- 如果数据中没有 eventTime，则需要将 proctime 作为 watermark。如下所示：
+-- 创建一张主表，需要将 proctime 作为 watermark。如下所示：
 CREATE TABLE orders (
     order_id    STRING,
     price       DECIMAL(32,2),
@@ -60,8 +52,25 @@ ON orders.user_id = user_dim.id
 
 ```
 
+|Key|默认值|类型|是否必填|描述|
+|--- |--- |--- |--- |--- |
+|dim-table.enable|false|Boolean|否|是否将 Arctic 表作为维表使用，默认false。作为维表时需要设置为 true|
+
 - 当 Arctic 作为维表（user 表）数据量很大时，需要一定的存量数据加载时间。在此期间，左表（orders）的数据会缓存在 Join 算子中，直到维表存量数据加载完，
 才会触发 Join 算子的关联操作并向下游输出数据。
 - 现阶段维表读 Arctic file-store 会存在一定的时间延迟，如果左表（orders）的数据是毫秒级延迟的实时数据，需要指定允许一定时间的延迟，让左表数据缓存一段时间后，再触发 Join。
 如允许 10s 的延迟：WATERMARK FOR order_time AS order_time - INTERVAL '10' SECOND，避免左表（orders）的数据比维表数据快，导致 Join 关联不上
 维表侧（user 表）的数据。
+
+**注意事项**
+
+- 如果主表有指定 watermark 的需求，如需要维表 Join 后作窗口计算，则可以自由指定：
+```sql
+CREATE TABLE orders (
+  order_id    STRING,
+  price       DECIMAL(32,2),
+  user_id     INT,
+  order_time  TIMESTAMP(3),
+  WATERMARK FOR order_time AS order_time
+  ) WITH (/* ... */);
+```
