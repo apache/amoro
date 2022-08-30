@@ -19,8 +19,10 @@
 package com.netease.arctic.flink.catalog;
 
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.util.CollectionUtil;
+import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
@@ -37,7 +39,6 @@ public class TestCatalog  extends FlinkTestBase {
 
   private static final String DB = PK_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
-  private static final String TOPIC = String.join(".", TEST_CATALOG_NAME, DB, TABLE);
 
   public void before() {
     super.before();
@@ -53,7 +54,7 @@ public class TestCatalog  extends FlinkTestBase {
         " (" +
         " id INT," +
         " name STRING," +
-        " t TIMESTAMP," +
+        " t TIMESTAMP(3)," +
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(t) " +
         " WITH (" +
@@ -62,7 +63,11 @@ public class TestCatalog  extends FlinkTestBase {
         ")");
     sql("SHOW tables");
 
-    Assert.assertTrue(testCatalog.loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE)).isKeyedTable());
+    ArcticTable table = testCatalog.loadTable(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE));
+    Assert.assertTrue(table.isKeyedTable());
+    Assert.assertTrue(table.schema().columns().get(2).type().asPrimitiveType() instanceof Types.TimestampType);
+    Assert.assertEquals(3, ((Types.TimestampType) table.schema().columns().get(2).type().asPrimitiveType()).precision());
+
     sql("DROP TABLE " + DB + "." + TABLE);
 
     sql("DROP DATABASE " + DB);
