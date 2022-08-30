@@ -142,18 +142,6 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     }
   }
 
-  @Override
-  public void addReader(int subtaskId) {
-    super.addReader(subtaskId);
-    // If temporalJoinSplits.getSplits() is null, it means reader is added after notified.
-    // It may happen when task failover.
-    if (context.registeredReaders().size() == context.currentParallelism() &&
-        dimTable && temporalJoinSplits != null && temporalJoinSplits.getSplits() == null) {
-      context.registeredReaders().keySet().forEach(
-          index -> context.sendEventToSourceReader(index, InitializationFinishedEvent.INSTANCE));
-    }
-  }
-
   private ContinuousEnumerationResult planSplits() {
     ContinuousEnumerationResult result = doPlanSplits();
     if (dimTable && temporalJoinSplits == null) {
