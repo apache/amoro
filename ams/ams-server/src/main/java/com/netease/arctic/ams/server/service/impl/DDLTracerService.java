@@ -1,5 +1,24 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.ams.server.service.impl;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.UpdateColumn;
@@ -14,7 +33,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.TableTracer;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Schema;
@@ -23,14 +41,11 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.table.TableProperties.BASE_TABLE_MAX_TRANSACTION_ID;
 
 public class DDLTracerService extends IJDBCService {
 
@@ -292,7 +307,7 @@ public class DDLTracerService extends IJDBCService {
       ServiceContainer.getDdlTracerService()
           .commitProperties(arcticTable.id().buildTableIdentifier(), tableMetadata.getProperties(),
               table.properties());
-      ServiceContainer.getMetaService().updateTableProperties(arcticTable.id(), table.properties());
+      ServiceContainer.getMetaService().updateTableProperties(arcticTable.id(), Maps.newHashMap(table.properties()));
     }
 
     public String compareSchema(String tableName, Schema before, Schema after) {

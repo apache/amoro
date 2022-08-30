@@ -29,32 +29,29 @@ import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.types.Types;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.rules.TemporaryFolder;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import org.junit.rules.TemporaryFolder;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
@@ -65,7 +62,7 @@ public class HiveTableTestBase extends TableTestBase {
 
   protected static final TemporaryFolder tempFolder = new TemporaryFolder();
 
-  protected static HMSMockServer hms  ;
+  protected static HMSMockServer hms;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
@@ -79,10 +76,10 @@ public class HiveTableTestBase extends TableTestBase {
 
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone()),
-      Types.NestedField.required(4, "op_time_with_zone", Types.TimestampType.withZone()),
-      Types.NestedField.required(5, "d", Types.DecimalType.of(3, 0))
+      Types.NestedField.required(2, "op_time", Types.TimestampType.withoutZone()),
+      Types.NestedField.required(3, "op_time_with_zone", Types.TimestampType.withZone()),
+      Types.NestedField.required(4, "d", Types.DecimalType.of(3, 0)),
+      Types.NestedField.required(5, "name", Types.StringType.get())
   );
 
   protected static final PartitionSpec HIVE_SPEC =
@@ -209,14 +206,6 @@ public class HiveTableTestBase extends TableTestBase {
         tableName,
         (short) -1);
 
-    System.out.println("> assert hive partition location as expected");
-    System.out.printf("HiveTable[%s.%s] partition count: %d \n", database, tableName, partitions.size());
-    for (Partition p: partitions){
-      System.out.printf(
-          "HiveTablePartition[%s.%s  %s] location:%s \n", database, tableName,
-          Joiner.on("/").join(p.getValues()), p.getSd().getLocation());
-    }
-
     Assert.assertEquals("expect " + partitionLocations.size() + " partition after first rewrite partition",
         partitionLocations.size(), partitions.size());
 
@@ -238,8 +227,11 @@ public class HiveTableTestBase extends TableTestBase {
           "partition location is not expected, expect " + actualLocation + " end-with " + locationExpect,
           actualLocation.contains(locationExpect));
       Map<String, String> properties = partitionProperties.get(getPartitionData(valuePath, table.spec()));
-      Assert.assertEquals("partition properties is not expected", actualLocation,
-          properties.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+      Assert.assertEquals("partition property hive location is not expected", actualLocation,
+          properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+      Assert.assertEquals("partition property transient_lastDdlTime is not expected",
+          p.getParameters().get("transient_lastDdlTime"),
+          properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
     }
   }
 }

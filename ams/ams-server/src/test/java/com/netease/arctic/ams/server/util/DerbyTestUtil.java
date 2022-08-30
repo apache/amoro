@@ -64,7 +64,7 @@ import java.sql.ResultSet;
 public class DerbyTestUtil extends IJDBCService {
   public static volatile SqlSessionFactory sqlSessionFactory;
   public static String path = System.getProperty("user.dir") +
-      "/src/test/java/com/netease/arctic/ams/server/sql/".replace("/", File.separator);
+      "/src/test/java/com/netease/arctic/ams/server/derby/".replace("/", File.separator);
   public static String db = "mydb1";
 
   public void createTestTable() throws Exception {
@@ -74,10 +74,11 @@ public class DerbyTestUtil extends IJDBCService {
       PreparedStatement ps = connection.prepareStatement(query);
       ps.setString(1, "CATALOG_METADATA");
       ResultSet rs = ps.executeQuery();
-      if ( !rs.next() || !rs.getBoolean(1) ) {
+      if (!rs.next() || !rs.getBoolean(1)) {
         // Table does NOT exist ... create it
         ScriptRunner runner = new ScriptRunner(connection);
-        runner.runScript(new InputStreamReader(new FileInputStream(path + "0.3.0-derby.sql"), "UTF-8"));
+        runner.runScript(new InputStreamReader(new FileInputStream(getClass().getResource("/sql/derby/ams-init.sql")
+            .getFile()), "UTF-8"));
       }
     }
   }
@@ -100,7 +101,7 @@ public class DerbyTestUtil extends IJDBCService {
           dataSource.setLogAbandoned(true);
           dataSource.setRemoveAbandonedTimeout(60);
           dataSource.setTimeBetweenEvictionRunsMillis(
-                  BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
+              BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
           dataSource.setTestOnBorrow(BaseObjectPoolConfig.DEFAULT_TEST_ON_BORROW);
           dataSource.setTestWhileIdle(BaseObjectPoolConfig.DEFAULT_TEST_WHILE_IDLE);
           dataSource.setMinEvictableIdleTimeMillis(1000);

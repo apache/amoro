@@ -42,6 +42,7 @@ public class UpdatePartitionPropertiesTest extends TableTestBase {
     Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
 
+  @Test
   public void testUpdatePartitionPropertiesInTx() {
     StructLikeMap<Map<String, String>> partitionProperties = testTable.partitionProperty();
     Transaction transaction = testTable.newTransaction();
