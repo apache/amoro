@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.controller.response.PageResult;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.DDLInfo;
+import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
@@ -291,7 +292,7 @@ public class TableControllerTest {
       assert result.getCode() == 200;
       assert result.getResult().getTotal() == 3;
       assert result.getResult().getList().size() == 3;
-      
+
       url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations?page=1&pageSize=2", catalogName, database, table);
       final okhttp3.Response resp1 = client.get(url, x -> {});
       OkResponse<PageResult> result1 = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
@@ -328,7 +329,7 @@ public class TableControllerTest {
         .thenReturn(1000L);
     when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE))
         .thenReturn(1000L);
-    when(fileInfoCacheService.getTransactions(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
+    when(fileInfoCacheService.getTxExcludeOptimize(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
         .thenReturn(mockTableTransactions());
     when(fileInfoCacheService.getDatafilesInfo(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), 1L))
         .thenReturn(mockDataFileInfos());
@@ -413,13 +414,13 @@ public class TableControllerTest {
     return transactions;
   }
 
-  private List<DataFileInfo> mockDataFileInfos() {
-    List<DataFileInfo> dataFileInfos = new ArrayList<>();
-    DataFileInfo dataFileInfo = new DataFileInfo();
+  private List<AMSDataFileInfo> mockDataFileInfos() {
+    List<AMSDataFileInfo> dataFileInfos = new ArrayList<>();
+    AMSDataFileInfo dataFileInfo = new AMSDataFileInfo();
     dataFileInfo.setPath("/home/");
     dataFileInfo.setPartition("id");
     dataFileInfo.setType("BASE_FILE");
-    dataFileInfo.setSize(100L);
+    dataFileInfo.setFileSize(100L);
     dataFileInfo.setCommitTime(1656855463563L);
     dataFileInfos.add(dataFileInfo);
     return dataFileInfos;

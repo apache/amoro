@@ -62,7 +62,7 @@ CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${ARCTIC_H
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
 function status(){
     test -e ${PID} || return 2
-    test -d /proc/$(cat ${PID}) && return 0 || return 1
+    test -n "$(ps -p $(cat ${PID}) -o pid=)" && return 0 || return 1
 }
 
 function start() {

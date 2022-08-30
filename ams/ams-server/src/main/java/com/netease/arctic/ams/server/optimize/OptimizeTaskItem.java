@@ -52,7 +52,7 @@ public class OptimizeTaskItem extends IJDBCService {
   private static final long RETRY_INTERVAL = 60000; // 60s
 
   private final BaseOptimizeTask optimizeTask;
-  private final BaseOptimizeTaskRuntime optimizeRuntime;
+  private volatile BaseOptimizeTaskRuntime optimizeRuntime;
   private final ReentrantLock lock = new ReentrantLock();
 
   public OptimizeTaskItem(BaseOptimizeTask optimizeTask,
@@ -80,12 +80,14 @@ public class OptimizeTaskItem extends IJDBCService {
   public void onPending() {
     lock.lock();
     try {
-      if (optimizeRuntime.getStatus() == OptimizeStatus.Failed) {
-        optimizeRuntime.setRetry(optimizeRuntime.getRetry() + 1);
+      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      if (newRuntime.getStatus() == OptimizeStatus.Failed) {
+        newRuntime.setRetry(newRuntime.getRetry() + 1);
       }
-      optimizeRuntime.setPendingTime(System.currentTimeMillis());
-      optimizeRuntime.setStatus(OptimizeStatus.Pending);
-      persistTaskRuntime(false);
+      newRuntime.setPendingTime(System.currentTimeMillis());
+      newRuntime.setStatus(OptimizeStatus.Pending);
+      persistTaskRuntime(newRuntime, false);
+      optimizeRuntime = newRuntime;
     } finally {
       lock.unlock();
     }
@@ -94,12 +96,17 @@ public class OptimizeTaskItem extends IJDBCService {
   public TableTaskHistory onExecuting(JobId jobId, String attemptId) {
     lock.lock();
     try {
+      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       long currentTime = System.currentTimeMillis();
-      optimizeRuntime.setAttemptId(attemptId);
-      optimizeRuntime.setExecuteTime(currentTime);
-      optimizeRuntime.setJobId(jobId);
-      optimizeRuntime.setStatus(OptimizeStatus.Executing);
-      persistTaskRuntime(false);
+      newRuntime.setAttemptId(attemptId);
+      newRuntime.setExecuteTime(currentTime);
+      newRuntime.setJobId(jobId);
+      newRuntime.setStatus(OptimizeStatus.Executing);
+      newRuntime.setPreparedTime(BaseOptimizeTaskRuntime.INVALID_TIME);
+      newRuntime.setCostTime(0);
+      newRuntime.setErrorMessage(null);
+      persistTaskRuntime(newRuntime, false);
+      optimizeRuntime = newRuntime;
       return constructTableTaskHistory(currentTime);
     } catch (Throwable t) {
       onFailed(new ErrorMessage(System.currentTimeMillis(),
@@ -113,10 +120,12 @@ public class OptimizeTaskItem extends IJDBCService {
   public void onCommitted(long commitTime) {
     lock.lock();
     try {
-      optimizeRuntime.setCommitTime(commitTime);
-      optimizeRuntime.setStatus(OptimizeStatus.Committed);
-      // after commit if will be delete, there is no need to update
-      persistTaskRuntime(false);
+      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      newRuntime.setCommitTime(commitTime);
+      newRuntime.setStatus(OptimizeStatus.Committed);
+      // after commit, task will be deleted, there is no need to update
+      persistTaskRuntime(newRuntime, false);
+      optimizeRuntime = newRuntime;
     } finally {
       lock.unlock();
     }
@@ -126,12 +135,15 @@ public class OptimizeTaskItem extends IJDBCService {
     long reportTime = System.currentTimeMillis();
     lock.lock();
     try {
-      optimizeRuntime.setErrorMessage(errorMessage);
-      optimizeRuntime.setStatus(OptimizeStatus.Failed);
-      optimizeRuntime.setReportTime(reportTime);
-      optimizeRuntime.setAttemptId(null);
-      optimizeRuntime.setCostTime(costTime);
-      persistTaskRuntime(false);
+      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      newRuntime.setErrorMessage(errorMessage);
+      newRuntime.setStatus(OptimizeStatus.Failed);
+      newRuntime.setPreparedTime(BaseOptimizeTaskRuntime.INVALID_TIME);
+      newRuntime.setReportTime(reportTime);
+      newRuntime.setAttemptId(null);
+      newRuntime.setCostTime(costTime);
+      persistTaskRuntime(newRuntime, false);
+      optimizeRuntime = newRuntime;
     } finally {
       lock.unlock();
     }
@@ -141,17 +153,19 @@ public class OptimizeTaskItem extends IJDBCService {
     long reportTime = System.currentTimeMillis();
     lock.lock();
     try {
-      if (optimizeRuntime.getExecuteTime() == BaseOptimizeTaskRuntime.INVALID_TIME) {
-        optimizeRuntime.setExecuteTime(preparedTime);
+      BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
+      if (newRuntime.getExecuteTime() == BaseOptimizeTaskRuntime.INVALID_TIME) {
+        newRuntime.setExecuteTime(preparedTime);
       }
-      optimizeRuntime.setPreparedTime(preparedTime);
-      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
-      optimizeRuntime.setReportTime(reportTime);
-      optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
-      optimizeRuntime.setNewFileSize(newFileSize);
-      optimizeRuntime.setTargetFiles(targetFiles);
-      optimizeRuntime.setCostTime(costTime);
-      persistTaskRuntime(true);
+      newRuntime.setPreparedTime(preparedTime);
+      newRuntime.setStatus(OptimizeStatus.Prepared);
+      newRuntime.setReportTime(reportTime);
+      newRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
+      newRuntime.setNewFileSize(newFileSize);
+      newRuntime.setTargetFiles(targetFiles);
+      newRuntime.setCostTime(costTime);
+      persistTaskRuntime(newRuntime, true);
+      optimizeRuntime = newRuntime;
     } finally {
       lock.unlock();
     }
@@ -228,18 +242,18 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
-  private void persistTaskRuntime(boolean updateTargetFiles) {
+  private void persistTaskRuntime(BaseOptimizeTaskRuntime newRuntime, boolean updateTargetFiles) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
           getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
       InternalTableFilesMapper internalTableFilesMapper =
           getMapper(sqlSession, InternalTableFilesMapper.class);
 
-      optimizeTaskRuntimesMapper.updateOptimizeTaskRuntime(optimizeRuntime);
+      optimizeTaskRuntimesMapper.updateOptimizeTaskRuntime(newRuntime);
       if (updateTargetFiles) {
         try {
           internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
-          optimizeRuntime.getTargetFiles().forEach(file -> {
+          newRuntime.getTargetFiles().forEach(file -> {
             ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
             if (contentFile instanceof DataFile) {
               internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),

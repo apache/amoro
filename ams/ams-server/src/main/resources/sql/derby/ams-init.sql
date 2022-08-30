@@ -49,6 +49,9 @@ CREATE TABLE snapshot_info_cache (
     parent_snapshot_id bigint NOT NULL,
     action varchar(64) DEFAULT NULL,
     inner_table varchar(64) NOT NULL,
+    producer varchar(64) NOT NULL DEFAULT 'INGESTION',
+    file_size bigint NOT NULL DEFAULT 0,
+    file_count int NOT NULL DEFAULT 0,
     commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (table_identifier,inner_table,snapshot_id)
     );
@@ -141,6 +144,7 @@ CREATE TABLE file_info_cache (
     inner_table varchar(64) DEFAULT NULL,
     file_path varchar(400) NOT NULL,
     file_type varchar(64) DEFAULT NULL,
+    producer varchar(64) NOT NULL DEFAULT 'INGESTION',
     file_size bigint DEFAULT NULL,
     file_mask bigint DEFAULT NULL,
     file_index bigint DEFAULT NULL,
@@ -245,7 +249,7 @@ CREATE TABLE ddl_record
 (
     table_identifier varchar(256) NOT NULL,
     ddl        clob(64m),
-    ddl_type        varchar(256) NOT NULL,
+    ddl_type       varchar(256) NOT NULL,
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

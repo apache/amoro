@@ -21,9 +21,8 @@ package com.netease.arctic.table;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
-import org.apache.iceberg.UpdateProperties;
-import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.StructLikeMap;
+
 import java.util.Map;
 
 /**
@@ -66,20 +65,6 @@ public interface KeyedTable extends ArcticTable {
    * @return a table scan for this table
    */
   KeyedTableScan newScan();
-
-  /**
-   * Create a new {@link UpdateSchema} to alter the columns of this table and commit the change.
-   *
-   * @return a new {@link UpdateSchema}
-   */
-  UpdateSchema updateSchema();
-
-  /**
-   * Create a new {@link UpdateProperties} to update table properties and commit the changes.
-   *
-   * @return a new {@link UpdateProperties}
-   */
-  UpdateProperties updateProperties();
 
   /**
    * Allocate a new transaction id from this table
