@@ -26,7 +26,7 @@ import com.netease.arctic.ams.api.OptimizeTaskId;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class BaseOptimizeTaskRuntime {
+public class BaseOptimizeTaskRuntime implements Cloneable {
   public static final long INVALID_TIME = 0;
   private OptimizeTaskId optimizeTaskId;
   private OptimizeStatus status = OptimizeStatus.Init;
@@ -201,5 +201,14 @@ public class BaseOptimizeTaskRuntime {
         ", attemptId='" + attemptId +
         ", targetFiles=" + targetFiles +
         '}';
+  }
+
+  @Override
+  public BaseOptimizeTaskRuntime clone() {
+    try {
+      return (BaseOptimizeTaskRuntime) super.clone();
+    } catch (CloneNotSupportedException e) {
+      throw new RuntimeException(e);
+    }
   }
 }
