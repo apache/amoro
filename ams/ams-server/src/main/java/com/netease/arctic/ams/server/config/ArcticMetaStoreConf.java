@@ -103,6 +103,11 @@ public class ArcticMetaStoreConf {
           .stringType()
           .defaultValue("")
           .withDescription("Bind host on which to run the ams thrift service.");
+  public static final ConfigOption<String> THRIFT_BIND_HOST_PREFIX =
+      ConfigOptions.key("arctic.ams.server-host.prefix")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Bind host on which to run the ams thrift service.");
   public static final ConfigOption<String> ZOOKEEPER_SERVER =
       ConfigOptions.key("arctic.ams.zookeeper.server")
           .stringType()

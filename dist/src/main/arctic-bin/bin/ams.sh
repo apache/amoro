@@ -57,7 +57,7 @@ if [ -z "$RUNSERVER" ]; then
     exit 1
 fi
 
-export CLASSPATH=$ARCTIC_HOME/conf/:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | grep -v 'CompactJob.jar' | paste -sd':' -)
+export CLASSPATH=$ARCTIC_HOME/conf/:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
 CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${ARCTIC_HOME}  $JAVA_OPTS ${RUNSERVER}"
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
 function status(){

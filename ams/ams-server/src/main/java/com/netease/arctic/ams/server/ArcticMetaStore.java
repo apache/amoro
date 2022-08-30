@@ -45,6 +45,7 @@ import com.netease.arctic.ams.server.service.impl.DerbyService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
+import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
@@ -62,6 +63,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -95,15 +97,16 @@ public class ArcticMetaStore {
     try {
       String configPath = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()) + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
-      JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
-      if (systemConfig.getBooleanValue(ArcticMetaStoreConf.HA_ENABLE.key())) {
-        String zkAddress = systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key());
-        String cluster = systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key());
+      Configuration conf = initSystemConfig();
+      ArcticMetaStore.conf = conf;
+      if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
+        String zkAddress = conf.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER);
+        String cluster = conf.getString(ArcticMetaStoreConf.CLUSTER_NAME);
         haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
         haService.addListener(genHAListener(zkAddress, cluster));
         haService.leaderLatch();
       } else {
-        startMetaStore(initSystemConfig());
+        startMetaStore(conf);
       }
     } catch (Throwable t) {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
@@ -113,7 +116,6 @@ public class ArcticMetaStore {
 
   public static void startMetaStore(Configuration conf) throws Throwable {
     try {
-      ArcticMetaStore.conf = conf;
       long maxMessageSize = conf.getLong(ArcticMetaStoreConf.SERVER_MAX_MESSAGE_SIZE);
       int minWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MIN_THREADS);
       int maxWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MAX_THREADS);
@@ -172,7 +174,9 @@ public class ArcticMetaStore {
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
       syncAndExpiredFileInfoCache(server);
       startSyncDDl(server);
-      checkLeader();
+      if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
+        checkLeader();
+      }
       server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
@@ -355,6 +359,7 @@ public class ArcticMetaStore {
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static void checkLeader() {
@@ -367,7 +372,8 @@ public class ArcticMetaStore {
         }
         try {
           if (haService != null && isLeader.get() &&
-              !haService.getMaster().equals(haService.getNodeInfo(conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
+              !haService.getMaster().equals(haService.getNodeInfo(
+                  conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
                   conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)))) {
             LOG.info("there is not leader, the leader is " + JSONObject.toJSONString(haService.getMaster()));
             failover();
@@ -381,6 +387,7 @@ public class ArcticMetaStore {
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static Configuration initSystemConfig() {
@@ -389,8 +396,16 @@ public class ArcticMetaStore {
     config.setString(ArcticMetaStoreConf.ARCTIC_HOME, System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()));
     config.setInteger(
         ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
-    config.setString(
-        ArcticMetaStoreConf.THRIFT_BIND_HOST, systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST.key()));
+    if (!systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key())) {
+      throw new RuntimeException("configuration " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " must be set");
+    }
+    InetAddress inetAddress =
+        AmsUtils.getLocalHostExactAddress(systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+    if (inetAddress == null) {
+      throw new RuntimeException("can't find host address start with " +
+          systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+    }
+    config.setString(ArcticMetaStoreConf.THRIFT_BIND_HOST, inetAddress.getHostAddress());
     config.setInteger(
         ArcticMetaStoreConf.HTTP_SERVER_PORT, systemConfig.getInteger(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
     config.setInteger(
@@ -598,10 +613,9 @@ public class ArcticMetaStore {
           ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
           String masterPath = AmsHAProperties.getMasterPath(namespace);
           zkService.create(masterPath);
-          JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
           AmsServerInfo serverInfo = new AmsServerInfo();
-          serverInfo.setHost(systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST.key()));
-          serverInfo.setThriftBindPort(systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+          serverInfo.setHost(conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST));
+          serverInfo.setThriftBindPort(conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT));
           zkService.setData(masterPath, JSONObject.toJSONString(serverInfo));
           isLeader.set(true);
           startMetaStore(initSystemConfig());
