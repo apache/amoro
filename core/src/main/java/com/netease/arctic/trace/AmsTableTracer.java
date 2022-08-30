@@ -161,7 +161,6 @@ public class AmsTableTracer implements TableTracer {
       update = true;
     }
     if (updateColumns.size() > 0 && Constants.INNER_TABLE_BASE.equals(innerTable)) {
-      table.refresh();
       int schemaId = table.schema().schemaId();
       SchemaUpdateMeta ddlCommitMeta = new SchemaUpdateMeta();
       ddlCommitMeta.setSchemaId(schemaId);

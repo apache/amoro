@@ -1,5 +1,6 @@
 package com.netease.arctic.hive.op;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.MockDataFileBuilder;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
@@ -7,15 +8,8 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
@@ -28,6 +22,12 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class TestOverwriteFiles extends HiveTableTestBase {
 
@@ -170,10 +170,14 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     Assert.assertTrue(
         "table location to new path",
         hiveTable.getSd().getLocation().endsWith("/test_path/hive_data_location"));
-    Assert.assertEquals("table partition properties is error",
+    Assert.assertEquals("table partition properties hive location is error",
         hiveTable.getSd().getLocation(),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+    Assert.assertEquals("table partition properties transient_lastDdlTime is error",
+        hiveTable.getParameters().get("transient_lastDdlTime"),
+        table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
     // =================== test delete all files and add no file to un-partitioned table ===================
     overwriteFiles = table.newOverwrite();
@@ -190,11 +194,14 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     Assert.assertTrue(
         "table location change to hive location",
         hiveLocation.startsWith(table.hiveLocation()));
-    Assert.assertEquals("table partition properties is error",
+    Assert.assertEquals("table partition property hive location is error",
         hiveTable.getSd().getLocation(),
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
-    System.out.println(hiveLocation);
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION));
+    Assert.assertEquals("table partition property transient_lastDdlTime is error",
+        hiveTable.getParameters().get("transient_lastDdlTime"),
+        table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
+            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
     hiveCatalog.dropTable(identifier, true);
     AMS.handler().getTableCommitMetas().remove(identifier.buildTableIdentifier());
