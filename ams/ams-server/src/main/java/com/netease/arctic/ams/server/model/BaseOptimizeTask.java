@@ -43,7 +43,6 @@ public class BaseOptimizeTask extends OptimizeTask {
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
   private int isDeletePosDelete;
 
-
   public BaseOptimizeTask() {
   }
 
@@ -70,7 +69,6 @@ public class BaseOptimizeTask extends OptimizeTask {
   public void setMaxChangeTransactionId(long maxChangeTransactionId) {
     this.maxChangeTransactionId = maxChangeTransactionId;
   }
-
 
   public String getPartition() {
     return partition;

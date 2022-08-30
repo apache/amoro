@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +74,8 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                         arcticTable.asKeyedTable().baseLocation() : arcticTable.asUnkeyedTable().location(),
                             targetFile.path().toString().substring(targetFile.path().toString().lastIndexOf("/") + 1));
                 HivePartitionUtil
-                    .getPartition(hiveClient, arcticTable, partitionValues, partitionPath);
+                    .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
+                        Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
               }
               partitionPathMap.put(partition, partitionPath);
             }

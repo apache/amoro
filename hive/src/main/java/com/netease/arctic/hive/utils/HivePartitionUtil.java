@@ -35,7 +35,6 @@ import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 
-import java.util.Collections;
 import java.util.List;
 
 public class HivePartitionUtil {
@@ -82,7 +81,7 @@ public class HivePartitionUtil {
     p.setSd(sd);
 
     HiveTableUtil.generateTableProperties(createTimeInSeconds, dataFiles)
-        .forEach((key, value) -> p.putToParameters(key, value));
+        .forEach(p::putToParameters);
 
     if (privilegeSet != null) {
       p.setPrivileges(privilegeSet.deepCopy());
@@ -99,56 +98,30 @@ public class HivePartitionUtil {
   }
 
 
-  public static Partition getPartition(HMSClient hmsClient,
-                                       ArcticTable arcticTable,
-                                       List<String> partitionValues,
-                                       String partitionLocation) {
+  public static void createPartitionIfAbsent(HMSClient hmsClient,
+                                             ArcticTable arcticTable,
+                                             List<String> partitionValues,
+                                             String partitionLocation,
+                                             List<DataFile> dataFiles,
+                                             int accessTimestamp) {
     String db = arcticTable.id().getDatabase();
     String tableName = arcticTable.id().getTableName();
-    Table hiveTable;
-    try {
-      hiveTable = hmsClient.run(c -> c.getTable(db, tableName));
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
 
     try {
-      return hmsClient.run(client -> {
+      hmsClient.run(client -> {
         Partition partition;
         try {
           partition = client.getPartition(db, tableName, partitionValues);
           return partition;
         } catch (NoSuchObjectException noSuchObjectException) {
-          partition = newPartition(hiveTable, partitionValues, partitionLocation, Collections.emptyList());
+          Table hiveTable = client.getTable(db, tableName);
+          partition = newPartition(hiveTable, partitionValues, partitionLocation,
+              dataFiles, accessTimestamp);
           client.add_partition(partition);
           return partition;
         }
       });
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  public static void addPartition(HMSClient hmsClient,
-                                  ArcticTable arcticTable,
-                                  List<String> partitionValues,
-                                  String partitionLocation) {
-    String db = arcticTable.id().getDatabase();
-    String tableName = arcticTable.id().getTableName();
-    Table hiveTable;
-    try {
-      hiveTable = hmsClient.run(c -> c.getTable(db, tableName));
-    } catch (TException | InterruptedException e) {
-      throw new RuntimeException(e);
-    }
-
-    try {
-      hmsClient.run(client -> {
-        Partition partition = newPartition(hiveTable, partitionValues, partitionLocation, Collections.emptyList());
-        client.add_partition(partition);
-        return partition;
-      });
-    } catch (TException | InterruptedException e) {
+    } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
@@ -174,8 +147,10 @@ public class HivePartitionUtil {
   public static void updatePartitionLocation(HMSClient hmsClient,
                                              ArcticTable arcticTable,
                                              Partition hivePartition,
-                                             String newLocation) {
+                                             String newLocation,
+                                             List<DataFile> dataFiles,
+                                             int accessTimestamp) {
     dropPartition(hmsClient, arcticTable, hivePartition);
-    addPartition(hmsClient, arcticTable, hivePartition.getValues(), newLocation);
+    createPartitionIfAbsent(hmsClient, arcticTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
   }
 }

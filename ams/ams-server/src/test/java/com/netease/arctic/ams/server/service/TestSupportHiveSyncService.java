@@ -20,12 +20,12 @@ package com.netease.arctic.ams.server.service;
 
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeBase;
 import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -56,7 +56,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveMajorOptimizeBase
     Assert.assertEquals(0, partitionProperty.size());
     String newLocation = createEmptyLocationForHive(testUnPartitionKeyedHiveTable);
     testUnPartitionKeyedHiveTable.baseTable().updatePartitionProperties(null)
-        .set(EMPTY_STRUCT, TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newLocation).commit();
+        .set(EMPTY_STRUCT, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newLocation).commit();
     String hiveLocation = ((SupportHive) testUnPartitionKeyedHiveTable).getHMSClient().run(client -> {
       Table hiveTable = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
           testUnPartitionKeyedHiveTable.id().getTableName());
@@ -100,7 +100,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveMajorOptimizeBase
     List<DataFile> dataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 1);
     String partitionLocation = FileUtil.getFileDir(dataFiles.get(0).path().toString());
     testKeyedHiveTable.baseTable().updatePartitionProperties(null)
-        .set(dataFiles.get(0).partition(), TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, partitionLocation)
+        .set(dataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, partitionLocation)
         .commit();
 
     List<String> partitionValues =
@@ -260,7 +260,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveMajorOptimizeBase
     List<DataFile> newDataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 2);
     String newPartitionLocation = FileUtil.getFileDir(newDataFiles.get(0).path().toString());
     testKeyedHiveTable.baseTable().updatePartitionProperties(null)
-        .set(newDataFiles.get(0).partition(), TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newPartitionLocation)
+        .set(newDataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newPartitionLocation)
         .commit();
     Assert.assertNotEquals(newPartitionLocation, hivePartition.getSd().getLocation());
 

@@ -25,12 +25,12 @@ import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -38,7 +38,10 @@ import org.apache.hadoop.hive.metastore.Warehouse;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +116,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
       if (arcticTable.spec().isUnpartitioned()) {
         syncNoPartitionTable(arcticTable, partitionProperty, traceId);
       } else {
-        syncPartitionTable(arcticTable, partitionProperty, traceId);
+        syncPartitionTable(arcticTable, partitionProperty);
       }
     }
 
@@ -125,12 +128,12 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
                                              StructLikeMap<Map<String, String>> partitionProperty,
                                              String traceId) {
       Map<String, String> property = partitionProperty.get(TablePropertyUtil.EMPTY_STRUCT);
-      if (property == null || property.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
+      if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
         LOG.debug("[{}] {} has no hive location in partition property", traceId, arcticTable.id());
         return;
       }
 
-      String currentLocation = property.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+      String currentLocation = property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
       String hiveLocation;
       try {
         hiveLocation = ((SupportHive) arcticTable).getHMSClient().run(client -> {
@@ -157,8 +160,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
     }
 
     private static void syncPartitionTable(ArcticTable arcticTable,
-                                           StructLikeMap<Map<String, String>> partitionProperty,
-                                           String traceId) throws Exception {
+                                           StructLikeMap<Map<String, String>> partitionProperty) throws Exception {
       Map<String, StructLike> icebergPartitionMap = new HashMap<>();
       for (StructLike structLike : partitionProperty.keySet()) {
         icebergPartitionMap.put(arcticTable.spec().partitionToPath(structLike), structLike);
@@ -209,17 +211,20 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
                                                   StructLikeMap<Map<String, String>> partitionProperty) {
       inIcebergNotInHive.forEach(partition -> {
         Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
-        if (property == null || property.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
+        if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
           return;
         }
-        String currentLocation = property.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+        String currentLocation = property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
 
         if (arcticTable.io().exists(currentLocation)) {
-          HivePartitionUtil.addPartition(((SupportHive) arcticTable).getHMSClient(),
+          int transientTime = Integer.parseInt(property
+            .getOrDefault(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
+          List<DataFile> dataFiles = getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
+          HivePartitionUtil.createPartitionIfAbsent(((SupportHive) arcticTable).getHMSClient(),
               arcticTable,
               HivePartitionUtil.partitionValuesAsList(icebergPartitionMap.get(partition),
                   arcticTable.spec().partitionType()),
-              currentLocation);
+              currentLocation, dataFiles, transientTime);
         }
       });
     }
@@ -229,8 +234,9 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
                                                Map<String, Partition> hivePartitionMap) {
       inHiveNotInIceberg.forEach(partition -> {
         Partition hivePartition = hivePartitionMap.get(partition);
-        // todo lt check if hive partition is created by arctic
-        if (false) {
+        boolean isArctic = hivePartition.getParameters()
+            .getOrDefault(HiveTableProperties.ARCTIC_TABLE_FLAG, "false").equals("true");
+        if (isArctic) {
           HivePartitionUtil.dropPartition(((SupportHive) arcticTable).getHMSClient(), arcticTable, hivePartition);
         }
       });
@@ -244,21 +250,39 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
       Set<String> inHiveNotInIceberg = new HashSet<>();
       inBoth.forEach(partition -> {
         Map<String, String> property = partitionProperty.get(icebergPartitionMap.get(partition));
-        if (property == null || property.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
+        if (property == null || property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION) == null) {
           inHiveNotInIceberg.add(partition);
           return;
         }
 
-        String currentLocation = property.get(TableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+        String currentLocation = property.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
         Partition hivePartition = hivePartitionMap.get(partition);
 
         if (!Objects.equals(currentLocation, hivePartition.getSd().getLocation())) {
+          int transientTime = Integer.parseInt(property
+              .getOrDefault(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
+          List<DataFile> dataFiles = getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
           HivePartitionUtil.updatePartitionLocation(((SupportHive) arcticTable).getHMSClient(),
-              arcticTable, hivePartition, currentLocation);
+              arcticTable, hivePartition, currentLocation, dataFiles, transientTime);
         }
       });
 
       handleInHivePartitions(arcticTable, inHiveNotInIceberg, hivePartitionMap);
+    }
+
+    private static List<DataFile> getIcebergPartitionFiles(ArcticTable arcticTable,
+                                                           StructLike partition) {
+      UnkeyedTable baseStore;
+      baseStore = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+
+      List<DataFile> partitionFiles = new ArrayList<>();
+      TableScan tableScan = baseStore.newScan();
+      for (FileScanTask fileScanTask : tableScan.planFiles()) {
+        if (fileScanTask.file().partition().equals(partition)) {
+          partitionFiles.add(fileScanTask.file());
+        }
+      }
+      return partitionFiles;
     }
   }
 }
