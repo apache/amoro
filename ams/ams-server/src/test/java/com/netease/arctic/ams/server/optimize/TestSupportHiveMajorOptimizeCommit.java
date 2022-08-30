@@ -80,7 +80,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -131,7 +131,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -180,7 +180,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -225,7 +225,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -273,7 +273,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -320,7 +320,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -369,7 +369,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOpti
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, unused -> null);
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, taskItem -> {});
     optimizeCommit.commit(tableOptimizeRuntime);
 
     Set<String> newDataFilesPath = new HashSet<>();

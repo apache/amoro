@@ -51,6 +51,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -709,7 +710,12 @@ public class TableOptimizeItem extends IJDBCService {
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
-        BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(getArcticTable(true), tasksToCommit);
+        BaseOptimizeCommit optimizeCommit;
+        if (HiveTableUtil.isHive(getArcticTable())) {
+          optimizeCommit = new SupportHiveCommit(getArcticTable(true), tasksToCommit, OptimizeTaskItem::persistTargetFiles);
+        } else {
+          optimizeCommit = new BaseOptimizeCommit(getArcticTable(true), tasksToCommit);
+        }
         long commitTime = optimizeCommit.commit(tableOptimizeRuntime);
         optimizeTasksCommitted(
             optimizeCommit.getCommittedTasks(), commitTime, optimizeCommit.getPartitionOptimizeType());

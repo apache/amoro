@@ -89,14 +89,30 @@ public class HivePartitionUtil {
     return p;
   }
 
+  public static Partition getPartition(HMSClient hmsClient,
+                                       ArcticTable arcticTable,
+                                       List<String> partitionValues) {
+    String db = arcticTable.id().getDatabase();
+    String tableName = arcticTable.id().getTableName();
+
+    try {
+      return hmsClient.run(client -> {
+        Partition partition;
+        partition = client.getPartition(db, tableName, partitionValues);
+        return partition;
+      });
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static void rewriteHivePartitions(Partition partition, String location, List<DataFile> dataFiles,
-      int accessTimestamp) {
+                                           int accessTimestamp) {
     partition.getSd().setLocation(location);
     partition.setLastAccessTime(accessTimestamp);
     HiveTableUtil.generateTableProperties(accessTimestamp, dataFiles)
         .forEach(partition::putToParameters);
   }
-
 
   public static void createPartitionIfAbsent(HMSClient hmsClient,
                                              ArcticTable arcticTable,

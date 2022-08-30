@@ -31,6 +31,8 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   protected final Set<String> supportHivePartitions = new HashSet<>();
   // hive location.
   protected final String hiveLocation;
+  // files in locations don't need to major optimize
+  protected final Set<String> excludeLocations = new HashSet<>();
 
   public SupportHiveMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                       List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
@@ -63,7 +65,8 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
     }
 
     // check small data file count
-    if (checkSmallFileCount(partitionToPath, partitionNeedOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()))) {
+    if (checkSmallFileCount(partitionToPath,
+        partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()))) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       if (CollectionUtils.isEmpty(partitionPosDeleteFiles.get(partitionToPath))) {
         supportHivePartitions.add(partitionToPath);
@@ -90,8 +93,8 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
             TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT)) {
       // need to rewrite or move all files that not in hive location to hive location.
-      long fileCount = partitionNeedOptimizeFiles.get(partitionToPath) == null ?
-          0 : partitionNeedOptimizeFiles.get(partitionToPath).size();
+      long fileCount = partitionNeedMajorOptimizeFiles.get(partitionToPath) == null ?
+          0 : partitionNeedMajorOptimizeFiles.get(partitionToPath).size();
       return fileCount >= 1;
     }
 
@@ -105,8 +108,9 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
             TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
 
+    // if iceberg store has pos-delete, only optimize small files
     if (CollectionUtils.isNotEmpty(partitionPosDeleteFiles.get(partition))) {
-      partitionNeedOptimizeFiles.put(partition, smallFileList);
+      partitionNeedMajorOptimizeFiles.put(partition, smallFileList);
     }
 
     return super.checkSmallFileCount(partition, smallFileList);
@@ -116,14 +120,23 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   protected void fillPartitionNeedOptimizeFiles(String partition, ContentFile<?> contentFile) {
     // for support hive table, add all files in iceberg base store and not in hive store
     if (canInclude(contentFile.path().toString())) {
-      List<DataFile> files = partitionNeedOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
+      List<DataFile> files = partitionNeedMajorOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
       files.add((DataFile) contentFile);
-      partitionNeedOptimizeFiles.put(partition, files);
+      partitionNeedMajorOptimizeFiles.put(partition, files);
     }
   }
 
   @Override
   protected boolean canSkip(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return CollectionUtils.isEmpty(posDeleteFiles) && baseFiles.isEmpty();
+  }
+
+  private boolean canInclude(String filePath) {
+    for (String exclude : excludeLocations) {
+      if (filePath.contains(exclude)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

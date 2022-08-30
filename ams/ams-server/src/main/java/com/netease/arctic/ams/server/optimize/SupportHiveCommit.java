@@ -25,17 +25,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class SupportHiveCommit extends BaseOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(SupportHiveCommit.class);
 
-  protected Function<Void, Void> updateTargetFiles;
+  protected Consumer<OptimizeTaskItem> updateTargetFiles;
 
   public SupportHiveCommit(ArcticTable arcticTable,
                            Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
-                           Function<Void, Void> updateTargetFiles) {
+                           Consumer<OptimizeTaskItem> updateTargetFiles) {
     super(arcticTable, optimizeTasksToCommit);
     Preconditions.checkArgument(HiveTableUtil.isHive(arcticTable), "The table not support hive");
     this.updateTargetFiles = updateTargetFiles;
@@ -76,6 +76,8 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                 HivePartitionUtil
                     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
                         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
+
+                partitionPath = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues).getSd().getLocation();
               }
               partitionPathMap.put(partition, partitionPath);
             }
@@ -85,7 +87,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
           }
 
           optimizeRuntime.setTargetFiles(newTargetFiles);
-          updateTargetFiles.apply(null);
+          updateTargetFiles.accept(optimizeTaskItem);
         }
       }
     });
