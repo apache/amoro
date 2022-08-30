@@ -30,7 +30,7 @@
     <files>
         <file>
             <source>../optimizer/target/arctic-optimizer-${project.version}-jar-with-dependencies.jar</source>
-            <outputDirectory>plugin/</outputDirectory>
+            <outputDirectory>plugin/optimize</outputDirectory>
             <destName>OptimizeJob.jar</destName>
             <fileMode>0644</fileMode>
         </file>

@@ -85,7 +85,7 @@ public class FlinkOptimizer implements StatefulOptimizer {
 
     //add compact execute config
     String arcticHome = systemInfo.getString(OptimizerProperties.ARCTIC_HOME);
-    String jarPath = " " + arcticHome + "/plugin/OptimizeJob.jar ";
+    String jarPath = " " + arcticHome + "/plugin/optimize/OptimizeJob.jar ";
     String entryClass = this.getClass().getName();
     cmd += " -c " + entryClass + jarPath;
     String amsUrl =
