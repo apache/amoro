@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *    ${table_location}
  *            -| change
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
  *                            -| txid=${txid}
@@ -45,13 +45,13 @@ import java.util.concurrent.atomic.AtomicLong;
  *    ${table_location}
  *            -| change
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                  -| txid=${txid}
  *
  * For UnKeyed adapt hive with partitions the dir construct is :
  *    ${table_location}
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
  *                            -| ${timestamp_uuid}
@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * For Keyed adapt hive without partitions the dir construct is :
  *    ${table_location}
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                  -| ${timestamp_uuid}
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
