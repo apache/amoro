@@ -78,9 +78,6 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 
 public class FlinkTestBase extends HiveTableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
-  @ClassRule
-  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
-      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   public static boolean IS_LOCAL = true;
   public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();

@@ -35,8 +35,11 @@ import com.netease.arctic.flink.write.ArcticFileCommitterTest;
 import com.netease.arctic.flink.write.ArcticFileWriterTest;
 import com.netease.arctic.flink.write.FlinkSinkTest;
 import com.netease.arctic.hive.HiveTableTestBase;
+import org.apache.flink.test.util.MiniClusterWithClientResource;
+import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -60,6 +63,10 @@ import org.junit.runners.Suite;
     FlinkSinkTest.class
 })
 public class FlinkTestMain {
+
+  @ClassRule
+  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
+      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   @BeforeClass
   public static void setup() throws Exception {
