@@ -53,7 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.FlinkSchemaUtil.toRowType;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
@@ -144,7 +144,7 @@ public class FlinkSource {
       if (projectedSchema == null) {
         contextBuilder.project(arcticTable.schema());
       } else {
-        contextBuilder.project(FlinkSchemaUtil.convert(arcticTable.schema(), filterWatermark(projectedSchema)));
+        contextBuilder.project(FlinkSchemaUtil.convert(arcticTable.schema(), getPhysicalSchema(projectedSchema)));
       }
       contextBuilder.fromProperties(properties);
       ArcticScanContext scanContext = contextBuilder.build();
@@ -167,7 +167,7 @@ public class FlinkSource {
         if (dimTable) {
           rowType = toRowType(projectedSchema);
         } else {
-          rowType = toRowType(filterWatermark(projectedSchema));
+          rowType = toRowType(getPhysicalSchema(projectedSchema));
         }
       } else {
         rowType = FlinkSchemaUtil.convert(scanContext.project());

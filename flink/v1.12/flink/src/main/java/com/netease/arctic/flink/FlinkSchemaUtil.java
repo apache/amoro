@@ -57,34 +57,16 @@ public class FlinkSchemaUtil {
    * For now, it only be used in the case of Arctic as dim-table.
    */
   public static TableSchema getPhysicalSchema(TableSchema tableSchema, boolean addWatermark) {
-    if (!addWatermark) {
-      return tableSchema;
-    }
     TableSchema.Builder builder = filter(tableSchema, TableColumn::isPhysical);
-    tableSchema.getWatermarkSpecs().forEach(builder::watermark);
+    if (addWatermark) {
+      tableSchema.getWatermarkSpecs().forEach(builder::watermark);
+    }
+
     return builder.build();
   }
 
-  /**
-   * filter watermark due to watermark is a virtual field for now, not in arctic physical table.
-   */
-  public static TableSchema filterWatermark(TableSchema tableSchema) {
-    List<WatermarkSpec> watermarkSpecs = tableSchema.getWatermarkSpecs();
-    if (watermarkSpecs.isEmpty()) {
-      return tableSchema;
-    }
-
-    Function<TableColumn, Boolean> filter = (tableColumn) -> {
-      boolean isWatermark = false;
-      for (WatermarkSpec spec : watermarkSpecs) {
-        if (spec.getRowtimeAttribute().equals(tableColumn.getName())) {
-          isWatermark = true;
-          break;
-        }
-      }
-      return !isWatermark;
-    };
-    return filter(tableSchema, filter).build();
+  public static TableSchema getPhysicalSchema(TableSchema tableSchema) {
+    return getPhysicalSchema(tableSchema, false);
   }
 
   /**
