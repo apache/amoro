@@ -44,6 +44,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.ListMultimap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Multimaps;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -84,9 +85,13 @@ public class HiveMetaSynchronizer {
           LOG.info("Table {} sync new hive column {} to arctic", table.id(), hiveField);
         } else if (!icebergField.type().equals(hiveField.type()) ||
             !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
-          updateSchema.updateColumn(icebergField.name(), icebergField.type().asPrimitiveType(), hiveField.doc());
-          update = true;
-          LOG.info("Table {} sync updated hive column {} to arctic", table.id(), icebergField);
+          if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(), hiveField.type().asPrimitiveType())) {
+            updateSchema.updateColumn(hiveField.name(), hiveField.type().asPrimitiveType(), hiveField.doc());
+            update = true;
+            LOG.info("Table {} sync hive column {} to arctic", table.id(), hiveField);
+          } else {
+            LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch", table.id(), hiveField);
+          }
         }
       }
       if (update) {
