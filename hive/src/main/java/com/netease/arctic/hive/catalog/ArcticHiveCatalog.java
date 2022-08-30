@@ -47,6 +47,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -193,6 +194,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
             throw new IllegalArgumentException("Unsupported partition transform:" +
                 partitionField.transform().toString());
           }
+          Preconditions.checkArgument(schema.columns().indexOf(schema.findField(partitionField.sourceId())) >=
+              (schema.columns().size() - partitionSpec.fields().size()), "Partition field should be at last of " +
+              "schema");
         }
       }
     }
