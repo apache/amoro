@@ -105,6 +105,15 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           " the current snapshot, \"latest\": read all incremental data in the change table starting from the" +
           " current snapshot (the current snapshot will be excluded).");
 
+  public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
+      .key("submit.empty.snapshots")
+      .booleanType()
+      .defaultValue(true)
+      .withDescription("Optional submit empty snapshots to the arctic table, false means that writers will not emit" +
+          " empty WriteResults to the committer operator, and reduce the number of snapshots in File Cache; true" +
+          " means this job will submit empty snapshots to the table, it is suitable with some valid reasons, e.g." +
+          " advance watermark metadata stored in the table(https://github.com/apache/iceberg/pull/5561).");
+
   @Override
   public void validate(DescriptorProperties properties) {
     String emitMode = properties.getString(ARCTIC_EMIT_MODE);

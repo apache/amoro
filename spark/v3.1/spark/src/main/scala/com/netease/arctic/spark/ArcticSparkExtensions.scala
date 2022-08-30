@@ -22,7 +22,7 @@ package com.netease.arctic.spark
 import com.netease.arctic.spark.sql.catalyst.analysis.ResolveArcticCommand
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
-import com.netease.arctic.spark.sql.optimize.OptimizeWriteRule
+import com.netease.arctic.spark.sql.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}
 import org.apache.spark.sql.catalyst.optimizer._
@@ -33,21 +33,32 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectParser {
       case (_, parser) => new ArcticSqlExtensionsParser(parser)
     }
-    // analyzer extensions
+    // resolve arctic command
+    extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
+
+    // iceberg analyzer rules
     extensions.injectPostHocResolutionRule { _ => AlignRowLevelOperations }
-    extensions.injectResolutionRule{ spark => ResolveArcticCommand(spark) }
     extensions.injectCheckRule { _ => RowLevelOperationsPredicateCheck }
 
-    // optimizer extensions
+    // iceberg optimizer rules
     extensions.injectOptimizerRule { _ => OptimizeConditionsInRowLevelOperations }
     extensions.injectOptimizerRule { _ => PullupCorrelatedPredicatesInRowLevelOperations }
     extensions.injectOptimizerRule { spark => RewriteDelete(spark) }
     extensions.injectOptimizerRule { spark => RewriteUpdate(spark) }
     extensions.injectOptimizerRule { spark => RewriteMergeInto(spark) }
+    // arctic optimizer rules
+    extensions.injectOptimizerRule { spark => RewriteAppendArcticTable(spark) }
+    extensions.injectOptimizerRule { spark => RewriteDeleteFromArcticTable(spark) }
+    extensions.injectOptimizerRule { spark => RewriteUpdateArcticTable(spark) }
+
+    // arctic optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)
 
-    // planner extensions
-    extensions.injectPlannerStrategy { spark => execution.ExtendedArcticUnkeyedStrategy(spark) }
-    extensions.injectPlannerStrategy { spark => execution.ExtendedArcticCommandStrategy(spark) }
+    // iceberg strategy rules
+    extensions.injectPlannerStrategy { spark => execution.ExtendedIcebergStrategy(spark) }
+
+    // arctic strategy rules
+    extensions.injectPlannerStrategy { spark => execution.ExtendedArcticStrategy(spark) }
   }
+
 }
