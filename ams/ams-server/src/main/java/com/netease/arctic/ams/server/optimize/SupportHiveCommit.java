@@ -77,7 +77,8 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
                         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
 
-                partitionPath = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues).getSd().getLocation();
+                partitionPath = HivePartitionUtil
+                    .getPartition(hiveClient, arcticTable, partitionValues).getSd().getLocation();
               }
               partitionPathMap.put(partition, partitionPath);
             }

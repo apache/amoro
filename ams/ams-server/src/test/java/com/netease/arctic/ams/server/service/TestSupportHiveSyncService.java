@@ -146,6 +146,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveMajorOptimizeBase
       p.putToParameters("transient_lastDdlTime", lastAccessTime + "");
       p.putToParameters("totalSize", totalSize + "");
       p.putToParameters("numFiles", files + "");
+      p.putToParameters(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
       if (privilegeSet != null) {
         p.setPrivileges(privilegeSet.deepCopy());
       }

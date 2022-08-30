@@ -218,7 +218,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
 
         if (arcticTable.io().exists(currentLocation)) {
           int transientTime = Integer.parseInt(property
-            .getOrDefault(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
+              .getOrDefault(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, "0"));
           List<DataFile> dataFiles = getIcebergPartitionFiles(arcticTable, icebergPartitionMap.get(partition));
           HivePartitionUtil.createPartitionIfAbsent(((SupportHive) arcticTable).getHMSClient(),
               arcticTable,

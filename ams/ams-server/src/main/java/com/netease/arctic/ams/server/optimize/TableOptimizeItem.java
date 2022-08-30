@@ -712,7 +712,8 @@ public class TableOptimizeItem extends IJDBCService {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
         BaseOptimizeCommit optimizeCommit;
         if (HiveTableUtil.isHive(getArcticTable())) {
-          optimizeCommit = new SupportHiveCommit(getArcticTable(true), tasksToCommit, OptimizeTaskItem::persistTargetFiles);
+          optimizeCommit = new SupportHiveCommit(getArcticTable(true),
+              tasksToCommit, OptimizeTaskItem::persistTargetFiles);
         } else {
           optimizeCommit = new BaseOptimizeCommit(getArcticTable(true), tasksToCommit);
         }
