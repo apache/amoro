@@ -84,7 +84,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     ServiceContainer.getFileInfoCacheService().commitCacheFileInfo(meta);
 
     List<TransactionsOfTable> transactionsOfTables =
-        ServiceContainer.getFileInfoCacheService().getTransactions(tableIdentifier);
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(tableIdentifier);
     Assert.assertEquals(2, transactionsOfTables.size());
     Assert.assertEquals(snapshotId1, transactionsOfTables.get(0).getTransactionId());
     Assert.assertEquals(snapshotId, transactionsOfTables.get(1).getTransactionId());
@@ -110,7 +110,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     meta.setChanges(changes);
 
     AtomicBoolean isCached = new AtomicBoolean(false);
-    ServiceContainer.getFileInfoCacheService().getTransactions(tableIdentifier).forEach(transactionsOfTable -> {
+    ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(tableIdentifier).forEach(transactionsOfTable -> {
       if (transactionsOfTable.getTransactionId() == snapshotId) {
         isCached.set(true);
       }
@@ -154,7 +154,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     ServiceContainer.getFileInfoCacheService().commitCacheFileInfo(meta);
 
     List<TransactionsOfTable> transactionsOfTables =
-        ServiceContainer.getFileInfoCacheService().getTransactions(tableIdentifier);
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(tableIdentifier);
     Assert.assertEquals(2, transactionsOfTables.size());
     Assert.assertEquals(snapshotId1, transactionsOfTables.get(0).getTransactionId());
     Assert.assertEquals(snapshotId, transactionsOfTables.get(1).getTransactionId());
@@ -198,7 +198,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     List<DataFileInfo> commitDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
         fileSyncUnkeyedTable.id().buildTableIdentifier(),
         "base");
-    List<TransactionsOfTable> commitSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+    List<TransactionsOfTable> commitSnapInfos = ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(
         fileSyncUnkeyedTable.id().buildTableIdentifier());
     ServiceContainer.getFileInfoCacheService().deleteTableCache(tableId);
     List<DataFileInfo> cacheDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
@@ -210,7 +210,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     List<DataFileInfo> syncDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
         fileSyncUnkeyedTable.id().buildTableIdentifier(),
         "base");
-    List<TransactionsOfTable> syncSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+    List<TransactionsOfTable> syncSnapInfos = ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(
         fileSyncUnkeyedTable.id().buildTableIdentifier());
     Assert.assertEquals(commitDataFileInfos.size(), syncDataFileInfos.size());
     for (DataFileInfo commitDataFileInfo : commitDataFileInfos) {
@@ -233,20 +233,22 @@ public class TestFileInfoCacheService extends TableTestBase {
         .deleteFile(FILE_B)
         .addFile(FILE_C)
         .commit();
-    List<TransactionsOfTable> overwriteCommitSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
-        fileSyncUnkeyedTable.id().buildTableIdentifier());
+    List<TransactionsOfTable> overwriteCommitSnapInfos =
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(
+            fileSyncUnkeyedTable.id().buildTableIdentifier());
     ServiceContainer.getFileInfoCacheService().deleteTableCache(tableId);
     ServiceContainer.getFileInfoCacheService()
         .syncTableFileInfo(fileSyncUnkeyedTable.id().buildTableIdentifier(), "base");
     List<DataFileInfo> overwriteSyncDataFileInfos = ServiceContainer.getFileInfoCacheService().getOptimizeDatafiles(
         fileSyncUnkeyedTable.id().buildTableIdentifier(),
         "base");
-    List<TransactionsOfTable> overwriteSnapInfos = ServiceContainer.getFileInfoCacheService().getTransactions(
+    List<TransactionsOfTable> overwriteSnapInfos = ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(
         fileSyncUnkeyedTable.id().buildTableIdentifier());
     Assert.assertEquals(1, overwriteSyncDataFileInfos.size());
     Assert.assertEquals(FILE_C.path(), overwriteSyncDataFileInfos.get(0).getPath());
     Assert.assertEquals(1, overwriteSnapInfos.size());
-    Assert.assertEquals(overwriteCommitSnapInfos.get(0).getTransactionId(),
+    Assert.assertEquals(
+        overwriteCommitSnapInfos.get(0).getTransactionId(),
         overwriteSnapInfos.get(0).getTransactionId());
   }
 
