@@ -54,9 +54,12 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-
 public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {
   private static final Logger LOG = LoggerFactory.getLogger(UnkeyedSparkBatchScan.class);
+
+  public static final String FILE_NAME_COL = "_file";
+  public static final String ROW_POS_COL = "_pos";
+  public static final List<String> rowIdColumns = Lists.newArrayList(FILE_NAME_COL, ROW_POS_COL);
 
   private final UnkeyedTable table;
   private final boolean caseSensitive;
@@ -68,7 +71,6 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
   private final Long asOfTimestamp;
   private StructType readSchema = null;
   private List<CombinedScanTask> tasks = null;
-
 
   UnkeyedSparkBatchScan(
       UnkeyedTable table, boolean caseSensitive,
@@ -292,5 +294,4 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
         "IcebergScan(table=%s, type=%s, filters=%s, caseSensitive=%s)",
         table, expectedSchema.asStruct(), filterExpressions, caseSensitive);
   }
-
 }

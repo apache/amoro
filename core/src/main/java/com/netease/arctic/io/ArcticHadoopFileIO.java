@@ -43,7 +43,6 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticHadoopFileIO.class);
   private final TableMetaStore tableMetaStore;
 
   public ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
@@ -178,6 +177,10 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         throw new UncheckedIOException("Failed to check file exist for " + path, e);
       }
     });
+  }
+
+  public TableMetaStore getTableMetaStore() {
+    return tableMetaStore;
   }
 
   private FileSystem getFs(Path path) {

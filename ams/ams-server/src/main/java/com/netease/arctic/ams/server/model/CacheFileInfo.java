@@ -96,16 +96,17 @@ public class CacheFileInfo {
               .get(table.properties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
               .getLong();
     }
-    String primaryKey = TableMetadataUtil.getTableAllIdentifyName(identifier) + tableType + amsFile.getPath();
+    String partitionName = StringUtils.isEmpty(partitionToPath(amsFile.getPartition())) ?
+        "" :
+        partitionToPath(amsFile.getPartition());
+    String primaryKey =
+        TableMetadataUtil.getTableAllIdentifyName(identifier) + tableType + amsFile.getPath() + partitionName;
     String primaryKeyMd5 = Hashing.md5()
         .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
         .toString();
     Long parentId = snapshot.parentId() == null ? -1 : snapshot.parentId();
     String producer =
         snapshot.summary().getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
-    String partitionName = StringUtils.isEmpty(partitionToPath(amsFile.getPartition())) ?
-        null :
-        partitionToPath(amsFile.getPartition());
     return new CacheFileInfo(primaryKeyMd5, identifier, snapshot.snapshotId(),
         parentId, null,
         tableType, amsFile.getPath(), amsFile.getFileType(), amsFile.getFileSize(), amsFile.getMask(),

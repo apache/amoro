@@ -66,7 +66,7 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
   protected static final TemporaryFolder tempFolder = new TemporaryFolder();
 
-  protected static HMSMockServer hms  ;
+  protected static HMSMockServer hms;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
@@ -80,10 +80,10 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
 
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone()),
-      Types.NestedField.required(4, "op_time_with_zone", Types.TimestampType.withZone()),
-      Types.NestedField.required(5, "d", Types.DecimalType.of(3, 0))
+      Types.NestedField.required(2, "op_time", Types.TimestampType.withoutZone()),
+      Types.NestedField.required(3, "op_time_with_zone", Types.TimestampType.withZone()),
+      Types.NestedField.required(4, "d", Types.DecimalType.of(3, 0)),
+      Types.NestedField.required(5, "name", Types.StringType.get())
   );
 
   protected static final PartitionSpec HIVE_SPEC =
