@@ -208,13 +208,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
       meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
-      meta.putToProperties(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
-          NameMappingParser.toJson(MappingUtil.create(schema)));
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
+          Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
+          createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+              NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
+          return createTable;
         } catch (Exception e) {
           throw new IllegalStateException("create base table failed", e);
         }
@@ -225,7 +226,10 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          return tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
+          Table createTable =  tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
+          createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+              NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
+          return createTable;
         } catch (Exception e) {
           throw new IllegalStateException("create change table failed", e);
         }
@@ -261,12 +265,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-      meta.putToProperties(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
-          NameMappingParser.toJson(MappingUtil.create(schema)));
 
       Table table = tableMetaStore.doAs(() -> {
         try {
-          return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
+          Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
+          // set name mapping using true schema
+          createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
+              NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
+          return createTable;
         } catch (Exception e) {
           throw new IllegalStateException("create table failed", e);
         }
