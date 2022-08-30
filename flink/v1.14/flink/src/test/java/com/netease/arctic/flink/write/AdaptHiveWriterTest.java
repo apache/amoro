@@ -193,10 +193,10 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
   private List<RowData> geneRowData(){
     RowData rowData = GenericRowData.of(
         1,
-        StringData.fromString("jack"),
         TimestampData.fromLocalDateTime(LocalDateTime.of(2022, 1, 1 , 10, 0, 0)),
         TimestampData.fromInstant(LocalDateTime.of(2022, 1, 1 , 10, 0, 0).toInstant(ZoneOffset.ofHours(8))),
-        DecimalData.fromBigDecimal(new BigDecimal("100"), 3, 0)
+        DecimalData.fromBigDecimal(new BigDecimal("100"), 3, 0),
+        StringData.fromString("jack")
     );
     return Lists.newArrayList(rowData);
   }
