@@ -45,7 +45,6 @@ public class HiveTableUtil {
     return arcticTable instanceof SupportHive;
   }
 
-
   public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
       HMSClient hiveClient, ArcticTable arcticTable) {
     try {

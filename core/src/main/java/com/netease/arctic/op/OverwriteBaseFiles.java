@@ -56,7 +56,6 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final List<DeleteFile> addDeleteFiles;
   private Expression deleteExpression = Expressions.alwaysFalse();
   private final StructLikeMap<Long> maxTransactionId;
-  private final Map<String, String> summary = Maps.newHashMap();
 
   private Long transactionId;
 
@@ -106,11 +105,6 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  public OverwriteBaseFiles set(String property, String value) {
-    summary.put(property, value);
-    return this;
-  }
-
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
@@ -136,9 +130,6 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     }
     if (transactionId != null && transactionId > 0) {
       overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
-    }
-    if (properties != null) {
-      properties.forEach(overwriteFiles::set);
     }
 
     if (MapUtils.isNotEmpty(properties)) {

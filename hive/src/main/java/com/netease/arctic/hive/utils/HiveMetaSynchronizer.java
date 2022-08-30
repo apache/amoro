@@ -169,7 +169,6 @@ public class HiveMetaSynchronizer {
             } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null) {
               filesToAdd.addAll(hiveDataFiles);
             }
-
           }
         }
 
