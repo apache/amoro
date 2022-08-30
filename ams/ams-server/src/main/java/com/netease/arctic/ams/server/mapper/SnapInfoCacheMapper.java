@@ -77,8 +77,7 @@ public interface SnapInfoCacheMapper {
   @Select(
       "select snapshot_id, file_count as cnt, file_size as size, commit_time from " + TABLE_NAME + " where " +
           "table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-          ".TableIdentifier2StringConverter} and producer!='OPTIMIZE' group by snapshot_id, file_count, file_size, " +
-          "commit_time order by commit_time desc")
+          ".TableIdentifier2StringConverter} and producer!='OPTIMIZE' order by commit_time desc")
   @Results({
       @Result(column = "snapshot_id", property = "transactionId"),
       @Result(column = "cnt", property = "fileCount"),
