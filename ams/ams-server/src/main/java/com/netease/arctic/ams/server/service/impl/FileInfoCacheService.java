@@ -127,6 +127,9 @@ public class FileInfoCacheService extends IJDBCService {
   }
 
   public Boolean snapshotIsCached(TableIdentifier identifier, String innerTable, Long snapshotId) {
+    if (snapshotId == -1) {
+      return true;
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
       return snapInfoCacheMapper.snapshotIsCached(identifier, innerTable, snapshotId);
@@ -380,8 +383,10 @@ public class FileInfoCacheService extends IJDBCService {
             cacheFileInfo.setInnerTable(tableChange.getInnerTable());
             cacheFileInfo.setFilePath(datafile.getPath());
             cacheFileInfo.setFileType(datafile.getFileType());
+            String partitionName = partitionToPath(datafile.getPartition());
+            cacheFileInfo.setPartitionName(StringUtils.isEmpty(partitionName) ? "" : partitionName);
             String primaryKey = TableMetadataUtil.getTableAllIdentifyName(tableCommitMeta.getTableIdentifier()) +
-                tableChange.getInnerTable() + datafile.getPath();
+                tableChange.getInnerTable() + datafile.getPath() + partitionName;
             String primaryKeyMd5 = Hashing.md5()
                 .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
                 .toString();
@@ -402,8 +407,6 @@ public class FileInfoCacheService extends IJDBCService {
               cacheFileInfo.setWatermark(0L);
             }
             cacheFileInfo.setAction(tableCommitMeta.getAction());
-            String partitionName = partitionToPath(datafile.getPartition());
-            cacheFileInfo.setPartitionName(StringUtils.isEmpty(partitionName) ? null : partitionName);
             cacheFileInfo.setCommitTime(tableCommitMeta.getCommitTime());
             rs.add(cacheFileInfo);
           });
