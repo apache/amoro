@@ -84,7 +84,8 @@ public class ArcticMetaStore {
   private static TServer server;
   private static final List<Thread> residentThreads = new ArrayList<>();
   private static HighAvailabilityServices haService = null;
-  private static AtomicBoolean isLeader = new AtomicBoolean(false);
+  private static final AtomicBoolean isLeader = new AtomicBoolean(false);
+  private static final int checkLeaderInterval = 2000;
 
   public static void main(String[] args) throws Throwable {
     tryStartServer();
@@ -360,7 +361,7 @@ public class ArcticMetaStore {
     Thread t = new Thread(() -> {
       while (true) {
         try {
-          Thread.sleep(2 * 1000);
+          Thread.sleep(checkLeaderInterval);
         } catch (InterruptedException e) {
           LOG.warn("notLeader thread was interrupted: " + e.getMessage());
         }
