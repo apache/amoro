@@ -26,7 +26,10 @@ public class CacheSnapshotInfo {
   private Long parentSnapshotId;
   private String action;
   private String innerTable;
+  private String producer;
   private Long commitTime;
+  private Long fileSize;
+  private Integer fileCount;
 
 
   public TableIdentifier getTableIdentifier() {
@@ -69,11 +72,35 @@ public class CacheSnapshotInfo {
     this.innerTable = innerTable;
   }
 
+  public String getProducer() {
+    return producer;
+  }
+
+  public void setProducer(String producer) {
+    this.producer = producer;
+  }
+
   public Long getCommitTime() {
     return commitTime;
   }
 
   public void setCommitTime(Long commitTime) {
     this.commitTime = commitTime;
+  }
+
+  public Long getFileSize() {
+    return fileSize;
+  }
+
+  public void setFileSize(Long fileSize) {
+    this.fileSize = fileSize;
+  }
+
+  public Integer getFileCount() {
+    return fileCount;
+  }
+
+  public void setFileCount(Integer fileCount) {
+    this.fileCount = fileCount;
   }
 }
