@@ -348,6 +348,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     protected Map<String, String> properties = new HashMap<>();
     protected PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.noPrimaryKey();
     protected String location;
+    protected boolean isUpgradeHive;
 
     public BaseArcticTableBuilder(TableIdentifier identifier, Schema schema) {
       Preconditions.checkArgument(identifier.getCatalog().equals(catalogMeta.getCatalogName()),
@@ -385,6 +386,12 @@ public class BaseArcticCatalog implements ArcticCatalog {
     @Override
     public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
       this.primaryKeySpec = primaryKeySpec;
+      return this;
+    }
+
+    @Override
+    public TableBuilder withUpgradeHive(boolean isUpgradeHive) {
+      this.isUpgradeHive = isUpgradeHive;
       return this;
     }
 

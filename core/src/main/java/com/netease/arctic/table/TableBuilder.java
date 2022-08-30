@@ -70,6 +70,14 @@ public interface TableBuilder {
   TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec);
 
   /**
+   * Set a upgrade hive key for the table.
+   *
+   * @param isUpgradeHive is upgrade Hive table or not
+   * @return this object for chaining call
+   */
+  TableBuilder withUpgradeHive(boolean isUpgradeHive);
+
+  /**
    * Creates the table.
    *
    * @return the created table

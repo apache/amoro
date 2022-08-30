@@ -45,7 +45,6 @@ public class ServerTableProperties {
     HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_HASH_AUTO);
     HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_MODE_NONE);
     HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_MODE_HASH);
-    HIDDEN_EXPOSED.add(TableProperties.UPGRADE_ENABLE);
     HIDDEN_EXPOSED.add(TableProperties.PROTECTED_PROPERTIES.toString());
     HIDDEN_EXPOSED.add(TableProperties.TABLE_EVENT_TIME_FIELD);
   }

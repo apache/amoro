@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -51,9 +52,9 @@ public class MetaService {
     ArcticTable at = ac.loadTable(ti);
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableIdentifier(ti);
-    Map<String, String> properties = at.properties();
+    Map<String, String> icebergProperties = at.properties();
+    Map<String, String> properties = new HashMap<>(icebergProperties);
     serverTableMeta.setProperties(properties);
-
     serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
             TableProperties.TABLE_CREATE_TIME_DEFAULT));
 

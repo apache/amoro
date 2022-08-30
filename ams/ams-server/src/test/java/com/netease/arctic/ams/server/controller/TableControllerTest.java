@@ -22,7 +22,6 @@ import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.AmsClientPools;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.Constants;
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.TableMeta;
@@ -33,15 +32,14 @@ import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
-import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.AMSDataFileInfo;
+import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
-import com.netease.arctic.ams.server.model.TableOperation;
 import com.netease.arctic.ams.server.model.TableStatistics;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.model.UpgradeHiveMeta;
@@ -59,8 +57,6 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.hive.table.HiveMetaStore;
-import com.netease.arctic.hive.table.HiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -76,11 +72,9 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +110,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
     DDLTracerService.class,
     OptimizeManagerHandler.class,
     AdaptHiveService.class,
-    HiveMetaStore.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class TableControllerTest {
@@ -233,41 +226,6 @@ public class TableControllerTest {
   }
 
   @Test
-  public void testGetHiveTableDetail() throws Exception {
-    mockService(catalogName, database, table);
-    JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/", TableController::getHiveTableDetail);
-      final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
-      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
-      assert result.getCode() == 200;
-    });
-  }
-
-  @Test
-  public void testUpgradeHive() throws Exception {
-    mockService(catalogName, database, table);
-    JavalinTest.test((app, client) -> {
-      UpgradeHiveMeta upgradeHiveMeta = mockUpgradeHiveMeta();
-      String requestJson = JSONObject.toJSONString(upgradeHiveMeta);
-      app.post("/{catalog}/{db}/{table}/", TableController::upgradeHiveTable);
-      final okhttp3.Response resp1 = client.post("/" + catalogName + "/" + database + "/" + table + "/",
-          requestJson, x -> {});
-      OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
-      assert result.getCode() == 200;
-    });
-
-    JavalinTest.test((app, client) -> {
-      app.get("/{catalog}/{db}/{table}/", TableController::getUpgradeStatus);
-      final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
-      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result));
-      assert result.getCode() == 200;
-    });
-  }
-
-  @Test
   public void testGetUpgradeHiveTableProperties() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
@@ -367,7 +325,6 @@ public class TableControllerTest {
     mockStatic(ServiceContainer.class);
     mockStatic(CatalogUtil.class);
     mockStatic(MetaService.class);
-    mockStatic(HiveMetaStore.class);
 
     ArcticCatalog arcticCatalog = mock(ArcticCatalog.class);
     when(CatalogUtil.getArcticCatalog(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
@@ -411,16 +368,10 @@ public class TableControllerTest {
     when(ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier()))
         .thenReturn(mockDDLTracer());
     when(catalogMetadataService.getCatalog(catalog)).thenReturn(mockCatalogMeta(catalog));
-    HiveMetaStore hiveMetaStore = mock(HiveMetaStore.class);
     ArcticHiveCatalog arcticHiveCatalog = mock(ArcticHiveCatalog.class);
     when(CatalogUtil.getArcticCatalog(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
         ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT), catalog)).
         thenReturn(arcticHiveCatalog);
-    when(HiveMetaStore.getHiveMetaStore(arcticHiveCatalog)).thenReturn(hiveMetaStore);
-    HiveTable hiveTable = mock(HiveTable.class);
-    when(hiveMetaStore.getHiveTable(TableIdentifier.of(catalog, db, table))).thenReturn(hiveTable);
-    when(hiveTable.getTableSchema()).thenReturn((mockHiveTableSchema()));
-    when(hiveTable.getHivePartitionKeys()).thenReturn((mockHivePartitionKeys()));
     AdaptHiveService adaptHiveService = mock(AdaptHiveService.class);
     when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     when(adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table),

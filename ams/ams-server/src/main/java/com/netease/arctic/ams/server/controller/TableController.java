@@ -58,14 +58,14 @@ import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.hive.table.HiveMetaStore;
-import com.netease.arctic.hive.table.HiveTable;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,12 +184,11 @@ public class TableController extends RestBaseController {
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo = null;
     try {
-      HiveMetaStore hiveMetaStore = HiveMetaStore.getHiveMetaStore(ac);
-      HiveTable hiveTable = hiveMetaStore.getHiveTable(tableIdentifier);
+      Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
       List<AMSColumnInfo> schema =
-          AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getTableSchema());
+          AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getSd().getCols());
       List<AMSColumnInfo> partitionColumnInfos =
-          AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getHivePartitionKeys());
+          AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getPartitionKeys());
       hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
           new HashMap<>(), hiveTable.getCreateTime());
     } catch (Exception e) {
@@ -437,8 +436,8 @@ public class TableController extends RestBaseController {
     LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
     List<TableMeta> tables = new ArrayList<>();
     if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
-      HiveMetaStore hiveMetaStore = HiveMetaStore.getHiveMetaStore((ArcticHiveCatalog)ac);
-      List<String> hiveTables = hiveMetaStore.getAllHiveTables(db);
+      ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
+      List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {
         tempTables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.toString()));
       }

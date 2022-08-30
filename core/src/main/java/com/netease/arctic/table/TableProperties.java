@@ -51,8 +51,6 @@ public class TableProperties {
 
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
 
-  public static final String UPGRADE_ENABLE = "upgrade.enable";
-
   /**
    * table optimize related properties
    */

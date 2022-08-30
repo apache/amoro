@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
@@ -39,10 +40,9 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
-import org.apache.hadoop.hive.metastore.api.SerDeInfo;
-import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.mapping.MappingUtil;
@@ -115,35 +115,16 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   @Override
   protected void doDropTable(TableMeta meta, boolean purge) {
     super.doDropTable(meta, purge);
-    if (meta.properties.containsKey(TableProperties.UPGRADE_ENABLE) &&
-        meta.properties.get(TableProperties.UPGRADE_ENABLE).equals("true")) {
-      LOG.info("No need to drop hive table");
-      com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
-      try {
-        hiveClientPool.run(client -> {
-          org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
-              tableIdentifier.getTableName());
-          Map<String, String> hiveParameters = hiveTable.getParameters();
-          hiveParameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "false");
-          client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
-          return null;
-        });
-      } catch (TException | InterruptedException e) {
-        LOG.warn("Failed to alter hive table while rolling back create table operation", e);
-      }
-
-    } else {
-      try {
-        hiveClientPool.run(client -> {
-          client.dropTable(meta.getTableIdentifier().getDatabase(),
-              meta.getTableIdentifier().getTableName(),
-              purge /* deleteData */,
-              false /* ignoreUnknownTab */);
-          return null;
-        });
-      } catch (TException | InterruptedException e) {
-        throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
-      }
+    try {
+      hiveClientPool.run(client -> {
+        client.dropTable(meta.getTableIdentifier().getDatabase(),
+            meta.getTableIdentifier().getTableName(),
+            purge /* deleteData */,
+            false /* ignoreUnknownTab */);
+        return null;
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
     }
   }
 
@@ -185,18 +166,23 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
   }
 
+  public HMSClient getHMSClient() {
+    return hiveClientPool;
+  }
+
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier, schema);
     }
 
+
+
     @Override
     protected void doCreateCheck() {
       super.doCreateCheck();
       try {
-        if (!(properties.containsKey(TableProperties.UPGRADE_ENABLE) &&
-            properties.get(TableProperties.UPGRADE_ENABLE).equals("true"))) {
+        if (!isUpgradeHive) {
           org.apache.hadoop.hive.metastore.api.Table hiveTable =
               hiveClientPool.run(client -> client.getTable(
                   identifier.getDatabase(),
@@ -267,8 +253,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       Map<String, String> properties = meta.properties;
       try {
         hiveClientPool.run(client -> {
-          if (properties.containsKey(TableProperties.UPGRADE_ENABLE) &&
-              properties.get(TableProperties.UPGRADE_ENABLE).equals("true")) {
+          if (isUpgradeHive) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
@@ -315,8 +300,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       });
       try {
         hiveClientPool.run(client -> {
-          if (properties.containsKey(TableProperties.UPGRADE_ENABLE) &&
-              properties.get(TableProperties.UPGRADE_ENABLE).equals("true")) {
+          if (isUpgradeHive) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
@@ -374,8 +358,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       super.doRollbackCreateTable(meta);
-      if (meta.properties.containsKey(TableProperties.UPGRADE_ENABLE) &&
-          meta.properties.get(TableProperties.UPGRADE_ENABLE).equals("true")) {
+      if (isUpgradeHive) {
         LOG.info("No need to drop hive table");
         com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
         try {
@@ -405,7 +388,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         }
       }
     }
-
 
     private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable) {
       Map<String, String> parameters = constructProperties();
