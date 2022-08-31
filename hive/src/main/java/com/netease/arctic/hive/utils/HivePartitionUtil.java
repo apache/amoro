@@ -18,21 +18,34 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.table.TableIdentifier;
+import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.ClientPool;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class HivePartitionUtil {
+
+  private static final Logger LOG = LoggerFactory.getLogger(HivePartitionUtil.class);
 
   public static List<String> partitionValuesAsList(StructLike partitionData, Types.StructType partitionSchema) {
     List<Types.NestedField> fields = partitionSchema.fields();
@@ -92,4 +105,102 @@ public class HivePartitionUtil {
         .forEach(partition::putToParameters);
   }
 
+  /**
+   * Gets all partitions object of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return A List of Hive partition objects
+   */
+  public List<Partition> getHiveAllPartitions(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+    try {
+      return hiveClient.run(client ->
+          client.listPartitions(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), Short.MAX_VALUE));
+    } catch (NoSuchObjectException e) {
+      throw new NoSuchTableException(e, "Hive table does not exist: %s", tableIdentifier.getTableName());
+    } catch (TException e) {
+      throw new RuntimeException("Failed to get partitions " + tableIdentifier.getTableName(), e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted in call to listPartitions", e);
+    }
+  }
+
+  /**
+   * Gets all partition names of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return A List of Hive partition names
+   */
+  public static List<String> getHivePartitionNames(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+    try {
+      return hiveClient.run(client -> client.listPartitionNames(tableIdentifier.getDatabase(),
+          tableIdentifier.getTableName(),
+          Short.MAX_VALUE)).stream().collect(Collectors.toList());
+    } catch (NoSuchObjectException e) {
+      throw new NoSuchTableException(e, "Hive table does not exist: %s", tableIdentifier.getTableName());
+    } catch (TException e) {
+      throw new RuntimeException("Failed to get partitions " + tableIdentifier.getTableName(), e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted in call to listPartitions", e);
+    }
+  }
+
+  /**
+   * Gets all partitions location of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return A List of Hive partition locations
+   */
+  public static List<String> getHivePartitionLocations(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+    try {
+      return hiveClient.run(client -> client.listPartitions(tableIdentifier.getDatabase(),
+          tableIdentifier.getTableName(),
+          Short.MAX_VALUE))
+          .stream()
+          .map(partition -> partition.getSd().getLocation())
+          .collect(Collectors.toList());
+    } catch (NoSuchObjectException e) {
+      throw new NoSuchTableException(e, "Hive table does not exist: %s", tableIdentifier.getTableName());
+    } catch (TException e) {
+      throw new RuntimeException("Failed to get partitions " + tableIdentifier.getTableName(), e);
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      throw new RuntimeException("Interrupted in call to listPartitions", e);
+    }
+  }
+
+  /**
+   * Change the Hive partition location.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @param partition A Hive partition name
+   * @param newPath Target partition location
+   */
+  public static void alterPartition(HMSClient hiveClient, TableIdentifier tableIdentifier,
+                                    String partition, String newPath) throws IOException {
+    try {
+      LOG.info("alter table {} hive partition {} to new location {}",
+          tableIdentifier, partition, newPath);
+      Partition oldPartition = hiveClient.run(
+          client -> client.getPartition(
+              tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName(),
+              partition));
+      Partition newPartition = new Partition(oldPartition);
+      newPartition.getSd().setLocation(newPath);
+      hiveClient.run((ClientPool.Action<Void, HiveMetaStoreClient, TException>) client -> {
+        client.alter_partition(tableIdentifier.getDatabase(),
+            tableIdentifier.getTableName(),
+            newPartition, null);
+        return null;
+      });
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+  }
 }
