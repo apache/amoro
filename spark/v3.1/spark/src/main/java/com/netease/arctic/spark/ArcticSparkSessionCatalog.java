@@ -18,8 +18,8 @@
 
 package com.netease.arctic.spark;
 
-
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NamespaceAlreadyExistsException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -41,6 +41,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+
+import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATALOG_TABLE;
 
 /**
  * A Spark catalog that can also load non-Iceberg tables.
@@ -78,7 +80,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public String[][] listNamespaces() throws NoSuchNamespaceException {
-    LOG.info("arctic session catalog list namespaces");
     return getSessionCatalog().listNamespaces();
   }
 
@@ -115,11 +116,15 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
-    try {
-      LOG.info("try to load arctic table first ......");
-      return arcticCatalog.loadTable(ident);
-    } catch (NoSuchTableException e) {
-      LOG.info("no arctic table, load hive table by default spark session catalog.");
+    if (isDelegateEnable()) {
+      try {
+        LOG.info("try to load arctic table first ......");
+        return arcticCatalog.loadTable(ident);
+      } catch (NoSuchTableException e) {
+        LOG.info("no arctic table, load hive table by default spark session catalog.");
+        return getSessionCatalog().loadTable(ident);
+      }
+    } else {
       return getSessionCatalog().loadTable(ident);
     }
   }
@@ -163,7 +168,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    if (arcticCatalog.tableExists(ident)) {
+    if (isDelegateEnable() && arcticCatalog.tableExists(ident)) {
       return arcticCatalog.alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
@@ -174,14 +179,18 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public boolean dropTable(Identifier ident) {
     // no need to check table existence to determine which catalog to use. if a table doesn't exist then both are
     // required to return false.
-    return arcticCatalog.dropTable(ident) || getSessionCatalog().dropTable(ident);
+    if (isDelegateEnable()){
+      return arcticCatalog.dropTable(ident) || getSessionCatalog().dropTable(ident);
+    } else {
+      return getSessionCatalog().dropTable(ident);
+    }
   }
 
   @Override
   public void renameTable(Identifier from, Identifier to) throws NoSuchTableException, TableAlreadyExistsException {
     // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
-    if (arcticCatalog.tableExists(from)) {
+    if (isDelegateEnable() && arcticCatalog.tableExists(from)) {
       arcticCatalog.renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
@@ -192,10 +201,6 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     this.arcticCatalog = buildSparkCatalog(name, options);
-
-    // this.createParquetAsIceberg = options.getBoolean("parquet-enabled", createParquetAsIceberg);
-    // this.createAvroAsIceberg = options.getBoolean("avro-enabled", createAvroAsIceberg);
-    // this.createOrcAsIceberg = options.getBoolean("orc-enabled", createOrcAsIceberg);
   }
 
   @Override
@@ -218,6 +223,13 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
       return true;
     }
     return false;
+  }
+
+  private boolean isDelegateEnable() {
+    SparkSession sparkSession = SparkSession.active();
+    return Boolean.parseBoolean(
+        sparkSession.conf().get(DELEGATE_DEFAULT_CATALOG_TABLE, "true")
+    );
   }
 
   private T getSessionCatalog() {
