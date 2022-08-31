@@ -10,7 +10,7 @@ CREATE TABLE `api_tokens`
 
 CREATE TABLE `ddl_record`
 (
-    `table_identifier` varchar(256) NOT NULL,
+    `table_identifier` varchar(384) NOT NULL,
     `ddl`              mediumtext,
     `ddl_type`         varchar(256) NOT NULL,
     `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -19,7 +19,8 @@ CREATE TABLE `ddl_record`
 ALTER TABLE `snapshot_info_cache` ADD COLUMN `producer` varchar(64) NOT NULL DEFAULT 'INGESTION';
 ALTER TABLE `snapshot_info_cache` ADD COLUMN `file_size` bigint(20) NOT NULL DEFAULT 0;
 ALTER TABLE `snapshot_info_cache` ADD COLUMN `file_count` int(11) NOT NULL DEFAULT 0;
-ALTER TABLE `snapshot_info_cache` modify COLUMN `table_identifier` varchar(256) NOT NULL;
+ALTER TABLE `snapshot_info_cache` modify COLUMN `table_identifier` varchar(384) NOT NULL;
 ALTER TABLE `file_info_cache` ADD COLUMN `producer` varchar(64) NOT NULL DEFAULT 'INGESTION';
-ALTER TABLE `file_info_cache` modify COLUMN `table_identifier` varchar(256) NOT NULL;
+ALTER TABLE `file_info_cache` modify COLUMN `table_identifier` varchar(384) NOT NULL;
 ALTER TABLE `table_metadata` ADD COLUMN `cur_schema_id` int(11) DEFAULT NULL;
+ALTER TABLE `table_transaction_meta` modify COLUMN `table_identifier` varchar(384) NOT NULL;
