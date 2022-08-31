@@ -40,7 +40,9 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetastore.Iface {
@@ -150,6 +152,25 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
       throw new NoSuchObjectException();
     }
     return metadata.buildTableMeta();
+  }
+
+  @Override
+  public List<TableMeta> getTables(List<TableIdentifier> tableIdentifiers) throws NoSuchObjectException, TException {
+    if (tableIdentifiers == null) {
+      throw new NoSuchObjectException("null pointer!");
+    }
+    if (tableIdentifiers.isEmpty()) {
+      return Collections.emptyList();
+    }
+    List<TableMetadata> tableMetadata = metaService.getTables(
+            tableIdentifiers.stream()
+                    .filter(Objects::nonNull)
+                    .map(com.netease.arctic.table.TableIdentifier::of)
+                    .collect(Collectors.toList())
+    );
+    return tableMetadata.stream()
+            .map(TableMetadata::buildTableMeta)
+            .collect(Collectors.toList());
   }
 
   @Override

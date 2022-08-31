@@ -229,6 +229,14 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   }
 
   @Override
+  public List<TableMetadata> getTables(List<TableIdentifier> tableIdentifiers) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetadataMapper tableMetadataMapper = sqlSession.getMapper(TableMetadataMapper.class);
+      return tableMetadataMapper.loadTableMetas(tableIdentifiers);
+    }
+  }
+
+  @Override
   public boolean isExist(TableIdentifier tableIdentifier) {
     return loadTableMetadata(tableIdentifier) != null;
   }

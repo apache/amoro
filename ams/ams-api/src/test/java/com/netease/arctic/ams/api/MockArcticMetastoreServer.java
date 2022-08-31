@@ -285,6 +285,13 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
+    public List<TableMeta> getTables(List<TableIdentifier> tableIdentifiers) throws NoSuchObjectException, TException {
+      return tables.stream()
+              .filter(t -> tableIdentifiers.contains(t.getTableIdentifier()))
+              .collect(Collectors.toList());
+    }
+
+    @Override
     public void removeTable(TableIdentifier tableIdentifier, boolean deleteData) {
       tables.removeIf(t -> t.getTableIdentifier().equals(tableIdentifier));
     }

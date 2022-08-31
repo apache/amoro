@@ -104,6 +104,13 @@ public interface IMetaService {
   List<TableMetadata> getTables(String catalogName, String database);
 
   /**
+   * load arctic table metadata list by given table identifiers
+   * @param tableIdentifiers list of table identifiers
+   * @return list of table metadata
+   */
+  List<TableMetadata> getTables(List<TableIdentifier> tableIdentifiers);
+
+  /**
    * check the table is existed
    *
    * @param tableIdentifier table id

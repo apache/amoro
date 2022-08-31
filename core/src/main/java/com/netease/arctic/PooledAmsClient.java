@@ -18,15 +18,13 @@
 
 package com.netease.arctic;
 
-import com.netease.arctic.ams.api.ArcticTableMetastore;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.TableCommitMeta;
-import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.*;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import org.apache.thrift.TException;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * {@link AmsClient} implementation using client pool.
@@ -88,6 +86,17 @@ public class PooledAmsClient implements AmsClient {
   @Override
   public TableMeta getTable(TableIdentifier tableIdentifier) throws TException {
     return getIface().getTable(tableIdentifier);
+  }
+
+  @Override
+  public List<TableMeta> getTables(List<TableIdentifier> tableIdentifiers) throws NoSuchObjectException, TException {
+    if (tableIdentifiers == null) {
+      throw new NoSuchObjectException("null pointer!");
+    }
+    return getIface().getTables(
+            tableIdentifiers.stream()
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList()));
   }
 
   @Override

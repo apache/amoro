@@ -162,6 +162,42 @@ public interface TableMetadataMapper {
   })
   TableMetadata loadTableMeta(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
+  @Select("<script>" +
+          "SELECT table_id, table_name, db_name, catalog_name, primary_key, sort_key, " +
+          "table_location, base_location, delta_location, " +
+          "meta_store_site, hdfs_site, core_site, hbase_site, " +
+          "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, " +
+          "properties" +
+          " FROM " + TABLE_NAME +
+          " WHERE " +
+          "<foreach item='identity' index='index' collection='tableIdentifiers' separator='OR'>" +
+          "  (table_name=#{identity.tableName} AND db_name=#{identity.database} AND catalog_name=#{identity.catalog})" +
+          "</foreach>" +
+          "</script>")
+  @Results({
+          @Result(property = "tableIdentifier.id", column = "table_id"),
+          @Result(property = "tableIdentifier.tableName", column = "table_name"),
+          @Result(property = "tableIdentifier.database", column = "db_name"),
+          @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
+          @Result(property = "primaryKey", column = "primary_key"),
+          @Result(property = "sortKey", column = "sort_key"),
+          @Result(property = "tableLocation", column = "table_location"),
+          @Result(property = "baseLocation", column = "base_location"),
+          @Result(property = "changeLocation", column = "delta_location"),
+          @Result(property = "metaStoreSite", column = "meta_store_site"),
+          @Result(property = "hdfsSite", column = "hdfs_site"),
+          @Result(property = "coreSite", column = "core_site"),
+          @Result(property = "hbaseSite", column = "hbase_site"),
+          @Result(property = "authMethod", column = "auth_method"),
+          @Result(property = "hadoopUsername", column = "hadoop_username"),
+          @Result(property = "krbKeyteb", column = "krb_keytab"),
+          @Result(property = "krbConf", column = "krb_conf"),
+          @Result(property = "krbPrincipal", column = "krb_principal"),
+          @Result(property = "properties", column = "properties",
+                  typeHandler = Map2StringConverter.class)
+  })
+  List<TableMetadata> loadTableMetas(@Param("tableIdentifiers") List<TableIdentifier> tableIdentifiers);
+
   @Select("select table_name, db_name, catalog_name, primary_key, " +
       "table_location, base_location, delta_location, meta_store_site, hdfs_site, core_site, " +
       "auth_method, hadoop_username, krb_keytab, krb_conf, krb_principal, properties, current_tx_id from " +

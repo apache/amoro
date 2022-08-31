@@ -115,6 +115,9 @@ service ArcticTableMetastore {
     TableMeta getTable(1:arctic_commons.TableIdentifier tableIdentifier)
             throws(1: arctic_commons.NoSuchObjectException e);
 
+    list<TableMeta> getTables(1: list<arctic_commons.TableIdentifier> tableIdentifiers)
+                throws(1: arctic_commons.NoSuchObjectException e);
+
     void removeTable(1:arctic_commons.TableIdentifier tableIdentifier, 2:bool deleteData)
         throws(
         1:arctic_commons.NoSuchObjectException e1,
