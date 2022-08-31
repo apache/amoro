@@ -44,7 +44,7 @@ CREATE TABLE container_metadata (
 );
 
 CREATE TABLE snapshot_info_cache (
-    table_identifier varchar(64) NOT NULL,
+    table_identifier varchar(384) NOT NULL,
     snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     action varchar(64) DEFAULT NULL,
@@ -137,7 +137,7 @@ CREATE TABLE table_metadata (
 
 CREATE TABLE file_info_cache (
     primary_key_md5 varchar(64) NOT NULL,
-    table_identifier varchar(64) NOT NULL,
+    table_identifier varchar(384) NOT NULL,
     add_snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     delete_snapshot_id bigint DEFAULT NULL,
@@ -208,7 +208,7 @@ CREATE TABLE optimize_history (
 
 
 CREATE TABLE table_transaction_meta (
-    table_identifier varchar(256) NOT NULL,
+    table_identifier varchar(384) NOT NULL,
     transaction_id bigint NOT NULL,
     signature varchar(256) NOT NULL,
     commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -248,7 +248,7 @@ CREATE TABLE api_tokens (
 
 CREATE TABLE ddl_record
 (
-    table_identifier varchar(256) NOT NULL,
+    table_identifier varchar(384) NOT NULL,
     ddl        clob(64m),
     ddl_type       varchar(256) NOT NULL,
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
