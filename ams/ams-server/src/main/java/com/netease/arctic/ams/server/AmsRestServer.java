@@ -114,6 +114,10 @@ public class AmsRestServer {
 
         /**  table controller **/
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", TableController::getTableDetail);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", TableController::getHiveTableDetail);
+        post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", TableController::upgradeHiveTable);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", TableController::getUpgradeStatus);
+        get("/upgrade/properties", TableController::getUpgradeHiveTableProperties);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", TableController::getOptimizeInfo);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
                 TableController::getTableTransactions);
@@ -156,6 +160,10 @@ public class AmsRestServer {
 
         /**  table controller **/
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", TableController::getTableDetail);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/hive/details", TableController::getHiveTableDetail);
+        post("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade", TableController::upgradeHiveTable);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/upgrade/status", TableController::getUpgradeStatus);
+        get("/upgrade/properties", TableController::getUpgradeHiveTableProperties);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/optimize", TableController::getOptimizeInfo);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions",
                 TableController::getTableTransactions);

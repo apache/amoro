@@ -19,17 +19,14 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.write.KeyedRowDataTaskWriterFactory;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.io.WriteResult;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +36,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -71,7 +67,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       for (RowData record : baseData) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), true);
+      commit(testKeyedTable, taskWriter.complete(), true);
     }
 
     //write change insert
@@ -86,7 +82,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       for (RowData record : insert) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), true);
+      commit(testKeyedTable, taskWriter.complete(), true);
     }
 
     //write change delete
@@ -102,28 +98,11 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       for (RowData record : update) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), false);
-    }
-  }
-
-  protected void commit(WriteResult result, boolean base) {
-    if (base) {
-      AppendFiles baseAppend = testKeyedTable.baseTable().newAppend();
-      Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
-      baseAppend.commit();
-    } else {
-      AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
-      Arrays.stream(result.dataFiles()).forEach(changeAppend::appendFile);
-      changeAppend.commit();
+      commit(testKeyedTable, taskWriter.complete(), false);
     }
   }
 
   protected TaskWriter<RowData> createTaskWriter(boolean base) {
-    KeyedRowDataTaskWriterFactory taskWriterFactory =
-        new KeyedRowDataTaskWriterFactory(testKeyedTable, ROW_TYPE, base);
-    taskWriterFactory.setTransactionId(TRANSACTION_ID.getAndIncrement());
-    taskWriterFactory.setMask(3);
-    taskWriterFactory.initialize(0, 0);
-    return taskWriterFactory.create();
+    return createKeyedTaskWriter(testKeyedTable, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), base);
   }
 }
