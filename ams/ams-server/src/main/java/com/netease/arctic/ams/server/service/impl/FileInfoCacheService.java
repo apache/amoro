@@ -124,7 +124,8 @@ public class FileInfoCacheService extends IJDBCService {
   public Long getCachedMaxTime(TableIdentifier identifier, String innerTable) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.getCachedMaxTime(identifier, innerTable);
+      Timestamp maxTime =  snapInfoCacheMapper.getCachedMaxTime(identifier, innerTable);
+      return maxTime == null ? 0 : maxTime.getTime();
     }
   }
 
