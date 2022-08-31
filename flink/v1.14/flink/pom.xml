@@ -389,6 +389,7 @@
                     <includes>
                         <include>**/FlinkTestMain.java</include>
                     </includes>
+                    <skip>${skip.flink.test}</skip>
                 </configuration>
             </plugin>
         </plugins>

@@ -34,4 +34,6 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build all module with Maven
-        run: mvn install -pl '!trino'
+        run: mvn install -pl '!trino' -Pskip-flink-test
+      - name: Build flink module with Maven
+        run: mvn clean package -pl ':arctic-flink-runtime-1.12,:arctic-flink-runtime-1.14' -am -Pskip-hive-test

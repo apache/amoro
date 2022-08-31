@@ -46,4 +46,13 @@
         <module>v1.15/flink-format</module>
         <module>v1.15/flink-runtime</module>
     </modules>
+
+    <profiles>
+        <profile>
+            <id>skip-flink</id>
+            <properties>
+                <skip.flink.test>true</skip.flink.test>
+            </properties>
+        </profile>
+    </profiles>
 </project>
