@@ -52,6 +52,7 @@ public class ShuffleHelper implements Serializable {
     if (table.spec() != null && !CollectionUtil.isNullOrEmpty(table.spec().fields())) {
       partitionKey = new PartitionKey(table.spec(), schema);
     }
+    schema = addFieldsNotInArctic(schema, rowType);
 
     if (table.isUnkeyedTable()) {
       return new ShuffleHelper(rowType, schema.asStruct(), partitionKey);
@@ -61,6 +62,28 @@ public class ShuffleHelper implements Serializable {
     PrimaryKeyData primaryKeyData = new PrimaryKeyData(keyedTable.primaryKeySpec(), schema);
     return new ShuffleHelper(keyedTable.primaryKeySpec().primaryKeyExisted(),
         primaryKeyData, partitionKey, rowType, schema.asStruct());
+  }
+
+  /**
+   * If using arctic table as build table, there will be an additional implicit field, valuing process time.
+   * @param schema The physical schema in Arctic table
+   * @param rowType Flink RowData type.
+   * @return the Arctic Schema with additional implicit field.
+   */
+  public static Schema addFieldsNotInArctic(Schema schema, RowType rowType) {
+    Types.NestedField[] nestedFields = new Types.NestedField[rowType.getFieldCount()];
+
+    for (int i = 0; i < nestedFields.length; i++) {
+      RowType.RowField field = rowType.getFields().get(i);
+      Types.NestedField nestedField;
+      if ((nestedField = schema.findField(field.getName())) != null) {
+        nestedFields[i] = nestedField;
+      } else {
+        // for now, there is only one case that virtual watermark exist in RowData, but not in Arctic table schema.
+        nestedFields[i] = Types.NestedField.optional(-1, field.getName(), Types.TimestampType.withoutZone());
+      }
+    }
+    return new Schema(nestedFields);
   }
 
   /**

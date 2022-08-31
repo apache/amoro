@@ -29,6 +29,7 @@ import org.apache.flink.table.descriptors.ConnectorDescriptorValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.types.logical.RowType;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -113,6 +114,28 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           " empty WriteResults to the committer operator, and reduce the number of snapshots in File Cache; true" +
           " means this job will submit empty snapshots to the table, it is suitable with some valid reasons, e.g." +
           " advance watermark metadata stored in the table(https://github.com/apache/iceberg/pull/5561).");
+
+  public static final ConfigOption<String> ARCTIC_CATALOG =
+      ConfigOptions.key("arctic.catalog")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic catalog name.");
+  public static final ConfigOption<String> ARCTIC_DATABASE =
+      ConfigOptions.key("arctic.database")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic database name.");
+  public static final ConfigOption<String> ARCTIC_TABLE =
+      ConfigOptions.key("arctic.table")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic table name.");
+
+  public static final ConfigOption<Boolean> DIM_TABLE_ENABLE =
+      ConfigOptions.key("dim-table.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
   @Override
   public void validate(DescriptorProperties properties) {

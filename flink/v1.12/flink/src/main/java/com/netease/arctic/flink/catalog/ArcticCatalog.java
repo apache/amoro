@@ -18,9 +18,11 @@
 
 package com.netease.arctic.flink.catalog;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.table.DynamicTableFactory;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -67,11 +69,20 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
+import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
+
 /**
  * Catalogs for arctic data lake.
  */
 public class ArcticCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
+
+  /**
+   * To distinguish 'CREATE TABLE LIKE' by checking stack
+   * {@link org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable}
+   */
+  public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
 
   private final InternalCatalogBuilder catalogBuilder;
 
@@ -167,6 +178,7 @@ public class ArcticCatalog extends AbstractCatalog {
     RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
     fillTableProperties(arcticProperties);
+    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
@@ -174,6 +186,35 @@ public class ArcticCatalog extends AbstractCatalog {
         partitionKeys,
         arcticProperties,
         null);
+  }
+
+  /**
+   * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in temporal join,
+   * as an alternative of lookup join, and use Arctic table as build table, i.e. right table.
+   * So the properties those required in temporal join will be put automatically.
+   * <p>
+   * If you don't want the properties, 'EXCLUDING ALL' is what you need.
+   * More details @see <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#like">LIKE</a>
+   */
+  private void fillTableMetaPropertiesIfLookupLike(Map<String, String> properties, TableIdentifier tableIdentifier) {
+    StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+    boolean isLookupLike = false;
+    for (StackTraceElement stackTraceElement : stackTraceElements) {
+      if (Objects.equal(SQL_LIKE_METHOD, stackTraceElement.getMethodName())) {
+        isLookupLike = true;
+        break;
+      }
+    }
+
+    if (!isLookupLike) {
+      return;
+    }
+
+    properties.put(CONNECTOR.key(), DynamicTableFactory.IDENTIFIER);
+    properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
+    properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
+    properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
+    properties.put(METASTORE_URL, catalogBuilder.getMetastoreUrl());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {

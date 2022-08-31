@@ -42,6 +42,7 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
@@ -53,6 +54,7 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -111,7 +113,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     PartitionSpec.class,
     FileInfoCacheService.class,
     CatalogMetadataService.class,
-    OptimizeManagerHandler.class
+    OptimizeManagerHandler.class,
+    AdaptHiveService.class,
+    HiveTableUtil.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class AmsTestBase {

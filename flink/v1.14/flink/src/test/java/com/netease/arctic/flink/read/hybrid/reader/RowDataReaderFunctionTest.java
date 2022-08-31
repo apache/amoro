@@ -146,7 +146,7 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
       for (RowData record : input) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), false);
+      commit(testKeyedTable, taskWriter.complete(), false);
     }
   }
 

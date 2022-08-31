@@ -23,6 +23,7 @@ import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
@@ -75,6 +76,8 @@ public class ServiceContainer {
   private static volatile DDLTracerService ddlTracerService;
 
   private static volatile RuntimeDataExpireService runtimeDataExpireService;
+
+  private static volatile AdaptHiveService adaptHiveService;
 
   private static volatile ISupportHiveSyncService supportHiveSyncService;
 
@@ -251,8 +254,18 @@ public class ServiceContainer {
         }
       }
     }
-
     return runtimeDataExpireService;
+  }
+
+  public static AdaptHiveService getAdaptHiveService() {
+    if (adaptHiveService == null) {
+      synchronized (AdaptHiveService.class) {
+        if (adaptHiveService == null) {
+          adaptHiveService = new AdaptHiveService();
+        }
+      }
+    }
+    return adaptHiveService;
   }
 
   public static ISupportHiveSyncService getSupportHiveSyncService() {

@@ -57,14 +57,14 @@ public class HiveSchemaUpdate implements UpdateSchema {
   @Override
   public void commit() {
     this.updateSchema.commit();
-    if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable) == null) {
+    if (HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id()) == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
     syncSchemaToHive();
   }
 
   private void syncSchemaToHive() {
-    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable);
+    org.apache.hadoop.hive.metastore.api.Table tbl = HiveTableUtil.loadHmsTable(hiveClient, arcticTable.id());
     if (tbl == null) {
       throw new RuntimeException(String.format("there is no such hive table named %s", arcticTable.id().toString()));
     }
