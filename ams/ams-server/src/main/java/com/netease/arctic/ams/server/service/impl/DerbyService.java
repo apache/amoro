@@ -48,9 +48,9 @@ public class DerbyService extends IJDBCService {
   private static String getDerbyInitSqlDir() {
     String derbyInitSqlDir = System.getProperty("derby.init.sql.dir");
     if (derbyInitSqlDir == null) {
-      return System.getProperty("user.dir") + "/conf/ams-init-derby.sql".replace("/", File.separator);
+      return System.getProperty("user.dir") + "/conf/derby/ams-init.sql".replace("/", File.separator);
     } else {
-      return derbyInitSqlDir + "/ams-init-derby.sql".replace("/", File.separator);
+      return derbyInitSqlDir + "/ams-init.sql".replace("/", File.separator);
     }
   }
 }

@@ -19,9 +19,12 @@
 package com.netease.arctic.hive;
 
 import com.netease.arctic.hive.catalog.TestArcticHiveCatalog;
+import com.netease.arctic.hive.io.TestAdaptHiveWriter;
+import com.netease.arctic.hive.op.AutoSyncHiveTest;
 import com.netease.arctic.hive.op.TestHiveSchemaUpdate;
 import com.netease.arctic.hive.op.TestOverwriteFiles;
 import com.netease.arctic.hive.op.TestRewritePartitions;
+import com.netease.arctic.hive.utils.HiveMetaSynchronizerTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -32,7 +35,10 @@ import org.junit.runners.Suite;
     TestArcticHiveCatalog.class,
     TestRewritePartitions.class,
     TestOverwriteFiles.class,
-    TestHiveSchemaUpdate.class
+    TestHiveSchemaUpdate.class,
+    HiveMetaSynchronizerTest.class,
+    TestAdaptHiveWriter.class,
+    AutoSyncHiveTest.class
 })
 public class ArcticHiveTestMain {
 
