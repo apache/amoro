@@ -130,7 +130,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     }
   }
 
-  public void dropTableButNotDropHiveTable (TableIdentifier tableIdentifier) {
+  public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
     TableMeta meta;
     try {
       meta = client.getTable(tableIdentifier.buildTableIdentifier());
