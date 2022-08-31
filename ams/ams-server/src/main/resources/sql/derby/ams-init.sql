@@ -225,7 +225,8 @@ CREATE TABLE optimize_task_history (
     end_time timestamp DEFAULT NULL,
     cost_time bigint DEFAULT NULL,
     queue_id int DEFAULT NULL,
-    task_group_id varchar(40) DEFAULT NULL
+    task_group_id varchar(40) DEFAULT NULL,
+    UNIQUE (task_history_id, task_group_id)
 );
 
 CREATE TABLE database_metadata (

@@ -81,6 +81,11 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     buildArcticTable(tableMetadata);
     TABLE_META_STORE_CACHE.put(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()),
         tableMetadata.getMetaStore());
+    try {
+      ServiceContainer.getOptimizeService().listCachedTables(true);
+    } catch (Exception e) {
+      LOG.warn("createTable success but failed to refresh optimize table cache", e);
+    }
   }
 
   @Override
