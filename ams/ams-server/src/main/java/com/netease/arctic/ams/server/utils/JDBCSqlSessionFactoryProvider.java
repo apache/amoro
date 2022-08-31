@@ -51,6 +51,8 @@ import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
 
+import java.time.Duration;
+
 public class JDBCSqlSessionFactoryProvider {
 
   private static volatile SqlSessionFactory sqlSessionFactory;
@@ -63,13 +65,13 @@ public class JDBCSqlSessionFactoryProvider {
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             dataSource.setUrl(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL));
             dataSource.setDriverClassName(
-                    ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
+                ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
           } else {
             dataSource.setUsername(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME));
             dataSource.setPassword(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD));
             dataSource.setUrl(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL));
             dataSource.setDriverClassName(
-                    ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
+                ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
           }
           dataSource.setDefaultAutoCommit(true);
           dataSource.setMaxTotal(20);
@@ -79,8 +81,7 @@ public class JDBCSqlSessionFactoryProvider {
           dataSource.setLogAbandoned(true);
           dataSource.setRemoveAbandonedOnBorrow(true);
           dataSource.setRemoveAbandonedTimeout(60);
-          dataSource.setTimeBetweenEvictionRunsMillis(
-              BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
+          dataSource.setTimeBetweenEvictionRunsMillis(Duration.ofMillis(10 * 60 * 1000L).toMillis());
           dataSource.setTestOnBorrow(BaseObjectPoolConfig.DEFAULT_TEST_ON_BORROW);
           dataSource.setTestWhileIdle(BaseObjectPoolConfig.DEFAULT_TEST_WHILE_IDLE);
           dataSource.setMinEvictableIdleTimeMillis(1000);

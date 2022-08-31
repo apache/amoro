@@ -26,14 +26,16 @@ import com.netease.arctic.ams.server.model.CompactRangeType;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.iceberg.types.Types;
 
 import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -152,4 +154,42 @@ public class AmsUtils {
       printWriter.close();
     }
   }
+
+  public static InetAddress getLocalHostExactAddress(String prefix) {
+    try {
+      InetAddress candidateAddress = null;
+      Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+      while (networkInterfaces.hasMoreElements()) {
+        NetworkInterface iface = networkInterfaces.nextElement();
+        for (Enumeration<InetAddress> inetAddrs = iface.getInetAddresses(); inetAddrs.hasMoreElements(); ) {
+          InetAddress inetAddr = inetAddrs.nextElement();
+          if (!inetAddr.isLoopbackAddress()) {
+            if (inetAddr.isSiteLocalAddress() && checkHostAddress(inetAddr, prefix)) {
+              return inetAddr;
+            }
+            if (candidateAddress == null) {
+              candidateAddress = inetAddr;
+            }
+          }
+        }
+      }
+      if (candidateAddress != null) {
+        if (checkHostAddress(candidateAddress, prefix)) {
+          return candidateAddress;
+        }
+      } else {
+        if (checkHostAddress(InetAddress.getLocalHost(), prefix)) {
+          return InetAddress.getLocalHost();
+        }
+      }
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
+    return null;
+  }
+
+  private static boolean checkHostAddress(InetAddress address, String prefix) {
+    return address != null && address.getHostAddress().startsWith(prefix);
+  }
+  
 }

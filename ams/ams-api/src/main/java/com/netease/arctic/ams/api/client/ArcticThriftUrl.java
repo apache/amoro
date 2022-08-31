@@ -18,13 +18,20 @@
 
 package com.netease.arctic.ams.api.client;
 
+import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.properties.AmsHAProperties;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ArcticThriftUrl {
   public static final String PARAM_SOCKET_TIMEOUT = "socketTimeout";
   public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
+  public static final String ZOOKEEPER_FLAG = "zookeeper";
+  public static final String THRIFT_FLAG = "thrift";
+  private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/(\\w+)");
   private final String schema;
   private final String host;
   private final int port;
@@ -35,13 +42,50 @@ public class ArcticThriftUrl {
   private final String url;
 
   /**
-   * parse thrift url.
+   * parse thrift url, now support thrift://host:port/{catalogName} and zookeeper://host:port/{cluster}/{catalogName}
+   * . parse to ArcticThriftUrl that contains properties schema, host, port, catalogName, socketTimeout, url.
+   *
    * @param url - thrift url
    * @return -
    */
   public static ArcticThriftUrl parse(String url) {
     if (url == null) {
       throw new IllegalArgumentException("thrift url is null");
+    }
+    if (url.startsWith(ZOOKEEPER_FLAG)) {
+      String thriftUrl = url;
+      String query = "";
+      if (url.contains("?")) {
+        query = url.substring(url.indexOf("?"));
+        thriftUrl = url.substring(0, url.indexOf("?"));
+      }
+      Matcher m = PATTERN.matcher(thriftUrl);
+      if (m.matches()) {
+        String zkServerAddress;
+        String cluster;
+        String catalog = "";
+        if (m.group(1).contains("/")) {
+          zkServerAddress = m.group(1).substring(0, m.group(1).indexOf("/"));
+          cluster = m.group(1).substring(m.group(1).indexOf("/") + 1);
+          catalog = m.group(2);
+        } else {
+          zkServerAddress = m.group(1);
+          cluster = m.group(2);
+        }
+        ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
+        AmsServerInfo serverInfo = null;
+        try {
+          serverInfo = JSONObject.parseObject(
+              zkService.getData(AmsHAProperties.getMasterPath(cluster)),
+              AmsServerInfo.class);
+        } catch (Exception e) {
+          throw new RuntimeException("get master server info from zookeeper error");
+        }
+        url =
+            String.format("thrift://%s:%d/%s%s", serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog, query);
+      } else {
+        throw new RuntimeException(String.format("invalid ams url %s", url));
+      }
     }
     String schema;
     String host;
@@ -74,8 +118,9 @@ public class ArcticThriftUrl {
     }
   }
 
-  private ArcticThriftUrl(String schema, String host, int port, String catalogName, int socketTimeout,
-                         String url) {
+  private ArcticThriftUrl(
+      String schema, String host, int port, String catalogName, int socketTimeout,
+      String url) {
     this.schema = schema;
     this.host = host;
     this.port = port;
