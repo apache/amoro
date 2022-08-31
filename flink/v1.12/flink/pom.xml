@@ -383,6 +383,12 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <properties>
+                        <property>
+                            <name>listener</name>
+                            <value>com.netease.arctic.listener.ArcticRunListener</value>
+                        </property>
+                    </properties>
                     <includes>
                         <include>**/FlinkTestMain.java</include>
                     </includes>
