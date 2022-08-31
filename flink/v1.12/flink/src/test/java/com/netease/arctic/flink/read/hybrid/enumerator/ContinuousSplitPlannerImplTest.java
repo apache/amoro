@@ -71,7 +71,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       for (RowData record : baseData) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), true);
+      commit(testKeyedTable, taskWriter.complete(), true);
     }
 
     //write change insert
@@ -86,7 +86,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       for (RowData record : insert) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), true);
+      commit(testKeyedTable, taskWriter.complete(), true);
     }
 
     //write change delete
@@ -102,7 +102,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       for (RowData record : update) {
         taskWriter.write(record);
       }
-      commit(taskWriter.complete(), false);
+      commit(testKeyedTable, taskWriter.complete(), false);
     }
   }
 
@@ -119,11 +119,6 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
   }
 
   protected TaskWriter<RowData> createTaskWriter(boolean base) {
-    KeyedRowDataTaskWriterFactory taskWriterFactory =
-        new KeyedRowDataTaskWriterFactory(testKeyedTable, ROW_TYPE, base);
-    taskWriterFactory.setTransactionId(TRANSACTION_ID.getAndIncrement());
-    taskWriterFactory.setMask(3);
-    taskWriterFactory.initialize(0, 0);
-    return taskWriterFactory.create();
+    return createKeyedTaskWriter(testKeyedTable, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), base);
   }
 }

@@ -39,6 +39,14 @@ public class InternalCatalogBuilder implements Serializable {
     return CatalogLoader.load(metastoreUrl, properties);
   }
 
+  public String getMetastoreUrl() {
+    return metastoreUrl;
+  }
+
+  public Map<String, String> getProperties() {
+    return properties;
+  }
+
   public InternalCatalogBuilder() {
   }
 

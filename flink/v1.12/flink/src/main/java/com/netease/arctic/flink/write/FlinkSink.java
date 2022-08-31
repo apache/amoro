@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.RoundRobinShuffleRulePolicy;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
