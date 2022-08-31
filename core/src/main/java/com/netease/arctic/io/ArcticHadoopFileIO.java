@@ -104,7 +104,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
     });
   }
 
-
   @VisibleForTesting
   public List<FileStatus> list(String location, Callable<List<FileStatus>> callable) {
     return tableMetaStore.doAs(() -> {

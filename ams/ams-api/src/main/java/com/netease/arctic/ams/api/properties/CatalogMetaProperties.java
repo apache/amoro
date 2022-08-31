@@ -43,7 +43,7 @@ public class CatalogMetaProperties {
     public static final String CATALOG_TYPE_HIVE = "hive";
 
     public static final String CLIENT_POOL_SIZE = "clients";
-    public static final int CLIENT_POOL_SIZE_DEFAULT = 5;
+    public static final int CLIENT_POOL_SIZE_DEFAULT = 2;
 
     public static final String CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS = "client.pool.cache.eviction-interval-ms";
     public static final long CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT = TimeUnit.MINUTES.toMillis(5);

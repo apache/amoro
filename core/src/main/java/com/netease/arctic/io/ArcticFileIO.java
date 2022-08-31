@@ -41,8 +41,7 @@ public interface ArcticFileIO extends FileIO {
   /**
    * Check if a path exists.
    *
-   * @param path source path
-   * @return true if the path exists
+   * @param path source pathmkdir
    */
   boolean exists(String path);
 
@@ -55,7 +54,7 @@ public interface ArcticFileIO extends FileIO {
   boolean mkdirs(String path);
 
   /**
-   * Create a new directory.
+   * Rename file from old path to new path
    *
    * @param oldpath source path
    * @param newPath target path

@@ -43,7 +43,6 @@ import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionField;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.exceptions.NoSuchTableException;
@@ -190,14 +189,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       super(identifier, schema);
     }
 
-
-
     @Override
     protected void doCreateCheck() {
       super.doCreateCheck();
       try {
-        if (!(properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
-        properties.get(TableProperties.ALLOW_HIVE_TABLE_EXISTED).equals("true"))) {
+        if ((properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
+            properties.get(TableProperties.ALLOW_HIVE_TABLE_EXISTED).equals("true"))) {
+          LOG.info("No need to check hive table exist");
+        } else {
           org.apache.hadoop.hive.metastore.api.Table hiveTable =
               hiveClientPool.run(client -> client.getTable(
                   identifier.getDatabase(),
@@ -267,7 +266,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
           fileIO, client);
 
-      Map<String, String> properties = meta.properties;
+      Map<String, String> metaProperties = meta.properties;
       try {
         hiveClientPool.run(client -> {
           if ((properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
@@ -281,7 +280,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           } else {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
             hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
-                FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
+                FileFormat.valueOf(PropertyUtil.propertyAsString(metaProperties, TableProperties.DEFAULT_FILE_FORMAT,
                     TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
             setProToHive(hiveTable);
             client.createTable(hiveTable);

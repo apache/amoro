@@ -23,20 +23,11 @@ import com.netease.arctic.ams.server.model.UpgradeRunningInfo;
 import com.netease.arctic.ams.server.model.UpgradeStatus;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.hive.utils.HiveMigrateUtil;
-import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
-import org.apache.hadoop.hive.metastore.api.Table;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -55,43 +46,18 @@ public class AdaptHiveService {
   private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
       QUEUE_CAPACITY, TimeUnit.SECONDS, new LinkedBlockingDeque<>(5));
 
-
-
   public Object upgradeHiveTable(ArcticHiveCatalog ac, TableIdentifier tableIdentifier,
                                  UpgradeHiveMeta upgradeHiveMeta) {
     LOG.info("Start to upgrade hive table to arctic" + tableIdentifier.toString());
     executor.submit(() -> {
       runningInfoCache.put(tableIdentifier, new UpgradeRunningInfo());
-      boolean upgradeHive = false;
       try {
-        Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
         List<String> pkList = upgradeHiveMeta.getPkList().stream()
             .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName).collect(Collectors.toList());
-        List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
-        hiveSchema.addAll(hiveTable.getPartitionKeys());
-        Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
-        List<FieldSchema> partitionKeys = hiveTable.getPartitionKeys();
-
-        PartitionSpec.Builder partitionBuilder = PartitionSpec.builderFor(schema);
-        partitionKeys.stream().forEach(p -> partitionBuilder.identity(p.getName()));
-
-        PrimaryKeySpec.Builder primaryKeyBuilder = PrimaryKeySpec.builderFor(schema);
-        pkList.stream().forEach(p -> primaryKeyBuilder.addColumn(p));
-
-        ArcticTable arcticTable = ac.newTableBuilder(tableIdentifier, schema)
-            .withProperties(upgradeHiveMeta.getProperties())
-            .withPartitionSpec(partitionBuilder.build())
-            .withPrimaryKeySpec(primaryKeyBuilder.build())
-            .withProperty(TableProperties.ALLOW_HIVE_TABLE_EXISTED, "true")
-            .create();
-        upgradeHive = true;
-        HiveMigrateUtil.hiveDataMigration(arcticTable, ac, tableIdentifier);
+        UpgradeHiveTableUtil.upgradeHiveTable(ac, tableIdentifier, pkList, upgradeHiveMeta.getProperties());
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
       } catch (Throwable t) {
         LOG.error("Failed to upgrade hive table to arctic ", t);
-        if (upgradeHive) {
-          ac.dropTableButNotDropHiveTable(tableIdentifier);
-        }
         runningInfoCache.get(tableIdentifier).setErrorMessage(AmsUtils.getStackTrace(t));
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
       }
@@ -107,6 +73,4 @@ public class AdaptHiveService {
       return new UpgradeRunningInfo(UpgradeStatus.NONE.toString());
     }
   }
-
-
 }
