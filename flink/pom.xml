@@ -49,7 +49,7 @@
 
     <profiles>
         <profile>
-            <id>skip-flink</id>
+            <id>skip-flink-test</id>
             <properties>
                 <skip.flink.test>true</skip.flink.test>
             </properties>

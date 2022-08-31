@@ -130,7 +130,7 @@
 
     <profiles>
         <profile>
-            <id>skip-hive</id>
+            <id>skip-hive-test</id>
             <properties>
                 <skip.hive.test>true</skip.hive.test>
             </properties>
