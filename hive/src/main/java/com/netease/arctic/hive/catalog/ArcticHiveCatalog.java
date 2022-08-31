@@ -188,11 +188,12 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier, schema);
     }
+
     boolean allowExsitedHiveTable = false;
 
     @Override
     public TableBuilder withProperty(String key, String value) {
-      if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")){
+      if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")) {
         allowExsitedHiveTable = true;
       } else {
         this.properties.put(key, value);
