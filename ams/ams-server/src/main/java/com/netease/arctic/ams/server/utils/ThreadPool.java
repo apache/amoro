@@ -146,6 +146,7 @@ public class ThreadPool {
       commitPool.shutdown();
       expirePool.shutdown();
       orphanPool.shutdown();
+      optimizerMonitorPool.shutdown();
       syncFileInfoCachePool.shutdown();
       self = null;
     }
