@@ -101,7 +101,7 @@ public class ArcticSparkUtils {
         DistributionHashMode distributionHashMode = DistributionHashMode.valueOfDesc(
             arcticSparkTable.properties().getOrDefault(
                 TableProperties.WRITE_DISTRIBUTION_HASH_MODE,
-                TableProperties.WRITE_DISTRIBUTION_HASH_DEFAULT));
+                TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT));
         List<Transform> transforms = new ArrayList<>();
         if (DistributionHashMode.AUTO.equals(distributionHashMode)) {
           distributionHashMode = DistributionHashMode.autoSelect(

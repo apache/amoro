@@ -71,8 +71,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT;
 import static com.netease.arctic.table.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
-import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
@@ -250,7 +250,7 @@ public class FlinkSink {
           return DistributionHashMode.NONE;
         case HASH:
           String hashMode = PropertyUtil.propertyAsString(
-              table.properties(), WRITE_DISTRIBUTION_HASH_MODE, WRITE_DISTRIBUTION_HASH_DEFAULT);
+              table.properties(), WRITE_DISTRIBUTION_HASH_MODE, WRITE_DISTRIBUTION_HASH_MODE_DEFAULT);
           return DistributionHashMode.valueOfDesc(hashMode);
         case RANGE:
           LOG.warn("Fallback to use 'none' distribution mode, because {}={} is not supported in flink now",
