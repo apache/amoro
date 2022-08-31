@@ -92,7 +92,7 @@ public class HiveTableTestBase extends TableTestBase {
   protected UnkeyedHiveTable testUnPartitionHiveTable;
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
 
-  @BeforeClass
+//  @BeforeClass
   public static void startMetastore() throws Exception {
     int ref = testCount.incrementAndGet();
     if (ref == 1){
@@ -127,7 +127,7 @@ public class HiveTableTestBase extends TableTestBase {
     }
   }
 
-  @AfterClass
+//  @AfterClass
   public static void stopMetastore() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){

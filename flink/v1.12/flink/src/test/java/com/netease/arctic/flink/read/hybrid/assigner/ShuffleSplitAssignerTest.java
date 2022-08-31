@@ -45,6 +45,7 @@ public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
 
   @Test
   public void testSingleParallelism() {
+    System.out.println(0);
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(1);
 
     List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());

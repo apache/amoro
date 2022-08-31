@@ -55,6 +55,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
 
   @Before
   public void init() throws IOException {
+    System.out.println("ContinuousSplitPlannerImplTest0");
     //write base
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(true);
@@ -73,7 +74,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       }
       commit(taskWriter.complete(), true);
     }
-
+    System.out.println("ContinuousSplitPlannerImplTest1");
     //write change insert
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(false);
@@ -88,7 +89,7 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
       }
       commit(taskWriter.complete(), true);
     }
-
+    System.out.println("ContinuousSplitPlannerImplTest2");
     //write change delete
     {
       TaskWriter<RowData> taskWriter = createTaskWriter(false);
