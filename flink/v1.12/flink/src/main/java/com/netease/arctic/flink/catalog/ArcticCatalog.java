@@ -158,6 +158,9 @@ public class ArcticCatalog extends AbstractCatalog {
   @Override
   public CatalogBaseTable getTable(ObjectPath tablePath) throws TableNotExistException, CatalogException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
+    if (!internalCatalog.tableExists(tableIdentifier)) {
+      throw new TableNotExistException(this.getName(), tablePath);
+    }
     ArcticTable table = internalCatalog.loadTable(tableIdentifier);
     Schema arcticSchema = table.schema();
 
