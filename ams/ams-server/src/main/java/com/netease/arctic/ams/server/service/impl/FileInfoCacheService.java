@@ -124,7 +124,7 @@ public class FileInfoCacheService extends IJDBCService {
   public Long getCachedMaxTime(TableIdentifier identifier, String innerTable) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      Timestamp maxTime =  snapInfoCacheMapper.getCachedMaxTime(identifier, innerTable);
+      Timestamp maxTime = snapInfoCacheMapper.getCachedMaxTime(identifier, innerTable);
       return maxTime == null ? 0 : maxTime.getTime();
     }
   }
@@ -288,8 +288,12 @@ public class FileInfoCacheService extends IJDBCService {
 
       for (DataFile amsFile : deleteFiles) {
         CacheFileInfo cacheFileInfo = new CacheFileInfo();
+        String partitionName = StringUtils.isEmpty(partitionToPath(amsFile.getPartition())) ?
+            "" :
+            partitionToPath(amsFile.getPartition());
         cacheFileInfo.setDeleteSnapshotId(snapshot.snapshotId());
-        String primaryKey = TableMetadataUtil.getTableAllIdentifyName(identifier) + tableType + amsFile.getPath();
+        String primaryKey =
+            TableMetadataUtil.getTableAllIdentifyName(identifier) + tableType + amsFile.getPath() + partitionName;
         String primaryKeyMd5 = Hashing.md5()
             .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
             .toString();
@@ -399,8 +403,10 @@ public class FileInfoCacheService extends IJDBCService {
             cacheFileInfo.setInnerTable(tableChange.getInnerTable());
             cacheFileInfo.setFilePath(datafile.getPath());
             cacheFileInfo.setFileType(datafile.getFileType());
-            String partitionName = partitionToPath(datafile.getPartition());
-            cacheFileInfo.setPartitionName(StringUtils.isEmpty(partitionName) ? "" : partitionName);
+            String partitionName = StringUtils.isEmpty(partitionToPath(datafile.getPartition())) ?
+                "" :
+                partitionToPath(datafile.getPartition());
+            cacheFileInfo.setPartitionName(partitionName);
             String primaryKey = TableMetadataUtil.getTableAllIdentifyName(tableCommitMeta.getTableIdentifier()) +
                 tableChange.getInnerTable() + datafile.getPath() + partitionName;
             String primaryKeyMd5 = Hashing.md5()
@@ -432,8 +438,11 @@ public class FileInfoCacheService extends IJDBCService {
         if (CollectionUtils.isNotEmpty(tableChange.getDeleteFiles())) {
           tableChange.getDeleteFiles().forEach(datafile -> {
             CacheFileInfo cacheFileInfo = new CacheFileInfo();
+            String partitionName = StringUtils.isEmpty(partitionToPath(datafile.getPartition())) ?
+                "" :
+                partitionToPath(datafile.getPartition());
             String primaryKey = TableMetadataUtil.getTableAllIdentifyName(tableCommitMeta.getTableIdentifier()) +
-                tableChange.getInnerTable() + datafile.getPath();
+                tableChange.getInnerTable() + datafile.getPath() + partitionName;
             String primaryKeyMd5 = Hashing.md5()
                 .hashBytes(primaryKey.getBytes(StandardCharsets.UTF_8))
                 .toString();
@@ -447,7 +456,8 @@ public class FileInfoCacheService extends IJDBCService {
     return rs;
   }
 
-  private CacheSnapshotInfo syncSnapInfo(TableIdentifier identifier, String tableType, Snapshot snapshot,
+  private CacheSnapshotInfo syncSnapInfo(
+      TableIdentifier identifier, String tableType, Snapshot snapshot,
       long fileSize, int fileCount) {
     CacheSnapshotInfo cache = new CacheSnapshotInfo();
     cache.setTableIdentifier(identifier);
