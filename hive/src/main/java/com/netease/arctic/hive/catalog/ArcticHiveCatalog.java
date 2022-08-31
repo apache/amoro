@@ -392,7 +392,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
-            hiveParameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "false");
+            hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
             client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
             return null;
           });
