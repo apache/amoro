@@ -103,6 +103,7 @@ CREATE TABLE optimize_table_runtime (
     table_name varchar(64) NOT NULL,
     current_snapshot_id bigint NOT NULL DEFAULT -1,
     latest_major_optimize_time clob(64m),
+    latest_full_optimize_time clob(64m),
     latest_minor_optimize_time clob(64m),
     latest_task_history_id varchar(40) DEFAULT NULL,
     optimize_status varchar(20) DEFAULT 'Idle',
