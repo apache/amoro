@@ -86,9 +86,15 @@ public class LocalOptimizer implements StatefulOptimizer {
     JSONObject groupProperties = groupInfo.getJSONObject(OptimizerProperties.OPTIMIZER_GROUP_PROPERTIES);
 
     //add compact execute config
-    String amsUrl =
-        "thrift://" + systemInfo.getString(OptimizerProperties.THRIFT_BIND_HOST).trim() + ":" +
-            systemInfo.getString(OptimizerProperties.THRIFT_BIND_PORT).trim();
+    String amsUrl;
+    if (systemInfo.containsKey(OptimizerProperties.HA_ENABLE) && systemInfo.getBoolean(OptimizerProperties.HA_ENABLE)) {
+      amsUrl = String.format("zookeeper://%s/%s", systemInfo.getString(OptimizerProperties.ZOOKEEPER_SERVER).trim(),
+          systemInfo.getString(OptimizerProperties.CLUSTER_NAME)).trim();
+    } else {
+      amsUrl =
+          "thrift://" + systemInfo.getString(OptimizerProperties.THRIFT_BIND_HOST).trim() + ":" +
+              systemInfo.getString(OptimizerProperties.THRIFT_BIND_PORT).trim();
+    }
     int parallelism = jobInfo.getInteger(OptimizerProperties.OPTIMIZER_JOB_PARALLELISM);
     long heartBeatInterval = groupProperties.containsKey(OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL) ?
         groupProperties.getLong(OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL) :

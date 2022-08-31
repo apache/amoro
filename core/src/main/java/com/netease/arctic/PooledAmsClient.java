@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.client.AmsClientPools;
 import org.apache.thrift.TException;
 
 import java.util.List;
