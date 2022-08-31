@@ -222,6 +222,7 @@ public class HivePartitionUtil {
       throw new IOException(e);
     }
   }
+  
   public static void createPartitionIfAbsent(HMSClient hmsClient,
                                              ArcticTable arcticTable,
                                              List<String> partitionValues,
