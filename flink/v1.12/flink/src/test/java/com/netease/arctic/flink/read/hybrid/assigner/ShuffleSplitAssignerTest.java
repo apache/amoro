@@ -65,24 +65,28 @@ public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
 
   @Test
   public void testMultiParallelism() {
+    System.out.println(0);
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(3);
-
+    System.out.println(1);
     List<ArcticSplit> splitList = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger());
-    shuffleSplitAssigner.onDiscoveredSplits(splitList);
-    List<ArcticSplit> actual = new ArrayList<>();
+    System.out.println(2);
+    shuffleSplitAssigner.onDiscoveredSplits(splitList);System.out.println(3);
+    List<ArcticSplit> actual = new ArrayList<>();System.out.println(4);
 
     int subtaskId = 2;
     while (subtaskId >= 0) {
-      Optional<ArcticSplit> splitOpt = shuffleSplitAssigner.getNext(subtaskId);
-      if (splitOpt.isPresent()) {
+      System.out.println(5);
+      Optional<ArcticSplit> splitOpt = shuffleSplitAssigner.getNext(subtaskId);System.out.println(6);
+      if (splitOpt.isPresent()) {System.out.println(7);
         actual.add(splitOpt.get());
       } else {
         LOG.info("subtask id {}, splits {}.\n {}", subtaskId, actual.size(), actual);
         --subtaskId;
       }
+      System.out.println(8);
     }
-
-    Assert.assertEquals(splitList.size(), actual.size());
+    System.out.println(9);
+    Assert.assertEquals(splitList.size(), actual.size());System.out.println(10);
   }
 
   @Test
