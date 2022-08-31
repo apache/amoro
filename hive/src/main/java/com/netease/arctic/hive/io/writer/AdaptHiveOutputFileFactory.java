@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.io.writer;
 
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *    ${table_location}
  *            -| change
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
  *                            -| txid=${txid}
@@ -45,13 +46,13 @@ import java.util.concurrent.atomic.AtomicLong;
  *    ${table_location}
  *            -| change
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                  -| txid=${txid}
  *
  * For UnKeyed adapt hive with partitions the dir construct is :
  *    ${table_location}
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
  *                            -| ${timestamp_uuid}
@@ -59,7 +60,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * For Keyed adapt hive without partitions the dir construct is :
  *    ${table_location}
  *            -| base
- *            -| hive_data
+ *            -| hive
  *                  -| ${timestamp_uuid}
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
@@ -73,9 +74,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final long taskId;
   private final Long transactionId;
 
-  private final String unKeyedTmpDir = System.currentTimeMillis() + "_" + UUID.randomUUID();
+  private final String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
 
-  private final String keyedTmpDir;
+  private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
@@ -96,7 +97,6 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId;
-    keyedTmpDir = "txid=" + transactionId;
   }
 
 
@@ -107,27 +107,19 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
               transactionId, partitionId, taskId, fileCount.incrementAndGet()));
     } else {
       return format.addExtension(
-          String.format("%s-%05d-%d-%010d",
-              key.getFileType().shortName(), partitionId, taskId, fileCount.incrementAndGet()));
+          String.format("%s-%05d-%d-%s-%010d",
+              key.getFileType().shortName(), partitionId, taskId, unKeyedTableNameUUID, fileCount.incrementAndGet()));
     }
   }
 
   private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {
-    if (partitionSpec.isUnpartitioned()) {
-      if (key.getTreeNode() == null) {
-        return String.format("%s/%s/%s", baseLocation, unKeyedTmpDir, fileName);
-      } else {
-        return String.format("%s/%s/%s", baseLocation, keyedTmpDir, fileName);
-      }
+    String dir;
+    if (key.getTreeNode() == null) {
+      dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, unKeyedTmpDir);
     } else {
-      if (key.getTreeNode() == null) {
-        return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
-            unKeyedTmpDir, fileName);
-      } else {
-        return String.format("%s/%s/%s/%s", baseLocation, partitionSpec.partitionToPath(partitionData),
-            keyedTmpDir, fileName);
-      }
+      dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId);
     }
+    return String.format("%s/%s", dir, fileName);
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {

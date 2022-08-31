@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class BaseKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
-  private final AmsClient client;
+  protected final AmsClient client;
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
@@ -109,10 +109,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Map<String, String> properties() {
-    return baseTable.properties().entrySet()
-        .stream()
-        .filter(e -> !TableProperties.PROTECTED_PROPERTIES.contains(e.getKey()))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return baseTable.properties();
   }
 
   @Override
@@ -224,10 +221,6 @@ public class BaseKeyedTable implements KeyedTable {
       super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
     }
 
-    @Override
-    public Map<String, String> properties() {
-      return Maps.newHashMap(icebergTable.properties());
-    }
   }
 
   public static class ChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {

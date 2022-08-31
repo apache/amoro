@@ -41,7 +41,7 @@ public class DerbyService extends IJDBCService {
         // Table does NOT exist ... create it
         ScriptRunner runner = new ScriptRunner(connection);
         runner.runScript(new InputStreamReader(new FileInputStream(System.getProperty("user.dir") +
-                "/conf/ams-init-derby.sql".replace("/", File.separator)), "UTF-8"));
+                "/conf/derby/ams-init.sql".replace("/", File.separator)), "UTF-8"));
       }
     }
   }
