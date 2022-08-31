@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 
 public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
 
-  private final Logger logger = LoggerFactory.getLogger(getClass());
+  private static final Logger LOG = LoggerFactory.getLogger("ThriftClientPool");
 
   private final ThriftClientFactory clientFactory;
 
@@ -46,7 +46,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
 
   private final GenericObjectPool<ThriftClient<T>> pool;
 
-  private List<ServiceInfo> services;
+  private String url;
 
   private boolean serviceReset = false;
 
@@ -54,27 +54,30 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   // for thrift connects
   private static final int retries = 5;
 
+  private static final int retryInterval = 2000;
+
   /**
    * Construct a new pool using default config
    *
-   * @param services
+   * @param url
    * @param factory
    */
-  public ThriftClientPool(List<ServiceInfo> services, ThriftClientFactory factory, ThriftPingFactory pingFactory) {
-    this(services, factory, pingFactory, new PoolConfig());
+  public ThriftClientPool(String url, ThriftClientFactory factory, ThriftPingFactory pingFactory) {
+    this(url, factory, pingFactory, new PoolConfig());
   }
 
   /**
    * Construct a new pool using
    *
-   * @param services
+   * @param url
    * @param factory
    * @param config
    */
-  public ThriftClientPool(List<ServiceInfo> services, ThriftClientFactory factory, ThriftPingFactory pingFactory,
-                          PoolConfig config) {
-    if (services == null || services.size() == 0) {
-      throw new IllegalArgumentException("services is empty!");
+  public ThriftClientPool(
+      String url, ThriftClientFactory factory, ThriftPingFactory pingFactory,
+      PoolConfig config) {
+    if (url == null || url.isEmpty()) {
+      throw new IllegalArgumentException("url is empty!");
     }
     if (factory == null) {
       throw new IllegalArgumentException("factory is empty!");
@@ -83,7 +86,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
       throw new IllegalArgumentException("config is empty!");
     }
 
-    this.services = services;
+    this.url = url;
     this.clientFactory = factory;
     this.pingFactory = pingFactory;
     this.poolConfig = config;
@@ -96,29 +99,36 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
       public ThriftClient<T> create() throws Exception {
 
         // get from global list first
-        List<ServiceInfo> serviceList = ThriftClientPool.this.services;
-        ServiceInfo serviceInfo = getRandomService(serviceList);
+        ArcticThriftUrl arcticThriftUrl = ArcticThriftUrl.parse(url);
+        ServiceInfo serviceInfo = new ServiceInfo(arcticThriftUrl.host(), arcticThriftUrl.port());
         TTransport transport = getTransport(serviceInfo);
 
         try {
           transport.open();
         } catch (TTransportException e) {
-          logger.info("transport open fail service: host={}, port={}",
+          LOG.warn("transport open fail service: host={}, port={}",
               serviceInfo.getHost(), serviceInfo.getPort());
           if (poolConfig.isFailover()) {
-            while (true) {
+            for (int i = 0; i < 5; i++) {
               try {
-                // mark current fail and try next, until none service available
-                serviceList = removeFailService(serviceList, serviceInfo);
-                serviceInfo = getRandomService(serviceList);
+                arcticThriftUrl = ArcticThriftUrl.parse(url);
+                serviceInfo.setHost(arcticThriftUrl.host());
+                serviceInfo.setPort(arcticThriftUrl.port());
                 transport = getTransport(serviceInfo); // while break here
-                logger.info("failover to next service host={}, port={}",
+                LOG.info("failover to next service host={}, port={}",
                     serviceInfo.getHost(), serviceInfo.getPort());
                 transport.open();
                 break;
               } catch (TTransportException e2) {
-                logger.warn("failover fail, services left: {}", serviceList.size());
+                LOG.warn("transport open fail service: host={}, port={}",
+                    serviceInfo.getHost(), serviceInfo.getPort());
               }
+              Thread.sleep(retryInterval);
+            }
+            if (!transport.isOpen()) {
+              throw new ConnectionFailException(
+                  "connect error after try 5 times, last connect is: host=" + serviceInfo.getHost() + ", ip=" +
+                      serviceInfo.getPort(), e);
             }
           } else {
             throw new ConnectionFailException("host=" + serviceInfo.getHost() + ", ip=" + serviceInfo.getPort(), e);
@@ -128,7 +138,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         ThriftClient<T> client = new ThriftClient<>(clientFactory.createClient(transport),
             pool, serviceInfo);
 
-        logger.debug("create new object for pool {}", client);
+        LOG.debug("create new object for pool {}", client);
         return client;
       }
 
@@ -140,16 +150,9 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
       @Override
       public boolean validateObject(PooledObject<ThriftClient<T>> p) {
         ThriftClient<T> client = p.getObject();
-
-        // check if return client in current service list if 
-        if (serviceReset) {
-          if (!ThriftClientPool.this.services.contains(client.getServiceInfo())) {
-            logger.warn("not return object cuase it's from previous config {}", client);
-            client.closeClient();
-            return false;
-          }
+        if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
+          return false;
         }
-
         return super.validateObject(p);
       }
 
@@ -159,19 +162,6 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
         super.destroyObject(p);
       }
     }, poolConfig);
-  }
-
-  /**
-   * set new services for this pool
-   *
-   * @param services
-   */
-  public void setServices(List<ServiceInfo> services) {
-    if (services == null || services.size() == 0) {
-      throw new IllegalArgumentException("services is empty!");
-    }
-    this.services = services;
-    serviceReset = true;
   }
 
   private TTransport getTransport(ServiceInfo serviceInfo) throws TTransportException {
@@ -204,7 +194,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
   }
 
   private List<ServiceInfo> removeFailService(List<ServiceInfo> list, ServiceInfo serviceInfo) {
-    logger.info("remove service from current service list: host={}, port={}",
+    LOG.info("remove service from current service list: host={}, port={}",
         serviceInfo.getHost(), serviceInfo.getPort());
     return list.stream() //
         .filter(si -> !serviceInfo.equals(si)) //
@@ -242,11 +232,17 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
       try {
         client = pool.borrowObject();
         if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
-          client.close();
+          if (attempt > 1) {
+            // if attempt > 1, it means the server is maybe restarting, so we should wait a while
+            LOG.warn("server is restarting, wait a while");
+            Thread.sleep(retryInterval);
+          }
+          pool.clear();
+          client = pool.borrowObject();
         } else {
           break;
         }
-      } catch(Exception e){
+      } catch (Exception e) {
         if (e instanceof ThriftException) {
           throw (ThriftException) e;
         }

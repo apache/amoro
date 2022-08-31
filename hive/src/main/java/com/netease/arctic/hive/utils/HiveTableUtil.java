@@ -29,6 +29,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -36,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class HiveTableUtil {
 
@@ -87,6 +89,29 @@ public class HiveTableUtil {
 
   public static String hiveRootLocation(String tableLocation) {
     return tableLocation + "/hive";
+  }
+
+  public static String newKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
+                                                StructLike partitionData, Long transactionId) {
+    if (partitionSpec.isUnpartitioned()) {
+      return String.format("%s/%s", hiveLocation, "txid=" + transactionId);
+    } else {
+      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData),
+          "txid=" + transactionId);
+    }
+  }
+
+  public static String newUnKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
+                                                  StructLike partitionData, String subDir) {
+    if (partitionSpec.isUnpartitioned()) {
+      return String.format("%s/%s", hiveLocation, subDir);
+    } else {
+      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), subDir);
+    }
+  }
+
+  public static String getRandomSubDir() {
+    return System.currentTimeMillis() + "_" + UUID.randomUUID();
   }
 
   public static StorageDescriptor storageDescriptor(
