@@ -94,11 +94,9 @@ public class UpgradeHiveTableUtil {
       newPath = hiveDataLocation + "/" + System.currentTimeMillis() + "_" + UUID.randomUUID();
       arcticTable.io().mkdirs(newPath);
       for (FileStatus fileStatus : arcticTable.io().list(hiveTable.getSd().getLocation())) {
-        if (hiveTable.getPartitionKeys().isEmpty()) {
           if (!fileStatus.isDirectory()) {
             arcticTable.io().rename(fileStatus.getPath().toString(), newPath);
           }
-        }
       }
 
       try {

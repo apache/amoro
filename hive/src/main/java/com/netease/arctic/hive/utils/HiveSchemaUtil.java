@@ -30,8 +30,6 @@ import java.util.List;
  */
 public class HiveSchemaUtil {
 
-  private static final int PARTITION_COLUMN_START_ID = 2;
-
   /**
    * Converts the Iceberg schema to a Hive schema.
    * Filter partition fields from iceberg schema fields.
