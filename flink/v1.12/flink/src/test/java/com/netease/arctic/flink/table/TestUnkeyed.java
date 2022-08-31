@@ -20,7 +20,6 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -36,10 +35,8 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.types.Types;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -72,7 +69,6 @@ public class TestUnkeyed extends FlinkTestBase {
 
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TABLE_ID.getDatabase();
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   private String catalog;
   private ArcticCatalog arcticCatalog;
@@ -107,16 +103,6 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
-  }
-
-  @BeforeClass
-  public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
-  }
-
-  @AfterClass
-  public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
   }
 
   @After

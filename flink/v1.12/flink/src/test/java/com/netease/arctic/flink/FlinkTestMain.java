@@ -72,11 +72,13 @@ public class FlinkTestMain {
   public static void setup() throws Exception {
     System.out.println("================== begin flink test ==================");
     HiveTableTestBase.startMetastore();
+    FlinkTestBase.prepare();
   }
 
   @AfterClass
-  public static void cleanDown() {
+  public static void cleanDown() throws Exception {
     System.out.println("================== end flink test ===================");
     HiveTableTestBase.stopMetastore();
+    FlinkTestBase.shutdown();
   }
 }

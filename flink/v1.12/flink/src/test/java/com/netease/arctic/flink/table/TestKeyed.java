@@ -19,7 +19,6 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.core.execution.JobClient;
@@ -34,9 +33,7 @@ import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -70,7 +67,6 @@ public class TestKeyed extends FlinkTestBase {
 
   private static final String DB = PK_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   private String catalog;
   private String db;
@@ -95,16 +91,6 @@ public class TestKeyed extends FlinkTestBase {
     }
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
-  }
-
-  @BeforeClass
-  public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
-  }
-
-  @AfterClass
-  public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
   }
 
   @After
