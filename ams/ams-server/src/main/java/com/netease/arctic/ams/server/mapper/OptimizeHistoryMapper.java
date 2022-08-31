@@ -137,4 +137,7 @@ public interface OptimizeHistoryMapper {
           "#{optimizeHistory.partitionCnt}, #{optimizeHistory.partitions}, " +
           "#{optimizeHistory.baseTableMaxTransactionId})")
   void insertOptimizeHistory(@Param("optimizeHistory") OptimizeHistory optimizeHistory);
+
+  @Select("select max(history_id) from " + TABLE_NAME)
+  Long maxOptimizeHistoryId();
 }

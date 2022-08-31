@@ -37,7 +37,6 @@ public class TableProperties {
   static {
     PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
     PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
-    PROTECTED_PROPERTIES.add(TableProperties.TABLE_CREATE_TIME);
     PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
   }
 
@@ -51,7 +50,6 @@ public class TableProperties {
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
-
   /**
    * table optimize related properties
    */
@@ -155,7 +153,7 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY = "primary-key";
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String WRITE_DISTRIBUTION_HASH_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
+  public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
   /**
    * table read related properties
@@ -169,7 +167,7 @@ public class TableProperties {
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String READ_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String READ_DISTRIBUTION_HASH_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
+  public static final String READ_DISTRIBUTION_HASH_MODE_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
 
   public static final String SPLIT_SIZE = org.apache.iceberg.TableProperties.SPLIT_SIZE;
   public static final long SPLIT_SIZE_DEFAULT = 134217728; // 128 MB
@@ -197,5 +195,4 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-
 }

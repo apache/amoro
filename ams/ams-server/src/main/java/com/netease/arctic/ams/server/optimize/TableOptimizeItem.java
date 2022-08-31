@@ -461,6 +461,7 @@ public class TableOptimizeItem extends IJDBCService {
         optimizeTaskItem.clearFiles();
       }
       updateTableOptimizeStatus();
+      tryTriggerCommit();
     } catch (Throwable t) {
       // rollback
       for (OptimizeTaskId addedOptimizeTaskId : addedOptimizeTaskIds) {

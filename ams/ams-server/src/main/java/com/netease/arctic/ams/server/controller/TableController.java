@@ -22,39 +22,50 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
+import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
 import com.netease.arctic.ams.server.model.BaseMajorCompactRecord;
 import com.netease.arctic.ams.server.model.CatalogMeta;
 import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
+import com.netease.arctic.ams.server.model.HiveTableInfo;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
+import com.netease.arctic.ams.server.model.TableMeta;
 import com.netease.arctic.ams.server.model.TableOperation;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
+import com.netease.arctic.ams.server.model.UpgradeHiveMeta;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.service.ITableInfoService;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,8 +75,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -79,6 +92,7 @@ public class TableController extends RestBaseController {
   private static IOptimizeService optimizeService = ServiceContainer.getOptimizeService();
   private static FileInfoCacheService fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
   private static CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
+  private static AdaptHiveService adaptHiveService = ServiceContainer.getAdaptHiveService();
   private static DDLTracerService ddlTracerService = ServiceContainer.getDdlTracerService();
 
   /**
@@ -143,19 +157,93 @@ public class TableController extends RestBaseController {
       } else {
         changeMetrics.put("maxEventTime", null);
       }
-      serverTableMeta.setChangeMetrics(changeMetrics);
     } else {
       changeMetrics.put("lastCommitTime", null);
       changeMetrics.put("size", null);
       changeMetrics.put("file", null);
       changeMetrics.put("averageFile", null);
       changeMetrics.put("maxEventTime", null);
-      serverTableMeta.setChangeMetrics(changeMetrics);
     }
+    serverTableMeta.setChangeMetrics(changeMetrics);
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
-  /** get optimize info. */
+  /**
+   * get hive table detail.
+   */
+  public static void getHiveTableDetail(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+
+    // get table from catalog
+    String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
+    Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
+    ArcticHiveCatalog arcticHiveCatalog
+        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+
+    TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
+    HiveTableInfo hiveTableInfo = null;
+    try {
+      Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
+      List<AMSColumnInfo> schema =
+          AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getSd().getCols());
+      List<AMSColumnInfo> partitionColumnInfos =
+          AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getPartitionKeys());
+      hiveTableInfo = new HiveTableInfo(tableIdentifier, TableMeta.TableType.HIVE, schema, partitionColumnInfos,
+          new HashMap<>(), hiveTable.getCreateTime());
+    } catch (Exception e) {
+      LOG.error("Failed to get hive table info", e);
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get hive table info", ""));
+      return;
+    }
+    ctx.json(OkResponse.of(hiveTableInfo));
+  }
+
+  /**
+   * upgrade hive table to arctic.
+   */
+  public static void upgradeHiveTable(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    UpgradeHiveMeta upgradeHiveMeta = ctx.bodyAsClass(UpgradeHiveMeta.class);
+
+    String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
+    Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
+    ArcticHiveCatalog arcticHiveCatalog
+        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+    adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
+    ctx.json(OkResponse.ok());
+  }
+
+  public static void getUpgradeStatus(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
+    ctx.json(OkResponse.of(adaptHiveService.getUpgradeRunningInfo(TableIdentifier.of(catalog, db, table))));
+  }
+
+
+  /**
+   * upgrade hive table to arctic.
+   */
+  public static void getUpgradeHiveTableProperties(Context ctx) throws IllegalAccessException {
+    Map<String, String> keyValues = new TreeMap<>();
+    Map<String, String> tableProperties =
+        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(TableProperties.class);
+    tableProperties.keySet().stream()
+        .filter(key -> !key.endsWith("_DEFAULT"))
+        .forEach(
+            key -> keyValues
+                .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
+    ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
+    ctx.json(OkResponse.of(keyValues));
+  }
+
+  /**
+   * get optimize info.
+   */
   public static void getOptimizeInfo(Context ctx) {
 
     String catalog = ctx.pathParam("catalog");
@@ -199,8 +287,7 @@ public class TableController extends RestBaseController {
 
   /**
    * get list of transactions.
-   * url /tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions
-   **/
+   */
   public static void getTableTransactions(Context ctx) {
 
     String catalog = ctx.pathParam("catalog");
@@ -226,8 +313,7 @@ public class TableController extends RestBaseController {
 
   /**
    * get detail of transaction.
-   * url: /tables/catalogs/{catalog}/dbs/{db}/tables/{table}/transactions/{transactionId}/detail
-   **/
+   */
   public static void getTransactionDetail(Context ctx) {
     String catalog = ctx.pathParam("catalog");
     String db = ctx.pathParam("db");
@@ -278,8 +364,6 @@ public class TableController extends RestBaseController {
 
   /**
    * get file list of some partition.
-   *
-   * @return
    */
   public static void getPartitionFileListInfo(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -351,16 +435,33 @@ public class TableController extends RestBaseController {
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticCatalog ac = CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     List<TableIdentifier> tableIdentifiers = ac.listTables(db);
-    List<String> tables = tableIdentifiers.stream().map(TableIdentifier::getTableName)
-            .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
-            .collect(Collectors.toList());
-    ctx.json(OkResponse.of(tables));
+    LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
+    List<TableMeta> tables = new ArrayList<>();
+    if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
+      ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
+      List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
+      for (String hiveTable : hiveTables) {
+        tempTables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.toString()));
+      }
+      for (TableIdentifier tableIdentifier : tableIdentifiers) {
+        TableMeta tableMeta = new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.toString());
+        if (tempTables.contains(tableMeta)) {
+          tables.add(tableMeta);
+          tempTables.remove(tableMeta);
+        }
+      }
+      tables.addAll(tempTables);
+    } else {
+      for (TableIdentifier tableIdentifier : tableIdentifiers) {
+        tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ARCTIC.toString()));
+      }
+    }
+    ctx.json(OkResponse.of(tables.stream().filter(t -> StringUtils.isEmpty(keywords) ||
+        t.getName().contains(keywords)).collect(Collectors.toList())));
   }
 
   /**
    * get databases of some catalog.
-   *
-   * @param ctx ctx
    */
   public static void getDatabaseList(Context ctx) {
     String catalog = ctx.pathParam("catalog");
@@ -377,8 +478,6 @@ public class TableController extends RestBaseController {
 
   /**
    * list catalogs.
-   *
-   * @param ctx ctx
    */
   public static void getCatalogs(Context ctx) {
     List<CatalogMeta> catalogs = catalogMetadataService.getCatalogs().stream().map(t ->

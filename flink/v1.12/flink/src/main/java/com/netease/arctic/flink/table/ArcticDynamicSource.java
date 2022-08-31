@@ -52,8 +52,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_DEFAULT;
+import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE;
+import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE_DEFAULT;
 
@@ -112,7 +113,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     } else {
       flinkSchemaRowType = (RowType) projectedSchema.toRowDataType().getLogicalType();
-      readSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(projectedSchema), arcticTable.schema());
+      readSchema = TypeUtil.reassignIds(
+          FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema());
     }
   }
 
@@ -162,7 +164,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
           if (arcticTable.isUnkeyedTable()) {
             return DistributionHashMode.NONE;
           }
-          hashMode = READ_DISTRIBUTION_HASH_DEFAULT;
+          hashMode = READ_DISTRIBUTION_HASH_MODE_DEFAULT;
         }
         return DistributionHashMode.valueOfDesc(hashMode);
       default:

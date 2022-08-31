@@ -19,6 +19,8 @@
 package com.netease.arctic.flink.catalog.descriptors;
 
 import com.netease.arctic.flink.catalog.ArcticCatalog;
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.descriptors.CatalogDescriptorValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 
@@ -30,6 +32,8 @@ public class ArcticCatalogValidator extends CatalogDescriptorValidator {
   public static final String METASTORE_URL = "metastore.url";
   public static final String PROPERTIES_PREFIX = "properties";
 
+  public static final ConfigOption<String> METASTORE_URL_OPTION =
+      ConfigOptions.key(METASTORE_URL).stringType().noDefaultValue();
 
   @Override
   public void validate(DescriptorProperties properties) {

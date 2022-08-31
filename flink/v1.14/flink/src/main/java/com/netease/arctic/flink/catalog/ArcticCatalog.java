@@ -18,9 +18,12 @@
 
 package com.netease.arctic.flink.catalog;
 
+import com.google.common.base.Objects;
 import com.netease.arctic.NoSuchDatabaseException;
 import com.netease.arctic.flink.InternalCatalogBuilder;
+import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
 import com.netease.arctic.flink.table.DynamicTableFactory;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -28,6 +31,7 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.catalog.AbstractCatalog;
 import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.catalog.CatalogDatabase;
@@ -68,12 +72,19 @@ import java.util.stream.Collectors;
 
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
+import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 
 /**
  * Catalogs for arctic data lake.
  */
 public class ArcticCatalog extends AbstractCatalog {
   public static final String DEFAULT_DB = "default";
+
+  /**
+   * To distinguish 'CREATE TABLE LIKE' by checking stack
+   * {@link org.apache.flink.table.planner.operations.SqlCreateTableConverter#lookupLikeSourceTable}
+   */
+  public static final String SQL_LIKE_METHOD = "lookupLikeSourceTable";
 
   private final InternalCatalogBuilder catalogBuilder;
 
@@ -160,12 +171,16 @@ public class ArcticCatalog extends AbstractCatalog {
   @Override
   public CatalogBaseTable getTable(ObjectPath tablePath) throws TableNotExistException, CatalogException {
     TableIdentifier tableIdentifier = getTableIdentifier(tablePath);
+    if (!internalCatalog.tableExists(tableIdentifier)) {
+      throw new TableNotExistException(this.getName(), tablePath);
+    }
     ArcticTable table = internalCatalog.loadTable(tableIdentifier);
     Schema arcticSchema = table.schema();
 
     RowType rowType = FlinkSchemaUtil.convert(arcticSchema);
     Map<String, String> arcticProperties = Maps.newHashMap(table.properties());
     fillTableProperties(arcticProperties);
+    fillTableMetaPropertiesIfLookupLike(arcticProperties, tableIdentifier);
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
@@ -173,6 +188,35 @@ public class ArcticCatalog extends AbstractCatalog {
         partitionKeys,
         arcticProperties,
         null);
+  }
+
+  /**
+   * For now, 'CREATE TABLE LIKE' would be treated as the case which users want to add watermark in temporal join,
+   * as an alternative of lookup join, and use Arctic table as build table, i.e. right table.
+   * So the properties those required in temporal join will be put automatically.
+   * <p>
+   * If you don't want the properties, 'EXCLUDING ALL' is what you need.
+   * More details @see <a href="https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/sql/create/#like">LIKE</a>
+   */
+  private void fillTableMetaPropertiesIfLookupLike(Map<String, String> properties, TableIdentifier tableIdentifier) {
+    StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+    boolean isLookupLike = false;
+    for (StackTraceElement stackTraceElement : stackTraceElements) {
+      if (Objects.equal(SQL_LIKE_METHOD, stackTraceElement.getMethodName())) {
+        isLookupLike = true;
+        break;
+      }
+    }
+
+    if (!isLookupLike) {
+      return;
+    }
+
+    properties.put(CONNECTOR.key(), DynamicTableFactory.IDENTIFIER);
+    properties.put(ArcticValidator.ARCTIC_CATALOG.key(), tableIdentifier.getCatalog());
+    properties.put(ArcticValidator.ARCTIC_TABLE.key(), tableIdentifier.getTableName());
+    properties.put(ArcticValidator.ARCTIC_DATABASE.key(), tableIdentifier.getDatabase());
+    properties.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), catalogBuilder.getMetastoreUrl());
   }
 
   private static List<String> toPartitionKeys(PartitionSpec spec, Schema icebergSchema) {
@@ -250,7 +294,20 @@ public class ArcticCatalog extends AbstractCatalog {
     validateFlinkTable(table);
 
     TableSchema tableSchema = table.getSchema();
-    Schema icebergSchema = FlinkSchemaUtil.convert(tableSchema);
+    TableSchema.Builder b = TableSchema.builder();
+
+    tableSchema.getTableColumns().forEach(c -> {
+      List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
+      for (WatermarkSpec w : ws) {
+        if (w.getRowtimeAttribute().equals(c.getName())) {
+          return;
+        }
+      }
+      b.field(c.getName(), c.getType());
+    });
+    TableSchema tableSchemaWithoutWatermark = b.build();
+
+    Schema icebergSchema = FlinkSchemaUtil.convert(tableSchemaWithoutWatermark);
 
     TableBuilder tableBuilder = internalCatalog.newTableBuilder(
         getTableIdentifier(tablePath), icebergSchema);
@@ -292,9 +349,6 @@ public class ArcticCatalog extends AbstractCatalog {
       }
     });
 
-    if (!schema.getWatermarkSpecs().isEmpty()) {
-      throw new UnsupportedOperationException("Creating table with watermark specs is not supported yet.");
-    }
   }
 
   @Override
