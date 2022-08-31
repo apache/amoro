@@ -243,6 +243,7 @@ public class ArcticMetaStore {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
           LOG.warn("Signalling thread was interrupted: " + e.getMessage());
+          return;
         }
       } while (!server.isServing());
       startLock.lock();
@@ -321,12 +322,14 @@ public class ArcticMetaStore {
             Thread.sleep(5 * 60 * 1000);
           } catch (InterruptedException e) {
             LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+            return;
           }
         }
         try {
           Thread.sleep(60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+          return;
         }
       }
     });
@@ -349,12 +352,14 @@ public class ArcticMetaStore {
             Thread.sleep(5 * 60 * 1000);
           } catch (InterruptedException e) {
             LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+            return;
           }
         }
         try {
           Thread.sleep(60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+          return;
         }
       }
     });
@@ -369,6 +374,7 @@ public class ArcticMetaStore {
           Thread.sleep(checkLeaderInterval);
         } catch (InterruptedException e) {
           LOG.warn("notLeader thread was interrupted: " + e.getMessage());
+          return;
         }
         try {
           if (haService != null && isLeader.get() &&
