@@ -20,6 +20,7 @@ package com.netease.arctic.flink.catalog;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.flink.types.Row;
 import org.apache.flink.util.CollectionUtil;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -27,6 +28,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.util.List;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
@@ -71,4 +73,45 @@ public class TestCatalog  extends FlinkTestBase {
     sql("DROP CATALOG arcticCatalog");
   }
 
+  @Test
+  public void testDML() throws IOException {
+    sql("CREATE TABLE " + TABLE +
+        " (" +
+        " id INT," +
+        " name STRING," +
+        " t TIMESTAMP," +
+        " PRIMARY KEY (id) NOT ENFORCED " +
+        ") PARTITIONED BY(t) " +
+        " WITH (" +
+        " 'connector' = 'datagen'," +
+        " 'fields.id.kind'='sequence'," +
+        " 'fields.id.start'='1'," +
+        " 'fields.id.end'='1'" +
+        ")");
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+    sql("USE CATALOG arcticCatalog");
+    sql("CREATE TABLE arcticCatalog." + DB + "." + TABLE +
+        " (" +
+        " id INT," +
+        " name STRING," +
+        " t TIMESTAMP," +
+        " PRIMARY KEY (id) NOT ENFORCED " +
+        ") PARTITIONED BY(t) " +
+        " WITH (" +
+        " 'connector' = 'arctic'," +
+        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        ")");
+
+    sql("INSERT INTO arcticCatalog." + DB + "." + TABLE +
+        " SELECT * FROM default_catalog.default_database." + TABLE);
+    List<Row> rows = sql("SELECT * FROM arcticCatalog." + DB + "." + TABLE);
+    Assert.assertEquals(1, rows.size());
+
+    sql("DROP TABLE " + DB + "." + TABLE);
+    sql("DROP DATABASE " + DB);
+    sql("DROP CATALOG arcticCatalog");
+
+    sql("DROP TABLE default_catalog.default_database." + TABLE);
+  }
 }

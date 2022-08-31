@@ -49,6 +49,10 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
       TaskHistoryMapper taskHistoryMapper =
           getMapper(sqlSession, TaskHistoryMapper.class);
       taskHistoryMapper.insertTaskHistory(taskHistory);
+    } catch (Exception e) {
+      if (!(e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate"))) {
+        throw e;
+      }
     }
   }
 

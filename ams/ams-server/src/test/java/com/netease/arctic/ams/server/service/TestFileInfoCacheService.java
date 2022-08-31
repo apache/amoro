@@ -18,11 +18,13 @@
 
 package com.netease.arctic.ams.server.service;
 
+import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MetaException;
+import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
@@ -263,7 +265,12 @@ public class TestFileInfoCacheService extends TableTestBase {
     byte[] bytes = ByteBuffer.allocate(Long.SIZE / Byte.SIZE).putLong(1000L).array();
     upperBounds.put("eventTime", ByteBuffer.wrap(bytes));
     dataFile.setUpperBounds(upperBounds);
-    dataFile.setPartition(new ArrayList<>());
+    PartitionFieldData partitionFieldData = new PartitionFieldData();
+    partitionFieldData.setName("pt");
+    partitionFieldData.setValue("2022-08-31");
+    List<PartitionFieldData> partitionFieldDataList = new ArrayList<>();
+    partitionFieldDataList.add(partitionFieldData);
+    dataFile.setPartition(partitionFieldDataList);
     return dataFile;
   }
 }

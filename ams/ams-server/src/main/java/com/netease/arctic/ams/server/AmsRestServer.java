@@ -227,7 +227,7 @@ public class AmsRestServer {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
     });
   }
-
+  
   public static void stopRestServer() {
     if (app != null) {
       app.stop();
