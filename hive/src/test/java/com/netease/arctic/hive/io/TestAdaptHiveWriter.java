@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class AdaptHiveWriterTest extends HiveTableTestBase {
+public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
   public void testWriteTypeFromOperateKind(){
