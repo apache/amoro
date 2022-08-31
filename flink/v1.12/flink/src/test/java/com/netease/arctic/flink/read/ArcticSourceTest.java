@@ -479,7 +479,8 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
         arcticScanContext,
         rowDataReaderFunction,
         typeInformation,
-        testKeyedTable.name());
+        testKeyedTable.name(),
+        false);
   }
 
   private RowDataReaderFunction initRowDataReadFunction() {

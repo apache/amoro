@@ -84,6 +84,6 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
 
   @Override
   public ArcticSourceEnumState snapshotState() throws Exception {
-    return new ArcticSourceEnumState(assigner.state(), null, null);
+    return new ArcticSourceEnumState(assigner.state(), null, null, null);
   }
 }
