@@ -34,7 +34,10 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,10 +76,14 @@ public class OptimizeIntegrationTest {
       Types.NestedField.required(3, "op_time", Types.TimestampType.withZone())
   );
 
+  @ClassRule
+  public static TemporaryFolder tempFolder = new TemporaryFolder();
+
   @BeforeClass
   public static void beforeClass() {
+    LOG.info("TEMP folder {}", tempFolder.getRoot().getAbsolutePath());
     catalogsCache.clear();
-    amsEnvironment = new AmsEnvironment();
+    amsEnvironment = new AmsEnvironment(tempFolder.getRoot().getAbsolutePath());
     amsEnvironment.start();
     catalog(CATALOG).createDatabase(DATABASE);
   }
@@ -203,12 +210,23 @@ public class OptimizeIntegrationTest {
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 8, 4);
     optimizeHistory = waitOptimizeResult(tb, startId + 3);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 8, 4);
+    try {
+      Thread.sleep(60000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
 
     // Step3: delete change data
     writeChange(table, null, Lists.newArrayList(
         newRecord(table, 7, "fff", quickDateWithZone(3)),
         newRecord(table, 8, "ggg", quickDateWithZone(3))
     ));
+
+    try {
+      Thread.sleep(10000000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 4);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 4, 2);

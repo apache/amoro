@@ -130,7 +130,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
       if (transactionId != null && transactionId > 0) {
-      overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
+        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
       }
 
       if (MapUtils.isNotEmpty(properties)) {
