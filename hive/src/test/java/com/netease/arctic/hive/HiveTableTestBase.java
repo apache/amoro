@@ -142,22 +142,22 @@ public class HiveTableTestBase extends TableTestBase {
     System.out.println("setupHiveTables");
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
     tableDir = temp.newFolder();
-
+    System.out.println("setupHiveTables1");
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
-
+    System.out.println("setupHiveTables2");
     testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
         .create().asUnkeyedTable();
-
+    System.out.println("setupHiveTables3");
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
-
+    System.out.println("setupHiveTables4");
     testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
