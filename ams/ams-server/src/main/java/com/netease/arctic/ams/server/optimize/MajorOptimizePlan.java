@@ -154,7 +154,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
 
     if (fullMajorOptimizeInterval != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-      long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullMajorOptimizeTime(partitionToPath);
+      long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullOptimizeTime(partitionToPath);
       return current - lastFullMajorOptimizeTime >= fullMajorOptimizeInterval;
     }
 

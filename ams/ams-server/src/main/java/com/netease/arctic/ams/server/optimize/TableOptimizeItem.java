@@ -498,7 +498,7 @@ public class TableOptimizeItem extends IJDBCService {
               tableOptimizeRuntime.putLatestMajorOptimizeTime(partition, commitTime);
               break;
             case FullMajor:
-              tableOptimizeRuntime.putLatestFullMajorOptimizeTime(partition, commitTime);
+              tableOptimizeRuntime.putLatestFullOptimizeTime(partition, commitTime);
               break;
           }
         });

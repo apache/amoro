@@ -651,7 +651,7 @@ public class OptimizeQueueService extends IJDBCService {
                 tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
                 break;
               case FullMajor:
-                tableItem.getTableOptimizeRuntime().putLatestFullMajorOptimizeTime(currentPartition, -1);
+                tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
                 break;
             }
           }
