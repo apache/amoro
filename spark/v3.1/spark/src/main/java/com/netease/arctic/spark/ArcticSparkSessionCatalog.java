@@ -52,7 +52,7 @@ import static com.netease.arctic.spark.SparkSQLProperties.DELEGATE_DEFAULT_CATAL
 public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespaces>
     implements StagingTableCatalog, SupportsNamespaces, CatalogExtension {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkSessionCatalog.class);
-  private static final String[] DEFAULT_NAMESPACE = new String[] {"default"};
+  private static final String[] DEFAULT_NAMESPACE = new String[]{"default"};
 
   private String catalogName = null;
   private ArcticSparkCatalog arcticCatalog = null;
@@ -179,7 +179,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public boolean dropTable(Identifier ident) {
     // no need to check table existence to determine which catalog to use. if a table doesn't exist then both are
     // required to return false.
-    if (isDelegateEnable()){
+    if (isDelegateEnable()) {
       return arcticCatalog.dropTable(ident) || getSessionCatalog().dropTable(ident);
     } else {
       return getSessionCatalog().dropTable(ident);
