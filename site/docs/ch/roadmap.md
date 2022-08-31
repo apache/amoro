@@ -8,8 +8,8 @@ Arctic 预计每2-3个月发布一个大版本，每1个月发布一个小版本
 | --------------------------------------------------------| ---------------- |
 | [0.3.1](https://github.com/NetEase/arctic/milestone/1)  | 2022.08          |
 | [0.3.2](https://github.com/NetEase/arctic/milestone/2)  | 2022.09          |
-| [0.4](https://github.com/NetEase/arctic/milestone/3)    | 2022.11          |
-| [0.5](https://github.com/NetEase/arctic/milestone/4)    | 2022.12          |
+| [0.4.0](https://github.com/NetEase/arctic/milestone/3)  | 2022.11          |
+| [0.5.0](https://github.com/NetEase/arctic/milestone/4)  | 2022.12          |
 
 ## 开发中
 
