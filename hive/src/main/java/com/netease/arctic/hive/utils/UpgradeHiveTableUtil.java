@@ -87,7 +87,7 @@ public class UpgradeHiveTableUtil {
                                         TableIdentifier tableIdentifier)
       throws Exception {
     Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
-    String hiveDataLocation = hiveTable.getSd().getLocation() + "/hive";
+    String hiveDataLocation = HiveTableUtil.hiveRootLocation(hiveTable.getSd().getLocation());
     arcticTable.io().mkdirs(hiveDataLocation);
     String newPath;
     if (hiveTable.getPartitionKeys().isEmpty()) {
