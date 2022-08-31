@@ -159,7 +159,7 @@ public class AmsEnvironment {
   
   private String getAmsConfig() {
     return "ams:\n" +
-        "  arctic.ams.server-host.prefix: \"10.\"\n" +
+        "  arctic.ams.server-host.prefix: \"127.\"\n" +
         // "  arctic.ams.server-host: 127.0.0.1\n" +
         "  arctic.ams.thrift.port: 1260 # useless in test, System.getProperty(\"arctic.ams.thrift.port\") is used\n" +
         "  arctic.ams.http.port: 1630\n" +
