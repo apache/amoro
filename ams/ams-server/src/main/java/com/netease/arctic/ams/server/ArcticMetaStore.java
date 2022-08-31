@@ -172,11 +172,6 @@ public class ArcticMetaStore {
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
-      syncAndExpiredFileInfoCache(server);
-      startSyncDDl(server);
-      if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
-        checkLeader();
-      }
       server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
@@ -218,6 +213,11 @@ public class ArcticMetaStore {
         monitorOptimizerStatus();
         tableRuntimeDataExpire();
         AmsRestServer.startRestServer(httpPort);
+        startSyncDDl();
+        syncAndExpiredFileInfoCache();
+        if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
+          checkLeader();
+        }
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
             StringUtils.stringifyException(t1));
@@ -307,60 +307,56 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
-  private static void syncAndExpiredFileInfoCache(final TServer server) {
+  private static void syncAndExpiredFileInfoCache() {
     Thread t = new Thread(() -> {
-      while (true) {
-        while (server.isServing()) {
-          try {
-            FileInfoCacheService.SyncAndExpireFileCacheTask task =
-                new FileInfoCacheService.SyncAndExpireFileCacheTask();
-            task.doTask();
-          } catch (Exception e) {
-            LOG.error("sync and expired file info cache error", e);
-          }
-          try {
-            Thread.sleep(5 * 60 * 1000);
-          } catch (InterruptedException e) {
-            LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
-            return;
-          }
+      while (server.isServing()) {
+        try {
+          FileInfoCacheService.SyncAndExpireFileCacheTask task =
+              new FileInfoCacheService.SyncAndExpireFileCacheTask();
+          task.doTask();
+        } catch (Exception e) {
+          LOG.error("sync and expired file info cache error", e);
         }
         try {
-          Thread.sleep(60 * 1000);
+          Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
           return;
         }
+      }
+      try {
+        Thread.sleep(60 * 1000);
+      } catch (InterruptedException e) {
+        LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+        return;
       }
     });
     t.start();
     residentThreads.add(t);
   }
 
-  private static void startSyncDDl(final TServer server) {
+  private static void startSyncDDl() {
     Thread t = new Thread(() -> {
-      while (true) {
-        while (server.isServing()) {
-          try {
-            DDLTracerService.DDLSyncTask task =
-                new DDLTracerService.DDLSyncTask();
-            task.doTask();
-          } catch (Exception e) {
-            LOG.error("sync schema change cache error", e);
-          }
-          try {
-            Thread.sleep(5 * 60 * 1000);
-          } catch (InterruptedException e) {
-            LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
-            return;
-          }
+      while (server.isServing()) {
+        try {
+          DDLTracerService.DDLSyncTask task =
+              new DDLTracerService.DDLSyncTask();
+          task.doTask();
+        } catch (Exception e) {
+          LOG.error("sync schema change cache error", e);
         }
         try {
-          Thread.sleep(60 * 1000);
+          Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
           return;
         }
+      }
+      try {
+        Thread.sleep(60 * 1000);
+      } catch (InterruptedException e) {
+        LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+        return;
       }
     });
     t.start();
@@ -369,7 +365,7 @@ public class ArcticMetaStore {
 
   private static void checkLeader() {
     Thread t = new Thread(() -> {
-      while (true) {
+      while (isLeader.get()) {
         try {
           Thread.sleep(checkLeaderInterval);
         } catch (InterruptedException e) {
@@ -377,7 +373,7 @@ public class ArcticMetaStore {
           return;
         }
         try {
-          if (haService != null && isLeader.get() &&
+          if (haService != null &&
               !haService.getMaster().equals(haService.getNodeInfo(
                   conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
                   conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)))) {
