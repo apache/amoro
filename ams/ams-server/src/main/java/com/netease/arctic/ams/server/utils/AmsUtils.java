@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
 import com.netease.arctic.ams.server.model.BaseMajorCompactRecord;
 import com.netease.arctic.ams.server.model.CompactRangeType;
@@ -105,30 +106,18 @@ public class AmsUtils {
   }
 
   public static InetAddress getLocalHostExactAddress(String prefix) {
+    if (prefix.startsWith("0")) {
+      throw new RuntimeException("config " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " can't start with 0");
+    }
     try {
-      InetAddress candidateAddress = null;
       Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
       while (networkInterfaces.hasMoreElements()) {
         NetworkInterface iface = networkInterfaces.nextElement();
         for (Enumeration<InetAddress> inetAddrs = iface.getInetAddresses(); inetAddrs.hasMoreElements(); ) {
           InetAddress inetAddr = inetAddrs.nextElement();
-          if (!inetAddr.isLoopbackAddress()) {
-            if (inetAddr.isSiteLocalAddress() && checkHostAddress(inetAddr, prefix)) {
-              return inetAddr;
-            }
-            if (candidateAddress == null) {
-              candidateAddress = inetAddr;
-            }
+          if (checkHostAddress(inetAddr, prefix)) {
+            return inetAddr;
           }
-        }
-      }
-      if (candidateAddress != null) {
-        if (checkHostAddress(candidateAddress, prefix)) {
-          return candidateAddress;
-        }
-      } else {
-        if (checkHostAddress(InetAddress.getLocalHost(), prefix)) {
-          return InetAddress.getLocalHost();
         }
       }
     } catch (Exception e) {

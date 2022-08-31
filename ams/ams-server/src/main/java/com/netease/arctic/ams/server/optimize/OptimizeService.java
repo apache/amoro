@@ -278,6 +278,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
         addNewTables(toAddTables);
         clearRemovedTables(toRemoveTables);
+        if (!toAddTables.isEmpty() || !toRemoveTables.isEmpty()) {
+          internalCheckOptimizeChecker(
+              this.optimizeStatusCheckInterval == null ? DEFAULT_CHECK_INTERVAL : this.optimizeStatusCheckInterval);
+        }
         this.refreshTime = now;
       }
       return new ArrayList<>(cachedTables.keySet());
@@ -314,8 +318,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       return;
     }
     toRemoveTables.forEach(this::clearTableCache);
-    internalCheckOptimizeChecker(
-        this.optimizeStatusCheckInterval == null ? DEFAULT_CHECK_INTERVAL : this.optimizeStatusCheckInterval);
     LOG.info("clear tables[{}] {}", toRemoveTables.size(), toRemoveTables);
   }
 
@@ -406,6 +408,16 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           getMapper(sqlSession, OptimizeHistoryMapper.class);
 
       return optimizeHistoryMapper.selectOptimizeHistory(identifier);
+    }
+  }
+
+  @Override
+  public long maxOptimizeHistoryId() {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizeHistoryMapper optimizeHistoryMapper =
+          getMapper(sqlSession, OptimizeHistoryMapper.class);
+      Long maxId = optimizeHistoryMapper.maxOptimizeHistoryId();
+      return maxId == null ? 0 : maxId;
     }
   }
 

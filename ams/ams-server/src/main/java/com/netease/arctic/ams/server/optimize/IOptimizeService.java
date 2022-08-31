@@ -67,6 +67,12 @@ public interface IOptimizeService {
 
 
   /**
+   * Get max optimize history id.
+   * @return max optimize history id
+   */
+  long maxOptimizeHistoryId();
+
+  /**
    * Trigger table to commit, async.
    * @param tableIdentifier -
    * @return return true if trigger success

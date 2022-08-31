@@ -89,13 +89,15 @@ public class ArcticMetaStore {
   private static final AtomicBoolean isLeader = new AtomicBoolean(false);
   private static final int checkLeaderInterval = 2000;
 
+  private volatile boolean stopped = false;
+
   public static void main(String[] args) throws Throwable {
     tryStartServer();
   }
 
   public static void tryStartServer() throws Throwable {
     try {
-      String configPath = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()) + "/conf/config.yaml";
+      String configPath = getArcticHome() + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
       Configuration conf = initSystemConfig();
       ArcticMetaStore.conf = conf;
@@ -112,6 +114,14 @@ public class ArcticMetaStore {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
       throw t;
     }
+  }
+  
+  private static String getArcticHome() {
+    String arcticHome = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key());
+    if (arcticHome != null) {
+      return arcticHome;
+    }
+    return System.getProperty(ArcticMetaStoreConf.ARCTIC_HOME.key());
   }
 
   public static void startMetaStore(Configuration conf) throws Throwable {
@@ -190,6 +200,10 @@ public class ArcticMetaStore {
     }
     residentThreads.forEach(Thread::interrupt);
     ThreadPool.shutdown();
+  }
+  
+  public static boolean isStarted() {
+    return server != null && server.isServing();
   }
 
   public static void failover() {
@@ -393,9 +407,15 @@ public class ArcticMetaStore {
   private static Configuration initSystemConfig() {
     JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
     Configuration config = new Configuration();
-    config.setString(ArcticMetaStoreConf.ARCTIC_HOME, System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    config.setString(ArcticMetaStoreConf.ARCTIC_HOME, getArcticHome());
+    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
+    if (systemThriftPort == null) {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    } else {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT, Integer.parseInt(systemThriftPort));
+    }
     if (!systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key())) {
       throw new RuntimeException("configuration " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " must be set");
     }

@@ -54,7 +54,7 @@ public interface TaskHistoryMapper {
   List<TableTaskHistory> selectTaskHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                            @Param("historyId") String historyId);
 
-  @Insert("insert ignore into " + TABLE_NAME + "(catalog_name, db_name, table_name, task_group_id, " +
+  @Insert("insert into " + TABLE_NAME + "(catalog_name, db_name, table_name, task_group_id, " +
       "task_history_id, start_time, end_time, cost_time, queue_id) values ( " +
       "#{taskHistory.tableIdentifier.catalog}, " +
       "#{taskHistory.tableIdentifier.database}, " +
