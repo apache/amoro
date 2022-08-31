@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write;
+package com.netease.arctic.flink.metric;
 
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;

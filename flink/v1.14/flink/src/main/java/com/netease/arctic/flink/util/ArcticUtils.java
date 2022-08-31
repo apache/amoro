@@ -18,21 +18,21 @@
 
 package com.netease.arctic.flink.util;
 
+import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.write.ArcticLogWriter;
-import com.netease.arctic.flink.write.MetricsGenerator;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
@@ -147,6 +148,11 @@ public class ArcticUtils {
     boolean toBase = overwrite;
     LOGGER.info("is write to base:{}", toBase);
     return toBase;
+  }
+
+  public static TimestampData getCurrentTimestampData(TimeZone timeZone) {
+    long ts = System.currentTimeMillis();
+    return TimestampData.fromEpochMillis(ts + timeZone.getOffset(ts));
   }
 
 }

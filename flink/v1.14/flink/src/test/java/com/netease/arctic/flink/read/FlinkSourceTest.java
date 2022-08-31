@@ -54,7 +54,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import static com.netease.arctic.flink.write.ArcticFileWriterTest.TARGET_FILE_SIZE;
-import static com.netease.arctic.flink.write.ArcticFileWriterTest.createTaskWriter;
+import static com.netease.arctic.flink.write.ArcticFileWriterTest.createUnkeyedTaskWriter;
 
 public class FlinkSourceTest extends FlinkTestBase {
 
@@ -67,7 +67,7 @@ public class FlinkSourceTest extends FlinkTestBase {
   }
 
   protected static void write(Collection<Object[]> data, Table table, RowType rowType) throws IOException {
-    try (TaskWriter<RowData> taskWriter = createTaskWriter(table, TARGET_FILE_SIZE, fileFormat, rowType)) {
+    try (TaskWriter<RowData> taskWriter = createUnkeyedTaskWriter(table, TARGET_FILE_SIZE, fileFormat, rowType)) {
       data.forEach(d -> {
         try {
           taskWriter.write(DataUtil.toRowData(d));
