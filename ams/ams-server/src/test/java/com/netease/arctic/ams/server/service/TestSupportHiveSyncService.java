@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeBase;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveBase;
 import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -49,7 +49,7 @@ import java.util.Map;
 
 import static com.netease.arctic.utils.TablePropertyUtil.EMPTY_STRUCT;
 
-public class TestSupportHiveSyncService extends TestSupportHiveMajorOptimizeBase {
+public class TestSupportHiveSyncService extends TestSupportHiveBase {
   @Test
   public void testUnPartitionTableSyncInIceberg() throws Exception {
     StructLikeMap<Map<String, String>> partitionProperty = testUnPartitionKeyedHiveTable.baseTable().partitionProperty();

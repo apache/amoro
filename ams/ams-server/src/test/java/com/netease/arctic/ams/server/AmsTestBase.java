@@ -29,11 +29,13 @@ import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
+import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
@@ -92,9 +94,13 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
+    OptimizeIntegrationTest.class,
+    TestFileInfoCacheService.class,
     TestSupportHiveMajorOptimizePlan.class,
     TestSupportHiveMajorOptimizeCommit.class,
-    TestSupportHiveSyncService.class})
+    TestSupportHiveSyncService.class,
+    TestExpiredFileCleanSupportHive.class,
+    TestOrphanFileCleanSupportHive.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,

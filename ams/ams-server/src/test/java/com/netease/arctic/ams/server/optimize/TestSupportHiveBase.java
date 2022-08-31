@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-public class TestSupportHiveMajorOptimizeBase implements TestOptimizeBase {
+public class TestSupportHiveBase implements TestOptimizeBase {
   public static ArcticCatalog hiveCatalog;
   public static final String AMS_TEST_HIVE_CATALOG_NAME = "ams_hive_test_catalog";
   public static final String AMS_TEST_HIVE_DB_NAME = "ams_hive_test_db";
@@ -79,11 +79,12 @@ public class TestSupportHiveMajorOptimizeBase implements TestOptimizeBase {
 
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone()),
-      Types.NestedField.required(4, "op_time_with_zone", Types.TimestampType.withZone()),
-      Types.NestedField.required(5, "d", Types.DecimalType.of(10, 0))
+      Types.NestedField.required(2, "op_time", Types.TimestampType.withoutZone()),
+      Types.NestedField.required(3, "op_time_with_zone", Types.TimestampType.withZone()),
+      Types.NestedField.required(4, "d", Types.DecimalType.of(10, 0)),
+      Types.NestedField.required(5, "name", Types.StringType.get())
   );
+
   protected static final PartitionSpec HIVE_SPEC =
       PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity("name").build();
   protected static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(HIVE_TABLE_SCHEMA)
@@ -208,10 +209,10 @@ public class TestSupportHiveMajorOptimizeBase implements TestOptimizeBase {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (int i = start; i < start + length; i++) {
-      builder.add(record.copy(ImmutableMap.of("id", i, "name", "name" + 1,
+      builder.add(record.copy(ImmutableMap.of("id", i,
           "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
           "op_time_with_zone", LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).atOffset(ZoneOffset.UTC),
-          "d", new BigDecimal(i))));
+          "d", new BigDecimal(i), "name", "name" + 1)));
     }
 
     return builder.build();

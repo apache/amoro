@@ -53,12 +53,24 @@ public class OptimizeExecuteService {
     systemInfo.put(
         ArcticMetaStoreConf.ARCTIC_HOME.key(),
         ArcticMetaStore.conf.getString(ArcticMetaStoreConf.ARCTIC_HOME));
-    systemInfo.put(
-            ArcticMetaStoreConf.THRIFT_BIND_HOST.key(),
-            ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST));
-    systemInfo.put(
-            ArcticMetaStoreConf.THRIFT_BIND_PORT.key(),
-            String.valueOf(ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)));
+    if (ArcticMetaStore.conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE, false)) {
+      systemInfo.put(
+          ArcticMetaStoreConf.HA_ENABLE.key(),
+          ArcticMetaStore.conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE));
+      systemInfo.put(
+          ArcticMetaStoreConf.CLUSTER_NAME.key(),
+          ArcticMetaStore.conf.getString(ArcticMetaStoreConf.CLUSTER_NAME));
+      systemInfo.put(
+          ArcticMetaStoreConf.ZOOKEEPER_SERVER.key(),
+          String.valueOf(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER)));
+    } else {
+      systemInfo.put(
+          ArcticMetaStoreConf.THRIFT_BIND_HOST.key(),
+          ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST));
+      systemInfo.put(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT.key(),
+          String.valueOf(ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)));
+    }
     properties.put(AMS_SYSTEM_INFO, JSONObject.toJSONString(systemInfo));
     properties.put(CONTAINER_INFO, JSONObject.toJSONString(container));
     properties.put(OPTIMIZER_GROUP_INFO, JSONObject.toJSONString(groupInfo));

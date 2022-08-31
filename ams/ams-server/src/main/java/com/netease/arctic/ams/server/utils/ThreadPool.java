@@ -153,10 +153,12 @@ public class ThreadPool {
   public static synchronized void shutdown() {
     if (self != null) {
       optimizeCheckPool.shutdown();
+      optimizerMonitorPool.shutdown();
       commitPool.shutdown();
       expirePool.shutdown();
       orphanPool.shutdown();
       syncFileInfoCachePool.shutdown();
+      tableRuntimeDataExpirePool.shutdownNow();
       supportHiveSyncPool.shutdown();
       self = null;
     }
