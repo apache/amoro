@@ -463,7 +463,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   private void generateUnpartitionTableLocation() {
     if (this.addFiles.isEmpty()) {
-      unpartitionTableLocation = createEmptyLocationForHive();
+      unpartitionTableLocation = createUnpartitionEmptyLocationForHive();
     } else {
       unpartitionTableLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
     }
@@ -486,13 +486,14 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     }
   }
 
-  private String createEmptyLocationForHive() {
+  private String createUnpartitionEmptyLocationForHive() {
     // create a new empty location for hive
     String newLocation;
     if (txId > 0) {
-      newLocation = table.hiveLocation() + "/txId=" + txId;
+      newLocation = HiveTableUtil.newKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null, txId);
     } else {
-      newLocation = table.hiveLocation() + "/ts_" + System.currentTimeMillis();
+      newLocation = HiveTableUtil.newUnKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null,
+          HiveTableUtil.getRandomSubDir());
     }
     OutputFile file = table.io().newOutputFile(newLocation + "/.keep");
     try {
