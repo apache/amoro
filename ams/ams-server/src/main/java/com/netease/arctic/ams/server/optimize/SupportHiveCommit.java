@@ -5,6 +5,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -13,6 +14,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
@@ -58,6 +60,13 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
           List<DataFile> targetFiles = optimizeRuntime.getTargetFiles().stream()
               .map(fileByte -> (DataFile) SerializationUtil.toInternalTableFile(fileByte))
               .collect(Collectors.toList());
+          long maxTransactionId = targetFiles.stream()
+              .mapToLong(dataFile -> {
+                DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString());
+                return fileMeta.transactionId();
+              })
+              .max()
+              .orElse(0L);
 
           List<ByteBuffer> newTargetFiles = new ArrayList<>(targetFiles.size());
           for (DataFile targetFile : targetFiles) {
@@ -66,13 +75,21 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   HivePartitionUtil.partitionValuesAsList(targetFile.partition(), partitionSchema);
               String partitionPath;
               if (arcticTable.spec().isUnpartitioned()) {
-                partitionPath = ((SupportHive) arcticTable).hiveLocation();
+                try {
+                  Table hiveTable = ((SupportHive) arcticTable).getHMSClient().run(client ->
+                      client.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName()));
+                  partitionPath = hiveTable.getSd().getLocation();
+                } catch (Exception e) {
+                  LOG.error("Get hive table failed", e);
+                  break;
+                }
               } else {
-                partitionPath =
-                    ((SupportHive) arcticTable).hiveLocation() +
-                        FileUtil.getPartitionPathFromFilePath(targetFile.path().toString(), arcticTable.isKeyedTable() ?
-                        arcticTable.asKeyedTable().baseLocation() : arcticTable.asUnkeyedTable().location(),
-                            targetFile.path().toString().substring(targetFile.path().toString().lastIndexOf("/") + 1));
+                partitionPath = arcticTable.isKeyedTable() ?
+                    HiveTableUtil.newKeyedHiveDataLocation(
+                        ((SupportHive) arcticTable).hiveLocation(), arcticTable.asKeyedTable().baseTable().spec(),
+                        targetFile.partition(), maxTransactionId) :
+                    HiveTableUtil.newUnKeyedHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                        arcticTable.asUnkeyedTable().spec(), targetFile.partition(), HiveTableUtil.getRandomSubDir());
                 HivePartitionUtil
                     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
                         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));

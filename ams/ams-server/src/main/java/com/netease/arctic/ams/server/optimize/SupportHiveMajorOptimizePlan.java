@@ -65,8 +65,9 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
     }
 
     // check small data file count
-    if (checkSmallFileCount(partitionToPath,
-        partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()))) {
+    List<DataFile> smallFiles =
+        filterSmallFiles(partitionToPath, partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()));
+    if (checkSmallFileCount(partitionToPath, smallFiles)) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       if (CollectionUtils.isEmpty(partitionPosDeleteFiles.get(partitionToPath))) {
         supportHivePartitions.add(partitionToPath);
@@ -102,21 +103,6 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   }
 
   @Override
-  protected boolean checkSmallFileCount(String partition, List<DataFile> dataFileList) {
-    // for support hive table, filter small files
-    List<DataFile> smallFileList = dataFileList.stream().filter(file -> file.fileSizeInBytes() <=
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
-
-    // if iceberg store has pos-delete, only optimize small files
-    if (CollectionUtils.isNotEmpty(partitionPosDeleteFiles.get(partition))) {
-      partitionNeedMajorOptimizeFiles.put(partition, smallFileList);
-    }
-
-    return super.checkSmallFileCount(partition, smallFileList);
-  }
-
-  @Override
   protected void fillPartitionNeedOptimizeFiles(String partition, ContentFile<?> contentFile) {
     // for support hive table, add all files in iceberg base store and not in hive store
     if (canInclude(contentFile.path().toString())) {
@@ -129,6 +115,20 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   @Override
   protected boolean canSkip(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return CollectionUtils.isEmpty(posDeleteFiles) && baseFiles.isEmpty();
+  }
+
+  private List<DataFile> filterSmallFiles(String partition, List<DataFile> dataFileList) {
+    // for support hive table, filter small files
+    List<DataFile> smallFileList = dataFileList.stream().filter(file -> file.fileSizeInBytes() <=
+        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
+            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
+
+    // if iceberg store has pos-delete, only optimize small files
+    if (CollectionUtils.isNotEmpty(partitionPosDeleteFiles.get(partition))) {
+      partitionNeedMajorOptimizeFiles.put(partition, smallFileList);
+    }
+
+    return smallFileList;
   }
 
   private boolean canInclude(String filePath) {
