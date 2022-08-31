@@ -94,6 +94,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
+    OptimizeIntegrationTest.class,
+    TestFileInfoCacheService.class,
     TestSupportHiveMajorOptimizePlan.class,
     TestSupportHiveMajorOptimizeCommit.class,
     TestSupportHiveSyncService.class,
