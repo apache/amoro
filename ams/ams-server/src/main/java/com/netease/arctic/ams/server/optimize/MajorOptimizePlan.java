@@ -118,7 +118,11 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   protected List<BaseOptimizeTask> collectTask(String partition) {
     List<BaseOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
-      List<DataFile> fileList = partitionNeedMajorOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
+      // if Major, only optimize partitionNeedMajorOptimizeFiles.
+      // if Full Major, optimize all files in file tree.
+      List<DataFile> fileList = partitionOptimizeType.get(partition) == OptimizeType.Major ?
+          partitionNeedMajorOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>()) :
+          partitionFileTree.get(partition).getBaseFiles();
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
       partitionNeedMajorOptimizeFiles.put(partition, Collections.emptyList());
@@ -153,7 +157,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL,
         TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
 
-    if (fullMajorOptimizeInterval != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+    if (fullMajorOptimizeInterval != TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT) {
       long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullOptimizeTime(partitionToPath);
       return current - lastFullMajorOptimizeTime >= fullMajorOptimizeInterval;
     }
