@@ -20,6 +20,7 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
@@ -45,6 +46,7 @@ import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -126,6 +128,18 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
     }
+  }
+
+  public void dropTableButNotDropHiveTable (TableIdentifier tableIdentifier) {
+    TableMeta meta;
+    try {
+      meta = client.getTable(tableIdentifier.buildTableIdentifier());
+    } catch (NoSuchObjectException e) {
+      throw new NoSuchTableException(e, "load table failed %s.", tableIdentifier);
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load table %s.", tableIdentifier), e);
+    }
+    super.doDropTable(meta, false);
   }
 
   @Override

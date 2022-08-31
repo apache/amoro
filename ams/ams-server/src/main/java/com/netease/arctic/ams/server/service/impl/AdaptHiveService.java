@@ -89,7 +89,7 @@ public class AdaptHiveService {
       } catch (Throwable t) {
         LOG.error("Failed to upgrade hive table to arctic ", t);
         if (upgradeHive) {
-          ac.dropTable(tableIdentifier, false);
+          ac.dropTableButNotDropHiveTable(tableIdentifier);
         }
         runningInfoCache.get(tableIdentifier).setErrorMessage(AmsUtils.getStackTrace(t));
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.FAILED.toString());
