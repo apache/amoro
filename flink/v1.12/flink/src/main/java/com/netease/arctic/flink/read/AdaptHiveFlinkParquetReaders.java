@@ -385,8 +385,8 @@ public class AdaptHiveFlinkParquetReaders {
     public TimestampData read(TimestampData ignored) {
       long value = readLong();
       return TimestampData.fromLocalDateTime(Instant.ofEpochSecond(
-              Math.floorDiv(value, 1000_000),
-              Math.floorMod(value, 1000_000) * 1000)
+              Math.floorDiv(value, 1000_000L),
+              Math.floorMod(value, 1000_000L) * 1000)
           .atOffset(ZoneOffset.UTC)
           .toLocalDateTime());
     }
@@ -406,8 +406,8 @@ public class AdaptHiveFlinkParquetReaders {
     public TimestampData read(TimestampData ignored) {
       long value = readLong();
       return TimestampData.fromInstant(Instant.ofEpochSecond(
-          Math.floorDiv(value, 1000_000),
-          Math.floorMod(value, 1000_000) * 1000));
+          Math.floorDiv(value, 1000_000L),
+          Math.floorMod(value, 1000_000L) * 1000));
     }
 
     @Override
@@ -478,7 +478,7 @@ public class AdaptHiveFlinkParquetReaders {
     @Override
     public Integer read(Integer reuse) {
       // Discard microseconds since Flink uses millisecond unit for TIME type.
-      return (int) Math.floorDiv(column.nextLong(), 1000);
+      return (int) Math.floorDiv(column.nextLong(), 1000L);
     }
   }
 

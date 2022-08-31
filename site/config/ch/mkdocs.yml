@@ -65,6 +65,7 @@ nav:
     - Getting Started: flink/flink-get-started.md
     - Flink DDL: flink/flink-ddl.md
     - Flink DML: flink/flink-dml.md
+    - Flink Dim: flink/flink-dim.md
     - Flink DataStream: flink/flink-ds.md
     - Using Kafka as Logstore: flink/hidden-kafka.md
     - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md

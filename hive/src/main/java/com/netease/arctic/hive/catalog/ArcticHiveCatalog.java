@@ -20,10 +20,12 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
@@ -39,12 +41,11 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
-import org.apache.hadoop.hive.metastore.api.SerDeInfo;
-import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -128,6 +129,18 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     }
   }
 
+  public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
+    TableMeta meta;
+    try {
+      meta = client.getTable(tableIdentifier.buildTableIdentifier());
+    } catch (NoSuchObjectException e) {
+      throw new NoSuchTableException(e, "load table failed %s.", tableIdentifier);
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load table %s.", tableIdentifier), e);
+    }
+    super.doDropTable(meta, false);
+  }
+
   @Override
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
@@ -166,22 +179,42 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
   }
 
+  public HMSClient getHMSClient() {
+    return hiveClientPool;
+  }
+
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier, schema);
     }
 
+    boolean allowExsitedHiveTable = false;
+
+    @Override
+    public TableBuilder withProperty(String key, String value) {
+      if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")) {
+        allowExsitedHiveTable = true;
+      } else {
+        this.properties.put(key, value);
+      }
+      return this;
+    }
+
     @Override
     protected void doCreateCheck() {
       super.doCreateCheck();
       try {
-        org.apache.hadoop.hive.metastore.api.Table hiveTable =
-            hiveClientPool.run(client -> client.getTable(
-                identifier.getDatabase(),
-                identifier.getTableName()));
-        if (hiveTable != null) {
-          throw new IllegalArgumentException("Table is already existed in hive meta store:" + identifier);
+        if (allowExsitedHiveTable) {
+          LOG.info("No need to check hive table exist");
+        } else {
+          org.apache.hadoop.hive.metastore.api.Table hiveTable =
+              hiveClientPool.run(client -> client.getTable(
+                  identifier.getDatabase(),
+                  identifier.getTableName()));
+          if (hiveTable != null) {
+            throw new IllegalArgumentException("Table is already existed in hive meta store:" + identifier);
+          }
         }
       } catch (org.apache.hadoop.hive.metastore.api.NoSuchObjectException noSuchObjectException) {
         // ignore this exception
@@ -242,14 +275,24 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
           fileIO, client);
 
+      Map<String, String> metaProperties = meta.properties;
       try {
         hiveClientPool.run(client -> {
-          org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
-          hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
-              FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
-                  TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-          setProToHive(hiveTable);
-          client.createTable(hiveTable);
+          if (allowExsitedHiveTable) {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName());
+            Map<String, String> hiveParameters = hiveTable.getParameters();
+            hiveParameters.putAll(constructProperties());
+            hiveTable.setParameters(hiveParameters);
+            client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
+          } else {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
+            hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
+                FileFormat.valueOf(PropertyUtil.propertyAsString(metaProperties, TableProperties.DEFAULT_FILE_FORMAT,
+                    TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            setProToHive(hiveTable);
+            client.createTable(hiveTable);
+          }
           return null;
         });
       } catch (TException | InterruptedException e) {
@@ -283,11 +326,21 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       });
       try {
         hiveClientPool.run(client -> {
-          org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
-          hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
-              FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
-                  TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
-          client.createTable(hiveTable);
+          if (allowExsitedHiveTable) {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName());
+            Map<String, String> hiveParameters = hiveTable.getParameters();
+            hiveParameters.putAll(constructProperties());
+            hiveTable.setParameters(hiveParameters);
+            client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
+          } else {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
+            hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
+                FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.BASE_FILE_FORMAT,
+                    TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            setProToHive(hiveTable);
+            client.createTable(hiveTable);
+          }
           return null;
         });
       } catch (TException | InterruptedException e) {
@@ -331,27 +384,47 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       super.doRollbackCreateTable(meta);
-      try {
-        hiveClientPool.run(client -> {
-          client.dropTable(
-              meta.getTableIdentifier().getDatabase(),
-              meta.getTableIdentifier().getTableName(),
-              true,
-              true);
-          return null;
-        });
-      } catch (TException | InterruptedException e) {
-        LOG.warn("Failed to drop hive table while rolling back create table operation", e);
+      if (allowExsitedHiveTable) {
+        LOG.info("No need to drop hive table");
+        com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
+        try {
+          hiveClientPool.run(client -> {
+            org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
+                tableIdentifier.getTableName());
+            Map<String, String> hiveParameters = hiveTable.getParameters();
+            hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
+            client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
+            return null;
+          });
+        } catch (TException | InterruptedException e) {
+          LOG.warn("Failed to alter hive table while rolling back create table operation", e);
+        }
+      } else {
+        try {
+          hiveClientPool.run(client -> {
+            client.dropTable(
+                meta.getTableIdentifier().getDatabase(),
+                meta.getTableIdentifier().getTableName(),
+                true,
+                true);
+            return null;
+          });
+        } catch (TException | InterruptedException e) {
+          LOG.warn("Failed to drop hive table while rolling back create table operation", e);
+        }
       }
     }
 
-
     private void setProToHive(org.apache.hadoop.hive.metastore.api.Table hiveTable) {
+      Map<String, String> parameters = constructProperties();
+      hiveTable.setParameters(parameters);
+    }
+
+    private Map<String, String> constructProperties() {
       Map<String, String> parameters = new HashMap<>();
       parameters.put(HiveTableProperties.ARCTIC_TABLE_FLAG, "true");
       parameters.put(HiveTableProperties.ARCTIC_TABLE_PRIMARY_KEYS, primaryKeySpec.description());
-      hiveTable.setParameters(parameters);
+      return parameters;
     }
   }
-
 }
