@@ -139,6 +139,7 @@ public class HiveTableTestBase extends TableTestBase {
 
   @Before
   public void setupHiveTables() throws Exception {
+    System.out.println("setupHiveTables");
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
     tableDir = temp.newFolder();
 
@@ -161,6 +162,7 @@ public class HiveTableTestBase extends TableTestBase {
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
+    System.out.println("setupHiveTables finished");
   }
 
   @After

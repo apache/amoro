@@ -117,6 +117,7 @@ public class TableTestBase {
 
   @Before
   public void setupTables() throws Exception {
+    System.out.println("setupTables");
     testCatalog = CatalogLoader.load(AMS.getUrl());
     tableDir = temp.newFolder();
 
@@ -139,6 +140,7 @@ public class TableTestBase {
         .create().asKeyedTable();
 
     this.before();
+    System.out.println("setupTables finished");
   }
 
   public void before() {
