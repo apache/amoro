@@ -265,6 +265,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
             hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
                 FileFormat.valueOf(PropertyUtil.propertyAsString(properties, TableProperties.DEFAULT_FILE_FORMAT,
                     TableProperties.DEFAULT_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH))));
+            setProToHive(hiveTable);
             client.createTable(hiveTable);
           }
           return null;

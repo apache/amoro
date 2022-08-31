@@ -41,7 +41,7 @@ public class HiveMigrateUtil {
     Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
     String hiveDataLocation = hiveTable.getSd().getLocation() + "/hive";
     arcticTable.io().mkdirs(hiveDataLocation);
-    String newPath = null;
+    String newPath;
     if (hiveTable.getPartitionKeys().isEmpty()) {
       newPath = hiveDataLocation + "/" + System.currentTimeMillis() + "_" + UUID.randomUUID();
       arcticTable.io().mkdirs(newPath);

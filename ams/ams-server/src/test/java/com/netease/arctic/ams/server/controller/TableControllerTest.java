@@ -57,12 +57,15 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import io.javalin.testtools.JavalinTest;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -110,6 +113,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     DDLTracerService.class,
     OptimizeManagerHandler.class,
     AdaptHiveService.class,
+    HiveTableUtil.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class TableControllerTest {
@@ -226,6 +230,41 @@ public class TableControllerTest {
   }
 
   @Test
+  public void testGetHiveTableDetail() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      app.get("/{catalog}/{db}/{table}/", TableController::getHiveTableDetail);
+      final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+  }
+
+  @Test
+  public void testUpgradeHive() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      UpgradeHiveMeta upgradeHiveMeta = mockUpgradeHiveMeta();
+      String requestJson = JSONObject.toJSONString(upgradeHiveMeta);
+      app.post("/{catalog}/{db}/{table}/", TableController::upgradeHiveTable);
+      final okhttp3.Response resp1 = client.post("/" + catalogName + "/" + database + "/" + table + "/",
+          requestJson, x -> {});
+      OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+
+    JavalinTest.test((app, client) -> {
+      app.get("/{catalog}/{db}/{table}/", TableController::getUpgradeStatus);
+      final okhttp3.Response resp = client.get("/" + catalogName + "/" + database + "/" + table + "/", x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+    });
+  }
+
+  @Test
   public void testGetUpgradeHiveTableProperties() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
@@ -325,6 +364,7 @@ public class TableControllerTest {
     mockStatic(ServiceContainer.class);
     mockStatic(CatalogUtil.class);
     mockStatic(MetaService.class);
+    mockStatic(HiveTableUtil.class);
 
     ArcticCatalog arcticCatalog = mock(ArcticCatalog.class);
     when(CatalogUtil.getArcticCatalog(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
@@ -378,6 +418,13 @@ public class TableControllerTest {
         mockUpgradeHiveMeta())).thenReturn(null);
     when(MetaService.getServerTableMeta(arcticHiveCatalog, TableIdentifier.of(catalog, db, table)))
         .thenReturn(mockServerTableMeta(catalog, db, table));
+    Table hiveTable = mock(Table.class);
+    when(HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), TableIdentifier.of(catalog, db, table)))
+        .thenReturn(hiveTable);
+    StorageDescriptor sd = mock(StorageDescriptor.class);
+    when(hiveTable.getSd()).thenReturn(sd);
+    when(sd.getCols()).thenReturn(mockHiveTableSchema());
+    when(hiveTable.getPartitionKeys()).thenReturn(mockHivePartitionKeys());
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {

@@ -35,6 +35,7 @@ import org.apache.iceberg.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -65,7 +66,9 @@ public class AdaptHiveService {
         Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
         List<String> pkList = upgradeHiveMeta.getPkList().stream()
             .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName).collect(Collectors.toList());
-        Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveTable.getSd().getCols());
+        List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
+        hiveSchema.addAll(hiveTable.getPartitionKeys());
+        Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
         List<FieldSchema> partitionKeys = hiveTable.getPartitionKeys();
 
         PartitionSpec.Builder partitionBuilder = PartitionSpec.builderFor(schema);
