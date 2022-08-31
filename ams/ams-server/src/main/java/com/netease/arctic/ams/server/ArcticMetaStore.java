@@ -201,6 +201,10 @@ public class ArcticMetaStore {
     residentThreads.forEach(Thread::interrupt);
     ThreadPool.shutdown();
   }
+  
+  public static boolean isStarted() {
+    return server != null && server.isServing();
+  }
 
   public static void failover() {
     stopMetaStore();

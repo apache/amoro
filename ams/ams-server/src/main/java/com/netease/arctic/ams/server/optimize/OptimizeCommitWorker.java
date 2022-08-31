@@ -38,7 +38,7 @@ public class OptimizeCommitWorker implements Runnable {
     LOG.info("{} start work", workerName);
     TableIdentifier currentTable = null;
     try {
-      while (!ArcticMetaStore.getInstance().isStarted()) {
+      while (!ArcticMetaStore.isStarted()) {
         Thread.sleep(1000);
       }
       while (true) {

@@ -210,23 +210,12 @@ public class OptimizeIntegrationTest {
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 8, 4);
     optimizeHistory = waitOptimizeResult(tb, startId + 3);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 8, 4);
-    try {
-      Thread.sleep(60000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
 
     // Step3: delete change data
     writeChange(table, null, Lists.newArrayList(
         newRecord(table, 7, "fff", quickDateWithZone(3)),
         newRecord(table, 8, "ggg", quickDateWithZone(3))
     ));
-
-    try {
-      Thread.sleep(10000000);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 4);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 4, 2);

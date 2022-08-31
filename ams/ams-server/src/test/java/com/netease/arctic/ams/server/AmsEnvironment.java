@@ -118,7 +118,7 @@ public class AmsEnvironment {
       } catch (InterruptedException e) {
         break;
       }
-      if (ArcticMetaStore.getInstance() != null && ArcticMetaStore.getInstance().isStarted()) {
+      if (ArcticMetaStore.isStarted()) {
         break;
       }
     }
@@ -126,9 +126,7 @@ public class AmsEnvironment {
   }
   
   private void stopAms() {
-    if (ArcticMetaStore.getInstance() != null) {
-      ArcticMetaStore.getInstance().shutDown();
-    }
+    ArcticMetaStore.stopMetaStore();
     LOG.info("ams stop");
   }
 
@@ -161,7 +159,8 @@ public class AmsEnvironment {
   
   private String getAmsConfig() {
     return "ams:\n" +
-        "  arctic.ams.server-host: 127.0.0.1\n" +
+        "  arctic.ams.server-host.prefix: \"10.\"\n" +
+        // "  arctic.ams.server-host: 127.0.0.1\n" +
         "  arctic.ams.thrift.port: 1260 # useless in test, System.getProperty(\"arctic.ams.thrift.port\") is used\n" +
         "  arctic.ams.http.port: 1630\n" +
         "  arctic.ams.optimize.check.thread.pool-size: 1\n" +
@@ -169,17 +168,17 @@ public class AmsEnvironment {
         "  arctic.ams.expire.thread.pool-size: 1\n" +
         "  arctic.ams.orphan.clean.thread.pool-size: 1\n" +
         "  arctic.ams.file.sync.thread.pool-size: 1\n" +
-        // "  # derby config.sh\n" +
-        // "  arctic.ams.mybatis.ConnectionDriverClassName: org.apache.derby.jdbc.EmbeddedDriver\n" +
-        // "  arctic.ams.mybatis.ConnectionURL: jdbc:derby:" + rootPath + "/derby;create=true\n" +
-        // "  arctic.ams.database.type: derby\n" +
+        "  # derby config.sh\n" +
+        "  arctic.ams.mybatis.ConnectionDriverClassName: org.apache.derby.jdbc.EmbeddedDriver\n" +
+        "  arctic.ams.mybatis.ConnectionURL: jdbc:derby:" + rootPath + "/derby;create=true\n" +
+        "  arctic.ams.database.type: derby\n" +
         "  # mysql config.sh\n" +
-        "  arctic.ams.mybatis.ConnectionURL: jdbc:mysql://localhost:3306/arctic_opensource_local?useUnicode=true" +
-        "&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false\n" +
-        "  arctic.ams.mybatis.ConnectionDriverClassName: com.mysql.jdbc.Driver\n" +
-        "  arctic.ams.mybatis.ConnectionUserName: ndc\n" +
-        "  arctic.ams.mybatis.ConnectionPassword: ndc\n" +
-        "  arctic.ams.database.type: mysql" +
+        // "  arctic.ams.mybatis.ConnectionURL: jdbc:mysql://localhost:3306/arctic_opensource_local?useUnicode=true" +
+        // "&characterEncoding=UTF8&autoReconnect=true&useAffectedRows=true&useSSL=false\n" +
+        // "  arctic.ams.mybatis.ConnectionDriverClassName: com.mysql.jdbc.Driver\n" +
+        // "  arctic.ams.mybatis.ConnectionUserName: ndc\n" +
+        // "  arctic.ams.mybatis.ConnectionPassword: ndc\n" +
+        // "  arctic.ams.database.type: mysql" +
         "\n" +
         "# extension properties for like system\n" +
         "extension_properties:\n" +
