@@ -188,13 +188,23 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
       super(identifier, schema);
     }
+    boolean isUpgradeHive = false;
+
+    @Override
+    public TableBuilder withProperty(String key, String value) {
+      if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")){
+        isUpgradeHive = true;
+      } else {
+        this.properties.put(key, value);
+      }
+      return this;
+    }
 
     @Override
     protected void doCreateCheck() {
       super.doCreateCheck();
       try {
-        if ((properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
-            properties.get(TableProperties.ALLOW_HIVE_TABLE_EXISTED).equals("true"))) {
+        if (isUpgradeHive) {
           LOG.info("No need to check hive table exist");
         } else {
           org.apache.hadoop.hive.metastore.api.Table hiveTable =
@@ -238,7 +248,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          meta.properties.remove(TableProperties.ALLOW_HIVE_TABLE_EXISTED);
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
           createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
               NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
@@ -253,7 +262,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
         try {
-          meta.properties.remove(TableProperties.ALLOW_HIVE_TABLE_EXISTED);
           Table createTable =  tables.create(schema, partitionSpec, meta.getProperties(), changeLocation);
           createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
               NameMappingParser.toJson(MappingUtil.create(createTable.schema()))).commit();
@@ -269,8 +277,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       Map<String, String> metaProperties = meta.properties;
       try {
         hiveClientPool.run(client -> {
-          if ((properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
-              properties.get(TableProperties.ALLOW_HIVE_TABLE_EXISTED).equals("true"))) {
+          if (isUpgradeHive) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
@@ -307,7 +314,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       Table table = tableMetaStore.doAs(() -> {
         try {
-          meta.properties.remove(TableProperties.ALLOW_HIVE_TABLE_EXISTED);
           Table createTable = tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
           // set name mapping using true schema
           createTable.updateProperties().set(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING,
@@ -319,8 +325,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       });
       try {
         hiveClientPool.run(client -> {
-          if ((properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
-              properties.get(TableProperties.ALLOW_HIVE_TABLE_EXISTED).equals("true"))) {
+          if (isUpgradeHive) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
@@ -378,8 +383,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       super.doRollbackCreateTable(meta);
-      if ((properties.containsKey(TableProperties.ALLOW_HIVE_TABLE_EXISTED) &&
-          properties.get(TableProperties.ALLOW_HIVE_TABLE_EXISTED).equals("true"))) {
+      if (isUpgradeHive) {
         LOG.info("No need to drop hive table");
         com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
         try {

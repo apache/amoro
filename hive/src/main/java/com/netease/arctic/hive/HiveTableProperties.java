@@ -36,5 +36,7 @@ public class HiveTableProperties {
 
   public static final String AUTO_SYNC_HIVE_DATA_WRITE = "base.hive.auto-sync-data-write";
   public static final boolean AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT = false;
+
+  public static final String ALLOW_HIVE_TABLE_EXISTED = "allow.hive-table.existed";
 }
 

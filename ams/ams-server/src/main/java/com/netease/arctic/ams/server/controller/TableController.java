@@ -179,12 +179,12 @@ public class TableController extends RestBaseController {
     // get table from catalog
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
-    ArcticHiveCatalog ac = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+    ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo = null;
     try {
-      Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
+      Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
       List<AMSColumnInfo> schema =
           AmsUtils.transforHiveSchemaToAMSColumnInfos(hiveTable.getSd().getCols());
       List<AMSColumnInfo> partitionColumnInfos =
@@ -210,8 +210,8 @@ public class TableController extends RestBaseController {
 
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
-    ArcticHiveCatalog ac = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
-    adaptHiveService.upgradeHiveTable(ac, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
+    ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+    adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
     ctx.json(OkResponse.ok());
   }
 

@@ -105,6 +105,13 @@ public class HivePartitionUtil {
         .forEach(partition::putToParameters);
   }
 
+  /**
+   * Gets all partitions object of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return A List of Hive partition objects
+   */
   public List<Partition> getHiveAllPartitions(HMSClient hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client ->
@@ -119,6 +126,13 @@ public class HivePartitionUtil {
     }
   }
 
+  /**
+   * Gets all partition names of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return A List of Hive partition names
+   */
   public static List<String> getHivePartitionNames(HMSClient hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client -> client.listPartitionNames(tableIdentifier.getDatabase(),
@@ -134,8 +148,14 @@ public class HivePartitionUtil {
     }
   }
 
-  public static List<String> getHivePartitionLocations(HMSClient hiveClient,
-                                                       TableIdentifier tableIdentifier) {
+  /**
+   * Gets all partitions location of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return A List of Hive partition locations
+   */
+  public static List<String> getHivePartitionLocations(HMSClient hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client -> client.listPartitions(tableIdentifier.getDatabase(),
           tableIdentifier.getTableName(),
@@ -153,6 +173,14 @@ public class HivePartitionUtil {
     }
   }
 
+  /**
+   * Change the Hive partition location.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @param partition A Hive partition name
+   * @param newPath Target partition location
+   */
   public static void alterPartition(HMSClient hiveClient, TableIdentifier tableIdentifier,
                                     String partition, String newPath) throws IOException {
     try {

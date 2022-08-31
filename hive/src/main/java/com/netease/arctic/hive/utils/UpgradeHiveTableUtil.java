@@ -18,11 +18,11 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -42,11 +42,19 @@ public class UpgradeHiveTableUtil {
 
   private static final String DEFAULT_TXID = "txid=0";
 
-  public static void upgradeHiveTable(ArcticHiveCatalog ac, TableIdentifier tableIdentifier,
+  /**
+   * Upgrade a hive table to an Arctic table.
+   *
+   * @param arcticHiveCatalog A arctic catalog adapt hive
+   * @param tableIdentifier A table identifier
+   * @param pkList The name of the columns that needs to be set as the primary key
+   * @param properties Properties to be added to the target table
+   */
+  public static void upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
                                       List<String> pkList, Map<String, String> properties) throws Exception {
     boolean upgradeHive = false;
     try {
-      Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
+      Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
 
       List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
       hiveSchema.addAll(hiveTable.getPartitionKeys());
@@ -59,25 +67,26 @@ public class UpgradeHiveTableUtil {
       PrimaryKeySpec.Builder primaryKeyBuilder = PrimaryKeySpec.builderFor(schema);
       pkList.stream().forEach(p -> primaryKeyBuilder.addColumn(p));
 
-      ArcticTable arcticTable = ac.newTableBuilder(tableIdentifier, schema)
+      ArcticTable arcticTable = arcticHiveCatalog.newTableBuilder(tableIdentifier, schema)
           .withProperties(properties)
           .withPartitionSpec(partitionBuilder.build())
           .withPrimaryKeySpec(primaryKeyBuilder.build())
-          .withProperty(TableProperties.ALLOW_HIVE_TABLE_EXISTED, "true")
+          .withProperty(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED, "true")
           .create();
       upgradeHive = true;
-      UpgradeHiveTableUtil.hiveDataMigration(arcticTable, ac, tableIdentifier);
+      UpgradeHiveTableUtil.hiveDataMigration(arcticTable, arcticHiveCatalog, tableIdentifier);
     } catch (Throwable t) {
       if (upgradeHive) {
-        ac.dropTableButNotDropHiveTable(tableIdentifier);
+        arcticHiveCatalog.dropTableButNotDropHiveTable(tableIdentifier);
       }
       throw t;
     }
   }
 
-  public static void hiveDataMigration(ArcticTable arcticTable, ArcticHiveCatalog ac, TableIdentifier tableIdentifier)
+  private static void hiveDataMigration(ArcticTable arcticTable, ArcticHiveCatalog arcticHiveCatalog,
+                                        TableIdentifier tableIdentifier)
       throws Exception {
-    Table hiveTable = HiveTableUtil.loadHmsTable(ac.getHMSClient(), tableIdentifier);
+    Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
     String hiveDataLocation = hiveTable.getSd().getLocation() + "/hive";
     arcticTable.io().mkdirs(hiveDataLocation);
     String newPath;
@@ -93,15 +102,15 @@ public class UpgradeHiveTableUtil {
       }
 
       try {
-        HiveTableUtil.alterTableLocation(ac.getHMSClient(), arcticTable.id(), newPath);
+        HiveTableUtil.alterTableLocation(arcticHiveCatalog.getHMSClient(), arcticTable.id(), newPath);
         LOG.info("table{" + arcticTable.name() + "} alter hive table location " + hiveDataLocation + " success");
       } catch (IOException e) {
         LOG.warn("table{" + arcticTable.name() + "} alter hive table location failed", e);
         throw new RuntimeException(e);
       }
     } else {
-      List<String> partitions = HivePartitionUtil.getHivePartitionNames(ac.getHMSClient(), tableIdentifier);
-      List<String> partitionLocations = HivePartitionUtil.getHivePartitionLocations(ac.getHMSClient(), tableIdentifier);
+      List<String> partitions = HivePartitionUtil.getHivePartitionNames(arcticHiveCatalog.getHMSClient(), tableIdentifier);
+      List<String> partitionLocations = HivePartitionUtil.getHivePartitionLocations(arcticHiveCatalog.getHMSClient(), tableIdentifier);
       for (int i = 0; i < partitionLocations.size(); i++) {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
@@ -112,9 +121,9 @@ public class UpgradeHiveTableUtil {
             arcticTable.io().rename(fileStatus.getPath().toString(), newLocation);
           }
         }
-        HivePartitionUtil.alterPartition(ac.getHMSClient(), tableIdentifier, partition, newLocation);
+        HivePartitionUtil.alterPartition(arcticHiveCatalog.getHMSClient(), tableIdentifier, partition, newLocation);
       }
     }
-    HiveMetaSynchronizer.syncHiveDataToArctic(arcticTable, ac.getHMSClient());
+    HiveMetaSynchronizer.syncHiveDataToArctic(arcticTable, arcticHiveCatalog.getHMSClient());
   }
 }

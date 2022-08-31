@@ -138,9 +138,16 @@ public class HiveTableUtil {
     return storageDescriptor;
   }
 
-  public boolean checkExist(HMSClient hiveClient, TableIdentifier identifier) {
-    String database = identifier.getDatabase();
-    String name = identifier.getTableName();
+  /**
+   * Check whether the table is in Hive.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return If table is existed in hive
+   */
+  public boolean checkExist(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+    String database = tableIdentifier.getDatabase();
+    String name = tableIdentifier.getTableName();
     try {
       hiveClient.run(client -> client.getTable(database, name));
       return true;
@@ -154,6 +161,13 @@ public class HiveTableUtil {
     }
   }
 
+  /**
+   * Gets all the tables in a database.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param database Hive database
+   * @return A List of table-names from hive database
+   */
   public static List<String> getAllHiveTables(HMSClient hiveClient, String database) {
     try {
       return hiveClient.run(client -> client.getAllTables(database));
@@ -165,6 +179,12 @@ public class HiveTableUtil {
     }
   }
 
+  /**
+   * Change the location of the Hive table.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   */
   public static void alterTableLocation(HMSClient hiveClient, TableIdentifier tableIdentifier,
                                         String newPath) throws IOException {
     try {
