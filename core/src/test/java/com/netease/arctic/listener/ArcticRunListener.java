@@ -8,17 +8,17 @@ import org.junit.runner.notification.RunListener;
 
 public class ArcticRunListener extends RunListener {
   private long startTime;
-  private long endTime;
 
   @Override
   public void testRunStarted(Description description) {
     startTime = System.currentTimeMillis();
-    System.out.println("Tests started! Number of Test case: " + description.testCount() + "\n");
+    System.out.println("Tests started! Number of Test case: " +
+        (description == null ? 0 : description.testCount()) + "\n");
   }
 
   @Override
   public void testRunFinished(Result result) throws Exception {
-    endTime = System.currentTimeMillis();
+    long endTime = System.currentTimeMillis();
     System.out.println("Tests finished! Number of test case: " + result.getRunCount());
     long elapsedSeconds = (endTime - startTime) / 1000;
     System.out.println("Elapsed time of tests execution: " + elapsedSeconds + " seconds");
