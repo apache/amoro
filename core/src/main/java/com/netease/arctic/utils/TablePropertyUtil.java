@@ -23,7 +23,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -34,6 +36,8 @@ import java.util.Map;
  * Utils to handle table properties.
  */
 public class TablePropertyUtil {
+
+  public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
 
   /**
    * Encode max transaction id map of each partition to string.
@@ -81,5 +85,41 @@ public class TablePropertyUtil {
     } catch (JsonProcessingException e) {
       throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
     }
+  }
+
+  public static StructLikeMap<Map<String, String>> decodePartitionProperties(PartitionSpec spec, String value) {
+    try {
+      StructLikeMap<Map<String, String>> results = StructLikeMap.create(spec.partitionType());
+      TypeReference<Map<String, Map<String, String>>> typeReference =
+          new TypeReference<Map<String, Map<String, String>>>() {};
+      Map<String, Map<String, String>> map = new ObjectMapper().readValue(value, typeReference);
+      for (String key : map.keySet()) {
+        if (spec.isUnpartitioned()) {
+          results.put(EMPTY_STRUCT, map.get(key));
+        } else {
+          StructLike partitionData = DataFiles.data(spec, key);
+          results.put(partitionData, map.get(key));
+        }
+      }
+      return results;
+    } catch (JsonProcessingException e) {
+      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
+    }
+  }
+
+  public static String encodePartitionProperties(PartitionSpec spec,
+      StructLikeMap<Map<String, String>> partitionProperties) {
+    Map<String, Map<String, String>> stringKeyMap = Maps.newHashMap();
+    for (StructLike pd : partitionProperties.keySet()) {
+      String pathLike = spec.partitionToPath(pd);
+      stringKeyMap.put(pathLike, partitionProperties.get(pd));
+    }
+    String value;
+    try {
+      value = new ObjectMapper().writeValueAsString(stringKeyMap);
+    } catch (JsonProcessingException e) {
+      throw new UncheckedIOException(e);
+    }
+    return value;
   }
 }

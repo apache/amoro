@@ -48,12 +48,12 @@ import static io.javalin.apibuilder.ApiBuilder.path;
 import static io.javalin.apibuilder.ApiBuilder.post;
 import static io.javalin.apibuilder.ApiBuilder.put;
 
-
 public class AmsRestServer {
   public static final Logger LOG = LoggerFactory.getLogger("AmsRestServer");
+  private static Javalin app;
 
   public static void startRestServer(Integer port) {
-    Javalin app = Javalin.create(config -> {
+    app = Javalin.create(config -> {
       config.addStaticFiles(staticFiles -> {
         staticFiles.hostedPath = "/";
         // change to host files on a subpath, like '/assets'
@@ -82,7 +82,8 @@ public class AmsRestServer {
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
-    }).start(port);
+    });
+    app.start(port);
     LOG.info("Javalin Rest server start at {}!!!", port);
 
     // before
@@ -94,7 +95,7 @@ public class AmsRestServer {
       } else if (needLoginCheck(uriPath)) {
         if (null == ctx.sessionAttribute("user")) {
           LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
-                  ctx.sessionAttributeMap()));
+              ctx.sessionAttributeMap()));
           throw new ForbiddenException();
         }
       }
@@ -121,6 +122,8 @@ public class AmsRestServer {
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", TableController::getTablePartitions);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
                 TableController::getPartitionFileListInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
+
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
@@ -212,9 +215,15 @@ public class AmsRestServer {
       ctx.json(new ErrorResponse(HttpCode.NOT_FOUND, "page not found!", ""));
     });
 
-    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(),ctx -> {
+    app.error(HttpCode.INTERNAL_SERVER_ERROR.getStatus(), ctx -> {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
     });
+  }
+
+  public static void stopRestServer() {
+    if (app != null) {
+      app.stop();
+    }
   }
 
   private static final String[] urlWhiteList = {

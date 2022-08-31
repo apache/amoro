@@ -21,9 +21,8 @@ package com.netease.arctic.table;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
-import org.apache.iceberg.UpdateProperties;
-import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.StructLikeMap;
+
 import java.util.Map;
 
 /**
@@ -68,20 +67,6 @@ public interface KeyedTable extends ArcticTable {
   KeyedTableScan newScan();
 
   /**
-   * Create a new {@link UpdateSchema} to alter the columns of this table and commit the change.
-   *
-   * @return a new {@link UpdateSchema}
-   */
-  UpdateSchema updateSchema();
-
-  /**
-   * Create a new {@link UpdateProperties} to update table properties and commit the changes.
-   *
-   * @return a new {@link UpdateProperties}
-   */
-  UpdateProperties updateProperties();
-
-  /**
    * Allocate a new transaction id from this table
    *
    * @param signature signature for this request. Requests with the same signature will get the same transaction id.
@@ -94,6 +79,7 @@ public interface KeyedTable extends ArcticTable {
    * get max transactionId of each partition. use {@link #partitionMaxTransactionId()} instead.
    *
    * @return map of max transactionId of each partition
+   * @deprecated use {@link UnkeyedTable#partitionProperty()} instead.
    */
   @Deprecated
   Map<String, Long> maxTransactionId();
@@ -102,7 +88,9 @@ public interface KeyedTable extends ArcticTable {
    * get max transactionId of each partition
    *
    * @return map of max transactionId of each partition
+   * @deprecated use {@link UnkeyedTable#partitionProperty()} instead.
    */
+  @Deprecated
   StructLikeMap<Long> partitionMaxTransactionId();
 
   @Override
@@ -118,4 +106,5 @@ public interface KeyedTable extends ArcticTable {
   RewritePartitions newRewritePartitions();
 
   OverwriteBaseFiles newOverwriteBaseFiles();
+
 }

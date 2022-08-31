@@ -54,7 +54,7 @@ import java.util.stream.Collectors;
 public class BaseKeyedTable implements KeyedTable {
   private final String tableLocation;
   private final PrimaryKeySpec primaryKeySpec;
-  private final AmsClient client;
+  protected final AmsClient client;
 
   protected final BaseTable baseTable;
   protected final ChangeTable changeTable;
@@ -109,10 +109,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Map<String, String> properties() {
-    return baseTable.properties().entrySet()
-        .stream()
-        .filter(e -> !TableConstants.HIDDEN_PROPERTIES.contains(e.getKey()))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    return baseTable.properties();
   }
 
   @Override
@@ -160,13 +157,7 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public UpdateProperties updateProperties() {
-    UpdateProperties updateProperties = new UpdateKeyedTableProperties(this, tableMeta);
-    if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TrackerOperations.UPDATE_PROPERTIES, client);
-      return new TracedUpdateProperties(updateProperties, tracer);
-    } else {
-      return updateProperties;
-    }
+    return new UpdateKeyedTableProperties(this, tableMeta);
   }
 
   @Override

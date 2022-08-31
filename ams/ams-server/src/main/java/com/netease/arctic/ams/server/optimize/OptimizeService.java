@@ -62,6 +62,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -71,8 +73,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizeService.class);
   private static final long DEFAULT_CHECK_INTERVAL = 60000;
 
-  private ScheduledTasks<TableIdentifier, OptimizeCommitTask> commitTasks;
   private ScheduledTasks<TableIdentifier, OptimizeCheckTask> checkTasks;
+
+  private final BlockingQueue<TableIdentifier> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private static final long DEFAULT_CACHE_REFRESH_TIME = 60_000; // 1min
   private final Map<TableIdentifier, TableOptimizeItem> cachedTables = new HashMap<>();
@@ -126,36 +129,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         OptimizeCheckTask::new,
         false);
     LOG.info("Schedule Optimize Checker finished with {} valid tables", validTables.size());
-  }
-
-  @Override
-  public synchronized void checkOptimizeCommitTasks() {
-    if (commitTasks == null) {
-      commitTasks = new ScheduledTasks<>(ThreadPool.Type.COMMIT);
-    }
-    internalCheckOptimizeCommitter();
-  }
-
-  private void internalCheckOptimizeCommitter() {
-    LOG.info("Schedule Optimize Committer");
-    if (commitTasks == null) {
-      return;
-    }
-    List<TableIdentifier> validTables = listCachedTables(true);
-    commitTasks.checkRunningTask(
-        new HashSet<>(validTables),
-        this::getCommitInterval,
-        OptimizeCommitTask::new,
-        false);
-    LOG.info("Schedule Optimize Committer finished with {} valid tables", validTables.size());
-  }
-
-  private Long getCommitInterval(TableIdentifier identifier) {
-    try {
-      return getTableOptimizeItem(identifier).getCommitInterval();
-    } catch (NoSuchObjectException e) {
-      return null;
-    }
   }
 
   @Override
@@ -343,7 +316,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     toRemoveTables.forEach(this::clearTableCache);
     internalCheckOptimizeChecker(
         this.optimizeStatusCheckInterval == null ? DEFAULT_CHECK_INTERVAL : this.optimizeStatusCheckInterval);
-    internalCheckOptimizeCommitter();
     LOG.info("clear tables[{}] {}", toRemoveTables.size(), toRemoveTables);
   }
 
@@ -435,6 +407,16 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
       return optimizeHistoryMapper.selectOptimizeHistory(identifier);
     }
+  }
+
+  @Override
+  public boolean triggerOptimizeCommit(TableIdentifier tableIdentifier) {
+    return toCommitTables.offer(tableIdentifier);
+  }
+
+  @Override
+  public TableIdentifier takeTableToCommit() throws InterruptedException {
+    return toCommitTables.take();
   }
 
   private List<BaseOptimizeTaskRuntime> selectAllOptimizeTaskRuntimes() {

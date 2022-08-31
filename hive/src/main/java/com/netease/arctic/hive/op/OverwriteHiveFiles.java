@@ -1,12 +1,32 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.hive.op;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
+import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
@@ -17,11 +37,15 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -34,30 +58,42 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.op.OverwriteBaseFiles.PROPERTIES_TRANSACTION_ID;
+
 public class OverwriteHiveFiles implements OverwriteFiles {
 
   private static final Logger LOG = LoggerFactory.getLogger(OverwriteHiveFiles.class);
 
-  final OverwriteFiles delegate;
-  final UnkeyedHiveTable table;
-  final HMSClient hmsClient;
-  final HMSClient transactionClient;
-  final String db;
-  final String tableName;
+  public static final String PROPERTIES_VALIDATE_LOCATION = "validate-location";
 
-  final Table hiveTable;
+  private final Transaction transaction;
+  private final boolean insideTransaction;
+  private final OverwriteFiles delegate;
+  private final UnkeyedHiveTable table;
+  private final HMSClient hmsClient;
+  private final HMSClient transactionClient;
+  private final String db;
+  private final String tableName;
 
-  Expression expr;
-  List<DataFile> addFiles = Lists.newArrayList();
-  List<DataFile> deleteFiles = Lists.newArrayList();
+  private final Table hiveTable;
 
-  List<Partition> partitionToDelete = Lists.newArrayList();
-  List<Partition> partitionToCreate = Lists.newArrayList();
-  long txId = -1;
+  private Expression expr;
+  private final List<DataFile> addFiles = Lists.newArrayList();
+  private final List<DataFile> deleteFiles = Lists.newArrayList();
 
-  public OverwriteHiveFiles(
-      OverwriteFiles delegate, UnkeyedHiveTable table, HMSClient hmsClient, HMSClient transactionClient) {
-    this.delegate = delegate;
+  private Map<StructLike, Partition> partitionToDelete = Maps.newHashMap();
+  private Map<StructLike, Partition> partitionToCreate = Maps.newHashMap();
+  private final Map<StructLike, Partition> partitionToAlter = Maps.newHashMap();
+  private String unpartitionTableLocation;
+  private long txId = -1;
+  private boolean validateLocation = true;
+  private int commitTimestamp; // in seconds
+
+  public OverwriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
+      HMSClient hmsClient, HMSClient transactionClient) {
+    this.transaction = transaction;
+    this.insideTransaction = insideTransaction;
+    this.delegate = transaction.newOverwrite();
     this.table = table;
     this.hmsClient = hmsClient;
     this.transactionClient = transactionClient;
@@ -134,8 +170,12 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   @Override
   public OverwriteFiles set(String property, String value) {
-    if ("txId".equals(property)) {
+    if (PROPERTIES_TRANSACTION_ID.equals(property)) {
       this.txId = Long.parseLong(value);
+    }
+
+    if (PROPERTIES_VALIDATE_LOCATION.equals(property)) {
+      this.validateLocation = Boolean.parseBoolean(value);
     }
 
     delegate.set(property, value);
@@ -161,12 +201,19 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   @Override
   public void commit() {
-    if (!table.spec().isUnpartitioned()) {
+    commitTimestamp = (int) (System.currentTimeMillis() / 1000);
+    if (table.spec().isUnpartitioned()) {
+      generateUnpartitionTableLocation();
+    } else {
       this.partitionToDelete = getDeletePartition();
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
     delegate.commit();
+    commitPartitionProperties();
+    if (!insideTransaction) {
+      transaction.commitTransaction();
+    }
 
     if (table.spec().isUnpartitioned()) {
       commitNonPartitionedTable();
@@ -175,14 +222,44 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     }
   }
 
+  private void commitPartitionProperties() {
+    UpdatePartitionProperties updatePartitionProperties = table.updatePartitionProperties(transaction);
+    if (table.spec().isUnpartitioned()) {
+      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, unpartitionTableLocation);
+      updatePartitionProperties.set(TablePropertyUtil.EMPTY_STRUCT,
+          HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME, commitTimestamp + "");
+    } else {
+      partitionToDelete.forEach((partitionData, partition) -> {
+        if (!partitionToCreate.containsKey(partitionData)) {
+          updatePartitionProperties.remove(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION);
+          updatePartitionProperties.remove(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+        }
+      });
+      partitionToCreate.forEach((partitionData, partition) -> {
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partition.getSd().getLocation());
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            commitTimestamp + "");
+      });
+      partitionToAlter.forEach((partitionData, partition) -> {
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION,
+            partition.getSd().getLocation());
+        updatePartitionProperties.set(partitionData, HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME,
+            commitTimestamp + "");
+      });
+    }
+    updatePartitionProperties.commit();
+  }
+
   @Override
   public Object updateEvent() {
     return delegate.updateEvent();
   }
 
-  protected List<Partition> getCreatePartition(List<Partition> partitionToDelete) {
+  protected Map<StructLike, Partition> getCreatePartition(Map<StructLike, Partition> partitionToDelete) {
     if (this.addFiles.isEmpty()) {
-      return Lists.newArrayList();
+      return Maps.newHashMap();
     }
 
     Map<String, String> partitionLocationMap = Maps.newHashMap();
@@ -196,42 +273,38 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       String location = FileUtil.getFileDir(d.path().toString());
       partitionLocationMap.put(value, location);
       if (!partitionDataFileMap.containsKey(value)) {
-        partitionDataFileMap.put(value, org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList());
+        partitionDataFileMap.put(value, Lists.newArrayList());
       }
       partitionDataFileMap.get(value).add(d);
       partitionValueMap.put(value, partitionValues);
     }
 
-    List<Partition> partitions = Lists.newArrayList();
+    Map<StructLike, Partition> createPartitions = Maps.newHashMap();
     for (String val : partitionValueMap.keySet()) {
       List<String> values = partitionValueMap.get(val);
       String location = partitionLocationMap.get(val);
       List<DataFile> dataFiles = partitionDataFileMap.get(val);
 
-      Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles);
-      partitions.add(p);
-    }
-    for (String val : partitionLocationMap.keySet()) {
-      String partitionLocation = partitionLocationMap.get(val);
-      List<DataFile> dataFiles = partitionDataFileMap.get(val);
-      checkCreatePartitionDataFiles(dataFiles, partitionLocation);
+      checkCreatePartitionDataFiles(dataFiles, location);
+      Partition p = HivePartitionUtil.newPartition(hiveTable, values, location, dataFiles, commitTimestamp);
+      createPartitions.put(dataFiles.get(0).partition(), p);
     }
 
-    partitions = filterNewPartitionNonExists(partitions, partitionToDelete);
-    return partitions;
+    createPartitions = filterNewPartitionNonExists(createPartitions, partitionToDelete);
+    return createPartitions;
   }
 
-  protected List<Partition> getDeletePartition() {
+  protected Map<StructLike, Partition> getDeletePartition() {
     if (expr != null) {
       List<DataFile> deleteFilesByExpr = applyDeleteExpr();
       this.deleteFiles.addAll(deleteFilesByExpr);
     }
 
+    Map<StructLike, Partition> deletePartitions = Maps.newHashMap();
     if (deleteFiles.isEmpty()) {
-      return Lists.newArrayList();
+      return deletePartitions;
     }
 
-    List<Partition> partitions = Lists.newArrayList();
     Types.StructType partitionSchema = table.spec().partitionType();
 
     Set<String> checkedPartitionValues = Sets.newHashSet();
@@ -246,7 +319,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       }
       try {
         Partition partition = hmsClient.run(c -> c.getPartition(db, tableName, values));
-        partitions.add(partition);
+        deletePartitions.put(dataFile.partition(), partition);
       } catch (NoSuchObjectException e) {
         // pass do nothing
       } catch (TException | InterruptedException e) {
@@ -255,8 +328,10 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       checkedPartitionValues.add(pathValue);
     }
 
-    partitions.forEach(p -> checkPartitionDelete(deleteFileLocations, p));
-    return partitions;
+    if (validateLocation) {
+      deletePartitions.values().forEach(p -> checkPartitionDelete(deleteFileLocations, p));
+    }
+    return deletePartitions;
   }
 
   private void checkPartitionDelete(Set<Path> deleteFiles, Partition partition) {
@@ -297,45 +372,47 @@ public class OverwriteHiveFiles implements OverwriteFiles {
    * 1. exists but location is same. skip
    * 2. exists but location is not same, throw {@link CannotAlterHiveLocationException}
    */
-  private List<Partition> filterNewPartitionNonExists(
-      List<Partition> partitionToCreate,
-      List<Partition> partitionToDelete) {
-    List<Partition> partitions = Lists.newArrayList();
+  private Map<StructLike, Partition> filterNewPartitionNonExists(
+      Map<StructLike, Partition> partitionToCreate,
+      Map<StructLike, Partition> partitionToDelete) {
+    Map<StructLike, Partition> partitions = Maps.newHashMap();
     Map<String, Partition> deletePartitionValueMap = Maps.newHashMap();
-    for (Partition p : partitionToDelete) {
+    for (Partition p : partitionToDelete.values()) {
       String partValue = Joiner.on("/").join(p.getValues());
       deletePartitionValueMap.put(partValue, p);
     }
 
-    for (Partition p : partitionToCreate) {
-      String partValue = Joiner.on("/").join(p.getValues());
-      String location = p.getSd().getLocation();
+    for (Map.Entry<StructLike, Partition> entry : partitionToCreate.entrySet()) {
+      String partValue = Joiner.on("/").join(entry.getValue().getValues());
+      String location = entry.getValue().getSd().getLocation();
       Partition toDelete = deletePartitionValueMap.get(partValue);
       if (toDelete != null) {
         String deleteLocation = toDelete.getSd().getLocation();
         // if exists partition to delete with same value
         // make sure location is different
-        if (isPathEquals(location, deleteLocation)) {
-          throw new CannotAlterHiveLocationException("can't create new partition: " + partitionToString(p) + ", this " +
+        if (isPathEquals(location, deleteLocation) && validateLocation) {
+          throw new CannotAlterHiveLocationException("can't create new partition: " +
+              partitionToString(entry.getValue()) + ", this " +
               "partition will be " +
               "delete and re-create with same location");
         } else {
-          partitions.add(p);
+          partitions.put(entry.getKey(), entry.getValue());
           continue;
         }
       }
 
       try {
-        Partition partitionInHive = hmsClient.run(c -> c.getPartition(db, tableName, p.getValues()));
+        Partition partitionInHive = hmsClient.run(c -> c.getPartition(db, tableName, entry.getValue().getValues()));
         String locationInHive = partitionInHive.getSd().getLocation();
         if (isPathEquals(location, locationInHive)) {
-          // exists same location, skip create operation
+          partitionToAlter.put(entry.getKey(), entry.getValue());
           continue;
         }
-        throw new CannotAlterHiveLocationException("can't create new partition: " + partitionToString(p) +
+        throw new CannotAlterHiveLocationException("can't create new partition: " +
+            partitionToString(entry.getValue()) +
             ", this partition exists in hive with different location: " + locationInHive);
       } catch (NoSuchObjectException e) {
-        partitions.add(p);
+        partitions.put(entry.getKey(), entry.getValue());
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -345,7 +422,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
   private void commitPartitionedTable() {
     if (!partitionToDelete.isEmpty()) {
-      for (Partition p : partitionToDelete) {
+      for (Partition p : partitionToDelete.values()) {
         try {
           transactionClient.run(c -> {
             PartitionDropOptions options = PartitionDropOptions.instance()
@@ -366,26 +443,41 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
     if (!partitionToCreate.isEmpty()) {
       try {
-        transactionClient.run(c -> c.add_partitions(partitionToCreate));
+        transactionClient.run(c -> c.add_partitions(Lists.newArrayList(partitionToCreate.values())));
+      } catch (TException | InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    if (!partitionToAlter.isEmpty()) {
+      try {
+        transactionClient.run(c ->  {
+          c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
+          return null;
+        });
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
     }
   }
 
-  private void commitNonPartitionedTable() {
-    String newHiveLocation = null;
+  private void generateUnpartitionTableLocation() {
     if (this.addFiles.isEmpty()) {
-      newHiveLocation = createEmptyLocationForHive();
+      unpartitionTableLocation = createUnpartitionEmptyLocationForHive();
     } else {
-      newHiveLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
+      unpartitionTableLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
     }
+  }
 
-    final String finalLocation = newHiveLocation;
+  private void commitNonPartitionedTable() {
+
+    final String finalLocation = unpartitionTableLocation;
     try {
       transactionClient.run(c -> {
         Table hiveTable = c.getTable(db, tableName);
         hiveTable.getSd().setLocation(finalLocation);
+        HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
+            .forEach((key, value) -> hiveTable.getParameters().put(key, value));
         c.alter_table(db, tableName, hiveTable);
         return 0;
       });
@@ -394,13 +486,14 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     }
   }
 
-  private String createEmptyLocationForHive() {
+  private String createUnpartitionEmptyLocationForHive() {
     // create a new empty location for hive
-    String newLocation = null;
+    String newLocation;
     if (txId > 0) {
-      newLocation = table.hiveLocation() + "/txId=" + txId;
+      newLocation = HiveTableUtil.newKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null, txId);
     } else {
-      newLocation = table.hiveLocation() + "/ts_" + System.currentTimeMillis();
+      newLocation = HiveTableUtil.newUnKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null,
+          HiveTableUtil.getRandomSubDir());
     }
     OutputFile file = table.io().newOutputFile(newLocation + "/.keep");
     try {

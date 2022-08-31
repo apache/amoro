@@ -28,11 +28,6 @@ import java.util.List;
 public interface IOptimizeService {
 
   /**
-   * Check optimize commit tasks, add tasks of new tables, and clean tasks of removed table.
-   */
-  void checkOptimizeCommitTasks();
-
-  /**
    * Check optimize check tasks, add tasks of new tables, and clean tasks of removed table.
    */
   void checkOptimizeCheckTasks(long checkInterval);
@@ -69,5 +64,20 @@ public interface IOptimizeService {
    * @return list of OptimizeHistory
    */
   List<OptimizeHistory> getOptimizeHistory(TableIdentifier tableIdentifier);
+
+
+  /**
+   * Trigger table to commit, async.
+   * @param tableIdentifier -
+   * @return return true if trigger success
+   */
+  boolean triggerOptimizeCommit(TableIdentifier tableIdentifier);
+
+
+  /**
+   * Take Table to commit, wait if no table is ready.
+   * @return tableIdentifier -
+   */
+  TableIdentifier takeTableToCommit() throws InterruptedException;
 
 }

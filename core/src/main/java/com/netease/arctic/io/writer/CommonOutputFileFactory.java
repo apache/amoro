@@ -26,6 +26,7 @@ import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -49,13 +50,14 @@ public class CommonOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final int partitionId;
   private final long taskId;
-  private final long transactionId;
+  private final Long transactionId;
+  private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
   public CommonOutputFileFactory(String baseLocation, PartitionSpec partitionSpec,
                            FileFormat format, ArcticFileIO io, EncryptionManager encryptionManager,
-                           int partitionId, long taskId, long transactionId) {
+                           int partitionId, long taskId, Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
     this.format = format;
@@ -73,8 +75,8 @@ public class CommonOutputFileFactory implements OutputFileFactory {
               transactionId, partitionId, taskId, fileCount.incrementAndGet()));
     } else {
       return format.addExtension(
-          String.format("%s-%05d-%d-%010d", key.getFileType().shortName(),
-              partitionId, taskId, fileCount.incrementAndGet()));
+          String.format("%s-%05d-%d-%s-%010d", key.getFileType().shortName(),
+              partitionId, taskId, unKeyedTableNameUUID, fileCount.incrementAndGet()));
     }
   }
 

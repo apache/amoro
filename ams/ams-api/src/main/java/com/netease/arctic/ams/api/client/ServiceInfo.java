@@ -20,9 +20,9 @@ package com.netease.arctic.ams.api.client;
 
 public class ServiceInfo {
 
-  private final String host;
+  private String host;
 
-  private final int port;
+  private int port;
 
   public ServiceInfo(String host, int port) {
     super();
@@ -36,6 +36,14 @@ public class ServiceInfo {
 
   public int getPort() {
     return port;
+  }
+
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public void setPort(int port) {
+    this.port = port;
   }
 
   @Override

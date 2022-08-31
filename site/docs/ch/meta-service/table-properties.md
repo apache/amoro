@@ -34,7 +34,6 @@
 | optimize.group                                | default          | 结构优化所属的组                          |
 | optimize.quota                                | 0.1              | 表所能占用的结构优化资源量                     |
 | optimize.num-retries                          | 5                | 结构优化失败时的重试次数                      |
-| optimize.commit.interval                      | 60000（1分钟）    | 结构优化的最短提交间隔                       |
 | optimize.small-file-size-bytes-threshold      | 16777216（16MB）| 结构优化时判断是否为小文件的阈值                  |
 | optimize.major.trigger.max-interval           | 86400000（1天）               | 触发 major optimize 的最长时间间隔         |
 | optimize.major.trigger.delete-file-size-bytes | 67108864（64MB）   | 触发 major optimize 的 delete 文件大小阈值 |
@@ -54,7 +53,7 @@
 | clean-orphan-file.enable                    | false     | 是否开启游离文件自动清理                       |
 | clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 清理游离文件时为了防止错误清理正在写入的文件，判断文件最低的存在时间 |
 
-### Logstore相关配置
+### Logstore 相关配置
 
 | 配置名称                            | 默认值             | 描述                                     |
 | ---------------------------------- | ---------------- | ----------------------------------       |
@@ -65,3 +64,10 @@
 | log-store.data-format              | json             | Logstore 中的消息格式，当前仅支持 json         |
 | log-store.data-version             | v1               | Logstore 中消息的版本，当前仅支持 v1           |
 | log.consistency.guarantee.enable   | false            | 标记是否开启一致性保证                       |
+
+### Hive format 相关配置
+
+| 配置名称                            | 默认值             | 描述                                     |
+| ---------------------------------- | ---------------- | ----------------------------------       |
+| base.hive.auto-sync-schema-change  | true             | 是否自动同步 Hive 的原生的结构变更             |
+| base.hive.auto-sync-data-write     | false            | 是否自动同步 Hive 的原生的数据写入             |
