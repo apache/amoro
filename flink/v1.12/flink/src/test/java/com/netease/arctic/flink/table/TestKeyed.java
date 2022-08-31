@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.flink.FlinkTestWithHiveBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.core.execution.JobClient;
@@ -60,7 +61,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.flink.table.api.Expressions.$;
 
 @RunWith(Parameterized.class)
-public class TestKeyed extends FlinkTestBase {
+public class TestKeyed extends FlinkTestWithHiveBase {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();

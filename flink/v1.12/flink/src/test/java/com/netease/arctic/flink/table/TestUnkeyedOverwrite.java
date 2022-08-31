@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
+import com.netease.arctic.flink.FlinkTestWithHiveBase;
 import com.netease.arctic.flink.util.DataUtil;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
@@ -45,7 +46,7 @@ import java.util.List;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
 @RunWith(Parameterized.class)
-public class TestUnkeyedOverwrite extends FlinkTestBase {
+public class TestUnkeyedOverwrite extends FlinkTestWithHiveBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TestUnkeyedOverwrite.class);
 
