@@ -25,22 +25,32 @@ import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.spark.writer.UnkeyedPosDeleteSparkWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
+import scala.collection.JavaConversions;
+import scala.collection.JavaConverters;
+import scala.collection.Seq;
 
+import java.util.List;
 import java.util.Locale;
 
 public class TaskWriters {
@@ -139,14 +149,52 @@ public class TaskWriters {
 
   public ChangeTaskWriter<InternalRow> newChangeWriter() {
     preconditions();
+    String baseLocation;
+    EncryptionManager encryptionManager;
+    Schema schema;
+    PrimaryKeySpec primaryKeySpec = null;
+    Table icebergTable;
+
+    if (table.isKeyedTable()) {
+      KeyedTable keyedTable = table.asKeyedTable();
+      baseLocation = keyedTable.changeLocation();
+      encryptionManager = keyedTable.changeTable().encryption();
+      schema = SchemaUtil.changeWriteSchema(keyedTable.changeTable().schema());
+      primaryKeySpec = keyedTable.primaryKeySpec();
+      icebergTable = keyedTable.baseTable();
+    } else {
+      UnkeyedTable table = this.table.asUnkeyedTable();
+      baseLocation = table.location();
+      encryptionManager = table.encryption();
+      schema = table.schema();
+      icebergTable = table;
+    }
+    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
+        .builderFor(icebergTable, schema, SparkSchemaUtil.convert(schema))
+        .writeHive(isHiveTable)
+        .build();
+
+    OutputFileFactory outputFileFactory = null;
+    outputFileFactory = new CommonOutputFileFactory(
+        baseLocation, table.spec(), fileFormat, table.io(),
+        encryptionManager, partitionId, taskId, transactionId);
+
     // TODO: issues-173 - support change writer for upsert
-    return null;
+    return new ArcticSparkChangeTaskWriter(fileFormat, appenderFactory,
+        outputFileFactory,
+        table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
   }
 
-  public SortedPosDeleteWriter newBasePosDeleteWriter() {
+  public UnkeyedPosDeleteSparkWriter<InternalRow> newBasePosDeleteWriter() {
     preconditions();
-    // TODO: issues-173 - support change writer for upsert
-    return null;
+
+    Schema schema = table.schema();
+    InternalRowFileAppenderFactory build = new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(),
+        schema, dsSchema).build();
+    return new UnkeyedPosDeleteSparkWriter<>(build,
+        new CommonOutputFileFactory(table.location(), table.spec(), fileFormat, table.io(),
+            table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId),
+        fileFormat, mask, 0, new PartitionKey(table.spec(), schema), schema);
   }
 
   private void preconditions() {

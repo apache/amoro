@@ -23,6 +23,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 public class TestUnKeyedTableDML extends SparkTestBase {
 
   protected String database = "arc_def";
@@ -32,23 +34,23 @@ public class TestUnKeyedTableDML extends SparkTestBase {
       " id int, \n" +
       " name string, \n" +
       " data string, \n" +
-      " ts timestamp ) \n" +
+      " ts timestamp, primary key(id)) \n" +
       " using arctic " +
-      " partitioned by ( days(ts)  ) ";
+      " partitioned by ( identity(ts)  ) ";
 
   @Before
   public void prepareTable() {
-    sql("use " + catalogNameArctic);
+    sql("use " + catalogNameHive);
     sql("create database " + database);
 
     sql(createTableTemplate, database, table);
   }
 
-  @After
-  public void cleanUpTable() {
-    sql("drop table " + database + "." + table);
-    sql("drop database " + database);
-  }
+//  @After
+//  public void cleanUpTable() {
+//    sql("drop table " + database + "." + table);
+//    sql("drop database " + database);
+//  }
 
   @Test
   public void testUnKeyedTableDML() {
@@ -78,7 +80,7 @@ public class TestUnKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testUpdate() {
-    sql("insert into " + database + "." + table +
+    sql("insert overwrite " + database + "." + table +
         " values (1, 'aaa', 'abcd', timestamp('2021-1-1 01:00:00') ) , " +
         "(2, 'bbb', 'bbcd', timestamp('2022-1-2 12:21:00') ), " +
         "(3, 'ccc', 'cbcd', timestamp('2022-1-2 21:00:00') ) ");
@@ -92,7 +94,7 @@ public class TestUnKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testDelete() {
-    sql("insert into " + database + "." + table +
+    sql("insert overwrite " + database + "." + table +
         " values (1, 'aaa', 'abcd', timestamp('2021-1-1 01:00:00') ) , " +
         "(2, 'bbb', 'bbcd', timestamp('2022-1-2 12:21:00') ), " +
         "(3, 'ccc', 'cbcd', timestamp('2022-1-2 21:00:00') ) ");

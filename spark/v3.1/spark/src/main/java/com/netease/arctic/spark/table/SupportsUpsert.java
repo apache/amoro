@@ -19,7 +19,11 @@
 
 package com.netease.arctic.spark.table;
 
+import org.apache.iceberg.expressions.Expression;
 import org.apache.spark.sql.connector.catalog.Table;
+import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+
+import java.util.List;
 
 /**
  * A mix-in interface of {@link Table}, to indicate that can handle update or delete by upsert.
@@ -32,7 +36,7 @@ public interface SupportsUpsert extends Table {
 
 
 
-  SupportsExtendIdentColumns newScanBuilder();
+  SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options);
 
   boolean requireAdditionIdentifierColumns();
 

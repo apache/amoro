@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
@@ -169,10 +170,10 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
-    private final UnkeyedTable table;
-    private final StructType dsSchema;
+    protected final UnkeyedTable table;
+    protected final StructType dsSchema;
 
-    private boolean isOverwrite;
+    protected boolean isOverwrite;
 
     WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite) {
       this.table = table;
@@ -200,7 +201,12 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       // TODO: issues-173 - support upsert data writer
-      return null;
+      UnkeyedPosDeleteSparkWriter<InternalRow> internalRowUnkeyedPosDeleteSparkWriter = TaskWriters.of(table)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(dsSchema)
+          .newBasePosDeleteWriter();
+      return new SimpleInternalRowDataWriter(internalRowUnkeyedPosDeleteSparkWriter);
     }
   }
 }
