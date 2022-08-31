@@ -30,6 +30,11 @@ import org.apache.thrift.TException;
 public class OptimizeManagerHandler implements OptimizeManager.Iface {
 
   @Override
+  public void ping() throws TException {
+
+  }
+
+  @Override
   public OptimizeTask pollTask(int queueId, JobId jobId, String attemptId, long waitTime)
       throws TException {
     return ServiceContainer.getOptimizeQueueService().pollTask(queueId, jobId, attemptId, waitTime);
