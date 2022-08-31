@@ -88,7 +88,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
-    TestFileInfoCacheService.class})
+    TestFileInfoCacheService.class,
+    OptimizeIntegrationTest.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,

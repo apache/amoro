@@ -261,6 +261,9 @@ public class FileInfoCacheService extends IJDBCService {
   private boolean needFixCacheFromTable(TableCommitMeta tableCommitMeta) {
     if (CollectionUtils.isNotEmpty(tableCommitMeta.getChanges())) {
       TableChange tableChange = tableCommitMeta.getChanges().get(0);
+      if (tableChange.getParentSnapshotId() == -1) {
+        return false;
+      }
       return !(snapshotIsCached(tableCommitMeta.getTableIdentifier(), tableChange.getInnerTable(),
           tableChange.getParentSnapshotId()) &&
           !snapshotIsCached(tableCommitMeta.getTableIdentifier(), tableChange.getInnerTable(),
