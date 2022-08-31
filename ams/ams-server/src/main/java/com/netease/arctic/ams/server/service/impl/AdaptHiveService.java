@@ -28,6 +28,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
@@ -81,7 +82,7 @@ public class AdaptHiveService {
             .withProperties(upgradeHiveMeta.getProperties())
             .withPartitionSpec(partitionBuilder.build())
             .withPrimaryKeySpec(primaryKeyBuilder.build())
-            .withUpgradeHive(true)
+            .withProperty(TableProperties.ALLOW_HIVE_TABLE_EXISTED, "true")
             .create();
         upgradeHive = true;
         HiveMigrateUtil.hiveDataMigration(arcticTable, ac, tableIdentifier);

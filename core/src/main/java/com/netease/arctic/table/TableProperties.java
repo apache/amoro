@@ -51,6 +51,7 @@ public class TableProperties {
 
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
 
+  public static final String ALLOW_HIVE_TABLE_EXISTED = "allow.hive-table.existed";
   /**
    * table optimize related properties
    */
