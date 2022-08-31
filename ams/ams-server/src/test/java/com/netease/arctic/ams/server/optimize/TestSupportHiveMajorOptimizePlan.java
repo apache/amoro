@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveMajorOptimizeBase {
+public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
   @Test
   public void testKeyedTableMajorOptimizeSupportHive() throws IOException {
     insertTableBaseDataFiles(testKeyedHiveTable, 1, baseDataFilesInfo);

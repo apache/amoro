@@ -18,23 +18,9 @@
 
 package com.netease.arctic.ams.server;
 
-import com.netease.arctic.ams.server.controller.LoginControllerTest;
-import com.netease.arctic.ams.server.controller.OptimizerControllerTest;
-import com.netease.arctic.ams.server.controller.TableControllerTest;
-import com.netease.arctic.ams.server.controller.TerminalControllerTest;
-import com.netease.arctic.ams.server.optimize.TestBaseOptimizePlan;
-import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
-import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
-import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
-import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
-import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
-import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
-import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunner;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({TestHighAvailabilityServices.class})

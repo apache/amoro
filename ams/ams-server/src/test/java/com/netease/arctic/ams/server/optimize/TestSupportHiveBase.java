@@ -59,7 +59,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-public class TestSupportHiveMajorOptimizeBase implements TestOptimizeBase {
+public class TestSupportHiveBase implements TestOptimizeBase {
   public static ArcticCatalog hiveCatalog;
   public static final String AMS_TEST_HIVE_CATALOG_NAME = "ams_hive_test_catalog";
   public static final String AMS_TEST_HIVE_DB_NAME = "ams_hive_test_db";

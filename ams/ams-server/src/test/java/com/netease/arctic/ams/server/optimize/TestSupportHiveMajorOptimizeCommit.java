@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveMajorOptimizeBase {
+public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveHasPosDeleteCommit() throws Exception {
     insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
