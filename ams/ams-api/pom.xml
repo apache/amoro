@@ -33,7 +33,6 @@
 
     <properties>
         <checkstyle.skip>true</checkstyle.skip>
-        <thrift.version>0.13.0</thrift.version>
         <thrift.plugin.version>0.1.11</thrift.plugin.version>
     </properties>
 
