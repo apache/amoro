@@ -168,6 +168,7 @@ public class AmsEnvironment {
         "  arctic.ams.expire.thread.pool-size: 1\n" +
         "  arctic.ams.orphan.clean.thread.pool-size: 1\n" +
         "  arctic.ams.file.sync.thread.pool-size: 1\n" +
+        "  arctic.ams.support.hive.sync.thread.pool-size: 1\n" +
         "  # derby config.sh\n" +
         "  arctic.ams.mybatis.ConnectionDriverClassName: org.apache.derby.jdbc.EmbeddedDriver\n" +
         "  arctic.ams.mybatis.ConnectionURL: jdbc:derby:" + rootPath + "/derby;create=true\n" +
