@@ -174,11 +174,7 @@ import static org.apache.hadoop.hive.metastore.MetaStoreUtils.DEFAULT_DATABASE_N
 import static org.apache.hadoop.hive.metastore.MetaStoreUtils.isIndexTable;
 
 /**
- * Hive Metastore Client.
- * The public implementation of IMetaStoreClient. Methods not inherited from IMetaStoreClient
- * are not public and can change. Hence this is marked as unstable.
- * For users who require retry mechanism when the connection between metastore and client is
- * broken, RetryingMetaStoreClient class should be used.
+ * Copy form hive 2.1.1 to change some code to adapt jdk 11.
  */
 @Public
 @Unstable
