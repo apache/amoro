@@ -16,14 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.service;
+package com.netease.arctic.flink.read.hybrid.reader;
+
+import org.apache.flink.api.connector.source.SourceEvent;
 
 /**
- * Service for support hive sync periodically.
+ * It denotes {@link ArcticSourceReader} is starting.
  */
-public interface ISupportHiveSyncService {
-  /**
-   * Check support hive table tasks, sync iceberg partition location to hive table.
-   */
-  void checkHiveSyncTasks();
+public class ReaderStartEvent implements SourceEvent {
+  private static final long serialVersionUID = 1L;
+
+  public static final ReaderStartEvent INSTANCE = new ReaderStartEvent();
 }

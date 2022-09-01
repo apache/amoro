@@ -74,6 +74,7 @@ public class ArcticSourceReader<T> extends
     if (getNumberOfCurrentlyAssignedSplits() == 0) {
       requestSplit(Collections.emptyList());
     }
+    context.sendSourceEventToCoordinator(ReaderStartEvent.INSTANCE);
   }
 
   @Override

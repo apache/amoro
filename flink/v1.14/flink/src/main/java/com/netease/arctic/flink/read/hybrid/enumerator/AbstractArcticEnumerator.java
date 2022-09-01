@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read.hybrid.enumerator;
 
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
+import com.netease.arctic.flink.read.hybrid.reader.ReaderStartEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import org.apache.flink.api.connector.source.SourceEvent;
@@ -81,6 +82,8 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
       assigner.onCompletedSplits(splitRequestEvent.finishedSplitIds());
       readersAwaitingSplit.put(subtaskId, String.valueOf(splitRequestEvent.requesterHostname()));
       assignSplits();
+    } else if (sourceEvent instanceof ReaderStartEvent) {
+      LOG.info("Received ReaderStartEvent from subtask {}", subtaskId);
     } else {
       throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
           subtaskId, sourceEvent.getClass().getCanonicalName()));
