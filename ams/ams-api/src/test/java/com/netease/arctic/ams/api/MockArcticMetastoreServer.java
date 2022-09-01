@@ -218,12 +218,19 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public CatalogMeta getCatalog(String name) throws TException {
-      LOG.info("AMS getCatalog " + name);
+      LOG.info("AMS getCatalog {}, {}" , name, catalogs.size());
       for (CatalogMeta catalog : catalogs) {
         LOG.info("catalog {}" , catalog);
       }
-      CatalogMeta m = catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
-          .findFirst().orElseThrow(NoSuchObjectException::new);
+      CatalogMeta m;
+      try {
+        m = catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
+            .findFirst().orElseThrow(NoSuchObjectException::new);
+
+      } catch (Exception e) {
+        LOG.info("error", e);
+        throw new TException(e);
+      }
       LOG.info("m {}" , m);
       return m;
     }
