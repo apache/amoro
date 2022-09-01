@@ -258,15 +258,6 @@ public class BaseOptimizeCommit {
                 "add {} new files [{} posDelete files]",
             arcticTable.id(), majorDeleteFiles.size(), deleteDeleteFiles.size(), majorAddFiles.size(),
             addDeleteFiles.size());
-
-        // update table runtime base snapshotId, avoid repeat Major plan
-        if (arcticTable.isKeyedTable()) {
-          tableOptimizeRuntime.setCurrentSnapshotId(arcticTable.asKeyedTable().baseTable()
-              .currentSnapshot().snapshotId());
-        } else {
-          tableOptimizeRuntime.setCurrentSnapshotId(arcticTable.asUnkeyedTable()
-              .currentSnapshot().snapshotId());
-        }
       } else {
         LOG.info("{} skip major optimize commit", arcticTable.id());
       }
