@@ -19,16 +19,12 @@
 package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.FlinkTestWithHiveBase;
 import com.netease.arctic.flink.util.DataUtil;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
-import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -46,13 +42,13 @@ import java.util.List;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
 @RunWith(Parameterized.class)
-public class TestUnkeyedOverwrite extends FlinkTestWithHiveBase {
+public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(TestUnkeyedOverwrite.class);
 
-  @ClassRule
-  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
-      MiniClusterResource.createWithClassloaderCheckDisabled();
+//  @ClassRule
+//  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
+//      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();

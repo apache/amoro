@@ -20,7 +20,6 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.FlinkTestWithHiveBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -63,7 +62,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 
 @RunWith(Parameterized.class)
-public class TestUnkeyed extends FlinkTestWithHiveBase {
+public class TestUnkeyed extends FlinkTestBase {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();

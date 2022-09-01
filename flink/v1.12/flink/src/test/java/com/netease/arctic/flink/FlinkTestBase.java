@@ -76,7 +76,7 @@ import java.util.concurrent.ExecutionException;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-public class FlinkTestBase extends TableTestBase {
+public class FlinkTestBase extends HiveTableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
 
   public static boolean IS_LOCAL = true;
