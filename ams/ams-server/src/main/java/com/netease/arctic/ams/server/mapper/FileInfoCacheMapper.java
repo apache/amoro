@@ -113,7 +113,7 @@ public interface FileInfoCacheMapper {
   @Select("select partition_name, count(1) as file_count, sum(file_size) as size," +
           "max(commit_time) as lastCommitTime from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
-          ".ams.server.mybatis.TableIdentifier2StringConverter} and delete_snapshot_id is not null group by " +
+          ".ams.server.mybatis.TableIdentifier2StringConverter} and delete_snapshot_id is null group by " +
           "partition_name order by partition_name desc")
   @Results({
           @Result(column = "partition_name", property = "partition"),
@@ -129,7 +129,7 @@ public interface FileInfoCacheMapper {
           "select add_snapshot_id, partition_name, file_path, partition_name, " +
           "file_type, file_size, commit_time, watermark from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-          ".TableIdentifier2StringConverter} " +
+          ".TableIdentifier2StringConverter} and delete_snapshot_id is null " +
           "<if test='partition!=null'> and partition_name = #{partition}</if>" +
           " order by commit_time desc </script>"
   )

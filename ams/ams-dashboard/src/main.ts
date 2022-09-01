@@ -30,6 +30,7 @@ import './assets/icons'
 import SvgIcon from '@/components/svg-icon.vue'
 import loginService from './services/login.service'
 import { NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import { getQueryString } from './utils'
 
 const app = createApp(App).use(createPinia())
 app.component('svg-icon', SvgIcon)
@@ -40,7 +41,8 @@ RegisterComponents(app);
 (async () => {
   try {
     const store = useStore()
-    const res = await loginService.getCurUserInfo()
+    const token = getQueryString('token') || ''
+    const res = await loginService.getCurUserInfo(token)
     if (res) {
       store.updateUserInfo({
         userName: res.userName

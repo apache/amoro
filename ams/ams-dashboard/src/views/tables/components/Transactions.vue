@@ -55,6 +55,7 @@ const columns: IColumns[] = shallowReactive([
   { title: t('snapshotId'), dataIndex: 'snapshotId', ellipsis: true }
 ])
 const breadcrumbColumns = shallowReactive([
+  { title: t('operation'), dataIndex: 'operation', ellipsis: true },
   { title: t('file'), dataIndex: 'file', ellipsis: true },
   // { title: t('fsn'), dataIndex: 'fsn' },
   { title: t('partition'), dataIndex: 'partition', width: 120 },
