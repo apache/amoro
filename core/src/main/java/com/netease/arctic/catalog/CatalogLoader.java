@@ -93,7 +93,7 @@ public class CatalogLoader {
     try {
       System.out.println("load catalog " + catalogName);
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
-      System.out.println("load catalog " + catalogMeta);
+      System.out.println("load catalog finished: " + catalogMeta);
       String type = catalogMeta.getCatalogType();
       String catalogImpl;
       switch (type) {
