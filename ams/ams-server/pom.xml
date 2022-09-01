@@ -44,6 +44,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.apache.thrift</groupId>
+            <artifactId>libthrift</artifactId>
+            <version>${thrift.version}</version>
+        </dependency>
+        
+        <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-optimizer</artifactId>
             <version>${project.version}</version>
