@@ -256,12 +256,6 @@ public class TableMetaStore implements Serializable {
               }
             }
 
-            if (!ugi.getAuthenticationMethod().toString().equals(authMethod) ||
-                !ugi.getUserName().equals(krbPrincipal)) {
-              LOG.info("current ugi is not equal target ugi need to reconstruct new ugi");
-              constructUgi();
-            }
-
             ugi.checkTGTAndReloginFromKeytab();
           } catch (Exception e) {
             throw new RuntimeException("Re-login from keytab failed", e);
