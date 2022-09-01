@@ -1578,7 +1578,7 @@ public class IcebergMetadata
         newUnenforcedConstraint.equals(table.getUnenforcedPredicate())) {
       return Optional.empty();
     }
-    if (HiveTableUtil.isHive((ArcticTable) table)) {
+    if (table instanceof AdaptHiveIcebergTableHandle) {
       return Optional.of(new ConstraintApplicationResult<>(
           new AdaptHiveIcebergTableHandle(
               table.getSchemaName(),
