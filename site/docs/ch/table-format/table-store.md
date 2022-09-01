@@ -68,11 +68,9 @@ Minor Optimize 提升了 Basestore 的数据实效性，同时由于 eq-delete �
 
 ### Major Optimize
 
-Major Optimize 只对 Basestore 中的文件进行合并，因此对有主键表、无主键表都生效。
+Major Optimize 只对 Basestore 中的小文件进行合并，因此对有主键表、无主键表都生效，Arctic 支持为每张表独立配置是否是小文件的大小阈值。
 
-无主键表的 Major Optimize 逻辑比较简单，将小文件合并成大文件，Arctic 支持每张表独立配置是否是小文件的大小阈值。
-
-对于有主键表，参与合并的文件既包括 base 文件，只有 base 文件中的小文件与 pos-delete 文件进行合并，小文件合并生成新的 base 文件。
+Major Optimize 合并时，base 小文件以及相关的 pos-delete 文件会参与合并过程，合并后，这些 base 小文件中被 pos-delete 标记为删除的数据不会出现在新的 base 文件中，如果 pos-delete 文件还与其他未参与合并的文件关联，这些 pos-delete 文件不会被清理。
 
 ![Major Optimize](../images/format/major-optimize.png)
 
@@ -82,11 +80,7 @@ Major Optimize 的核心目标是解决小文件问题，减轻对文件系统�
 
 ### Full Optimize
 
-Full Optimize 只对 Basestore 中的所有文件进行合并，因此对有主键表、无主键表都生效。
-
-无主键表的 Full Optimize 逻辑比较简单，将所有文件进行合并。
-
-对于有主键表，所有的 base 文件 与 pos-delete 文件合并，重写所有 base 文件，删除 pos-delete 文件。
+Full Optimize 只对 Basestore 中的文件进行合并，因此对有主键表、无主键表都生效，Basestore 中包括 base 文件和 pos-delete 文件在内的所有文件都会参与 Full Optimize，合并之后，生成新的 base 文件，并将 pos-delete 文件删除。
 
 ![Full Optimize](../images/format/full-optimize.png)
 
