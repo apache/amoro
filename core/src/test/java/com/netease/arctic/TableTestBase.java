@@ -73,7 +73,9 @@ public class TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_table");
   protected static final TableIdentifier PK_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
-  protected static final Schema TABLE_SCHEMA = new Schema(
+  protected static final TableIdentifier NO_PARTITION_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_no_partition_table");
+  public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
@@ -109,6 +111,7 @@ public class TableTestBase {
   protected ArcticCatalog testCatalog;
   protected UnkeyedTable testTable;
   protected KeyedTable testKeyedTable;
+  protected KeyedTable testNoPartitionTable;
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -138,6 +141,12 @@ public class TableTestBase {
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
+    testNoPartitionTable = testCatalog
+        .newTableBuilder(NO_PARTITION_TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/no_partition_table")
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
     this.before();
   }
 
@@ -152,6 +161,9 @@ public class TableTestBase {
 
     testCatalog.dropTable(PK_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID.buildTableIdentifier());
+
+    testCatalog.dropTable(NO_PARTITION_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(NO_PARTITION_TABLE_ID.buildTableIdentifier());
   }
 
   public List<DataFile> writeBase(TableIdentifier identifier, List<Record> records) {
@@ -214,7 +226,7 @@ public class TableTestBase {
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
-        try (CloseableIterator<Record> records = reader.readData(scTask);) {
+        try (CloseableIterator<Record> records = reader.readData(scTask)) {
           while (records.hasNext()) {
             result.add(records.next());
           }

@@ -68,5 +68,4 @@ public class HiveSchemaUtil {
   public static List<FieldSchema> hivePartitionFields(Schema schema, PartitionSpec spec) {
     return org.apache.iceberg.hive.HiveSchemaUtil.convert(TypeUtil.select(schema, spec.identitySourceIds()));
   }
-
 }

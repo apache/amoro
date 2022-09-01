@@ -20,42 +20,68 @@ package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.hive.utils.HiveSchemaUtil;
-import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HiveTableProperties;
+import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.table.BaseKeyedTable;
-import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
+import org.apache.iceberg.util.PropertyUtil;
 
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
-public class KeyedHiveTable extends BaseKeyedTable {
+public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
+
+  private final HMSClient hiveClient;
+
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      BaseTable baseTable, ChangeTable changeTable) {
+      HMSClient hiveClient,
+      UnkeyedHiveTable baseTable,
+      ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
+    this.hiveClient = hiveClient;
+    syncHiveSchemaToArctic();
+    syncHiveDataToArctic();
   }
 
-  public static class HiveBaseInternalTable extends BaseInternalTable {
+  @Override
+  public void refresh() {
+    super.refresh();
+    syncHiveSchemaToArctic();
+    syncHiveDataToArctic();
+  }
 
-    public HiveBaseInternalTable(
-        TableIdentifier tableIdentifier,
-        Table baseIcebergTable,
-        ArcticFileIO arcticFileIO,
-        AmsClient client) {
-      super(tableIdentifier, baseIcebergTable, arcticFileIO, client);
-    }
 
-    @Override
-    public Schema schema() {
-      return HiveSchemaUtil.hiveTableSchema(icebergTable.schema(), icebergTable.spec());
+  @Override
+  public String hiveLocation() {
+    return ((SupportHive)baseTable()).hiveLocation();
+  }
+
+  private void syncHiveSchemaToArctic() {
+    if (PropertyUtil.propertyAsBoolean(
+        properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
+      HiveMetaSynchronizer.syncHiveSchemaToArctic(this, hiveClient);
     }
+  }
+
+  private void syncHiveDataToArctic() {
+    if (PropertyUtil.propertyAsBoolean(
+        properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
+        HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT)) {
+      HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
+    }
+  }
+
+  @Override
+  public HMSClient getHMSClient() {
+    return hiveClient;
   }
 }

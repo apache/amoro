@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -27,12 +28,14 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
@@ -53,10 +56,10 @@ import java.util.stream.Collectors;
 
 public class BaseOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizeCommit.class);
-  private final ArcticTable arcticTable;
-  private final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
-  private final Map<String, TableTaskHistory> commitTableTaskHistory = new HashMap<>();
-  private final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
+  protected final ArcticTable arcticTable;
+  protected final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
+  protected final Map<String, TableTaskHistory> commitTableTaskHistory = new HashMap<>();
+  protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
 
   public BaseOptimizeCommit(ArcticTable arcticTable, Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
     this.arcticTable = arcticTable;
@@ -97,11 +100,6 @@ public class BaseOptimizeCommit {
 
             minorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), minorAddFiles));
 
-            // if minor optimize, insert files as base new files
-            task.getOptimizeTask().getInsertFiles().stream()
-                .map(SerializationUtil::toInternalTableFile)
-                .forEach(minorAddFiles::add);
-
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
             if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
@@ -117,7 +115,7 @@ public class BaseOptimizeCommit {
                 .map(SerializationUtil::toInternalTableFile)
                 .forEach(majorAddFiles::add);
             majorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), new HashSet<>()));
-            partitionOptimizeType.put(entry.getKey(), OptimizeType.Major);
+            partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
           }
 
           String taskGroupId = task.getOptimizeTask().getTaskGroup();
@@ -153,9 +151,10 @@ public class BaseOptimizeCommit {
       // commit minor optimize content
       if (CollectionUtils.isNotEmpty(minorAddFiles) || CollectionUtils.isNotEmpty(minorDeleteFiles)) {
         OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(arcticTable.asKeyedTable());
+        overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
         AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
         minorAddFiles.forEach(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             overwriteBaseFiles.addFile((DataFile) contentFile);
           } else {
             overwriteBaseFiles.addFile((DeleteFile) contentFile);
@@ -165,7 +164,7 @@ public class BaseOptimizeCommit {
         AtomicInteger deletedPosDeleteFile = new AtomicInteger(0);
         Set<DeleteFile> deletedPosDeleteFiles = new HashSet<>();
         minorDeleteFiles.forEach(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             overwriteBaseFiles.deleteFile((DataFile) contentFile);
           } else {
             deletedPosDeleteFiles.add((DeleteFile) contentFile);
@@ -181,6 +180,7 @@ public class BaseOptimizeCommit {
 
         if (CollectionUtils.isNotEmpty(deletedPosDeleteFiles)) {
           RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
+          rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
           rewriteFiles.rewriteFiles(Collections.emptySet(), deletedPosDeleteFiles,
               Collections.emptySet(), Collections.emptySet());
           try {
@@ -201,14 +201,14 @@ public class BaseOptimizeCommit {
       // commit major optimize content
       if (CollectionUtils.isNotEmpty(majorAddFiles) || CollectionUtils.isNotEmpty(majorDeleteFiles)) {
         Set<DataFile> addDataFiles = majorAddFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             return (DataFile) contentFile;
           }
 
           return null;
         }).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<DeleteFile> addDeleteFiles = majorAddFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DeleteFile) {
+          if (contentFile.content() == FileContent.POSITION_DELETES) {
             return (DeleteFile) contentFile;
           }
 
@@ -216,14 +216,14 @@ public class BaseOptimizeCommit {
         }).filter(Objects::nonNull).collect(Collectors.toSet());
 
         Set<DataFile> deleteDataFiles = majorDeleteFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DataFile) {
+          if (contentFile.content() == FileContent.DATA) {
             return (DataFile) contentFile;
           }
 
           return null;
         }).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<DeleteFile> deleteDeleteFiles = majorDeleteFiles.stream().map(contentFile -> {
-          if (contentFile instanceof DeleteFile) {
+          if (contentFile.content() == FileContent.POSITION_DELETES) {
             return (DeleteFile) contentFile;
           }
 
@@ -233,18 +233,27 @@ public class BaseOptimizeCommit {
         if (!addDeleteFiles.isEmpty()) {
           throw new IllegalArgumentException("for major optimize, can't add delete files " + addDeleteFiles);
         }
-        if (deleteDeleteFiles.isEmpty()) {
-          OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
-          deleteDataFiles.forEach(overwriteFiles::deleteFile);
-          addDataFiles.forEach(overwriteFiles::addFile);
-          overwriteFiles.commit();
-        } else {
+
+        // overwrite DataFiles
+        OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
+        overwriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        deleteDataFiles.forEach(overwriteFiles::deleteFile);
+        addDataFiles.forEach(overwriteFiles::addFile);
+        overwriteFiles.commit();
+
+        // remove DeleteFiles
+        if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
           RewriteFiles rewriteFiles = baseArcticTable.newRewrite()
               .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
-          rewriteFiles.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, addDeleteFiles);
-          rewriteFiles.commit();
+          rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+          rewriteFiles.rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), addDeleteFiles);
+          try {
+            rewriteFiles.commit();
+          } catch (ValidationException e) {
+            LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
+          }
         }
-        
+
         LOG.info("{} major optimize committed, delete {} files [{} posDelete files], " +
                 "add {} new files [{} posDelete files]",
             arcticTable.id(), majorDeleteFiles.size(), deleteDeleteFiles.size(), majorAddFiles.size(),
@@ -275,6 +284,7 @@ public class BaseOptimizeCommit {
   private static Set<ContentFile<?>> selectDeletedFiles(BaseOptimizeTask optimizeTask,
                                                         Set<ContentFile<?>> addPosDeleteFiles) {
     switch (optimizeTask.getTaskId().getType()) {
+      case FullMajor:
       case Major:
         return selectMajorOptimizeDeletedFiles(optimizeTask);
       case Minor:
@@ -287,7 +297,7 @@ public class BaseOptimizeCommit {
   private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask,
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
-      if (contentFile instanceof DeleteFile) {
+      if (contentFile.content() == FileContent.POSITION_DELETES) {
         return DefaultKeyedFile.parseMetaFromFileName(contentFile.path().toString()).node();
       }
 
@@ -305,7 +315,7 @@ public class BaseOptimizeCommit {
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
         .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
 
-    if (optimizeTask.getIsDeletePosDelete() == 1) {
+    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
     }

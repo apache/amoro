@@ -18,6 +18,9 @@
 
 package com.netease.arctic.table;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * Reserved Arctic table properties list.
  */
@@ -25,6 +28,19 @@ public class TableProperties {
 
   private TableProperties() {
   }
+
+  /**
+   * Protected properties which should not be exposed to user.
+   */
+  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
+
+  static {
+    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+  }
+
+  public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
@@ -34,14 +50,15 @@ public class TableProperties {
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
-
   /**
    * table optimize related properties
    */
   public static final String ENABLE_OPTIMIZE = "optimize.enable";
   public static final String ENABLE_OPTIMIZE_DEFAULT = "true";
 
+  @Deprecated
   public static final String OPTIMIZE_COMMIT_INTERVAL = "optimize.commit.interval";
+  @Deprecated
   public static final long OPTIMIZE_COMMIT_INTERVAL_DEFAULT = 60_000; // 1 min
 
   public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
@@ -55,6 +72,9 @@ public class TableProperties {
 
   public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
   public static final long MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 86_400_000; // 1 day
+
+  public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.full.trigger.max-interval";
+  public static final long FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = -1; // default not trigger
 
   public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.minor.trigger.max-interval";
   public static final long MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 3600_000; // 1h
@@ -113,7 +133,7 @@ public class TableProperties {
   public static final int BASE_FILE_INDEX_HASH_BUCKET_DEFAULT = 4;
 
   public static final String CHANGE_FILE_INDEX_HASH_BUCKET = "change.file-index.hash-bucket";
-  public static final int CHANGE_FILE_INDEX_HASH_MOD_BUCKET = 4;
+  public static final int CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT = 4;
 
   public static final String WRITE_TARGET_FILE_SIZE_BYTES =
       org.apache.iceberg.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES;
@@ -136,7 +156,7 @@ public class TableProperties {
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY = "primary-key";
   public static final String WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String WRITE_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String WRITE_DISTRIBUTION_HASH_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
+  public static final String WRITE_DISTRIBUTION_HASH_MODE_DEFAULT = WRITE_DISTRIBUTION_HASH_AUTO;
 
   /**
    * table read related properties
@@ -150,7 +170,7 @@ public class TableProperties {
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY_PARTITION = "primary-partition-key";
   public static final String READ_DISTRIBUTION_HASH_AUTO = "auto";
-  public static final String READ_DISTRIBUTION_HASH_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
+  public static final String READ_DISTRIBUTION_HASH_MODE_DEFAULT = READ_DISTRIBUTION_HASH_AUTO;
 
   public static final String SPLIT_SIZE = org.apache.iceberg.TableProperties.SPLIT_SIZE;
   public static final long SPLIT_SIZE_DEFAULT = 134217728; // 128 MB
@@ -178,5 +198,4 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
-
 }

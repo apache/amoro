@@ -24,6 +24,8 @@ import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
@@ -31,6 +33,7 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.relocated.com.google.common.io.BaseEncoding;
@@ -57,6 +60,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final int minFileSplitCount;
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
+  private final boolean submitEmptySnapshot;
 
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
@@ -75,12 +79,16 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       TaskWriterFactory<RowData> taskWriterFactory,
       int minFileSplitCount,
       ArcticTableLoader tableLoader,
-      boolean upsert) {
+      boolean upsert,
+      boolean submitEmptySnapshot) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
     this.tableLoader = tableLoader;
     this.upsert = upsert;
+    this.submitEmptySnapshot = submitEmptySnapshot;
+    LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
+        minFileSplitCount, upsert, submitEmptySnapshot);
   }
 
   @Override
@@ -140,9 +148,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     table.io().doAs(() -> {
       completeAndEmitFiles();
 
-      // reassign transaction id
-      initTaskWriterFactory(null);
-      this.writer = taskWriterFactory.create();
+      this.writer = null;
       return null;
     });
   }
@@ -158,13 +164,22 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private void completeAndEmitFiles() throws IOException {
     // For bounded stream, it may don't enable the checkpoint mechanism so we'd better to emit the remaining
     // completed files to downstream before closing the writer so that we won't miss any of them.
-    emit(writer.complete());
+    if (writer != null) {
+      emit(writer.complete());
+    }
   }
 
   @Override
   public void processElement(StreamRecord<RowData> element) throws Exception {
     RowData row = element.getValue();
     table.io().doAs(() -> {
+      if (writer == null) {
+        // Reassign transaction id when processing the new file data to avoid the situation that there is no data
+        // written during the next checkpoint period.
+        initTaskWriterFactory(null);
+        this.writer = taskWriterFactory.create();
+      }
+
       if (upsert && RowKind.INSERT.equals(row.getRowKind())) {
         row.setRowKind(RowKind.DELETE);
         writer.write(row);
@@ -189,6 +204,28 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   }
 
   private void emit(WriteResult writeResult) {
-    output.collect(new StreamRecord<>(writeResult));
+    if (shouldEmit(writeResult)) {
+      // Only emit a non-empty WriteResult to committer operator, thus avoiding submitting too much empty snapshots.
+      output.collect(new StreamRecord<>(writeResult));
+    }
+  }
+
+  /**
+   * Whether to emit the WriteResult.
+   *
+   * @param writeResult the WriteResult to emit
+   * @return true if the WriteResult should be emitted, or the WriteResult isn't empty,
+   *         false only if the WriteResult is empty and the submitEmptySnapshot is false.
+   */
+  private boolean shouldEmit(WriteResult writeResult) {
+    return submitEmptySnapshot || (writeResult != null &&
+        (!ArrayUtils.isEmpty(writeResult.dataFiles()) ||
+            !ArrayUtils.isEmpty(writeResult.deleteFiles()) ||
+            !ArrayUtils.isEmpty(writeResult.referencedDataFiles())));
+  }
+
+  @VisibleForTesting
+  public TaskWriter<RowData> getWriter() {
+    return writer;
   }
 }

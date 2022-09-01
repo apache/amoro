@@ -65,12 +65,17 @@ Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
 
 Arctic support multiple processing engines as below:
 
-| Processing Engine | Version           |
-| ----------------- | ----------------- |
-| Flink             | 1.12.x and 1.14.x |
-| Spark             | 3.1+              |
-| Trino             | 380               |
+| Processing Engine | Version                   |
+| ----------------- |---------------------------|
+| Flink             | 1.12.x, 1.14.x and 1.15.x |
+| Spark             | 3.1+                      |
+| Trino             | 380                       |
 
 ## Quickstart
 
-Visit [https://arctic.netease.com/ch/getting-started/](https://arctic.netease.com/ch/getting-started/) to quickly explore what arctic can do.
+Visit [https://arctic.netease.com/ch/docker-quickstart/](https://arctic.netease.com/ch/docker-quickstart/) to quickly explore what arctic can do.
+
+## Join Community 
+If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source. 
+
+Join the Arctic WeChat Group: Add " `kllnn999` " as a friend on WeChat and specify "Arctic lover".

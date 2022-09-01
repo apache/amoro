@@ -20,13 +20,29 @@ package com.netease.arctic.spark;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.RowDelta;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.data.Record;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -34,10 +50,15 @@ public class TestKeyedTableDML extends SparkTestBase {
   private final String database = "db_test";
   private final String table = "testA";
   private KeyedTable keyedTable;
+  private final List<Object[]> baseFiles = Lists.newArrayList(
+      new Object[]{1, "aaa", ofDateWithZone(2022, 1, 1, 0)},
+      new Object[]{2, "bbb", ofDateWithZone(2022, 1, 2, 0)},
+      new Object[]{3, "ccc", ofDateWithZone(2022, 1, 2, 0)});
+  private List<DataFile> dataFiles;
 
   @Before
   public void before() {
-    sql("use " + catalogName);
+    sql("use " + catalogNameArctic);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -49,7 +70,7 @@ public class TestKeyedTableDML extends SparkTestBase {
         " options ( \n" +
         " ''props.test1'' = ''val1'', \n" +
         " ''props.test2'' = ''val2'' ) ", database, table);
-    keyedTable = loadTable(TableIdentifier.of(catalogName, database, table)).asKeyedTable();
+    keyedTable = loadTable(TableIdentifier.of(catalogNameArctic, database, table)).asKeyedTable();
   }
 
   @After
@@ -59,12 +80,8 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testMergeOnRead() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
-    writeBase(identifier,  Lists.newArrayList(
-        new Object[]{1, "aaa", ofDateWithZone(2022, 1, 1,0)},
-        new Object[]{2, "bbb", ofDateWithZone(2022, 1, 2,0)},
-        new Object[]{3, "ccc", ofDateWithZone(2022, 1, 2,0)}
-    ));
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
+    writeBase(identifier,  baseFiles);
     writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(4) ),
         newRecord(keyedTable, 5, "eee", quickDateWithZone(4) )
@@ -86,13 +103,60 @@ public class TestKeyedTableDML extends SparkTestBase {
 
   @Test
   public void testSelectChangeFiles() {
-    TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
     writeChange(identifier,  ChangeAction.INSERT, Lists.newArrayList(
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(4)),
         newRecord(keyedTable, 5, "eee", quickDateWithZone(4))
     ));
     rows = sql("select * from {0}.{1}.change", database, table);
     Assert.assertEquals(2, rows.size());
+  }
+
+
+  @Test
+  public void testSelectDeleteAll() throws IOException {
+    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogNameArctic, database, table), baseFiles);
+    insertBasePosDeleteFiles(keyedTable.beginTransaction(""), dataFiles);
+    rows = sql("select * from {0}.{1}", database, table);
+    Assert.assertEquals(0, rows.size());
+  }
+
+  @Test
+  public void testSelectDeletePart() throws IOException {
+    List<DataFile> dataFiles = writeBase(TableIdentifier.of(catalogNameArctic, database, table), baseFiles);
+    List<DataFile> deleteFiles = dataFiles.stream().filter(dataFile -> Objects.equals(18993,
+        dataFile.partition().get(0, Object.class))).collect(Collectors.toList());
+    insertBasePosDeleteFiles(keyedTable.beginTransaction(""), deleteFiles);
+    rows = sql("select id from {0}.{1}", database, table);
+    assertContainIdSet(rows, 0, 2, 3);
+  }
+
+  protected void insertBasePosDeleteFiles(long transactionId, List<DataFile> dataFiles) throws IOException {
+    Map<StructLike, List<DataFile>> dataFilesPartitionMap =
+        new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
+    List<DeleteFile> deleteFiles = new ArrayList<>();
+    for (Map.Entry<StructLike, List<DataFile>> dataFilePartitionMap : dataFilesPartitionMap.entrySet()) {
+      StructLike partition = dataFilePartitionMap.getKey();
+      List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
+      Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
+          .collect(Collectors.groupingBy(dataFile ->
+              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+      for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
+        DataTreeNode key = nodeFilePartitionMap.getKey();
+        List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
+
+        // write pos delete
+        SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(keyedTable)
+            .withTransactionId(transactionId).buildBasePosDeleteWriter(key.getMask(), key.getIndex(), partition);
+        for (DataFile nodeFile : nodeFiles) {
+          writer.delete(nodeFile.path(), 0);
+        }
+        deleteFiles.addAll(writer.complete());
+      }
+    }
+    RowDelta rowDelta = keyedTable.baseTable().newRowDelta();
+    deleteFiles.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
   }
 
 }

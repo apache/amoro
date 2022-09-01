@@ -23,6 +23,7 @@ import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.mapper.ApiTokensMapper;
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
+import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.FileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
@@ -41,7 +42,6 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
-import com.netease.arctic.ams.server.mapper.derby.DerbySnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
@@ -50,6 +50,8 @@ import org.apache.ibatis.session.Configuration;
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.ibatis.transaction.TransactionFactory;
 import org.apache.ibatis.transaction.jdbc.JdbcTransactionFactory;
+
+import java.time.Duration;
 
 public class JDBCSqlSessionFactoryProvider {
 
@@ -63,24 +65,23 @@ public class JDBCSqlSessionFactoryProvider {
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             dataSource.setUrl(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL));
             dataSource.setDriverClassName(
-                    ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
+                ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
           } else {
             dataSource.setUsername(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME));
             dataSource.setPassword(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD));
             dataSource.setUrl(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL));
             dataSource.setDriverClassName(
-                    ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
+                ArcticMetaStore.conf.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME));
           }
           dataSource.setDefaultAutoCommit(true);
-          dataSource.setMaxTotal(10);
-          dataSource.setMaxIdle(8);
+          dataSource.setMaxTotal(20);
+          dataSource.setMaxIdle(16);
           dataSource.setMinIdle(0);
           dataSource.setMaxWaitMillis(1000L);
           dataSource.setLogAbandoned(true);
           dataSource.setRemoveAbandonedOnBorrow(true);
           dataSource.setRemoveAbandonedTimeout(60);
-          dataSource.setTimeBetweenEvictionRunsMillis(
-              BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
+          dataSource.setTimeBetweenEvictionRunsMillis(Duration.ofMillis(10 * 60 * 1000L).toMillis());
           dataSource.setTestOnBorrow(BaseObjectPoolConfig.DEFAULT_TEST_ON_BORROW);
           dataSource.setTestWhileIdle(BaseObjectPoolConfig.DEFAULT_TEST_WHILE_IDLE);
           dataSource.setMinEvictableIdleTimeMillis(1000);
@@ -109,10 +110,10 @@ public class JDBCSqlSessionFactoryProvider {
           configuration.addMapper(ContainerMetadataMapper.class);
           configuration.addMapper(OptimizerGroupMapper.class);
           configuration.addMapper(ApiTokensMapper.class);
+          configuration.addMapper(DDLRecordMapper.class);
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             configuration.addMapper(DerbyContainerMetadataMapper.class);
             configuration.addMapper(DerbyFileInfoCacheMapper.class);
-            configuration.addMapper(DerbySnapInfoCacheMapper.class);
             configuration.addMapper(DerbyCatalogMetadataMapper.class);
             configuration.addMapper(DerbyTableMetadataMapper.class);
             configuration.addMapper(DerbyOptimizeTasksMapper.class);

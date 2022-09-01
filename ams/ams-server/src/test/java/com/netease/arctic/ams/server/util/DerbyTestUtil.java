@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.util;
 
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.ContainerMetadataMapper;
+import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.FileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
@@ -38,7 +39,6 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
-import com.netease.arctic.ams.server.mapper.derby.DerbySnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
@@ -64,7 +64,8 @@ import java.sql.ResultSet;
 public class DerbyTestUtil extends IJDBCService {
   public static volatile SqlSessionFactory sqlSessionFactory;
   public static String path = System.getProperty("user.dir") +
-      "/src/test/java/com/netease/arctic/ams/server/sql/".replace("/", File.separator);
+      "/src/test/java/com/netease/arctic/ams/server/derby/".replace("/", File.separator);
+  public static String db = "mydb1";
 
   public void createTestTable() throws Exception {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -73,10 +74,11 @@ public class DerbyTestUtil extends IJDBCService {
       PreparedStatement ps = connection.prepareStatement(query);
       ps.setString(1, "CATALOG_METADATA");
       ResultSet rs = ps.executeQuery();
-      if ( !rs.next() || !rs.getBoolean(1) ) {
+      if (!rs.next() || !rs.getBoolean(1)) {
         // Table does NOT exist ... create it
         ScriptRunner runner = new ScriptRunner(connection);
-        runner.runScript(new InputStreamReader(new FileInputStream(path + "0.3.0-derby.sql"), "UTF-8"));
+        runner.runScript(new InputStreamReader(new FileInputStream(getClass().getResource("/sql/derby/ams-init.sql")
+            .getFile()), "UTF-8"));
       }
     }
   }
@@ -87,7 +89,11 @@ public class DerbyTestUtil extends IJDBCService {
         if (sqlSessionFactory == null) {
           TransactionFactory transactionFactory = new JdbcTransactionFactory();
           BasicDataSource dataSource = new BasicDataSource();
-          dataSource.setUrl("jdbc:derby:" + path + "mydb1;create=true");
+          if (new File(path + db).exists()) {
+            dataSource.setUrl("jdbc:derby:" + path + db + ";");
+          } else {
+            dataSource.setUrl("jdbc:derby:" + path + db + ";create=true");
+          }
           dataSource.setDriverClassName("org.apache.derby.jdbc.EmbeddedDriver");
           dataSource.setDefaultAutoCommit(true);
           dataSource.setMaxIdle(8);
@@ -95,7 +101,7 @@ public class DerbyTestUtil extends IJDBCService {
           dataSource.setLogAbandoned(true);
           dataSource.setRemoveAbandonedTimeout(60);
           dataSource.setTimeBetweenEvictionRunsMillis(
-                  BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
+              BaseObjectPoolConfig.DEFAULT_TIME_BETWEEN_EVICTION_RUNS.toMillis());
           dataSource.setTestOnBorrow(BaseObjectPoolConfig.DEFAULT_TEST_ON_BORROW);
           dataSource.setTestWhileIdle(BaseObjectPoolConfig.DEFAULT_TEST_WHILE_IDLE);
           dataSource.setMinEvictableIdleTimeMillis(1000);
@@ -121,10 +127,10 @@ public class DerbyTestUtil extends IJDBCService {
           configuration.addMapper(OptimizerGroupMapper.class);
           configuration.addMapper(DerbyContainerMetadataMapper.class);
           configuration.addMapper(DerbyFileInfoCacheMapper.class);
-          configuration.addMapper(DerbySnapInfoCacheMapper.class);
           configuration.addMapper(DerbyCatalogMetadataMapper.class);
           configuration.addMapper(DerbyTableMetadataMapper.class);
           configuration.addMapper(DerbyOptimizeTasksMapper.class);
+          configuration.addMapper(DDLRecordMapper.class);
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }
       }

@@ -30,7 +30,6 @@ LIB_PATH=$ARCTIC_HOME/lib
 WORKDIR=$ARCTIC_HOME
 LOG_DIR=${WORKDIR}/logs
 STDERR_LOG=${WORKDIR}/logs/app.log.err
-STDOUT_LOG=${WORKDIR}/logs/app.log
 PID=${WORKDIR}/run/app.pid
 
 if [ ! -d "$LOG_DIR" ]; then
@@ -49,10 +48,6 @@ if [ ! -f $STDERR_LOG ];then
     touch $STDERR_LOG
 fi
 
-if [ ! -f $STDOUT_LOG ];then
-    touch $STDOUT_LOG
-fi
-
 if [ -z "$JAVA_OPTS" ]; then
     JAVA_OPTS="-Xms512m -Xmx512m -verbose:gc -XX:+PrintGCDetails"
 fi
@@ -67,11 +62,11 @@ CMDS="$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.dir=${LOG_DIR} -Duser.dir=${ARCTIC_H
 #0:pid bad and proc OK;   1:pid ok and proc bad;    2:pid bad
 function status(){
     test -e ${PID} || return 2
-    test -d /proc/$(cat ${PID}) && return 0 || return 1
+    test -n "$(ps -p $(cat ${PID}) -o pid=)" && return 0 || return 1
 }
 
 function start() {
-  nohup ${CMDS} </dev/null >>${STDOUT_LOG} 2>>${STDERR_LOG} &
+  nohup ${CMDS} </dev/null 2>>${STDERR_LOG} &
     if [ $? -ne 0 ]; then
         echo "start failed."
     fi

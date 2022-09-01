@@ -2,7 +2,14 @@ package com.netease.arctic.spark.source;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableBuilder;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -17,11 +24,13 @@ import org.apache.spark.sql.sources.v2.WriteSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
+
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public class ArcticSource implements DataSourceRegister, DataSourceV2,
     ReadSupport, WriteSupport, TableSupport {
-
   @Override
   public String shortName() {
     return "arctic";
@@ -33,25 +42,68 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   }
 
   @Override
-  public Optional<DataSourceWriter> createWriter(
-      String jobId, StructType schema, SaveMode mode, DataSourceOptions options) {
+  public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
+                                                 SaveMode mode, DataSourceOptions options) {
     return Optional.empty();
   }
 
   @Override
   public DataSourceTable createTable(
-      TableIdentifier identifier, StructType schema) {
-    return null;
+      TableIdentifier identifier, StructType schema, List<String> partitions, Map<String, String> properties) {
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    ArcticTable arcticTable;
+    Schema arcticSchema = SparkSchemaUtil.convert(schema, false);
+    PartitionSpec spec = toPartitionSpec(partitions, arcticSchema);
+    TableBuilder tableBuilder = catalog.newTableBuilder(com.netease.arctic.table.TableIdentifier
+        .of(catalog.name(), identifier.database().get(), identifier.table()), arcticSchema);
+    if (properties.containsKey("primary.keys")) {
+      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(arcticSchema)
+          .addDescription(properties.get("primary.keys"))
+          .build();
+      arcticTable = tableBuilder.withPartitionSpec(spec)
+          .withPrimaryKeySpec(primaryKeySpec)
+          .withProperties(properties)
+          .create();
+    } else {
+      arcticTable = tableBuilder.withPartitionSpec(spec)
+          .withProperties(properties)
+          .create();
+    }
+    return ArcticSparkTable.ofArcticTable(arcticTable);
+  }
+
+  private static PartitionSpec toPartitionSpec(List<String> partitionKeys, Schema icebergSchema) {
+    PartitionSpec.Builder builder = PartitionSpec.builderFor(icebergSchema);
+    partitionKeys.forEach(builder::identity);
+    return builder.build();
   }
 
   @Override
   public DataSourceTable loadTable(TableIdentifier identifier) {
-    return null;
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), identifier.database().get(), identifier.table());
+    ArcticTable arcticTable = catalog.loadTable(tableId);
+    return ArcticSparkTable.ofArcticTable(arcticTable);
   }
 
   @Override
-  public boolean dropTable(TableIdentifier identifier) {
-    return false;
+  public boolean tableExists(TableIdentifier identifier) {
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), identifier.database().get(), identifier.table());
+    return catalog.tableExists(tableId);
+  }
+
+  @Override
+  public boolean dropTable(TableIdentifier identifier, boolean purge) {
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticHiveCatalog catalog = (ArcticHiveCatalog) catalog(spark.conf());
+    return catalog.dropTable(com.netease.arctic.table.TableIdentifier
+        .of(catalog.name(), identifier.database().get(), identifier.table()), purge);
   }
 
   /**
@@ -83,8 +135,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
     TableIdentifier identifier = tableDesc.identifier();
     ArcticCatalog catalog = catalog(spark.conf());
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
-        catalog.name(), identifier.database().get(), identifier.table()
-    );
+        catalog.name(), identifier.database().get(), identifier.table());
     return catalog.tableExists(tableId);
   }
 

@@ -31,8 +31,6 @@ import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -43,7 +41,6 @@ import java.util.concurrent.Callable;
  * Implementation of {@link ArcticFileIO} for hadoop file system with authentication.
  */
 public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticHadoopFileIO.class);
   private final TableMetaStore tableMetaStore;
 
   public ArcticHadoopFileIO(TableMetaStore tableMetaStore) {
@@ -105,7 +102,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
     });
   }
 
-
   @VisibleForTesting
   public List<FileStatus> list(String location, Callable<List<FileStatus>> callable) {
     return tableMetaStore.doAs(() -> {
@@ -163,6 +159,20 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
+  public boolean rename(String src, String dts) {
+    return tableMetaStore.doAs(() -> {
+      Path srcPath = new Path(src);
+      Path dtsPath = new Path(dts);
+      FileSystem fs = getFs(srcPath);
+      try {
+        return fs.rename(srcPath, dtsPath);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
+      }
+    });
+  }
+
+  @Override
   public <T> T doAs(Callable<T> callable) {
     return tableMetaStore.doAs(callable);
   }
@@ -178,6 +188,23 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         throw new UncheckedIOException("Failed to check file exist for " + path, e);
       }
     });
+  }
+
+  @Override
+  public boolean mkdirs(String path) {
+    return tableMetaStore.doAs(() -> {
+      Path filePath = new Path(path);
+      FileSystem fs = getFs(filePath);
+      try {
+        return fs.mkdirs(filePath);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
+      }
+    });
+  }
+
+  public TableMetaStore getTableMetaStore() {
+    return tableMetaStore;
   }
 
   private FileSystem getFs(Path path) {

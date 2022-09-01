@@ -29,6 +29,7 @@ import org.apache.flink.table.descriptors.ConnectorDescriptorValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.types.logical.RowType;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -104,6 +105,37 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           "\"earliest\" or \"latest\", \"earliest\": read earliest table data including base and change files from" +
           " the current snapshot, \"latest\": read all incremental data in the change table starting from the" +
           " current snapshot (the current snapshot will be excluded).");
+
+  public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
+      .key("submit.empty.snapshots")
+      .booleanType()
+      .defaultValue(true)
+      .withDescription("Optional submit empty snapshots to the arctic table, false means that writers will not emit" +
+          " empty WriteResults to the committer operator, and reduce the number of snapshots in File Cache; true" +
+          " means this job will submit empty snapshots to the table, it is suitable with some valid reasons, e.g." +
+          " advance watermark metadata stored in the table(https://github.com/apache/iceberg/pull/5561).");
+
+  public static final ConfigOption<String> ARCTIC_CATALOG =
+      ConfigOptions.key("arctic.catalog")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic catalog name.");
+  public static final ConfigOption<String> ARCTIC_DATABASE =
+      ConfigOptions.key("arctic.database")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic database name.");
+  public static final ConfigOption<String> ARCTIC_TABLE =
+      ConfigOptions.key("arctic.table")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic table name.");
+
+  public static final ConfigOption<Boolean> DIM_TABLE_ENABLE =
+      ConfigOptions.key("dim-table.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
   @Override
   public void validate(DescriptorProperties properties) {

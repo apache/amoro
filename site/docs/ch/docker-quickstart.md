@@ -74,7 +74,7 @@ create table test_db.test_table(
   name string,
   op_time timestamp,
   primary key(id)
-) partitioned by(days(op_time)) using arctic;
+) using arctic partitioned by(days(op_time));
 ```
 
 ## 实时写入与读取
@@ -82,12 +82,18 @@ create table test_db.test_table(
 将任务提交到 [Flink Standalone](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/resource-providers/standalone/)
 的集群上运行。
 
+**0. 环境准备**
+
+使用 docker 部署可跳过该步骤。非 docker 部署请参考 [环境准备](flink/flink-get-started.md#_2)
+
 **1.启动 Flink SQL Client**  
-f#
+
 使用以下命令进入 arctic_flink 容器。
 ```shell
 docker exec -it arctic_flink /bin/bash
 ```
+
+**环境准备**
 
 启动 Flink SQL Client:
 ```shell
@@ -298,4 +304,4 @@ select * from test_db.test_table order by id;
 
 新增的1个 pos-delete 是 minor optimize 的结果，而新增的1个 base file 是 major optimize 的结果，由于只有一行数据被删除，因此只有1个 base 文件和 pos-delete 文件合并生成了最终的 base file。
 
-更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-structure.md#_3)。
+更多有关结构优化的相关信息可以查看[结构优化的具体介绍](table-format/table-store.md#_3)。

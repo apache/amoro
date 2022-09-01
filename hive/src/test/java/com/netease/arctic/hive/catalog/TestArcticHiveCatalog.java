@@ -21,19 +21,12 @@ package com.netease.arctic.hive.catalog;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class TestArcticHiveCatalog extends HiveTableTestBase {
-
-  protected static final Schema HIVE_TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
-  );
 
   @Test
   public void testCreateAndDropDatabase() {
@@ -65,7 +58,7 @@ public class TestArcticHiveCatalog extends HiveTableTestBase {
     Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.baseTable().schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.baseTable().spec());
 
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
+    Assert.assertEquals(HIVE_TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
     Assert.assertEquals(HIVE_SPEC, loadTable.changeTable().spec());
   }
 }

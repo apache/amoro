@@ -63,7 +63,8 @@ enum JobType {
 
 enum OptimizeType {
     Minor,
-    Major
+    Major,
+    FullMajor
 }
 
 
@@ -97,6 +98,8 @@ struct DataFileInfo {
 * replace TableContainer
 **/
 service OptimizeManager {
+
+    void ping()
 
     OptimizeTask pollTask(1:i32 queueId, 2:JobId jobId, 3:string attemptId, 4:i64 waitTime)
         throws (1: arctic_commons.NoSuchObjectException e1)

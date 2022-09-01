@@ -32,6 +32,7 @@ import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
 import org.apache.flink.table.connector.source.abilities.SupportsFilterPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
+import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsWatermarkPushDown;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.expressions.ResolvedExpression;
@@ -51,8 +52,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_DEFAULT;
+import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE;
+import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE_DEFAULT;
 
@@ -60,7 +62,7 @@ import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE_DE
  * Flink table api that generates source operators.
  */
 public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushDown,
-    SupportsLimitPushDown, SupportsWatermarkPushDown {
+    SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
 
   public static final Logger LOG = LoggerFactory.getLogger(ArcticDynamicSource.class);
 
@@ -111,7 +113,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     } else {
       flinkSchemaRowType = (RowType) projectedSchema.toRowDataType().getLogicalType();
-      readSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(projectedSchema), arcticTable.schema());
+      readSchema = TypeUtil.reassignIds(
+          FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema());
     }
   }
 
@@ -161,7 +164,7 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
           if (arcticTable.isUnkeyedTable()) {
             return DistributionHashMode.NONE;
           }
-          hashMode = READ_DISTRIBUTION_HASH_DEFAULT;
+          hashMode = READ_DISTRIBUTION_HASH_MODE_DEFAULT;
         }
         return DistributionHashMode.valueOfDesc(hashMode);
       default:
@@ -218,6 +221,22 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       return ((SupportsFilterPushDown) arcticDynamicSource).applyFilters(filters);
     } else {
       return Result.of(Collections.emptyList(), filters);
+    }
+  }
+
+  @Override
+  public boolean supportsNestedProjection() {
+    if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
+      return ((SupportsProjectionPushDown) arcticDynamicSource).supportsNestedProjection();
+    } else {
+      return false;
+    }
+  }
+
+  @Override
+  public void applyProjection(int[][] projectedFields) {
+    if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
+      ((SupportsProjectionPushDown) arcticDynamicSource).applyProjection(projectedFields);
     }
   }
 

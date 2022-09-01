@@ -20,19 +20,32 @@ package com.netease.arctic.ams.server.config;
 
 import com.netease.arctic.table.TableProperties;
 
+import java.awt.event.HierarchyBoundsAdapter;
 import java.util.HashSet;
 import java.util.Set;
 
 public class ServerTableProperties {
 
-  /**
-   * Hidden properties which not shown on ams
-   */
   public static final Set<String> HIDDEN_EXPOSED = new HashSet<>();
 
   static {
     HIDDEN_EXPOSED.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
     HIDDEN_EXPOSED.add(TableProperties.LOCATION);
     HIDDEN_EXPOSED.add(TableProperties.TABLE_CREATE_TIME);
+    HIDDEN_EXPOSED.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_MODE_NONE);
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_MODE_HASH);
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_MODE_RANGE);
+    HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_HASH_PARTITION);
+    HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_HASH_PRIMARY);
+    HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_HASH_PRIMARY_PARTITION);
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_HASH_PRIMARY_PARTITION);
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_HASH_PRIMARY);
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_DISTRIBUTION_HASH_PARTITION);
+    HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_HASH_AUTO);
+    HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_MODE_NONE);
+    HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_MODE_HASH);
+    HIDDEN_EXPOSED.add(TableProperties.PROTECTED_PROPERTIES.toString());
+    HIDDEN_EXPOSED.add(TableProperties.TABLE_EVENT_TIME_FIELD);
   }
 }

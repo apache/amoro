@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -28,10 +29,8 @@ import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.File;
 import java.util.Collections;
@@ -41,7 +40,6 @@ import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
 @PrepareForTest({
     ServiceContainer.class,
     JDBCSqlSessionFactoryProvider.class
@@ -49,7 +47,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestOrphanFileClean extends TestBaseOptimizePlan {
+public class TestOrphanFileClean extends TableTestBase {
 
   @Before
   public void mock() {

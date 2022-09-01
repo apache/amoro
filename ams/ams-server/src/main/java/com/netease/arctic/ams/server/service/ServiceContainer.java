@@ -23,9 +23,11 @@ import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
+import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
@@ -34,6 +36,7 @@ import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.impl.QuotaService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
+import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
@@ -70,12 +73,20 @@ public class ServiceContainer {
 
   private static volatile ArcticTableMetastoreHandler tableMetastoreHandler;
 
+  private static volatile DDLTracerService ddlTracerService;
+
   private static volatile RuntimeDataExpireService runtimeDataExpireService;
+
+  private static volatile AdaptHiveService adaptHiveService;
+
+  private static volatile ISupportHiveSyncService supportHiveSyncService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
       synchronized (ServiceContainer.class) {
-        optimizeService = new OptimizeService();
+        if (optimizeService == null) {
+          optimizeService = new OptimizeService();
+        }
       }
     }
 
@@ -85,7 +96,9 @@ public class ServiceContainer {
   public static ITableExpireService getTableExpireService() {
     if (tableExpireService == null) {
       synchronized (ServiceContainer.class) {
-        tableExpireService = new TableExpireService();
+        if (tableExpireService == null) {
+          tableExpireService = new TableExpireService();
+        }
       }
     }
 
@@ -95,7 +108,9 @@ public class ServiceContainer {
   public static IOrphanFilesCleanService getOrphanFilesCleanService() {
     if (orphanFilesCleanService == null) {
       synchronized (ServiceContainer.class) {
-        orphanFilesCleanService = new OrphanFilesCleanService();
+        if (orphanFilesCleanService == null) {
+          orphanFilesCleanService = new OrphanFilesCleanService();
+        }
       }
     }
 
@@ -128,7 +143,9 @@ public class ServiceContainer {
   public static OptimizeQueueService getOptimizeQueueService() {
     if (optimizeQueueService == null) {
       synchronized (ServiceContainer.class) {
-        optimizeQueueService = new OptimizeQueueService();
+        if (optimizeQueueService == null) {
+          optimizeQueueService = new OptimizeQueueService();
+        }
       }
     }
 
@@ -138,7 +155,9 @@ public class ServiceContainer {
   public static IMetaService getMetaService() {
     if (metaService == null) {
       synchronized (ServiceContainer.class) {
-        metaService = new JDBCMetaService();
+        if (metaService == null) {
+          metaService = new JDBCMetaService();
+        }
       }
     }
 
@@ -148,7 +167,9 @@ public class ServiceContainer {
   public static IQuotaService getQuotaService() {
     if (quotaService == null) {
       synchronized (ServiceContainer.class) {
-        quotaService = new QuotaService(getTableTaskHistoryService(), getMetaService());
+        if (quotaService == null) {
+          quotaService = new QuotaService(getTableTaskHistoryService(), getMetaService());
+        }
       }
     }
 
@@ -194,7 +215,9 @@ public class ServiceContainer {
   public static ITableTaskHistoryService getTableTaskHistoryService() {
     if (tableTaskHistoryService == null) {
       synchronized (ServiceContainer.class) {
-        tableTaskHistoryService = new TableTaskHistoryService();
+        if (tableTaskHistoryService == null) {
+          tableTaskHistoryService = new TableTaskHistoryService();
+        }
       }
     }
 
@@ -204,7 +227,9 @@ public class ServiceContainer {
   public static ITableInfoService getTableInfoService() {
     if (tableInfoService == null) {
       synchronized (ServiceContainer.class) {
-        tableInfoService = new TableBaseInfoService(getMetaService());
+        if (tableInfoService == null) {
+          tableInfoService = new TableBaseInfoService(getMetaService());
+        }
       }
     }
     return tableInfoService;
@@ -213,7 +238,9 @@ public class ServiceContainer {
   public static ArcticTableMetastoreHandler getTableMetastoreHandler() {
     if (tableMetastoreHandler == null) {
       synchronized (ServiceContainer.class) {
-        tableMetastoreHandler = new ArcticTableMetastoreHandler(getMetaService());
+        if (tableMetastoreHandler == null) {
+          tableMetastoreHandler = new ArcticTableMetastoreHandler(getMetaService());
+        }
       }
     }
     return tableMetastoreHandler;
@@ -227,8 +254,42 @@ public class ServiceContainer {
         }
       }
     }
-
     return runtimeDataExpireService;
+  }
+
+  public static AdaptHiveService getAdaptHiveService() {
+    if (adaptHiveService == null) {
+      synchronized (AdaptHiveService.class) {
+        if (adaptHiveService == null) {
+          adaptHiveService = new AdaptHiveService();
+        }
+      }
+    }
+    return adaptHiveService;
+  }
+
+  public static ISupportHiveSyncService getSupportHiveSyncService() {
+    if (supportHiveSyncService == null) {
+      synchronized (ServiceContainer.class) {
+        if (supportHiveSyncService == null) {
+          supportHiveSyncService = new SupportHiveSyncService();
+        }
+      }
+    }
+
+    return supportHiveSyncService;
+  }
+
+  public static DDLTracerService getDdlTracerService() {
+    if (ddlTracerService == null) {
+      synchronized (ServiceContainer.class) {
+        if (ddlTracerService == null) {
+          ddlTracerService = new DDLTracerService();
+        }
+      }
+    }
+
+    return ddlTracerService;
   }
 
   @VisibleForTesting

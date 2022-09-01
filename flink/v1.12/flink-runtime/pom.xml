@@ -23,13 +23,17 @@
     <parent>
         <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.0</version>
+        <version>0.3.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <!--  a shaded module. For supply a clean jar with shaded dependencies -->
     <artifactId>arctic-flink-runtime-1.12</artifactId>
+
+    <properties>
+        <flink.version>1.12.7</flink.version>
+    </properties>
 
     <dependencies>
         <dependency>

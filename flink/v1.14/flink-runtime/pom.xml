@@ -23,12 +23,16 @@
     <parent>
         <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.0</version>
+        <version>0.3.1-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-flink-runtime-1.14</artifactId>
+
+    <properties>
+        <flink.version>1.14.5</flink.version>
+    </properties>
 
     <dependencies>
         <dependency>

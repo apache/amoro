@@ -21,8 +21,8 @@ package com.netease.arctic.spark;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
+import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -137,7 +137,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          ChangeTable changeTable = table.asKeyedTable().changeTable();
+          UnkeyedTable changeTable = table.asKeyedTable().changeTable();
           return new ArcticSparkChangeTable(changeTable);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
@@ -359,7 +359,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (StringUtils.isBlank(catalogUrl)) {
       throw new IllegalArgumentException("lack required properties: url");
     }
-    catalog = CatalogLoader.load(catalogUrl, null);
+    catalog = CatalogLoader.load(catalogUrl, Maps.newHashMap());
   }
 
   @Override

@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSPartitionField;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
@@ -32,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -52,13 +52,14 @@ public class MetaService {
     ArcticTable at = ac.loadTable(ti);
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableIdentifier(ti);
-    Map<String, String> properties = at.properties();
+    Map<String, String> icebergProperties = at.properties();
+    Map<String, String> properties = new HashMap<>(icebergProperties);
     serverTableMeta.setProperties(properties);
-
     serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
             TableProperties.TABLE_CREATE_TIME_DEFAULT));
 
-    ServerTableProperties.HIDDEN_EXPOSED.forEach(serverTableMeta.getProperties()::remove);
+    TableProperties.PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
+    serverTableMeta.getProperties().remove(TableProperties.TABLE_CREATE_TIME);
 
     serverTableMeta.setBaseLocation(at.location());
     serverTableMeta.setPartitionColumnList(at

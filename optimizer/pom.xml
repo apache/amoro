@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-parent</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.0</version>
+        <version>0.3.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -39,6 +39,13 @@
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-core</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
@@ -227,6 +234,14 @@
                     <groupId>org.slf4j</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
         </dependency>
 
         <dependency>

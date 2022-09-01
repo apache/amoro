@@ -30,7 +30,6 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
-import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -47,13 +46,13 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-public class TestMinorExecutor extends TestBaseExecutor {
+public class TestMinorExecutor extends TestBaseOptimizeBase {
   protected List<DataFileInfo> changeInsertFilesInfo = new ArrayList<>();
   protected List<DataFileInfo> changeDeleteFilesInfo = new ArrayList<>();
 
   @Test
   public void testMinorExecutor() throws Exception {
-    insertBasePosDeleteFiles(2);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
     insertChangeDeleteFiles(3);
     insertChangeDataFiles(4);
 
@@ -64,6 +63,29 @@ public class TestMinorExecutor extends TestBaseExecutor {
     MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DeleteFile> result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
+    result.getTargetFiles().forEach(dataFile -> {
+      Assert.assertEquals(250, dataFile.recordCount());
+      Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
+    });
+  }
+
+  @Test
+  public void testNoPartitionTableMinorExecutor() throws Exception {
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertChangeDeleteFiles(3);
+    insertChangeDataFiles(4);
+
+    NodeTask nodeTask = constructNodeTask();
+    String[] arg = new String[0];
+    OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
+    optimizerConfig.setOptimizerId("UnitTest");
+    MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DeleteFile> result = minorExecutor.execute();
+    Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
+    result.getTargetFiles().forEach(dataFile -> {
+      Assert.assertEquals(250, dataFile.recordCount());
+      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+    });
   }
 
   private NodeTask constructNodeTask() {
@@ -72,7 +94,7 @@ public class TestMinorExecutor extends TestBaseExecutor {
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
         .collect(Collectors.toSet()));
     nodeTask.setTableIdentifier(testKeyedTable.id());
-    nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Major, UUID.randomUUID().toString()));
+    nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Minor, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
     nodeTask.setPartition(FILE_A.partition());
 
@@ -109,7 +131,7 @@ public class TestMinorExecutor extends TestBaseExecutor {
     // delete 1000 records in 2 partitions(2022-1-1\2022-1-2)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length)) {
+      for (Record record : baseRecords(i, length, testKeyedTable.changeTable().schema())) {
         writer.write(record);
       }
       WriteResult result = writer.complete();
@@ -134,7 +156,7 @@ public class TestMinorExecutor extends TestBaseExecutor {
     // write 1000 records to 2 partitions(2022-1-1\2022-1-2)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length)) {
+      for (Record record : baseRecords(i, length, testKeyedTable.changeTable().schema())) {
         writer.write(record);
       }
       WriteResult result = writer.complete();

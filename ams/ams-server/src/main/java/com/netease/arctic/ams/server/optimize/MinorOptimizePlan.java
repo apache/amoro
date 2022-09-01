@@ -36,6 +36,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -85,6 +86,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
       if (deleteFileList.size() >= PropertyUtil.propertyAsInt(arcticTable.properties(),
           TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT,
           TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT)) {
+        partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
         return true;
       }
     }
@@ -93,6 +95,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     if (current - tableOptimizeRuntime.getLatestMinorOptimizeTime(partitionToPath) >=
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
             TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT)) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
       return true;
     }
     LOG.debug("{} ==== don't need {} optimize plan, skip partition {}", tableId(), getOptimizeType(), partitionToPath);
@@ -122,6 +125,18 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     partitionFileTree.get(partition).initFiles();
 
     return result;
+  }
+
+  @Override
+  protected boolean tableChanged() {
+    return changeTableChanged();
+  }
+
+  private boolean changeTableChanged() {
+    long lastChangeSnapshotId = tableOptimizeRuntime.getCurrentChangeSnapshotId();
+    LOG.debug("{} ==== {} currentChangeSnapshotId={}, lastChangeSnapshotId={}", tableId(), getOptimizeType(),
+        currentChangeSnapshotId, lastChangeSnapshotId);
+    return currentChangeSnapshotId != lastChangeSnapshotId;
   }
 
   private void addChangeFilesIntoFileTree() {
@@ -198,7 +213,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
                 DataFileType.POS_DELETE_FILE : DataFileType.BASE_FILE);
 
         // fill node position delete file map
-        if (contentFile instanceof DeleteFile) {
+        if (contentFile.content() == FileContent.POSITION_DELETES) {
           List<DeleteFile> files = partitionPosDeleteFiles.computeIfAbsent(partition, e -> new ArrayList<>());
           files.add((DeleteFile) contentFile);
           partitionPosDeleteFiles.put(partition, files);
@@ -255,7 +270,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private boolean isOptimized(ContentFile<?> dataFile, String partition) {
     // if Pos-Delete files, ignore
-    if (dataFile instanceof DeleteFile) {
+    if (dataFile.content() == FileContent.POSITION_DELETES) {
       return false;
     }
 
@@ -274,7 +289,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   private long getBaseMaxTransactionId(String partition) {
     if (baseTableMaxTransactionId == null) {
       baseTableMaxTransactionId = new HashMap<>();
-      baseTableMaxTransactionId.putAll(arcticTable.asKeyedTable().baseTable().maxTransactionId());
+      baseTableMaxTransactionId.putAll(arcticTable.asKeyedTable().maxTransactionId());
       LOG.debug("{} ==== get base table max transaction id: {}", tableId(), baseTableMaxTransactionId);
     }
     Long maxTransactionId = baseTableMaxTransactionId.get(partition);

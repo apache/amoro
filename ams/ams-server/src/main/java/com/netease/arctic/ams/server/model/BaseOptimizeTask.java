@@ -41,6 +41,7 @@ public class BaseOptimizeTask extends OptimizeTask {
   protected long createTime;
 
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
+  @Deprecated
   private int isDeletePosDelete;
 
   public BaseOptimizeTask() {
@@ -69,7 +70,6 @@ public class BaseOptimizeTask extends OptimizeTask {
   public void setMaxChangeTransactionId(long maxChangeTransactionId) {
     this.maxChangeTransactionId = maxChangeTransactionId;
   }
-
 
   public String getPartition() {
     return partition;
@@ -143,10 +143,12 @@ public class BaseOptimizeTask extends OptimizeTask {
     this.deleteFileCnt = deleteFileCnt;
   }
 
+  @Deprecated
   public int getIsDeletePosDelete() {
     return isDeletePosDelete;
   }
 
+  @Deprecated
   public void setIsDeletePosDelete(int isDeletePosDelete) {
     this.isDeletePosDelete = isDeletePosDelete;
   }
