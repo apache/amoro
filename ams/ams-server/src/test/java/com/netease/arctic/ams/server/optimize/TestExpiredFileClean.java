@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 
 public class TestExpiredFileClean extends TableTestBase {
 
-  private List<DataFileInfo> changeTableFilesInfo = new ArrayList<>();
+  private final List<DataFileInfo> changeTableFilesInfo = new ArrayList<>();
 
   @Test
   public void testDeleteChangeFiles() throws Exception {
@@ -66,17 +66,13 @@ public class TestExpiredFileClean extends TableTestBase {
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
     testKeyedTable.changeTable().newScan().planFiles()
-        .forEach(fileScanTask -> {
-          existedDataFiles.add(fileScanTask.file());
-        });
+        .forEach(fileScanTask -> existedDataFiles.add(fileScanTask.file()));
     Assert.assertEquals(4, existedDataFiles.size());
 
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
     List<DataFile> currentDataFiles = new ArrayList<>();
     testKeyedTable.changeTable().newScan().planFiles()
-        .forEach(fileScanTask -> {
-          currentDataFiles.add(fileScanTask.file());
-        });
+        .forEach(fileScanTask -> currentDataFiles.add(fileScanTask.file()));
     Assert.assertEquals(2, currentDataFiles.size());
   }
 

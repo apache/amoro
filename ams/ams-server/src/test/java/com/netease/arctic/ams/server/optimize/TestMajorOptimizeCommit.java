@@ -19,16 +19,22 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeStatus;
+import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,11 +43,25 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
+
+@PrepareForTest({
+    JDBCSqlSessionFactoryProvider.class
+})
+@PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
+    "com.amazonaws.http.conn.ssl.*",
+    "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
+public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
+  @Before
+  public void mock() {
+    mockStatic(JDBCSqlSessionFactoryProvider.class);
+    when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
+  }
 
   @Test
   public void testMajorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(2);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
@@ -51,7 +71,6 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
           fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
         });
 
-    //testKeyedTable.properties().put(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0");
     testKeyedTable.updateProperties().
         set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
@@ -60,7 +79,7 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
 
-    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles();
+    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       List<DataFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
@@ -93,8 +112,8 @@ public class TestMajorOptimizeCommit extends TestMajorOptimizePlan {
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
 
-  private Map<TreeNode, List<DataFile>> generateTargetFiles() throws Exception {
-    List<DataFile> dataFiles = insertKeyedTableBaseDataFiles(3);
+  private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable) throws Exception {
+    List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, OptimizeType.Major, 3);
     return dataFiles.stream().collect(Collectors.groupingBy(dataFile ->  {
       DefaultKeyedFile keyedFile = new DefaultKeyedFile(dataFile);
       return keyedFile.node().toAmsTreeNode();

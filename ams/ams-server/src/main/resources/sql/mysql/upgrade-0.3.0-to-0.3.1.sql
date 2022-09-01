@@ -24,3 +24,5 @@ ALTER TABLE `file_info_cache` ADD COLUMN `producer` varchar(64) NOT NULL DEFAULT
 ALTER TABLE `file_info_cache` modify COLUMN `table_identifier` varchar(384) NOT NULL;
 ALTER TABLE `table_metadata` ADD COLUMN `cur_schema_id` int(11) DEFAULT NULL;
 ALTER TABLE `table_transaction_meta` modify COLUMN `table_identifier` varchar(384) NOT NULL;
+ALTER TABLE `optimize_file` MODIFY COLUMN `optimize_type` varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor, FullMajor';
+ALTER TABLE `optimize_table_runtime` ADD COLUMN `latest_full_optimize_time` MEDIUMTEXT NULL COMMENT 'Latest Full Optimize time for all partitions';

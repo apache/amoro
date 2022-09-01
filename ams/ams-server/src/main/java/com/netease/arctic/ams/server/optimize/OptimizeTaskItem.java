@@ -34,7 +34,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileContent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,7 +255,7 @@ public class OptimizeTaskItem extends IJDBCService {
           internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
           newRuntime.getTargetFiles().forEach(file -> {
             ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
-            if (contentFile instanceof DataFile) {
+            if (contentFile.content() == FileContent.DATA) {
               internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
                   DataFileType.BASE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
             } else {
@@ -269,6 +269,33 @@ public class OptimizeTaskItem extends IJDBCService {
           throw e;
         }
       }
+      sqlSession.commit(true);
+    }
+  }
+
+  public void persistTargetFiles() {
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      InternalTableFilesMapper internalTableFilesMapper =
+          getMapper(sqlSession, InternalTableFilesMapper.class);
+
+      try {
+        internalTableFilesMapper.deleteOptimizeTaskTargetFile(optimizeTask.getTaskId());
+        optimizeRuntime.getTargetFiles().forEach(file -> {
+          ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
+          if (contentFile.content() == FileContent.DATA) {
+            internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
+                DataFileType.BASE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+          } else {
+            internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
+                DataFileType.POS_DELETE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+          }
+        });
+      } catch (Exception e) {
+        LOG.error("Update the internal table files failed.", e);
+        sqlSession.rollback(true);
+        throw e;
+      }
+
       sqlSession.commit(true);
     }
   }

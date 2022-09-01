@@ -36,7 +36,9 @@ public class TableOptimizeRuntime {
   private long currentChangeSnapshotId = INVALID_SNAPSHOT_ID;
   private TableOptimizeInfo.OptimizeStatus optimizeStatus = TableOptimizeInfo.OptimizeStatus.Idle;
   private long optimizeStatusStartTime = -1;
+
   private final Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
+  private final Map<String, Long> latestFullOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskHistoryId;
   private volatile boolean isRunning;
@@ -77,6 +79,15 @@ public class TableOptimizeRuntime {
     }
   }
 
+  public void putLatestFullOptimizeTime(String partition, long time) {
+    Long oldValue = latestFullOptimizeTime.putIfAbsent(partition, time);
+    if (oldValue != null) {
+      if (time > oldValue) {
+        latestFullOptimizeTime.put(partition, time);
+      }
+    }
+  }
+
   public TableOptimizeInfo.OptimizeStatus getOptimizeStatus() {
     return optimizeStatus;
   }
@@ -99,6 +110,11 @@ public class TableOptimizeRuntime {
     return time == null ? -1 : time;
   }
 
+  public long getLatestFullOptimizeTime(String partition) {
+    Long time = latestFullOptimizeTime.get(partition);
+    return time == null ? -1 : time;
+  }
+
   public void putLatestMinorOptimizeTime(String partition, long time) {
     Long oldValue = latestMinorOptimizeTime.putIfAbsent(partition, time);
     if (oldValue != null) {
@@ -117,6 +133,9 @@ public class TableOptimizeRuntime {
     Set<String> result = new HashSet<>();
     if (MapUtils.isNotEmpty(latestMajorOptimizeTime)) {
       result.addAll(latestMajorOptimizeTime.keySet());
+    }
+    if (MapUtils.isNotEmpty(latestFullOptimizeTime)) {
+      result.addAll(latestFullOptimizeTime.keySet());
     }
     if (MapUtils.isNotEmpty(latestMinorOptimizeTime)) {
       result.addAll(latestMinorOptimizeTime.keySet());
@@ -158,6 +177,7 @@ public class TableOptimizeRuntime {
         ", optimizeStatus=" + optimizeStatus +
         ", optimizeStatusStartTime=" + optimizeStatusStartTime +
         ", latestMajorOptimizeTime=" + latestMajorOptimizeTime +
+        ", latestFullOptimizeTime=" + latestFullOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskHistoryId='" + latestTaskHistoryId + '\'' +
         ", isRunning=" + isRunning +

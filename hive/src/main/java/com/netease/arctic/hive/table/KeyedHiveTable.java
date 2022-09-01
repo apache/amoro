@@ -79,4 +79,9 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
       HiveMetaSynchronizer.syncHiveDataToArctic(this, hiveClient);
     }
   }
+
+  @Override
+  public HMSClient getHMSClient() {
+    return hiveClient;
+  }
 }
