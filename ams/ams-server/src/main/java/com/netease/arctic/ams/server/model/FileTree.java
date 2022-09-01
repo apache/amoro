@@ -152,20 +152,20 @@ public class FileTree {
   }
 
   public void collectBaseFiles(List<DataFile> collector) {
-    collectBaseFiles(collector, false, 0);
+    collectBaseFiles(collector, false, Collections.emptyList());
   }
 
-  public void collectBaseFiles(List<DataFile> collector, boolean isFilterSmallFile, long smallFileSize) {
-    if (isFilterSmallFile) {
+  public void collectBaseFiles(List<DataFile> collector, boolean isMajor, List<DataFile> needOptimizeFiles) {
+    if (isMajor) {
       baseFiles = baseFiles.stream()
-          .filter(dataFile -> dataFile.fileSizeInBytes() < smallFileSize).collect(Collectors.toList());
+          .filter(needOptimizeFiles::contains).collect(Collectors.toList());
     }
     collector.addAll(baseFiles);
     if (left != null) {
-      left.collectBaseFiles(collector, isFilterSmallFile, smallFileSize);
+      left.collectBaseFiles(collector, isMajor, needOptimizeFiles);
     }
     if (right != null) {
-      right.collectBaseFiles(collector, isFilterSmallFile, smallFileSize);
+      right.collectBaseFiles(collector, isMajor, needOptimizeFiles);
     }
   }
 

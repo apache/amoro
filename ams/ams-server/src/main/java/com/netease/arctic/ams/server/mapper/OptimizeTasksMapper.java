@@ -37,7 +37,7 @@ public interface OptimizeTasksMapper {
 
   @Select("select trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
       " task_group, task_history_id, max_change_transaction_id, is_delete_pos_delete," +
-      " source_nodes, create_time, properties, queue_id, " +
+      " source_nodes, create_time, properties, queue_id," +
       " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
       " insert_files, delete_files, base_files, pos_delete_files" +
       " from " + TABLE_NAME)

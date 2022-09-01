@@ -44,7 +44,7 @@ import { defineComponent, reactive, toRefs, watch, shallowReactive } from 'vue'
 // import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
-// import UOperations from './components/Operations.vue'
+import UOperations from './components/Operations.vue'
 import UTransactions from './components/Transactions.vue'
 import UOptimized from './components/Optimized.vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -58,7 +58,7 @@ export default defineComponent({
     // DeleteOutlined,
     UDetails,
     UFiles,
-    // UOperations,
+    UOperations,
     UTransactions,
     UOptimized
   },
@@ -71,8 +71,8 @@ export default defineComponent({
       // { key: 'Details' },
       // { key: 'Files' },
       { key: 'Transactions' },
-      // { key: 'Operations' },
-      { key: 'Optimized' }
+      { key: 'Optimized' },
+      { key: 'Operations' }
     ])
 
     const state = reactive({

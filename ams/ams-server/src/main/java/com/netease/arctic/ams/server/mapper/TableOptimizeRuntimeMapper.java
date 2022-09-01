@@ -38,7 +38,7 @@ public interface TableOptimizeRuntimeMapper {
   String TABLE_NAME = "optimize_table_runtime";
 
   @Select("select catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId," +
-      " latest_major_optimize_time, latest_minor_optimize_time, latest_task_history_id," +
+      " latest_major_optimize_time, latest_full_optimize_time, latest_minor_optimize_time, latest_task_history_id," +
       " optimize_status, optimize_status_start_time " +
       " from " + TABLE_NAME)
   @ConstructorArgs({
@@ -50,6 +50,8 @@ public interface TableOptimizeRuntimeMapper {
       @Result(property = "currentSnapshotId", column = "current_snapshot_id"),
       @Result(property = "currentChangeSnapshotId", column = "current_change_snapshotId"),
       @Result(property = "latestMajorOptimizeTime", column = "latest_major_optimize_time",
+          typeHandler = MapLong2StringConverter.class),
+      @Result(property = "latestFullOptimizeTime", column = "latest_full_optimize_time",
           typeHandler = MapLong2StringConverter.class),
       @Result(property = "latestMinorOptimizeTime", column = "latest_minor_optimize_time",
           typeHandler = MapLong2StringConverter.class),
@@ -64,6 +66,8 @@ public interface TableOptimizeRuntimeMapper {
       "current_snapshot_id = #{runtime.currentSnapshotId}, " +
       "current_change_snapshotId = #{runtime.currentChangeSnapshotId}, " +
       "latest_major_optimize_time = #{runtime.latestMajorOptimizeTime, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}, " +
+      "latest_full_optimize_time = #{runtime.latestFullOptimizeTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}, " +
       "latest_minor_optimize_time = #{runtime.latestMinorOptimizeTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}, " +
@@ -84,14 +88,16 @@ public interface TableOptimizeRuntimeMapper {
   void deleteTableOptimizeRuntime(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
   @Insert("insert into " + TABLE_NAME + " (catalog_name, db_name, table_name, " +
-      "current_snapshot_id, current_change_snapshotId, latest_major_optimize_time, latest_minor_optimize_time, " +
-      "latest_task_history_id, optimize_status, optimize_status_start_time) values ( " +
+      "current_snapshot_id, current_change_snapshotId, latest_major_optimize_time, latest_full_optimize_time, " +
+      "latest_minor_optimize_time, latest_task_history_id, optimize_status, optimize_status_start_time) values ( " +
       "#{runtime.tableIdentifier.catalog}, " +
       "#{runtime.tableIdentifier.database}, " +
       "#{runtime.tableIdentifier.tableName}, " +
       "#{runtime.currentSnapshotId}, " +
       "#{runtime.currentChangeSnapshotId}, " +
       "#{runtime.latestMajorOptimizeTime, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}," +
+      "#{runtime.latestFullOptimizeTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}," +
       "#{runtime.latestMinorOptimizeTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}," +

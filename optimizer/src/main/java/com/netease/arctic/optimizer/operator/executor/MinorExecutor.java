@@ -24,9 +24,9 @@ import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
+import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
-import com.netease.arctic.io.reader.GenericArcticDataReader;
-import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -93,7 +93,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
       CloseableIterator<Record> iterator =
           openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
-      SortedPosDeleteWriter<Record> posDeleteWriter = GenericTaskWriters.builderFor(keyedTable)
+      SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
           .withTransactionId(getMaxTransactionId(dataFiles))
           .withTaskId(task.getAttemptId())
           .buildBasePosDeleteWriter(treeNode.mask(), treeNode.index(), task.getPartition());
@@ -179,8 +179,8 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
       KeyedTable keyedTable = table.asKeyedTable();
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
-    GenericArcticDataReader arcticDataReader =
-        new GenericArcticDataReader(table.io(), table.schema(), requiredSchema,
+    AdaptHiveGenericArcticDataReader arcticDataReader =
+        new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema,
             primaryKeySpec, null, false, IdentityPartitionConverters::convertConstant, sourceNodes, false);
 
     KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(fileScanTasks);
