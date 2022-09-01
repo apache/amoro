@@ -68,29 +68,54 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
 参考 [启动/重启/关闭](#_3)。
 
-### 导入 hadoop 集群
+### 导入集群
 
 在默认的 AMS 配置中，我们已经初始化了一个名为`local`的基于AMS本地文件系统的集群以方便你的测试。
-生产环境中我们需要导入 Hadoop 集群，为此我们需要在AMS的配置中新增一个 catalog，并在创建和使用 Arctic 表时使用该 catalog。
 
-新增 catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
+**1.导入Hadoop集群**
+
+生产环境中我们如果需要导入 Hadoop 集群，需要在AMS的配置中新增一个 Arctic catalog，并在创建和使用 Arctic 表时使用该 catalog。
+
+新增 Arctic catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
 
 ```yaml
   - name:                           #catalog名称
-    type: hadoop                    #catalog类型，目前支持hadoop和hive两种类型，当catalog配置为hive时，Arctic将兼容原生的Hive集群
+    type: hadoop                    #catalog类型配置为hadoop
     storage_config:
       storage.type: hdfs
-      core-site:                    #hadoop集群core-site.xml配置文件绝对路径
-      hdfs-site:                    #hadoop集群hdfs-site.xml配置文件绝对路径
-      hive-site:                    #如果catalog类型为hive则需要配置Hive集群hive-site.xml配置文件的绝对路径，否则可忽略本条配置
+      core-site:                    #Hadoop集群core-site.xml配置文件绝对路径
+      hdfs-site:                    #Hadoop集群hdfs-site.xml配置文件绝对路径
     auth_config:
       type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
-      hadoop_username: hadoop       #访问hadoop集群用户名
+      hadoop_username: hadoop       #访问Hadoop集群用户名
     properties:
-      warehouse.dir: hdfs://default/default/warehouse         #hadoop集群仓库地址
+      warehouse.dir: hdfs://default/default/warehouse         #Hadoop集群仓库地址
 ```
 
-如果需要使用 KERBEROS 认证方式访问 Hadoop 集群可以修改 catalog 中 auth_config 如下：
+**2.导入Hive集群**
+
+生产环境中我们如果需要导入 Hive 集群并利用 Arctic 提供的 Hive 兼容相关功能，需要在AMS的配置中新增一个 Arctic Hive catalog，并在创建和使用 Arctic 表时使用该 catalog。
+
+新增 Arctic Hive catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
+
+```yaml
+  - name:                           #catalog名称
+    type: hive                      #catalog类型配置为 hive
+    storage_config:
+      storage.type: hdfs
+      core-site:                    #Hive集群core-site.xml配置文件绝对路径
+      hdfs-site:                    #Hive集群hdfs-site.xml配置文件绝对路径
+      hive-site:                    #Hive集群hive-site.xml配置文件绝对路径
+    auth_config:
+      type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
+      hadoop_username: hadoop       #访问Hive集群用户名
+    properties:
+      warehouse.dir: hdfs://default/default/warehouse         #Hive集群仓库地址
+```
+
+**3.修改认证方式**
+
+如果需要使用 KERBEROS 认证方式访问 Hadoop 或 Hive 集群可以修改 catalog 中 auth_config 如下：
 
 ```yaml
     auth_config:
