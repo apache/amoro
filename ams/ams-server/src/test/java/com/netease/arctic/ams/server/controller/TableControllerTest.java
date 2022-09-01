@@ -343,17 +343,19 @@ public class TableControllerTest {
       app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
       String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations", catalogName, database, table);
       final okhttp3.Response resp = client.get(url, x -> {});
-      OkResponse<PageResult> result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      OkResponse<JSONObject> result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      JSONObject result2 = result.getResult();
       assert result.getCode() == 200;
-      assert result.getResult().getTotal() == 3;
-      assert result.getResult().getList().size() == 3;
+      assert result2.getInteger("total") == 3;
+      assert result2.getJSONArray("list").size() == 3;
 
       url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/operations?page=1&pageSize=2", catalogName, database, table);
       final okhttp3.Response resp1 = client.get(url, x -> {});
-      OkResponse<PageResult> result1 = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      OkResponse<JSONObject> result1 = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
+      JSONObject result3 = result1.getResult();
       assert result1.getCode() == 200;
-      assert result1.getResult().getTotal() == 3;
-      assert result1.getResult().getList().size() == 2;
+      assert result3.getInteger("total") == 3;
+      assert result3.getJSONArray("list").size() == 2;
     });
   }
 
