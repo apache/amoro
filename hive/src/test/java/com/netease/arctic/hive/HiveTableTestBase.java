@@ -63,6 +63,7 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final TemporaryFolder tempFolder = new TemporaryFolder();
 
   protected static HMSMockServer hms;
+  public static boolean IS_HIVE = true;
 
   protected static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
@@ -138,7 +139,11 @@ public class HiveTableTestBase extends TableTestBase {
   }
 
   @Before
-  public void setupHiveTables() throws Exception {
+  public void setupTables() throws Exception {
+    if (!IS_HIVE) {
+      super.setupTables();
+      return;
+    }
     System.out.println("setupHiveTables");
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
     tableDir = temp.newFolder();
@@ -166,7 +171,11 @@ public class HiveTableTestBase extends TableTestBase {
   }
 
   @After
-  public void clearHiveTable() {
+  public void clearTable() {
+    if (!IS_HIVE) {
+      super.clearTable();
+      return;
+    }
     hiveCatalog.dropTable(HIVE_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(HIVE_TABLE_ID.buildTableIdentifier());
 

@@ -80,6 +80,7 @@ public class FlinkTestWithHiveBase extends HiveTableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestWithHiveBase.class);
 
   public static boolean IS_LOCAL = true;
+
   public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();
 
   public static String metastoreUrl;
@@ -109,6 +110,9 @@ public class FlinkTestWithHiveBase extends HiveTableTestBase {
   public static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   public void before() {
+    if (IS_HIVE) {
+      return;
+    }
     if (IS_LOCAL) {
       metastoreUrl = "thrift://127.0.0.1:" + AMS.port();
       testKeyedNoPartitionTable = testCatalog
@@ -131,6 +135,9 @@ public class FlinkTestWithHiveBase extends HiveTableTestBase {
 
   @After
   public void clean() {
+    if (IS_HIVE) {
+      return;
+    }
     if (IS_LOCAL) {
       testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
       AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);

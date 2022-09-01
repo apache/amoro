@@ -79,6 +79,7 @@ public class TestUnkeyedOverwrite extends FlinkTestWithHiveBase {
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      IS_HIVE = false;
     }
     super.config(catalog);
   }

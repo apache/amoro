@@ -90,6 +90,7 @@ public class TestUnkeyed extends FlinkTestWithHiveBase {
       arcticCatalog = hiveCatalog;
     } else {
       arcticCatalog = testCatalog;
+      IS_HIVE = false;
     }
   }
 

@@ -89,6 +89,7 @@ public class TestKeyed extends FlinkTestWithHiveBase {
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      IS_HIVE = false;
     }
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
