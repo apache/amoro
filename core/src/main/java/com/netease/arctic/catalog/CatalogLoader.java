@@ -91,7 +91,9 @@ public class CatalogLoader {
    */
   public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
     try {
+      System.out.println("load catalog " + catalogName);
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
+      System.out.println("load catalog " + catalogMeta);
       String type = catalogMeta.getCatalogType();
       String catalogImpl;
       switch (type) {
@@ -106,8 +108,11 @@ public class CatalogLoader {
               "unsupported catalog type:" + type
           );
       }
+      System.out.println("buildCatalog " + catalogImpl);
       ArcticCatalog catalog = buildCatalog(catalogImpl);
+      System.out.println("initialize " + props);
       catalog.initialize(client, catalogMeta, props);
+      System.out.println("initialize finished: " + catalog);
       return catalog;
     } catch (NoSuchObjectException e1) {
       throw new IllegalArgumentException("catalog not found, please check catalog name", e1);
