@@ -2,7 +2,8 @@
 
 ## CREATE TABLE
 
-在 Arctic Catalog 下使用 `USING arctic` 指定使用 Arctic 数据源即可通过 `CREATE TABLE` 语句创建 Arctic 表
+在 Arctic Catalog 下使用 `USING arctic` 指定使用 Arctic 数据源即可通过 `CREATE TABLE` 语句创建 Arctic 表。 
+如果 Catalog 的类型是 hive ，则创建的是 hive 兼容表。
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -59,10 +60,11 @@ PARTITIONED BY (bucket(16, id), days(ts), category)
 * bucket(N, col) : 取某一列上的 hash 值作为分区值
 * truncate(L, col): 截取某一列上前 L 个字符作为分区值
 
+> hive 类型的 Catalog 不支持分区表达式。
 
 ## CREATE TABLE ... AS SELECT 
 
-???+note "CREATE TABLE ... AS SELECT 语法在当前版本只支持无主键表"
+???+note "CREATE TABLE ... AS SELECT 同时支持有主键表和无主键表"
 
 ``` 
 CREATE TABLE arctic_catalog.db.sample

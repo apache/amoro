@@ -92,6 +92,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   @Test
   public void testCatalogEnable() throws IOException, TException {
     sql("use spark_catalog");
+    System.out.println("arctic.sql.delegate.enable = " + spark.conf().get("arctic.sql.delegate.enable"));
     sql("create table {0}.{1} ( id int, data string) using arctic", database, table);
     sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table2);
     sql("insert overwrite {0}.{1} values \n" +
@@ -134,7 +135,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   @Test
   public void enableHiveDelegate() throws TException {
     sql("set `arctic.sql.delegate.enable` = true");
-
+    System.out.println("arctic.sql.delegate.enable = " + spark.conf().get("arctic.sql.delegate.enable"));
     sql("use spark_catalog");
     sql("create table {0}.{1} ( id int, data string) using arctic", database, table_D);
     sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table_D2);
