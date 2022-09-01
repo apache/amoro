@@ -220,7 +220,7 @@ public class MockArcticMetastoreServer implements Runnable {
     public CatalogMeta getCatalog(String name) throws TException {
       LOG.info("AMS getCatalog {}, {}" , name, catalogs.size());
       for (CatalogMeta catalog : catalogs) {
-        LOG.info("catalog {}" , catalog);
+        LOG.info("catalog {}" , catalog.catalogName);
       }
       CatalogMeta m;
       try {
