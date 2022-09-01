@@ -42,8 +42,8 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
-import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
+import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
@@ -85,22 +85,22 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
     OptimizerControllerTest.class,
-//    TableControllerTest.class,
-//    TerminalControllerTest.class,
-//    TestDDLTracerService.class,
-//    LoginControllerTest.class,
-//    TestExpiredFileClean.class,
-//    TestMajorOptimizeCommit.class,
-//    TestMajorOptimizePlan.class,
-//    TestMinorOptimizeCommit.class,
-//    TestMinorOptimizePlan.class,
-//    TestOrphanFileClean.class,
-//    TestFileInfoCacheService.class,
+    TableControllerTest.class,
+    TerminalControllerTest.class,
+    TestDDLTracerService.class,
+    LoginControllerTest.class,
+    TestExpiredFileClean.class,
+    TestMajorOptimizeCommit.class,
+    TestMajorOptimizePlan.class,
+    TestMinorOptimizeCommit.class,
+    TestMinorOptimizePlan.class,
+    TestOrphanFileClean.class,
+    TestFileInfoCacheService.class,
     OptimizeIntegrationTest.class,
-//    TestSupportHiveMajorOptimizePlan.class,
-//    TestSupportHiveMajorOptimizeCommit.class,
-//    TestSupportHiveSyncService.class,
-//    TestExpiredFileCleanSupportHive.class,
+    TestSupportHiveMajorOptimizePlan.class,
+    TestSupportHiveMajorOptimizeCommit.class,
+    TestSupportHiveSyncService.class,
+    TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
