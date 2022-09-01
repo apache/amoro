@@ -112,7 +112,7 @@ public class BaseTaskExecutor implements Serializable {
     try {
       String amsUrl = config.getAmsUrl();
       table = getArcticTable(new TableIdentificationInfo(amsUrl, task.getTableIdentifier()));
-      setPartition(table, task);
+      setPartition(task);
     } catch (Exception e) {
       LOG.error("failed to set partition info {}", task.getTaskId(), e);
       onTaskFailed(e);
@@ -181,7 +181,7 @@ public class BaseTaskExecutor implements Serializable {
     return arcticCatalog.loadTable(tableIdentifierInfo.getTableIdentifier());
   }
 
-  private void setPartition(ArcticTable arcticTable, NodeTask nodeTask) {
+  private void setPartition(NodeTask nodeTask) {
     // partition
     if (nodeTask.files().size() == 0) {
       LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());

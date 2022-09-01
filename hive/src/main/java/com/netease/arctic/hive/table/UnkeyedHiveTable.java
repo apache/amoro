@@ -107,6 +107,11 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   }
 
   @Override
+  public HMSClient getHMSClient() {
+    return hiveClient;
+  }
+
+  @Override
   public OverwriteHiveFiles newOverwrite() {
     return new OverwriteHiveFiles(super.newTransaction(), false, this, hiveClient, hiveClient);
   }

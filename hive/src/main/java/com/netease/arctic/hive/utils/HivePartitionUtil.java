@@ -19,8 +19,10 @@
 package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
@@ -89,7 +91,7 @@ public class HivePartitionUtil {
     p.setSd(sd);
 
     HiveTableUtil.generateTableProperties(createTimeInSeconds, dataFiles)
-        .forEach((key, value) -> p.putToParameters(key, value));
+        .forEach(p::putToParameters);
 
     if (privilegeSet != null) {
       p.setPrivileges(privilegeSet.deepCopy());
@@ -97,8 +99,25 @@ public class HivePartitionUtil {
     return p;
   }
 
+  public static Partition getPartition(HMSClient hmsClient,
+                                       ArcticTable arcticTable,
+                                       List<String> partitionValues) {
+    String db = arcticTable.id().getDatabase();
+    String tableName = arcticTable.id().getTableName();
+
+    try {
+      return hmsClient.run(client -> {
+        Partition partition;
+        partition = client.getPartition(db, tableName, partitionValues);
+        return partition;
+      });
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
   public static void rewriteHivePartitions(Partition partition, String location, List<DataFile> dataFiles,
-      int accessTimestamp) {
+                                           int accessTimestamp) {
     partition.getSd().setLocation(location);
     partition.setLastAccessTime(accessTimestamp);
     HiveTableUtil.generateTableProperties(accessTimestamp, dataFiles)
@@ -202,5 +221,61 @@ public class HivePartitionUtil {
     } catch (Exception e) {
       throw new IOException(e);
     }
+  }
+  
+  public static void createPartitionIfAbsent(HMSClient hmsClient,
+                                             ArcticTable arcticTable,
+                                             List<String> partitionValues,
+                                             String partitionLocation,
+                                             List<DataFile> dataFiles,
+                                             int accessTimestamp) {
+    String db = arcticTable.id().getDatabase();
+    String tableName = arcticTable.id().getTableName();
+
+    try {
+      hmsClient.run(client -> {
+        Partition partition;
+        try {
+          partition = client.getPartition(db, tableName, partitionValues);
+          return partition;
+        } catch (NoSuchObjectException noSuchObjectException) {
+          Table hiveTable = client.getTable(db, tableName);
+          partition = newPartition(hiveTable, partitionValues, partitionLocation,
+              dataFiles, accessTimestamp);
+          client.add_partition(partition);
+          return partition;
+        }
+      });
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void dropPartition(HMSClient hmsClient,
+                                   ArcticTable arcticTable,
+                                   Partition hivePartition) {
+    try {
+      hmsClient.run(client -> {
+        PartitionDropOptions options = PartitionDropOptions.instance()
+            .deleteData(false)
+            .ifExists(true)
+            .purgeData(false)
+            .returnResults(false);
+        return client.dropPartition(arcticTable.id().getDatabase(),
+            arcticTable.id().getTableName(), hivePartition.getValues(), options);
+      });
+    } catch (TException | InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  public static void updatePartitionLocation(HMSClient hmsClient,
+                                             ArcticTable arcticTable,
+                                             Partition hivePartition,
+                                             String newLocation,
+                                             List<DataFile> dataFiles,
+                                             int accessTimestamp) {
+    dropPartition(hmsClient, arcticTable, hivePartition);
+    createPartitionIfAbsent(hmsClient, arcticTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
   }
 }

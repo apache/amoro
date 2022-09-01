@@ -19,10 +19,10 @@
 package com.netease.arctic.ams.server.optimize;
 
 
+import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
-import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -37,12 +37,7 @@ import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -52,31 +47,17 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
-
-@PrepareForTest({
-    JDBCSqlSessionFactoryProvider.class
-})
-@PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
-    "com.amazonaws.http.conn.ssl.*",
-    "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestMajorOptimizePlan extends TestBaseOptimizePlan {
-  
-  @Before
-  public void mock() {
-    mockStatic(JDBCSqlSessionFactoryProvider.class);
-    when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
-  }
-
+public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testKeyedTableMajorOptimize() throws IOException {
-    insertBasePosDeleteFiles(2);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
     Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
@@ -86,8 +67,8 @@ public class TestMajorOptimizePlan extends TestBaseOptimizePlan {
   }
 
   @Test
-  public void testRemovePosDeleteMajorOptimize() throws IOException {
-    insertBasePosDeleteFiles(2);
+  public void testKeyedTableFullMajorOptimize() throws IOException {
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     testKeyedTable.updateProperties()
         .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
@@ -97,6 +78,8 @@ public class TestMajorOptimizePlan extends TestBaseOptimizePlan {
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
     Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
@@ -113,11 +96,73 @@ public class TestMajorOptimizePlan extends TestBaseOptimizePlan {
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(2, tasks.size());
     Assert.assertEquals(5, tasks.get(0).getBaseFileCnt());
     Assert.assertEquals(0, tasks.get(0).getPosDeleteFiles().size());
     Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
     Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
+  public void testUnKeyedTableFullMajorOptimize() {
+    testTable.updateProperties()
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .commit();
+    insertUnKeyedTableDataFiles();
+
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
+        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(2, tasks.size());
+    Assert.assertEquals(5, tasks.get(0).getBaseFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
+  public void testNoPartitionTableMajorOptimize() throws IOException {
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testNoPartitionTable,
+        new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(4, tasks.size());
+    Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
+    Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getIsDeletePosDelete());
+  }
+
+  @Test
+  public void testNoPartitionTableFullMajorOptimize() throws IOException {
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+
+    testNoPartitionTable.updateProperties()
+        .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .commit();
+
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testNoPartitionTable,
+        new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(4, tasks.size());
+    Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
+    Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+    Assert.assertEquals(1, tasks.get(0).getIsDeletePosDelete());
   }
 
   private void insertUnKeyedTableDataFiles() {

@@ -31,7 +31,8 @@ public class TaskConfig {
   private final String historyId;
   private final long createTime;
 
-  public TaskConfig(String partition, @Nullable Long maxTransactionId, String group, String historyId,
+  public TaskConfig(String partition, @Nullable Long maxTransactionId,
+                    String group, String historyId,
                     OptimizeType optimizeType, long createTime) {
     this.optimizeType = optimizeType;
     this.partition = partition;
@@ -49,6 +50,7 @@ public class TaskConfig {
     return partition;
   }
 
+  @org.jetbrains.annotations.Nullable
   public Long getMaxTransactionId() {
     return maxTransactionId;
   }

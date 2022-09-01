@@ -31,8 +31,6 @@ import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -161,6 +159,20 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
   }
 
   @Override
+  public boolean rename(String src, String dts) {
+    return tableMetaStore.doAs(() -> {
+      Path srcPath = new Path(src);
+      Path dtsPath = new Path(dts);
+      FileSystem fs = getFs(srcPath);
+      try {
+        return fs.rename(srcPath, dtsPath);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to rename: from " + src + " to " + dts, e);
+      }
+    });
+  }
+
+  @Override
   public <T> T doAs(Callable<T> callable) {
     return tableMetaStore.doAs(callable);
   }
@@ -187,20 +199,6 @@ public class ArcticHadoopFileIO extends HadoopFileIO implements ArcticFileIO {
         return fs.mkdirs(filePath);
       } catch (IOException e) {
         throw new UncheckedIOException("Failed to mkdirs: path " + path, e);
-      }
-    });
-  }
-
-  @Override
-  public boolean rename(String oldPath, String newPath) {
-    return tableMetaStore.doAs(() -> {
-      Path srcPath = new Path(oldPath);
-      Path dtsPath = new Path(newPath);
-      FileSystem fs = getFs(srcPath);
-      try {
-        return fs.rename(srcPath, dtsPath);
-      } catch (IOException e) {
-        throw new UncheckedIOException("Failed to rename: from " + oldPath + " to " + newPath, e);
       }
     });
   }

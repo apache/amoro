@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,18 +16,14 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server;
+package com.netease.arctic.ams.server.service;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-
-@RunWith(Suite.class)
-@Suite.SuiteClasses({TestHighAvailabilityServices.class})
-@PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
-                  "com.amazonaws.http.conn.ssl.*",
-                  "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*",
-                  "javax.xml.parsers.*"})
-public class OutAmsTestBase {
-
+/**
+ * Service for support hive sync periodically.
+ */
+public interface ISupportHiveSyncService {
+  /**
+   * Check support hive table tasks, sync iceberg partition location to hive table.
+   */
+  void checkHiveSyncTasks();
 }

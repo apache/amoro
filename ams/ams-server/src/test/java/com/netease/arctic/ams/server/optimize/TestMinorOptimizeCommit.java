@@ -28,21 +28,25 @@ import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
@@ -64,9 +68,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testMinorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(2);
-    insertChangeDeleteFiles(3);
-    insertChangeDataFiles(4);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertChangeDeleteFiles(testKeyedTable, 3);
+    List<DataFile> dataFiles = insertChangeDataFiles(testKeyedTable,4);
 
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
@@ -84,10 +88,15 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
-    Map<TreeNode, List<DeleteFile>> resultFiles = generateTargetFiles();
+    List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
+    Set<StructLike> partitionData = new HashSet<>();
+    for (List<DeleteFile> resultFile : resultFiles) {
+      partitionData.addAll(resultFile.stream().map(ContentFile::partition).collect(Collectors.toList()));
+    }
+    AtomicInteger i = new AtomicInteger();
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
-      List<DeleteFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
+      List<DeleteFile> targetFiles = resultFiles.get(i.getAndIncrement());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
@@ -96,6 +105,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
         optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
       }
+      List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
+      finalTargetFiles.addAll(task.getInsertFiles());
+      optimizeRuntime.setTargetFiles(finalTargetFiles);
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
       return new OptimizeTaskItem(task, optimizeRuntime);
@@ -113,12 +125,79 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
           newDataFilesPath.add((String) fileScanTask.file().path());
           fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
+
+    StructLikeMap<Long> maxTxId = testKeyedTable.partitionMaxTransactionId();
+    for (StructLike partitionDatum : partitionData) {
+      Assert.assertEquals(4L, (long) maxTxId.get(partitionDatum));
+    }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
 
-  private Map<TreeNode, List<DeleteFile>> generateTargetFiles() throws Exception {
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(6);
+  @Test
+  public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertChangeDeleteFiles(testNoPartitionTable, 3);
+    List<DataFile> dataFiles = insertChangeDataFiles(testNoPartitionTable, 4);
+
+    Set<String> oldDataFilesPath = new HashSet<>();
+    Set<String> oldDeleteFilesPath = new HashSet<>();
+    testNoPartitionTable.baseTable().newScan().planFiles()
+        .forEach(fileScanTask -> {
+          oldDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
+        });
+
+    List<DataFileInfo> changeTableFilesInfo = new ArrayList<>(changeInsertFilesInfo);
+    changeTableFilesInfo.addAll(changeDeleteFilesInfo);
+    TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
+    MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
+        tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+
+    List<List<DeleteFile>> resultFiles = new ArrayList<>(generateTargetFiles(dataFiles).values());
+    AtomicInteger i = new AtomicInteger();
+    List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
+      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      List<DeleteFile> targetFiles = resultFiles.get(i.getAndIncrement());
+      optimizeRuntime.setPreparedTime(System.currentTimeMillis());
+      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
+      optimizeRuntime.setReportTime(System.currentTimeMillis());
+      optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
+      if (targetFiles != null) {
+        optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+      }
+      List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
+      finalTargetFiles.addAll(task.getInsertFiles());
+      optimizeRuntime.setTargetFiles(finalTargetFiles);
+      // 1min
+      optimizeRuntime.setCostTime(60 * 1000);
+      return new OptimizeTaskItem(task, optimizeRuntime);
+    }).collect(Collectors.toList());
+    Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
+        .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
+
+    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testNoPartitionTable, partitionTasks);
+    optimizeCommit.commit(tableOptimizeRuntime);
+
+    Set<String> newDataFilesPath = new HashSet<>();
+    Set<String> newDeleteFilesPath = new HashSet<>();
+    testNoPartitionTable.baseTable().newScan().planFiles()
+        .forEach(fileScanTask -> {
+          newDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
+        });
+
+    StructLikeMap<Long> maxTxId = testNoPartitionTable.partitionMaxTransactionId();
+    Assert.assertEquals(4L, (long) maxTxId.get(null));
+    Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+    Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
+  }
+
+  private Map<TreeNode, List<DeleteFile>> generateTargetFiles(List<DataFile> dataFiles) throws Exception {
+    List<DeleteFile> deleteFiles = insertOptimizeTargetDeleteFiles(testKeyedTable, dataFiles, 5);
     return deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->  {
       DataTreeNode dataTreeNode = DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node();
       return new TreeNode(dataTreeNode.mask(), dataTreeNode.index());
