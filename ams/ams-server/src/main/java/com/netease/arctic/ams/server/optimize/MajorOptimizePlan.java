@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.collect.ImmutableList;
-import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
@@ -33,7 +32,6 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.trace.SnapshotSummary;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -41,7 +39,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.util.BinPacking;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -102,7 +99,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     }
 
     // check small data file count
-    if (checkSmallFileCount(
+    if (checkSmallFileCount(partitionToPath,
         partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()))) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       return true;
@@ -182,7 +179,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     return false;
   }
 
-  protected boolean checkSmallFileCount(List<DataFile> dataFileList) {
+  protected boolean checkSmallFileCount(String partition, List<DataFile> dataFileList) {
     if (CollectionUtils.isNotEmpty(dataFileList)) {
       // file count
       return dataFileList.size() >= PropertyUtil.propertyAsInt(arcticTable.properties(),
@@ -197,8 +194,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     // fill partition need optimize file map
     // add small files in iceberg base store and not in hive store
     boolean isSmallFile = contentFile.fileSizeInBytes() < PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
+            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
+            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
     if (isSmallFile) {
       List<DataFile> files = partitionNeedMajorOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
       files.add((DataFile) contentFile);
@@ -208,42 +205,24 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   private boolean baseTableChanged() {
     long lastBaseSnapshotId = tableOptimizeRuntime.getCurrentSnapshotId();
-    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
-        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
-    Iterable<Snapshot> snapshots = baseTable.snapshots();
+    Snapshot snapshot;
+    if (arcticTable.isKeyedTable()) {
+      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
+    } else {
+      snapshot = arcticTable.asUnkeyedTable().currentSnapshot();
+    }
 
-    if (snapshots != null) {
-      List<Snapshot> snapshotsList = new ArrayList<>();
-      Iterables.addAll(snapshotsList, snapshots);
-      if (snapshotsList.isEmpty()) {
-        // if no snapshot(no data), there is no need to do optimize
-        return false;
-      }
-      // find if any new data came after last check snapshot
-      int index = snapshotsList.size() - 1;
+    if (snapshot != null) {
       boolean findNewData = false;
-      while (index >= 0) {
-        Snapshot snapshot = snapshotsList.get(index);
-        if (snapshot.snapshotId() == lastBaseSnapshotId) {
-          break;
-        }
-        if (!snapshot.summary()
-            .getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT)
-            .equals(CommitMetaProducer.OPTIMIZE.name())) {
-          findNewData = true;
-          LOG.info("{} ==== find {} data in base snapshot={}", tableId(),
-              snapshot.summary()
-                  .getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT),
-              snapshot.snapshotId());
-          break;
-        }
-        index--;
+      if (snapshot.snapshotId() != lastBaseSnapshotId) {
+        findNewData = true;
+        LOG.debug("{} ==== {} find {} data in base snapshot={}", tableId(), getOptimizeType(), snapshot.operation(),
+            snapshot.snapshotId());
       }
-      // If last snapshot not exist(may expire), then skip optimize，
-      // because optimize check interval is much shorter than expire time.
-      if (index < 0) {
-        LOG.warn("{} ==== can't find lastBaseSnapshotId={}, skip optimize", tableId(), lastBaseSnapshotId);
-      }
+
+      // If last snapshot not exist(may expire), then skip compaction，
+      // because compaction check interval is much shorter than expire time.
+      // Set table properties compact.major.force=true, if compaction is needed.
       return findNewData;
     } else {
       LOG.warn("{} {} base snapshots is null, regard as table not changed", tableId(), getOptimizeType());

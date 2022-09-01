@@ -42,8 +42,8 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
-import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
+import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
@@ -96,6 +96,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
+    OptimizeIntegrationTest.class,
     TestSupportHiveMajorOptimizePlan.class,
     TestSupportHiveMajorOptimizeCommit.class,
     TestSupportHiveSyncService.class,
