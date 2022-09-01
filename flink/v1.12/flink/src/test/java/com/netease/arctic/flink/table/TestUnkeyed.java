@@ -90,19 +90,19 @@ public class TestUnkeyed extends FlinkTestWithHiveBase {
       arcticCatalog = hiveCatalog;
     } else {
       arcticCatalog = testCatalog;
-      IS_HIVE = false;
     }
   }
 
   public void before() {
-    super.before();
     if (isHive) {
       catalog = HIVE_CATALOG_NAME;
       db = HIVE_DB_NAME;
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      IS_HIVE = false;
     }
+    super.before();
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
   }
