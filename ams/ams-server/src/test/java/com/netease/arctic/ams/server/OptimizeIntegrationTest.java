@@ -29,13 +29,10 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.types.Types;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -219,8 +216,6 @@ public class OptimizeIntegrationTest {
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 4);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 4, 2);
-    optimizeHistory = waitOptimizeResult(tb, startId + 5);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
 
     // Step4: update change data
     writeChange(table, Lists.newArrayList(
@@ -231,10 +226,10 @@ public class OptimizeIntegrationTest {
         newRecord(table, 10, "ggg", quickDateWithZone(4))
     ));
     // wait Minor/Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 6);
+    optimizeHistory = waitOptimizeResult(tb, startId + 5);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 6, 4);
-    optimizeHistory = waitOptimizeResult(tb, startId + 7);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 10, 4);
+    optimizeHistory = waitOptimizeResult(tb, startId + 6);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 6, 2);
 
     // Step5: delete all change data
     writeChange(table, null, Lists.newArrayList(
@@ -246,18 +241,18 @@ public class OptimizeIntegrationTest {
         newRecord(table, 10, "iii_new", quickDateWithZone(4))
     ));
     // wait Minor/Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 8);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 10, 4);
-    optimizeHistory = waitOptimizeResult(tb, startId + 9);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 8, 0);
+    optimizeHistory = waitOptimizeResult(tb, startId + 7);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 12, 4);
 
     // Step6: insert change data
     writeChange(table, Lists.newArrayList(
         newRecord(table, 11, "jjj", quickDateWithZone(3))
     ), null);
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
-    optimizeHistory = waitOptimizeResult(tb, startId + 10);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 1, 1);
+    optimizeHistory = waitOptimizeResult(tb, startId + 8);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
+    optimizeHistory = waitOptimizeResult(tb, startId + 9);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 3, 1);
   }
 
   private void assertOptimizeHistory(OptimizeHistory optimizeHistory,

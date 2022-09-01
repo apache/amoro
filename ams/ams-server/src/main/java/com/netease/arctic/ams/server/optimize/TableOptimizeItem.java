@@ -372,21 +372,28 @@ public class TableOptimizeItem extends IJDBCService {
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
       tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else {
-      MajorOptimizePlan majorPlan = getMajorPlan(-1, System.currentTimeMillis());
-      List<BaseOptimizeTask> majorTasks = majorPlan.plan();
-      if (CollectionUtils.isEmpty(majorTasks)) {
-        if (isKeyedTable()) {
-          MinorOptimizePlan minorPlan = getMinorPlan(-1, System.currentTimeMillis());
-          List<BaseOptimizeTask> minorTasks = minorPlan.plan();
-          if (!CollectionUtils.isEmpty(minorTasks)) {
-            tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, minorTasks,
-                new HashSet<>(Collections.singletonList(OptimizeType.Minor)));
-            return;
+      FullOptimizePlan fullPlan = getFullPlan(-1, System.currentTimeMillis());
+      List<BaseOptimizeTask> fullTasks = fullPlan.plan();
+      if (CollectionUtils.isEmpty(fullTasks)) {
+        MajorOptimizePlan majorPlan = getMajorPlan(-1, System.currentTimeMillis());
+        List<BaseOptimizeTask> majorTasks = majorPlan.plan();
+        if (CollectionUtils.isEmpty(majorTasks)) {
+          if (isKeyedTable()) {
+            MinorOptimizePlan minorPlan = getMinorPlan(-1, System.currentTimeMillis());
+            List<BaseOptimizeTask> minorTasks = minorPlan.plan();
+            if (!CollectionUtils.isEmpty(minorTasks)) {
+              tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, minorTasks,
+                  new HashSet<>(Collections.singletonList(OptimizeType.Minor)));
+              return;
+            }
           }
+          tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+        } else {
+          tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, majorTasks,
+              new HashSet<>(Arrays.asList(OptimizeType.Major, OptimizeType.FullMajor)));
         }
-        tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
       } else {
-        tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, majorTasks,
+        tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, fullTasks,
             new HashSet<>(Arrays.asList(OptimizeType.Major, OptimizeType.FullMajor)));
       }
     }
@@ -740,6 +747,28 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public List<OptimizeTaskItem> getOptimizeTasks() {
     return new ArrayList<>(optimizeTasks.values());
+  }
+
+  /**
+   * Get Full Plan.
+   * @param queueId -
+   * @param currentTime -
+   * @return -
+   */
+  public FullOptimizePlan getFullPlan(int queueId, long currentTime) {
+    List<DataFileInfo> baseTableFiles =
+        fileInfoCacheService.getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
+    List<DataFileInfo> baseFiles = filterFile(baseTableFiles, DataFileType.BASE_FILE);
+    baseFiles.addAll(filterFile(baseTableFiles, DataFileType.INSERT_FILE));
+    List<DataFileInfo> posDeleteFiles = filterFile(baseTableFiles, DataFileType.POS_DELETE_FILE);
+
+    if (getArcticTable() instanceof SupportHive) {
+      return new SupportHiveFullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
+          baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+    } else {
+      return new FullOptimizePlan(getArcticTable(), tableOptimizeRuntime,
+          baseFiles, posDeleteFiles, generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+    }
   }
 
   /**
