@@ -548,8 +548,14 @@ public class OptimizeQueueService extends IJDBCService {
           BaseOptimizePlan optimizePlan;
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
-          optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
+          optimizePlan = tableItem.getFullPlan(queueId, currentTime);
           optimizeTasks = optimizePlan.plan();
+
+          // if no full tasks, then plan minor tasks
+          if (CollectionUtils.isEmpty(optimizeTasks)) {
+            optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
+            optimizeTasks = optimizePlan.plan();
+          }
 
           // if no major tasks and keyed table, then plan minor tasks
           if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
