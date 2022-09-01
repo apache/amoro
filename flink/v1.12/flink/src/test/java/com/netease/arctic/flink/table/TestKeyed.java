@@ -72,6 +72,7 @@ public class TestKeyed extends FlinkTestBase {
   private String catalog;
   private String db;
   private String topic;
+  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
 
   @Parameterized.Parameter
   public boolean isHive;
@@ -81,15 +82,16 @@ public class TestKeyed extends FlinkTestBase {
     return Arrays.asList(false, true);
   }
 
-  public void before() {
+  public void before() throws Exception {
     if (isHive) {
       catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
       db = HiveTableTestBase.HIVE_DB_NAME;
+      hiveTableTestBase.setupTables();
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      super.before();
     }
-    super.before();
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
   }
@@ -97,6 +99,9 @@ public class TestKeyed extends FlinkTestBase {
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    if (isHive) {
+      hiveTableTestBase.clearTable();
+    }
   }
 
   @Test

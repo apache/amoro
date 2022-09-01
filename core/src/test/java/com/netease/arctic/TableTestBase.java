@@ -143,7 +143,7 @@ public class TableTestBase {
     System.out.println("setupTables finished");
   }
 
-  public void before() {
+  public void before() throws Exception {
     // implement for sub case
   }
 

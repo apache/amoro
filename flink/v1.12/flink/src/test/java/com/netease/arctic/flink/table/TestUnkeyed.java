@@ -95,7 +95,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
   }
 
-  public void before() {
+  public void before() throws Exception {
     if (isHive) {
       catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
       db = HiveTableTestBase.HIVE_DB_NAME;

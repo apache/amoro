@@ -112,7 +112,7 @@ public class FlinkTestBase extends TableTestBase {
 //    IS_HIVE = false;
 //  }
 
-  public void before() {
+  public void before() throws Exception {
 //    if (IS_HIVE) {
 //      return;
 //    }
