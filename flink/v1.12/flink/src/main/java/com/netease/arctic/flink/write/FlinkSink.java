@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.RoundRobinShuffleRulePolicy;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.shuffle.ShuffleKey;
@@ -64,6 +65,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
+import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_DEFAULT;
 import static org.apache.flink.table.factories.FactoryUtil.SINK_PARALLELISM;
