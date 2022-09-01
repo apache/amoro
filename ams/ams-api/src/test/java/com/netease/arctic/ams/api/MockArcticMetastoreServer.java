@@ -218,13 +218,13 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public CatalogMeta getCatalog(String name) throws TException {
-      LOG.info("AMS getCatalog {}, {}" , name, catalogs.size());
+      LOG.info("AMS getCatalog {}, {}", name, catalogs.size());
       for (CatalogMeta catalog : catalogs) {
         if (name.equals(catalog.catalogName)) {
-          LOG.info("m {}" , catalog.catalogName);
+          LOG.info("m {}", catalog.catalogName);
           return catalog;
         }
-        LOG.info("catalog {}" , catalog.catalogName);
+        LOG.info("catalog {}", catalog.catalogName);
       }
 //      CatalogMeta m;
 //      try {
