@@ -64,7 +64,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
     如需升级ams版本，请根据`conf/mysql/upgrade-*.sql`的升级语句进行升级。
 
-**3.重启**
+**3.重启 AMS**
 
 参考 [启动/重启/关闭](#_3)。
 
