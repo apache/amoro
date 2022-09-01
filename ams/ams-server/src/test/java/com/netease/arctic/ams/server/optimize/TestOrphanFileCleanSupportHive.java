@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.optimize;
 
-import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -47,49 +46,31 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestOrphanFileClean extends TableTestBase {
-
+public class TestOrphanFileCleanSupportHive extends TestSupportHiveBase {
   @Before
   public void mock() {
     mockStatic(JDBCSqlSessionFactoryProvider.class);
     mockStatic(ServiceContainer.class);
     when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
-    FakeFileInfoCacheService fakeFileInfoCacheService = new FakeFileInfoCacheService();
+    TestOrphanFileCleanSupportHive.FakeFileInfoCacheService fakeFileInfoCacheService = new TestOrphanFileCleanSupportHive.FakeFileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fakeFileInfoCacheService);
   }
 
   @Test
   public void orphanDataFileClean() {
-    String baseOrphanFilePath = testKeyedTable.baseTable().location() +
+    String baseOrphanFilePath = testUnPartitionKeyedHiveTable.baseTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
-    String changeOrphanFilePath = testKeyedTable.changeTable().location() +
+    String hiveOrphanFilePath = testUnPartitionKeyedHiveTable.hiveLocation() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
-    OutputFile baseOrphanDataFile = testKeyedTable.io().newOutputFile(baseOrphanFilePath);
+    OutputFile baseOrphanDataFile = testUnPartitionKeyedHiveTable.io().newOutputFile(baseOrphanFilePath);
     baseOrphanDataFile.createOrOverwrite();
-    OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
+    OutputFile changeOrphanDataFile = testUnPartitionKeyedHiveTable.io().newOutputFile(hiveOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite();
-    Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
-    Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
-    OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", false);
-    Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
-    Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
-  }
-
-  @Test
-  public void orphanMetadataFileClean() {
-    String baseOrphanFilePath = testKeyedTable.baseTable().location() + File.separator + "metadata" +
-        File.separator + "orphan.avro";
-    String changeOrphanFilePath = testKeyedTable.changeTable().location() + File.separator + "metadata" +
-        File.separator + "orphan.avro";
-    OutputFile baseOrphanDataFile = testKeyedTable.io().newOutputFile(baseOrphanFilePath);
-    baseOrphanDataFile.createOrOverwrite();
-    OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
-    changeOrphanDataFile.createOrOverwrite();
-    Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
-    Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
-    OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", true);
-    Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
-    Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
+    Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(baseOrphanFilePath));
+    Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(hiveOrphanFilePath));
+    OrphanFilesCleanService.clean(testUnPartitionKeyedHiveTable, System.currentTimeMillis(), true, "all", false);
+    Assert.assertFalse(testUnPartitionKeyedHiveTable.io().exists(baseOrphanFilePath));
+    Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(hiveOrphanFilePath));
   }
 
   private static class FakeFileInfoCacheService extends FileInfoCacheService {

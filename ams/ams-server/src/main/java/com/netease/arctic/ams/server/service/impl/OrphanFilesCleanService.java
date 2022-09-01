@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IOrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -167,8 +168,12 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
           .getOptimizeDatafiles(table.id().buildTableIdentifier(), Constants.INNER_TABLE_BASE);
       exclude = dataFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
     }
+
+    // add hive location to exclude
+    exclude.addAll(HiveLocationUtils.getHiveLocation(table));
+
     String dataLocation = internalTable.location() + File.separator + DATA_FOLDER_NAME;
-    if (new File(dataLocation).exists()) {
+    if (table.io().exists(dataLocation)) {
       for (FileStatus fileStatus : table.io().list(dataLocation)) {
         deleteFilesCnt += deleteInvalidDataFiles(table.io(),
             fileStatus,

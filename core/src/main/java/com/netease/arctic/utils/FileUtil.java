@@ -22,6 +22,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.Set;
 
@@ -49,6 +50,12 @@ public class FileUtil {
     return filePath.substring(0, lastSlash);
   }
 
+  public static String getPartitionPathFromFilePath(String fileLocation, String tableLocation, String fileName) {
+    int tableIndex = fileLocation.indexOf(tableLocation);
+    int fileIndex = fileLocation.lastIndexOf(fileName);
+    return fileLocation.substring(tableIndex + tableLocation.length(), fileIndex - 1);
+  }
+
   public static void deleteEmptyDirectory(ArcticFileIO io, String directoryPath) {
     deleteEmptyDirectory(io, directoryPath, Collections.emptySet());
   }
@@ -72,5 +79,15 @@ public class FileUtil {
       io.deleteFileWithResult(directoryPath, true);
       deleteEmptyDirectory(io, parent, exclude);
     }
+  }
+
+  /**
+   * Get the file path after move file to target directory
+   * @param newDirectory target directory
+   * @param filePath file
+   * @return new file path
+   */
+  public static String getNewFilePath(String newDirectory, String filePath) {
+    return newDirectory + File.separator + getFileName(filePath);
   }
 }
