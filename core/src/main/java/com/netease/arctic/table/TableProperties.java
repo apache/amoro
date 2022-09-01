@@ -21,6 +21,8 @@ package com.netease.arctic.table;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+
 /**
  * Reserved Arctic table properties list.
  */
@@ -38,6 +40,7 @@ public class TableProperties {
     PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
     PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
   }
 
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";

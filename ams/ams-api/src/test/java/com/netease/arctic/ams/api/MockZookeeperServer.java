@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.api;
 
+import java.util.Random;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -48,7 +49,7 @@ public class MockZookeeperServer {
   }
 
   public static String getUri() {
-    return "127.0.0.1:2181";
+    return "127.0.0.1:"+ new Random().nextInt(4000) + 14000;
   }
 
   public static void stopServer() throws IOException {
