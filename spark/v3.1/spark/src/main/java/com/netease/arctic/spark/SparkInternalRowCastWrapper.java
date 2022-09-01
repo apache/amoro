@@ -65,6 +65,28 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     this.isDelete = isDelete;
   }
 
+  public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction) {
+    List<DataType> dataTypeList = Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
+      List<Object> rows = new ArrayList<>();
+      GenericInternalRow genericInternalRow = null;
+      for (int i = 1; i < schema.size() - 2; i++) {
+        rows.add(row.get(i, dataTypeList.get(i)));
+      }
+      genericInternalRow = new GenericInternalRow(rows.toArray());
+
+      this.row = genericInternalRow;
+    } else {
+      this.row = row;
+    }
+    StructType newSchema = new StructType(Arrays.stream(schema.fields())
+        .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+    this.schema = newSchema;
+    this.middle = newSchema.size() / 2;
+    this.changeAction = changeAction;
+    this.isDelete = false;
+  }
+
   @Override
   public Object genericGet(int ordinal) {
     return super.genericGet(ordinal);

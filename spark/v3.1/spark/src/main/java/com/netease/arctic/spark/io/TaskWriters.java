@@ -149,7 +149,7 @@ public class TaskWriters {
 
   public ChangeTaskWriter<InternalRow> newChangeWriter() {
     preconditions();
-    String baseLocation;
+    String changeLocation;
     EncryptionManager encryptionManager;
     Schema schema;
     PrimaryKeySpec primaryKeySpec = null;
@@ -157,14 +157,14 @@ public class TaskWriters {
 
     if (table.isKeyedTable()) {
       KeyedTable keyedTable = table.asKeyedTable();
-      baseLocation = keyedTable.changeLocation();
+      changeLocation = keyedTable.changeLocation();
       encryptionManager = keyedTable.changeTable().encryption();
       schema = SchemaUtil.changeWriteSchema(keyedTable.changeTable().schema());
       primaryKeySpec = keyedTable.primaryKeySpec();
       icebergTable = keyedTable.baseTable();
     } else {
       UnkeyedTable table = this.table.asUnkeyedTable();
-      baseLocation = table.location();
+      changeLocation = table.location();
       encryptionManager = table.encryption();
       schema = table.schema();
       icebergTable = table;
@@ -176,7 +176,7 @@ public class TaskWriters {
 
     OutputFileFactory outputFileFactory = null;
     outputFileFactory = new CommonOutputFileFactory(
-        baseLocation, table.spec(), fileFormat, table.io(),
+        changeLocation, table.spec(), fileFormat, table.io(),
         encryptionManager, partitionId, taskId, transactionId);
 
     // TODO: issues-173 - support change writer for upsert
@@ -187,11 +187,10 @@ public class TaskWriters {
 
   public UnkeyedPosDeleteSparkWriter<InternalRow> newBasePosDeleteWriter() {
     preconditions();
-
     Schema schema = table.schema();
     InternalRowFileAppenderFactory build = new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(),
         schema, dsSchema).build();
-    return new UnkeyedPosDeleteSparkWriter<>(build,
+    return new UnkeyedPosDeleteSparkWriter<>(table, build,
         new CommonOutputFileFactory(table.location(), table.spec(), fileFormat, table.io(),
             table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId),
         fileFormat, mask, 0, new PartitionKey(table.spec(), schema), schema);
