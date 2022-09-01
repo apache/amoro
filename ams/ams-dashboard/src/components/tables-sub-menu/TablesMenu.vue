@@ -16,19 +16,22 @@
           <span class="label">{{$t('database', 2)}}</span>
           <!-- <plus-outlined @click="addDatabase" class="icon" /> -->
         </div>
-        <a-list
-          :data-source="databaseList"
-          :loading="loading"
-        >
-          <template #renderItem="{ item }">
-            <a-list-item  @mouseenter="mouseEnter(item)" :class="{ active: database === item }">
-              <svg-icon icon-class="database" class="g-mr-8" />
-              <p :title="item" class="name g-text-nowrap">
-                {{ item }}
-              </p>
-            </a-list-item>
-          </template>
-        </a-list>
+        <div class="filter-wrap">
+          <a-input-search
+            v-model:value="DBSearchInput"
+            :placeholder="placeholder.filterDBPh"
+            @change="(val) => handleSearch('db',val)"
+          >
+            <template #prefix>
+              <SearchOutlined />
+            </template>
+            <template #suffix v-if="DBSearchInput">
+              <CloseCircleOutlined @click="clearSearch('db')" class="input-clear-icon" />
+            </template>
+          </a-input-search>
+        </div>
+        <u-loading v-if="loading" />
+        <virtual-recycle-scroller :loading="loading" :items="databaseList" :activeItem="database" :itemSize="40" @mouseEnter="mouseEnter" iconName="database" />
       </div>
     </div>
     <div class="table-list">
@@ -38,19 +41,22 @@
           <span class="label">{{$t('table', 2)}}</span>
           <!-- <plus-outlined @click="createTable" class="icon" /> -->
         </div>
-        <a-list
-          :data-source="tableList"
-          :loading="tableLoading"
-        >
-          <template #renderItem="{ item }">
-            <a-list-item @click="handleClickTable(item)" :class="{ active: tableName === item }">
-              <table-outlined class="g-mr-8" />
-              <p :title="item" class="name g-text-nowrap">
-                {{ item }}
-              </p>
-            </a-list-item>
-          </template>
-        </a-list>
+        <div class="filter-wrap">
+          <a-input-search
+            v-model:value="tableSearchInput"
+            :placeholder="placeholder.filterTablePh"
+            @change="(val) => handleSearch('table', val)"
+          >
+            <template #prefix>
+              <SearchOutlined />
+            </template>
+            <template #suffix v-if="tableSearchInput">
+              <CloseCircleOutlined @click="clearSearch('table')" class="input-clear-icon" />
+            </template>
+          </a-input-search>
+        </div>
+        <u-loading v-if="tableLoading" />
+        <virtual-recycle-scroller :loading="tableLoading" :items="tableList" :activeItem="tableName" :itemSize="40" @handleClickTable="handleClickTable" iconName="tableOutlined" />
       </div>
     </div>
   </div>
@@ -61,29 +67,39 @@
 import { defineComponent, onBeforeMount, reactive, toRefs } from 'vue'
 import {
   // PlusOutlined,
-  TableOutlined
+  SearchOutlined,
+  CloseCircleOutlined
 } from '@ant-design/icons-vue'
 import CreateDBModal from './CreateDB.vue'
 import { useRoute, useRouter } from 'vue-router'
-import useStore from '@/store/index'
 import { getCatalogList, getDatabaseList, getTableList } from '@/services/table.service'
-import { ICatalogItem, ILableAndValue } from '@/types/common.type'
+import { ICatalogItem, ILableAndValue, IMap } from '@/types/common.type'
 import { debounce } from '@/utils/index'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
+import virtualRecycleScroller from '@/components/VirtualRecycleScroller.vue'
+
+interface ITableItem {
+  name: string
+  type: string
+}
 
 export default defineComponent({
   name: 'TablesMenu',
   components: {
     // PlusOutlined,
-    TableOutlined,
-    CreateDBModal
+    SearchOutlined,
+    CloseCircleOutlined,
+    CreateDBModal,
+    virtualRecycleScroller
   },
   emits: ['goCreatePage'],
   setup(props, { emit }) {
     const router = useRouter()
     const route = useRoute()
-    const store = useStore()
     const state = reactive({
       catalogLoading: false as boolean,
+      DBSearchInput: '' as string,
+      tableSearchInput: '' as string,
       curCatalog: '',
       database: '',
       tableName: '',
@@ -91,8 +107,33 @@ export default defineComponent({
       showCreateDBModal: false,
       loading: false,
       tableLoading: false,
-      databaseList: [] as string[],
-      tableList: [] as string[]
+      databaseList: [] as IMap<string>[],
+      tableList: [] as IMap<string>[]
+    })
+    const storageTableKey = 'easylake-menu-catalog-db-table'
+    const storageCataDBTable = JSON.parse(localStorage.getItem(storageTableKey) || '{}')
+
+    const placeholder = reactive(usePlaceholder())
+
+    const handleSearch = (type: string) => {
+      type === 'table' ? getSearchTableList() : getSearchDBList()
+    }
+    const clearSearch = (type: string) => {
+      if (type === 'table') {
+        state.tableSearchInput = ''
+        getSearchTableList()
+      } else {
+        state.DBSearchInput = ''
+        getSearchDBList()
+      }
+    }
+
+    const getSearchTableList = debounce(() => {
+      getAllTableList()
+    })
+
+    const getSearchDBList = debounce(() => {
+      getAllDatabaseList(true)
     })
 
     const mouseEnter = debounce((item: string) => {
@@ -103,10 +144,6 @@ export default defineComponent({
       state.tableName = ''
       getAllTableList()
     })
-
-    const toggleTablesMenu = (flag = false) => {
-      store.updateTablesMenu(flag)
-    }
 
     const getPopupContainer = (triggerNode: Element) => {
       return triggerNode.parentNode
@@ -130,11 +167,16 @@ export default defineComponent({
     const createTable = () => {
       emit('goCreatePage')
     }
-    const handleClickTable = (item: string) => {
-      state.tableName = item
-      store.updateTablesMenu(false)
+    const handleClickTable = (item: IMap<string>) => {
+      state.tableName = item.label
+      localStorage.setItem(storageTableKey, JSON.stringify({
+        catalog: state.curCatalog,
+        database: state.database,
+        tableName: item.label
+      }))
+      const path = item.type === 'HIVE' ? '/hive-tables' : '/tables'
       const pathQuery = {
-        path: '/tables',
+        path,
         query: {
           catalog: state.curCatalog,
           db: state.database,
@@ -160,7 +202,7 @@ export default defineComponent({
         }))
         if (state.catalogOptions.length) {
           const query = route.query
-          state.curCatalog = (query?.catalog)?.toString() || state.catalogOptions[0].value
+          state.curCatalog = storageCataDBTable.catalog || (query?.catalog)?.toString() || state.catalogOptions[0].value
         }
         getAllDatabaseList()
       }).finally(() => {
@@ -168,12 +210,22 @@ export default defineComponent({
       })
     }
 
-    const getAllDatabaseList = () => {
+    const getAllDatabaseList = (isSearch = false) => {
+      if (!state.curCatalog) {
+        return
+      }
       state.loading = true
-      getDatabaseList(state.curCatalog).then((res: string[]) => {
-        state.databaseList = res || []
-        if (state.databaseList.length) {
-          state.database = state.databaseList[0]
+      getDatabaseList({
+        catalog: state.curCatalog,
+        keywords: state.DBSearchInput
+      }).then((res: string[]) => {
+        state.databaseList = (res || []).map((ele: string) => ({
+          id: ele,
+          label: ele
+        }))
+        if (state.databaseList.length && !isSearch) {
+          const index = state.databaseList.findIndex(ele => ele.id === storageCataDBTable.database)
+          state.database = index > -1 ? storageCataDBTable.database : (route.query?.db)?.toString() || state.databaseList[0].id || ''
           getAllTableList()
         }
       }).finally(() => {
@@ -182,31 +234,45 @@ export default defineComponent({
     }
 
     const getAllTableList = () => {
+      if (!state.curCatalog || !state.database) {
+        return
+      }
       state.tableLoading = true
+      state.tableList.length = 0
       getTableList({
         catalog: state.curCatalog,
-        db: state.database
-      }).then((res: string[]) => {
-        state.tableList = res || []
+        db: state.database,
+        keywords: state.tableSearchInput
+      }).then((res: ITableItem[]) => {
+        state.tableList = (res || []).map((ele: ITableItem) => ({
+          id: ele.name,
+          label: ele.name,
+          type: ele.type
+        }))
       }).finally(() => {
         state.tableLoading = false
       })
     }
     onBeforeMount(() => {
+      const { database, tableName } = storageCataDBTable
+      state.database = database
+      state.tableName = tableName
       getCatalogOps()
     })
 
     return {
       ...toRefs(state),
+      placeholder,
       mouseEnter,
       getPopupContainer,
-      toggleTablesMenu,
       clickDatabase,
       catalogChange,
       addDatabase,
       cancel,
       createTable,
-      handleClickTable
+      handleClickTable,
+      handleSearch,
+      clearSearch
     }
   }
 })
@@ -218,6 +284,15 @@ export default defineComponent({
     height: 100%;
     width: 512px;
     box-shadow: rgb(0 21 41 / 8%) 2px 0 6px;
+    .filter-wrap {
+      padding: 4px 4px 0;
+      .input-clear-icon {
+        font-size: 12px;
+      }
+    }
+    :deep(.ant-input-group-addon) {
+      display: none;
+    }
     .database-list,
     .table-list {
       flex: 1;
@@ -230,12 +305,12 @@ export default defineComponent({
     }
     .list-wrap {
       height: calc(100% - 48px);
-    }
-    :deep(.ant-list) {
-      padding: 0 4px;
-      height: calc(100% - 48px);
-      margin-top: 4px;
-      overflow-y: auto;
+      position: relative;
+      .u-loading {
+        background: transparent;
+        justify-content: flex-start;
+        padding-top: 200px;
+      }
     }
     .select-catalog,
     .add {
@@ -260,27 +335,6 @@ export default defineComponent({
     .label {
       font-size: 16px;
       font-weight: 600;
-    }
-    :deep(.ant-list-items) {
-      padding: 4px 0;
-    }
-    :deep(.ant-list-item) {
-      justify-content: flex-start;
-      padding: 12px;
-      color: #102048;
-      height: 40px;
-      cursor: pointer;
-      &.active,
-      &:hover {
-        background-color: #f6f7fa;
-        color: @primary-color;
-      }
-    }
-    .ant-list-split .ant-list-item {
-      border-bottom: 0;
-    }
-    .name {
-      max-width: 200px;
     }
   }
 

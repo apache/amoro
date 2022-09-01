@@ -605,6 +605,7 @@ export const language = {
     'OUTPUTBUFFER',
     'OVER',
     'OVERRIDE',
+    'OVERWRITE',
     'OWNER',
     'OWNERSHIP',
     'PAD_INDEX',
