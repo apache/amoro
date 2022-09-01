@@ -35,3 +35,4 @@ Arctic 预计每2-3个月发布一个大版本，每1个月发布一个小版本
 * Support aggregate key
 * Support manage Hudi table
 * Support materialized view
+* Support table watermark to determine table freshness
