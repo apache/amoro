@@ -29,15 +29,21 @@ import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
+import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
+import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
@@ -48,6 +54,7 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -59,9 +66,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,7 +95,13 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
-    TestFileInfoCacheService.class})
+    TestFileInfoCacheService.class,
+    OptimizeIntegrationTest.class,
+    TestSupportHiveMajorOptimizePlan.class,
+    TestSupportHiveMajorOptimizeCommit.class,
+    TestSupportHiveSyncService.class,
+    TestExpiredFileCleanSupportHive.class,
+    TestOrphanFileCleanSupportHive.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -100,7 +113,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     PartitionSpec.class,
     FileInfoCacheService.class,
     CatalogMetadataService.class,
-    OptimizeManagerHandler.class
+    OptimizeManagerHandler.class,
+    AdaptHiveService.class,
+    HiveTableUtil.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class AmsTestBase {

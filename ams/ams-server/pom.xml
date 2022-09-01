@@ -72,26 +72,16 @@
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-recipes</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.netease.arctic</groupId>-->
-<!--            <artifactId>arctic-hive</artifactId>-->
-<!--            <exclusions>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.apache.hadoop</groupId>-->
-<!--                    <artifactId>hadoop-client</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <groupId>org.apache.hadoop</groupId>-->
-<!--                    <artifactId>hadoop-yarn-api</artifactId>-->
-<!--                </exclusion>-->
-<!--                <exclusion>-->
-<!--                    <artifactId>libthrift</artifactId>-->
-<!--                    <groupId>org.apache.thrift</groupId>-->
-<!--                </exclusion>-->
-<!--            </exclusions>-->
-<!--        </dependency>-->
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
@@ -99,11 +89,24 @@
             <version>${project.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.hadoop</groupId>
+                    <artifactId>hadoop-yarn-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>libthrift</artifactId>
+                    <groupId>org.apache.thrift</groupId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.12</artifactId>
@@ -132,6 +135,14 @@
                 <exclusion>
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-recipes</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -299,6 +310,18 @@
                     <groupId>org.apache.avro</groupId>
                     <artifactId>avro</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-framework</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-recipes</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-client</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -445,6 +468,49 @@
             <artifactId>parquet-hadoop</artifactId>
             <version>${parquet.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.netease.arctic</groupId>
+            <artifactId>arctic-hive</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+            <type>test-jar</type>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-framework</artifactId>
+            <version>${curator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-recipes</artifactId>
+            <version>${curator.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>${zookeeper.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.curator</groupId>
+            <artifactId>curator-test</artifactId>
+            <version>${curator.version}</version>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.guava</groupId>
+                    <artifactId>guava</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
     </dependencies>
 
     <build>
@@ -499,7 +565,7 @@
                 <configuration>
                     <includes>
                         <include>**/AmsTestBase.java</include>
-<!--                        <include>**/OutAmsTestBase.java</include>-->
+                        <include>**/OutAmsTestBase.java</include>
                     </includes>
                 </configuration>
             </plugin>

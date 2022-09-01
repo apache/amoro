@@ -545,7 +545,6 @@ public class OptimizeQueueService extends IJDBCService {
           }
 
           List<BaseOptimizeTask> optimizeTasks;
-          OptimizeType optimizeType = OptimizeType.Major;
           BaseOptimizePlan optimizePlan;
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
@@ -556,10 +555,9 @@ public class OptimizeQueueService extends IJDBCService {
           if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
             optimizePlan = tableItem.getMinorPlan(queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
-            optimizeType = OptimizeType.Minor;
           }
 
-          initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizeType);
+          initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizePlan.getPartitionOptimizeType());
           LOG.debug("{} after plan get {} tasks", tableItem.getTableIdentifier(), optimizeTasks.size());
 
           List<OptimizeTaskItem> toExecuteTasks = addTask(tableItem, optimizeTasks);
@@ -640,21 +638,25 @@ public class OptimizeQueueService extends IJDBCService {
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
                                           BaseOptimizePlan optimizePlan,
                                           List<BaseOptimizeTask> optimizeTasks,
-                                          OptimizeType optimizeType) {
+                                          Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {
         // set latest optimize time
-        switch (optimizeType) {
-          case Minor:
-            for (String currentPartition : optimizePlan.getCurrentPartitions()) {
-              tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
+        for (String currentPartition : optimizePlan.getCurrentPartitions()) {
+          if (partitionOptimizeType.get(currentPartition) != null) {
+            switch (partitionOptimizeType.get(currentPartition)) {
+              case Minor:
+                tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
+                break;
+              case Major:
+                tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
+                break;
+              case FullMajor:
+                tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
+                break;
             }
-            break;
-          case Major:
-            for (String currentPartition : optimizePlan.getCurrentPartitions()) {
-              tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
-            }
-            break;
+          }
         }
+
         // set current snapshot id
         tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentBaseSnapshotId());
         if (tableItem.isKeyedTable()) {

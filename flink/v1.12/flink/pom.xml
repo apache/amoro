@@ -49,11 +49,6 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
-            <version>${project.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
@@ -320,6 +315,21 @@
             <artifactId>flink-runtime-web_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!--   for values test connector     -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-planner-blink_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- conflicts with the version in spring-cloud, so assign it explicitly here -->

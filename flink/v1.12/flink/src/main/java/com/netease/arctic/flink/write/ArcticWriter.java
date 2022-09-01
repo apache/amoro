@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.write;
 
+import com.netease.arctic.flink.metric.MetricsGenerator;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MeterView;

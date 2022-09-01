@@ -46,6 +46,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Multimaps;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,8 +120,12 @@ public class HiveMetaSynchronizer {
         Table hiveTable =
             hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
         String hiveTransientTime =  hiveTable.getParameters().get("transient_lastDdlTime");
-        String arcticTransientTime = baseStore.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
-            .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+        StructLikeMap<Map<String, String>> structLikeMap = baseStore.partitionProperty();
+        String arcticTransientTime = null;
+        if (structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
+          arcticTransientTime = structLikeMap.get(TablePropertyUtil.EMPTY_STRUCT)
+              .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
+        }
         if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
           List<DataFile> hiveDataFiles = TableMigrationUtil.listPartition(Maps.newHashMap(),
               hiveTable.getSd().getLocation(),

@@ -18,11 +18,11 @@
 
 package com.netease.arctic.optimizer.operator;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizerStateReport;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import com.netease.arctic.optimizer.OptimizerConfig;
-import com.netease.arctic.optimizer.util.OptimizeManagerClients;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class BaseToucher implements Serializable {
       if (state == null) {
         state = EMPTY_STATE;
       }
-      OptimizeManager.Iface client = OptimizeManagerClients.getClient(config.getAmsUrl());
+      OptimizeManager.Iface client = OptimizeManagerClientPools.getClient(config.getAmsUrl());
       OptimizerStateReport report = new OptimizerStateReport();
       report.optimizerId = Long.parseLong(config.getOptimizerId());
       report.optimizerState = state;

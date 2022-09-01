@@ -19,11 +19,11 @@
 package com.netease.arctic.ams.server.service;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.optimize.OptimizeService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
@@ -36,6 +36,7 @@ import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.impl.QuotaService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
+import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
@@ -75,6 +76,10 @@ public class ServiceContainer {
   private static volatile DDLTracerService ddlTracerService;
 
   private static volatile RuntimeDataExpireService runtimeDataExpireService;
+
+  private static volatile AdaptHiveService adaptHiveService;
+
+  private static volatile ISupportHiveSyncService supportHiveSyncService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
@@ -249,8 +254,30 @@ public class ServiceContainer {
         }
       }
     }
-
     return runtimeDataExpireService;
+  }
+
+  public static AdaptHiveService getAdaptHiveService() {
+    if (adaptHiveService == null) {
+      synchronized (AdaptHiveService.class) {
+        if (adaptHiveService == null) {
+          adaptHiveService = new AdaptHiveService();
+        }
+      }
+    }
+    return adaptHiveService;
+  }
+
+  public static ISupportHiveSyncService getSupportHiveSyncService() {
+    if (supportHiveSyncService == null) {
+      synchronized (ServiceContainer.class) {
+        if (supportHiveSyncService == null) {
+          supportHiveSyncService = new SupportHiveSyncService();
+        }
+      }
+    }
+
+    return supportHiveSyncService;
   }
 
   public static DDLTracerService getDdlTracerService() {

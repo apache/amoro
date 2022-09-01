@@ -19,6 +19,18 @@
 package com.netease.arctic.ams.server.config;
 
 public class ArcticMetaStoreConf {
+  public static final ConfigOption<String> CLUSTER_NAME =
+      ConfigOptions.key("arctic.ams.cluster.name")
+          .stringType()
+          .defaultValue("default")
+          .withDescription("arctic ams cluster name.");
+
+  public static final ConfigOption<Boolean> HA_ENABLE =
+      ConfigOptions.key("arctic.ams.ha.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("is arctic ams running high available.");
+
   public static final ConfigOption<Long> SERVER_MAX_MESSAGE_SIZE =
       ConfigOptions.key("arctic.ams.server.max.message.size")
           .longType()
@@ -80,6 +92,12 @@ public class ArcticMetaStoreConf {
           .defaultValue(10)
           .withDescription("Number of threads in the thread pool.  " +
               "These will be used to execute all orphan file clean processes.");
+  public static final ConfigOption<Integer> SUPPORT_HIVE_SYNC_THREAD_POOL_SIZE =
+      ConfigOptions.key("arctic.ams.support.hive.sync.thread.pool-size")
+          .intType()
+          .defaultValue(10)
+          .withDescription("Number of threads in the thread pool.  " +
+              "These will be used to execute all support hive sync processes.");
   public static final ConfigOption<Integer> SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE =
       ConfigOptions.key("arctic.ams.file.sync.thread.pool-size")
           .intType()
@@ -91,6 +109,16 @@ public class ArcticMetaStoreConf {
           .stringType()
           .defaultValue("")
           .withDescription("Bind host on which to run the ams thrift service.");
+  public static final ConfigOption<String> THRIFT_BIND_HOST_PREFIX =
+      ConfigOptions.key("arctic.ams.server-host.prefix")
+          .stringType()
+          .defaultValue("")
+          .withDescription("Bind host on which to run the ams thrift service.");
+  public static final ConfigOption<String> ZOOKEEPER_SERVER =
+      ConfigOptions.key("arctic.ams.zookeeper.server")
+          .stringType()
+          .defaultValue("")
+          .withDescription("zookeeper server uri.");
   public static final ConfigOption<Boolean> USE_THRIFT_COMPACT_PROTOCOL =
       ConfigOptions.key("arctic.ams.thrift.compact.protocol.enabled")
           .booleanType()

@@ -19,11 +19,11 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.AmsClientPools;
 import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;

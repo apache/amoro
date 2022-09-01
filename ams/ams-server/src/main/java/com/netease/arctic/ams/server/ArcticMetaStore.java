@@ -27,6 +27,9 @@ import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeManager;
+import com.netease.arctic.ams.api.client.AmsServerInfo;
+import com.netease.arctic.ams.api.client.ZookeeperService;
+import com.netease.arctic.ams.api.properties.AmsHAProperties;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
@@ -42,9 +45,11 @@ import com.netease.arctic.ams.server.service.impl.DerbyService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
+import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
+import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -58,9 +63,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -76,21 +83,49 @@ public class ArcticMetaStore {
 
   public static Configuration conf;
   private static JSONObject yamlConfig;
+  private static TServer server;
+  private static final List<Thread> residentThreads = new ArrayList<>();
+  private static HighAvailabilityServices haService = null;
+  private static final AtomicBoolean isLeader = new AtomicBoolean(false);
+  private static final int checkLeaderInterval = 2000;
+
+  private volatile boolean stopped = false;
 
   public static void main(String[] args) throws Throwable {
+    tryStartServer();
+  }
+
+  public static void tryStartServer() throws Throwable {
     try {
-      String configPath = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()) + "/conf/config.yaml";
+      String configPath = getArcticHome() + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
-      startMetaStore(initSystemConfig());
+      Configuration conf = initSystemConfig();
+      ArcticMetaStore.conf = conf;
+      if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
+        String zkAddress = conf.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER);
+        String cluster = conf.getString(ArcticMetaStoreConf.CLUSTER_NAME);
+        haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
+        haService.addListener(genHAListener(zkAddress, cluster));
+        haService.leaderLatch();
+      } else {
+        startMetaStore(conf);
+      }
     } catch (Throwable t) {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
       throw t;
     }
   }
+  
+  private static String getArcticHome() {
+    String arcticHome = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key());
+    if (arcticHome != null) {
+      return arcticHome;
+    }
+    return System.getProperty(ArcticMetaStoreConf.ARCTIC_HOME.key());
+  }
 
   public static void startMetaStore(Configuration conf) throws Throwable {
     try {
-      ArcticMetaStore.conf = conf;
       long maxMessageSize = conf.getLong(ArcticMetaStoreConf.SERVER_MAX_MESSAGE_SIZE);
       int minWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MIN_THREADS);
       int maxWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MAX_THREADS);
@@ -132,7 +167,7 @@ public class ArcticMetaStore {
           .protocolFactory(protocolFactory)
           .inputProtocolFactory(inputProtoFactory)
           .workerThreads(maxWorkerThreads);
-      TServer server = new TThreadedSelectorServer(args);
+      server = new TThreadedSelectorServer(args);
       LOG.info("Started the new meta server on port [" + port + "]...");
       LOG.info("Options.minWorkerThreads = " + minWorkerThreads);
       LOG.info("Options.maxWorkerThreads = " + maxWorkerThreads);
@@ -147,13 +182,28 @@ public class ArcticMetaStore {
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
-      syncAndExpiredFileInfoCache(server);
-      startSyncDDl(server);
       server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
       throw t;
     }
+  }
+
+  public static void stopMetaStore() {
+    if (server != null && server.isServing()) {
+      server.stop();
+    }
+    residentThreads.forEach(Thread::interrupt);
+    ThreadPool.shutdown();
+  }
+  
+  public static boolean isStarted() {
+    return server != null && server.isServing();
+  }
+
+  public static void failover() {
+    stopMetaStore();
+    AmsRestServer.stopRestServer();
   }
 
   private static void startMetaStoreThreads(
@@ -174,9 +224,15 @@ public class ArcticMetaStore {
         startOptimizeCommit(conf.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE));
         startExpiredClean();
         startOrphanClean();
+        startSupportHiveSync();
         monitorOptimizerStatus();
         tableRuntimeDataExpire();
         AmsRestServer.startRestServer(httpPort);
+        startSyncDDl();
+        syncAndExpiredFileInfoCache();
+        if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
+          checkLeader();
+        }
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
             StringUtils.stringifyException(t1));
@@ -187,6 +243,7 @@ public class ArcticMetaStore {
 
     t.setName("Metastore threads starter thread");
     t.start();
+    residentThreads.add(t);
   }
 
   private static void signalOtherThreadsToStart(
@@ -201,6 +258,7 @@ public class ArcticMetaStore {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
           LOG.warn("Signalling thread was interrupted: " + e.getMessage());
+          return;
         }
       } while (!server.isServing());
       startLock.lock();
@@ -213,6 +271,7 @@ public class ArcticMetaStore {
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static void startOptimizeCheck(final long checkInterval) {
@@ -245,6 +304,14 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
+  private static void startSupportHiveSync() {
+    ThreadPool.getPool(ThreadPool.Type.HIVE_SYNC).scheduleWithFixedDelay(
+        ServiceContainer.getSupportHiveSyncService()::checkHiveSyncTasks,
+        3 * 1000L,
+        60 * 1000L,
+        TimeUnit.MILLISECONDS);
+  }
+
   private static void monitorOptimizerStatus() {
     OptimizeExecuteService.OptimizerMonitor monitor = new OptimizeExecuteService.OptimizerMonitor();
     ThreadPool.getPool(ThreadPool.Type.OPTIMIZER_MONITOR).scheduleWithFixedDelay(
@@ -263,68 +330,113 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
-  private static void syncAndExpiredFileInfoCache(final TServer server) {
+  private static void syncAndExpiredFileInfoCache() {
     Thread t = new Thread(() -> {
-      while (true) {
-        while (server.isServing()) {
-          try {
-            FileInfoCacheService.SyncAndExpireFileCacheTask task =
-                new FileInfoCacheService.SyncAndExpireFileCacheTask();
-            task.doTask();
-          } catch (Exception e) {
-            LOG.error("sync and expired file info cache error", e);
-          }
-          try {
-            Thread.sleep(5 * 60 * 1000);
-          } catch (InterruptedException e) {
-            LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
-          }
+      while (server.isServing()) {
+        try {
+          FileInfoCacheService.SyncAndExpireFileCacheTask task =
+              new FileInfoCacheService.SyncAndExpireFileCacheTask();
+          task.doTask();
+        } catch (Exception e) {
+          LOG.error("sync and expired file info cache error", e);
         }
         try {
-          Thread.sleep(60 * 1000);
+          Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+          return;
         }
+      }
+      try {
+        Thread.sleep(60 * 1000);
+      } catch (InterruptedException e) {
+        LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+        return;
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
-  private static void startSyncDDl(final TServer server) {
+  private static void startSyncDDl() {
     Thread t = new Thread(() -> {
-      while (true) {
-        while (server.isServing()) {
-          try {
-            DDLTracerService.DDLSyncTask task =
-                new DDLTracerService.DDLSyncTask();
-            task.doTask();
-          } catch (Exception e) {
-            LOG.error("sync schema change cache error", e);
-          }
-          try {
-            Thread.sleep(5 * 60 * 1000);
-          } catch (InterruptedException e) {
-            LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
-          }
+      while (server.isServing()) {
+        try {
+          DDLTracerService.DDLSyncTask task =
+              new DDLTracerService.DDLSyncTask();
+          task.doTask();
+        } catch (Exception e) {
+          LOG.error("sync schema change cache error", e);
         }
         try {
-          Thread.sleep(60 * 1000);
+          Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+          return;
+        }
+      }
+      try {
+        Thread.sleep(60 * 1000);
+      } catch (InterruptedException e) {
+        LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+        return;
+      }
+    });
+    t.start();
+    residentThreads.add(t);
+  }
+
+  private static void checkLeader() {
+    Thread t = new Thread(() -> {
+      while (isLeader.get()) {
+        try {
+          Thread.sleep(checkLeaderInterval);
+        } catch (InterruptedException e) {
+          LOG.warn("notLeader thread was interrupted: " + e.getMessage());
+          return;
+        }
+        try {
+          if (haService != null &&
+              !haService.getMaster().equals(haService.getNodeInfo(
+                  conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
+                  conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)))) {
+            LOG.info("there is not leader, the leader is " + JSONObject.toJSONString(haService.getMaster()));
+            failover();
+            isLeader.set(false);
+          }
+        } catch (Exception e) {
+          LOG.error("check leader error", e);
+          failover();
+          isLeader.set(false);
         }
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static Configuration initSystemConfig() {
     JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
     Configuration config = new Configuration();
-    config.setString(ArcticMetaStoreConf.ARCTIC_HOME, System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
-    config.setString(
-        ArcticMetaStoreConf.THRIFT_BIND_HOST, systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST.key()));
+    config.setString(ArcticMetaStoreConf.ARCTIC_HOME, getArcticHome());
+    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
+    if (systemThriftPort == null) {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    } else {
+      config.setInteger(
+          ArcticMetaStoreConf.THRIFT_BIND_PORT, Integer.parseInt(systemThriftPort));
+    }
+    if (!systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key())) {
+      throw new RuntimeException("configuration " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " must be set");
+    }
+    InetAddress inetAddress =
+        AmsUtils.getLocalHostExactAddress(systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+    if (inetAddress == null) {
+      throw new RuntimeException("can't find host address start with " +
+          systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+    }
+    config.setString(ArcticMetaStoreConf.THRIFT_BIND_HOST, inetAddress.getHostAddress());
     config.setInteger(
         ArcticMetaStoreConf.HTTP_SERVER_PORT, systemConfig.getInteger(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
     config.setInteger(
@@ -352,6 +464,8 @@ public class ArcticMetaStore {
     config.setString(
         ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME,
         systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
+
+    //mysql config
     if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
       config.setString(
           ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD,
@@ -360,6 +474,19 @@ public class ArcticMetaStore {
           ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME,
           systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key()));
     }
+
+    //HA config
+    if (systemConfig.containsKey(ArcticMetaStoreConf.HA_ENABLE.key()) &&
+        systemConfig.getBoolean(ArcticMetaStoreConf.HA_ENABLE.key())) {
+      config.setBoolean(ArcticMetaStoreConf.HA_ENABLE, true);
+      config.setString(
+          ArcticMetaStoreConf.CLUSTER_NAME,
+          systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key()));
+      config.setString(
+          ArcticMetaStoreConf.ZOOKEEPER_SERVER,
+          systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key()));
+    }
+
     //extension properties
     String extensionPro = yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG) == null ? "" :
         yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG);
@@ -506,5 +633,33 @@ public class ArcticMetaStore {
         ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);
       }
     }
+  }
+
+  private static LeaderLatchListener genHAListener(String zkServerAddress, String namespace) {
+    return new LeaderLatchListener() {
+      @Override
+      public void isLeader() {
+        LOG.info("i am leader");
+        try {
+          ZookeeperService zkService = ZookeeperService.getInstance(zkServerAddress);
+          String masterPath = AmsHAProperties.getMasterPath(namespace);
+          zkService.create(masterPath);
+          AmsServerInfo serverInfo = new AmsServerInfo();
+          serverInfo.setHost(conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST));
+          serverInfo.setThriftBindPort(conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT));
+          zkService.setData(masterPath, JSONObject.toJSONString(serverInfo));
+          isLeader.set(true);
+          startMetaStore(initSystemConfig());
+        } catch (Throwable throwable) {
+          failover();
+        }
+      }
+
+      @Override
+      public void notLeader() {
+        //do nothing
+        LOG.info("i am salver");
+      }
+    };
   }
 }

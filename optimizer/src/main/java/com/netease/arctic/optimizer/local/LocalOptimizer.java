@@ -63,6 +63,12 @@ public class LocalOptimizer implements StatefulOptimizer {
 
   private static final String STATE_JOB_ID = "local-job-id";
 
+  private ExecutorService executeThreadPool;
+
+  private ScheduledExecutorService toucherService;
+  
+  private volatile boolean stopped = false;
+
   public LocalOptimizer() {
   }
 
@@ -80,9 +86,15 @@ public class LocalOptimizer implements StatefulOptimizer {
     JSONObject groupProperties = groupInfo.getJSONObject(OptimizerProperties.OPTIMIZER_GROUP_PROPERTIES);
 
     //add compact execute config
-    String amsUrl =
-        "thrift://" + systemInfo.getString(OptimizerProperties.THRIFT_BIND_HOST).trim() + ":" +
-            systemInfo.getString(OptimizerProperties.THRIFT_BIND_PORT).trim();
+    String amsUrl;
+    if (systemInfo.containsKey(OptimizerProperties.HA_ENABLE) && systemInfo.getBoolean(OptimizerProperties.HA_ENABLE)) {
+      amsUrl = String.format("zookeeper://%s/%s", systemInfo.getString(OptimizerProperties.ZOOKEEPER_SERVER).trim(),
+          systemInfo.getString(OptimizerProperties.CLUSTER_NAME)).trim();
+    } else {
+      amsUrl =
+          "thrift://" + systemInfo.getString(OptimizerProperties.THRIFT_BIND_HOST).trim() + ":" +
+              systemInfo.getString(OptimizerProperties.THRIFT_BIND_PORT).trim();
+    }
     int parallelism = jobInfo.getInteger(OptimizerProperties.OPTIMIZER_JOB_PARALLELISM);
     long heartBeatInterval = groupProperties.containsKey(OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL) ?
         groupProperties.getLong(OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL) :
@@ -152,15 +164,25 @@ public class LocalOptimizer implements StatefulOptimizer {
 
     ThreadFactory executorFactory = new ThreadFactoryBuilder().setDaemon(false)
         .setNameFormat("Executor %d").build();
-    ExecutorService executeThreadPool = Executors.newFixedThreadPool(config.getExecutorParallel(), executorFactory);
+    executeThreadPool = Executors.newFixedThreadPool(config.getExecutorParallel(), executorFactory);
 
     ThreadFactory toucherFactory = new ThreadFactoryBuilder().setDaemon(false)
         .setNameFormat("Toucher %d").build();
-    ScheduledExecutorService toucherService =
+    toucherService =
         Executors.newScheduledThreadPool(config.getExecutorParallel(), toucherFactory);
 
     toucherService.scheduleAtFixedRate(new Toucher(), 3000, config.getHeartBeat(), TimeUnit.MILLISECONDS);
     executeThreadPool.execute(new Executor());
+  }
+  
+  public void release() {
+    this.stopped = true;
+    if (executeThreadPool != null) {
+      executeThreadPool.shutdownNow();
+    }
+    if (toucherService != null) {
+      toucherService.shutdownNow();
+    }
   }
 
   @Override
@@ -181,10 +203,9 @@ public class LocalOptimizer implements StatefulOptimizer {
       this.baseTaskConsumer = new BaseTaskConsumer(config);
     }
 
-    @Nonnull
     public TaskWrapper pollTask() throws InterruptedException {
       int retry = 0;
-      while (true) {
+      while (!stopped) {
         try {
           TaskWrapper task = baseTaskConsumer.pollTask();
           if (task != null) {
@@ -194,6 +215,9 @@ public class LocalOptimizer implements StatefulOptimizer {
             LOG.info("poll no task");
           }
         } catch (Throwable e) {
+          if (stopped) {
+            break;
+          }
           // The subscription is abnormal and cannot be restored, and a new consumer can be activated
           LOG.error("failed to poll task, retry {}", retry, e);
           retry++;
@@ -201,17 +225,18 @@ public class LocalOptimizer implements StatefulOptimizer {
           if (retry >= 3) {
             //stop = true;
             retry = 0;
-            LOG.error("flink source has tried too many times, and the subscription message is suspended." +
+            LOG.error("consumer has tried too many times, and the subscription message is suspended." +
                 " Please check for errors");
             try {
               Thread.sleep(10000);
             } catch (InterruptedException e) {
-              LOG.error("consumer interrupted", e);
+              LOG.warn("consumer interrupted");
               throw e;
             }
           }
         }
       }
+      return null;
     }
   }
 
@@ -228,12 +253,15 @@ public class LocalOptimizer implements StatefulOptimizer {
 
     @Override
     public void run() {
-      while (true) {
+      while (!stopped) {
         try {
           TaskWrapper task;
           pollTaskSemaphore.acquire();
           try {
             task = consumer.pollTask();
+            if (task == null) {
+              continue;
+            }
           } finally {
             pollTaskSemaphore.release();
           }
@@ -243,12 +271,13 @@ public class LocalOptimizer implements StatefulOptimizer {
           baseTaskReporter.report(result, 20, 10000);
           LOG.info("report success {}", result.getTaskId());
         } catch (InterruptedException e) {
-          LOG.error("execute interrupted", e);
-          return;
+          LOG.warn("execute interrupted");
+          break;
         } catch (Throwable t) {
           LOG.error("execute error, ignore", t);
         }
       }
+      LOG.info("execute thread exit");
     }
   }
 

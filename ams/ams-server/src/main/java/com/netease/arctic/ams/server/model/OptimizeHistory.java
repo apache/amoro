@@ -42,7 +42,7 @@ public class OptimizeHistory {
 
   private int partitionCnt;
   private String partitions;
-  private String baseTableMaxTransactionId;
+  private String baseTableMaxTransactionId = "";
 
   public OptimizeHistory() {
   }

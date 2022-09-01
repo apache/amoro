@@ -83,7 +83,7 @@ const params = computed(() => {
 watch(
   () => route.query,
   (val) => {
-    val?.catalog && getTableDetails()
+    val?.catalog && route.path === '/tables' && getTableDetails()
   }
 )
 
@@ -128,7 +128,7 @@ const getTableDetails = async() => {
       ...baseMetrics,
       tableName: tableIdentifier?.tableName || '',
       createTime: createTime ? dateFormat(createTime) : '',
-      hasPartition: !!(partitionColumnList.length)
+      hasPartition: !!(partitionColumnList?.length)
     }
 
     state.pkList = pkList || []

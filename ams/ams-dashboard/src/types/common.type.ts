@@ -54,6 +54,10 @@ export interface IMap<T> {
   [key: string]: T;
 }
 
+export interface IKeyAndValue {
+  key: string
+  value: string
+}
 export interface IBaseDetailInfo {
   tableName: string
   createTime: string
@@ -67,6 +71,12 @@ export interface DetailColumnItem {
   field: string
   type: string
   comment: string
+}
+
+export interface IField {
+  field: string
+  type: string
+  description: string
 }
 
 export interface PartitionColumnItem {
@@ -206,4 +216,11 @@ export enum debugResultBgcMap {
   Failed = '#fff2f0',
   Finished = '#f6ffed',
   Canceled = '#f5f5f5'
+}
+
+export enum upgradeStatusMap {
+  failed = 'FAILED',
+  upgrading = 'UPGRADING',
+  success = 'SUCCESS',
+  none = 'NONE' // can upgrade
 }

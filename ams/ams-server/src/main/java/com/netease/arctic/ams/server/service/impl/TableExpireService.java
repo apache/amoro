@@ -25,12 +25,14 @@ import com.netease.arctic.ams.server.service.ITableExpireService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.ChangeFilesUtil;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
+import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -112,8 +114,14 @@ public class TableExpireService implements ITableExpireService {
             .getOrDefault(TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES,
                 TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
 
+        Set<String> hiveLocation = new HashSet<>();
+        if (HiveTableUtil.isHive(arcticTable)) {
+          hiveLocation = HiveLocationUtils.getHiveLocation(arcticTable);
+        }
+
         if (arcticTable.isKeyedTable()) {
           KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
+          Set<String> finalHiveLocation = hiveLocation;
           keyedArcticTable.io().doAs(() -> {
             UnkeyedTable baseTable = keyedArcticTable.baseTable();
             if (baseTable == null) {
@@ -123,6 +131,7 @@ public class TableExpireService implements ITableExpireService {
             List<DataFileInfo> changeFilesInfo = ServiceContainer.getFileInfoCacheService()
                 .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_CHANGE);
             Set<String> baseExclude = changeFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
+            baseExclude.addAll(finalHiveLocation);
             expireSnapshots(baseTable, startTime - baseSnapshotsKeepTime, baseExclude);
             long baseCleanedTime = System.currentTimeMillis();
             LOG.info("[{}] {} base expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
@@ -140,6 +149,7 @@ public class TableExpireService implements ITableExpireService {
             List<DataFileInfo> baseFilesInfo = ServiceContainer.getFileInfoCacheService()
                 .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
             Set<String> changeExclude = baseFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
+            changeExclude.addAll(finalHiveLocation);
             expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
             return null;
           });
@@ -147,7 +157,7 @@ public class TableExpireService implements ITableExpireService {
               System.currentTimeMillis() - startTime);
         } else {
           UnkeyedTable unKeyedArcticTable = arcticTable.asUnkeyedTable();
-          expireSnapshots(unKeyedArcticTable, startTime - baseSnapshotsKeepTime, new HashSet<>());
+          expireSnapshots(unKeyedArcticTable, startTime - baseSnapshotsKeepTime, hiveLocation);
           long baseCleanedTime = System.currentTimeMillis();
           LOG.info("[{}] {} unKeyedTable expire cost {} ms", traceId, arcticTable.id(), baseCleanedTime - startTime);
         }
