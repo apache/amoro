@@ -45,22 +45,22 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    TestCatalog.class,
-    ShuffleSplitAssignerTest.class,
-    ArcticSourceEnumStateSerializerTest.class,
-    RowDataReaderFunctionTest.class,
-    ArcticSplitSerializerTest.class,
-    ArcticSourceTest.class,
-    FlinkSourceTest.class,
-    FlinkSplitPlannerTest.class,
-    RoundRobinShuffleRulePolicyTest.class,
+//    TestCatalog.class,
+//    ShuffleSplitAssignerTest.class,
+//    ArcticSourceEnumStateSerializerTest.class,
+//    RowDataReaderFunctionTest.class,
+//    ArcticSplitSerializerTest.class,
+//    ArcticSourceTest.class,
+//    FlinkSourceTest.class,
+//    FlinkSplitPlannerTest.class,
+//    RoundRobinShuffleRulePolicyTest.class,
     TestKeyed.class,
-    TestUnkeyed.class,
-    TestUnkeyedOverwrite.class,
-    AdaptHiveWriterTest.class,
-    ArcticFileCommitterTest.class,
-    ArcticFileWriterTest.class,
-    FlinkSinkTest.class
+//    TestUnkeyed.class,
+//    TestUnkeyedOverwrite.class,
+//    AdaptHiveWriterTest.class,
+//    ArcticFileCommitterTest.class,
+//    ArcticFileWriterTest.class,
+//    FlinkSinkTest.class
 })
 public class FlinkTestMain {
 
