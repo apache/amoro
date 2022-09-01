@@ -20,6 +20,7 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -82,12 +83,11 @@ public class TestKeyed extends FlinkTestBase {
 
   public void before() {
     if (isHive) {
-      catalog = HIVE_CATALOG_NAME;
-      db = HIVE_DB_NAME;
+      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
+      db = HiveTableTestBase.HIVE_DB_NAME;
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
-      IS_HIVE = false;
     }
     super.before();
     topic = String.join(".", catalog, db, TABLE);
@@ -131,8 +131,8 @@ public class TestKeyed extends FlinkTestBase {
         " (" +
         " id INT," +
         " name STRING," +
-        " op_time TIMESTAMP," +
         " op_time_tz TIMESTAMP WITH LOCAL TIME ZONE," +
+        " op_time TIMESTAMP," +
         " PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) " +
         " WITH (" +
@@ -143,10 +143,10 @@ public class TestKeyed extends FlinkTestBase {
     sql("insert into arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.emit.mode'='file'" +
-        ")*/ select * from input");
+        ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
-        sql("select * from arcticCatalog." + db + "." + TABLE +
+        sql("select id, name, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
             ")*/" +

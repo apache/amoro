@@ -21,6 +21,7 @@ package com.netease.arctic.flink.table;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.flink.core.execution.JobClient;
@@ -37,7 +38,6 @@ import org.apache.iceberg.types.Types;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -75,6 +75,7 @@ public class TestUnkeyed extends FlinkTestBase {
   private ArcticCatalog arcticCatalog;
   private String db;
   private String topic;
+  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
 
   @Parameterized.Parameter
   public boolean isHive;
@@ -85,9 +86,10 @@ public class TestUnkeyed extends FlinkTestBase {
   }
 
   @Before
-  public void init() {
+  public void init() throws Exception{
     if (isHive) {
-      arcticCatalog = hiveCatalog;
+      hiveTableTestBase.setupTables();
+      arcticCatalog = HiveTableTestBase.hiveCatalog;
     } else {
       arcticCatalog = testCatalog;
     }
@@ -95,12 +97,11 @@ public class TestUnkeyed extends FlinkTestBase {
 
   public void before() {
     if (isHive) {
-      catalog = HIVE_CATALOG_NAME;
-      db = HIVE_DB_NAME;
+      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
+      db = HiveTableTestBase.HIVE_DB_NAME;
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
-      IS_HIVE = false;
     }
     super.before();
     topic = String.join(".", catalog, db, TABLE);
@@ -110,6 +111,7 @@ public class TestUnkeyed extends FlinkTestBase {
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    hiveTableTestBase.clearTable();
   }
 
   @Test
@@ -261,7 +263,6 @@ public class TestUnkeyed extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
   }
 
-  @Ignore
   @Test
   public void testLogSinkSource() throws Exception {
     String topic = this.topic + "testLogSinkSource";
@@ -318,7 +319,6 @@ public class TestUnkeyed extends FlinkTestBase {
     result.getJobClient().ifPresent(JobClient::cancel);
   }
 
-  @Ignore
   @Test
   public void testUnPartitionDoubleSink() throws Exception {
     String topic = this.topic + "testUnPartitionDoubleSink";
@@ -496,7 +496,6 @@ public class TestUnkeyed extends FlinkTestBase {
     Assert.assertEquals(new HashSet<>(expected), actual);
   }
 
-  @Ignore
   @Test
   public void testPartitionLogSinkSource() throws Exception {
     String actualTopic = topic + "testUnKeyedPartitionLogSinkSource";
@@ -555,7 +554,6 @@ public class TestUnkeyed extends FlinkTestBase {
     result.getJobClient().ifPresent(JobClient::cancel);
   }
 
-  @Ignore
   @Test
   public void testPartitionDoubleSink() throws Exception {
     String actualTopic = topic + "testUnkeyedPartitionDoubleSink";

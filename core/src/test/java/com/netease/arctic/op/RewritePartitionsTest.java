@@ -26,6 +26,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
@@ -36,7 +37,7 @@ public class RewritePartitionsTest extends TableTestBase {
 
   private long initTxId = 0;
 
-  @Override
+  @Before
   public void before() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
     List<DataFile> files = writeBaseNoCommit(testKeyedTable, txId, Lists.newArrayList(

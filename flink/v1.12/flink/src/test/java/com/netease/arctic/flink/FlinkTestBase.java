@@ -76,7 +76,7 @@ import java.util.concurrent.ExecutionException;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC_TABLE_OPTIONS_ENABLED;
 
-public class FlinkTestBase extends HiveTableTestBase {
+public class FlinkTestBase extends TableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
 
   public static boolean IS_LOCAL = true;
@@ -108,7 +108,14 @@ public class FlinkTestBase extends HiveTableTestBase {
   public static InternalCatalogBuilder catalogBuilder;
   public static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
+//  {
+//    IS_HIVE = false;
+//  }
+
   public void before() {
+//    if (IS_HIVE) {
+//      return;
+//    }
     if (IS_LOCAL) {
       metastoreUrl = "thrift://127.0.0.1:" + AMS.port();
       testKeyedNoPartitionTable = testCatalog
@@ -131,6 +138,9 @@ public class FlinkTestBase extends HiveTableTestBase {
 
   @After
   public void clean() {
+//    if (IS_HIVE) {
+//      return;
+//    }
     if (IS_LOCAL) {
       testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
       AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);
