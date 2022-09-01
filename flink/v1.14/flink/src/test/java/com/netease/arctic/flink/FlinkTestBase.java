@@ -20,6 +20,7 @@ package com.netease.arctic.flink;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
@@ -46,7 +47,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
@@ -65,7 +65,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.After;
-import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,9 +83,6 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 
 public class FlinkTestBase extends TableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
-  @ClassRule
-  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
-      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   public static boolean IS_LOCAL = true;
   public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();
@@ -115,8 +111,9 @@ public class FlinkTestBase extends TableTestBase {
   protected static UnkeyedTable testPartitionTable;
 
   public static InternalCatalogBuilder catalogBuilder;
+  public static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
-  public void before() {
+  public void before() throws Exception {
     if (IS_LOCAL) {
       metastoreUrl = "thrift://127.0.0.1:" + AMS.port();
       testKeyedNoPartitionTable = testCatalog
@@ -139,12 +136,16 @@ public class FlinkTestBase extends TableTestBase {
 
   @After
   public void clean() {
-    if (IS_LOCAL) {
-      testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
-      AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);
+    if (IS_LOCAL && testCatalog != null) {
+      if (testCatalog.tableExists(PK_TABLE_ID_WITHOUT_PARTITION)) {
+        testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
+        AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);
+      }
 
-      testCatalog.dropTable(PARTITION_TABLE_ID, true);
-      AMS.handler().getTableCommitMetas().remove(PARTITION_TABLE_ID);
+      if (testCatalog.tableExists(PARTITION_TABLE_ID)) {
+        testCatalog.dropTable(PARTITION_TABLE_ID, true);
+        AMS.handler().getTableCommitMetas().remove(PARTITION_TABLE_ID);
+      }
     }
   }
 
@@ -152,6 +153,14 @@ public class FlinkTestBase extends TableTestBase {
     props = Maps.newHashMap();
     props.put("type", IDENTIFIER);
     props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl + "/" + catalog);
+  }
+
+  public static void prepare() throws Exception {
+    kafkaTestBase.prepare();
+  }
+
+  public static void shutdown() throws Exception {
+    kafkaTestBase.shutDownServices();
   }
 
   protected StreamTableEnvironment getTableEnv() {

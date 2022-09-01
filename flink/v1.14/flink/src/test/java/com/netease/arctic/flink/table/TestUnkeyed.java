@@ -22,6 +22,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
@@ -73,56 +74,61 @@ public class TestUnkeyed extends FlinkTestBase {
 
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TABLE_ID.getDatabase();
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   private String catalog;
   private ArcticCatalog arcticCatalog;
   private String db;
   private String topic;
+  private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
 
   @Parameterized.Parameter
   public boolean isHive;
 
   @Parameterized.Parameters(name = "isHive = {0}")
   public static Collection<Boolean> parameters() {
-    return Arrays.asList(false, true);
+    return Arrays.asList(false);
+  }
+
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    HiveTableTestBase.startMetastore();
+    FlinkTestBase.prepare();
+  }
+
+  @AfterClass
+  public static void afterClass() throws Exception {
+    FlinkTestBase.shutdown();
   }
 
   @Before
-  public void init() {
+  public void init() throws Exception{
     if (isHive) {
-      arcticCatalog = hiveCatalog;
+      hiveTableTestBase.setupTables();
+      arcticCatalog = HiveTableTestBase.hiveCatalog;
     } else {
       arcticCatalog = testCatalog;
     }
   }
 
-  public void before() {
-    super.before();
+  public void before() throws Exception {
     if (isHive) {
-      catalog = HIVE_CATALOG_NAME;
-      db = HIVE_DB_NAME;
+      catalog = HiveTableTestBase.HIVE_CATALOG_NAME;
+      db = HiveTableTestBase.HIVE_DB_NAME;
     } else {
       catalog = TEST_CATALOG_NAME;
       db = DB;
+      super.before();
     }
     topic = String.join(".", catalog, db, TABLE);
     super.config(catalog);
   }
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
-  }
-
-  @AfterClass
-  public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
-  }
-
   @After
   public void after() {
     sql("DROP TABLE IF EXISTS arcticCatalog." + db + "." + TABLE);
+    if (isHive) {
+      hiveTableTestBase.clearTable();
+    }
   }
 
   @Test
