@@ -220,19 +220,26 @@ public class MockArcticMetastoreServer implements Runnable {
     public CatalogMeta getCatalog(String name) throws TException {
       LOG.info("AMS getCatalog {}, {}" , name, catalogs.size());
       for (CatalogMeta catalog : catalogs) {
+        if (name.equals(catalog.catalogName)) {
+          LOG.info("m {}" , catalog.catalogName);
+          return catalog;
+        }
         LOG.info("catalog {}" , catalog.catalogName);
       }
-      CatalogMeta m;
-      try {
-        m = catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
-            .findFirst().orElseThrow(NoSuchObjectException::new);
-
-      } catch (Exception e) {
-        LOG.info("error", e);
-        throw new TException(e);
-      }
-      LOG.info("m {}" , m);
-      return m;
+//      CatalogMeta m;
+//      try {
+//        for (CatalogMeta catalog : catalogs) {
+//          if
+//        }
+//        m = catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
+//            .findFirst().orElseThrow(NoSuchObjectException::new);
+//
+//      } catch (Exception e) {
+//        LOG.info("error", e);
+//        throw new TException(e);
+//      }
+//      LOG.info("m {}" , m);
+      throw new TException(new NoSuchObjectException(name));
     }
 
     @Override

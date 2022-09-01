@@ -92,7 +92,10 @@ public class CatalogLoader {
   public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
     try {
       System.out.println("load catalog " + catalogName);
+      long start = System.currentTimeMillis();
+      System.out.println("start:"+start);
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
+      System.out.println("cost:"+(System.currentTimeMillis()-start));
       System.out.println("load catalog finished: " + catalogMeta);
       String type = catalogMeta.getCatalogType();
       String catalogImpl;
