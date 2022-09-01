@@ -74,9 +74,7 @@ Major Optimize 只对 Basestore 中的文件进行合并，因此对有主键表
 
 对于有主键表，参与合并的文件既包括 base 文件，只有 base 文件中的小文件与 pos-delete 文件进行合并，小文件合并生成新的 base 文件。
 
-![Major Optimize with all files](../images/format/major-optimize-all-files.png)
-
-![Major Optimize with small files](../images/format/major-optimize-small-files.png)
+![Major Optimize](../images/format/major-optimize.png)
 
 Major Optimize 只处理小文件，执行代价相对低一些，但是 pos-delete 文件和无效数据不能得到清理。
 
@@ -89,6 +87,8 @@ Full Optimize 只对 Basestore 中的所有文件进行合并，因此对有主�
 无主键表的 Full Optimize 逻辑比较简单，将所有文件进行合并。
 
 对于有主键表，所有的 base 文件 与 pos-delete 文件合并，重写所有 base 文件，删除 pos-delete 文件。
+
+![Full Optimize](../images/format/full-optimize.png)
 
 Full Optimize 的核心目标是清理无效数据，消除 pos-delete 文件。
 
