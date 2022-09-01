@@ -73,7 +73,7 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog.
    *
-   * @param client arctic metastore client
+   * @param client      arctic metastore client
    * @param catalogName arctic catalog name
    * @return arctic catalog object
    */
@@ -84,18 +84,18 @@ public class CatalogLoader {
   /**
    * Entrypoint for loading catalog
    *
-   * @param client arctic metastore client
+   * @param client      arctic metastore client
    * @param catalogName arctic catalog name
-   * @param props client side catalog configs
+   * @param props       client side catalog configs
    * @return arctic catalog object
    */
   public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
     try {
       System.out.println("load catalog " + catalogName);
       long start = System.currentTimeMillis();
-      System.out.println("start:"+start);
+      System.out.println("start:" + start);
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
-      System.out.println("cost:"+(System.currentTimeMillis()-start));
+      System.out.println("cost:" + (System.currentTimeMillis() - start));
       System.out.println("load catalog finished: " + catalogMeta);
       String type = catalogMeta.getCatalogType();
       String catalogImpl;
