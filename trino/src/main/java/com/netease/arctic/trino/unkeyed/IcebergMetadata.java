@@ -27,6 +27,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
+import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.table.ArcticTable;
 import io.airlift.json.JsonCodec;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
@@ -288,6 +290,22 @@ public class IcebergMetadata
 
     Map<String, String> tableProperties = table.properties();
     String nameMappingJson = tableProperties.get(TableProperties.DEFAULT_NAME_MAPPING);
+    if (HiveTableUtil.isHive((ArcticTable) table)) {
+      return new AdaptHiveIcebergTableHandle(
+          tableName.getSchemaName(),
+          name.getTableName(),
+          name.getTableType(),
+          snapshotId,
+          SchemaParser.toJson(table.schema()),
+          ((HasTableOperations) table).operations().current().formatVersion(),
+          TupleDomain.all(),
+          TupleDomain.all(),
+          ImmutableSet.of(),
+          Optional.ofNullable(nameMappingJson),
+          table.location(),
+          table.properties(),
+          NO_RETRIES);
+    }
     return new IcebergTableHandle(
         tableName.getSchemaName(),
         name.getTableName(),
@@ -1560,7 +1578,25 @@ public class IcebergMetadata
         newUnenforcedConstraint.equals(table.getUnenforcedPredicate())) {
       return Optional.empty();
     }
-
+    if (HiveTableUtil.isHive((ArcticTable) table)) {
+      return Optional.of(new ConstraintApplicationResult<>(
+          new AdaptHiveIcebergTableHandle(
+              table.getSchemaName(),
+              table.getTableName(),
+              table.getTableType(),
+              table.getSnapshotId(),
+              table.getTableSchemaJson(),
+              table.getFormatVersion(),
+              newUnenforcedConstraint,
+              newEnforcedConstraint,
+              table.getProjectedColumns(),
+              table.getNameMappingJson(),
+              table.getTableLocation(),
+              table.getStorageProperties(),
+              table.getRetryMode()),
+          remainingConstraint.transformKeys(ColumnHandle.class::cast),
+          false));
+    }
     return Optional.of(new ConstraintApplicationResult<>(
         new IcebergTableHandle(
             table.getSchemaName(),

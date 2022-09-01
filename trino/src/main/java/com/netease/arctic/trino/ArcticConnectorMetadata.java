@@ -20,6 +20,7 @@ package com.netease.arctic.trino;
 
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.trino.keyed.KeyedConnectorMetadata;

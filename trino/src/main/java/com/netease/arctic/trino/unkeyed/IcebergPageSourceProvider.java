@@ -238,8 +238,12 @@ public class IcebergPageSourceProvider
         MetadataColumns.CHANGE_ACTION_ID,
         Optional.ofNullable(icebergSplit.getFileType())
             .map(s -> s == DataFileType.EQ_DELETE_FILE ? ChangeAction.DELETE.name() : ChangeAction.INSERT.name()));
+    DateTimeZone dateTimeZone = UTC;
+    if (connectorTable instanceof AdaptHiveIcebergTableHandle) {
+      dateTimeZone = DateTimeZone.forID(TimeZone.getDefault().getID());
+    }
     return createPageSource(transaction, session, connectorSplit, connectorTable, columns, dynamicFilter,
-        idToConstant, true);
+        idToConstant, true, dateTimeZone);
   }
 
   public ConnectorPageSource createPageSource(
@@ -250,7 +254,8 @@ public class IcebergPageSourceProvider
       List<ColumnHandle> columns,
       DynamicFilter dynamicFilter,
       Map<Integer, Optional<String>> idToConstant,
-      boolean useIcebergDelete) {
+      boolean useIcebergDelete,
+      DateTimeZone dateTimeZone) {
     IcebergSplit split = (IcebergSplit) connectorSplit;
     IcebergTableHandle table = (IcebergTableHandle) connectorTable;
 
@@ -313,7 +318,8 @@ public class IcebergPageSourceProvider
         requiredColumns,
         effectivePredicate,
         table.getNameMappingJson().map(NameMappingParser::fromJson),
-        partitionKeys);
+        partitionKeys,
+        dateTimeZone);
 
     Optional<ReaderProjectionsAdapter> projectionsAdapter = dataPageSource.getReaderColumns().map(readerColumns ->
         new ReaderProjectionsAdapter(
@@ -365,7 +371,8 @@ public class IcebergPageSourceProvider
       List<IcebergColumnHandle> dataColumns,
       TupleDomain<IcebergColumnHandle> predicate,
       Optional<NameMapping> nameMapping,
-      Map<Integer, Optional<String>> partitionKeys) {
+      Map<Integer, Optional<String>> partitionKeys,
+      DateTimeZone dateTimeZone) {
     if (!isUseFileSizeFromMetadata(session)) {
       try {
         FileStatus fileStatus = hdfsEnvironment.doAs(
@@ -417,7 +424,8 @@ public class IcebergPageSourceProvider
             predicate,
             fileFormatDataSourceStats,
             nameMapping,
-            partitionKeys);
+            partitionKeys,
+            dateTimeZone);
       default:
         throw new TrinoException(NOT_SUPPORTED, "File format not supported for Iceberg: " + fileFormat);
     }
@@ -764,7 +772,8 @@ public class IcebergPageSourceProvider
       TupleDomain<IcebergColumnHandle> effectivePredicate,
       FileFormatDataSourceStats fileFormatDataSourceStats,
       Optional<NameMapping> nameMapping,
-      Map<Integer, Optional<String>> partitionKeys) {
+      Map<Integer, Optional<String>> partitionKeys,
+      DateTimeZone dateTimeZone) {
     AggregatedMemoryContext memoryContext = newSimpleAggregatedMemoryContext();
 
     ParquetDataSource dataSource = null;
@@ -809,7 +818,7 @@ public class IcebergPageSourceProvider
           parquetFields.stream().filter(Objects::nonNull).collect(toImmutableList()));
       Map<List<String>, RichColumnDescriptor> descriptorsByPath = getDescriptors(fileSchema, requestedSchema);
       TupleDomain<ColumnDescriptor> parquetTupleDomain = getParquetTupleDomain(descriptorsByPath, effectivePredicate);
-      Predicate parquetPredicate = buildPredicate(requestedSchema, parquetTupleDomain, descriptorsByPath, UTC);
+      Predicate parquetPredicate = buildPredicate(requestedSchema, parquetTupleDomain, descriptorsByPath, dateTimeZone);
 
       long nextStart = 0;
       ImmutableList.Builder<Long> blockStarts = ImmutableList.builder();
@@ -831,7 +840,7 @@ public class IcebergPageSourceProvider
           blocks,
           blockStarts.build(),
           dataSource,
-          DateTimeZone.forID(TimeZone.getDefault().getID()),
+          dateTimeZone,
           memoryContext,
           options);
 
