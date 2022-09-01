@@ -96,7 +96,6 @@ public class CatalogLoader {
       System.out.println("start:" + start);
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
       System.out.println("cost:" + (System.currentTimeMillis() - start));
-      System.out.println("load catalog finished: " + catalogMeta);
       String type = catalogMeta.getCatalogType();
       String catalogImpl;
       switch (type) {
