@@ -218,6 +218,7 @@ public class MockArcticMetastoreServer implements Runnable {
 
     @Override
     public CatalogMeta getCatalog(String name) throws TException {
+      LOG.info("AMS getCatalog " + name);
       return catalogs.stream().filter(c -> name.equals(c.getCatalogName()))
           .findFirst().orElseThrow(NoSuchObjectException::new);
     }

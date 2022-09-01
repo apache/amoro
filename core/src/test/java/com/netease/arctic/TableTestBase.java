@@ -117,7 +117,7 @@ public class TableTestBase {
 
   @Before
   public void setupTables() throws Exception {
-    System.out.println("setupTables");
+    System.out.println("setupTables:"+AMS.getUrl());
     testCatalog = CatalogLoader.load(AMS.getUrl());
     tableDir = temp.newFolder();
 

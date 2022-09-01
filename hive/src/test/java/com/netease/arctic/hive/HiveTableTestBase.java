@@ -144,7 +144,7 @@ public class HiveTableTestBase extends TableTestBase {
       super.setupTables();
       return;
     }
-    System.out.println("setupHiveTables");
+    System.out.println("setupHiveTables" + AMS.getUrl(HIVE_CATALOG_NAME));
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
     tableDir = temp.newFolder();
     System.out.println("setupHiveTables1");
