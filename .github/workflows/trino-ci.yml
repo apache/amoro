@@ -34,4 +34,4 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build with Maven
-        run: mvn test -pl 'ams/ams-api,core,trino,hive'
+        run: mvn test -pl 'trino'
