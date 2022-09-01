@@ -412,7 +412,6 @@ public class ArcticMetaStore {
       }
     });
     t.start();
-    residentThreads.add(t);
   }
 
   private static Configuration initSystemConfig() {
