@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
+import java.time.Duration;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -230,7 +231,7 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
     int attempt;
     for (attempt = 0; attempt < retries; ++attempt) {
       try {
-        client = pool.borrowObject();
+        client = pool.borrowObject(Duration.ofMillis(5000));
         if (client.isDisConnected() || !pingFactory.ping(client.iface())) {
           if (attempt > 1) {
             // if attempt > 1, it means the server is maybe restarting, so we should wait a while
