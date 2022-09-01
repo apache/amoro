@@ -32,6 +32,8 @@ export function usePlaceholder() {
   const filterDBPh = computed(() => t('database', 2)).value
   const filterTablePh = computed(() => t('table', 2)).value
   return {
+    selectPh: t('selectPlaceholder'),
+    inputPh: t('inputPlaceholder'),
     selectClPh: t('selectPlaceholder', { selectPh: catalogPh }),
     selectDBPh: t('selectPlaceholder', { selectPh: dbNamePh }),
     inputDBPh: t('inputPlaceholder', { inputPh: dbNamePh }),
