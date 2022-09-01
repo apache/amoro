@@ -36,7 +36,7 @@ AMS完成启动后即可登录 [AMS Dashboard](http://localhost:1630) 来访问A
 ## 使用 MySQL 作为系统库
 AMS 默认使用 Derby 作为系统库存储自己的元数据，在生产环境下我们建议换成MySQL以提升系统的高可用。
 
-### 修改配置文件
+**1.修改配置文件**
 
 为使用 MySQL 作为 AMS 的系统库需要修改配置文件`conf/config.yaml`将 Derby（默认系统数据库）配置修改为 MySQL 配置，需要修改配置项包括：
 
@@ -52,7 +52,7 @@ arctic.ams.database.type: mysql                                          #系统
 
     目前只支持 MySQL 5.x 版本，不支持 MySQL 8。
 
-### 初始化 MySQL 表
+**2.初始化 MySQL 表**
 
 根据`conf/mysql/ams-init.sql`初始化AMS所需表：
 
@@ -64,7 +64,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
     如需升级ams版本，请根据`conf/mysql/upgrade-*.sql`的升级语句进行升级。
 
-### 重启 AMS
+**3.重启**
 
 参考 [启动/重启/关闭](#_3)。
 
@@ -134,7 +134,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 在默认的 AMS 配置中，我们已经初始化了一个名为`default`的 optimizer group，它会在AMS本地新启动一个进程完成 local catalog 中表的结构优化。
 生产环境中我们通常在 Yarn 集群中使用 Flink 来完成表的结构优化。
 
-### 新增 Flink 类型 container
+**1.新增 Flink 类型 container**
 
 新增container通过在`conf/config.yaml`中`containers`增加以下配置:
 
@@ -149,7 +149,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
       FLINK_CONF_DIR: /etc/hadoop/conf/                  #flink配置文件所在目录
 ```
 
-### 新增 optimizer group
+**2.新增 optimizer group**
 
 新增 optimizer group 通过在`conf/config.yaml`中`optimize_group`增加以下配置:
 
@@ -165,6 +165,6 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
     修改配置文件后需重启AMS服务才可生效，参考[启动/重启/关闭](#_3)。
 
-### 启动 optimizer
+**3.启动 optimizer**
 
 新配置的 optimizer group 中还未启动任何的 optimizer，所以还需要登录 [AMS Dashboard](http://localhost:1630) 手动启动至少一个 optimizer。
