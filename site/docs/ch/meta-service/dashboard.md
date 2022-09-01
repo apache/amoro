@@ -77,11 +77,12 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
 ```yaml
   - name:                           #catalog名称
-    type: hadoop
+    type: hadoop                    #catalog类型，目前支持hadoop和hive两种类型，当catalog配置为hive时，Arctic将兼容原生的Hive集群
     storage_config:
       storage.type: hdfs
       core-site:                    #hadoop集群core-site.xml配置文件绝对路径
       hdfs-site:                    #hadoop集群hdfs-site.xml配置文件绝对路径
+      hive-site:                    #如果catalog类型为hive则需要配置Hive集群hive-site.xml配置文件的绝对路径，否则可忽略本条配置
     auth_config:
       type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
       hadoop_username: hadoop       #访问hadoop集群用户名
