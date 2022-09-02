@@ -39,18 +39,18 @@ Arctic 版本：0.3
 
 - 基于 TCP-H 改写的22个 OLAP 型负载，其中由于Q15查询和视图相关，故此次测试舍弃了Q15
 
-![OLTP AND OLAP](images/chbenchmark/OLTP-OLAP.png)
+![OLTP AND OLAP](images/chbenchmark/OLTP-OLAP.png){:height="60%" width="60%"}
 
 ### 基于TPC-C的数据构造
 
 基于TPC-C标准，本次测试在 MySQL中构造了原始数据，数据集总共包括12张表，其中TPC-C和TPC-H表的关系如下图所示：
 
-![TPCC AND TPCH](images/chbenchmark/TPCC-TPCH.png)
+![TPCC AND TPCH](images/chbenchmark/TPCC-TPCH.png){:height="60%" width="60%"}
 
 此外，各个数据表数据规模间的联系如下表所示，其中 w 表示 warehouse 的数量。可以观察到中间的 new_order, stock 等表的数据规模受到 warehouse 数量的影响，
 因此在测试过程中可以通过控制 warehouse 的数量来调整数据集的规模。
 
-![chbenchmark](images/chbenchmark/chbenchmark.png)
+![chbenchmark](images/chbenchmark/chbenchmark.png){:height="60%" width="60%"}
 
 在本次测试中，设置 warehouse 数量为100，MySQL 数据库中对应的初始数据集大小约为10G。下表展示了初始数据集下各张表的数据记录数以及开启一小时 TPC-C 测试后各张表的数据记录变化情况。
 
@@ -119,7 +119,7 @@ TPC-H 面向模拟的业务系统设计了22个 Query ，受限于篇幅，这�
 
 4. 基于 TPC-H 标准，通过 Trino 进行查询，并记录每个查询花费的时间以及所有查询的平均查询时间
 
-![over design](images/chbenchmark/benchmark-over-design-cn.png)
+![over design](images/chbenchmark/benchmark-over-design-cn.png){:height="60%" width="60%"}
 
 ## 测试结果
 
