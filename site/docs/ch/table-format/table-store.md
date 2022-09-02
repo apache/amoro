@@ -5,7 +5,7 @@ Arctic 能够兼容已有的存储介质(如 HDFS、OSS)和表结构(如 Hive、
 ## 存储结构
 对于一张定义了主键的 Arctic 表，存储结构上最多可以拆分为三部分：Changestore、Basestore、Logstore。
 
-![TableStructure](../images/format/table-structure.png)
+![TableStructure](../images/format/table-structure.png){:height="70%" width="70%"}
 
 ### Changestore
 Changestore 中存储了表上最近的变更数据。
@@ -68,22 +68,24 @@ Minor Optimize 提升了 Basestore 的数据实效性，同时由于 eq-delete �
 
 ### Major Optimize
 
-Major Optimize 只对 Basestore 中的文件进行合并，因此对有主键表、无主键表都生效。
+Major Optimize 只对 Basestore 中的小文件进行合并，因此对有主键表、无主键表都生效，Arctic 支持为每张表独立配置是否是小文件的大小阈值。
 
-无主键表的 Major Optimize 逻辑比较简单，将小文件合并成大文件，Arctic 支持每张表独立配置是否是小文件的大小阈值。
+Major Optimize 合并时，base 小文件以及相关的 pos-delete 文件会参与合并过程，合并后，这些 base 小文件中被 pos-delete 标记为删除的数据不会出现在新的 base 文件中，如果 pos-delete 文件还与其他未参与合并的文件关联，这些 pos-delete 文件不会被清理。
 
-对于有主键表，参与合并的文件既包括 base 文件，也包括 pos-delete 文件，比无主键表复杂一些，根据参与合并的 base 文件范围，可以分为两种模式：
+![Major Optimize](../images/format/major-optimize.png)
 
-- 所有的 base 文件 与 pos-delete 文件合并，重写所有 base 文件，删除 pos-delete 文件
+Major Optimize 只处理小文件，执行代价相对低一些，但是 pos-delete 文件和无效数据不能得到清理。
 
-- 只有 base 文件中的小文件与 pos-delete 文件进行合并，小文件合并生成新的 base 文件，重写 pos-delete 文件
+Major Optimize 的核心目标是解决小文件问题，减轻对文件系统的压力，同时文件数量的减少也可以进一步提升查询性能。
 
-![Major Optimize with all files](../images/format/major-optimize-all-files.png)
+### Full Optimize
 
-![Major Optimize with small files](../images/format/major-optimize-small-files.png)
+Full Optimize 只对 Basestore 中的文件进行合并，因此对有主键表、无主键表都生效，Basestore 中包括 base 文件和 pos-delete 文件在内的所有文件都会参与 Full Optimize，合并之后，生成新的 base 文件，并将 pos-delete 文件删除。
 
-第一种方式由于需要重写所有历史 base 文件，执行代价高，好处是可以彻底清理掉 pos-delete 文件以及 base 文件中的无效数据；第二种方式只处理小文件，执行代价相对低一些，但是 pos-delete 文件和无效数据不能得到清理。
+![Full Optimize](../images/format/full-optimize.png)
 
-实际应用中，具体使用哪种模式是根据 pos-delete 文件的大小自动判断的，用户可以修改这一阈值。
+Full Optimize 的核心目标是清理无效数据，消除 pos-delete 文件。
 
-Major Optimize 的核心目标是解决小文件问题，清理无效数据，减轻对文件系统的压力，同时文件数量的减少也可以进一步提升查询性能。
+Full Optimize 需要重写所有历史 base 文件，执行代价高，好处是可以彻底清理掉 pos-delete 文件以及 base 文件中的无效数据。
+
+实际应用中，具体使用 Full 还是 Major 是根据 pos-delete 文件的大小自动判断的，用户可以修改这一阈值。

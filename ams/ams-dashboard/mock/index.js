@@ -107,6 +107,48 @@ module.exports = {
       "hwtesrtrt1"]
     })
   },
+  'GET /ams/v1/catalogs/trino_online_env/databases/arctic100wdynamic/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'arctic_spark_test3'
+        },
+        {
+          name: 'arctic_test'
+        }
+      ]
+    })
+  },
+  'GET /ams/v1/catalogs/trino_online_env/databases/arctic100wfileSize/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'arctic_5555'
+        },
+        {
+          name: 'arctic_666'
+        }
+      ]
+    })
+  },
+  'GET /ams/v1/catalogs/local_catalog/databases/db/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'arctic_7777'
+        },
+        {
+          name: 'arctic_8888'
+        }
+      ]
+    })
+  },
   'GET /api/v1/as/db/t1/detail': (req, res) => {
     res.json({
       code: 200,
@@ -483,6 +525,118 @@ module.exports = {
           ]
         }
       ]
+    })
+  },
+  'GET /mock/ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/upgradeStatus': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        status: "upgrade",
+        errorMessage: "errorMessage"
+      }
+    })
+  },
+  'GET /mock/ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/hive/details': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "tableType": "HIVE",
+        "tableIdentifier": {
+          "catalog": "bdmstest_arctic",
+          "database": "default",
+          "tableName": "zyxtest"
+        },
+        "schema": [
+          {
+            "field": "id1",
+            "type": "int",
+            "description": "rZiGhjpbqj"
+          },
+          {
+            "field": "id2",
+            "type": "int",
+            "description": "x6T9Y8D7wi"
+          },
+          {
+            "field": "id3",
+            "type": "int",
+            "description": "AWpoSVLR6f"
+          },
+          {
+            "field": "id4",
+            "type": "int",
+            "description": "rZiGhjpbqj"
+          },
+          {
+            "field": "id5",
+            "type": "int",
+            "description": "x6T9Y8D7wi"
+          },
+          {
+            "field": "id6",
+            "type": "int",
+            "description": "AWpoSVLR6f"
+          }
+        ],
+        "partitionColumnList": [
+          {
+            "field": "TqgUCqOfr0",
+            "type": "bZpDUpDo2l",
+            "description": "D3SVsvwmuD"
+          },
+          {
+            "field": "g1tpuaWFg6",
+            "type": "tJr2zYltbL",
+            "description": "F5z48Arinv"
+          },
+          {
+            "field": "I61mT0lDBP",
+            "type": "dSDu69M3Ph",
+            "description": "X6Nx4K7S8t"
+          },
+          {
+            "field": "I61mT0welDBP",
+            "type": "dSDu69M3Ph",
+            "description": "X6Nwex4K7S8t"
+          }
+        ],
+        "properties": {
+          "xxxx": "148"
+        }
+      }
+    })
+  },
+  'GET /mock/ams/v1/upgrade/properties': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "key1": "koYg4SDRzM",
+        "key2": "T3ScQHN0hE"
+      }
+    })
+  },
+  'POST /mock/ams/v1/tables/catalogs/arctic_catalog_dev/dbs/ndc_test_db/tables/user_order_unpk/upgrade': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
+  'GET /mock/ams/v1/tables/catalogs/trino_online_env/dbs/arctic10wforOptimizeContinue/tables/nation/operations': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        list: [
+          {
+            ts: 11234567890123,
+            operation: "sdsd"
+          }
+        ]
+      }
     })
   }
 }

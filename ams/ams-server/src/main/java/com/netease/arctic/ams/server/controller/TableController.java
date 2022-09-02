@@ -57,6 +57,7 @@ import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -238,6 +239,15 @@ public class TableController extends RestBaseController {
             key -> keyValues
                 .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
     ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
+    Map<String, String> hiveProperties =
+        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(HiveTableProperties.class);
+
+    hiveProperties.keySet().stream()
+        .filter(key -> HiveTableProperties.EXPOSED.contains(hiveProperties.get(key)))
+        .filter(key -> !key.endsWith("_DEFAULT"))
+        .forEach(
+            key -> keyValues
+                .put(hiveProperties.get(key), hiveProperties.get(key + "_DEFAULT")));
     ctx.json(OkResponse.of(keyValues));
   }
 

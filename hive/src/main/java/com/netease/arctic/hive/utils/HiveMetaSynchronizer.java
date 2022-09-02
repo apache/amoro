@@ -24,6 +24,7 @@ import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -51,7 +52,6 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.crypto.Data;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -76,31 +76,49 @@ public class HiveMetaSynchronizer {
       List<FieldSchema> fieldSchemas =  hiveTable.getSd().getCols();
       Schema hiveSchema = org.apache.iceberg.hive.HiveSchemaUtil.convert(fieldSchemas);
       UpdateSchema updateSchema = table.updateSchema();
-      boolean update = false;
-      for (int i = 0; i < hiveSchema.columns().size(); i++) {
-        Types.NestedField hiveField = hiveSchema.columns().get(i);
-        Types.NestedField icebergField = table.schema().findField(hiveField.name());
-        if (icebergField == null) {
-          updateSchema.addColumn(hiveField.name(), hiveField.type(), hiveField.doc());
-          update = true;
-          LOG.info("Table {} sync new hive column {} to arctic", table.id(), hiveField);
-        } else if (!icebergField.type().equals(hiveField.type()) ||
-            !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
-          if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(), hiveField.type().asPrimitiveType())) {
-            updateSchema.updateColumn(hiveField.name(), hiveField.type().asPrimitiveType(), hiveField.doc());
-            update = true;
-            LOG.info("Table {} sync hive column {} to arctic", table.id(), hiveField);
-          } else {
-            LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch", table.id(), hiveField);
-          }
-        }
-      }
+      boolean update = updateStructSchema(table.id(), updateSchema, null,
+          table.schema().asStruct(), hiveSchema.asStruct());
       if (update) {
         updateSchema.commit();
       }
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to get hive table:" + table.id(), e);
     }
+  }
+
+  private static boolean updateStructSchema(TableIdentifier tableIdentifier, UpdateSchema updateSchema,
+      String parentName, Types.StructType icebergStruct, Types.StructType hiveStruct) {
+    boolean update = false;
+    for (int i = 0; i < hiveStruct.fields().size(); i++) {
+      Types.NestedField hiveField = hiveStruct.fields().get(i);
+      Types.NestedField icebergField = icebergStruct.field(hiveField.name());
+      if (icebergField == null) {
+        updateSchema.addColumn(parentName, hiveField.name(), hiveField.type(), hiveField.doc());
+        update = true;
+        LOG.info("Table {} sync new hive column {} to arctic", tableIdentifier, hiveField);
+      } else if (!icebergField.type().equals(hiveField.type()) ||
+          !Objects.equals(icebergField.doc(), (hiveField.doc()))) {
+        if (hiveField.type().isPrimitiveType() && icebergField.type().isPrimitiveType()) {
+          if (TypeUtil.isPromotionAllowed(icebergField.type().asPrimitiveType(), hiveField.type().asPrimitiveType())) {
+            String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
+            updateSchema.updateColumn(columnName, hiveField.type().asPrimitiveType(), hiveField.doc());
+            update = true;
+            LOG.info("Table {} sync hive column {} to arctic", tableIdentifier, hiveField);
+          } else {
+            LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
+                tableIdentifier, hiveField);
+          }
+        } else if (hiveField.type().isStructType() && icebergField.type().isStructType()) {
+          String columnName = parentName == null ? hiveField.name() : parentName + "." + hiveField.name();
+          update = update || updateStructSchema(tableIdentifier, updateSchema,
+              columnName, icebergField.type().asStructType(), hiveField.type().asStructType());
+        } else {
+          LOG.warn("Table {} sync hive column {} to arctic failed, because of type mismatch",
+              tableIdentifier, hiveField);
+        }
+      }
+    }
+    return update;
   }
 
   /**
@@ -127,14 +145,8 @@ public class HiveMetaSynchronizer {
               .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME);
         }
         if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
-          List<DataFile> hiveDataFiles = TableMigrationUtil.listPartition(Maps.newHashMap(),
-              hiveTable.getSd().getLocation(),
-              table.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
-                  TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
-              table.spec(), ((ArcticHadoopFileIO)table.io()).getTableMetaStore().getConfiguration(),
-              MetricsConfig.fromProperties(table.properties()),
-              NameMappingParser.fromJson(
-                  table.properties().get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING)));
+          List<DataFile> hiveDataFiles = listHivePartitionFiles(table, Maps.newHashMap(),
+              hiveTable.getSd().getLocation());
           List<DataFile> deleteFiles = Lists.newArrayList();
           baseStore.newScan().planFiles().forEach(fileScanTask -> deleteFiles.add(fileScanTask.file()));
           overwriteTable(table, deleteFiles, hiveDataFiles);
@@ -164,14 +176,9 @@ public class HiveMetaSynchronizer {
           // compare hive partition parameter transient_lastDdlTime with arctic partition properties to
           // find out if the partition is changed.
           if (arcticTransientTime == null || !arcticTransientTime.equals(hiveTransientTime)) {
-            List<DataFile> hiveDataFiles = TableMigrationUtil.listPartition(
+            List<DataFile> hiveDataFiles = listHivePartitionFiles(table,
                 buildPartitionValueMap(hivePartition.getValues(), table.spec()),
-                hivePartition.getSd().getLocation(),
-                table.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
-                    TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
-                table.spec(), ((ArcticHadoopFileIO)table.io()).getTableMetaStore().getConfiguration(),
-                MetricsConfig.fromProperties(table.properties()), NameMappingParser.fromJson(
-                    table.properties().get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING)));
+                hivePartition.getSd().getLocation());
             if (filesMap.get(partitionData) != null) {
               filesToDelete.addAll(filesMap.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
@@ -196,6 +203,16 @@ public class HiveMetaSynchronizer {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to get hive table:" + table.id(), e);
     }
+  }
+
+  private static List<DataFile> listHivePartitionFiles(ArcticTable arcticTable, Map<String, String> partitionValueMap,
+      String partitionLocation) {
+    return arcticTable.io().doAs(() -> TableMigrationUtil.listPartition(partitionValueMap, partitionLocation,
+        arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+            TableProperties.DEFAULT_FILE_FORMAT_DEFAULT),
+        arcticTable.spec(), ((ArcticHadoopFileIO)arcticTable.io()).getTableMetaStore().getConfiguration(),
+        MetricsConfig.fromProperties(arcticTable.properties()), NameMappingParser.fromJson(
+            arcticTable.properties().get(org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING))));
   }
 
   private static Map<String, String> buildPartitionValueMap(List<String> partitionValues, PartitionSpec spec) {

@@ -26,14 +26,14 @@
       <MenuUnfoldOutlined v-if="collapsed" />
       <MenuFoldOutlined v-else />
     </a-button>
-    <div @click.self="toggleTablesMenu(false)" v-if="store.isShowTablesMenu" @mouseleave="toggleTablesMenu(false)" :class="{'collapsed-sub-menu': collapsed}" class="tables-menu-wrap">
+    <div @click.self="toggleTablesMenu(false)" v-if="store.isShowTablesMenu && !hasToken" @mouseleave="toggleTablesMenu(false)" :class="{'collapsed-sub-menu': collapsed}" class="tables-menu-wrap">
       <TableMenu @goCreatePage="goCreatePage" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, nextTick, reactive, toRefs, watchEffect } from 'vue'
+import { computed, defineComponent, nextTick, reactive, toRefs, watchEffect } from 'vue'
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -45,6 +45,7 @@ import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
 import TableMenu from '@/components/tables-sub-menu/TablesMenu.vue'
 import { useI18n } from 'vue-i18n'
+import { getQueryString } from '@/utils'
 
 interface MenuItem {
   key: string
@@ -70,8 +71,20 @@ export default defineComponent({
 
     const state = reactive({
       collapsed: false,
-      selectedKeys: [] as string[],
-      menuList: [
+      selectedKeys: [] as string[]
+    })
+    const hasToken = computed(() => {
+      return !!(getQueryString('token') || '')
+    })
+    const menuList = computed(() => {
+      const menu: MenuItem[] = [
+        {
+          key: 'tables',
+          title: t('tables'),
+          icon: 'TableOutlined'
+        }
+      ]
+      const allMenu : MenuItem[] = [
         // {
         //   key: 'overview',
         //   title: t('overview'),
@@ -97,8 +110,10 @@ export default defineComponent({
         //   title: t('settings'),
         //   icon: 'SettingOutlined'
         // }
-      ] as MenuItem[]
+      ]
+      return hasToken.value ? menu : allMenu
     })
+
     const setCurMenu = () => {
       const pathArr = route.path.split('/')
       if (route.path) {
@@ -140,11 +155,16 @@ export default defineComponent({
     }
 
     const toggleTablesMenu = (flag = false) => {
+      if (hasToken.value) {
+        return
+      }
       store.updateTablesMenu(flag)
     }
 
     return {
       ...toRefs(state),
+      hasToken,
+      menuList,
       toggleCollapsed,
       navClick,
       mouseenter,

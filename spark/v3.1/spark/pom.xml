@@ -280,7 +280,7 @@
                 <version>2.19</version>
                 <configuration>
                     <includes>
-                        <include>**/ArcticSparkHiveMainTest.java</include>
+                        <include>**/MavenTestSuites.java</include>
                     </includes>
                 </configuration>
             </plugin>

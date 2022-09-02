@@ -17,29 +17,46 @@
   */
 
 // import { IOptions } from '@/types/common.type'
-import { ICatalogItem } from '@/types/common.type'
+import { ICatalogItem, IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogList(): Promise<ICatalogItem[]> {
   return request.get('ams/v1/catalogs')
 }
-export function getDatabaseList(catalog: string): Promise<string[]> {
-  return request.get(`ams/v1/catalogs/${catalog}/databases`)
+export function getDatabaseList(params: {
+  catalog: string
+  keywords: string
+}): Promise<string[]> {
+  const { catalog, keywords } = params
+  return request.get(`ams/v1/catalogs/${catalog}/databases`, { params: { keywords } })
 }
 
 export function getTableList(params: {
   catalog: string
   db: string
-}): Promise<string[]> {
-  const { catalog, db } = params
-  return request.get(`ams/v1/catalogs/${catalog}/databases/${db}/tables`)
+  keywords: string
+}) {
+  const { catalog, db, keywords } = params
+  return request.get(`ams/v1/catalogs/${catalog}/databases/${db}/tables`, { params: { keywords } })
 }
 
 // get tables detail
 export function getTableDetail(
+  { catalog = '' as string, db = '' as string, table = '' as string, token = '' as string }
+) {
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`, { params: { token } })
+}
+
+export function getHiveTableDetail(
   { catalog = '' as string, db = '' as string, table = '' as string }
 ) {
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/details`)
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/hive/details`)
+}
+
+export function getUpgradeStatus(
+  { catalog = '' as string, db = '' as string, table = '' as string }
+) {
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade/status`)
 }
 // get partions table
 export function getPartitionTable(
@@ -49,10 +66,11 @@ export function getPartitionTable(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
 }
 
 // get partions
@@ -63,10 +81,11 @@ export function getPartitions(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions`, { params: { page, pageSize, token } })
 }
 // get partions-files
 export function getPartitionFiles(
@@ -77,10 +96,11 @@ export function getPartitionFiles(
     partition: string | null,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, partition, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize } })
+  const { catalog, db, table, partition, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/partitions/${partition}/files`, { params: { page, pageSize, token } })
 }
 // get Transactions
 export function getTransactions(
@@ -90,10 +110,11 @@ export function getTransactions(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions`, { params: { page, pageSize, token } })
 }
 
 // get TransactionId detail
@@ -105,10 +126,11 @@ export function getDetailByTransactionId(
     transactionId: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, transactionId, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions/${transactionId}/detail`, { params: { page, pageSize } })
+  const { catalog, db, table, transactionId, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/transactions/${transactionId}/detail`, { params: { page, pageSize, token } })
 }
 // get operations
 export function getOperations(
@@ -118,10 +140,11 @@ export function getOperations(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/operations`, { params: { page, pageSize, token } })
 }
 // get optimizes
 export function getOptimizes(
@@ -131,8 +154,22 @@ export function getOptimizes(
     table: string,
     page: number
     pageSize: number
+    token: string
   }
 ) {
-  const { catalog, db, table, page, pageSize } = params
-  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimize`, { params: { page, pageSize } })
+  const { catalog, db, table, page, pageSize, token } = params
+  return request.get(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/optimize`, { params: { page, pageSize, token } })
+}
+
+export function upgradeHiveTable(
+  { catalog = '' as string, db = '' as string, table = '' as string, properties = {} as IMap<string>, pkList = [] as IMap<string>[] }
+) {
+  return request.post(`ams/v1/tables/catalogs/${catalog}/dbs/${db}/tables/${table}/upgrade`, {
+    properties,
+    pkList
+  })
+}
+
+export function getUpgradeProperties() {
+  return request.get('ams/v1/upgrade/properties')
 }

@@ -106,11 +106,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   }
 
   private void initTaskWriterFactory(Long mask) {
-    if (taskWriterFactory instanceof KeyedRowDataTaskWriterFactory) {
+    if (taskWriterFactory instanceof ArcticRowDataTaskWriterFactory) {
       if (mask != null) {
-        ((KeyedRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
+        ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setMask(mask);
       }
-      ((KeyedRowDataTaskWriterFactory) taskWriterFactory).setTransactionId(getTransactionId());
+      ((ArcticRowDataTaskWriterFactory) taskWriterFactory).setTransactionId(getTransactionId());
     }
     taskWriterFactory.initialize(subTaskId, attemptId);
   }

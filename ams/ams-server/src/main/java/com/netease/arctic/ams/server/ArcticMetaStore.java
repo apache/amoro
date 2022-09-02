@@ -89,13 +89,16 @@ public class ArcticMetaStore {
   private static final AtomicBoolean isLeader = new AtomicBoolean(false);
   private static final int checkLeaderInterval = 2000;
 
-  private volatile boolean stopped = false;
+  private static volatile boolean shouldStop = false;
 
   public static void main(String[] args) throws Throwable {
-    tryStartServer();
+    while (!shouldStop) {
+      tryStartServer();
+      Thread.sleep(500);
+    }
   }
 
-  public static void tryStartServer() throws Throwable {
+  public static void tryStartServer() {
     try {
       String configPath = getArcticHome() + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
@@ -104,7 +107,10 @@ public class ArcticMetaStore {
       if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
         String zkAddress = conf.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER);
         String cluster = conf.getString(ArcticMetaStoreConf.CLUSTER_NAME);
-        haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
+        if (haService != null) {
+          haService.close();
+        }
+        haService = new HighAvailabilityServices(zkAddress, cluster);
         haService.addListener(genHAListener(zkAddress, cluster));
         haService.leaderLatch();
       } else {
@@ -112,7 +118,6 @@ public class ArcticMetaStore {
       }
     } catch (Throwable t) {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
-      throw t;
     }
   }
   
@@ -182,11 +187,6 @@ public class ArcticMetaStore {
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
       signalOtherThreadsToStart(server, metaStoreThreadsLock, startCondition, startedServing);
-      syncAndExpiredFileInfoCache(server);
-      startSyncDDl(server);
-      if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
-        checkLeader();
-      }
       server.serve();
     } catch (Throwable t) {
       LOG.error("ams start error", t);
@@ -209,6 +209,13 @@ public class ArcticMetaStore {
   public static void failover() {
     stopMetaStore();
     AmsRestServer.stopRestServer();
+    isLeader.set(false);
+  }
+
+  public static void shutDown() {
+    stopMetaStore();
+    AmsRestServer.stopRestServer();
+    shouldStop = true;
   }
 
   private static void startMetaStoreThreads(
@@ -233,6 +240,11 @@ public class ArcticMetaStore {
         monitorOptimizerStatus();
         tableRuntimeDataExpire();
         AmsRestServer.startRestServer(httpPort);
+        startSyncDDl();
+        syncAndExpiredFileInfoCache();
+        if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
+          checkLeader();
+        }
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
             StringUtils.stringifyException(t1));
@@ -258,6 +270,7 @@ public class ArcticMetaStore {
           Thread.sleep(1000);
         } catch (InterruptedException e) {
           LOG.warn("Signalling thread was interrupted: " + e.getMessage());
+          return;
         }
       } while (!server.isServing());
       startLock.lock();
@@ -329,56 +342,56 @@ public class ArcticMetaStore {
         TimeUnit.MILLISECONDS);
   }
 
-  private static void syncAndExpiredFileInfoCache(final TServer server) {
+  private static void syncAndExpiredFileInfoCache() {
     Thread t = new Thread(() -> {
-      while (true) {
-        while (server.isServing()) {
-          try {
-            FileInfoCacheService.SyncAndExpireFileCacheTask task =
-                new FileInfoCacheService.SyncAndExpireFileCacheTask();
-            task.doTask();
-          } catch (Exception e) {
-            LOG.error("sync and expired file info cache error", e);
-          }
-          try {
-            Thread.sleep(5 * 60 * 1000);
-          } catch (InterruptedException e) {
-            LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
-          }
+      while (server.isServing()) {
+        try {
+          FileInfoCacheService.SyncAndExpireFileCacheTask task =
+              new FileInfoCacheService.SyncAndExpireFileCacheTask();
+          task.doTask();
+        } catch (Exception e) {
+          LOG.error("sync and expired file info cache error", e);
         }
         try {
-          Thread.sleep(60 * 1000);
+          Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+          return;
         }
+      }
+      try {
+        Thread.sleep(60 * 1000);
+      } catch (InterruptedException e) {
+        LOG.warn("sync and expired file info cache thread was interrupted: " + e.getMessage());
+        return;
       }
     });
     t.start();
     residentThreads.add(t);
   }
 
-  private static void startSyncDDl(final TServer server) {
+  private static void startSyncDDl() {
     Thread t = new Thread(() -> {
-      while (true) {
-        while (server.isServing()) {
-          try {
-            DDLTracerService.DDLSyncTask task =
-                new DDLTracerService.DDLSyncTask();
-            task.doTask();
-          } catch (Exception e) {
-            LOG.error("sync schema change cache error", e);
-          }
-          try {
-            Thread.sleep(5 * 60 * 1000);
-          } catch (InterruptedException e) {
-            LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
-          }
+      while (server.isServing()) {
+        try {
+          DDLTracerService.DDLSyncTask task =
+              new DDLTracerService.DDLSyncTask();
+          task.doTask();
+        } catch (Exception e) {
+          LOG.error("sync schema change cache error", e);
         }
         try {
-          Thread.sleep(60 * 1000);
+          Thread.sleep(5 * 60 * 1000);
         } catch (InterruptedException e) {
           LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+          return;
         }
+      }
+      try {
+        Thread.sleep(60 * 1000);
+      } catch (InterruptedException e) {
+        LOG.warn("sync schema change cache thread was interrupted: " + e.getMessage());
+        return;
       }
     });
     t.start();
@@ -387,25 +400,24 @@ public class ArcticMetaStore {
 
   private static void checkLeader() {
     Thread t = new Thread(() -> {
-      while (true) {
+      while (isLeader.get()) {
         try {
           Thread.sleep(checkLeaderInterval);
         } catch (InterruptedException e) {
           LOG.warn("notLeader thread was interrupted: " + e.getMessage());
+          return;
         }
         try {
-          if (haService != null && isLeader.get() &&
+          if (haService != null &&
               !haService.getMaster().equals(haService.getNodeInfo(
                   conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
                   conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)))) {
             LOG.info("there is not leader, the leader is " + JSONObject.toJSONString(haService.getMaster()));
             failover();
-            isLeader.set(false);
           }
         } catch (Exception e) {
           LOG.error("check leader error", e);
           failover();
-          isLeader.set(false);
         }
       }
     });

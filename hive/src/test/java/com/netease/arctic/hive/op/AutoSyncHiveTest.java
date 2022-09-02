@@ -18,20 +18,16 @@
 
 package com.netease.arctic.hive.op;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
-import com.netease.arctic.hive.utils.HiveMetaSynchronizerTest;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.hadoop.conf.Configuration;
