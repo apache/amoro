@@ -60,7 +60,7 @@
             <span class="td-val">Flink</span>
           </td>
           <td>
-            <span class="td-val">1.12.x and 1.14.x</span>
+            <span class="td-val">1.12.x,1.14.x and 1.15.x</span>
           </td>
         </tr>
         <tr>
@@ -85,13 +85,16 @@
     <p class="desc">
       Visit
       <a
-        href="https://arctic.netease.com/ch/getting-started/"
+        href="https://arctic.netease.com/ch/docker-quickstart/"
         target="_blank"
         rel="noopener noreferrer">
-      https://arctic.netease.com/ch/getting-started/
+      https://arctic.netease.com/ch/docker-quickstart/
       </a>
       to quickly explore what arctic can do.
     </p>
+    <h2 class="sub-title">Join Community</h2>
+    <p class="desc">If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source.</p>
+    <p class="desc">Join the Arctic WeChat Group: Add " <code>kllnn999</code> " as a friend on WeChat and specify "Arctic lover".</p>
   </div>
 </template>
 
