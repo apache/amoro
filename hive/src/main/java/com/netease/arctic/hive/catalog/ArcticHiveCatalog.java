@@ -314,8 +314,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-      // default 1 day
-      meta.putToProperties(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000");
 
       Table table = tableMetaStore.doAs(() -> {
         try {
