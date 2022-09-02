@@ -76,6 +76,7 @@ nav:
     - Spark DataFrame: spark/spark-dataframe.md
   - Trino: trino.md
   - Benchmark: benchmark.md
+  - Roadmap: roadmap.md
   - How to contribute: contribute.md
 
 
