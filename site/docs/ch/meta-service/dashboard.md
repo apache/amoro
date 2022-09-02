@@ -13,7 +13,7 @@ java -version
 AMS所有配置项都在`conf/config.yaml`文件中:
 
 ```yaml
-  arctic.ams.server-host.prefix: "127.0.0.1"       #optimizer连接ams时使用的地址，需配置ams所在机器ip前缀(注意必须加双引号)，前缀可以便捷批量部署时
+  arctic.ams.server-host.prefix: "127.0.0.1"       #引擎端连接ams时使用的地址，需配置ams所在机器ip前缀(注意必须加双引号)，前缀可以便捷批量部署
   arctic.ams.thrift.port: 1260                     #thrift服务端口
   arctic.ams.http.port: 1630                       #http服务端口，即ams页面端口
   arctic.ams.optimize.check.thread.pool-size: 10   #table optimize task任务运行时信息同步任务线程池大小
