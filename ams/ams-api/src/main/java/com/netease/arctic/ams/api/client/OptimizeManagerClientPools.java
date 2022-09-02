@@ -18,16 +18,12 @@
 
 package com.netease.arctic.ams.api.client;
 
-
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.OptimizeManager;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TMultiplexedProtocol;
-
-import java.util.Collections;
 
 /**
  * Client pool cache for different ams optimize server, sharing in jvm.
