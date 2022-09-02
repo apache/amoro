@@ -151,7 +151,7 @@ export default defineComponent({
       () => route.query,
       (val, old) => {
         const { catalog, db, table } = val
-        if (catalog !== old.catalog || db !== old.db || table !== old.table) {
+        if (route.path === '/hive-tables' && (catalog !== old.catalog || db !== old.db || table !== old.table)) {
           init()
         }
       }
