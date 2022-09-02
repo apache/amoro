@@ -40,7 +40,6 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -100,7 +99,7 @@ public class TestUnkeyed extends FlinkTestBase {
   }
 
   @Before
-  public void init() throws Exception{
+  public void init() throws Exception {
     if (isHive) {
       hiveTableTestBase.setupTables();
       arcticCatalog = HiveTableTestBase.hiveCatalog;

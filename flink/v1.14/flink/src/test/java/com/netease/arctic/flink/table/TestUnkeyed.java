@@ -20,12 +20,10 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
@@ -101,7 +99,7 @@ public class TestUnkeyed extends FlinkTestBase {
   }
 
   @Before
-  public void init() throws Exception{
+  public void init() throws Exception {
     if (isHive) {
       hiveTableTestBase.setupTables();
       arcticCatalog = HiveTableTestBase.hiveCatalog;
