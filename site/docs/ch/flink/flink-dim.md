@@ -80,31 +80,31 @@ CREATE TABLE orders (
 
 **测试条件**
 
-* 主表：Flink DataGen数据源，设置数据生成速率为10000条/秒
+* 主表：Flink DataGen 数据源，设置数据生成速率为10000条/秒
 * 维表：初始数据量为10G大小，共1580万条记录数的 Arctic 表，并且有新的数据不断流入，流入速率为100条/秒
-* Flink任务配置
+* Flink 任务配置
     * 并发度：8
-    * TaskManager数量：8
-    * TaskManager内存：2G
+    * TaskManager 数量：8
+    * TaskManager 内存：2G
     * numberOfTaskSlots：1
-    * JobManager内存：2G
+    * JobManager 内存：2G
     * state backend： RocksDB
     * state.backend.incremental：true
-    * Checkpoint间隔：1min
-    * Checkpoint超时时间：30min。需要说明的是，当数据量过大或者Flink任务资源配置较低时，容易造成Checkpoint超时，因此本次测试将Checkpoint超时时间设置为30min
+    * Checkpoint 间隔：1min
+    * Checkpoint 超时时间：30min。需要说明的是，Flink 任务首次初始化维表数据到 Rocksdb 容易造成 Checkpoint 超时，因此本次测试将 Checkpoint 超时时间设置为30min
 
 **测试指标**
 
 1. 维表存量数据的加载时间
-2. 维表存量数据加载完后第一次Join计算花费的时间
-3. Checkpoint大小
-4. Failover耗时
+2. 维表存量数据加载完后第一次 Join 计算花费的时间
+3. Checkpoint 大小
+4. Failover 耗时
 
 **测试结果**
 
-| 测试指标           | 测试数值   |
-|----------------|--------|
-| 维表存量数据的加载时间    | 8min   |
-| 第一次Join计算花费的时间 | 3min   |
-| Checkpoint大小   | 1.86GB |
-| Failover耗时     | 5s     |
+| 测试指标             | 测试数值   |
+|------------------|--------|
+| 维表存量数据的加载时间      | 8min   |
+| 第一次 Join 计算花费的时间 | 3min   |
+| Checkpoint 大小    | 1.86GB |
+| Failover 耗时      | 5s     |
