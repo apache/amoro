@@ -74,3 +74,37 @@ CREATE TABLE orders (
   WATERMARK FOR order_time AS order_time
   ) WITH (/* ... */);
 ```
+
+### 性能测试
+本次性能测试主要面向维表有较大存量数据，并且主表持续流入数据的场景。有相关场景需求的用户可以将本次性能测试的结果作为一个参考，具体的测试条件和结果如下：
+
+**测试条件**
+
+* 主表：Flink DataGen 数据源，设置数据生成速率为10000条/秒
+* 维表：初始数据量为10G大小，共1580万条记录数的 Arctic 表，并且有新的数据不断流入，流入速率为100条/秒
+* Flink 任务配置
+    * 并发度：8
+    * TaskManager 数量：8
+    * TaskManager 内存：2G
+    * numberOfTaskSlots：1
+    * JobManager 内存：2G
+    * state backend： RocksDB
+    * state.backend.incremental：true
+    * Checkpoint 间隔：1min
+    * Checkpoint 超时时间：30min。需要说明的是，Flink 任务首次初始化维表数据到 Rocksdb 容易造成 Checkpoint 超时，因此本次测试将 Checkpoint 超时时间设置为30min
+
+**测试指标**
+
+1. 维表存量数据的加载时间
+2. 维表存量数据加载完后第一次 Join 计算花费的时间
+3. Checkpoint 大小
+4. Failover 耗时
+
+**测试结果**
+
+| 测试指标             | 测试数值   |
+|------------------|--------|
+| 维表存量数据的加载时间      | 8min   |
+| 第一次 Join 计算花费的时间 | 3min   |
+| Checkpoint 大小    | 1.86GB |
+| Failover 耗时      | 5s     |
