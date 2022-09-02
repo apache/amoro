@@ -501,14 +501,14 @@ public class TestUnkeyed extends FlinkTestBase {
       add(Row.of(1000007, "e", "2022-05-18"));
     }};
 
-    List<Row> actual = new LinkedList<>();
+    Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (int i = 0; i < expected.size(); i++) {
         actual.add(iterator.next());
       }
     }
     result.getJobClient().ifPresent(JobClient::cancel);
-    Assert.assertEquals(expected, actual);
+    Assert.assertEquals(new HashSet<>(expected), actual);
   }
 
   @Test
