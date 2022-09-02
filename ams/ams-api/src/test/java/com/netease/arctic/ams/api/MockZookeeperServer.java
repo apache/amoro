@@ -36,6 +36,7 @@ public class MockZookeeperServer {
 
   private static TestingServer server;
   private static CuratorFramework client;
+  private static int port;
 
   public static CuratorFramework getClient() {
     if (client == null) {
@@ -49,7 +50,7 @@ public class MockZookeeperServer {
   }
 
   public static String getUri() {
-    return "127.0.0.1:"+ new Random().nextInt(4000) + 14000;
+    return "127.0.0.1:"+ port;
   }
 
   public static void stopServer() throws IOException {
@@ -58,7 +59,8 @@ public class MockZookeeperServer {
   }
 
   private static void init() throws Exception {
-    server = new TestingServer(2181, true);
+    port = new Random().nextInt(4000) + 14000;
+    server = new TestingServer(port, true);
     server.start();
 
     client = CuratorFrameworkFactory.newClient("127.0.0.1",
