@@ -164,7 +164,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     Assert.assertNotNull(hiveTableA);
     rows = sql("desc table {0}.{1}", database, tableA);
     assertHiveDesc(rows,
-        Lists.newArrayList("id", "name"),
+        Lists.newArrayList("id", "name", "ts"),
         Lists.newArrayList());
 
     sql("use " + catalogNameHive);
