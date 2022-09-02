@@ -239,10 +239,15 @@ public class TableController extends RestBaseController {
             key -> keyValues
                 .put(tableProperties.get(key), tableProperties.get(key + "_DEFAULT")));
     ServerTableProperties.HIDDEN_EXPOSED.forEach(keyValues::remove);
-    keyValues.put(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE,
-        String.valueOf(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT));
-    keyValues.put(HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        String.valueOf(HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT));
+    Map<String, String> hiveProperties =
+        AmsUtils.getNotDeprecatedAndNotInternalStaticFields(HiveTableProperties.class);
+
+    hiveProperties.keySet().stream()
+        .filter(key -> HiveTableProperties.EXPOSED.contains(hiveProperties.get(key)))
+        .filter(key -> !key.endsWith("_DEFAULT"))
+        .forEach(
+            key -> keyValues
+                .put(hiveProperties.get(key), hiveProperties.get(key + "_DEFAULT")));
     ctx.json(OkResponse.of(keyValues));
   }
 
