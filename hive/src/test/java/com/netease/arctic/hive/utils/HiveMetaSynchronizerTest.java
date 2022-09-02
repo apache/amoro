@@ -65,13 +65,26 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     Table hiveTable = hms.getClient().getTable(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName());
     Assert.assertEquals(HiveSchemaUtil.hiveTableFields(testHiveTable.schema(), testHiveTable.spec()),
         hiveTable.getSd().getCols());
-    List<FieldSchema> hiveFields = Lists.newArrayList();
-    hiveTable.getSd().getCols().add(new FieldSchema("add_column", "bigint", "add column"));
-    hiveFields.addAll(hiveTable.getSd().getCols());
+    List<FieldSchema> hiveFields = Lists.newArrayList(hiveTable.getSd().getCols());
+    List<FieldSchema> addedFields = Lists.newArrayList(hiveFields);
+    addedFields.add(new FieldSchema("add_column",
+        "struct<id:bigint, name:string>", "add column"));
+    hiveTable.getSd().setCols(addedFields);
     hms.getClient().alter_table(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(), hiveTable);
     HiveMetaSynchronizer.syncHiveSchemaToArctic(testHiveTable, new TestHMSClient());
-    Assert.assertEquals(hiveFields, hiveTable.getSd().getCols());
-    Assert.assertEquals(hiveFields, HiveSchemaUtil.hiveTableFields(testHiveTable.schema(), testHiveTable.spec()));
+    Assert.assertEquals(addedFields, hiveTable.getSd().getCols());
+    Assert.assertEquals(addedFields, HiveSchemaUtil.hiveTableFields(testHiveTable.schema(), testHiveTable.spec()));
+
+    addedFields = Lists.newArrayList(hiveFields);
+    addedFields.add(new FieldSchema("add_column",
+        "struct<id:bigint, name:string, add_column:string>", "add column"));
+    hiveTable.getSd().setCols(addedFields);
+    hms.getClient().alter_table(HIVE_TABLE_ID.getDatabase(), HIVE_TABLE_ID.getTableName(), hiveTable);
+    HiveMetaSynchronizer.syncHiveSchemaToArctic(testHiveTable, new TestHMSClient());
+    Assert.assertEquals(addedFields, hiveTable.getSd().getCols());
+    Assert.assertEquals(addedFields, HiveSchemaUtil.hiveTableFields(testHiveTable.schema(), testHiveTable.spec()));
+
+
   }
 
   @Test
