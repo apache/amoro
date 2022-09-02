@@ -18,19 +18,15 @@
 
 package com.netease.arctic.spark;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import java.io.IOException;
+import java.util.Map;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * test base class for normal spark tests.
@@ -42,6 +38,25 @@ public class SparkTestBase extends SparkTestContext {
   @Rule
   public TestName testName = new TestName();
   protected long begin ;
+
+
+  @BeforeClass
+  public static void startAll() throws IOException, ClassNotFoundException {
+    Map<String, String> configs = Maps.newHashMap();
+    Map<String, String> arcticConfigs = setUpTestDirAndArctic();
+    Map<String, String> hiveConfigs = setUpHMS();
+    configs.putAll(arcticConfigs);
+    configs.putAll(hiveConfigs);
+    setUpSparkSession(configs);
+  }
+
+  @AfterClass
+  public static void stopAll() {
+    cleanUpAms();
+    cleanUpHive();
+    cleanUpSparkSession();
+  }
+
 
   @Before
   public void testBegin(){

@@ -28,6 +28,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,12 +37,12 @@ public class HighAvailabilityServices {
   public static final Logger LOG = LoggerFactory.getLogger(HighAvailabilityServices.class);
 
   private final LeaderLatch leaderLatch;
-  private static volatile HighAvailabilityServices instance;
-  private static final List<LeaderLatchListener> listeners = new ArrayList<>();
-  private static ZookeeperUtils zkService;
+  private  volatile HighAvailabilityServices instance;
+  private  final List<LeaderLatchListener> listeners = new ArrayList<>();
+  private  ZookeeperUtils zkService;
   private final String namespace;
 
-  private HighAvailabilityServices(String zkServerAddress, String namespace) {
+  public HighAvailabilityServices(String zkServerAddress, String namespace) {
     this.namespace = namespace;
     zkService = new ZookeeperUtils(zkServerAddress);
     String lockPath = AmsHAProperties.getLeaderPath(namespace);
@@ -51,19 +52,6 @@ public class HighAvailabilityServices {
       e.printStackTrace();
     }
     leaderLatch = new LeaderLatch(zkService.getZkClient(), lockPath);
-  }
-
-  public static HighAvailabilityServices getInstance(String zkServerAddress, String namespace) {
-    Preconditions.checkNotNull(namespace, "cluster name cannot be null");
-
-    if (instance == null) {
-      synchronized (HighAvailabilityServices.class) {
-        if (instance == null) {
-          instance = new HighAvailabilityServices(zkServerAddress, namespace);
-        }
-      }
-    }
-    return instance;
   }
 
   public void addListener(LeaderLatchListener listener) {
@@ -87,5 +75,14 @@ public class HighAvailabilityServices {
     return JSONObject.parseObject(
         zkService.getData(AmsHAProperties.getMasterPath(namespace)),
         AmsServerInfo.class);
+  }
+
+  public void close() {
+    try {
+      this.zkService.close();
+      this.leaderLatch.close();
+    } catch (IOException e) {
+      LOG.error("close HighAvailabilityServices error");
+    }
   }
 }

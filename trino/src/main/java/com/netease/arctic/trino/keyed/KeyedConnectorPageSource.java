@@ -42,6 +42,7 @@ import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.io.CloseableIterable;
 import org.jetbrains.annotations.Nullable;
+import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -50,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -280,7 +282,8 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
         requireColumnsDummy,
         dynamicFilter,
         idToConstant,
-        false
+        false,
+        DateTimeZone.forID(TimeZone.getDefault().getID())
     );
   }
 }

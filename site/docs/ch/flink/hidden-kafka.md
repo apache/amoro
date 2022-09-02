@@ -40,7 +40,7 @@ create table db.log_table (
 
 ###双写 Logstore 和 Filestore
 
-![Introduce](../images/double-write.png)
+![Introduce](../images/double-write.png){:height="70%" width="70%"}
 
 Arctic Connector 通过双写写入 Logstore 和 Changestore，不会开启 Kafka transaction 保证两者数据一致性，因为这会给下游任务带来数分钟延迟（与上游任务 Checkpoint 时间间隔有关）。
 

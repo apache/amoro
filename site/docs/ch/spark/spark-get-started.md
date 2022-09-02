@@ -23,6 +23,8 @@ ${SPARK_HOME}/bin/spark-sql \
 > AMS_PORT 为AMS服务 thrift api接口端口号，默认值为 1260
 > AMS_CATALOG_NAME 为启动AMS 服务时配置的 Catalog, 默认值为 local_catalog
 
+关于 Spark 下的详细配置，请参考 [SPARK CONFIGURATION](spark-conf.md)
+
 ## 创建表
 
 在 Spark SQL 命令行中，可以通过 `CREATE TABLE` 语句执行建表命令。
@@ -72,7 +74,7 @@ insert overwrite test3 values
 ( 3, "bbb", timestamp('2022-1-3 00:00:00'));
 ```
 
-> 在当前版本中, 只在无主键表上支持 insert into 语法，在有主键表上目前只支持 insert overwrite 语法
+> 在当前版本中, 只在无主键表上支持 insert into 语法
 
 > 如果使用 static 类型的 Overwrite, 不能在分区上定义函数。
 

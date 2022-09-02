@@ -53,10 +53,10 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
         .commit();
     insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
-    SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
+    SupportHiveFullOptimizePlan supportHiveFullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         new TableOptimizeRuntime(testKeyedHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
-    List<BaseOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
+    List<BaseOptimizeTask> tasks = supportHiveFullOptimizePlan.plan();
     Assert.assertEquals(4, tasks.size());
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
     Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
@@ -88,7 +88,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
         .commit();
     insertTableBaseDataFiles(testHiveTable, 1, baseDataFilesInfo);
 
-    SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
+    SupportHiveFullOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
         new TableOptimizeRuntime(testHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();
@@ -122,7 +122,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
         .commit();
     insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1, baseDataFilesInfo);
 
-    SupportHiveMajorOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
+    SupportHiveFullOptimizePlan supportHiveMajorOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,
         new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
     List<BaseOptimizeTask> tasks = supportHiveMajorOptimizePlan.plan();

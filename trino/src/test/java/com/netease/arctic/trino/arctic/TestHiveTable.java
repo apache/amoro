@@ -46,7 +46,7 @@ import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
-public class TestHiveTble extends TestHiveTableBaseForTrino{
+public class TestHiveTable extends TestHiveTableBaseForTrino{
 
   private final String TEST_HIVE_TABLE_FULL_NAME = "arctic." + HIVE_TABLE_ID.getDatabase() + "." + HIVE_TABLE_ID.getTableName();
 

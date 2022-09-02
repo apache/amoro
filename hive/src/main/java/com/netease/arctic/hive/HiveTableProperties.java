@@ -18,8 +18,17 @@
 
 package com.netease.arctic.hive;
 
+import java.util.HashSet;
+import java.util.Set;
 
 public class HiveTableProperties {
+
+  public static final Set<String> EXPOSED = new HashSet<>();
+
+  static {
+    EXPOSED.add(HiveTableProperties.AUTO_SYNC_HIVE_DATA_WRITE);
+    EXPOSED.add(HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE);
+  }
 
   public static final String ARCTIC_TABLE_FLAG = "arctic.enable";
 

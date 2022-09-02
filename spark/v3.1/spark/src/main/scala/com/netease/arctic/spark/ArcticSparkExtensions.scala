@@ -50,6 +50,9 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectOptimizerRule { spark => RewriteMergeInto(spark) }
     // arctic optimizer rules
     extensions.injectOptimizerRule { spark => RewriteAppendArcticTable(spark) }
+//    extensions.injectOptimizerRule { spark => RewriteAppendArcticTable(spark) }
+//    extensions.injectOptimizerRule { spark => RewriteDeleteFromArcticTable(spark) }
+//    extensions.injectOptimizerRule { spark => RewriteUpdateArcticTable(spark) }
 
     // arctic optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)
