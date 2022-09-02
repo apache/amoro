@@ -126,7 +126,7 @@ public class AmsEnvironment {
   }
   
   private void stopAms() {
-    ArcticMetaStore.failover();
+    ArcticMetaStore.shutDown();
     LOG.info("ams stop");
   }
 
