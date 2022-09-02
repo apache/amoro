@@ -5,7 +5,7 @@ Flink SQL 官方支持多种 Join 方式，见 [官方文档](https://nightlies.
 对于 Flink 官方 Regular Join、Interval Join、Temporal Join，用户可以按照上述 Flink 官方的文档正常使用。
 对于将 Arctic 表作为维表的 Lookup Join 场景，请按本文档的描述配置使用。
 
-**未来会基于 Arctic LogStore 实现更实时的维表**
+**未来会基于 Arctic Logstore 实现更实时的维表**
 
 ### 使用说明
 
