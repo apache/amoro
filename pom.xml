@@ -29,13 +29,13 @@
 
     <modules>
         <module>core</module>
-        <module>ams</module>
+        <module>hive</module>
         <module>optimizer</module>
         <module>flink</module>
         <module>spark</module>
-        <module>dist</module>
         <module>trino</module>
-        <module>hive</module>
+        <module>ams</module>
+        <module>dist</module>
     </modules>
 
     <properties>
