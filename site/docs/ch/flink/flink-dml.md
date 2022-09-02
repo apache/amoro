@@ -35,7 +35,7 @@ SET execution.runtime-mode = batch;
 
 > **TIPS**
 > 
-> LogStore 不支持有界读取.
+> Logstore 不支持有界读取.
     
 ```sql
 -- 在当前 session 中以批的模式运行 Flink 任务

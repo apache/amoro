@@ -60,7 +60,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
   private int partitionId = 0;
   private long taskId = 0;
   private RowType flinkSchema;
-  private int mask;
+  private long mask;
 
   private FlinkTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -86,7 +86,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     return this;
   }
 
-  public FlinkTaskWriterBuilder withMask(int mask) {
+  public FlinkTaskWriterBuilder withMask(long mask) {
     this.mask = mask;
     return this;
   }

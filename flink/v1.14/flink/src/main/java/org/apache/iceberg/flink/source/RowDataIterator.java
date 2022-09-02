@@ -18,6 +18,7 @@
 
 package org.apache.iceberg.flink.source;
 
+import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.CombinedScanTask;
@@ -31,7 +32,6 @@ import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
 import org.apache.iceberg.flink.data.FlinkAvroReader;
 import org.apache.iceberg.flink.data.FlinkOrcReader;
-import org.apache.iceberg.flink.data.FlinkParquetReaders;
 import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
@@ -126,7 +126,7 @@ class RowDataIterator extends DataIterator<RowData> {
         .reuseContainers()
         .split(task.start(), task.length())
         .project(schema)
-        .createReaderFunc(fileSchema -> FlinkParquetReaders.buildReader(schema, fileSchema, idToConstant))
+        .createReaderFunc(fileSchema -> AdaptHiveFlinkParquetReaders.buildReader(schema, fileSchema, idToConstant))
         .filter(task.residual())
         .caseSensitive(caseSensitive)
         .reuseContainers();
