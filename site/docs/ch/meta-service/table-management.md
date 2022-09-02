@@ -9,7 +9,7 @@ Arctic 从 v0.3.1 版本开始支持了 Hive 表，可以对已有的 Hive 表�
 
 ![Hive Table Detail](../images/meta-service/hive-table-detail.png)
 
-点击表详情右上角的 `Upgrade` 按钮。
+点击表详情右上角的 `Upgrade` 按钮（已经完成升级的 Hive 表不再显示此按钮）。
 
 ![Hive Table Upgrade](../images/meta-service/hive-table-upgrade.png)
 

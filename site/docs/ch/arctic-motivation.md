@@ -14,10 +14,10 @@ LakeHouse 给企业带来的价值，应当是用一套数据湖底座，拓展�
 ### Continuous self-optimized
 
 Hive 作为目前使用最为广泛的数据湖离线数仓方案，由于其表格式与数据文件的静态关系，缺乏数据写入和读取的 ACID 保障，适合 T+1 或 T+H 等离线摄取和计算场景，如下图所示：
-![Hive Table Space](images/motivation/hive-table-space.png)
+![Hive Table Space](images/motivation/hive-table-space.png){:height="80%" width="80%"}
 
 近年来 Iceberg/DeltaLake 在数据湖之上开创了新的理念，与 Hive 相比，Iceberg/DeltaLake 在表格式中抽象出快照的概念，表的任何数据变更都会构造出新的快照，Iceberg/DeltaLake 通过快照的隔离实现数据写入的 ACID 和读取的 MVCC，更好地支持数据实时摄取和计算，如下图所示：
-![Iceberg Table Space](images/motivation/iceberg-table-space.png)
+![Iceberg Table Space](images/motivation/iceberg-table-space.png){:height="80%" width="80%"}
 
 Iceberg/DeltaLake 的表格式是数据湖之上进一步的元数据封装，遵循所读即所写的原则，但是一些情况下用户想要读的不是直接写入的数据：
 
@@ -29,7 +29,7 @@ Iceberg/DeltaLake 的表格式是数据湖之上进一步的元数据封装，�
 
 Arctic 的核心目标之一是在 DataOps 的场景中消除优化者的角色，Arctic 提供托管的持续 optimizing 机制实现流批写入的存储结构转换，对流批读取的场景，也可以提供不同的存储结构响应，后续，Arctic 也可以扩展存储结构以支持排序和聚合：
 
-![Arctic Table Space](images/motivation/arctic-table-space.png)
+![Arctic Table Space](images/motivation/arctic-table-space.png){:height="80%" width="80%"}
 
 持续优化的特性让数据湖除了离线场景，也能适用于更多实时场景，同时数据湖开放性，弹性以及存算分离的优势让湖仓可以轻便地作用于 AI，数据科学，数仓等领域。托管的持续优化能力也能让 Arctic 的用户体验尽可能贴近数据库或传统数仓，减少用户对性能和成本的担忧。
 
@@ -38,7 +38,7 @@ Iceberg 和 DeltaLake 通过 format 元数据定义了表和快照一对多关�
 
 与 DeltaLake/Iceberg table format 不同的是，Arctic 支持在 schema 中设置主键，并保障数据并发写入时数据按主键具有事务的一致性语义，考虑下面两个场景：
 
-![Concurrent Conflicts](images/motivation/concurrent-conflicts.png)
+![Concurrent Conflicts](images/motivation/concurrent-conflicts.png){:height="80%" width="80%"}
 
 **场景一：数据库 CDC 同步**
 
@@ -51,13 +51,13 @@ Iceberg 和 DeltaLake 通过 format 元数据定义了表和快照一对多关�
 ### Batch and stream fused solution
 实时计算中通常使用 kafka 这类消息队列作为流表方案，对应离线计算下的 hive，但由于消息队列不支持 AP 查询，实时场景下还需要一个实时 OLAP 系统如 Kudu，Druid：
 
-![Batch Stream](images/motivation/batch-stream.png)
+![Batch Stream](images/motivation/batch-stream.png){:height="80%" width="80%"}
 
 对 Lambda 架构，最明显的问题是冗余带来的浪费以及多套系统维护和重复开发带来的低效，另外在两个系统中同时建模会打来语义二义性问题，而在真实的生产场景中，业务还需要应对实时和离线视图合并的问题，或者引入 KV 实现实时场景的维表关联。
 
 Arctic 的核心目标之一，是为业务提供基于数据湖的去 Lambda 化，业务可以使用一套 Arctic 服务替代 Kafka 流表与 Hive 批表的数据生产和查询，实现存储底座的流批一体：
 
-![Batch Stream Fused](images/motivation/batch-stream-fused.png)
+![Batch Stream Fused](images/motivation/batch-stream-fused.png){:height="80%" width="80%"}
 
 为此 Arctic 满足以下特性：
 
@@ -73,7 +73,7 @@ Arctic 目前的定位是流式湖仓服务，流式强调向实时能力的拓�
 
 Arctic 为管理员和开发者提供了持续优化的度量和管理工具，以帮助用户实现时效性，存储和计算成本的测量，标定和规划。进一步说，在以数据湖构建的离线场景中，成本和性能呈非常线性的关系，当性能或容量不足时，SRE 只需要考虑加多少机器。而当我们将数据湖的能力拓展到实时场景，成本，性能和数据新鲜度的关系将呈现更为复杂和微妙的状态，arcitic 的服务和管理功能，将为用户和上层平台理清这一层三角关系：
 
-![Optimizing Cost](images/motivation/optimizing-cost.png)
+![Optimizing Cost](images/motivation/optimizing-cost.png){:height="50%" width="50%"}
 
 Arctic 管理功能聚焦在回答以下几个问题：
 

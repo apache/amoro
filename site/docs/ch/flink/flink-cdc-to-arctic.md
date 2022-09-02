@@ -1,7 +1,7 @@
 #Flink CDC 入湖 Arctic
 CDC 是 Change Data Capture 的缩写，这是一个宽泛的概念，只要能捕捉到变化的数据，就可以称为CDC。Flink CDC 是一个基于 Log 消息的数据捕获工具，所有存量和增量数据都可以被捕获。以 Mysql 为例，其可以轻松通过 Debezium 采集 Binlog 数据并实时处理计算发送到 Arctic 数据湖中。后续可以通过其他引擎查询 Arctic 数据湖。
 
-![Introduce](../images/flink-cdc-arctic.png)
+![Introduce](../images/flink-cdc-arctic.png){:height="80%" width="80%"}
 
 ## 入湖
 Flink CDC Connector 捕获数据库数据包含四种 RowKind: UPDATE_BEFORE, UPDATE_AFTER, DELETE and INSERT，Flink on Arctic Connector 也支持四种数据写入到 Arctic 数据湖。
