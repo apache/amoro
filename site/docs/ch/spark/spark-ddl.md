@@ -64,7 +64,6 @@ PARTITIONED BY (bucket(16, id), days(ts), category)
 
 ## CREATE TABLE ... AS SELECT 
 
-???+note "CREATE TABLE ... AS SELECT 同时支持有主键表和无主键表"
 
 ``` 
 CREATE TABLE arctic_catalog.db.sample
@@ -76,7 +75,6 @@ AS SELECT ...
 
 ## CREATE TABLE ... LIKE
 
-???+note "CREATE TABLE ... LIKE 同时支持有主键表和无主键表"
 
 ``` 
 CREATE TABLE arctic_catalog.db.sample
