@@ -108,7 +108,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
       .key("submit.empty.snapshots")
       .booleanType()
-      .defaultValue(true)
+      .defaultValue(false)
       .withDescription("Optional submit empty snapshots to the arctic table, false means that writers will not emit" +
           " empty WriteResults to the committer operator, and reduce the number of snapshots in File Cache; true" +
           " means this job will submit empty snapshots to the table, it is suitable with some valid reasons, e.g." +
