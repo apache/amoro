@@ -13,7 +13,7 @@ java -version
 AMS所有配置项都在`conf/config.yaml`文件中:
 
 ```yaml
-  arctic.ams.server-host.prefix: "127.0.0.1"       #引擎端连接ams时使用的地址，需配置ams所在机器ip前缀(注意必须加双引号)，前缀可以便捷批量部署
+  arctic.ams.server-host.prefix: "127.0.0.1"       #AMS的地址前缀，可以填写完整的地址，也可以只填写用于匹配真实地址的前缀(例如"192.168"，注意必须加双引号)
   arctic.ams.thrift.port: 1260                     #thrift服务端口
   arctic.ams.http.port: 1630                       #http服务端口，即ams页面端口
   arctic.ams.optimize.check.thread.pool-size: 10   #table optimize task任务运行时信息同步任务线程池大小
@@ -179,9 +179,9 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 **2.新增配置**
 
 ```yaml
-  arctic.ams.ha.enable: true
-  arctic.ams.cluster.name: default
-  arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
+  arctic.ams.ha.enable: true                        #是否开启高可用
+  arctic.ams.cluster.name: default                  #ams集群名称，一个集群内会保持一主多备
+  arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183   #zookeeper server地址
 ```
 
 **3.重启 AMS**
