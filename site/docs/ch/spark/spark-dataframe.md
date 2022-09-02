@@ -31,3 +31,22 @@ data.writeTo("arctic_catalog.db.sample").append()
 val data: DataFrame = ...
 data.writeTo("arctic_catalog.db.sample").overwritePartitions()
 ```
+
+### Creating tables
+创建表请使用`create`操作
+```sql
+val data: DataFrame = ...
+data.writeTo("arctic_catalog.db.sample").create()
+```
+
+创建表操作支持表配置方法，如`partitionBy`，并且arctic支持使用`option("primary.keys", "'xxx'")`来指定主键:
+```sql
+val data: DataFrame = ...
+data.write().format("arctic")
+    .partitionBy("data")
+    .option("primary.keys", "'xxx'")
+    .save("arctic_catalog.db.sample")
+```
+
+
+
