@@ -134,6 +134,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
+        " ts timestamp , \n " +
         " primary key (id) \n" +
         ") using arctic \n" +
         " tblproperties ( \n" +
@@ -144,7 +145,9 @@ public class TestCreateTableDDL extends SparkTestBase {
     ArcticTable keyedTable = loadTable(identifierA);
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
-        Types.NestedField.optional(2, "name", Types.StringType.get()));
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone())
+        );
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTable.schema().asStruct());
 
