@@ -74,6 +74,16 @@ AS SELECT ...
 
 ???+danger "CREATE TABLE ... AS SELECT 在当前版本没有原子性保证"
 
+## CREATE TABLE ... LIKE
+
+???+note "CREATE TABLE ... LIKE 同时支持有主键表和无主键表"
+
+``` 
+CREATE TABLE arctic_catalog.db.sample
+LIKE arctic_catalog.db.sample2
+USING arctic
+```
+
 ## REPLACE TABLE ... AS SELECT
 
 ???+note "REPLACE TABLE ... AS SELECT 语法在当前版本只支持无主键表"
