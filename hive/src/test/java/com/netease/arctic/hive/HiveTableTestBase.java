@@ -61,22 +61,22 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 public class HiveTableTestBase extends TableTestBase {
   public static final Logger LOG = LoggerFactory.getLogger(HiveTableTestBase.class);
 
-  protected static final String HIVE_DB_NAME = "hivedb";
-  protected static final String HIVE_CATALOG_NAME = "hive_catalog";
-  protected static final AtomicInteger testCount = new AtomicInteger(0);
+  public static final String HIVE_DB_NAME = "hivedb";
+  public static final String HIVE_CATALOG_NAME = "hive_catalog";
+  public static final AtomicInteger testCount = new AtomicInteger(0);
 
-  protected static final TemporaryFolder tempFolder = new TemporaryFolder();
+  public static final TemporaryFolder tempFolder = new TemporaryFolder();
 
-  protected static HMSMockServer hms;
+  public static HMSMockServer hms;
 
-  protected static final TableIdentifier HIVE_TABLE_ID =
+  public static final TableIdentifier HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_hive_table");
-  protected static final TableIdentifier HIVE_PK_TABLE_ID =
+  public static final TableIdentifier HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "test_pk_hive_table");
 
-  protected static final TableIdentifier UN_PARTITION_HIVE_TABLE_ID =
+  public static final TableIdentifier UN_PARTITION_HIVE_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_hive_table");
-  protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
+  public static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
@@ -90,9 +90,9 @@ public class HiveTableTestBase extends TableTestBase {
   protected static final PartitionSpec HIVE_SPEC =
       PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity("name").build();
 
-  protected ArcticHiveCatalog hiveCatalog;
-  protected UnkeyedHiveTable testHiveTable;
-  protected KeyedHiveTable testKeyedHiveTable;
+  public static ArcticHiveCatalog hiveCatalog;
+  public UnkeyedHiveTable testHiveTable;
+  public KeyedHiveTable testKeyedHiveTable;
 
   protected UnkeyedHiveTable testUnPartitionHiveTable;
   protected KeyedHiveTable testUnPartitionKeyedHiveTable;
@@ -145,23 +145,19 @@ public class HiveTableTestBase extends TableTestBase {
   @Before
   public void setupTables() throws Exception {
     hiveCatalog = (ArcticHiveCatalog) CatalogLoader.load(AMS.getUrl(HIVE_CATALOG_NAME));
-    tableDir = temp.newFolder();
-
+    tableDir = tempFolder.newFolder();
     testHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
         .create().asUnkeyedTable();
-
     testUnPartitionHiveTable = (UnkeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_TABLE_ID, HIVE_TABLE_SCHEMA)
         .create().asUnkeyedTable();
-
     testKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPartitionSpec(HIVE_SPEC)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
-
     testUnPartitionKeyedHiveTable = (KeyedHiveTable) hiveCatalog
         .newTableBuilder(UN_PARTITION_HIVE_PK_TABLE_ID, HIVE_TABLE_SCHEMA)
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)

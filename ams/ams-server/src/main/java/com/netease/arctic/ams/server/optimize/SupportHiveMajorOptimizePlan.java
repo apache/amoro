@@ -27,8 +27,6 @@ import java.util.stream.Collectors;
 public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(SupportHiveMajorOptimizePlan.class);
 
-  // partitions are support hive
-  protected final Set<String> supportHivePartitions = new HashSet<>();
   // hive location.
   protected final String hiveLocation;
   // files in locations don't need to major optimize
@@ -50,37 +48,17 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   public boolean partitionNeedPlan(String partitionToPath) {
     long current = System.currentTimeMillis();
 
-    // check position delete file total size
-    if (checkPosDeleteTotalSize(partitionToPath)) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
-      supportHivePartitions.add(partitionToPath);
-      return true;
-    }
-
-    // check full major optimize interval
-    if (checkFullMajorOptimizeInterval(current, partitionToPath)) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
-      supportHivePartitions.add(partitionToPath);
-      return true;
-    }
-
     // check small data file count
     List<DataFile> smallFiles = filterSmallFiles(partitionToPath,
         partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()));
     if (checkSmallFileCount(smallFiles)) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
-      if (CollectionUtils.isEmpty(partitionPosDeleteFiles.get(partitionToPath))) {
-        supportHivePartitions.add(partitionToPath);
-      }
       return true;
     }
 
     // check major optimize interval
     if (checkMajorOptimizeInterval(current, partitionToPath)) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
-      if (CollectionUtils.isEmpty(partitionPosDeleteFiles.get(partitionToPath))) {
-        supportHivePartitions.add(partitionToPath);
-      }
       return true;
     }
 
@@ -113,8 +91,10 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   }
 
   @Override
-  protected boolean canSkip(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
-    return CollectionUtils.isEmpty(posDeleteFiles) && baseFiles.isEmpty();
+  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+    boolean hasPos = CollectionUtils.isNotEmpty(posDeleteFiles) && baseFiles.size() >= 2;
+    boolean noPos = CollectionUtils.isEmpty(posDeleteFiles) && CollectionUtils.isNotEmpty(baseFiles);
+    return hasPos || noPos;
   }
 
   private List<DataFile> filterSmallFiles(String partition, List<DataFile> dataFileList) {
