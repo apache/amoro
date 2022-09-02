@@ -58,6 +58,8 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   private ArcticSparkCatalog arcticCatalog = null;
   private T sessionCatalog = null;
 
+  private CaseInsensitiveStringMap options = null;
+
   /**
    * Build a {@link ArcticSparkCatalog} to be used for Iceberg operations.
    * <p>
@@ -119,7 +121,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     if (isDelegateEnable()) {
       try {
         LOG.info("try to load arctic table first ......");
-        return arcticCatalog.loadTable(ident);
+        return getArcticCatalog().loadTable(ident);
       } catch (NoSuchTableException e) {
         LOG.info("no arctic table, load hive table by default spark session catalog.");
         return getSessionCatalog().loadTable(ident);
@@ -169,7 +171,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
     if (isDelegateEnable() && arcticCatalog.tableExists(ident)) {
-      return arcticCatalog.alterTable(ident, changes);
+      return getArcticCatalog().alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
     }
@@ -180,7 +182,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     // no need to check table existence to determine which catalog to use. if a table doesn't exist then both are
     // required to return false.
     if (isDelegateEnable()) {
-      return arcticCatalog.dropTable(ident) || getSessionCatalog().dropTable(ident);
+      return getArcticCatalog().dropTable(ident) || getSessionCatalog().dropTable(ident);
     } else {
       return getSessionCatalog().dropTable(ident);
     }
@@ -191,7 +193,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
     if (isDelegateEnable() && arcticCatalog.tableExists(from)) {
-      arcticCatalog.renameTable(from, to);
+      getArcticCatalog().renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
     }
@@ -200,6 +202,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   @Override
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
+    this.options = options;
     if (isDelegateEnable()) {
       this.arcticCatalog = buildSparkCatalog(name, options);
     }
@@ -238,5 +241,13 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
     Preconditions.checkNotNull(sessionCatalog, "Delegated SessionCatalog is missing. " +
         "Please make sure your are replacing Spark's default catalog, named 'spark_catalog'.");
     return sessionCatalog;
+  }
+
+  private ArcticSparkCatalog getArcticCatalog() {
+    if (arcticCatalog == null) {
+      this.arcticCatalog = buildSparkCatalog(this.catalogName, this.options);
+    }
+    return this.arcticCatalog;
+
   }
 }
