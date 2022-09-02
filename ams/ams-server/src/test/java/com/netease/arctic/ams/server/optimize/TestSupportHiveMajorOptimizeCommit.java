@@ -155,10 +155,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
         .forEach(fileScanTask -> oldDataFilesPath.add((String) fileScanTask.file().path()));
 
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedHiveTable.id());
-    SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testKeyedHiveTable,
+    SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedHiveTable, tasks.get(0).getTaskId().getType());
@@ -251,10 +251,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
         .forEach(fileScanTask -> oldDataFilesPath.add((String) fileScanTask.file().path()));
 
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testHiveTable.id());
-    SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testHiveTable,
+    SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testHiveTable, tasks.get(0).getTaskId().getType());
@@ -348,10 +348,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
         .forEach(fileScanTask -> oldDataFilesPath.add((String) fileScanTask.file().path()));
 
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testUnPartitionKeyedHiveTable.id());
-    SupportHiveMajorOptimizePlan majorOptimizePlan = new SupportHiveMajorOptimizePlan(testUnPartitionKeyedHiveTable,
+    SupportHiveFullOptimizePlan fullOptimizePlan = new SupportHiveFullOptimizePlan(testUnPartitionKeyedHiveTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
-    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
     Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
 
     Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testUnPartitionKeyedHiveTable, tasks.get(0).getTaskId().getType());

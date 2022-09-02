@@ -360,15 +360,15 @@
             <properties>
                 <hive.version>2.3.7</hive.version>
             </properties>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
         </profile>
         <profile>
             <id>hive-v2.1</id>
             <properties>
                 <hive.version>2.1.1</hive.version>
             </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
         </profile>
     </profiles>
 </project>

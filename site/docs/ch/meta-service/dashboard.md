@@ -2,14 +2,14 @@
 
 如[概述](../index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是部署 AMS。
 
-### 下载
+## 下载
 AMS依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经安装正确。
 ```shell
 java -version
 ```
 可以通过这个[链接](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip)下载到最新版的AMS压缩包。
 
-### 参数配置
+## 参数配置
 AMS所有配置项都在`conf/config.yaml`文件中:
 
 ```yaml
@@ -24,7 +24,7 @@ AMS所有配置项都在`conf/config.yaml`文件中:
 ```
 默认参数即可应对大多数场景，如果要在分布式环境下使用则需要修改`arctic.ams.server-host`配置为AMS所在机器的正确地址。
 
-### 启动/重启/关闭
+## 启动/重启/关闭
 AMS安装包中提供了脚本文件`bin/ams.sh`用以处理AMS的日常运维需求，可以通过下面的命令完成AMS的启动、重启或关闭需求。
 ```shell
 ./bin/ams.sh start     #启动
@@ -33,7 +33,7 @@ AMS安装包中提供了脚本文件`bin/ams.sh`用以处理AMS的日常运维�
 ```
 AMS完成启动后即可登录 [AMS Dashboard](http://localhost:1630) 来访问AMS的页面，默认的用户名密码为：`admin/admin`。
 
-### 使用 MySQL 作为系统库
+## 使用 MySQL 作为系统库
 AMS 默认使用 Derby 作为系统库存储自己的元数据，在生产环境下我们建议换成MySQL以提升系统的高可用。
 
 **1.修改配置文件**
@@ -68,28 +68,54 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
 参考 [启动/重启/关闭](#_3)。
 
-### 导入 hadoop 集群
+## 导入集群
 
 在默认的 AMS 配置中，我们已经初始化了一个名为`local`的基于AMS本地文件系统的集群以方便你的测试。
-生产环境中我们需要导入 Hadoop 集群，为此我们需要在AMS的配置中新增一个 catalog，并在创建和使用 Arctic 表时使用该 catalog。
 
-新增 catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
+### 导入Hadoop集群
+
+生产环境中我们如果需要导入 Hadoop 集群，需要在AMS的配置中新增一个 Arctic catalog，并在创建和使用 Arctic 表时使用该 catalog。
+
+新增 Arctic catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
 
 ```yaml
   - name:                           #catalog名称
-    type: hadoop
+    type: hadoop                    #catalog类型配置为hadoop
     storage_config:
       storage.type: hdfs
-      core-site:                    #hadoop集群core-site.xml配置文件绝对路径
-      hdfs-site:                    #hadoop集群hdfs-site.xml配置文件绝对路径
+      core-site:                    #Hadoop集群core-site.xml配置文件绝对路径
+      hdfs-site:                    #Hadoop集群hdfs-site.xml配置文件绝对路径
     auth_config:
       type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
-      hadoop_username: hadoop       #访问hadoop集群用户名
+      hadoop_username: hadoop       #访问Hadoop集群用户名
     properties:
-      warehouse.dir: hdfs://default/default/warehouse         #hadoop集群仓库地址
+      warehouse.dir: hdfs://default/default/warehouse         #Hadoop集群仓库地址
 ```
 
-如果需要使用 KERBEROS 认证方式访问 Hadoop 集群可以修改 catalog 中 auth_config 如下：
+### 导入Hive集群
+
+生产环境中我们如果需要导入 Hive 集群并利用 Arctic 提供的 Hive 兼容相关功能，需要在AMS的配置中新增一个 Arctic Hive catalog，并在创建和使用 Arctic 表时使用该 catalog。
+
+新增 Arctic Hive catalog 通过在`conf/config.yaml`中`catalogs`中增加以下配置：
+
+```yaml
+  - name:                           #catalog名称
+    type: hive                      #catalog类型配置为 hive
+    storage_config:
+      storage.type: hdfs
+      core-site:                    #Hive集群core-site.xml配置文件绝对路径
+      hdfs-site:                    #Hive集群hdfs-site.xml配置文件绝对路径
+      hive-site:                    #Hive集群hive-site.xml配置文件绝对路径
+    auth_config:
+      type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
+      hadoop_username: hadoop       #访问Hive集群用户名
+    properties:
+      warehouse.dir: hdfs://default/default/warehouse         #Hive集群仓库地址
+```
+
+### 修改认证方式
+
+如果需要使用 KERBEROS 认证方式访问 Hadoop 或 Hive 集群可以修改 catalog 中 auth_config 如下：
 
 ```yaml
     auth_config:
@@ -103,7 +129,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
     修改配置文件后需重启AMS服务才可生效，参考[启动/重启/关闭](#_3)。
 
-### 使用 Flink 执行结构优化
+## 使用 Flink 执行结构优化
 
 在默认的 AMS 配置中，我们已经初始化了一个名为`default`的 optimizer group，它会在AMS本地新启动一个进程完成 local catalog 中表的结构优化。
 生产环境中我们通常在 Yarn 集群中使用 Flink 来完成表的结构优化。
