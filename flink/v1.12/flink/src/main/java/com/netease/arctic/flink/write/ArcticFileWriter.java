@@ -89,7 +89,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     this.submitEmptySnapshot = submitEmptySnapshot;
     LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
         minFileSplitCount, upsert, submitEmptySnapshot);
-    LOG.info("upsert is {}", upsert);
   }
 
   @Override

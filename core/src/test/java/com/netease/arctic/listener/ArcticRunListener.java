@@ -23,47 +23,48 @@ import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ArcticRunListener extends RunListener {
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticRunListener.class);
   private long startTime;
 
   @Override
   public void testRunStarted(Description description) {
     startTime = System.currentTimeMillis();
-    System.out.println("Tests started! Number of Test case: " +
-        (description == null ? 0 : description.testCount()) + "\n");
+    LOG.info("{} Tests started! Number of Test case: {}",
+        description == null ? "Unknown" : description.getClassName(),
+        description == null ? 0 : description.testCount());
   }
 
   @Override
   public void testRunFinished(Result result) throws Exception {
     long endTime = System.currentTimeMillis();
-    System.out.println("Tests finished! Number of test case: " + result.getRunCount());
+    LOG.info("Tests finished! Number of test case: {}", result.getRunCount());
     long elapsedSeconds = (endTime - startTime) / 1000;
-    System.out.println("Elapsed time of tests execution: " + elapsedSeconds + " seconds");
+    LOG.info("Elapsed time of tests execution: " + elapsedSeconds + " seconds");
   }
 
   @Override
   public void testStarted(Description description) {
-    System.out.println(description.getMethodName() + " test is starting...");
+    LOG.info(description.getMethodName() + " test is starting...");
   }
 
   @Override
   public void testFinished(Description description) {
-    System.out.println(description.getMethodName() + " test is finished...\n");
+    LOG.info(description.getMethodName() + " test is finished...\n");
   }
 
   @Override
   public void testFailure(Failure failure) {
-    System.out.println(failure.getDescription().getMethodName() + " test FAILED!!!");
+    LOG.info(failure.getDescription().getMethodName() + " test FAILED!!!");
   }
 
   @Override
   public void testIgnored(Description description) throws Exception {
     super.testIgnored(description);
     Ignore ignore = description.getAnnotation(Ignore.class);
-    String ignoreMessage = String.format(
-        "@Ignore test method '%s()': '%s'",
-        description.getMethodName(), ignore.value());
-    System.out.println(ignoreMessage + "\n");
+    LOG.info("@Ignore test method '{}': '%{}'", description.getMethodName(), ignore.value());
   }
 }
