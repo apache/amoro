@@ -5,8 +5,6 @@ Flink SQL 官方支持多种 Join 方式，见 [官方文档](https://nightlies.
 对于 Flink 官方 Regular Join、Interval Join、Temporal Join，用户可以按照上述 Flink 官方的文档正常使用。
 对于将 Arctic 表作为维表的 Lookup Join 场景，请按本文档的描述配置使用。
 
-**未来会基于 Arctic Logstore 实现更实时的维表**
-
 ### 使用说明
 
 注意：维表必须定义主键，并且 Join 条件必须包含所有主键字段。
@@ -58,9 +56,10 @@ ON orders.user_id = user_dim.id
 
 - 当 Arctic 作为维表（user 表）数据量很大时，需要一定的存量数据加载时间。在此期间，左表（orders）的数据会缓存在 Join 算子中，直到维表存量数据加载完，
 才会触发 Join 算子的关联操作并向下游输出数据。
-- 现阶段维表读 Arctic FileStore 会存在一定的时间延迟，如果左表（orders）的数据是毫秒级延迟的实时数据，需要指定允许一定时间的延迟，让左表数据缓存一段时间后，再触发 Join。
-如允许 10s 的延迟：WATERMARK FOR order_time AS order_time - INTERVAL '10' SECOND，避免左表（orders）的数据比维表数据快，导致 Join 关联不上
-维表侧（user 表）的数据。
+- 现阶段维表读 Arctic Filestore 会存在一定的时间延迟，如果左表（orders）的数据是毫秒级延迟的实时数据，需要指定允许一定时间的延迟，让左表数据缓存一段时间后，再触发 Join。
+如允许 10s 的延迟：WATERMARK FOR order_time AS order_time - INTERVAL '10' SECOND，避免左表（orders）的数据比维表数据快，导致 Join 关联不上维表侧（user 表）的数据。
+- 未来会基于 Arctic Logstore 实现更实时的维表
+
 
 **注意事项**
 
