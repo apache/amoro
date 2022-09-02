@@ -20,5 +20,5 @@ package com.netease.arctic.spark;
 
 public class SparkSQLProperties {
 
-  public static final String DELEGATE_DEFAULT_CATALOG_TABLE = "arctic.sql.delegate.enable";
+  public static final String DELEGATE_DEFAULT_CATALOG_TABLE = "spark.arctic.sql.delegate.enable";
 }

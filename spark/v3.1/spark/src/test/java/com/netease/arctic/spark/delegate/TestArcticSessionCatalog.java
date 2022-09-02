@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.delegate;
 
-import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.SparkTestContext;
 import java.io.IOException;
@@ -51,7 +50,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
     configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
     configs.put("spark.sql.catalog.spark_catalog.url", amsUrl + "/" + catalogNameHive);
-    configs.put("arctic.sql.delegate.enable", "false");
+    configs.put("spark.arctic.sql.delegate.enable", "true");
 
     setUpSparkSession(configs);
   }
@@ -81,61 +80,14 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   }
 
   private String database = "default";
-  private String table = "test";
   private String table2 = "test2";
   private String table3 = "test3";
-
   private String table_D = "test4";
   private String table_D2 = "test5";
-
-
+  
   @Test
-  public void testCatalogEnable() throws IOException, TException {
-    sql("use spark_catalog");
-    System.out.println("arctic.sql.delegate.enable = " + spark.conf().get("arctic.sql.delegate.enable"));
-    sql("create table {0}.{1} ( id int, data string) using arctic", database, table);
-    sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table2);
-    sql("insert overwrite {0}.{1} values \n" +
-        "(1, ''aaa''), \n " +
-        "(2, ''bbb''), \n " +
-        "(3, ''ccc'') \n ", database, table);
-    sql("insert overwrite {0}.{1} values \n" +
-        "(1, ''aaa''), \n " +
-        "(2, ''bbb''), \n " +
-        "(3, ''ccc'') \n ", database, table2);
-    Table tableA = hms.getClient().getTable(database, table);
-    Assert.assertNotNull(tableA);
-    Table tableB = hms.getClient().getTable(database, table2);
-    Assert.assertNotNull(tableB);
-    sql("select * from {0}.{1}", database, table);
-    sql("select * from {0}.{1}", database, table2);
-
-    // when ams is unavailable
-    AmsClientPools.cleanAll();
-    sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table3);
-    sql("insert overwrite {0}.{1} values \n" +
-        "(4, ''aaa''), \n " +
-        "(5, ''bbb''), \n " +
-        "(6, ''ccc'') \n ", database, table);
-    sql("insert overwrite {0}.{1} values \n" +
-        "(4, ''aaa''), \n " +
-        "(5, ''bbb''), \n " +
-        "(6, ''ccc'') \n ", database, table2);
-    rows = sql("select * from {0}.{1}", database, table);
-    assertContainIdSet(rows, 0, 4, 5, 6);
-    rows = sql("select * from {0}.{1}", database, table2);
-    assertContainIdSet(rows, 0, 4, 5, 6);
-    sql("select * from {0}.{1}", database, table3);
-
-    sql("drop table {0}.{1}", database, table);
-    sql("drop table {0}.{1}", database, table2);
-    sql("drop table {0}.{1}", database, table3);
-  }
-
-  @Test
-  public void enableHiveDelegate() throws TException {
-    sql("set `arctic.sql.delegate.enable` = true");
-    System.out.println("arctic.sql.delegate.enable = " + spark.conf().get("arctic.sql.delegate.enable"));
+  public void testHiveDelegate() throws TException {
+    System.out.println("spark.arctic.sql.delegate.enable = " + spark.conf().get("spark.arctic.sql.delegate.enable"));
     sql("use spark_catalog");
     sql("create table {0}.{1} ( id int, data string) using arctic", database, table_D);
     sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table_D2);
@@ -156,5 +108,38 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
     sql("drop table {0}.{1}", database, table_D);
     sql("drop table {0}.{1}", database, table_D2);
+
   }
+
+  @Test
+  public void testCatalogEnable() throws TException {
+    sql("set spark.arctic.sql.delegate.enable=false");
+    sql("use spark_catalog");
+    System.out.println("spark.arctic.sql.delegate.enable = " + spark.conf().get("spark.arctic.sql.delegate.enable"));
+    sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table2);
+    sql("insert overwrite {0}.{1} values \n" +
+        "(1, ''aaa''), \n " +
+        "(2, ''bbb''), \n " +
+        "(3, ''ccc'') \n ", database, table2);
+    Table tableB = hms.getClient().getTable(database, table2);
+    Assert.assertNotNull(tableB);
+    sql("select * from {0}.{1}", database, table2);
+
+    sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table3);
+    sql("insert overwrite {0}.{1} values \n" +
+        "(4, ''aaa''), \n " +
+        "(5, ''bbb''), \n " +
+        "(6, ''ccc'') \n ", database, table2);
+    rows = sql("select * from {0}.{1}", database, table2);
+    assertContainIdSet(rows, 0, 4, 5, 6);
+    sql("select * from {0}.{1}", database, table3);
+
+    sql("drop table {0}.{1}", database, table2);
+    sql("drop table {0}.{1}", database, table3);
+  }
+
+
+
+
+
 }
