@@ -29,11 +29,11 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.op.OverwriteBaseFiles;
-import com.netease.arctic.spark.hive.HMSMockServer;
 import com.netease.arctic.spark.hive.HiveCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -67,9 +67,7 @@ import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 import org.apache.thrift.TException;
 import org.glassfish.jersey.internal.guava.Sets;
-import org.junit.AfterClass;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -101,7 +99,6 @@ public class SparkTestContext extends ExternalResource {
   final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
   private static final Logger LOG = LoggerFactory.getLogger(SparkTestBase.class);
 
-  protected static Map<String, String> additionSparkConfigs = Maps.newHashMap();
   protected static File testBaseDir = new File("unit_test_base_tmp");
   protected static File testSparkDir = new File(testBaseDir, "spark-warehouse");
   protected static File testArcticDir = new File(testBaseDir, "arctic");
@@ -114,34 +111,19 @@ public class SparkTestContext extends ExternalResource {
   static final File hmsDir = new File(testBaseDir, "hive");
   protected static final HMSMockServer hms = new HMSMockServer(hmsDir);
 
-  protected static final AtomicInteger testCount = new AtomicInteger(0);
+  protected static final AtomicInteger arcticSetupCount = new AtomicInteger(0);
+  protected static final AtomicInteger hiveSetupCount = new AtomicInteger(0);
+  protected static final AtomicInteger sparkSetupCount = new AtomicInteger(0);
 
-  public static void cleanUpAdditionSparkConfigs() {
-    additionSparkConfigs.clear();
-  }
+  public static Map<String, String> setUpTestDirAndArctic() throws IOException {
+    Map<String, String> configs = Maps.newHashMap();
+    configs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
+    configs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
 
-  @BeforeClass
-  public static void startAll() throws IOException, ClassNotFoundException {
-    int ref = testCount.incrementAndGet();
-    if (ref == 1) {
-      setUpTestDirAndArctic();
-      setUpHMS();
-      setUpSparkSession();
+    if (arcticSetupCount.incrementAndGet() > 1) {
+      return configs;
     }
-  }
 
-  @AfterClass
-  public static void stopAll() {
-    int ref = testCount.decrementAndGet();
-    if (ref == 0) {
-      cleanUpAms();
-      cleanUpHive();
-      cleanUpSparkSession();
-      cleanUpAdditionSparkConfigs();
-    }
-  }
-
-  public static void setUpTestDirAndArctic() throws IOException {
     System.out.println("======================== start AMS  ========================= ");
     FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
@@ -155,30 +137,49 @@ public class SparkTestContext extends ExternalResource {
     CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
     catalogNameArctic = arctic.getCatalogName();
     ams.handler().createCatalog(arctic);
+
+    configs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
+    configs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
+    return configs;
   }
 
-  public static void setUpHMS() throws IOException, ClassNotFoundException {
-    System.out.println("======================== start hive metastore ========================= ");
-    hms.start();
-    additionSparkConfigs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
-    additionSparkConfigs.put("spark.sql.catalogImplementation", "hive");
+  public static Map<String, String> setUpHMS() throws IOException, ClassNotFoundException {
+    Map<String, String> configs = Maps.newHashMap();
     String hiveVersion = SparkTestContext.class.getClassLoader()
         .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
         .getPackage()
         .getImplementationVersion();
-    additionSparkConfigs.put("spark.sql.hive.metastore.version", hiveVersion);
-    additionSparkConfigs.put("spark.sql.hive.metastore.jars", "maven");
-    //hive.metastore.client.capability.check
-    additionSparkConfigs.put("hive.metastore.client.capability.check", "false");
 
+    configs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
+    configs.put("spark.sql.catalogImplementation", "hive");
+    configs.put("spark.sql.hive.metastore.version", hiveVersion);
+    configs.put("spark.sql.hive.metastore.jars", "maven");
+    //hive.metastore.client.capability.check
+    configs.put("hive.metastore.client.capability.check", "false");
+    configs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
+    configs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
+
+    if (hiveSetupCount.incrementAndGet() > 1) {
+      return configs;
+    }
+
+    System.out.println("======================== start hive metastore ========================= ");
+    hms.start();
     HiveConf entries = hms.hiveConf();
     CatalogMeta arctic_hive = HiveCatalogMetaTestUtil.createArcticCatalog(testArcticDir, entries);
     catalogNameHive = arctic_hive.getCatalogName();
     ams.handler().createCatalog(arctic_hive);
+
+    configs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
+    configs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
+    return configs;
   }
 
+  public static void setUpSparkSession(Map<String, String> configs) {
+    if (sparkSetupCount.incrementAndGet() > 1) {
+      return;
+    }
 
-  public static void setUpSparkSession() {
     System.out.println("======================== set up spark session  ========================= ");
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
@@ -189,17 +190,8 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "471859200");
 
-    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic, ArcticSparkCatalog.class.getName());
-    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic + ".type", "arctic");
-    sparkConfigs.put("spark.sql.catalog." + catalogNameArctic + ".url", amsUrl + "/" + catalogNameArctic);
-
-    sparkConfigs.put("spark.sql.catalog." + catalogNameHive, ArcticSparkCatalog.class.getName());
-    sparkConfigs.put("spark.sql.catalog." + catalogNameHive + ".type", "hive");
-    sparkConfigs.put("spark.sql.catalog." + catalogNameHive + ".url", amsUrl + "/" + catalogNameHive);
-
-    sparkConfigs.putAll(additionSparkConfigs);
+    sparkConfigs.putAll(configs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));
-
 
     SparkConf sparkconf = new SparkConf()
         .setAppName("test")
@@ -215,17 +207,26 @@ public class SparkTestContext extends ExternalResource {
   }
 
   public static void cleanUpAms() {
+    if (arcticSetupCount.decrementAndGet() > 0) {
+      return;
+    }
     System.out.println("======================== clean up AMS  ========================= ");
     ams.handler().cleanUp();
     AmsClientPools.cleanAll();
   }
 
   public static void cleanUpHive() {
+    if (hiveSetupCount.decrementAndGet() > 0) {
+      return;
+    }
     System.out.println("======================== stop hive metastore ========================= ");
     hms.stop();
   }
 
   public static void cleanUpSparkSession() {
+    if (sparkSetupCount.decrementAndGet() > 0) {
+      return;
+    }
     System.out.println("======================== clean up spark session  ========================= ");
     spark.stop();
     spark.close();
@@ -411,7 +412,6 @@ public class SparkTestContext extends ExternalResource {
     return Timestamp.valueOf(quickDateWithZone(day).toLocalDateTime());
   }
 
-
   public void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
     boolean primaryKeysBlock = false;
     List<String> descPrimaryKeys = Lists.newArrayList();
@@ -426,7 +426,8 @@ public class SparkTestContext extends ExternalResource {
     }
 
     Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
+    Assert.assertArrayEquals(
+        primaryKeys.stream().sorted().distinct().toArray(),
         descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 
@@ -442,7 +443,8 @@ public class SparkTestContext extends ExternalResource {
     }
 
     Assert.assertEquals(partitionKey.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+    Assert.assertArrayEquals(
+        partitionKey.stream().sorted().distinct().toArray(),
         descPrimaryKeys.stream().sorted().distinct().toArray());
   }
 
@@ -461,13 +463,16 @@ public class SparkTestContext extends ExternalResource {
         descPartitionKey.add(row[0].toString());
       }
     }
-    Assert.assertArrayEquals(cols.stream().sorted().distinct().toArray(),
+    Assert.assertArrayEquals(
+        cols.stream().sorted().distinct().toArray(),
         descCols.stream().sorted().distinct().toArray());
-    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
+    Assert.assertArrayEquals(
+        partitionKey.stream().sorted().distinct().toArray(),
         descPartitionKey.stream().sorted().distinct().toArray());
   }
 
-  public List<DataFile> writeHive(ArcticTable table, LocationKind locationKind, List<Record> records) throws IOException {
+  public List<DataFile> writeHive(ArcticTable table, LocationKind locationKind, List<Record> records)
+      throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
         .withTransactionId(1);
@@ -494,7 +499,8 @@ public class SparkTestContext extends ExternalResource {
     return Arrays.asList(dataFiles);
   }
 
-  public void adaptHiveInsertPosDeleteFiles(long transactionId, List<DataFile> dataFiles, ArcticTable table) throws IOException {
+  public void adaptHiveInsertPosDeleteFiles(long transactionId, List<DataFile> dataFiles, ArcticTable table)
+      throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -530,5 +536,4 @@ public class SparkTestContext extends ExternalResource {
       throw new IllegalStateException("Table is neither keyed nor unkeyed");
     }
   }
-
 }
