@@ -67,7 +67,6 @@ public class DDLTracerService extends IJDBCService {
   private static final String DOC = " COMMENT '%s'";
   private static final String TYPE = " TYPE %s ";
 
-
   public void commit(TableIdentifier tableIdentifier, SchemaUpdateMeta commitMeta) {
     Long commitTime = System.currentTimeMillis();
     int schemaId = commitMeta.getSchemaId();
@@ -313,20 +312,7 @@ public class DDLTracerService extends IJDBCService {
     public String compareSchema(String tableName, Schema before, Schema after) {
       StringBuilder rs = new StringBuilder();
       if (before == null) {
-        for (int i = 0; i < after.columns().size(); i++) {
-          Types.NestedField field = after.columns().get(i);
-          StringBuilder sb = new StringBuilder();
-          // add col
-          sb.append(String.format(ALTER_TABLE, tableName));
-          sb.append(ADD_COLUMN);
-          sb.append(field.name()).append(" ");
-          sb.append(field.type().toString()).append(" ");
-          if (field.doc() != null) {
-            sb.append(String.format(DOC, field.doc()));
-          }
-          rs.append(sb).append(";").append("\\n");
-        }
-        return rs.toString();
+        return "";
       }
 
       LinkedList<String> sortedBefore =

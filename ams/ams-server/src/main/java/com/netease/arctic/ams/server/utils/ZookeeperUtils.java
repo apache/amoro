@@ -88,4 +88,8 @@ public class ZookeeperUtils {
   public void delete(String path) throws Exception {
     zkClient.delete().forPath(path);
   }
+
+  public void close() {
+    this.zkClient.close();
+  }
 }
