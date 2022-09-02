@@ -138,7 +138,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
       throws TableAlreadyExistsException, NoSuchNamespaceException {
     String provider = properties.get("provider");
     if (useArctic(provider)) {
-      return arcticCatalog.createTable(ident, schema, partitions, properties);
+      return getArcticCatalog().createTable(ident, schema, partitions, properties);
     } else {
       // delegate to the session catalog
       return getSessionCatalog().createTable(ident, schema, partitions, properties);
@@ -170,7 +170,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
 
   @Override
   public Table alterTable(Identifier ident, TableChange... changes) throws NoSuchTableException {
-    if (isDelegateEnable() && arcticCatalog.tableExists(ident)) {
+    if (isDelegateEnable() && getArcticCatalog().tableExists(ident)) {
       return getArcticCatalog().alterTable(ident, changes);
     } else {
       return getSessionCatalog().alterTable(ident, changes);
@@ -192,7 +192,7 @@ public class ArcticSparkSessionCatalog<T extends TableCatalog & SupportsNamespac
   public void renameTable(Identifier from, Identifier to) throws NoSuchTableException, TableAlreadyExistsException {
     // rename is not supported by HadoopCatalog. to avoid UnsupportedOperationException for session catalog tables,
     // check table existence first to ensure that the table belongs to the Iceberg catalog.
-    if (isDelegateEnable() && arcticCatalog.tableExists(from)) {
+    if (isDelegateEnable() && getArcticCatalog().tableExists(from)) {
       getArcticCatalog().renameTable(from, to);
     } else {
       getSessionCatalog().renameTable(from, to);
