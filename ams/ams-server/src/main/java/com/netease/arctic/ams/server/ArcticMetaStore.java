@@ -89,13 +89,16 @@ public class ArcticMetaStore {
   private static final AtomicBoolean isLeader = new AtomicBoolean(false);
   private static final int checkLeaderInterval = 2000;
 
-  private volatile boolean stopped = false;
+  private static volatile boolean shouldStop = false;
 
   public static void main(String[] args) throws Throwable {
-    tryStartServer();
+    while (!shouldStop) {
+      tryStartServer();
+      Thread.sleep(500);
+    }
   }
 
-  public static void tryStartServer() throws Throwable {
+  public static void tryStartServer() {
     try {
       String configPath = getArcticHome() + "/conf/config.yaml";
       yamlConfig = YamlUtils.load(configPath);
@@ -104,7 +107,10 @@ public class ArcticMetaStore {
       if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
         String zkAddress = conf.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER);
         String cluster = conf.getString(ArcticMetaStoreConf.CLUSTER_NAME);
-        haService = HighAvailabilityServices.getInstance(zkAddress, cluster);
+        if (haService != null) {
+          haService.close();
+        }
+        haService = new HighAvailabilityServices(zkAddress, cluster);
         haService.addListener(genHAListener(zkAddress, cluster));
         haService.leaderLatch();
       } else {
@@ -112,7 +118,6 @@ public class ArcticMetaStore {
       }
     } catch (Throwable t) {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
-      throw t;
     }
   }
   
@@ -204,6 +209,13 @@ public class ArcticMetaStore {
   public static void failover() {
     stopMetaStore();
     AmsRestServer.stopRestServer();
+    isLeader.set(false);
+  }
+
+  public static void shutDown() {
+    stopMetaStore();
+    AmsRestServer.stopRestServer();
+    shouldStop = true;
   }
 
   private static void startMetaStoreThreads(
@@ -402,16 +414,15 @@ public class ArcticMetaStore {
                   conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT)))) {
             LOG.info("there is not leader, the leader is " + JSONObject.toJSONString(haService.getMaster()));
             failover();
-            isLeader.set(false);
           }
         } catch (Exception e) {
           LOG.error("check leader error", e);
           failover();
-          isLeader.set(false);
         }
       }
     });
     t.start();
+    residentThreads.add(t);
   }
 
   private static Configuration initSystemConfig() {
