@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.1-SNAPSHOT</version>
+        <version>0.3.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -332,6 +332,21 @@
             <artifactId>flink-runtime-web</artifactId>
             <version>${flink.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <!--   for values test connector     -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table-planner_${scala.binary.version}</artifactId>
+            <version>${flink.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- conflicts with the version in spring-cloud, so assign it explicitly here -->

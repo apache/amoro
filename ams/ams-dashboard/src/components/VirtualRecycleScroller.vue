@@ -89,6 +89,9 @@ export default defineComponent ({
   cursor: pointer;
   &.active,
   &:hover {
+    .name {
+      color: @primary-color !important;
+    }
     background-color: #f6f7fa;
     color: @primary-color;
   }

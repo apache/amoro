@@ -17,3 +17,4 @@
 #
 
 com.netease.arctic.flink.catalog.factories.ArcticCatalogFactory
+com.netease.arctic.flink.table.DynamicTableFactory

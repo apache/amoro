@@ -19,11 +19,15 @@
           <a-auto-complete
             v-model:value="item.key"
             :options="options"
-            @select="onSelect(item)"
+            @select="(val, option) => onSelect(val, option, item)"
             :filter-option="filterOption"
             style="width: 100%"
             class="g-mr-12"
-          />
+          >
+            <template #option="{key: key}">
+              <span>{{ key }}</span>
+            </template>
+          </a-auto-complete>
         </a-form-item>
         <a-form-item
           :name="['data', index, 'value']"
@@ -96,8 +100,8 @@ async function getPropertiesList() {
   const result = await getUpgradeProperties()
   Object.keys(result).forEach(key => {
     const item = {
-      key: result[key],
-      value: key
+      key: key,
+      value: result[key]
     }
     propertiesIncludeValueList.push(item)
     options.value.push(item)
@@ -105,14 +109,17 @@ async function getPropertiesList() {
 }
 
 function filterOption(input: string, option: IMap<string>) {
-  return option.value.toUpperCase().indexOf(input.toUpperCase()) >= 0
+  return option.key.toUpperCase().indexOf(input.toUpperCase()) >= 0
 }
 
-function onSelect(item) {
-  const value = item.key
-  const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.value === value)
+function onSelect(val, option, item) {
+  const key = option.key
+  const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.key === key)
   const selectVal = propertiesForm.data.find((ele: IItem) => ele.uuid === item.uuid)
-  selectVal && (selectVal.value = selected.key || '')
+  if (selectVal) {
+    selectVal.value = selected.value || ''
+    selectVal.key = selected.key || ''
+  }
 }
 function removeRule(item) {
   const index = propertiesForm.data.indexOf(item)
