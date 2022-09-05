@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.1-SNAPSHOT</version>
+        <version>0.3.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -106,6 +106,12 @@
                             </excludes>
                         </filter>
                         <filter>
+                            <artifact>com.netease.arctic:arctic-hive</artifact>
+                            <excludes>
+                                <exclude>org/apache/hadoop/hive/**</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
                             <artifact>org.apache.commons:*</artifact>
                             <excludes>
                                 <exclude>assets/**</exclude>
@@ -177,6 +183,7 @@
                             <artifact>org.apache.flink:flink-connector-kafka_${scala.binary.version}</artifact>
                             <excludes>
                                 <exclude>META-INF/**</exclude>
+                                <exclude>org/apache/flink/table/descriptors/**</exclude>
                             </excludes>
                         </filter>
                         <filter>
@@ -232,6 +239,10 @@
                                 </relocation>
                                 <relocation>
                                     <pattern>shaded.parquet.</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.shaded.parquet.</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>parquet.</pattern>
                                     <shadedPattern>com.netease.arctic.shaded.parquet.</shadedPattern>
                                 </relocation>
                                 <!--           org.apache.commons, commons-lang                    -->
@@ -329,6 +340,10 @@
                                 <relocation>
                                     <pattern>org.apache.kafka</pattern>
                                     <shadedPattern>com.netease.arctic.shaded.org.apache.kafka</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.facebook.fb303</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.com.facebook.fb303</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

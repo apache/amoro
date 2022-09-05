@@ -74,7 +74,6 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     ArcticFileWriter streamWriter = FlinkSink.createFileWriter(arcticTable,
         null,
         false,
-        null,
         (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
         tableLoader);
     OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
@@ -87,7 +86,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     return harness;
   }
 
-  public static TaskWriter<RowData> createTaskWriter(Table table, long targetFileSize, FileFormat format,
+  public static TaskWriter<RowData> createUnkeyedTaskWriter(Table table, long targetFileSize, FileFormat format,
                                                      RowType rowType) {
     TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
         SerializableTable.copyOf(table), rowType, targetFileSize, format, null);
