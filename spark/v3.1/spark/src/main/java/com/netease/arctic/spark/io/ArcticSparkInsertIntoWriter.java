@@ -27,10 +27,12 @@ import java.util.stream.Collectors;
 public class ArcticSparkInsertIntoWriter extends ChangeTaskWriter<InternalRow> {
   private final Schema schema;
   private final StructType dsSchema;
+
   protected ArcticSparkInsertIntoWriter(FileFormat format,
                                         FileAppenderFactory<InternalRow> appenderFactory,
                                         OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                                        long mask, Schema schema, StructType dsSchema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec) {
+                                        long mask, Schema schema, StructType dsSchema, PartitionSpec spec,
+                                        PrimaryKeySpec primaryKeySpec) {
     super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
     this.schema = schema;
     this.dsSchema = dsSchema;
@@ -43,7 +45,8 @@ public class ArcticSparkInsertIntoWriter extends ChangeTaskWriter<InternalRow> {
 
   @Override
   protected InternalRow appendMetaColumns(InternalRow data, Long fileOffset) {
-    List<DataType> dataTypeList = Arrays.stream(dsSchema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    List<DataType> dataTypeList = Arrays.stream(dsSchema.fields())
+        .map(StructField::dataType).collect(Collectors.toList());
     List<Object> rows = new ArrayList<>(dsSchema.size() + 1);
     for (int i = 0; i < dsSchema.size(); i++) {
       rows.add(data.get(i, dataTypeList.get(i)));

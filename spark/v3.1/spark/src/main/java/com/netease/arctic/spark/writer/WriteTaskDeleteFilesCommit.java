@@ -39,10 +39,6 @@ public class WriteTaskDeleteFilesCommit implements WriterCommitMessage {
     return taskFiles;
   }
 
-  DataFile[] dataFiles() {
-    return dataFiles;
-  }
-
   public static Iterable<DeleteFile> deleteFiles(WriterCommitMessage[] messages) {
     if (messages.length > 0) {
       return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
@@ -50,6 +46,10 @@ public class WriteTaskDeleteFilesCommit implements WriterCommitMessage {
           ImmutableList.of()));
     }
     return ImmutableList.of();
+  }
+
+  DataFile[] dataFiles() {
+    return dataFiles;
   }
 
   public static Iterable<DataFile> dataFiles(WriterCommitMessage[] messages) {

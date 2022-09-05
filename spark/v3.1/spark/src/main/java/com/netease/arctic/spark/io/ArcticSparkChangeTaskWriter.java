@@ -21,6 +21,7 @@ import org.apache.spark.sql.types.StructType;
 
 public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
   private final Schema schema;
+
   protected ArcticSparkChangeTaskWriter(FileFormat format,
                                         FileAppenderFactory<InternalRow> appenderFactory,
                                         OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,

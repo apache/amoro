@@ -41,7 +41,8 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
 
   private static final long DEFAULT_RECORDS_NUM_THRESHOLD = Long.MAX_VALUE;
 
-  private final Map<CharSequenceWrapper, List<UnkeyedPosDeleteSparkWriter.PosRow<InternalRow>>> posDeletes = Maps.newHashMap();
+  private final Map<CharSequenceWrapper,
+      List<UnkeyedPosDeleteSparkWriter.PosRow<InternalRow>>> posDeletes = Maps.newHashMap();
   private final List<DeleteFile> completedDeleteFiles = Lists.newArrayList();
   private final List<DataFile> completedDataFiles = Lists.newArrayList();
   private final CharSequenceSet referencedDataFiles = CharSequenceSet.empty();
@@ -56,6 +57,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
   private final ArcticTable table;
 
   private int records = 0;
+
   public UnkeyedPosDeleteSparkWriter(ArcticTable table,
                                      FileAppenderFactory<InternalRow> appenderFactory,
                                      OutputFileFactory fileFactory,
@@ -125,7 +127,8 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
     if (posRows != null) {
       posRows.add(UnkeyedPosDeleteSparkWriter.PosRow.of(pos, row));
     } else {
-      posDeletes.put(CharSequenceWrapper.wrap(path), Lists.newArrayList(UnkeyedPosDeleteSparkWriter.PosRow.of(pos, row)));
+      posDeletes.put(CharSequenceWrapper.wrap(path),
+          Lists.newArrayList(UnkeyedPosDeleteSparkWriter.PosRow.of(pos, row)));
     }
 
     records += 1;

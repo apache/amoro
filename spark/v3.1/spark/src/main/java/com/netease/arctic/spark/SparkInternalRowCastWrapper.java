@@ -29,7 +29,8 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private ChangeAction changeAction = ChangeAction.INSERT;
 
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    List<DataType> dataTypeList = Arrays.stream(schema.fields()).
+        map(StructField::dataType).collect(Collectors.toList());
     if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
       List<Object> rows = new ArrayList<>();
       GenericInternalRow genericInternalRow = null;
@@ -70,7 +71,8 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    List<DataType> dataTypeList = Arrays.stream(schema.fields()).
+        map(StructField::dataType).collect(Collectors.toList());
     if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
       List<Object> rows = new ArrayList<>();
       GenericInternalRow genericInternalRow = null;
@@ -118,7 +120,8 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
 
   @Override
   public boolean isNullAt(int ordinal) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
+    List<DataType> dataTypeList = Arrays.stream(schema.fields()).
+        map(StructField::dataType).collect(Collectors.toList());
     return row.get(ordinal, dataTypeList.get(ordinal)) == null;
   }
 
