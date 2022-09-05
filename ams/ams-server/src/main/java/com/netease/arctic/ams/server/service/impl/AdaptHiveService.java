@@ -58,7 +58,8 @@ public class AdaptHiveService {
         }
         List<String> pkList = upgradeHiveMeta.getPkList().stream()
             .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName).collect(Collectors.toList());
-        UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, tableIdentifier, pkList, upgradeHiveMeta.getProperties());
+        UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, tableIdentifier,
+            pkList, upgradeHiveMeta.getProperties());
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
       } catch (Throwable t) {
         LOG.error("Failed to upgrade hive table to arctic ", t);
