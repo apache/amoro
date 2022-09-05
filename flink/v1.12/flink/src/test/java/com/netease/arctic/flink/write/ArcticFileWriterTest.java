@@ -74,7 +74,6 @@ public class ArcticFileWriterTest extends FlinkTestBase {
     ArcticFileWriter streamWriter = FlinkSink.createFileWriter(arcticTable,
         null,
         false,
-        null,
         (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
         tableLoader);
     OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
