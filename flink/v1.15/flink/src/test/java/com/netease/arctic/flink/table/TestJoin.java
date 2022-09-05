@@ -70,9 +70,9 @@ public class TestJoin extends FlinkTestBase {
   private static final String DB = PK_TABLE_ID.getDatabase();
   private static final String TABLE = "test_keyed";
 
-  public void before() {
+  public void before() throws Exception {
     super.before();
-    super.config();
+    super.config(TEST_CATALOG_NAME);
   }
 
   @After
