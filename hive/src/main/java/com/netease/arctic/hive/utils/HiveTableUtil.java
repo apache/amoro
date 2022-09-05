@@ -126,9 +126,9 @@ public class HiveTableUtil {
     SerDeInfo serDeInfo = new SerDeInfo();
     switch (format) {
       case PARQUET:
-        storageDescriptor.setOutputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat");
-        storageDescriptor.setInputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat");
-        serDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe");
+        storageDescriptor.setOutputFormat(HiveTableProperties.PARQUET_OUTPUT_FORMAT);
+        storageDescriptor.setInputFormat(HiveTableProperties.PARQUET_INPUT_FORMAT);
+        serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
         break;
       default:
         throw new IllegalArgumentException("Unsupported hive table file format:" + format);
@@ -197,5 +197,29 @@ public class HiveTableUtil {
     } catch (Exception e) {
       throw new IOException(e);
     }
+  }
+
+  public static boolean isSupportFormat(HMSClient hiveClient, TableIdentifier tableIdentifier) throws IOException {
+    try {
+      hiveClient.run(client -> {
+        Table hiveTable = loadHmsTable(hiveClient, tableIdentifier);
+        StorageDescriptor storageDescriptor = hiveTable.getSd();
+        SerDeInfo serDeInfo = storageDescriptor.getSerdeInfo();
+        switch (storageDescriptor.getInputFormat()) {
+          case HiveTableProperties.PARQUET_INPUT_FORMAT:
+            if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.PARQUET_OUTPUT_FORMAT) &&
+                serDeInfo.getSerializationLib().equals(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE)) {
+              return true;
+            } else {
+              throw new IllegalStateException("Please check your hive table storage format is right");
+            }
+          default:
+            return false;
+        }
+      });
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+    return false;
   }
 }

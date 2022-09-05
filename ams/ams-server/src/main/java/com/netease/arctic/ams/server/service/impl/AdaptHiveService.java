@@ -23,6 +23,7 @@ import com.netease.arctic.ams.server.model.UpgradeRunningInfo;
 import com.netease.arctic.ams.server.model.UpgradeStatus;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
@@ -46,15 +47,18 @@ public class AdaptHiveService {
   private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
       QUEUE_CAPACITY, TimeUnit.SECONDS, new LinkedBlockingDeque<>(5));
 
-  public Object upgradeHiveTable(ArcticHiveCatalog ac, TableIdentifier tableIdentifier,
+  public Object upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
                                  UpgradeHiveMeta upgradeHiveMeta) {
     LOG.info("Start to upgrade hive table to arctic" + tableIdentifier.toString());
     executor.submit(() -> {
       runningInfoCache.put(tableIdentifier, new UpgradeRunningInfo());
       try {
+        if (!HiveTableUtil.isSupportFormat(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
+          throw new IllegalArgumentException("Only support storage format is parquet");
+        }
         List<String> pkList = upgradeHiveMeta.getPkList().stream()
             .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName).collect(Collectors.toList());
-        UpgradeHiveTableUtil.upgradeHiveTable(ac, tableIdentifier, pkList, upgradeHiveMeta.getProperties());
+        UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, tableIdentifier, pkList, upgradeHiveMeta.getProperties());
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
       } catch (Throwable t) {
         LOG.error("Failed to upgrade hive table to arctic ", t);
