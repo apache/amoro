@@ -53,7 +53,7 @@ public class AdaptHiveService {
     executor.submit(() -> {
       runningInfoCache.put(tableIdentifier, new UpgradeRunningInfo());
       try {
-        if (!HiveTableUtil.isSupportFormat(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
+        if (!UpgradeHiveTableUtil.isSupportFormat(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
           throw new IllegalArgumentException("Only support storage format is parquet");
         }
         List<String> pkList = upgradeHiveMeta.getPkList().stream()

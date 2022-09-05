@@ -198,28 +198,4 @@ public class HiveTableUtil {
       throw new IOException(e);
     }
   }
-
-  public static boolean isSupportFormat(HMSClient hiveClient, TableIdentifier tableIdentifier) throws IOException {
-    try {
-      hiveClient.run(client -> {
-        Table hiveTable = loadHmsTable(hiveClient, tableIdentifier);
-        StorageDescriptor storageDescriptor = hiveTable.getSd();
-        SerDeInfo serDeInfo = storageDescriptor.getSerdeInfo();
-        switch (storageDescriptor.getInputFormat()) {
-          case HiveTableProperties.PARQUET_INPUT_FORMAT:
-            if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.PARQUET_OUTPUT_FORMAT) &&
-                serDeInfo.getSerializationLib().equals(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE)) {
-              return true;
-            } else {
-              throw new IllegalStateException("Please check your hive table storage format is right");
-            }
-          default:
-            return false;
-        }
-      });
-    } catch (Exception e) {
-      throw new IOException(e);
-    }
-    return false;
-  }
 }
