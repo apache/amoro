@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-spark</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.1-SNAPSHOT</version>
+        <version>0.3.1</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -280,7 +280,7 @@
                 <version>2.19</version>
                 <configuration>
                     <includes>
-                        <include>**/ArcticSparkHiveMainTest.java</include>
+                        <include>**/MavenTestSuites.java</include>
                     </includes>
                 </configuration>
             </plugin>

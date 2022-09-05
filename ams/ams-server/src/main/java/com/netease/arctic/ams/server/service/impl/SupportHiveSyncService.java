@@ -276,12 +276,17 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
       baseStore = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
 
       List<DataFile> partitionFiles = new ArrayList<>();
-      TableScan tableScan = baseStore.newScan();
-      for (FileScanTask fileScanTask : tableScan.planFiles()) {
-        if (fileScanTask.file().partition().equals(partition)) {
-          partitionFiles.add(fileScanTask.file());
+      arcticTable.io().doAs(() -> {
+        TableScan tableScan = baseStore.newScan();
+        for (FileScanTask fileScanTask : tableScan.planFiles()) {
+          if (fileScanTask.file().partition().equals(partition)) {
+            partitionFiles.add(fileScanTask.file());
+          }
         }
-      }
+
+        return null;
+      });
+
       return partitionFiles;
     }
   }

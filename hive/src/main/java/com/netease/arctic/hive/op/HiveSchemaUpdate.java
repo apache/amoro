@@ -81,27 +81,16 @@ public class HiveSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema addColumn(String name, Type type, String doc) {
     this.updateSchema.addColumn(name, type, doc);
-    //It is strictly required that all non-partitioned columns precede partitioned columns in the schema.
-    if (!arcticTable.spec().isUnpartitioned()) {
-      int parFieldMinIndex = Integer.MAX_VALUE;
-      Types.NestedField firstParField = null;
-      for (PartitionField partitionField : arcticTable.spec().fields()) {
-        Types.NestedField sourceField = arcticTable.schema().findField(partitionField.sourceId());
-        if (arcticTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
-          parFieldMinIndex = arcticTable.schema().columns().indexOf(sourceField);
-          firstParField = sourceField;
-        }
-      }
-      if (firstParField != null) {
-        this.updateSchema.moveBefore(name, firstParField.name());
-      }
-    }
+    moveColBeforePar(name);
     return this;
   }
 
   @Override
   public UpdateSchema addColumn(String parent, String name, Type type, String doc) {
     this.updateSchema.addColumn(parent, name, type, doc);
+    if (parent == null) {
+      moveColBeforePar(name);
+    }
     return this;
   }
 
@@ -171,5 +160,23 @@ public class HiveSchemaUpdate implements UpdateSchema {
   @Override
   public UpdateSchema setIdentifierFields(Collection<String> names) {
     throw new UnsupportedOperationException("hive table not support setIdentifierFields");
+  }
+
+  //It is strictly required that all non-partitioned columns precede partitioned columns in the schema.
+  private void moveColBeforePar(String name) {
+    if (!arcticTable.spec().isUnpartitioned()) {
+      int parFieldMinIndex = Integer.MAX_VALUE;
+      Types.NestedField firstParField = null;
+      for (PartitionField partitionField : arcticTable.spec().fields()) {
+        Types.NestedField sourceField = arcticTable.schema().findField(partitionField.sourceId());
+        if (arcticTable.schema().columns().indexOf(sourceField) < parFieldMinIndex) {
+          parFieldMinIndex = arcticTable.schema().columns().indexOf(sourceField);
+          firstParField = sourceField;
+        }
+      }
+      if (firstParField != null) {
+        this.updateSchema.moveBefore(name, firstParField.name());
+      }
+    }
   }
 }

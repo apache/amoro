@@ -20,6 +20,8 @@ package com.netease.arctic.flink;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions;
+import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.write.ArcticRowDataTaskWriterFactory;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -45,27 +47,29 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.flink.MiniClusterResource;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.After;
-import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -79,9 +83,6 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 
 public class FlinkTestBase extends TableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
-  @ClassRule
-  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
-      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   public static boolean IS_LOCAL = true;
   public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();
@@ -110,8 +111,9 @@ public class FlinkTestBase extends TableTestBase {
   protected static UnkeyedTable testPartitionTable;
 
   public static InternalCatalogBuilder catalogBuilder;
+  public static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
-  public void before() {
+  public void before() throws Exception {
     if (IS_LOCAL) {
       metastoreUrl = "thrift://127.0.0.1:" + AMS.port();
       testKeyedNoPartitionTable = testCatalog
@@ -134,19 +136,31 @@ public class FlinkTestBase extends TableTestBase {
 
   @After
   public void clean() {
-    if (IS_LOCAL) {
-      testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
-      AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);
+    if (IS_LOCAL && testCatalog != null) {
+      if (testCatalog.tableExists(PK_TABLE_ID_WITHOUT_PARTITION)) {
+        testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
+        AMS.handler().getTableCommitMetas().remove(PK_TABLE_ID_WITHOUT_PARTITION);
+      }
 
-      testCatalog.dropTable(PARTITION_TABLE_ID, true);
-      AMS.handler().getTableCommitMetas().remove(PARTITION_TABLE_ID);
+      if (testCatalog.tableExists(PARTITION_TABLE_ID)) {
+        testCatalog.dropTable(PARTITION_TABLE_ID, true);
+        AMS.handler().getTableCommitMetas().remove(PARTITION_TABLE_ID);
+      }
     }
   }
 
-  public void config() {
+  public void config(String catalog) {
     props = Maps.newHashMap();
     props.put("type", IDENTIFIER);
-    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl + "/" + TEST_CATALOG_NAME);
+    props.put(ArcticCatalogFactoryOptions.METASTORE_URL.key(), metastoreUrl + "/" + catalog);
+  }
+
+  public static void prepare() throws Exception {
+    kafkaTestBase.prepare();
+  }
+
+  public static void shutdown() throws Exception {
+    kafkaTestBase.shutDownServices();
   }
 
   protected StreamTableEnvironment getTableEnv() {
@@ -270,5 +284,27 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static RowData createRowData(Integer id, String name, String dateTime) {
     return createRowData(id, name, dateTime, RowKind.INSERT);
+  }
+
+  protected static void commit(KeyedTable keyedTable, WriteResult result, boolean base) {
+    if (base) {
+      AppendFiles baseAppend = keyedTable.baseTable().newAppend();
+      Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
+      baseAppend.commit();
+    } else {
+      AppendFiles changeAppend = keyedTable.changeTable().newAppend();
+      Arrays.stream(result.dataFiles()).forEach(changeAppend::appendFile);
+      changeAppend.commit();
+    }
+  }
+
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
+                                                             boolean base) {
+    ArcticRowDataTaskWriterFactory taskWriterFactory =
+        new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
+    taskWriterFactory.setTransactionId(transactionId);
+    taskWriterFactory.setMask(3);
+    taskWriterFactory.initialize(0, 0);
+    return taskWriterFactory.create();
   }
 }

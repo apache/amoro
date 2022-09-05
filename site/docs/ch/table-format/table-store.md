@@ -5,7 +5,7 @@ Arctic 能够兼容已有的存储介质(如 HDFS、OSS)和表结构(如 Hive、
 ## 存储结构
 对于一张定义了主键的 Arctic 表，存储结构上最多可以拆分为三部分：Changestore、Basestore、Logstore。
 
-![TableStructure](../images/format/table-structure.png)
+![TableStructure](../images/format/table-structure.png){:height="70%" width="70%"}
 
 ### Changestore
 Changestore 中存储了表上最近的变更数据。

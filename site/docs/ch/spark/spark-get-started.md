@@ -6,7 +6,7 @@ Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批
 ## 环境准备
 
 当前 Arctic-Spark-Connector 支持与 Spark3.1+ 版本使用。在开始使用前，
-[下载](https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-spark_3.1-runtime-0.3.0.jar)并将 arctic-spark_3.1-runtime.jar 复制到
+[下载](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-spark_3.1-runtime-0.3.1.jar)并将 arctic-spark_3.1-runtime.jar 复制到
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
@@ -22,6 +22,8 @@ ${SPARK_HOME}/bin/spark-sql \
 >
 > AMS_PORT 为AMS服务 thrift api接口端口号，默认值为 1260
 > AMS_CATALOG_NAME 为启动AMS 服务时配置的 Catalog, 默认值为 local_catalog
+
+关于 Spark 下的详细配置，请参考 [SPARK CONFIGURATION](spark-conf.md)
 
 ## 创建表
 
@@ -72,7 +74,7 @@ insert overwrite test3 values
 ( 3, "bbb", timestamp('2022-1-3 00:00:00'));
 ```
 
-> 在当前版本中, 只在无主键表上支持 insert into 语法，在有主键表上目前只支持 insert overwrite 语法
+> 在当前版本中, 只在无主键表上支持 insert into 语法
 
 > 如果使用 static 类型的 Overwrite, 不能在分区上定义函数。
 
