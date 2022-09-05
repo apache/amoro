@@ -44,14 +44,17 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE;
@@ -109,13 +112,13 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
     this.arcticTable = arcticTable;
     this.properties = properties;
 
-    readSchema = arcticTable.schema();
     if (projectedSchema == null) {
+      readSchema = arcticTable.schema();
       flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     } else {
-      flinkSchemaRowType = (RowType) projectedSchema.toRowDataType().getLogicalType();
       readSchema = TypeUtil.reassignIds(
           FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema());
+      flinkSchemaRowType = (RowType) projectedSchema.toRowDataType().getLogicalType();
     }
   }
 
@@ -239,6 +242,16 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
 
   @Override
   public void applyProjection(int[][] projectedFields) {
+    int[] projectionFields = new int[projectedFields.length];
+    for (int i = 0; i < projectedFields.length; i++) {
+      org.apache.flink.util.Preconditions.checkArgument(
+          projectedFields[i].length == 1,
+          "Don't support nested projection now.");
+      projectionFields[i] = projectedFields[i][0];
+    }
+    final List<Types.NestedField> columns = readSchema.columns();
+    readSchema = new Schema(Arrays.stream(projectionFields).mapToObj(columns::get).collect(Collectors.toList()));
+    flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
       ((SupportsProjectionPushDown) arcticDynamicSource).applyProjection(projectedFields);
     }

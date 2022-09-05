@@ -49,6 +49,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.HashMap;
@@ -162,7 +163,9 @@ public class FlinkSource {
       RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
           flinkConf,
           arcticTable.schema(),
-          arcticTable.schema(),
+          projectedSchema == null ?
+              arcticTable.schema() :
+              TypeUtil.reassignIds(FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema()),
           arcticTable.asKeyedTable().primaryKeySpec(),
           scanContext.nameMapping(),
           scanContext.caseSensitive(),
