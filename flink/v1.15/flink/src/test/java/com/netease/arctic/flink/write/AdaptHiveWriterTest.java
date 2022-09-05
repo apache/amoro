@@ -40,7 +40,9 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.junit.AfterClass;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -55,6 +57,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class AdaptHiveWriterTest extends HiveTableTestBase {
+
+  @BeforeClass
+  public static void beforeClass() throws Exception {
+    HiveTableTestBase.startMetastore();
+  }
+
+  @AfterClass
+  public static void afterClass() throws Exception {
+    HiveTableTestBase.stopMetastore();
+  }
 
   @Test
   public void testWriteTypeFromOperateKind(){
