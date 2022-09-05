@@ -184,7 +184,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         appendFiles.appendFile(file);
       }
       appendFiles.commit();
-//      throw new UnsupportedOperationException("Upsert write is not supported");
     }
   }
 
