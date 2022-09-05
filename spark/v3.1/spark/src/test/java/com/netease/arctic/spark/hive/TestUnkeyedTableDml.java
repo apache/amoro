@@ -57,4 +57,16 @@ public class TestUnkeyedTableDml extends SparkTestBase {
     Assert.assertEquals(1, rows.get(0)[0]);
     Assert.assertEquals(2, rows.get(1)[0]);
   }
+
+  @Test
+  public void testInsert() {
+    sql("insert into " + database + "." + table +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
+
+    rows = sql("select * from {0}.{1} ", database, table);
+
+    Assert.assertEquals(3, rows.size());
+  }
 }

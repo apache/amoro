@@ -12,11 +12,11 @@ import org.apache.spark.sql.types.StructType;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class SimpleUpsertDataWriter implements DataWriter<InternalRow> {
+public class SimpleKeyedUpsertDataWriter implements DataWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   final StructType schema;
 
-  public SimpleUpsertDataWriter(TaskWriter<InternalRow> writer, StructType schemaNum) {
+  public SimpleKeyedUpsertDataWriter(TaskWriter<InternalRow> writer, StructType schemaNum) {
     this.writer = writer;
     this.schema = schemaNum;
   }
@@ -26,7 +26,9 @@ public class SimpleUpsertDataWriter implements DataWriter<InternalRow> {
     if (schema != null && !isDelete(schema)) {
       SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema, ChangeAction.INSERT, false);
       SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(record, schema, ChangeAction.DELETE, false);
-      writer.write(delete);
+      if (delete.getRow() != null) {
+        writer.write(delete);
+      }
       writer.write(insert);
     } else if (schema != null && isDelete(schema)) {
       SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(record, schema, ChangeAction.DELETE, true);

@@ -24,7 +24,7 @@ import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColu
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, ArcticExpressionUtils, AttributeReference, EqualTo, Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, AttributeReference, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -32,6 +32,8 @@ import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistributio
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.utils.ArcticRewriteHelper
+
+import java.util
 
 
 /**
@@ -102,8 +104,9 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       case a: ArcticSparkTable =>
         if (a.table().isKeyedTable) {
           val updatedRowsQuery = buildKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
-          Join(matchedRowsQuery, updatedRowsQuery, Inner,
-            Some(EqualTo(matchedRowsQuery.output.head, updatedRowsQuery.output.head)), JoinHint.NONE)
+          val primaries = a.table().asKeyedTable().primaryKeySpec().fieldNames()
+          val joinCondition = buildJoinCondition(primaries, r, updatedRowsQuery)
+          Join(matchedRowsQuery, updatedRowsQuery, Inner, Some(joinCondition), JoinHint.NONE)
         } else {
           val updatedRowsQuery = buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
           val deleteQuery = Project(Seq(Alias(Literal(SupportsUpsert.UPSERT_OP_VALUE_DELETE), SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
@@ -164,6 +167,28 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       }
     })
     Project(outputWithValues, scanPlan)
+  }
+
+  def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression =  {
+    var i = 0
+    var joinCondition: Expression = null
+    val expressions = new util.ArrayList[Expression]
+    while ( i < primaries.size) {
+      val primary = primaries.get(i)
+      val primaryAttr = r.output.find(_.name == primary).get
+      val joinAttribute = insertPlan.output.find(_.name.replace("_arctic_after_", "") == primary).get
+      val experssion = EqualTo(primaryAttr, joinAttribute)
+      expressions.add(experssion)
+      i += 1
+    }
+    expressions.forEach(experssion => {
+      if (joinCondition == null) {
+        joinCondition = experssion
+      } else {
+        joinCondition = And(joinCondition, experssion)
+      }
+    });
+    joinCondition
   }
 
 }

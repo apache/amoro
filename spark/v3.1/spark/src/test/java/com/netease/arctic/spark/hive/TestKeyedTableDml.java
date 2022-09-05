@@ -8,36 +8,102 @@ import org.junit.Test;
 
 public class TestKeyedTableDml extends SparkTestBase {
   private final String database = "db_hive";
-  private final String table = "test";
+  private final String notUpsertTable = "testNotUpsert";
+  private final String upsertTable = "testUpsert";
+  private final String insertTable = "testInsert";
 
-  protected String createTableTemplate = "create table {0}.{1}( \n" +
+  protected String createNotUpsertTableTemplate = "create table {0}.{1}( \n" +
+      " id int, \n" +
+      " name string, \n" +
+      " data string, primary key(id, name)) \n" +
+      " using arctic";
+
+  protected String createUpsertTableTemplate = "create table {0}.{1}( \n" +
+      " id int, \n" +
+      " name string, \n" +
+      " data string, primary key(id, name)) \n" +
+      " using arctic" +
+      " tblproperties ( \n" +
+      " ''write.upsert.enabled'' = ''true'' ";
+
+  protected String createTableInsert = "create table {0}.{1}( \n" +
       " id int, \n" +
       " name string, \n" +
       " data string, primary key(id)) \n" +
-      " using arctic ;";
+      " using arctic ";
 
   @Before
   public void prepare() {
     sql("use " + catalogNameHive);
     sql("create database if not exists " + database);
-    sql(createTableTemplate, database, table);
+    sql(createNotUpsertTableTemplate, database, notUpsertTable);
+    sql("insert overwrite " + database + "." + notUpsertTable +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
   }
 
   @After
   public void cleanUpTable() {
-    sql("drop table " + database + "." + table);
+    sql("drop table if exists " + database + "." + notUpsertTable);
+    sql("drop table if exists " + database + "." + upsertTable);
+    sql("drop table if exists " + database + "." + insertTable);
     sql("drop database " + database);
   }
 
   @Test
-  public void testUpdate() {
-    sql("insert overwrite " + database + "." + table +
+  public void testInsertNotUpsert() {
+    sql(createTableInsert, database, insertTable);
+    sql("insert into " + database + "." + notUpsertTable +
         " values (1, 'aaa', 'abcd' ) , " +
         "(2, 'bbb', 'bbcd'), " +
         "(3, 'ccc', 'cbcd') ");
+    rows = sql("select * from {0}.{1} ", database, notUpsertTable);
+    Assert.assertEquals(6, rows.size());
+    sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
-    sql("update {0}.{1} set name = \"ddd\" where id = 3", database, table);
-    rows = sql("select id, name from {0}.{1} where id = 3", database, table);
+    rows = sql("select * from {0}.{1} ", database, notUpsertTable);
+    Assert.assertEquals(6, rows.size());
+  }
+
+
+  @Test
+  public void testInsertValuesUpsertTable() {
+    sql("use " + catalogNameHive);
+    sql(createUpsertTableTemplate, database, upsertTable);
+    sql("insert overwrite " + database + "." + upsertTable +
+        " values (1, 'aaa', 'aaaa' ) , " +
+        "(4, 'bbb', 'bbcd'), " +
+        "(5, 'ccc', 'cbcd') ");
+    sql("insert into " + database + "." + upsertTable +
+        " values (1, 'aaa', 'dddd' ) , " +
+        "(2, 'bbb', 'bbbb'), " +
+        "(3, 'ccc', 'cccc') ");
+
+    rows = sql("select * from {0}.{1} ", database, upsertTable);
+    Assert.assertEquals(5, rows.size());
+  }
+
+  @Test
+  public void testInsertSelectUpsertTable() {
+    sql("use " + catalogNameHive);
+    sql(createUpsertTableTemplate, database, upsertTable);
+    sql("insert overwrite " + database + "." + upsertTable +
+        " values (1, 'aaa', 'aaaa' ) , " +
+        "(4, 'bbb', 'bbcd'), " +
+        "(5, 'ccc', 'cbcd') ");
+
+    sql("insert into " + database + "." + upsertTable + " select * from {0}.{1} ", database, notUpsertTable);
+
+    rows = sql("select * from {0}.{1} ", database, upsertTable);
+    Assert.assertEquals(5, rows.size());
+  }
+
+
+  @Test
+  public void testUpdate() {
+    sql("update {0}.{1} set name = \"ddd\" where id = 3", database, notUpsertTable);
+    rows = sql("select id, name from {0}.{1} where id = 3", database, notUpsertTable);
 
     Assert.assertEquals(1, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
@@ -45,13 +111,8 @@ public class TestKeyedTableDml extends SparkTestBase {
 
   @Test
   public void testDelete() {
-    sql("insert overwrite " + database + "." + table +
-        " values (1, 'aaa', 'abcd' ) , " +
-        "(2, 'bbb', 'bbcd' ), " +
-        "(3, 'ccc', 'cbcd' ) ");
-
-    sql("delete from {0}.{1} where id = 3", database, table);
-    rows = sql("select id, name from {0}.{1} order by id", database, table);
+    sql("delete from {0}.{1} where id = 3", database, notUpsertTable);
+    rows = sql("select id, name from {0}.{1} order by id", database, notUpsertTable);
 
     Assert.assertEquals(2, rows.size());
     Assert.assertEquals(1, rows.get(0)[0]);

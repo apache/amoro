@@ -37,13 +37,10 @@ import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import scala.collection.Seq;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
@@ -245,7 +242,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .newChangeWriter();
+          .newInsertChangeWriter();
       return new SimpleInternalRowDataWriter(writer);
     }
   }
@@ -266,7 +263,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
           .newChangeWriter();
-      return new SimpleUpsertDataWriter(writer, dsSchema);
+      return new SimpleKeyedUpsertDataWriter(writer, dsSchema);
     }
   }
 }

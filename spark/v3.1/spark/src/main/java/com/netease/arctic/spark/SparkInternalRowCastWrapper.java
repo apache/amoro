@@ -54,7 +54,11 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         }
         this.row = genericInternalRow;
       } else {
-        this.row = row;
+        if (row.isNullAt(0)) {
+          this.row = null;
+        } else {
+          this.row = row;
+        }
       }
     }
     StructType newSchema = new StructType(Arrays.stream(schema.fields())
@@ -89,7 +93,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
 
   @Override
   public Object genericGet(int ordinal) {
-    return super.genericGet(ordinal);
+    return row.get(ordinal, schema.apply(ordinal).dataType());
   }
 
   @Override
