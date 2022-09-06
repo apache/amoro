@@ -8,7 +8,7 @@ RUN apt update \
     && apt-get install -y telnet
 
 WORKDIR /usr/local/arctic_flink
-#需自行下载flink-1.12.2-bin-scala_2.11.tgz放在Dockerfile同级目录下
+#You need to download flink-1.12.2-bin-scala_2.11.tgz by yourself and put it in the same directory as Dockerfile
 COPY flink-1.12.7-bin-scala_2.12.tgz /usr/local/arctic_flink
 ARG FLINK_VERSION=1.12.7
 ARG SCALA_VERSION=2.12
@@ -21,7 +21,7 @@ RUN tar -zxvf flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz \
     && cp examples/table/ChangelogSocketExample.jar lib \
     && cp ../arctic-flink-runtime-1.12-0.3.1.jar lib \
     && cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
-#需自行下载hive-exec-2.1.1.jar放在Dockerfile同级目录下
+#You need to download hive-exec-2.1.1.jar by yourself and put it in the same directory as Dockerfile
 COPY hive-exec-2.1.1.jar /usr/local/arctic_flink/flink-${FLINK_VERSION}/lib
 
 ENV FLINK_HOME=/usr/local/arctic_flink/flink-${FLINK_VERSION} \
