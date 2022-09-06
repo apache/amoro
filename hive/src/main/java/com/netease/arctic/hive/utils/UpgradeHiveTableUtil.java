@@ -58,14 +58,17 @@ public class UpgradeHiveTableUtil {
 
       List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
       hiveSchema.addAll(hiveTable.getPartitionKeys());
-      Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
+      Schema schema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveSchema, pkList);
+
       List<FieldSchema> partitionKeys = hiveTable.getPartitionKeys();
 
       PartitionSpec.Builder partitionBuilder = PartitionSpec.builderFor(schema);
       partitionKeys.stream().forEach(p -> partitionBuilder.identity(p.getName()));
 
       PrimaryKeySpec.Builder primaryKeyBuilder = PrimaryKeySpec.builderFor(schema);
-      pkList.stream().forEach(p -> primaryKeyBuilder.addColumn(p));
+      pkList.stream().forEach(p -> {
+        primaryKeyBuilder.addColumn(p);
+      });
 
       ArcticTable arcticTable = arcticHiveCatalog.newTableBuilder(tableIdentifier, schema)
           .withProperties(properties)

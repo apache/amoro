@@ -22,8 +22,12 @@ import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Utils to handle Hive table schema.
@@ -67,5 +71,27 @@ public class HiveSchemaUtil {
    */
   public static List<FieldSchema> hivePartitionFields(Schema schema, PartitionSpec spec) {
     return org.apache.iceberg.hive.HiveSchemaUtil.convert(TypeUtil.select(schema, spec.identitySourceIds()));
+  }
+
+  /**
+   * Converts the Hive schema to a Iceberg schema with pk.
+   *
+   * @param hiveSchema The original Hive schema to convert
+   * @param primaryKeys The primary keys need to add to Iceberg schema
+   * @return An Iceberg schema
+   */
+  public static Schema convertHiveSchemaToIcebergSchema(List<FieldSchema> hiveSchema, List<String> primaryKeys) {
+    Set<String> pkSet = new HashSet<>(primaryKeys);
+    Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
+    List<Types.NestedField> columns = schema.columns();
+    List<Types.NestedField> columnsWithPk = new ArrayList<>();
+    columns.forEach(nf -> {
+      if (pkSet.contains(nf.name())) {
+        columnsWithPk.add(nf.asRequired());
+      } else {
+        columnsWithPk.add(nf);
+      }
+    });
+    return new Schema(columnsWithPk);
   }
 }
