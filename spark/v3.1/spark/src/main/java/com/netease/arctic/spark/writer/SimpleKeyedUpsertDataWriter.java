@@ -35,9 +35,10 @@ public class SimpleKeyedUpsertDataWriter implements DataWriter<InternalRow> {
     } else if (schema != null && isDelete(schema) && isUpsert) {
       SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(record, schema, ChangeAction.DELETE, true);
       writer.write(delete);
-    } else if (schema != null && !isDelete(schema) && !isUpsert){
+    } else if (schema != null && !isDelete(schema) && !isUpsert) {
       // keyed table unUpsert table insert
-      SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema, ChangeAction.INSERT, false, false);
+      SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema,
+          ChangeAction.INSERT, false, false);
       writer.write(insert);
     } else {
       writer.write(record);

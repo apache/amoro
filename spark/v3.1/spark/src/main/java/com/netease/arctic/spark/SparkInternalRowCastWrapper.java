@@ -31,7 +31,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private List<DataType> dataTypeList;
 
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete) {
-    this.row = buildInternalRow(row, schema, changeAction, isDelete);
+    this.row = buildInternalRow(row, schema, changeAction);
     StructType newSchema = new StructType(Arrays.stream(schema.fields())
         .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
     this.schema = newSchema;
@@ -86,7 +86,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
    * |  3| ddd|cccc|
    * +---+----+----+
    */
-  private InternalRow buildInternalRow(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete) {
+  private InternalRow buildInternalRow(InternalRow row, StructType schema, ChangeAction changeAction) {
     dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
     if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
@@ -127,7 +127,8 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
    * |  3| ddd|cbcd|
    * +---+----+----+
    */
-  public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete, boolean isUpsert) {
+  public SparkInternalRowCastWrapper(InternalRow row, StructType schema,
+                                     ChangeAction changeAction, boolean isDelete, boolean isUpsert) {
     if (!isUpsert) {
       this.row = buildSimpleInternalRow(row, schema, 0, schema.size());
     } else {
