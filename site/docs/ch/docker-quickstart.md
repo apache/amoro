@@ -40,7 +40,7 @@ networks:
   arctic_network:
     driver: bridge
 ```
-然后，请在您的 docker-compose.yml 文件所在目录下，使用以下命令启动 docker 容器：
+然后，请在您的 docker-compose.yml 文件所在目录下，使用以下命令启动 docker 容器（如果您想保证自己使用的是最新的镜像，请删掉本地镜像后再执行以下命令）：
 ```shell
 docker-compose up -d
 ```
