@@ -23,7 +23,6 @@ import com.netease.arctic.ams.server.model.UpgradeRunningInfo;
 import com.netease.arctic.ams.server.model.UpgradeStatus;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.UpgradeHiveTableUtil;
 import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
@@ -53,9 +52,6 @@ public class AdaptHiveService {
     executor.submit(() -> {
       runningInfoCache.put(tableIdentifier, new UpgradeRunningInfo());
       try {
-        if (!UpgradeHiveTableUtil.isSupportFormat(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
-          throw new IllegalArgumentException("Only support storage format is parquet");
-        }
         List<String> pkList = upgradeHiveMeta.getPkList().stream()
             .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName).collect(Collectors.toList());
         UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, tableIdentifier,

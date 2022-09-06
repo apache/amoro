@@ -56,6 +56,9 @@ public class UpgradeHiveTableUtil {
    */
   public static void upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
                                       List<String> pkList, Map<String, String> properties) throws Exception {
+    if (!formatCheck(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
+      throw new IllegalArgumentException("Only support storage format is parquet");
+    }
     boolean upgradeHive = false;
     try {
       Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
@@ -138,7 +141,7 @@ public class UpgradeHiveTableUtil {
    * @param tableIdentifier A table identifier
    * @return Support or not
    */
-  public static boolean isSupportFormat(HMSClient hiveClient, TableIdentifier tableIdentifier) throws IOException {
+  private static boolean formatCheck(HMSClient hiveClient, TableIdentifier tableIdentifier) throws IOException {
     AtomicBoolean isSupport = new AtomicBoolean(false);
     try {
       hiveClient.run(client -> {
