@@ -223,6 +223,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         schemaChanges.add(change);
       } else if (change instanceof SetProperty) {
         propertyChanges.add(change);
+      } else if (change instanceof RemoveProperty) {
+        propertyChanges.add(change);
       } else {
         throw new UnsupportedOperationException("Cannot apply unknown table change: " + change);
       }
