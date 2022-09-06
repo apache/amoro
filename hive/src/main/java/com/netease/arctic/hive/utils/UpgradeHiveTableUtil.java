@@ -64,9 +64,7 @@ public class UpgradeHiveTableUtil {
       partitionKeys.stream().forEach(p -> partitionBuilder.identity(p.getName()));
 
       PrimaryKeySpec.Builder primaryKeyBuilder = PrimaryKeySpec.builderFor(schema);
-      pkList.stream().forEach(p -> {
-        primaryKeyBuilder.addColumn(p);
-      });
+      pkList.stream().forEach(p -> primaryKeyBuilder.addColumn(p));
 
       ArcticTable arcticTable = arcticHiveCatalog.newTableBuilder(tableIdentifier, schema)
           .withProperties(properties)
