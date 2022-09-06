@@ -12,6 +12,9 @@ import org.apache.spark.sql.types.StructType;
 import java.io.IOException;
 import java.util.Arrays;
 
+/**
+ * keyed table upsert data writer
+ */
 public class SimpleKeyedUpsertDataWriter implements DataWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   final StructType schema;

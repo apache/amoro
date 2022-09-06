@@ -14,6 +14,9 @@ import java.util.Arrays;
 
 import static org.apache.spark.sql.types.DataTypes.StringType;
 
+/**
+ * unkeyed table upsert data writer
+ */
 public class SimpleUnkeyedUpsertDataWriter implements DataWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   final StructType schema;

@@ -21,6 +21,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * cast internal row to upsert internal row
+ */
 public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private final InternalRow row;
   private final StructType schema;
@@ -64,7 +67,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
    * +---+----+----+----------------+------------------+------------------+
    * @param schema
    * @param changeAction
-   * @param isDelete
    * @return InternalRow like
    * 1. delete file
    * +---+----+----+--------------------+----+
@@ -89,7 +91,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private InternalRow buildInternalRow(InternalRow row, StructType schema, ChangeAction changeAction) {
     dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
-    if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
+    if (Arrays.stream(schema.fieldNames()).findFirst().get().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)) {
       return buildSimpleInternalRow(row, schema, 1, schema.size());
     } else {
       int middle = schema.size() / 2;
@@ -172,7 +174,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction) {
     dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
-    if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
+    if (Arrays.stream(schema.fieldNames()).findFirst().get().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)) {
       List<Object> rows = new ArrayList<>();
       GenericInternalRow genericInternalRow = null;
       for (int i = 1; i < schema.size() - 2; i++) {

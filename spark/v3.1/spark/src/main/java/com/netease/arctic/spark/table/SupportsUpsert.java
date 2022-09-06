@@ -35,7 +35,11 @@ public interface SupportsUpsert extends Table {
   String UPSERT_OP_VALUE_DELETE = "D";
 
 
-
+  /**
+   * Returns support extend columns scan builder
+   * @param options
+   * @return
+   */
   SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options);
 
   boolean requireAdditionIdentifierColumns();

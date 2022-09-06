@@ -19,6 +19,9 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.JoinedRow;
 import org.apache.spark.sql.types.StructType;
 
+/**
+ * change task writer
+ */
 public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
   private final Schema schema;
 

@@ -26,6 +26,10 @@ import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.util.Arrays;
 
+/**
+ * A commit message for a write task that includes the data files and delete files that were
+ * written by the task.
+ */
 public class WriteTaskDeleteFilesCommit implements WriterCommitMessage {
   private final DeleteFile[] taskFiles;
   private final DataFile[] dataFiles;
