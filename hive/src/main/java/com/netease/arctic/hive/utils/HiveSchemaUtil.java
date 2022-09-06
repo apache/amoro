@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.utils;
 
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.TypeUtil;
@@ -76,11 +77,13 @@ public class HiveSchemaUtil {
   /**
    * Converts the Hive schema to a Iceberg schema with pk.
    *
-   * @param hiveSchema The original Hive schema to convert
+   * @param hiveTable The original Hive table to convert
    * @param primaryKeys The primary keys need to add to Iceberg schema
    * @return An Iceberg schema
    */
-  public static Schema convertHiveSchemaToIcebergSchema(List<FieldSchema> hiveSchema, List<String> primaryKeys) {
+  public static Schema convertHiveSchemaToIcebergSchema(Table hiveTable, List<String> primaryKeys) {
+    List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
+    hiveSchema.addAll(hiveTable.getPartitionKeys());
     Set<String> pkSet = new HashSet<>(primaryKeys);
     Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
     List<Types.NestedField> columns = schema.columns();

@@ -56,9 +56,7 @@ public class UpgradeHiveTableUtil {
     try {
       Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
 
-      List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
-      hiveSchema.addAll(hiveTable.getPartitionKeys());
-      Schema schema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveSchema, pkList);
+      Schema schema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable, pkList);
 
       List<FieldSchema> partitionKeys = hiveTable.getPartitionKeys();
 
