@@ -25,10 +25,8 @@ import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.types.RowKind;
-import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.io.TaskWriter;
-import org.apache.iceberg.io.WriteResult;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +36,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -102,18 +99,6 @@ public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
         taskWriter.write(record);
       }
       commit(testKeyedTable, taskWriter.complete(), false);
-    }
-  }
-
-  protected void commit(WriteResult result, boolean base) {
-    if (base) {
-      AppendFiles baseAppend = testKeyedTable.baseTable().newAppend();
-      Arrays.stream(result.dataFiles()).forEach(baseAppend::appendFile);
-      baseAppend.commit();
-    } else {
-      AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
-      Arrays.stream(result.dataFiles()).forEach(changeAppend::appendFile);
-      changeAppend.commit();
     }
   }
 
