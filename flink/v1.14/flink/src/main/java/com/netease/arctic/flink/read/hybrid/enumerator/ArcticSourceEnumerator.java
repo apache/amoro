@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
-import com.netease.arctic.flink.read.hybrid.reader.ReaderStartEvent;
+import com.netease.arctic.flink.read.hybrid.reader.ReaderStartedEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
@@ -189,7 +189,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       if (dimTable) {
         checkAndNotifyReader(finishedSplitIds);
       }
-    } else if (sourceEvent instanceof ReaderStartEvent) {
+    } else if (sourceEvent instanceof ReaderStartedEvent) {
       if (!dimTable || temporalJoinSplits == null || !temporalJoinSplits.hasNotifiedReader()) {
         return;
       }

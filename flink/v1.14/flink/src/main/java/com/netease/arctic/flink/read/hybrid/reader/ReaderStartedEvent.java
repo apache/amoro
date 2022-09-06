@@ -23,8 +23,8 @@ import org.apache.flink.api.connector.source.SourceEvent;
 /**
  * It denotes {@link ArcticSourceReader} is starting.
  */
-public class ReaderStartEvent implements SourceEvent {
+public class ReaderStartedEvent implements SourceEvent {
   private static final long serialVersionUID = 1L;
 
-  public static final ReaderStartEvent INSTANCE = new ReaderStartEvent();
+  public static final ReaderStartedEvent INSTANCE = new ReaderStartedEvent();
 }
