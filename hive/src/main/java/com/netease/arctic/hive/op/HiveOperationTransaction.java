@@ -25,33 +25,21 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.ExpireSnapshots;
-import org.apache.iceberg.HistoryEntry;
-import org.apache.iceberg.ManageSnapshots;
 import org.apache.iceberg.OverwriteFiles;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.TableScan;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateLocation;
 import org.apache.iceberg.UpdatePartitionSpec;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
-import org.apache.iceberg.encryption.EncryptionManager;
-import org.apache.iceberg.io.FileIO;
-import org.apache.iceberg.io.LocationProvider;
 import org.apache.thrift.TException;
 
 import java.util.List;
-import java.util.Map;
 
 public class HiveOperationTransaction implements Transaction {
 
@@ -60,8 +48,6 @@ public class HiveOperationTransaction implements Transaction {
   private final HMSClient client;
   private final TransactionalHMSClient transactionalClient;
 
-  private final TransactionalTable transactionalTable;
-
   public HiveOperationTransaction(
       UnkeyedHiveTable unkeyedHiveTable,
       Transaction wrapped,
@@ -69,13 +55,12 @@ public class HiveOperationTransaction implements Transaction {
     this.unkeyedHiveTable = unkeyedHiveTable;
     this.wrapped = wrapped;
     this.client = client;
-    this.transactionalTable = new TransactionalTable();
     this.transactionalClient = new TransactionalHMSClient();
   }
 
   @Override
   public Table table() {
-    return transactionalTable;
+    return wrapped.table();
   }
 
   @Override
@@ -171,184 +156,6 @@ public class HiveOperationTransaction implements Transaction {
           throw new RuntimeException("execute pending hive operation failed.", e);
         }
       }
-    }
-  }
-
-  private class TransactionalTable implements Table {
-
-    @Override
-    public String name() {
-      return unkeyedHiveTable.name();
-    }
-
-    @Override
-    public void refresh() {
-
-    }
-
-    @Override
-    public TableScan newScan() {
-      throw new UnsupportedOperationException("Transaction tables do not support scans");
-    }
-
-    @Override
-    public Schema schema() {
-      return unkeyedHiveTable.schema();
-    }
-
-    @Override
-    public Map<Integer, Schema> schemas() {
-      return unkeyedHiveTable.schemas();
-    }
-
-    @Override
-    public PartitionSpec spec() {
-      return unkeyedHiveTable.spec();
-    }
-
-    @Override
-    public Map<Integer, PartitionSpec> specs() {
-      return unkeyedHiveTable.specs();
-    }
-
-    @Override
-    public SortOrder sortOrder() {
-      return unkeyedHiveTable.sortOrder();
-    }
-
-    @Override
-    public Map<Integer, SortOrder> sortOrders() {
-      return unkeyedHiveTable.sortOrders();
-    }
-
-    @Override
-    public Map<String, String> properties() {
-      return unkeyedHiveTable.properties();
-    }
-
-    @Override
-    public String location() {
-      return unkeyedHiveTable.location();
-    }
-
-    @Override
-    public Snapshot currentSnapshot() {
-      return unkeyedHiveTable.currentSnapshot();
-    }
-
-    @Override
-    public Snapshot snapshot(long snapshotId) {
-      return unkeyedHiveTable.currentSnapshot();
-    }
-
-    @Override
-    public Iterable<Snapshot> snapshots() {
-      return unkeyedHiveTable.snapshots();
-    }
-
-    @Override
-    public List<HistoryEntry> history() {
-      return unkeyedHiveTable.history();
-    }
-
-    @Override
-    public UpdateSchema updateSchema() {
-      return HiveOperationTransaction.this.updateSchema();
-    }
-
-    @Override
-    public UpdatePartitionSpec updateSpec() {
-      return HiveOperationTransaction.this.updateSpec();
-    }
-
-    @Override
-    public UpdateProperties updateProperties() {
-      return HiveOperationTransaction.this.updateProperties();
-    }
-
-    @Override
-    public ReplaceSortOrder replaceSortOrder() {
-      return HiveOperationTransaction.this.replaceSortOrder();
-    }
-
-    @Override
-    public UpdateLocation updateLocation() {
-      return HiveOperationTransaction.this.updateLocation();
-    }
-
-    @Override
-    public AppendFiles newAppend() {
-      return HiveOperationTransaction.this.newAppend();
-    }
-
-    @Override
-    public AppendFiles newFastAppend() {
-      return HiveOperationTransaction.this.newFastAppend();
-    }
-
-    @Override
-    public RewriteFiles newRewrite() {
-      return HiveOperationTransaction.this.newRewrite();
-    }
-
-    @Override
-    public RewriteManifests rewriteManifests() {
-      return HiveOperationTransaction.this.rewriteManifests();
-    }
-
-    @Override
-    public OverwriteFiles newOverwrite() {
-      return HiveOperationTransaction.this.newOverwrite();
-    }
-
-    @Override
-    public RowDelta newRowDelta() {
-      return HiveOperationTransaction.this.newRowDelta();
-    }
-
-    @Override
-    public ReplacePartitions newReplacePartitions() {
-      return HiveOperationTransaction.this.newReplacePartitions();
-    }
-
-    @Override
-    public DeleteFiles newDelete() {
-      return HiveOperationTransaction.this.newDelete();
-    }
-
-    @Override
-    public ExpireSnapshots expireSnapshots() {
-      return HiveOperationTransaction.this.expireSnapshots();
-    }
-
-    @Override
-    public Rollback rollback() {
-      throw new UnsupportedOperationException("Transaction tables do not support rollback");
-    }
-
-    @Override
-    public ManageSnapshots manageSnapshots() {
-      throw new UnsupportedOperationException("Transaction tables do not support rollback");
-    }
-
-    @Override
-    public Transaction newTransaction() {
-      throw new UnsupportedOperationException("Transaction tables do not support rollback");
-    }
-
-    @Override
-    public FileIO io() {
-      return unkeyedHiveTable.io();
-    }
-
-    @Override
-    public EncryptionManager encryption() {
-      return unkeyedHiveTable.encryption();
-    }
-
-    @Override
-    public LocationProvider locationProvider() {
-      return unkeyedHiveTable.locationProvider();
     }
   }
 }

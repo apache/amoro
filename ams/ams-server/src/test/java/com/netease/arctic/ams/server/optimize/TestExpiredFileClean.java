@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.optimize;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
@@ -26,10 +25,10 @@ import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
@@ -43,10 +42,8 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TestExpiredFileClean extends TableTestBase {
@@ -55,14 +52,11 @@ public class TestExpiredFileClean extends TableTestBase {
 
   @Test
   public void testDeleteChangeFiles() throws Exception {
-    insertChangeDataFiles(1);
+    List<DataFile> s1Files = insertChangeDataFiles(1);
 
-    Map<String, Long> transactionIdMap = new HashMap<>();
-    transactionIdMap.put("op_time_day=2022-01-01", 2L);
-    transactionIdMap.put("op_time_day=2022-01-02", 0L);
-    UpdateProperties updateProperties = testKeyedTable.baseTable().updateProperties();
-    updateProperties.set(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID,
-        new ObjectMapper().writeValueAsString(transactionIdMap));
+    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
+    updateProperties.set(s1Files.get(0).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
+    updateProperties.set(s1Files.get(1).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "0");
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
     testKeyedTable.changeTable().newScan().planFiles()
@@ -80,12 +74,9 @@ public class TestExpiredFileClean extends TableTestBase {
   public void testExpireTableFiles() throws Exception {
     List<DataFile> s1Files = insertChangeDataFiles(1);
 
-    Map<String, Long> transactionIdMap = new HashMap<>();
-    transactionIdMap.put("op_time_day=2022-01-01", 3L);
-    transactionIdMap.put("op_time_day=2022-01-02", 1L);
-    UpdateProperties updateProperties = testKeyedTable.baseTable().updateProperties();
-    updateProperties.set(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID,
-        new ObjectMapper().writeValueAsString(transactionIdMap));
+    UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
+    updateProperties.set(s1Files.get(0).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
+    updateProperties.set(s1Files.get(1).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "1");
     updateProperties.commit();
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);

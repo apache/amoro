@@ -21,6 +21,7 @@ package com.netease.arctic.op;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -34,14 +35,12 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map
@@ -109,7 +108,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
 
-    StructLike partitionData = null;
+    StructLike partitionData = TablePropertyUtil.EMPTY_STRUCT;
     UnkeyedTable baseTable = keyedTable.baseTable();
 
     // step1: overwrite data files
@@ -120,13 +119,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
       }
       for (DataFile d : this.addFiles) {
         overwriteFiles.addFile(d);
-        partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+        partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
 
       for (DataFile d : this.deleteFiles) {
         overwriteFiles.deleteFile(d);
-        partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+        partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
       if (transactionId != null && transactionId > 0) {
@@ -148,12 +147,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         }
 
         for (DeleteFile d : this.addDeleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
 
         for (DataFile d : this.deleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
         addDeleteFiles.forEach(rowDelta::addDeletes);
@@ -168,12 +167,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         }
 
         for (DeleteFile d : this.addDeleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
 
         for (DataFile d : this.deleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
         rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),

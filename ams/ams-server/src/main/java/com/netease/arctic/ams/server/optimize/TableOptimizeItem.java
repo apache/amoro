@@ -56,6 +56,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -594,7 +595,7 @@ public class TableOptimizeItem extends IJDBCService {
     if (isKeyedTable()) {
       KeyedTable keyedHiveTable = getArcticTable(true).asKeyedTable();
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(keyedHiveTable.baseTable()));
-      record.setBaseTableMaxTransactionId(keyedHiveTable.maxTransactionId().toString());
+      record.setBaseTableMaxTransactionId(TablePropertyUtil.getPartitionMaxTransactionId(keyedHiveTable).toString());
     } else {
       getArcticTable(true);
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
