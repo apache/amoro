@@ -51,7 +51,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
@@ -130,6 +130,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Initial optimize tasks.
+   *
    * @param optimizeTasks -
    */
   public void initOptimizeTasks(List<OptimizeTaskItem> optimizeTasks) {
@@ -141,6 +142,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Initial TableOptimizeRuntime.
+   *
    * @param runtime -
    * @return this for chain
    */
@@ -189,6 +191,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get table identifier.
+   *
    * @return TableIdentifier
    */
   public TableIdentifier getTableIdentifier() {
@@ -197,7 +200,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Arctic Table, refresh if expired.
-   * @return  ArcticTable
+   *
+   * @return ArcticTable
    */
   public ArcticTable getArcticTable() {
     if (arcticTable == null) {
@@ -208,6 +212,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get arcticTable, refresh immediately or not.
+   *
    * @param forceRefresh - refresh immediately
    * @return ArcticTable
    */
@@ -218,7 +223,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * If arctic table is KeyedTable.
-   * 
+   *
    * @return true/false
    */
   public boolean isKeyedTable() {
@@ -230,6 +235,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get cached quota, cache will be updated when arctic table refresh.
+   *
    * @return quota
    */
   public double getQuotaCache() {
@@ -270,6 +276,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Update optimize task result, Failed or Prepared.
+   *
    * @param optimizeTaskStat - optimizeTaskStat
    */
   public void updateOptimizeTaskStat(OptimizeTaskStat optimizeTaskStat) {
@@ -309,6 +316,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Build current table optimize info.
+   *
    * @return TableOptimizeInfo
    */
   public TableOptimizeInfo buildTableOptimizeInfo() {
@@ -698,6 +706,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Commit optimize tasks.
+   *
    * @throws Exception -
    */
   public void commitOptimizeTasks() throws Exception {
@@ -719,7 +728,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
         BaseOptimizeCommit optimizeCommit;
-        if (HiveTableUtil.isHive(getArcticTable())) {
+        if (TableTypeUtil.isHive(getArcticTable())) {
           optimizeCommit = new SupportHiveCommit(getArcticTable(true),
               tasksToCommit, OptimizeTaskItem::persistTargetFiles);
         } else {
@@ -743,6 +752,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get all optimize tasks.
+   *
    * @return list of all optimize tasks
    */
   public List<OptimizeTaskItem> getOptimizeTasks() {
@@ -751,7 +761,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Full Plan.
-   * @param queueId -
+   *
+   * @param queueId     -
    * @param currentTime -
    * @return -
    */
@@ -773,7 +784,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Major Plan.
-   * @param queueId -
+   *
+   * @param queueId     -
    * @param currentTime -
    * @return -
    */
@@ -795,7 +807,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Minor Plan.
-   * @param queueId -
+   *
+   * @param queueId     -
    * @param currentTime -
    * @return -
    */
@@ -815,6 +828,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get optimizeRuntime.
+   *
    * @return -
    */
   public TableOptimizeRuntime getTableOptimizeRuntime() {

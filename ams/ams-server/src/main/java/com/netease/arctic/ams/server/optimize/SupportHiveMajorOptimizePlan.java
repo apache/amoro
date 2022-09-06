@@ -5,7 +5,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
@@ -39,7 +39,7 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, posDeleteFileList,
         partitionTaskRunning, queueId, currentTime, snapshotIsCached);
 
-    Preconditions.checkArgument(HiveTableUtil.isHive(arcticTable), "The table not support hive");
+    Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     hiveLocation = ((SupportHive) arcticTable).hiveLocation();
     excludeLocations.add(hiveLocation);
   }
