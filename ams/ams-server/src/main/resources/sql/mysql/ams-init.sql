@@ -237,7 +237,6 @@ CREATE TABLE `optimize_task_history`
     `cost_time`       bigint(20) DEFAULT NULL COMMENT 'Task cost time',
     `queue_id`        int(11) DEFAULT NULL COMMENT 'Task queue id',
     `task_group_id`   varchar(40) DEFAULT NULL COMMENT 'Task group id',
-    PRIMARY KEY (`task_history_id`,`task_group_id`),
     KEY               `task_group_id_index` (`task_history_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of each optimize task';
 

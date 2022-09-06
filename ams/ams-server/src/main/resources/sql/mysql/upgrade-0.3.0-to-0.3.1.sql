@@ -26,3 +26,6 @@ ALTER TABLE `table_metadata` ADD COLUMN `cur_schema_id` int(11) NOT NULL DEFAULT
 ALTER TABLE `table_transaction_meta` modify COLUMN `table_identifier` varchar(384) NOT NULL;
 ALTER TABLE `optimize_file` MODIFY COLUMN `optimize_type` varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor, FullMajor';
 ALTER TABLE `optimize_table_runtime` ADD COLUMN `latest_full_optimize_time` MEDIUMTEXT NULL COMMENT 'Latest Full Optimize time for all partitions';
+ALTER TABLE `optimize_task_history` MODIFY COLUMN `task_history_id` varchar(40) NOT NULL COMMENT 'Task history id' first, MODIFY COLUMN 
+`task_group_id` varchar(40) NOT NULL COMMENT 'Task group id' after `task_history_id`;
+ALTER TABLE `optimize_task_history` ADD PRIMARY KEY (`task_history_id`,`task_group_id`);
