@@ -101,7 +101,9 @@ async function getPropertiesList() {
   Object.keys(result).forEach(key => {
     const item = {
       key: key,
-      value: result[key]
+      label: key,
+      value: key,
+      text: result[key] || ''
     }
     propertiesIncludeValueList.push(item)
     options.value.push(item)
@@ -117,7 +119,7 @@ function onSelect(val, option, item) {
   const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.key === key)
   const selectVal = propertiesForm.data.find((ele: IItem) => ele.uuid === item.uuid)
   if (selectVal) {
-    selectVal.value = selected.value || ''
+    selectVal.value = selected.text || ''
     selectVal.key = selected.key || ''
   }
 }
