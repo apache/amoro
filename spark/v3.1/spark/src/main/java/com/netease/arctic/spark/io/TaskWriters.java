@@ -162,11 +162,7 @@ public class TaskWriters {
       primaryKeySpec = keyedTable.primaryKeySpec();
       icebergTable = keyedTable.baseTable();
     } else {
-      UnkeyedTable table = this.table.asUnkeyedTable();
-      changeLocation = table.location();
-      encryptionManager = table.encryption();
-      schema = table.schema();
-      icebergTable = table;
+      throw new UnsupportedOperationException("Unkeyed table does not support change writer");
     }
     FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
         .builderFor(icebergTable, schema, SparkSchemaUtil.convert(schema))
@@ -178,7 +174,6 @@ public class TaskWriters {
         changeLocation, table.spec(), fileFormat, table.io(),
         encryptionManager, partitionId, taskId, transactionId);
 
-    // TODO: issues-173 - support change writer for upsert
     return new ArcticSparkChangeTaskWriter(fileFormat, appenderFactory,
         outputFileFactory,
         table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
@@ -202,44 +197,5 @@ public class TaskWriters {
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");
     Preconditions.checkState(dsSchema != null, "Data source schema is not set");
-  }
-
-  public TaskWriter<InternalRow> newInsertChangeWriter() {
-    preconditions();
-    String changeLocation;
-    EncryptionManager encryptionManager;
-    Schema schema;
-    PrimaryKeySpec primaryKeySpec = null;
-    Table icebergTable;
-
-    if (table.isKeyedTable()) {
-      KeyedTable keyedTable = table.asKeyedTable();
-      changeLocation = keyedTable.changeLocation();
-      encryptionManager = keyedTable.changeTable().encryption();
-      schema = keyedTable.changeTable().schema();
-      primaryKeySpec = keyedTable.primaryKeySpec();
-      icebergTable = keyedTable.baseTable();
-    } else {
-      UnkeyedTable table = this.table.asUnkeyedTable();
-      changeLocation = table.location();
-      encryptionManager = table.encryption();
-      schema = table.schema();
-      icebergTable = table;
-    }
-    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
-        .builderFor(icebergTable, schema, dsSchema)
-        .writeHive(isHiveTable)
-        .build();
-
-    OutputFileFactory outputFileFactory = null;
-    outputFileFactory = new CommonOutputFileFactory(
-        changeLocation, table.spec(), fileFormat, table.io(),
-        encryptionManager, partitionId, taskId, transactionId);
-
-    // TODO: issues-173 - support change writer for upsert
-    return new ArcticSparkInsertIntoWriter(fileFormat, appenderFactory,
-        outputFileFactory,
-        table.io(), fileSize, mask, schema, dsSchema, table.spec(), primaryKeySpec);
-
   }
 }

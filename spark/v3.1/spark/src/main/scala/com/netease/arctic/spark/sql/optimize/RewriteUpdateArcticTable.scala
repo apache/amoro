@@ -89,8 +89,14 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
   def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns,
                        assignments: Seq[Assignment],
                        condition: Option[Expression]): LogicalPlan = {
-    if (upsert.requireAdditionIdentifierColumns()) {
-      scanBuilder.withIdentifierColumns()
+    r.table match {
+      case table: ArcticSparkTable => {
+        if (table.table().isUnkeyedTable) {
+          if (upsert.requireAdditionIdentifierColumns()) {
+            scanBuilder.withIdentifierColumns()
+          }
+        }
+      }
     }
     val scan = scanBuilder.build()
     val outputAttr = toOutputAttrs(scan.readSchema(), r.output)
@@ -181,11 +187,11 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       expressions.add(experssion)
       i += 1
     }
-    expressions.forEach(experssion => {
+    expressions.forEach(e => {
       if (joinCondition == null) {
-        joinCondition = experssion
+        joinCondition = e
       } else {
-        joinCondition = And(joinCondition, experssion)
+        joinCondition = And(joinCondition, e)
       }
     });
     joinCondition

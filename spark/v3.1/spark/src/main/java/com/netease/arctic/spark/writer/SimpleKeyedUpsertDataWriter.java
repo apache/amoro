@@ -15,24 +15,30 @@ import java.util.Arrays;
 public class SimpleKeyedUpsertDataWriter implements DataWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   final StructType schema;
+  final boolean isUpsert;
 
-  public SimpleKeyedUpsertDataWriter(TaskWriter<InternalRow> writer, StructType schemaNum) {
+  public SimpleKeyedUpsertDataWriter(TaskWriter<InternalRow> writer, StructType schema, boolean isUpsert) {
     this.writer = writer;
-    this.schema = schemaNum;
+    this.schema = schema;
+    this.isUpsert = isUpsert;
   }
 
   @Override
   public void write(InternalRow record) throws IOException {
-    if (schema != null && !isDelete(schema)) {
+    if (schema != null && !isDelete(schema) && isUpsert) {
       SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema, ChangeAction.INSERT, false);
       SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(record, schema, ChangeAction.DELETE, false);
       if (delete.getRow() != null) {
         writer.write(delete);
       }
       writer.write(insert);
-    } else if (schema != null && isDelete(schema)) {
+    } else if (schema != null && isDelete(schema) && isUpsert) {
       SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(record, schema, ChangeAction.DELETE, true);
       writer.write(delete);
+    } else if (schema != null && !isDelete(schema) && !isUpsert){
+      // keyed table unUpsert table insert
+      SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema, ChangeAction.INSERT, false, false);
+      writer.write(insert);
     } else {
       writer.write(record);
     }

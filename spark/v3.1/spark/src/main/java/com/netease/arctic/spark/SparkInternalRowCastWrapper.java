@@ -26,20 +26,71 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private final StructType schema;
   private final int middle;
   private final boolean isDelete;
+  private final boolean isUpsert;
   private ChangeAction changeAction = ChangeAction.INSERT;
+  private List<DataType> dataTypeList;
 
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields())
+    this.row = buildInternalRow(row, schema, changeAction, isDelete);
+    StructType newSchema = new StructType(Arrays.stream(schema.fields())
+        .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+    this.schema = newSchema;
+    this.middle = newSchema.size() / 2;
+    this.changeAction = changeAction;
+    this.isDelete = isDelete;
+    this.isUpsert = true;
+  }
+
+  /**
+   *
+   * @param row like
+   * 1. delete file
+   * +-----------------+---+----+----+--------------------+----+
+   * |_arctic_upsert_op| id|name|data|               _file|_pos|
+   * +-----------------+---+----+----+--------------------+----+
+   * |                D|  3| ccc|cbcd|file:/Users/...|   2|
+   * +-----------------+---+----+----+--------------------+----+
+   * 2.update keyed table file
+   * +---+----+----+----------------+------------------+------------------+
+   * | id|name|data|_arctic_after_id|_arctic_after_name|_arctic_after_data|
+   * +---+----+----+----------------+------------------+------------------+
+   * |  3| ccc|cbcd|               3|               ddd|              cccc|
+   * +---+----+----+----------------+------------------+------------------+
+   * 3.insert into keyed table file
+   * +---+----+----+----------------+------------------+------------------+
+   * | id|name|data|_arctic_after_id|_arctic_after_name|_arctic_after_data|
+   * +---+----+----+----------------+------------------+------------------+
+   * |null|null|null|               3|               ddd|             cccc|
+   * +---+----+----+----------------+------------------+------------------+
+   * @param schema
+   * @param changeAction
+   * @param isDelete
+   * @return InternalRow like
+   * 1. delete file
+   * +---+----+----+--------------------+----+
+   * | id|name|data|               _file|_pos|
+   * +---+----+----+--------------------+----+
+   * |  3| ccc|cbcd|file:/Users/...|   2|
+   * +---+----+----+--------------------+----+
+   * 2.update keyed table file
+   * +---+----+----+
+   * | id|name|data|
+   * +---+----+----+
+   * |  3| ddd|cccc|
+   * |  3| ccc|cbcd|
+   * +---+----+----+
+   * 3.insert into keyed table file
+   * +---+----+----+
+   * | id|name|data|
+   * +---+----+----+
+   * |  3| ddd|cccc|
+   * +---+----+----+
+   */
+  private InternalRow buildInternalRow(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete) {
+    dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
     if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
-      List<Object> rows = new ArrayList<>();
-      GenericInternalRow genericInternalRow = null;
-      for (int i = 1; i < schema.size(); i++) {
-        rows.add(row.get(i, dataTypeList.get(i)));
-      }
-      genericInternalRow = new GenericInternalRow(rows.toArray());
-
-      this.row = genericInternalRow;
+      return buildSimpleInternalRow(row, schema, 1, schema.size());
     } else {
       int middle = schema.size() / 2;
       List<Object> rows = new ArrayList<>();
@@ -53,25 +104,72 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         for (int i = middle, j = 0; i < schema.size() && j < middle; i++, j++) {
           genericInternalRow.update(j, row.get(i, dataTypeList.get(i)));
         }
-        this.row = genericInternalRow;
+        return genericInternalRow;
       } else {
         if (row.isNullAt(0)) {
-          this.row = null;
+          return null;
         } else {
-          this.row = row;
+          return row;
         }
       }
     }
-    StructType newSchema = new StructType(Arrays.stream(schema.fields())
-        .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
-    this.schema = newSchema;
-    this.middle = newSchema.size() / 2;
-    this.changeAction = changeAction;
-    this.isDelete = isDelete;
   }
 
+  /**
+   * Insert into unUpsert table Construct
+   * @param row
+   * @param schema
+   * @param changeAction INSERT or DELETE
+   * @return InternalRow like
+   * +---+----+----+
+   * | id|name|data|
+   * +---+----+----+
+   * |  3| ddd|cbcd|
+   * +---+----+----+
+   */
+  public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete, boolean isUpsert) {
+    if (!isUpsert) {
+      this.row = buildSimpleInternalRow(row, schema, 0, schema.size());
+    } else {
+      this.row = row;
+    }
+    this.schema = schema;
+    this.middle = schema.size();
+    this.changeAction = changeAction;
+    this.isDelete = isDelete;
+    this.isUpsert = isUpsert;
+  }
+
+  private InternalRow buildSimpleInternalRow(InternalRow row, StructType schema, int start, int end) {
+    dataTypeList = Arrays.stream(schema.fields())
+        .map(StructField::dataType).collect(Collectors.toList());
+    List<Object> rows = new ArrayList<>();
+    for (int i = start; i < end; i++) {
+      rows.add(row.get(i, dataTypeList.get(i)));
+    }
+    return new GenericInternalRow(rows.toArray());
+  }
+
+  /**
+   * Update unKeyed table insert file Construct
+   * unkeyed insert row like
+   +-----------------+---+----+----+--------------------+----+
+   |_arctic_upsert_op| id|name|data|               _file|_pos|
+   +-----------------+---+----+----+--------------------+----+
+   |                I|  3| ddd|cbcd|file:/Users/...|   2|
+   +-----------------+---+----+----+--------------------+----+
+   * @param row
+   * @param schema
+   * @param changeAction INSERT or DELETE
+   * @return InternalRow like
+   * +---+----+----+
+   * | id|name|data|
+   * +---+----+----+
+   * |  3| ddd|cbcd|
+   * +---+----+----+
+   */
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields())
+    dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
     if (Arrays.stream(schema.fieldNames()).findFirst().get().equals("_arctic_upsert_op")) {
       List<Object> rows = new ArrayList<>();
@@ -91,6 +189,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     this.middle = newSchema.size() / 2;
     this.changeAction = changeAction;
     this.isDelete = false;
+    this.isUpsert = true;
   }
 
   @Override
@@ -120,7 +219,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
 
   @Override
   public boolean isNullAt(int ordinal) {
-    List<DataType> dataTypeList = Arrays.stream(schema.fields())
+    dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
     return row.get(ordinal, dataTypeList.get(ordinal)) == null;
   }

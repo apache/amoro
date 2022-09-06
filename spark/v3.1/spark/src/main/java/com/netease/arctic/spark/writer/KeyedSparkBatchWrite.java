@@ -242,8 +242,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .newInsertChangeWriter();
-      return new SimpleInternalRowDataWriter(writer);
+          .newChangeWriter();
+      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, false);
     }
   }
 
@@ -263,7 +263,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
           .newChangeWriter();
-      return new SimpleKeyedUpsertDataWriter(writer, dsSchema);
+      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
     }
   }
 }

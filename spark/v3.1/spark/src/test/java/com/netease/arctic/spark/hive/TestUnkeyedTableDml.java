@@ -31,7 +31,7 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
   @Test
   public void testUpdate() {
-    sql("insert overwrite " + database + "." + table +
+    sql("insert into " + database + "." + table +
         " values (1, 'aaa', 'abcd' ) , " +
         "(2, 'bbb', 'bbcd'), " +
         "(3, 'ccc', 'cbcd') ");
@@ -45,7 +45,7 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
   @Test
   public void testDelete() {
-    sql("insert overwrite " + database + "." + table +
+    sql("insert into " + database + "." + table +
         " values (1, 'aaa', 'abcd' ) , " +
         "(2, 'bbb', 'bbcd' ), " +
         "(3, 'ccc', 'cbcd' ) ");

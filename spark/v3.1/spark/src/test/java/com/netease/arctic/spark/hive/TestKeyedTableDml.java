@@ -15,13 +15,13 @@ public class TestKeyedTableDml extends SparkTestBase {
   protected String createNotUpsertTableTemplate = "create table {0}.{1}( \n" +
       " id int, \n" +
       " name string, \n" +
-      " data string, primary key(id, name)) \n" +
-      " using arctic";
+      " data string, primary key(id)) \n" +
+      " using arctic" ;
 
   protected String createUpsertTableTemplate = "create table {0}.{1}( \n" +
       " id int, \n" +
       " name string, \n" +
-      " data string, primary key(id, name)) \n" +
+      " data string, primary key(id)) \n" +
       " using arctic" +
       " tblproperties ( \n" +
       " ''write.upsert.enabled'' = ''true'' ";
@@ -37,7 +37,7 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql("use " + catalogNameHive);
     sql("create database if not exists " + database);
     sql(createNotUpsertTableTemplate, database, notUpsertTable);
-    sql("insert overwrite " + database + "." + notUpsertTable +
+    sql("insert into " + database + "." + notUpsertTable +
         " values (1, 'aaa', 'abcd' ) , " +
         "(2, 'bbb', 'bbcd'), " +
         "(3, 'ccc', 'cbcd') ");
@@ -102,6 +102,10 @@ public class TestKeyedTableDml extends SparkTestBase {
 
   @Test
   public void testUpdate() {
+    sql("insert into " + database + "." + notUpsertTable +
+        " values (1, 'aaa', 'dddd' ) , " +
+        "(2, 'bbb', 'bbbb'), " +
+        "(3, 'ccc', 'cccc') ");
     sql("update {0}.{1} set name = \"ddd\" where id = 3", database, notUpsertTable);
     rows = sql("select id, name from {0}.{1} where id = 3", database, notUpsertTable);
 
