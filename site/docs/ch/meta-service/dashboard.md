@@ -34,7 +34,7 @@ AMS安装包中提供了脚本文件`bin/ams.sh`用以处理AMS的日常运维�
 AMS完成启动后即可登录 [AMS Dashboard](http://localhost:1630) 来访问AMS的页面，默认的用户名密码为：`admin/admin`。
 
 ## 使用 MySQL 作为系统库
-AMS 默认使用 Derby 作为系统库存储自己的元数据，在生产环境下我们建议换成MySQL以提升系统的高可用。
+AMS 默认使用 Derby 作为系统库存储自己的元数据，在生产环境下我们建议换成MySQL以提升系统的高可用。支持Mysql 5.6到8.0版本。
 
 **1.修改配置文件**
 
@@ -48,9 +48,6 @@ arctic.ams.mybatis.ConnectionPassword: {password}                        #MySQL 
 arctic.ams.database.type: mysql                                          #系统库类型
 ```
 
-???+ 注意
-
-    目前只支持 MySQL 5.x 版本，不支持 MySQL 8。
 
 **2.初始化 MySQL 表**
 
