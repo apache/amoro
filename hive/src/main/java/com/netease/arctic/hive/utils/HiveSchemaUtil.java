@@ -82,10 +82,14 @@ public class HiveSchemaUtil {
    * @return An Iceberg schema
    */
   public static Schema convertHiveSchemaToIcebergSchema(Table hiveTable, List<String> primaryKeys) {
+
     List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
     hiveSchema.addAll(hiveTable.getPartitionKeys());
     Set<String> pkSet = new HashSet<>(primaryKeys);
     Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
+    if (primaryKeys.isEmpty()) {
+      return schema;
+    }
     List<Types.NestedField> columnsWithPk = new ArrayList<>();
     schema.columns().forEach(nestedField -> {
       if (pkSet.contains(nestedField.name())) {
