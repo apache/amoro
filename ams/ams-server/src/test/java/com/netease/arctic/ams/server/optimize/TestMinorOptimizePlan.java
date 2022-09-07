@@ -62,7 +62,6 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
     Assert.assertEquals(10, tasks.get(0).getInsertFileCnt());
     Assert.assertEquals(10, tasks.get(0).getDeleteFileCnt());
-    Assert.assertEquals(0, tasks.get(0).getIsDeletePosDelete());
   }
 
   protected void insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {

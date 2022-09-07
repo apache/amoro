@@ -250,9 +250,6 @@ public abstract class BaseOptimizePlan {
     if (taskConfig.getMaxTransactionId() != null) {
       optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
     }
-    if (taskConfig.getOptimizeType() == OptimizeType.FullMajor) {
-      optimizeTask.setIsDeletePosDelete(1);
-    }
 
     // table ams url
     Map<String, String> properties = new HashMap<>();
