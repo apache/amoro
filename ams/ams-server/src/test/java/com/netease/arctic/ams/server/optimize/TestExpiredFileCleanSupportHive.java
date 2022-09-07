@@ -19,10 +19,9 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
-import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
@@ -66,7 +65,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
     }
 
     Set<String> hiveLocation = new HashSet<>();
-    if (HiveTableUtil.isHive(testUnPartitionKeyedHiveTable)) {
+    if (TableTypeUtil.isHive(testUnPartitionKeyedHiveTable)) {
       hiveLocation.add(FileUtil.getFileDir(hiveFiles.get(0).path().toString()));
     }
     TableExpireService.expireSnapshots(testUnPartitionKeyedHiveTable.baseTable(), System.currentTimeMillis(), hiveLocation);

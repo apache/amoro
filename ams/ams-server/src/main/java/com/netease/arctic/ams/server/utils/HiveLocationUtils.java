@@ -19,7 +19,7 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -35,7 +35,7 @@ public class HiveLocationUtils {
 
   public static Set<String> getHiveLocation(ArcticTable table) {
     Set<String> hiveLocations = new HashSet<>();
-    if (HiveTableUtil.isHive(table)) {
+    if (TableTypeUtil.isHive(table)) {
       if (table.spec().isUnpartitioned()) {
         try {
           Table hiveTable = ((SupportHive) table).getHMSClient().run(client ->
