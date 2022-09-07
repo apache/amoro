@@ -58,6 +58,7 @@ import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.ams.server.utils.Utils;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -203,46 +204,14 @@ public class TableControllerTest {
   public void testSinglePageToken() throws Exception {
     mockService(catalogName, database, table);
     JavalinTest.test((app, client) -> {
-      app.before(ctx -> {
-        String token = ctx.queryParam("token");
-        // if token is not empty, so we check the query by token first
-        if (StringUtils.isNotEmpty(token)) {
-          if (token.equals("test")) {
-            throw new SignatureCheckException();
-          }
-        }
-      });
       app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature",
               TableController::getTableDetailTabToken);
-      app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/details", TableController::getTableDetail);
-
-
       String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/signature", catalogName, database,table);
       final okhttp3.Response resp = client.get(String.format(url), x -> {});
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
-      String signature = (String)result.getResult();
-
-      url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/details?token=%s",
-              catalogName, database,table, signature);
-      final okhttp3.Response resp1 = client.get(String.format(url), x -> {});
-      OkResponse<JSONObject> result1 = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
-      LOG.info("xxx: {}", JSONObject.toJSONString(result1));
-      assert result1.getCode() == 200;
-      JSONObject body =  result1.getResult();
-      ServerTableMeta tableMeta = JSONObject.parseObject(body.toJSONString(), ServerTableMeta.class);
-      assert tableMeta.getTableIdentifier() != null;
-      assert tableMeta.getTableIdentifier().getCatalog() != catalogName;
-
-      url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/details?token=%s",
-              catalogName, database,table, "test");
-      try {
-        final okhttp3.Response resp2 = client.get(String.format(url), x -> {});
-        assert resp2.code() == 200;
-      } catch (Exception e) {
-        assert e instanceof SignatureCheckException;
-      }
+      assert Utils.generateTablePageToken(catalogName,database,table).equals(result.getResult());
     });
   }
 

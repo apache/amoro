@@ -30,6 +30,7 @@ import com.netease.arctic.ams.server.exception.ForbiddenException;
 import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.service.impl.ApiTokenService;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
+import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
@@ -94,7 +95,7 @@ public class AmsRestServer {
       String token = ctx.queryParam("token");
       // if token of api request is not empty, so we check the query by token first
       if (uriPath.startsWith("/api/") && StringUtils.isNotEmpty(token)) {
-        checkSinglePageToken(ctx);
+        Utils.checkSinglePageToken(ctx);
       } else {
         if (needApiKeyCheck(uriPath)) {
           checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
@@ -276,42 +277,6 @@ public class AmsRestServer {
 
   private static boolean needApiKeyCheck(String uri) {
     return uri.startsWith("/api");
-  }
-
-  /**
-   * check single page access token
-   *
-   * @param ctx
-   * @return
-   */
-  @VisibleForTesting
-  private static void checkSinglePageToken(Context ctx) {
-    // check if query parameters contain  token key
-    String token = ctx.queryParam("token");
-
-    if (StringUtils.isNotEmpty(token)) {
-      // regrex extract  catalog, db, table
-      String url = ctx.req.getRequestURI();
-      String catalog = null;
-      String db = null;
-      String table = null;
-      String[] splitResult = url.split("/");
-      for (int i = 0; i < splitResult.length; i++) {
-        if (splitResult[i].equals("catalogs")) {
-          catalog = splitResult[i + 1];
-        } else if (splitResult[i].equals("dbs")) {
-          db = splitResult[i + 1];
-        } else if (splitResult[i].equals("tables")) {
-          table = splitResult[i + 1];
-        }
-      }
-      if (StringUtils.isEmpty(catalog) ||
-              StringUtils.isEmpty(db) ||
-              StringUtils.isEmpty(table) ||
-              !token.equals(ParamSignatureCalculator.generateTablePageToken(catalog, db, table))) {
-        throw new SignatureCheckException();
-      }
-    }
   }
 
   private static void checkApiToken(String requestMethod, String requestUrl, String apiKey, String signature,

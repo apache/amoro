@@ -137,19 +137,6 @@ public class ParamSignatureCalculator {
     return sb.toString();
   }
 
-  /**
-   * generate the token for single table page access.
-   * @return
-   */
-  public static String generateTablePageToken(String catalog, String db, String table) {
-    Map<String, String> params = new HashMap<>();
-    params.put("catalog", catalog);
-    params.put("db",  db);
-    params.put("table", table);
 
-    String paramString = ParamSignatureCalculator.generateParamStringWithValue(params);
-    String plainText = String.format("%s%s%s", paramString, paramString, paramString);
-    return getMD5(plainText);
-  }
 
 }

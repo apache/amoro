@@ -58,6 +58,7 @@ import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
+import com.netease.arctic.ams.server.utils.Utils;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
@@ -84,9 +85,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.ams.server.utils.ParamSignatureCalculator.generateTablePageToken;
-import static com.netease.arctic.ams.server.utils.ParamSignatureCalculator.getMD5;
 
 /**
  * Table moudle controller.
@@ -510,7 +508,7 @@ public class TableController extends RestBaseController {
     String db =  ctx.pathParam("db");
     String table =  ctx.pathParam("table");
 
-    String signCal = generateTablePageToken(catalog, db, table);
+    String signCal = Utils.generateTablePageToken(catalog, db, table);
     ctx.json(OkResponse.of(signCal));
   }
 
