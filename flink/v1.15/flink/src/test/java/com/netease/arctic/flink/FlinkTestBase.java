@@ -136,6 +136,7 @@ public class FlinkTestBase extends TableTestBase {
 
   @After
   public void clean() {
+    LOG.info("clean start");
     if (IS_LOCAL && testCatalog != null) {
       if (testCatalog.tableExists(PK_TABLE_ID_WITHOUT_PARTITION)) {
         testCatalog.dropTable(PK_TABLE_ID_WITHOUT_PARTITION, true);
@@ -147,6 +148,7 @@ public class FlinkTestBase extends TableTestBase {
         AMS.handler().getTableCommitMetas().remove(PARTITION_TABLE_ID);
       }
     }
+    LOG.info("clean end");
   }
 
   public void config(String catalog) {

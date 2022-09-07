@@ -54,6 +54,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,6 +69,7 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 
 public class TableTestBase {
 
+  private static final Logger LOG = LoggerFactory.getLogger(TableTestBase.class);
   protected static final MockArcticMetastoreServer AMS = MockArcticMetastoreServer.getInstance();
 
   protected static final TableIdentifier TABLE_ID =
@@ -120,6 +123,7 @@ public class TableTestBase {
 
   @Before
   public void setupTables() throws Exception {
+    LOG.info("setupTables start");
     testCatalog = CatalogLoader.load(AMS.getUrl());
     tableDir = temp.newFolder();
 
@@ -148,6 +152,7 @@ public class TableTestBase {
         .create().asKeyedTable();
 
     this.before();
+    LOG.info("setupTables end");
   }
 
   public void before() throws Exception {
@@ -156,6 +161,7 @@ public class TableTestBase {
 
   @After
   public void clearTable() {
+    LOG.info("clearTable start");
     testCatalog.dropTable(TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(TABLE_ID.buildTableIdentifier());
 
@@ -164,6 +170,7 @@ public class TableTestBase {
 
     testCatalog.dropTable(NO_PARTITION_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(NO_PARTITION_TABLE_ID.buildTableIdentifier());
+    LOG.info("clearTable end");
   }
 
   public List<DataFile> writeBase(TableIdentifier identifier, List<Record> records) {
