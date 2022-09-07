@@ -46,10 +46,6 @@ public class HiveTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveTableUtil.class);
 
-  public static boolean isHive(ArcticTable arcticTable) {
-    return arcticTable instanceof SupportHive;
-  }
-
   public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
       HMSClient hiveClient, TableIdentifier tableIdentifier) {
     try {

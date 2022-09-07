@@ -10,6 +10,7 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
@@ -39,7 +40,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                            Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
                            Consumer<OptimizeTaskItem> updateTargetFiles) {
     super(arcticTable, optimizeTasksToCommit);
-    Preconditions.checkArgument(HiveTableUtil.isHive(arcticTable), "The table not support hive");
+    Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     this.updateTargetFiles = updateTargetFiles;
   }
 
