@@ -126,9 +126,9 @@ public class HiveTableUtil {
     SerDeInfo serDeInfo = new SerDeInfo();
     switch (format) {
       case PARQUET:
-        storageDescriptor.setOutputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat");
-        storageDescriptor.setInputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat");
-        serDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe");
+        storageDescriptor.setOutputFormat(HiveTableProperties.PARQUET_OUTPUT_FORMAT);
+        storageDescriptor.setInputFormat(HiveTableProperties.PARQUET_INPUT_FORMAT);
+        serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
         break;
       default:
         throw new IllegalArgumentException("Unsupported hive table file format:" + format);
