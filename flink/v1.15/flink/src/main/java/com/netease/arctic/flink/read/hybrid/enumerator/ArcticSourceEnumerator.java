@@ -21,10 +21,14 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
+import com.netease.arctic.flink.read.hybrid.reader.ReaderStartedEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
+import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.KeyedTable;
+import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.Snapshot;
@@ -33,8 +37,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_LATEST;
@@ -46,12 +52,28 @@ import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSourceEnumerator.class);
   private transient KeyedTable keyedTable;
+  /**
+   * To record the snapshotId at the first planSplits.
+   * <p>
+   * If its value is null, it means that we don't need to generate watermark. Won't check.
+   */
+  private transient volatile TemporalJoinSplits temporalJoinSplits = null;
   private final ArcticTableLoader loader;
   private final SplitEnumeratorContext<ArcticSplit> context;
   private final ContinuousSplitPlanner continuousSplitPlanner;
   private final SplitAssigner splitAssigner;
   private final ArcticScanContext scanContext;
   private final long snapshotDiscoveryIntervalMs;
+  /**
+   * If true, using arctic table as build table.
+   * {@link ArcticSourceEnumerator} will notify {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}
+   * after ArcticReaders have finished reading all {@link TemporalJoinSplits}.
+   * Then {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader} will emit a Watermark values
+   * Long.MAX_VALUE. Advancing TemporalJoinOperator's watermark can trigger the join operation and push the results to
+   * downstream. The watermark of Long.MAX_VALUE avoids affecting the watermark defined by user arbitrary  probe side
+   */
+  private final boolean dimTable;
+  private volatile boolean sourceEventBeforeFirstPlan = false;
   /**
    * snapshotId for the last enumerated snapshot. next incremental enumeration
    * should be based off this as the starting position.
@@ -65,7 +87,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner splitAssigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nullable ArcticSourceEnumState enumState) {
+      @Nullable ArcticSourceEnumState enumState,
+      boolean dimTable) {
     super(enumContext, splitAssigner);
     this.loader = loader;
     this.context = enumContext;
@@ -76,7 +99,10 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
     this.enumeratorPosition = new AtomicReference<>();
     if (enumState != null) {
       this.enumeratorPosition.set(enumState.lastEnumeratedOffset());
+      this.temporalJoinSplits = enumState.temporalJoinSplits();
     }
+    this.dimTable = dimTable;
+    LOG.info("dimTable: {}", dimTable);
   }
 
   @Override
@@ -119,6 +145,18 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   }
 
   private ContinuousEnumerationResult planSplits() {
+    ContinuousEnumerationResult result = doPlanSplits();
+    if (dimTable && temporalJoinSplits == null) {
+      temporalJoinSplits = new TemporalJoinSplits(result.splits(), context.metricGroup());
+      // the first SourceEvent may be faster than plan splits
+      if (result.isEmpty() && sourceEventBeforeFirstPlan) {
+        notifyReaders();
+      }
+    }
+    return result;
+  }
+
+  private ContinuousEnumerationResult doPlanSplits() {
     if (lock.get()) {
       LOG.info("prefix plan splits thread haven't finished.");
       return ContinuousEnumerationResult.EMPTY;
@@ -144,12 +182,64 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
   }
 
   @Override
+  public void handleSourceEvent(int subtaskId, SourceEvent sourceEvent) {
+    super.handleSourceEvent(subtaskId, sourceEvent);
+    if (sourceEvent instanceof SplitRequestEvent) {
+      SplitRequestEvent splitRequestEvent = (SplitRequestEvent) sourceEvent;
+      Collection<String> finishedSplitIds = splitRequestEvent.finishedSplitIds();
+      if (dimTable) {
+        checkAndNotifyReader(finishedSplitIds);
+      }
+    } else if (sourceEvent instanceof ReaderStartedEvent) {
+      if (!dimTable || temporalJoinSplits == null || !temporalJoinSplits.hasNotifiedReader()) {
+        return;
+      }
+      // If tm failover, the reader may not be notified and watermark will not be retrieved in reader.
+      sourceEventBeforeFirstPlan = true;
+      LOG.info("send InitializationFinishedEvent to reader again.");
+      context.sendEventToSourceReader(subtaskId, InitializationFinishedEvent.INSTANCE);
+    } else {
+      throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
+          subtaskId, sourceEvent.getClass().getCanonicalName()));
+    }
+  }
+
+  /**
+   * Check whether all first splits have been finished or not.
+   * After all finished, enumerator will send a {@link InitializationFinishedEvent} to notify all
+   * {@link com.netease.arctic.flink.read.hybrid.reader.ArcticSourceReader}.
+   *
+   * @param finishedSplitIds
+   */
+  public void checkAndNotifyReader(Collection<String> finishedSplitIds) {
+    if (temporalJoinSplits == null) {
+      sourceEventBeforeFirstPlan = true;
+      return;
+    }
+
+    if (temporalJoinSplits.hasNotifiedReader() ||
+        !temporalJoinSplits.removeAndReturnIfAllFinished(finishedSplitIds)) {
+      return;
+    }
+    notifyReaders();
+  }
+
+  private void notifyReaders() {
+    LOG.info("all splits finished, send events to readers");
+    IntStream.range(0, context.currentParallelism())
+        .forEach(i -> context.sendEventToSourceReader(i, InitializationFinishedEvent.INSTANCE));
+    temporalJoinSplits.clear();
+    temporalJoinSplits.notifyReader();
+  }
+
+  @Override
   public ArcticSourceEnumState snapshotState(long checkpointId) throws Exception {
     long[] shuffleSplitRelation = null;
     if (splitAssigner instanceof ShuffleSplitAssigner) {
       shuffleSplitRelation = ((ShuffleSplitAssigner) splitAssigner).serializePartitionIndex();
     }
-    return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation);
+    return new ArcticSourceEnumState(splitAssigner.state(), enumeratorPosition.get(), shuffleSplitRelation,
+        temporalJoinSplits);
   }
 
   @Override

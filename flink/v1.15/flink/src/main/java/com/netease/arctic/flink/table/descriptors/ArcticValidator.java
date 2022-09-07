@@ -108,11 +108,35 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
       .key("submit.empty.snapshots")
       .booleanType()
-      .defaultValue(true)
+      .defaultValue(false)
       .withDescription("Optional submit empty snapshots to the arctic table, false means that writers will not emit" +
           " empty WriteResults to the committer operator, and reduce the number of snapshots in File Cache; true" +
           " means this job will submit empty snapshots to the table, it is suitable with some valid reasons, e.g." +
           " advance watermark metadata stored in the table(https://github.com/apache/iceberg/pull/5561).");
+
+  public static final ConfigOption<String> ARCTIC_CATALOG =
+      ConfigOptions.key("arctic.catalog")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic catalog name.");
+
+  public static final ConfigOption<String> ARCTIC_DATABASE =
+      ConfigOptions.key("arctic.database")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic database name.");
+
+  public static final ConfigOption<String> ARCTIC_TABLE =
+      ConfigOptions.key("arctic.table")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("underlying arctic table name.");
+
+  public static final ConfigOption<Boolean> DIM_TABLE_ENABLE =
+      ConfigOptions.key("dim-table.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
   @Override
   public void validate(DescriptorProperties properties) {

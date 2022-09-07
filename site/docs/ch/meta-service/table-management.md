@@ -2,6 +2,19 @@
 [AMS Dashboard](http://localhost:1630) 中提供了命令行工具`Terminal`帮组用户快速完成表的创建、修改与删除操作。
 同时还可以在 [Spark](../spark/spark-ddl.md) 和 [Flink](../flink/flink-ddl.md) 等引擎中使用 SQL 完成表的管理。
 
+## 升级 Hive 表
+Arctic 从 v0.3.1 版本开始支持了 Hive 表，可以对已有的 Hive 表进行升级以获得 Arctic 提供的流批一体能力。有关升级后 Hive 表拥有的功能可以参考 [Hive Format](../table-fomat/hive-format.md)。
+
+登录 [AMS Dashboard](http://localhost:1630) 后，从菜单中的 `Tables` 中选择 Hive 集群中的一张表，即可进行升级操作。
+
+![Hive Table Detail](../images/meta-service/hive-table-detail.png)
+
+点击表详情右上角的 `Upgrade` 按钮（已经完成升级的 Hive 表不再显示此按钮）。
+
+![Hive Table Upgrade](../images/meta-service/hive-table-upgrade.png)
+
+在升级界面为表选择主键，并添加额外的参数，之后点击 `OK` 完成 Hive 表的升级操作。
+
 ## 新建表
 登录 [AMS Dashboard](http://localhost:1630) 后，进入`Terminal`，输入建表语句并执行即可完成表的创建。
 下面是一个建表的例子：

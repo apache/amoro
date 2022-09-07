@@ -39,7 +39,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.table.api.TableSchema;
-import org.apache.flink.table.api.constraints.UniqueConstraint;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.util.Preconditions;
@@ -54,8 +53,6 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.Properties;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
@@ -188,11 +185,8 @@ public class FlinkSink {
           .propertyAsBoolean(table.properties(), ARCTIC_THROUGHPUT_METRIC_ENABLE,
               ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT);
 
-      List<String> equalityColumns = flinkSchema.getPrimaryKey()
-          .map(UniqueConstraint::getColumns)
-          .orElse(Collections.emptyList());
       ArcticFileWriter fileWriter = createFileWriter(table, shufflePolicy, overwrite, flinkSchemaRowType,
-          equalityColumns, arcticEmitMode, tableLoader);
+          arcticEmitMode, tableLoader);
 
       ArcticLogWriter logWriter = ArcticUtils.buildArcticLogWriter(table.properties(),
           producerConfig, topic, flinkSchema, arcticEmitMode, helper);
@@ -292,10 +286,9 @@ public class FlinkSink {
   public static ArcticFileWriter createFileWriter(ArcticTable arcticTable,
                                                   ShuffleRulePolicy shufflePolicy,
                                                   boolean overwrite,
-                                                  List<String> equalityColumns,
                                                   RowType flinkSchema,
                                                   ArcticTableLoader tableLoader) {
-    return createFileWriter(arcticTable, shufflePolicy, overwrite, flinkSchema, equalityColumns, ARCTIC_EMIT_FILE,
+    return createFileWriter(arcticTable, shufflePolicy, overwrite, flinkSchema, ARCTIC_EMIT_FILE,
         tableLoader);
   }
 
@@ -303,7 +296,6 @@ public class FlinkSink {
                                                   ShuffleRulePolicy shufflePolicy,
                                                   boolean overwrite,
                                                   RowType flinkSchema,
-                                                  List<String> equalityColumns,
                                                   String emitMode,
                                                   ArcticTableLoader tableLoader) {
     if (!ArcticUtils.arcticFileWriterEnable(emitMode)) {
@@ -325,7 +317,7 @@ public class FlinkSink {
         arcticTable.properties(), SUBMIT_EMPTY_SNAPSHOTS.key(), SUBMIT_EMPTY_SNAPSHOTS.defaultValue());
 
     return new ArcticFileWriter(shufflePolicy,
-        createTaskWriterFactory(arcticTable, overwrite, flinkSchema, equalityColumns),
+        createTaskWriterFactory(arcticTable, overwrite, flinkSchema),
         minFileSplitCount,
         tableLoader,
         upsert,
@@ -334,8 +326,7 @@ public class FlinkSink {
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(ArcticTable arcticTable,
                                                                     boolean overwrite,
-                                                                    RowType flinkSchema,
-                                                                    List<String> equalityFieldColumns) {
+                                                                    RowType flinkSchema) {
     return new ArcticRowDataTaskWriterFactory(arcticTable, flinkSchema, overwrite);
   }
 

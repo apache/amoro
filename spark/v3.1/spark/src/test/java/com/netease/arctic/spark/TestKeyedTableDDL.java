@@ -48,6 +48,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
+        " point struct<x: double NOT NULL, y: double NOT NULL> , \n " +
         " ts timestamp , \n" +
         " primary key (id) \n" +
         ") using arctic \n" +

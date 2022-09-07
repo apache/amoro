@@ -18,16 +18,15 @@
 
 package com.netease.arctic.flink.util;
 
+import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.write.ArcticLogWriter;
-import com.netease.arctic.flink.write.MetricsGenerator;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.IdGenerator;

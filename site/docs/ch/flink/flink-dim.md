@@ -5,8 +5,6 @@ Flink SQL 官方支持多种 Join 方式，见 [官方文档](https://nightlies.
 对于 Flink 官方 Regular Join、Interval Join、Temporal Join，用户可以按照上述 Flink 官方的文档正常使用。
 对于将 Arctic 表作为维表的 Lookup Join 场景，请按本文档的描述配置使用。
 
-**未来会基于 Arctic Logstore 实现更实时的维表**
-
 ### 使用说明
 
 注意：维表必须定义主键，并且 Join 条件必须包含所有主键字段。
@@ -58,9 +56,10 @@ ON orders.user_id = user_dim.id
 
 - 当 Arctic 作为维表（user 表）数据量很大时，需要一定的存量数据加载时间。在此期间，左表（orders）的数据会缓存在 Join 算子中，直到维表存量数据加载完，
 才会触发 Join 算子的关联操作并向下游输出数据。
-- 现阶段维表读 Arctic FileStore 会存在一定的时间延迟，如果左表（orders）的数据是毫秒级延迟的实时数据，需要指定允许一定时间的延迟，让左表数据缓存一段时间后，再触发 Join。
-如允许 10s 的延迟：WATERMARK FOR order_time AS order_time - INTERVAL '10' SECOND，避免左表（orders）的数据比维表数据快，导致 Join 关联不上
-维表侧（user 表）的数据。
+- 现阶段维表读 Arctic Filestore 会存在一定的时间延迟，如果左表（orders）的数据是毫秒级延迟的实时数据，需要指定允许一定时间的延迟，让左表数据缓存一段时间后，再触发 Join。
+如允许 10s 的延迟：WATERMARK FOR order_time AS order_time - INTERVAL '10' SECOND，避免左表（orders）的数据比维表数据快，导致 Join 关联不上维表侧（user 表）的数据。
+- 未来会基于 Arctic Logstore 实现更实时的维表
+
 
 **注意事项**
 
@@ -74,3 +73,37 @@ CREATE TABLE orders (
   WATERMARK FOR order_time AS order_time
   ) WITH (/* ... */);
 ```
+
+### 性能测试
+本次性能测试主要面向维表有较大存量数据，并且主表持续流入数据的场景。有相关场景需求的用户可以将本次性能测试的结果作为一个参考，具体的测试条件和结果如下：
+
+**测试条件**
+
+* 主表：Flink DataGen 数据源，设置数据生成速率为10000条/秒
+* 维表：初始数据量为10G大小，共1580万条记录数的 Arctic 表，并且有新的数据不断流入，流入速率为100条/秒
+* Flink 任务配置
+    * 并发度：8
+    * TaskManager 数量：8
+    * TaskManager 内存：2G
+    * numberOfTaskSlots：1
+    * JobManager 内存：2G
+    * state backend： RocksDB
+    * state.backend.incremental：true
+    * Checkpoint 间隔：1min
+    * Checkpoint 超时时间：30min。需要说明的是，Flink 任务首次初始化维表数据到 Rocksdb 容易造成 Checkpoint 超时，因此本次测试将 Checkpoint 超时时间设置为30min
+
+**测试指标**
+
+1. 维表存量数据的加载时间
+2. 维表存量数据加载完后第一次 Join 计算花费的时间
+3. Checkpoint 大小
+4. Failover 耗时
+
+**测试结果**
+
+| 测试指标             | 测试数值   |
+|------------------|--------|
+| 维表存量数据的加载时间      | 8min   |
+| 第一次 Join 计算花费的时间 | 3min   |
+| Checkpoint 大小    | 1.86GB |
+| Failover 耗时      | 5s     |

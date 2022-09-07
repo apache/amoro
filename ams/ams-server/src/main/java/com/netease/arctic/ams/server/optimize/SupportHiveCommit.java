@@ -45,6 +45,8 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
 
   @Override
   public long commit(TableOptimizeRuntime tableOptimizeRuntime) throws Exception {
+    LOG.info("{} get tasks to support hive commit for partitions {}", arcticTable.id(),
+        optimizeTasksToCommit.keySet());
     HMSClient hiveClient = ((SupportHive) arcticTable).getHMSClient();
     Map<String, String> partitionPathMap = new HashMap<>();
     Types.StructType partitionSchema = arcticTable.isUnkeyedTable() ?
@@ -54,7 +56,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
     optimizeTasksToCommit.forEach((partition, optimizeTaskItems) -> {
       // if major optimize task don't contain pos-delete files in a partition, can rewrite or move data files
       // to hive location
-      if (isPartitionMajorOptimizeSupportHive(optimizeTaskItems)) {
+      if (isPartitionMajorOptimizeSupportHive(partition, optimizeTaskItems)) {
         for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
           BaseOptimizeTaskRuntime optimizeRuntime = optimizeTaskItem.getOptimizeRuntime();
           List<DataFile> targetFiles = optimizeRuntime.getTargetFiles().stream()
@@ -113,16 +115,18 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
     return super.commit(tableOptimizeRuntime);
   }
 
-  protected boolean isPartitionMajorOptimizeSupportHive(List<OptimizeTaskItem> optimizeTaskItems) {
+  protected boolean isPartitionMajorOptimizeSupportHive(String partition, List<OptimizeTaskItem> optimizeTaskItems) {
     for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
       BaseOptimizeTask optimizeTask = optimizeTaskItem.getOptimizeTask();
       boolean isMajorTaskSupportHive = optimizeTask.getTaskId().getType() == OptimizeType.Major &&
           CollectionUtils.isEmpty(optimizeTask.getPosDeleteFiles());
       if (!isMajorTaskSupportHive) {
+        LOG.info("{} is not major task support hive for partitions {}", arcticTable.id(), partition);
         return false;
       }
     }
 
+    LOG.info("{} is major task support hive for partitions {}", arcticTable.id(), partition);
     return true;
   }
 
