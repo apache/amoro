@@ -86,13 +86,12 @@ public class HiveSchemaUtil {
     hiveSchema.addAll(hiveTable.getPartitionKeys());
     Set<String> pkSet = new HashSet<>(primaryKeys);
     Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
-    List<Types.NestedField> columns = schema.columns();
     List<Types.NestedField> columnsWithPk = new ArrayList<>();
-    columns.forEach(nf -> {
-      if (pkSet.contains(nf.name())) {
-        columnsWithPk.add(nf.asRequired());
+    schema.columns().forEach(nestedField -> {
+      if (pkSet.contains(nestedField.name())) {
+        columnsWithPk.add(nestedField.asRequired());
       } else {
-        columnsWithPk.add(nf);
+        columnsWithPk.add(nestedField);
       }
     });
     return new Schema(columnsWithPk);

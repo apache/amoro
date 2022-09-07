@@ -428,11 +428,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
     protected void doCreateCheck() {
       if (primaryKeySpec.primaryKeyExisted()) {
-        Set<String> pkSet = new HashSet<>(primaryKeySpec.fieldNames());
-        schema.columns().forEach(nf -> {
-          if (pkSet.contains(nf.name()) && nf.isOptional()) {
-            throw new IllegalStateException("please check your schema, the primary key nested field must be required " +
-                "and field name is " + nf.name());
+        primaryKeySpec.fieldNames().forEach(primaryKey -> {
+          if (schema.findField(primaryKey).isOptional()) {
+            throw new IllegalArgumentException("please check your schema, the primary key nested field must" +
+                " be required and field name is " + primaryKey);
           }
         });
       }
