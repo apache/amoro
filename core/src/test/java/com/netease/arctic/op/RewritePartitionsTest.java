@@ -20,6 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -58,7 +59,7 @@ public class RewritePartitionsTest extends TableTestBase {
     ));
 
     // init. 3 partition with init txId
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     Assert.assertEquals(initTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
     ).longValue());
@@ -95,7 +96,7 @@ public class RewritePartitionsTest extends TableTestBase {
     overwrite.commit();
     // overwrite 1 partition by data file
 
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     // expect result: 1 partition with new txId, 2,3 partition use old txId
     Assert.assertEquals(txId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
