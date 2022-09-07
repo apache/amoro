@@ -73,8 +73,6 @@ public class HiveMetaSynchronizer {
   public static void syncHiveSchemaToArctic(ArcticTable table, HMSClient hiveClient) {
     try {
       Table hiveTable = hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
-      List<FieldSchema> fieldSchemas =  hiveTable.getSd().getCols();
-      fieldSchemas.addAll(hiveTable.getPartitionKeys());
       Schema hiveSchema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable,
           table.asKeyedTable().primaryKeySpec().fieldNames());
       UpdateSchema updateSchema = table.updateSchema();
