@@ -28,7 +28,9 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
@@ -53,10 +55,12 @@ public class TestExpiredFileClean extends TableTestBase {
   @Test
   public void testDeleteChangeFiles() throws Exception {
     List<DataFile> s1Files = insertChangeDataFiles(1);
+    List<StructLike> partitions = new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(s1Files.get(0).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(s1Files.get(1).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "0");
+    updateProperties.set(partitions.get(0), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
+    updateProperties.set(partitions.get(1), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "0");
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
     testKeyedTable.changeTable().newScan().planFiles()
@@ -73,10 +77,12 @@ public class TestExpiredFileClean extends TableTestBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> s1Files = insertChangeDataFiles(1);
+    List<StructLike> partitions = new ArrayList<>(s1Files.stream().collect(Collectors.groupingBy(ContentFile::partition)).keySet());
+    Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(s1Files.get(0).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(s1Files.get(1).partition(), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "1");
+    updateProperties.set(partitions.get(0), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
+    updateProperties.set(partitions.get(1), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "1");
     updateProperties.commit();
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
