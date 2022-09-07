@@ -23,6 +23,7 @@ import com.netease.arctic.flink.read.FlinkSplitPlanner;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.KeyedTable;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.annotation.Internal;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.TableScan;
@@ -74,10 +75,13 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     if (changeSnapshot != null && changeSnapshot.snapshotId() != fromChangeSnapshotId) {
       long snapshotId = changeSnapshot.snapshotId();
-      TableScan tableScan = table.changeTable().newScan().appendsBetween(fromChangeSnapshotId, snapshotId);
+      TableScan tableScan = table.changeTable().newScan();
+
+      if (fromChangeSnapshotId != Long.MIN_VALUE) {
+        tableScan = tableScan.appendsBetween(fromChangeSnapshotId, snapshotId);
+      }
 
       List<ArcticSplit> arcticChangeSplit = planChangeTable(tableScan, splitCount);
-
       return new ContinuousEnumerationResult(
           arcticChangeSplit,
           lastPosition,
@@ -88,17 +92,24 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
 
   private ContinuousEnumerationResult discoverInitialSplits() {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
+    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, splitCount);
+
     if (changeSnapshot != null) {
       long changeStartSnapshotId = table.changeTable().currentSnapshot().snapshotId();
-      List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, splitCount);
-
       return new ContinuousEnumerationResult(
           arcticSplits,
           null,
           ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
     } else {
       LOG.info("There have no change snapshot, table {}.", table);
+
+      if (CollectionUtils.isEmpty(arcticSplits)) {
+        return ContinuousEnumerationResult.EMPTY;
+      }
+      return new ContinuousEnumerationResult(
+          arcticSplits,
+          null,
+          ArcticEnumeratorOffset.of(Long.MIN_VALUE, null));
     }
-    return ContinuousEnumerationResult.EMPTY;
   }
 }

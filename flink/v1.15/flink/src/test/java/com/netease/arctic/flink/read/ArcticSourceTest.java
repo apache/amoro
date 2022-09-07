@@ -26,7 +26,9 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.FlinkSink;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -61,6 +63,7 @@ import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.junit.After;
@@ -77,6 +80,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -273,6 +277,54 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
     assertArrayEquals(excepts2(), actualResult);
     jobClient.cancel();
+  }
+
+  @Test
+  public void testArcticContinuousSourceWithEmptyChangeInInit() throws Exception {
+    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
+    KeyedTable table = testCatalog
+        .newTableBuilder(tableId, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + tableId.getTableName())
+        .withPartitionSpec(SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    TaskWriter<RowData> taskWriter = createTaskWriter(true);
+    List<RowData> baseData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    }};
+    for (RowData record : baseData) {
+      taskWriter.write(record);
+    }
+    commit(table, taskWriter.complete(), true);
+
+    ArcticSource<RowData> arcticSource = initArcticSource(true, FILE_SCAN_STARTUP_MODE_EARLIEST, tableId);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, arcticSource);
+
+    JobClient jobClient = clientAndIterator.client;
+
+    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
+
+    Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
+
+    LOG.info("begin write update_before update_after data and commit new snapshot to change table.");
+    writeUpdate(updateRecords(), table);
+    writeUpdate(updateRecords(), table);
+
+    actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
+    jobClient.cancel();
+
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
   }
 
   @Test
@@ -528,6 +580,23 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
         false);
   }
 
+  private ArcticSource<RowData> initArcticSource(boolean isStreaming, String scanStartupMode,
+                                                 TableIdentifier tableIdentifier) {
+    ArcticTableLoader tableLoader = ArcticTableLoader.of(tableIdentifier, catalogBuilder);
+    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, scanStartupMode);
+    ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
+    ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction(table.asKeyedTable());
+    TypeInformation<RowData> typeInformation = InternalTypeInfo.of(FlinkSchemaUtil.convert(table.schema()));
+
+    return new ArcticSource<>(
+        tableLoader,
+        arcticScanContext,
+        rowDataReaderFunction,
+        typeInformation,
+        table.name(),
+        false);
+  }
+
   private ArcticSource<RowData> initArcticDimSource(boolean isStreaming) {
     ArcticTableLoader tableLoader = initLoader();
     ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, FILE_SCAN_STARTUP_MODE_EARLIEST);
@@ -547,14 +616,18 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
   }
 
   private RowDataReaderFunction initRowDataReadFunction() {
+    return initRowDataReadFunction(testKeyedTable);
+  }
+
+  private RowDataReaderFunction initRowDataReadFunction(KeyedTable keyedTable) {
     return new RowDataReaderFunction(
         new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
+        keyedTable.schema(),
+        keyedTable.schema(),
+        keyedTable.primaryKeySpec(),
         null,
         true,
-        testKeyedTable.io()
+        keyedTable.io()
     );
   }
 

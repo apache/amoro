@@ -322,10 +322,9 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     writeUpdate(updateRecords(), table);
 
     actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
-
-    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
     jobClient.cancel();
 
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
   }
 
   @Test

@@ -114,7 +114,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
         FILE_SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanContext.scanStartupMode())) {
       keyedTable.refresh();
       Snapshot snapshot = keyedTable.changeTable().currentSnapshot();
-      enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshot.snapshotId(), null));
+      long snapshotId = snapshot == null ? Long.MIN_VALUE : snapshot.snapshotId();
+      enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshotId, null));
       LOG.info("{} is {}, the current snapshot id of the change table {}  is {}.",
           FILE_SCAN_STARTUP_MODE.key(), FILE_SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshot.snapshotId());
     }
