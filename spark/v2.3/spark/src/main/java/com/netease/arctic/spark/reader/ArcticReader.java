@@ -36,6 +36,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+
 public class ArcticReader implements DataSourceReader,
     SupportsPushDownFilters, SupportsPushDownRequiredColumns, SupportsReportStatistics {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticReader.class);
@@ -120,7 +122,7 @@ public class ArcticReader implements DataSourceReader,
   @Override
   public List<DataReaderFactory<Row>> createDataReaderFactories() {
     List<CombinedScanTask> scanTasks = tasks();
-    ReadTask[] readTasks  = new ReadTask[scanTasks.size()];
+    ReadTask[] readTasks = new ReadTask[scanTasks.size()];
     for (int i = 0; i < scanTasks.size(); i++) {
       readTasks[i] = new ReadTask(scanTasks.get(i), table, expectedSchema,
           caseSensitive);
@@ -136,6 +138,8 @@ public class ArcticReader implements DataSourceReader,
     final Schema tableSchema;
     final PrimaryKeySpec keySpec;
 
+    final String nameMapping;
+
     ReadTask(
         CombinedScanTask combinedScanTask,
         KeyedTable table,
@@ -147,6 +151,7 @@ public class ArcticReader implements DataSourceReader,
       this.caseSensitive = caseSensitive;
       this.io = table.io();
       this.keySpec = table.primaryKeySpec();
+      this.nameMapping = table.properties().get(DEFAULT_NAME_MAPPING);
     }
 
     @Override
@@ -156,7 +161,7 @@ public class ArcticReader implements DataSourceReader,
 
     @Override
     public DataReader<Row> createDataReader() {
-      return new RowReader(io, tableSchema, expectedSchema, keySpec, null, caseSensitive, combinedScanTask);
+      return new RowReader(io, tableSchema, expectedSchema, keySpec, nameMapping, caseSensitive, combinedScanTask);
     }
   }
 
@@ -211,7 +216,6 @@ public class ArcticReader implements DataSourceReader,
       }
     }
   }
-
 
 
   private List<CombinedScanTask> tasks() {

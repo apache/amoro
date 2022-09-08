@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+
 public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {
   private static final Logger LOG = LoggerFactory.getLogger(KeyedSparkBatchScan.class);
 
@@ -225,7 +227,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     RowReader(ArcticInputPartition task) {
       reader = new ArcticSparkKeyedDataReader(
           task.io, task.tableSchema, task.expectedSchema, task.keySpec,
-          null, task.caseSensitive
+          task.nameMapping, task.caseSensitive
       );
       scanTasks = task.combinedScanTask.tasks().iterator();
     }
@@ -268,6 +270,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     final Schema expectedSchema;
     final Schema tableSchema;
     final PrimaryKeySpec keySpec;
+    final String nameMapping;
 
     ArcticInputPartition(
         CombinedScanTask combinedScanTask,
@@ -280,6 +283,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
       this.caseSensitive = caseSensitive;
       this.io = table.io();
       this.keySpec = table.primaryKeySpec();
+      this.nameMapping = table.properties().get(DEFAULT_NAME_MAPPING);
     }
   }
 }
