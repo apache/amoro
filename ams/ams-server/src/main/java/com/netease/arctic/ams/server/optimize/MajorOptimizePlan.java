@@ -111,6 +111,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
       partitionNeedMajorOptimizeFiles.put(partition, Collections.emptyList());
+      partitionPosDeleteFiles.put(partition, Collections.emptyList());
       partitionFileTree.get(partition).initFiles();
     } else {
       FileTree treeRoot = partitionFileTree.get(partition);
@@ -237,8 +238,9 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         .pack(fileList, DataFile::fileSizeInBytes);
     for (List<DataFile> files : packed) {
       if (CollectionUtils.isNotEmpty(files)) {
+        List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
         collector.add(buildOptimizeTask(null,
-            Collections.emptyList(), Collections.emptyList(), files, Collections.emptyList(), taskPartitionConfig));
+            Collections.emptyList(), Collections.emptyList(), files, posDeleteFiles, taskPartitionConfig));
       }
     }
     return collector;

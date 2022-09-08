@@ -69,6 +69,10 @@ public class OptimizeTaskItem extends IJDBCService {
     return optimizeRuntime;
   }
 
+  public void setOptimizeRuntime(BaseOptimizeTaskRuntime optimizeRuntime) {
+    this.optimizeRuntime = optimizeRuntime;
+  }
+
   public TableIdentifier getTableIdentifier() {
     return new TableIdentifier(optimizeTask.getTableIdentifier());
   }

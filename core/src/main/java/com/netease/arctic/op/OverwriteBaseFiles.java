@@ -34,6 +34,7 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.StructLikeMap;
 
@@ -57,6 +58,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final StructLikeMap<Long> maxTransactionId;
 
   private Long transactionId;
+  private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
     super(table);
@@ -104,6 +106,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
+  public OverwriteBaseFiles validateNoConflictingAppends(Expression newConflictDetectionFilter) {
+    Preconditions.checkArgument(newConflictDetectionFilter != null, "Conflict detection filter cannot be null");
+    this.conflictDetectionFilter = newConflictDetectionFilter;
+    return this;
+  }
+
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
@@ -114,6 +122,9 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
+      if (conflictDetectionFilter != null) {
+        overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
+      }
       if (baseTable.currentSnapshot() != null) {
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
