@@ -41,8 +41,6 @@ public class BaseOptimizeTask extends OptimizeTask {
   protected long createTime;
 
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
-  @Deprecated
-  private int isDeletePosDelete;
 
   public BaseOptimizeTask() {
   }
@@ -143,16 +141,6 @@ public class BaseOptimizeTask extends OptimizeTask {
     this.deleteFileCnt = deleteFileCnt;
   }
 
-  @Deprecated
-  public int getIsDeletePosDelete() {
-    return isDeletePosDelete;
-  }
-
-  @Deprecated
-  public void setIsDeletePosDelete(int isDeletePosDelete) {
-    this.isDeletePosDelete = isDeletePosDelete;
-  }
-
   public long getPosDeleteFileSize() {
     return posDeleteFileSize;
   }
@@ -186,7 +174,6 @@ public class BaseOptimizeTask extends OptimizeTask {
         ", queueId=" + queueId +
         ", createTime=" + createTime +
         ", maxChangeTransactionId=" + maxChangeTransactionId +
-        ", isDeletePosDelete=" + isDeletePosDelete +
         "} " + superToString();
   }
 

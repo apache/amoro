@@ -50,6 +50,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   private final boolean caseSensitive;
   private final ArcticFileIO io;
   private final PrimaryKeySpec primaryKeySpec;
+  private final int columnSize;
 
   public RowDataReaderFunction(
       ReadableConfig config, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
@@ -62,6 +63,8 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
     this.io = io;
+    // Add file offset column after readSchema. Refer to this#wrapArcticFileOffsetColumnMeta
+    this.columnSize = readSchema.columns().size();
   }
 
   @Override
@@ -100,12 +103,14 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
   }
 
   long arcticFileOffset(RowData rowData) {
-    int index = rowData.getArity() - 1;
-    return rowData.getLong(index);
+    return rowData.getLong(columnSize);
   }
 
+  /**
+   * @param rowData It may have more columns than readSchema. Refer to {@link FlinkArcticDataReader}'s annotation.
+   */
   RowData removeArcticMetaColumn(RowData rowData) {
-    GenericRowData newRowData = new GenericRowData(rowData.getRowKind(), rowData.getArity() - 1);
+    GenericRowData newRowData = new GenericRowData(rowData.getRowKind(), columnSize);
     if (rowData instanceof GenericRowData) {
       GenericRowData before = (GenericRowData) rowData;
       for (int i = 0; i < newRowData.getArity(); i++) {

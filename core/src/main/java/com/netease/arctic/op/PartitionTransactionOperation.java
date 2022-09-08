@@ -24,7 +24,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PendingUpdate;
 import org.apache.iceberg.Transaction;
-import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.HashMap;
@@ -62,7 +61,7 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
 
   @Override
   public StructLikeMap<Long> apply() {
-    return apply(tx, keyedTable.partitionMaxTransactionId());
+    return apply(tx, TablePropertyUtil.getPartitionMaxTransactionId(keyedTable));
   }
 
 
@@ -70,11 +69,10 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
     this.tx = keyedTable.baseTable().newTransaction();
 
     StructLikeMap<Long> partitionMaxTxId = apply();
-
-    String propertyValue = TablePropertyUtil.encodePartitionMaxTxId(keyedTable.spec(), partitionMaxTxId);
-    UpdateProperties updateProperties = tx.updateProperties();
-    updateProperties.set(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, propertyValue);
-    updateProperties.commit();
+    UpdatePartitionProperties updatePartitionProperties = keyedTable.baseTable().updatePartitionProperties(tx);
+    partitionMaxTxId.forEach((partition, txId) ->
+        updatePartitionProperties.set(partition, TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, String.valueOf(txId)));
+    updatePartitionProperties.commit();
 
     tx.commitTransaction();
   }

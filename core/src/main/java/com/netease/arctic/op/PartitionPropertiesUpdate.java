@@ -22,6 +22,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -34,6 +35,7 @@ import java.util.Set;
 public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
 
   private final UnkeyedTable table;
+  private final Table transactionTable;
   private final StructLikeMap<Map<String, String>> setProperties;
   private final StructLikeMap<Set<String>> removeProperties;
   private final Transaction transaction;
@@ -43,6 +45,11 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     this.setProperties = StructLikeMap.create(table.spec().partitionType());
     this.removeProperties = StructLikeMap.create(table.spec().partitionType());
     this.transaction = transaction;
+    if (transaction != null) {
+      transactionTable = transaction.table();
+    } else {
+      transactionTable = null;
+    }
   }
 
   @Override
@@ -55,11 +62,7 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
     Preconditions.checkArgument(removePropertiesForPartition == null ||
             !removePropertiesForPartition.contains(key),
         "Cannot remove and update the same key: %s", key);
-    Map<String, String> properties = setProperties.get(partitionData);
-    if (properties == null) {
-      properties = Maps.newHashMap();
-      setProperties.put(partitionData, properties);
-    }
+    Map<String, String> properties = setProperties.computeIfAbsent(partitionData, k -> Maps.newHashMap());
     properties.put(key, value);
     return this;
   }
@@ -84,13 +87,19 @@ public class PartitionPropertiesUpdate implements UpdatePartitionProperties {
 
   @Override
   public StructLikeMap<Map<String, String>> apply() {
-    StructLikeMap<Map<String, String>> partitionProperties = table.partitionProperty();
-    setProperties.forEach((partitionData, properties) -> {
-      Map<String, String> oldProperties = partitionProperties.get(partitionData);
-      if (oldProperties == null) {
-        oldProperties = Maps.newHashMap();
-        partitionProperties.put(partitionData, oldProperties);
+    StructLikeMap<Map<String, String>> partitionProperties;
+    if (transactionTable != null) {
+      String s = transactionTable.properties().get(TableProperties.TABLE_PARTITION_PROPERTIES);
+      if (s != null) {
+        partitionProperties = TablePropertyUtil.decodePartitionProperties(table.spec(), s);
+      } else {
+        partitionProperties = StructLikeMap.create(table.spec().partitionType());
       }
+    } else {
+      partitionProperties = table.partitionProperty();
+    }
+    setProperties.forEach((partitionData, properties) -> {
+      Map<String, String> oldProperties = partitionProperties.computeIfAbsent(partitionData, k -> Maps.newHashMap());
       oldProperties.putAll(properties);
     });
     removeProperties.forEach((partitionData, keys) -> {

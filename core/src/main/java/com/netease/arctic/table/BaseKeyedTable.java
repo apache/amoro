@@ -18,8 +18,6 @@
 
 package com.netease.arctic.table;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
@@ -30,23 +28,14 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScan;
-import com.netease.arctic.trace.AmsTableTracer;
-import com.netease.arctic.trace.TracedSchemaUpdate;
-import com.netease.arctic.trace.TracedUpdateProperties;
-import com.netease.arctic.trace.TrackerOperations;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.util.StructLikeMap;
 import org.apache.thrift.TException;
 
-import java.util.Collections;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link KeyedTable}, wrapping a {@link BaseTable} and a {@link ChangeTable}.
@@ -172,35 +161,6 @@ public class BaseKeyedTable implements KeyedTable {
   @Override
   public String toString() {
     return name();
-  }
-
-  @Override
-  public Map<String, Long> maxTransactionId() {
-    String s = baseTable.properties().get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    if (s != null) {
-      try {
-        Map<String, Long> results = Maps.newHashMap();
-        Map map = new ObjectMapper().readValue(s, Map.class);
-        for (Object key : map.keySet()) {
-          results.put(key.toString(), Long.parseLong(map.get(key).toString()));
-        }
-        return results;
-      } catch (JsonProcessingException e) {
-        throw new UnsupportedOperationException("Failed to get " + TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, e);
-      }
-    } else {
-      return Collections.emptyMap();
-    }
-  }
-
-  @Override
-  public StructLikeMap<Long> partitionMaxTransactionId() {
-    String s = baseTable.properties().get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    if (s != null) {
-      return TablePropertyUtil.decodePartitionMaxTxId(spec(), s);
-    } else {
-      return StructLikeMap.create(spec().partitionType());
-    }
   }
 
   @Override
