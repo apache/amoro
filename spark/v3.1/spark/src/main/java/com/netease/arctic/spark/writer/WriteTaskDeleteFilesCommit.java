@@ -19,27 +19,47 @@
 package com.netease.arctic.spark.writer;
 
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
 
 import java.util.Arrays;
 
-public class WriteTaskCommit implements WriterCommitMessage {
-  private final DataFile[] taskFiles;
+/**
+ * A commit message for a write task that includes the data files and delete files that were
+ * written by the task.
+ */
+public class WriteTaskDeleteFilesCommit implements WriterCommitMessage {
+  private final DeleteFile[] taskFiles;
+  private final DataFile[] dataFiles;
 
-  WriteTaskCommit(DataFile[] taskFiles) {
+  WriteTaskDeleteFilesCommit(DeleteFile[] taskFiles, DataFile[] dataFiles) {
     this.taskFiles = taskFiles;
+    this.dataFiles = dataFiles;
   }
 
-  DataFile[] files() {
+  DeleteFile[] deleteFiles() {
     return taskFiles;
   }
 
-  public static Iterable<DataFile> files(WriterCommitMessage[] messages) {
+  public static Iterable<DeleteFile> deleteFiles(WriterCommitMessage[] messages) {
     if (messages.length > 0) {
       return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
-          ImmutableList.copyOf(((WriteTaskCommit) message).files()) :
+          ImmutableList.copyOf(((WriteTaskDeleteFilesCommit) message).deleteFiles()) :
+          ImmutableList.of()));
+    }
+    return ImmutableList.of();
+  }
+
+  DataFile[] dataFiles() {
+    return dataFiles;
+  }
+
+  public static Iterable<DataFile> dataFiles(WriterCommitMessage[] messages) {
+    if (messages.length > 0) {
+      return Iterables.concat(Iterables.transform(Arrays.asList(messages), message -> message != null ?
+          ImmutableList.copyOf(((WriteTaskDeleteFilesCommit) message).dataFiles()) :
           ImmutableList.of()));
     }
     return ImmutableList.of();
