@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.flink.read.FlinkSplitPlanner.planChangeTable;
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
 import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 
 /**
@@ -94,22 +95,15 @@ public class ContinuousSplitPlannerImpl implements ContinuousSplitPlanner {
     Snapshot changeSnapshot = table.changeTable().currentSnapshot();
     List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(table, splitCount);
 
-    if (changeSnapshot != null) {
-      long changeStartSnapshotId = table.changeTable().currentSnapshot().snapshotId();
-      return new ContinuousEnumerationResult(
-          arcticSplits,
-          null,
-          ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
-    } else {
-      LOG.info("There have no change snapshot, table {}.", table);
-
-      if (CollectionUtils.isEmpty(arcticSplits)) {
-        return ContinuousEnumerationResult.EMPTY;
-      }
-      return new ContinuousEnumerationResult(
-          arcticSplits,
-          null,
-          ArcticEnumeratorOffset.of(Long.MIN_VALUE, null));
+    long changeStartSnapshotId = changeSnapshot != null ? changeSnapshot.snapshotId() : EARLIEST_SNAPSHOT_ID;
+    if (changeSnapshot == null && CollectionUtils.isEmpty(arcticSplits)) {
+      LOG.info("There have no change snapshot, and no base splits in table: {}.", table);
+      return ContinuousEnumerationResult.EMPTY;
     }
+
+    return new ContinuousEnumerationResult(
+        arcticSplits,
+        null,
+        ArcticEnumeratorOffset.of(changeStartSnapshotId, null));
   }
 }
