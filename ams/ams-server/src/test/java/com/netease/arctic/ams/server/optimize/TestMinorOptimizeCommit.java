@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -126,7 +127,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
           fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
 
-    StructLikeMap<Long> maxTxId = testKeyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> maxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     for (StructLike partitionDatum : partitionData) {
       Assert.assertEquals(4L, (long) maxTxId.get(partitionDatum));
     }
@@ -190,8 +191,8 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
           fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
 
-    StructLikeMap<Long> maxTxId = testNoPartitionTable.partitionMaxTransactionId();
-    Assert.assertEquals(4L, (long) maxTxId.get(null));
+    StructLikeMap<Long> maxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
+    Assert.assertEquals(4L, (long) maxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
