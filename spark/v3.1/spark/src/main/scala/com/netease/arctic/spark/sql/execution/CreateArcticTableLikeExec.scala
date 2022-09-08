@@ -36,6 +36,7 @@ case class CreateArcticTableLikeExec(sparkSession: SparkSession,
             keyedTable.table() match {
               case table: KeyedTable =>
                 targetProperties += ("primary.keys" -> String.join(",", table.primaryKeySpec().fieldNames()))
+              case _ =>
             }
           case _ =>
         }
