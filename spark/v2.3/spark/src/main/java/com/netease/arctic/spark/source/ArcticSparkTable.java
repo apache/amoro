@@ -80,14 +80,14 @@ public class ArcticSparkTable implements DataSourceTable {
                                                  SaveMode mode, DataSourceOptions options) {
     if (arcticTable.isKeyedTable()) {
       if (mode == SaveMode.Overwrite) {
-        return Optional.of(new ArcticKeyedSparkOverwriteWriter(arcticTable.asKeyedTable(), schema, mode));
+        return Optional.of(new ArcticKeyedSparkOverwriteWriter(arcticTable.asKeyedTable(), schema));
       } else if (mode == SaveMode.Append) {
         // TODO: support keyed append
         throw new UnsupportedOperationException("Not support now!");
       }
     } else if (arcticTable.isUnkeyedTable()) {
       if (mode == SaveMode.Overwrite) {
-        return Optional.of(new ArcticUnkeyedSparkOverwriteWriter(arcticTable.asUnkeyedTable(), schema, mode));
+        return Optional.of(new ArcticUnkeyedSparkOverwriteWriter(arcticTable.asUnkeyedTable(), schema));
       } else if (mode == SaveMode.Append) {
         // TODO: support unkeyed append
         throw new UnsupportedOperationException("Not support now!");

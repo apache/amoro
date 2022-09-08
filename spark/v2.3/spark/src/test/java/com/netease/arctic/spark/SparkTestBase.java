@@ -18,13 +18,18 @@ package com.netease.arctic.spark;/*
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * test base class for normal spark tests.
@@ -36,6 +41,23 @@ public class SparkTestBase extends SparkTestContext {
   @Rule
   public TestName testName = new TestName();
   protected long begin ;
+
+  @BeforeClass
+  public static void startAll() throws IOException, ClassNotFoundException {
+    Map<String, String> configs = Maps.newHashMap();
+    Map<String, String> arcticConfigs = setUpTestDirAndArctic();
+    Map<String, String> hiveConfigs = setUpHMS();
+    configs.putAll(arcticConfigs);
+    configs.putAll(hiveConfigs);
+    setUpSparkSession(configs);
+  }
+
+  @AfterClass
+  public static void stopAll() {
+    cleanUpAms();
+    cleanUpHive();
+    cleanUpSparkSession();
+  }
 
   @Before
   public void testBegin(){
@@ -53,39 +75,4 @@ public class SparkTestBase extends SparkTestContext {
     System.out.println("==================================");
   }
 
-  public void assertDescResult(List<Object[]> rows, List<String> primaryKeys) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Primary keys", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
-        primaryKeysBlock = false;
-      } else if (primaryKeysBlock){
-        descPrimaryKeys.add(row[0].toString());
-      }
-    }
-
-    Assert.assertEquals(primaryKeys.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(primaryKeys.stream().sorted().distinct().toArray(),
-            descPrimaryKeys.stream().sorted().distinct().toArray());
-  }
-
-  public void assertPartitionResult(List<Object[]> rows, List<String> partitionKey) {
-    boolean primaryKeysBlock = false;
-    List<String> descPrimaryKeys = Lists.newArrayList();
-    for (Object[] row : rows) {
-      if (StringUtils.equalsIgnoreCase("# Partition Information", row[0].toString())) {
-        primaryKeysBlock = true;
-      } else if (StringUtils.startsWith(row[0].toString(), "# ") && primaryKeysBlock) {
-        primaryKeysBlock = true;
-      } else if (primaryKeysBlock){
-        descPrimaryKeys.add(row[0].toString());
-      }
-    }
-
-    Assert.assertEquals(partitionKey.size(), descPrimaryKeys.size());
-    Assert.assertArrayEquals(partitionKey.stream().sorted().distinct().toArray(),
-        descPrimaryKeys.stream().sorted().distinct().toArray());
-  }
 }

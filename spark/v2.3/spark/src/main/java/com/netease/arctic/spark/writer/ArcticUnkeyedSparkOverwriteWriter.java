@@ -32,7 +32,7 @@ import org.apache.spark.sql.types.StructType;
 
 public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalRow,
     SupportsOverwrite, SupportsDynamicOverwrite {
-  public ArcticUnkeyedSparkOverwriteWriter(UnkeyedTable asUnkeyedTable, StructType schema, SaveMode mode) {
+  public ArcticUnkeyedSparkOverwriteWriter(UnkeyedTable unkeyedTable, StructType schema) {
 
   }
 
