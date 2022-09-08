@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.model.UpgradeStatus;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HMSMockServer;
+import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Database;
@@ -71,11 +72,15 @@ public class TestAdaptHiveService {
   protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
+  protected static final TableIdentifier UNSUPPORTED_TABLE =
+      TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "unsupported_table");
+
 
   protected static Table PARTITION_TABLE = new Table();
   protected static Table PARTITION_TABLE_2 = new Table();
   protected static Table NO_PARTITION_TABLE = new Table();
   protected static Table NO_PARTITION_TABLE_2 = new Table();
+  protected static Table UNSUPPORTED_ORC_TABLE = new Table();
 
   protected static UpgradeHiveMeta withPk = new UpgradeHiveMeta();
   protected static UpgradeHiveMeta withoutPk = new UpgradeHiveMeta();
@@ -135,9 +140,11 @@ public class TestAdaptHiveService {
     schema.add(new FieldSchema("name", "string", null));
     schema.add(new FieldSchema("age", "int", null));
     StorageDescriptor storageDescriptor = new StorageDescriptor();
+    storageDescriptor.setInputFormat(HiveTableProperties.PARQUET_INPUT_FORMAT);
+    storageDescriptor.setOutputFormat(HiveTableProperties.PARQUET_OUTPUT_FORMAT);
     storageDescriptor.setCols(schema);
     SerDeInfo serDeInfo = new SerDeInfo();
-    serDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe");
+    serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
     storageDescriptor.setSerdeInfo(serDeInfo);
     List<FieldSchema> partitions = new ArrayList<>();
     schema.add(new FieldSchema("dt", "string", null));
@@ -165,6 +172,19 @@ public class TestAdaptHiveService {
     NO_PARTITION_TABLE_2.setSd(storageDescriptor);
     NO_PARTITION_TABLE_2.setPartitionKeys(partitions);
     hms.getClient().createTable(NO_PARTITION_TABLE_2);
+
+    StorageDescriptor wrongSd = new StorageDescriptor();
+    wrongSd.setInputFormat("org.apache.hadoop.hive.ql.io.orc.OrcInputFormat");
+    wrongSd.setOutputFormat("org.apache.hadoop.hive.ql.io.orc.OrcOutputFormat");
+    wrongSd.setCols(schema);
+    SerDeInfo wrongSerDeInfo = new SerDeInfo();
+    wrongSerDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.orc.OrcSerde");
+    wrongSd.setSerdeInfo(wrongSerDeInfo);
+    UNSUPPORTED_ORC_TABLE.setDbName(HIVE_DB_NAME);
+    UNSUPPORTED_ORC_TABLE.setTableName(UNSUPPORTED_TABLE.getTableName());
+    UNSUPPORTED_ORC_TABLE.setSd(wrongSd);
+    UNSUPPORTED_ORC_TABLE.setPartitionKeys(partitions);
+    hms.getClient().createTable(UNSUPPORTED_ORC_TABLE);
 
     List<UpgradeHiveMeta.PrimaryKeyField> pkList = new ArrayList<>();
     Map<String, String> properties = new HashMap<>();
@@ -213,5 +233,14 @@ public class TestAdaptHiveService {
       upgradeRunningInfo = adaptHiveService.getUpgradeRunningInfo(HIVE_PK_TABLE_ID);
     }
     Assert.assertEquals(upgradeRunningInfo.getStatus(), UpgradeStatus.SUCCESS.toString());
+
+    adaptHiveService.upgradeHiveTable(hiveCatalog, UNSUPPORTED_TABLE, withPk);
+    upgradeRunningInfo = adaptHiveService.getUpgradeRunningInfo(UNSUPPORTED_TABLE);
+    while (upgradeRunningInfo.getStatus().equals(UpgradeStatus.NONE.toString())
+        || upgradeRunningInfo.getStatus().equals(UpgradeStatus.UPGRADING.toString())) {
+      Thread.sleep(3000);
+      upgradeRunningInfo = adaptHiveService.getUpgradeRunningInfo(UNSUPPORTED_TABLE);
+    }
+    Assert.assertEquals(upgradeRunningInfo.getStatus(), UpgradeStatus.FAILED.toString());
   }
 }

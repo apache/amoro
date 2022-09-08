@@ -1,10 +1,14 @@
-
 FROM openjdk:8u332-jdk
 WORKDIR /usr/local/ams
-RUN wget https://github.com/NetEase/arctic/releases/download/v0.3.0-rc1/arctic-0.3.0-bin.zip \
-    && unzip arctic-0.3.0-bin.zip
+RUN apt update \
+    && apt-get install -y vim \
+    && apt-get install -y net-tools \
+    && apt-get install -y telnet
 
-WORKDIR /usr/local/ams/arctic-0.3.0
+RUN wget https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-0.3.1-bin.zip \
+    && unzip arctic-0.3.1-bin.zip
+
+WORKDIR /usr/local/ams/arctic-0.3.1
 
 CMD ["bash","-c","./bin/ams.sh start && tail -f /dev/null"]
 

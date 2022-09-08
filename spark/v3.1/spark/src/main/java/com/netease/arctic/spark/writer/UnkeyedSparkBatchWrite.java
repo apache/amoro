@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
@@ -61,6 +61,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
+  private final String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
 
   public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
     this.table = table;
@@ -110,7 +111,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, false);
+      return new WriterFactory(table, dsSchema, false, unKeyedTmpDir);
     }
 
     @Override
@@ -127,7 +128,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true);
+      return new WriterFactory(table, dsSchema, true, unKeyedTmpDir);
     }
 
     @Override
@@ -149,7 +150,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true);
+      return new WriterFactory(table, dsSchema, true, unKeyedTmpDir);
     }
 
     @Override
@@ -166,7 +167,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   private class UpsertWrite extends BaseBatchWrite {
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new DeltaUpsertWriteFactory(table, dsSchema);
+      return new DeltaUpsertWriteFactory(table, dsSchema, unKeyedTmpDir);
     }
 
     @Override
@@ -190,12 +191,17 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
 
-    protected boolean isOverwrite;
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite) {
+    private final String unKeyedTmpDir;
+
+    private final boolean isOverwrite;
+
+
+    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, String unKeyedTmpDir) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.isOverwrite = isOverwrite;
+      this.unKeyedTmpDir = unKeyedTmpDir;
     }
 
     @Override
@@ -204,6 +210,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
+          .withUnKeyedTmpDir(unKeyedTmpDir)
           .newBaseWriter(this.isOverwrite);
       return new SimpleInternalRowDataWriter(writer);
     }
@@ -211,8 +218,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private static class DeltaUpsertWriteFactory extends WriterFactory {
 
-    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema) {
-      super(table, dsSchema, false);
+    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema, String unKeyedTmpDir) {
+      super(table, dsSchema, false, unKeyedTmpDir);
     }
 
     @Override

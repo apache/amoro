@@ -46,10 +46,6 @@ public class HiveTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveTableUtil.class);
 
-  public static boolean isHive(ArcticTable arcticTable) {
-    return arcticTable instanceof SupportHive;
-  }
-
   public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
       HMSClient hiveClient, TableIdentifier tableIdentifier) {
     try {
@@ -126,9 +122,9 @@ public class HiveTableUtil {
     SerDeInfo serDeInfo = new SerDeInfo();
     switch (format) {
       case PARQUET:
-        storageDescriptor.setOutputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat");
-        storageDescriptor.setInputFormat("org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat");
-        serDeInfo.setSerializationLib("org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe");
+        storageDescriptor.setOutputFormat(HiveTableProperties.PARQUET_OUTPUT_FORMAT);
+        storageDescriptor.setInputFormat(HiveTableProperties.PARQUET_INPUT_FORMAT);
+        serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
         break;
       default:
         throw new IllegalArgumentException("Unsupported hive table file format:" + format);

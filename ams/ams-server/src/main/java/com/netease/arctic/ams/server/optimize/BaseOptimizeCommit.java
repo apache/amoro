@@ -30,6 +30,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -103,7 +104,7 @@ public class BaseOptimizeCommit {
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
             if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
               if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
-                maxTransactionIds.put(null, maxTransactionId);
+                maxTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, maxTransactionId);
               } else {
                 maxTransactionIds.putIfAbsent(
                     DataFiles.data(spec, entry.getKey()), maxTransactionId);
@@ -172,7 +173,8 @@ public class BaseOptimizeCommit {
         });
 
         if (spec.isUnpartitioned()) {
-          overwriteBaseFiles.withMaxTransactionId(null, maxTransactionIds.get(null));
+          overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.EMPTY_STRUCT,
+              maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT));
         } else {
           maxTransactionIds.forEach(overwriteBaseFiles::withMaxTransactionId);
         }

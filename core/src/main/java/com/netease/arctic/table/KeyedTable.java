@@ -21,9 +21,6 @@ package com.netease.arctic.table;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
-import org.apache.iceberg.util.StructLikeMap;
-
-import java.util.Map;
 
 /**
  * Represents an arctic table with keys supported, consist of one {@link ChangeTable} and one {@link BaseTable}.
@@ -74,24 +71,6 @@ public interface KeyedTable extends ArcticTable {
    * @return a new transaction id
    */
   long beginTransaction(String signature);
-
-  /**
-   * get max transactionId of each partition. use {@link #partitionMaxTransactionId()} instead.
-   *
-   * @return map of max transactionId of each partition
-   * @deprecated use {@link UnkeyedTable#partitionProperty()} instead.
-   */
-  @Deprecated
-  Map<String, Long> maxTransactionId();
-
-  /**
-   * get max transactionId of each partition
-   *
-   * @return map of max transactionId of each partition
-   * @deprecated use {@link UnkeyedTable#partitionProperty()} instead.
-   */
-  @Deprecated
-  StructLikeMap<Long> partitionMaxTransactionId();
 
   @Override
   default boolean isKeyedTable() {

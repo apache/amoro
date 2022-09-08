@@ -29,6 +29,7 @@ import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
+import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
@@ -56,6 +57,8 @@ import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
+import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
+import com.netease.arctic.ams.server.utils.Utils;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
@@ -65,6 +68,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.slf4j.Logger;
@@ -494,4 +498,18 @@ public class TableController extends RestBaseController {
             new CatalogMeta(t.getCatalogName(), t.getCatalogType())).collect(Collectors.toList());
     ctx.json(OkResponse.of(catalogs));
   }
+
+  /**
+   * get single page query token
+   * @param ctx
+   */
+  public static void getTableDetailTabToken(Context ctx) {
+    String catalog =  ctx.pathParam("catalog");
+    String db =  ctx.pathParam("db");
+    String table =  ctx.pathParam("table");
+
+    String signCal = Utils.generateTablePageToken(catalog, db, table);
+    ctx.json(OkResponse.of(signCal));
+  }
+
 }

@@ -28,7 +28,7 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
@@ -94,7 +94,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
-        if (!HiveTableUtil.isHive(arcticTable)) {
+        if (!TableTypeUtil.isHive(arcticTable)) {
           LOG.debug("[{}] {} is not a support hive table", traceId, tableIdentifier);
           return;
         }

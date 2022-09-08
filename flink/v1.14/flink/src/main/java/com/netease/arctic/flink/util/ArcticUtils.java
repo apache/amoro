@@ -32,7 +32,6 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
-import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -46,7 +45,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
@@ -148,11 +146,6 @@ public class ArcticUtils {
     boolean toBase = overwrite;
     LOGGER.info("is write to base:{}", toBase);
     return toBase;
-  }
-
-  public static TimestampData getCurrentTimestampData(TimeZone timeZone) {
-    long ts = System.currentTimeMillis();
-    return TimestampData.fromEpochMillis(ts + timeZone.getOffset(ts));
   }
 
 }
