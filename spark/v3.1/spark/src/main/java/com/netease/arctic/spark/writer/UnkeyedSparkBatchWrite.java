@@ -171,7 +171,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      // TODO: issue #173 - implement upsert commit
       RowDelta rowDelta = table.newRowDelta();
       for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
         rowDelta.addDeletes(file);

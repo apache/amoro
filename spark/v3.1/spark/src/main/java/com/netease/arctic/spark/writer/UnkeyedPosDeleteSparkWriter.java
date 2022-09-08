@@ -6,12 +6,14 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
+import com.netease.arctic.spark.SparkInternalRowWrapper;
 import com.netease.arctic.spark.io.ArcticSparkBaseTaskWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
@@ -21,6 +23,7 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Comparators;
 import org.apache.iceberg.util.CharSequenceSet;
 import org.apache.iceberg.util.CharSequenceWrapper;
@@ -51,7 +54,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
   private final FileAppenderFactory<InternalRow> appenderFactory;
   private final OutputFileFactory fileFactory;
   private final FileFormat format;
-  private final TaskWriterKey writerKey;
+  private TaskWriterKey writerKey;
   private final long recordsNumThreshold;
   private final Schema schema;
   private final ArcticTable table;
@@ -62,14 +65,11 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
                                      FileAppenderFactory<InternalRow> appenderFactory,
                                      OutputFileFactory fileFactory,
                                      FileFormat format,
-                                     long mask, long index,
-                                     StructLike partitionKey,
                                      long recordsNumThreshold, Schema schema) {
     this.table = table;
     this.appenderFactory = appenderFactory;
     this.fileFactory = fileFactory;
     this.format = format;
-    this.writerKey = new TaskWriterKey(partitionKey, DataTreeNode.of(mask, index), DataFileType.POS_DELETE_FILE);
     this.recordsNumThreshold = recordsNumThreshold;
     this.schema = schema;
   }
@@ -77,14 +77,17 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
   public UnkeyedPosDeleteSparkWriter(ArcticTable table, FileAppenderFactory<InternalRow> appenderFactory,
                                OutputFileFactory fileFactory,
                                FileFormat format,
-                               long mask, long index,
-                               StructLike partitionKey, Schema schema) {
-    this(table, appenderFactory, fileFactory, format, mask, index, partitionKey, DEFAULT_RECORDS_NUM_THRESHOLD, schema);
+                               Schema schema) {
+    this(table, appenderFactory, fileFactory, format, DEFAULT_RECORDS_NUM_THRESHOLD, schema);
   }
 
   @Override
   public void write(T row) throws IOException {
     SparkInternalRowCastWrapper internalRow = (SparkInternalRowCastWrapper) row;
+    StructLike structLike = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema)).wrap(internalRow.getRow());
+    PartitionKey partitionKey = new PartitionKey(table.spec(), schema);
+    partitionKey.partition(structLike);
+    this.writerKey = new TaskWriterKey(partitionKey, null, DataFileType.POS_DELETE_FILE);
     if (internalRow.getChangeAction() == ChangeAction.DELETE) {
       int numFields = internalRow.getRow().numFields();
       Object file = internalRow.getRow().get(numFields - 2, StringType);

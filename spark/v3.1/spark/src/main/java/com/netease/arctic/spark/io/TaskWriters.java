@@ -187,7 +187,7 @@ public class TaskWriters {
     return new UnkeyedPosDeleteSparkWriter<>(table, build,
         new CommonOutputFileFactory(table.location(), table.spec(), fileFormat, table.io(),
             table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId),
-        fileFormat, mask, 0, new PartitionKey(table.spec(), schema), schema);
+        fileFormat, schema);
   }
 
   private void preconditions() {

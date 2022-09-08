@@ -14,7 +14,7 @@ public class TestUnkeyedTableDml extends SparkTestBase {
       " id int, \n" +
       " name string, \n" +
       " data string) \n" +
-      " using arctic ;";
+      " using arctic partitioned by (data) ;";
 
   @Before
   public void prepare() {
@@ -32,23 +32,26 @@ public class TestUnkeyedTableDml extends SparkTestBase {
   @Test
   public void testUpdate() {
     sql("insert into " + database + "." + table +
-        " values (1, 'aaa', 'abcd' ) , " +
-        "(2, 'bbb', 'bbcd'), " +
-        "(3, 'ccc', 'cbcd') ");
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2'), " +
+        "(3, 'ccc', '1') ");
 
     sql("update {0}.{1} set name = \"ddd\" where id = 3", database, table);
     rows = sql("select id, name from {0}.{1} where id = 3", database, table);
 
     Assert.assertEquals(1, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
+    sql("select * from {0}.{1} ", database, table);
+    Assert.assertEquals(3, rows.size());
+
   }
 
   @Test
   public void testDelete() {
     sql("insert into " + database + "." + table +
-        " values (1, 'aaa', 'abcd' ) , " +
-        "(2, 'bbb', 'bbcd' ), " +
-        "(3, 'ccc', 'cbcd' ) ");
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2' ), " +
+        "(3, 'ccc', '1' ) ");
 
     sql("delete from {0}.{1} where id = 3", database, table);
     rows = sql("select id, name from {0}.{1} order by id", database, table);
