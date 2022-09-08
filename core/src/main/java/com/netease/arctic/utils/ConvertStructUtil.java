@@ -21,6 +21,7 @@ package com.netease.arctic.utils;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
+import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -70,12 +71,19 @@ public class ConvertStructUtil {
       });
       amsDataFile.setUpperBounds(amsUpperBounds);
     }
-    DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString());
-    amsDataFile.setFileType(fileMeta.type().name());
-    amsDataFile.setIndex(fileMeta.node().index());
-    amsDataFile.setMask(fileMeta.node().mask());
-    amsDataFile.setFileType(fileMeta.type().name());
-    return amsDataFile;
+    if (table.isKeyedTable()) {
+      DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(dataFile.path().toString());
+      amsDataFile.setFileType(fileMeta.type().name());
+      amsDataFile.setIndex(fileMeta.node().index());
+      amsDataFile.setMask(fileMeta.node().mask());
+      return amsDataFile;
+    } else {
+      DataFileType dataFileType = FileUtil.parseUnkeyedFileTypeFromFileName(dataFile.path().toString());
+      amsDataFile.setFileType(dataFileType.name());
+      amsDataFile.setIndex(0);
+      amsDataFile.setMask(0);
+      return amsDataFile;
+    }
   }
 
   private static List<PartitionFieldData> partitionFields(PartitionSpec partitionSpec, StructLike partitionData) {

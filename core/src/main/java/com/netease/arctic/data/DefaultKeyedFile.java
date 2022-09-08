@@ -215,6 +215,7 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
     return Objects.hash(internalFile.path());
   }
 
+  @Deprecated
   public static FileMeta parseMetaFromFileName(String fileName) {
     fileName = FileUtil.getFileName(fileName);
     Matcher matcher = FILE_NAME_PATTERN.matcher(fileName);

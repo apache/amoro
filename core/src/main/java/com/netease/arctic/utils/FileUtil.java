@@ -18,6 +18,9 @@
 
 package com.netease.arctic.utils;
 
+import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -25,8 +28,13 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.io.File;
 import java.util.Collections;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class FileUtil {
+
+  private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-(\\d+)\\.\\w+";
+  private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
 
   /**
    * Parse file name form file path
@@ -89,5 +97,90 @@ public class FileUtil {
    */
   public static String getNewFilePath(String newDirectory, String filePath) {
     return newDirectory + File.separator + getFileName(filePath);
+  }
+
+  /**
+   * parse unkeyed file meta from file name
+   * @param fileName unkeyed file name 
+   * @return DataFileType base or pos-delete
+   */
+  public static DataFileType parseUnkeyedFileTypeFromFileName(String fileName) {
+    fileName = FileUtil.getFileName(fileName);
+    int index = fileName.indexOf('-');
+    if (index > 0) {
+      String fileType = fileName.substring(0, index);
+      try {
+        return DataFileType.ofShortName(fileType);
+      } catch (IllegalArgumentException e) {
+        return DataFileType.BASE_FILE;
+      }
+    } else {
+      return DataFileType.BASE_FILE;
+    }
+  }
+
+  /**
+   * parse keyed file meta from file name
+   * @param fileName - keyed file name
+   * @return fileMeta
+   */
+  public static DefaultKeyedFile.FileMeta parseKeyedFileMetaFromFileName(String fileName) {
+    fileName = FileUtil.getFileName(fileName);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    long nodeId = 1;
+    DataFileType type = DataFileType.BASE_FILE;
+    long transactionId = 0L;
+    if (matcher.matches()) {
+      nodeId = Long.parseLong(matcher.group(1));
+      type = DataFileType.ofShortName(matcher.group(2));
+      transactionId = Long.parseLong(matcher.group(3));
+    }
+    DataTreeNode node = DataTreeNode.ofId(nodeId);
+    return new DefaultKeyedFile.FileMeta(transactionId, type, node);
+  }
+
+  /**
+   * parse keyed file type from file name
+   * @param fileName fileName
+   * @return DataFileType
+   */
+  public static DataFileType parseKeyedFileTypeFromFileName(String fileName) {
+    fileName = FileUtil.getFileName(fileName);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    DataFileType type = DataFileType.BASE_FILE;
+    if (matcher.matches()) {
+      type = DataFileType.ofShortName(matcher.group(2));
+    }
+    return type;
+  }
+
+  /**
+   * parse keyed file transaction id from file name
+   * @param fileName fileName
+   * @return transaction id
+   */
+  public static long parseKeyedFileTidFromFileName(String fileName) {
+    fileName = FileUtil.getFileName(fileName);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    long transactionId = 0L;
+    if (matcher.matches()) {
+      transactionId = Long.parseLong(matcher.group(3));
+    }
+    return transactionId;
+  }
+
+  /**
+   * parse keyed file node id from file name
+   * @param fileName fileName
+   * @return node id
+   */
+  public static DataTreeNode parseKeyedFileNodeFromFileName(String fileName) {
+    fileName = FileUtil.getFileName(fileName);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    long nodeId = 1;
+    if (matcher.matches()) {
+      nodeId = Long.parseLong(matcher.group(1));
+    }
+    return DataTreeNode.ofId(nodeId);
   }
 }
