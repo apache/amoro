@@ -23,10 +23,14 @@ import com.netease.arctic.spark.hive.TestHiveTableMergeOnRead;
 import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteDynamic;
 import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteStatic;
 import com.netease.arctic.spark.hive.TestMigrateHiveTable;
+import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteDynamic;
+import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteStatic;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
 import com.netease.arctic.spark.source.TestUnKeyedTableDataFrameAPI;
+
 import java.io.IOException;
 import java.util.Map;
+
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
