@@ -18,10 +18,11 @@
 
 package com.netease.arctic.trace;
 
-import java.util.function.Consumer;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Snapshot;
+
+import java.util.function.Consumer;
 
 public class TracedReplacePartitions implements ReplacePartitions {
 
