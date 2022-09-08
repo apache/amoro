@@ -74,7 +74,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final long taskId;
   private final Long transactionId;
 
-  private final String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
+  private String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
 
   private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
 
@@ -97,6 +97,27 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId;
+  }
+
+  public AdaptHiveOutputFileFactory(
+      String baseLocation,
+      PartitionSpec partitionSpec,
+      FileFormat format,
+      ArcticFileIO io,
+      EncryptionManager encryptionManager,
+      int partitionId,
+      long taskId,
+      Long transactionId,
+      String unKeyedTmpDir) {
+    this.baseLocation = baseLocation;
+    this.partitionSpec = partitionSpec;
+    this.format = format;
+    this.io = io;
+    this.encryptionManager = encryptionManager;
+    this.partitionId = partitionId;
+    this.taskId = taskId;
+    this.transactionId = transactionId;
+    this.unKeyedTmpDir = unKeyedTmpDir;
   }
 
 
