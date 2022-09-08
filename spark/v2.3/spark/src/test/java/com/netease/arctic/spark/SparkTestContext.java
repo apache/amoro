@@ -130,6 +130,7 @@ public class SparkTestContext extends ExternalResource {
     configs.put("spark.sql.catalogImplementation", "hive");
     configs.put("spark.sql.hive.metastore.version", hiveVersion);
     configs.put("spark.sql.hive.metastore.jars", "maven");
+    configs.put("arctic.sql.delegate-hive-table", "true");
     //hive.metastore.client.capability.check
     configs.put("hive.metastore.client.capability.check", "false");
 
