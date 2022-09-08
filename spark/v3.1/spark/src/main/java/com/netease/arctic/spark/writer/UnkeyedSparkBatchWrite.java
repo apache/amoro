@@ -151,7 +151,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
       OverwriteFiles overwriteFiles = table.newOverwrite();
       overwriteFiles.overwriteByRowFilter(overwriteExpr);
       for (DataFile file : files(messages)) {
-        System.out.println("------------data file ------------- " + file);
         overwriteFiles.addFile(file);
       }
       overwriteFiles.commit();
