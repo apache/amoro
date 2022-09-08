@@ -38,6 +38,11 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
 
     // iceberg analyzer rules
     extensions.injectPostHocResolutionRule { _ => AlignRowLevelOperations }
+
+    // arctic optimizer rules
+    extensions.injectPostHocResolutionRule { spark => RewriteAppendArcticTable(spark) }
+    extensions.injectPostHocResolutionRule { spark => RewriteDeleteFromArcticTable(spark) }
+    extensions.injectPostHocResolutionRule { spark => RewriteUpdateArcticTable(spark) }
     extensions.injectCheckRule { _ => RowLevelOperationsPredicateCheck }
 
     // iceberg optimizer rules
@@ -46,10 +51,6 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectOptimizerRule { spark => RewriteDelete(spark) }
     extensions.injectOptimizerRule { spark => RewriteUpdate(spark) }
     extensions.injectOptimizerRule { spark => RewriteMergeInto(spark) }
-    // arctic optimizer rules
-//    extensions.injectOptimizerRule { spark => RewriteAppendArcticTable(spark) }
-//    extensions.injectOptimizerRule { spark => RewriteDeleteFromArcticTable(spark) }
-//    extensions.injectOptimizerRule { spark => RewriteUpdateArcticTable(spark) }
 
     // arctic optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)

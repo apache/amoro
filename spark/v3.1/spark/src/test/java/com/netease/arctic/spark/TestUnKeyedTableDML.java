@@ -32,9 +32,9 @@ public class TestUnKeyedTableDML extends SparkTestBase {
       " id int, \n" +
       " name string, \n" +
       " data string, \n" +
-      " ts timestamp ) \n" +
+      " ts timestamp) \n" +
       " using arctic " +
-      " partitioned by ( days(ts)  ) ";
+      " partitioned by ( identity(ts)  ) ";
 
   @Before
   public void prepareTable() {
