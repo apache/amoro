@@ -411,4 +411,60 @@ public class TestCreateTableDDL extends SparkTestBase {
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
   }
+
+  @Test
+  public void testCreateKeyedTableLike() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp , \n" +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+    sql("desc table {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("desc table extended {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateUnKeyedTableLike() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp " +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifier).schema().asStruct());
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
 }
