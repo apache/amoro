@@ -18,11 +18,17 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.ams.server.exception.SignatureCheckException;
+import io.javalin.http.Context;
+import org.apache.arrow.util.VisibleForTesting;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Utils {
   private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -84,5 +90,55 @@ public class Utils {
       LOG.warn("ping {} timeout! ", ip);
       return false;
     }
+  }
+
+  /**
+   * check single page access token
+   *
+   * @param ctx
+   * @return
+   */
+  public static void checkSinglePageToken(Context ctx) {
+    // check if query parameters contain  token key
+    String token = ctx.queryParam("token");
+
+    if (StringUtils.isNotEmpty(token)) {
+      // regrex extract  catalog, db, table
+      String url = ctx.req.getRequestURI();
+      String catalog = null;
+      String db = null;
+      String table = null;
+      String[] splitResult = url.split("/");
+      for (int i = 0; i < splitResult.length; i++) {
+        if (splitResult[i].equals("catalogs")) {
+          catalog = splitResult[i + 1];
+        } else if (splitResult[i].equals("dbs")) {
+          db = splitResult[i + 1];
+        } else if (splitResult[i].equals("tables")) {
+          table = splitResult[i + 1];
+        }
+      }
+      if (StringUtils.isEmpty(catalog) ||
+              StringUtils.isEmpty(db) ||
+              StringUtils.isEmpty(table) ||
+              !token.equals(generateTablePageToken(catalog, db, table))) {
+        throw new SignatureCheckException();
+      }
+    }
+  }
+
+  /**
+   * generate the token for single table page access.
+   * @return
+   */
+  public static String generateTablePageToken(String catalog, String db, String table) {
+    Map<String, String> params = new HashMap<>();
+    params.put("catalog", catalog);
+    params.put("db",  db);
+    params.put("table", table);
+
+    String paramString = ParamSignatureCalculator.generateParamStringWithValue(params);
+    String plainText = String.format("%s%s%s", paramString, paramString, paramString);
+    return ParamSignatureCalculator.getMD5(plainText);
   }
 }
