@@ -140,7 +140,8 @@ public class TracedTransaction implements Transaction {
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return transaction.newReplacePartitions();
+    tracer.setAction(DataOperations.OVERWRITE);
+    return new TracedReplacePartitions(transaction.newReplacePartitions(), new TransactionTracker());
   }
 
   @Override
