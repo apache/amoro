@@ -66,9 +66,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -425,6 +427,14 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
 
     protected void doCreateCheck() {
+      if (primaryKeySpec.primaryKeyExisted()) {
+        primaryKeySpec.fieldNames().forEach(primaryKey -> {
+          if (schema.findField(primaryKey).isOptional()) {
+            throw new IllegalArgumentException("please check your schema, the primary key nested field must" +
+                " be required and field name is " + primaryKey);
+          }
+        });
+      }
       listDatabases().stream()
           .filter(d -> d.equals(identifier.getDatabase()))
           .findFirst()

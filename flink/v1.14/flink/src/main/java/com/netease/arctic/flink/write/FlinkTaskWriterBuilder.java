@@ -22,7 +22,7 @@ import com.netease.arctic.hive.io.writer.AdaptHiveOperateToTableRelation;
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
@@ -143,7 +143,7 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
             encryptionManager, partitionId, taskId, transactionId) :
         new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<RowData> appenderFactory = HiveTableUtil.isHive(table) ?
+    FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
         new AdaptHiveFlinkAppenderFactory(schema, flinkSchema, table.properties(), table.spec()) :
         new FlinkAppenderFactory(
             schema, flinkSchema, table.properties(), table.spec());

@@ -106,7 +106,7 @@ public abstract class BaseOptimizePlan {
   protected abstract boolean partitionNeedPlan(String partitionToPath);
 
   protected abstract void addOptimizeFilesTree();
-  
+
   protected abstract OptimizeType getOptimizeType();
 
   protected abstract List<BaseOptimizeTask> collectTask(String partition);
@@ -173,11 +173,11 @@ public abstract class BaseOptimizePlan {
   }
 
   protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
-                                            List<DataFile> insertFiles,
-                                            List<DataFile> deleteFiles,
-                                            List<DataFile> baseFiles,
-                                            List<DeleteFile> posDeleteFiles,
-                                            TaskConfig taskConfig) {
+                                               List<DataFile> insertFiles,
+                                               List<DataFile> deleteFiles,
+                                               List<DataFile> baseFiles,
+                                               List<DeleteFile> posDeleteFiles,
+                                               TaskConfig taskConfig) {
     // build task
     BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
     optimizeTask.setTaskGroup(taskConfig.getGroup());
@@ -250,9 +250,6 @@ public abstract class BaseOptimizePlan {
     if (taskConfig.getMaxTransactionId() != null) {
       optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
     }
-    if (taskConfig.getOptimizeType() == OptimizeType.FullMajor) {
-      optimizeTask.setIsDeletePosDelete(1);
-    }
 
     // table ams url
     Map<String, String> properties = new HashMap<>();
@@ -272,7 +269,7 @@ public abstract class BaseOptimizePlan {
       snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
       if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-                "wait file cache sync latest file info", snapshot.snapshotId());
+            "wait file cache sync latest file info", snapshot.snapshotId());
         return false;
       }
     }

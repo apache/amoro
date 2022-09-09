@@ -45,6 +45,10 @@ import java.util.function.Function;
 
 /**
  * This is an arctic reader accepts a {@link FileScanTask} and produces a {@link CloseableIterator<RowData>}.
+ * The RowData read from this reader may have more columns than the original schema.
+ * The additional columns are added after the original columns,
+ * see {@link com.netease.arctic.iceberg.optimize.DeleteFilter}.
+ * It shall be projected before sent to downstream. This can be processed in {@link DataIterator#next()}
  */
 public class FlinkArcticDataReader extends BaseIcebergDataReader<RowData> implements FileScanTaskReader<RowData> {
   private static final long serialVersionUID = -6773693031945244386L;

@@ -47,5 +47,9 @@ public class HiveTableProperties {
   public static final boolean AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT = false;
 
   public static final String ALLOW_HIVE_TABLE_EXISTED = "allow-hive-table-existed";
+
+  public static final String PARQUET_INPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat";
+  public static final String PARQUET_OUTPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat";
+  public static final String PARQUET_ROW_FORMAT_SERDE = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe";
 }
 

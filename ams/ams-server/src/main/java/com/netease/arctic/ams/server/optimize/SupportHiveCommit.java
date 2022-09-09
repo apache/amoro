@@ -4,12 +4,12 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
@@ -39,12 +39,12 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                            Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
                            Consumer<OptimizeTaskItem> updateTargetFiles) {
     super(arcticTable, optimizeTasksToCommit);
-    Preconditions.checkArgument(HiveTableUtil.isHive(arcticTable), "The table not support hive");
+    Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     this.updateTargetFiles = updateTargetFiles;
   }
 
   @Override
-  public long commit(TableOptimizeRuntime tableOptimizeRuntime) throws Exception {
+  public boolean commit(long baseSnapshotId) throws Exception {
     LOG.info("{} get tasks to support hive commit for partitions {}", arcticTable.id(),
         optimizeTasksToCommit.keySet());
     HMSClient hiveClient = ((SupportHive) arcticTable).getHMSClient();
@@ -112,7 +112,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
       }
     });
 
-    return super.commit(tableOptimizeRuntime);
+    return super.commit(baseSnapshotId);
   }
 
   protected boolean isPartitionMajorOptimizeSupportHive(String partition, List<OptimizeTaskItem> optimizeTaskItems) {

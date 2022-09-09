@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.ams.server.controller.response.OkResponse;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,5 +106,37 @@ public class ParamSignatureCalculator {
     }
     return sb.toString();
   }
+
+  /**
+   * Gets an ascending KeyValue concatenation string based on the request argument pair.
+   * Example：
+   * params: name=&value=111&age=11&sex=1&high=180&nick=
+   * Remove null and arrange in ascending order： age11high180sex1value111
+   *
+   * @param map
+   * @return
+   */
+  public static String generateParamStringWithValue(Map<String, String> map) {
+    Set<String> set = map.keySet();
+    String[] keyArray = (String[]) set.toArray(new String[set.size()]);
+    StringBuffer sb = new StringBuffer("");
+    Arrays.sort(keyArray);
+    String firstValue = "";
+    for (int i = 0; i < keyArray.length; i++) {
+      String value = map.get(keyArray[i]);
+      if (!StringUtils.isBlank(value)) {
+        try {
+          firstValue = URLDecoder.decode(value, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+          LOG.error("Failed to caculate signature", e);
+          return null;
+        }
+        sb.append(keyArray[i]).append(firstValue);
+      }
+    }
+    return sb.toString();
+  }
+
+
 
 }

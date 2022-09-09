@@ -21,6 +21,8 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -38,28 +40,6 @@ import java.util.Map;
 public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
-
-  /**
-   * Encode max transaction id map of each partition to string.
-   *
-   * @param spec table partition spec
-   * @param partitionMaxTransactionId max transaction id map of each partition
-   * @return encoded string
-   */
-  public static String encodePartitionMaxTxId(PartitionSpec spec, StructLikeMap<Long> partitionMaxTransactionId) {
-    Map<String, Long> pathPartitionMaxId = Maps.newHashMap();
-    for (StructLike pd : partitionMaxTransactionId.keySet()) {
-      String pathLike = spec.partitionToPath(pd);
-      pathPartitionMaxId.put(pathLike, partitionMaxTransactionId.get(pd));
-    }
-    String value;
-    try {
-      value = new ObjectMapper().writeValueAsString(pathPartitionMaxId);
-    } catch (JsonProcessingException e) {
-      throw new UncheckedIOException(e);
-    }
-    return value;
-  }
 
   /**
    * Decode string to max transaction id map of each partition.
@@ -121,5 +101,19 @@ public class TablePropertyUtil {
       throw new UncheckedIOException(e);
     }
     return value;
+  }
+
+  public static StructLikeMap<Long> getPartitionMaxTransactionId(KeyedTable keyedTable) {
+    StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
+
+    StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
+    partitionProperty.forEach((partitionKey, propertyValue) -> {
+      Long maxTxId = (propertyValue == null ||
+          propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null) ?
+          0 : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
+      baseTableMaxTransactionId.put(partitionKey, maxTxId);
+    });
+
+    return baseTableMaxTransactionId;
   }
 }

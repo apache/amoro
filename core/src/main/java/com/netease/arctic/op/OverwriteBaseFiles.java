@@ -21,6 +21,7 @@ package com.netease.arctic.op;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
@@ -33,15 +34,14 @@ import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Overwrite {@link com.netease.arctic.table.BaseTable} and change max transaction id map
@@ -58,6 +58,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final StructLikeMap<Long> maxTransactionId;
 
   private Long transactionId;
+  private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
     super(table);
@@ -105,28 +106,37 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
+  public OverwriteBaseFiles validateNoConflictingAppends(Expression newConflictDetectionFilter) {
+    Preconditions.checkArgument(newConflictDetectionFilter != null, "Conflict detection filter cannot be null");
+    this.conflictDetectionFilter = newConflictDetectionFilter;
+    return this;
+  }
+
   @Override
   protected StructLikeMap<Long> apply(Transaction transaction, StructLikeMap<Long> partitionMaxTxId) {
     applyDeleteExpression();
 
-    StructLike partitionData = null;
+    StructLike partitionData = TablePropertyUtil.EMPTY_STRUCT;
     UnkeyedTable baseTable = keyedTable.baseTable();
 
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
+      if (conflictDetectionFilter != null) {
+        overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
+      }
       if (baseTable.currentSnapshot() != null) {
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
       for (DataFile d : this.addFiles) {
         overwriteFiles.addFile(d);
-        partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+        partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
 
       for (DataFile d : this.deleteFiles) {
         overwriteFiles.deleteFile(d);
-        partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+        partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
       if (transactionId != null && transactionId > 0) {
@@ -148,12 +158,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         }
 
         for (DeleteFile d : this.addDeleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
 
         for (DataFile d : this.deleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
         addDeleteFiles.forEach(rowDelta::addDeletes);
@@ -168,12 +178,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         }
 
         for (DeleteFile d : this.addDeleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
 
         for (DataFile d : this.deleteFiles) {
-          partitionData = keyedTable.spec().isUnpartitioned() ? null : d.partition();
+          partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
           partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
         }
         rewriteFiles.rewriteFiles(Collections.emptySet(), new HashSet<>(deleteDeleteFiles),

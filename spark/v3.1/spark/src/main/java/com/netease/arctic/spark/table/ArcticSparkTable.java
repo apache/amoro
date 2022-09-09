@@ -24,6 +24,7 @@ import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
@@ -41,10 +42,11 @@ import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite {
+public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsUpsert {
   private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,
@@ -186,7 +188,17 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite {
   }
 
 
-  //@Override
+  @Override
+  public SupportsExtendIdentColumns newUpsertScanBuilder(CaseInsensitiveStringMap options) {
+    return new SparkScanBuilder(sparkSession(), arcticTable, options);
+  }
+
+  @Override
+  public boolean requireAdditionIdentifierColumns() {
+    return true;
+  }
+
+  @Override
   public boolean appendAsUpsert() {
     return arcticTable.isKeyedTable() &&
         Boolean.parseBoolean(arcticTable.properties().getOrDefault(

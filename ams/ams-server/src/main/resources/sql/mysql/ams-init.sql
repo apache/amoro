@@ -156,7 +156,6 @@ CREATE TABLE `optimize_task`
     `base_file_size`            bigint(20) DEFAULT NULL COMMENT 'Base file size in bytes',
     `pos_delete_file_size`      bigint(20) DEFAULT NULL COMMENT 'Pos-Delete file size in bytes',
     `source_nodes`              varchar(2048) DEFAULT NULL COMMENT 'Source nodes of task',
-    `is_delete_pos_delete`      tinyint(4) DEFAULT NULL COMMENT 'Delete pos delete files or not',
     `task_history_id`           varchar(40)   DEFAULT NULL COMMENT 'Task history id',
     `status`        varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `pending_time`  datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
