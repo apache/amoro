@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
@@ -45,7 +44,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
   }
 
   @Override
-  public long commit(TableOptimizeRuntime tableOptimizeRuntime) throws Exception {
+  public boolean commit(long baseSnapshotId) throws Exception {
     LOG.info("{} get tasks to support hive commit for partitions {}", arcticTable.id(),
         optimizeTasksToCommit.keySet());
     HMSClient hiveClient = ((SupportHive) arcticTable).getHMSClient();
@@ -113,7 +112,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
       }
     });
 
-    return super.commit(tableOptimizeRuntime);
+    return super.commit(baseSnapshotId);
   }
 
   protected boolean isPartitionMajorOptimizeSupportHive(String partition, List<OptimizeTaskItem> optimizeTaskItems) {

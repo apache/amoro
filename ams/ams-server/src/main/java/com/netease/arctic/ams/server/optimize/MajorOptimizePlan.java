@@ -111,6 +111,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
       partitionNeedMajorOptimizeFiles.put(partition, Collections.emptyList());
+      partitionPosDeleteFiles.put(partition, Collections.emptyList());
       partitionFileTree.get(partition).initFiles();
     } else {
       FileTree treeRoot = partitionFileTree.get(partition);
@@ -228,19 +229,23 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
         null, group, historyId, partitionOptimizeType.get(partition), createTime);
 
-    long taskSize =
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
-            TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
-    Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
-    int taskCnt = (int) (sum / taskSize) + 1;
-    List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
-        .pack(fileList, DataFile::fileSizeInBytes);
-    for (List<DataFile> files : packed) {
-      if (CollectionUtils.isNotEmpty(files)) {
-        collector.add(buildOptimizeTask(null,
-            Collections.emptyList(), Collections.emptyList(), files, Collections.emptyList(), taskPartitionConfig));
+    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
+    if (needOptimize(posDeleteFiles, fileList)) {
+      long taskSize =
+          PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
+              TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
+      Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
+      int taskCnt = (int) (sum / taskSize) + 1;
+      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
+          .pack(fileList, DataFile::fileSizeInBytes);
+      for (List<DataFile> files : packed) {
+        if (CollectionUtils.isNotEmpty(files)) {
+          collector.add(buildOptimizeTask(null,
+              Collections.emptyList(), Collections.emptyList(), files, posDeleteFiles, taskPartitionConfig));
+        }
       }
     }
+
     return collector;
   }
 
