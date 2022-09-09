@@ -25,6 +25,7 @@ import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SnapshotSummary;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
@@ -200,7 +201,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     RowReader(ArcticInputPartition task) {
       reader = new ArcticSparkUnkeyedDataReader(
           task.io, task.tableSchema, task.expectedSchema,
-          null, task.caseSensitive
+          task.nameMapping, task.caseSensitive
       );
       scanTasks = task.combinedScanTask.files().iterator();
     }
@@ -242,6 +243,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
     final boolean caseSensitive;
     final Schema expectedSchema;
     final Schema tableSchema;
+    final String nameMapping;
 
     ArcticInputPartition(
         CombinedScanTask combinedScanTask,
@@ -253,6 +255,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
       this.tableSchema = table.schema();
       this.caseSensitive = caseSensitive;
       this.io = table.io();
+      this.nameMapping = table.properties().get(TableProperties.DEFAULT_NAME_MAPPING);
     }
   }
 
