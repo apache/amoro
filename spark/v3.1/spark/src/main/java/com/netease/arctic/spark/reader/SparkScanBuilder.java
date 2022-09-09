@@ -82,6 +82,9 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
         .distinct()
         .map(MetadataColumns::get)
         .collect(Collectors.toList());
+    if (fields.size() == 1) {
+      return schema;
+    }
     Schema meta = new Schema(fields);
 
     return TypeUtil.join(schema, meta);

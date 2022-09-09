@@ -70,7 +70,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
     sql("desc table {0}.{1}", database, table);
     assertDescResult(rows, Lists.newArrayList("id"));
     Schema expectedSchema = new Schema(
-        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "data", Types.StringType.get()),
         Types.NestedField.optional(3, "pt", Types.StringType.get())
     );
@@ -142,7 +142,7 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, sourceTable));
 
     Schema expectedSchema = new Schema(
-        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "data", Types.StringType.get()),
         Types.NestedField.optional(3, "pt", Types.StringType.get())
     );
