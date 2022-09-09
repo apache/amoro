@@ -18,7 +18,6 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.ams.api.NotSupportedException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -82,7 +81,7 @@ public class ConvertStructUtil {
     i.  for iceberg DATA file, arctic keyed table has 3 file type: BASE_FILE, INSERT_FILE, EQ_DELETE_FILE;
         and arctic unkeyed table has 1 file type: BASE_FILE
     ii. for iceberg POSITION_DELETES file, arctic file type is POS_DELETE_FILE
-    iii.for iceberg EQUALITY_DELETES files, arctic is unsupported now
+    iii.for iceberg EQUALITY_DELETES file, arctic is unsupported now
      */
     if (table.isKeyedTable()) {
       FileContent content = dataFile.content();
