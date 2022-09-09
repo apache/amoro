@@ -176,79 +176,85 @@ public class HiveOperationTransaction implements Transaction {
 
   private class TransactionalTable implements Table {
 
+    Table transactionTable;
+
+    public TransactionalTable() {
+      transactionTable = wrapped.table();
+    }
+
     @Override
     public String name() {
-      return unkeyedHiveTable.name();
+      return transactionTable.name();
     }
 
     @Override
     public void refresh() {
-
+      transactionTable.refresh();
     }
 
     @Override
     public TableScan newScan() {
-      throw new UnsupportedOperationException("Transaction tables do not support scans");
+      return transactionTable.newScan();
     }
 
     @Override
     public Schema schema() {
-      return unkeyedHiveTable.schema();
+      return transactionTable.schema();
     }
 
     @Override
     public Map<Integer, Schema> schemas() {
-      return unkeyedHiveTable.schemas();
+      return transactionTable.schemas();
     }
 
     @Override
     public PartitionSpec spec() {
-      return unkeyedHiveTable.spec();
+      return transactionTable.spec();
     }
 
     @Override
     public Map<Integer, PartitionSpec> specs() {
-      return unkeyedHiveTable.specs();
+      return transactionTable.specs();
     }
 
     @Override
     public SortOrder sortOrder() {
-      return unkeyedHiveTable.sortOrder();
+      return transactionTable.sortOrder();
     }
 
     @Override
     public Map<Integer, SortOrder> sortOrders() {
-      return unkeyedHiveTable.sortOrders();
+      return transactionTable.sortOrders();
     }
 
     @Override
     public Map<String, String> properties() {
-      return unkeyedHiveTable.properties();
+      return transactionTable.properties();
     }
 
     @Override
     public String location() {
-      return unkeyedHiveTable.location();
+      return transactionTable.location();
     }
 
     @Override
     public Snapshot currentSnapshot() {
-      return unkeyedHiveTable.currentSnapshot();
+      return transactionTable.currentSnapshot();
     }
 
     @Override
     public Snapshot snapshot(long snapshotId) {
-      return unkeyedHiveTable.currentSnapshot();
+      return transactionTable.snapshot(snapshotId);
     }
 
     @Override
     public Iterable<Snapshot> snapshots() {
-      return unkeyedHiveTable.snapshots();
+      return transactionTable.snapshots();
     }
 
     @Override
     public List<HistoryEntry> history() {
-      return unkeyedHiveTable.history();
+      return transactionTable.history();
     }
 
     @Override
@@ -338,17 +344,17 @@ public class HiveOperationTransaction implements Transaction {
 
     @Override
     public FileIO io() {
-      return unkeyedHiveTable.io();
+      return transactionTable.io();
     }
 
     @Override
     public EncryptionManager encryption() {
-      return unkeyedHiveTable.encryption();
+      return transactionTable.encryption();
     }
 
     @Override
     public LocationProvider locationProvider() {
-      return unkeyedHiveTable.locationProvider();
+      return transactionTable.locationProvider();
     }
   }
 }

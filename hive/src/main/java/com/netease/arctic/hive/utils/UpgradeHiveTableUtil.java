@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
+import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.table.ArcticTable;
@@ -25,6 +26,8 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
+import org.apache.hadoop.hive.metastore.api.SerDeInfo;
+import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -35,6 +38,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class UpgradeHiveTableUtil {
 
@@ -52,6 +56,9 @@ public class UpgradeHiveTableUtil {
    */
   public static void upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
                                       List<String> pkList, Map<String, String> properties) throws Exception {
+    if (!formatCheck(arcticHiveCatalog.getHMSClient(), tableIdentifier)) {
+      throw new IllegalArgumentException("Only support storage format is parquet");
+    }
     boolean upgradeHive = false;
     try {
       Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
@@ -124,5 +131,40 @@ public class UpgradeHiveTableUtil {
       }
     }
     HiveMetaSynchronizer.syncHiveDataToArctic(arcticTable, arcticHiveCatalog.getHMSClient());
+  }
+
+  /**
+   * Check whether Arctic supports the hive table storage formats.
+   *
+   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param tableIdentifier A table identifier
+   * @return Support or not
+   */
+  private static boolean formatCheck(HMSClient hiveClient, TableIdentifier tableIdentifier) throws IOException {
+    AtomicBoolean isSupport = new AtomicBoolean(false);
+    try {
+      hiveClient.run(client -> {
+        Table hiveTable = HiveTableUtil.loadHmsTable(hiveClient, tableIdentifier);
+        StorageDescriptor storageDescriptor = hiveTable.getSd();
+        SerDeInfo serDeInfo = storageDescriptor.getSerdeInfo();
+        switch (storageDescriptor.getInputFormat()) {
+          case HiveTableProperties.PARQUET_INPUT_FORMAT:
+            if (storageDescriptor.getOutputFormat().equals(HiveTableProperties.PARQUET_OUTPUT_FORMAT) &&
+                serDeInfo.getSerializationLib().equals(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE)) {
+              isSupport.set(true);
+            } else {
+              throw new IllegalStateException("Please check your hive table storage format is right");
+            }
+            break;
+          default:
+            isSupport.set(false);
+            break;
+        }
+        return null;
+      });
+    } catch (Exception e) {
+      throw new IOException(e);
+    }
+    return isSupport.get();
   }
 }

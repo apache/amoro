@@ -21,7 +21,7 @@ package com.netease.arctic.hive.io.writer;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
@@ -163,7 +163,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
             encryptionManager, partitionId, taskId, transactionId) :
         new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId);
-    FileAppenderFactory<Record> appenderFactory = HiveTableUtil.isHive(table) ?
+    FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
         new AdaptHiveGenericAppenderFactory(schema, table.spec()) :
         new GenericAppenderFactory(schema, table.spec());
     return new GenericBaseTaskWriter(fileFormat, appenderFactory,
@@ -186,7 +186,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
         TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
     Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());
-    FileAppenderFactory<Record> appenderFactory = HiveTableUtil.isHive(table) ?
+    FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?
         new AdaptHiveGenericAppenderFactory(changeWriteSchema, table.spec()) :
         new GenericAppenderFactory(changeWriteSchema, table.spec());
     return new GenericChangeTaskWriter(fileFormat,

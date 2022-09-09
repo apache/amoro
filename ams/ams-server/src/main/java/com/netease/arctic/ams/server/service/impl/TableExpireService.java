@@ -32,13 +32,14 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.Path;
@@ -115,7 +116,7 @@ public class TableExpireService implements ITableExpireService {
                 TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
 
         Set<String> hiveLocation = new HashSet<>();
-        if (HiveTableUtil.isHive(arcticTable)) {
+        if (TableTypeUtil.isHive(arcticTable)) {
           hiveLocation = HiveLocationUtils.getHiveLocation(arcticTable);
         }
 
@@ -168,7 +169,7 @@ public class TableExpireService implements ITableExpireService {
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
-    StructLikeMap<Long> baseMaxTransactionId = keyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
     if (MapUtils.isEmpty(baseMaxTransactionId)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;
@@ -186,7 +187,7 @@ public class TableExpireService implements ITableExpireService {
       List<DataFileInfo> partitionDataFiles =
           partitionDataFileMap.get(null);
 
-      Long maxTransactionId = baseMaxTransactionId.get(null);
+      Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
             .filter(dataFileInfo ->
