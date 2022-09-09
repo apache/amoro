@@ -59,7 +59,7 @@ import java.util.Locale;
  */
 public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Record> {
 
-  private ArcticTable table;
+  private final ArcticTable table;
 
   private Long transactionId;
   private int partitionId = 0;
@@ -110,16 +110,13 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-    if (table.isUnkeyedTable()) {
-      throw new IllegalArgumentException("UnKeyed table UnSupport position delete");
-    }
-    KeyedTable table = (KeyedTable) this.table;
+    UnkeyedTable baseTable = this.table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
     Preconditions.checkNotNull(transactionId);
-    FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
+    FileFormat fileFormat = FileFormat.valueOf((baseTable.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
     GenericAppenderFactory appenderFactory =
-        new GenericAppenderFactory(table.baseTable().schema(), table.spec());
+        new GenericAppenderFactory(baseTable.schema(), baseTable.spec());
     appenderFactory.set(
         org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
         MetricsModes.Full.get().toString());
@@ -127,8 +124,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
         org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
         MetricsModes.Full.get().toString());
     return new SortedPosDeleteWriter<>(appenderFactory,
-        new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-            table.baseTable().encryption(), partitionId, taskId, transactionId),
+        new CommonOutputFileFactory(baseTable.location(), baseTable.spec(), fileFormat, baseTable.io(),
+            baseTable.encryption(), partitionId, taskId, transactionId),
         fileFormat, mask, index, partitionKey);
   }
 

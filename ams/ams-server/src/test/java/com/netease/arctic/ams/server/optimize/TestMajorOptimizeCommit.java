@@ -99,7 +99,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
     BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
-    optimizeCommit.commit(tableOptimizeRuntime);
+    optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
     Set<String> newDeleteFilesPath = new HashSet<>();
