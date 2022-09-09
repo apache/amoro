@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
+import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.OptimizeStatus;
@@ -84,6 +85,8 @@ public class OptimizeTaskItem extends IJDBCService {
   public void onPending() {
     lock.lock();
     try {
+      Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
+          "task prepared, can't on pending");
       BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       if (newRuntime.getStatus() == OptimizeStatus.Failed) {
         newRuntime.setRetry(newRuntime.getRetry() + 1);
@@ -100,6 +103,8 @@ public class OptimizeTaskItem extends IJDBCService {
   public TableTaskHistory onExecuting(JobId jobId, String attemptId) {
     lock.lock();
     try {
+      Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
+          "task prepared, can't on executing");
       BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       long currentTime = System.currentTimeMillis();
       newRuntime.setAttemptId(attemptId);
@@ -139,6 +144,8 @@ public class OptimizeTaskItem extends IJDBCService {
     long reportTime = System.currentTimeMillis();
     lock.lock();
     try {
+      Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
+          "task prepared, can't on failed");
       BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       newRuntime.setErrorMessage(errorMessage);
       newRuntime.setStatus(OptimizeStatus.Failed);
@@ -157,6 +164,8 @@ public class OptimizeTaskItem extends IJDBCService {
     long reportTime = System.currentTimeMillis();
     lock.lock();
     try {
+      Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
+          "task prepared, can't on prepared");
       BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       if (newRuntime.getExecuteTime() == BaseOptimizeTaskRuntime.INVALID_TIME) {
         newRuntime.setExecuteTime(preparedTime);
