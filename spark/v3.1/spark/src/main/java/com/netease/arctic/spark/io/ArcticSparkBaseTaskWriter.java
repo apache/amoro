@@ -36,7 +36,7 @@ public class ArcticSparkBaseTaskWriter extends BaseTaskWriter<InternalRow> {
 
   private final StructType structType;
 
-  protected ArcticSparkBaseTaskWriter(
+  public ArcticSparkBaseTaskWriter(
       FileFormat format,
       FileAppenderFactory<InternalRow> appenderFactory,
       OutputFileFactory outputFileFactory,
