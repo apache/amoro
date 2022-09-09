@@ -51,7 +51,7 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
         " partitioned by ( dt ) \n", database, table);
 
 
-    sql("insert overwrite {0}.{1} values \n" +
+    sql("insert overwrite table {0}.{1} values \n" +
         "(1, ''aaa'',  ''2021-1-1''), \n " +
         "(2, ''bbb'',  ''2021-1-2''), \n " +
         "(3, ''ccc'',  ''2021-1-3'') \n ", database, table);
@@ -61,13 +61,14 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
   @After
   public void after() {
     sql("drop table {0}.{1}", database, table);
+    sql("drop database if exists {0} cascade", database);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
   }
 
   @Test
   public void testInsertOverwriteAllPartitionByValue() throws TException {
     // insert overwrite by values, no partition expr
-    sql("insert overwrite {0}.{1} values \n" +
+    sql("insert overwrite table {0}.{1} values \n" +
         "(4, ''aaa'',  ''2021-1-1''), \n " +
         "(5, ''bbb'',  ''2021-1-2''), \n " +
         "(6, ''ccc'',  ''2021-1-2'') \n ", database, table);
@@ -86,7 +87,7 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
 
   @Test
   public void testInsertOverwriteSomePartitionByValue() throws TException {
-    sql("insert overwrite {0}.{1} \n" +
+    sql("insert overwrite table {0}.{1} \n" +
         "partition( dt = ''2021-1-1'')  values \n" +
         "(4, ''aaa''), \n " +
         "(5, ''bbb''), \n " +
