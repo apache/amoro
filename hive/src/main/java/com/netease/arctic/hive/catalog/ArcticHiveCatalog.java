@@ -203,6 +203,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
     @Override
     protected void doCreateCheck() {
+
       super.doCreateCheck();
       try {
         if (allowExsitedHiveTable) {

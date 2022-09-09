@@ -23,8 +23,10 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.util.PropertyUtil;
@@ -35,10 +37,15 @@ import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.DataWriterFactory;
 import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
@@ -165,18 +172,29 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      // TODO: issue #173 - implement upsert commit
-      throw new UnsupportedOperationException("Upsert write is not supported");
+      RowDelta rowDelta = table.newRowDelta();
+      for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+        rowDelta.addDeletes(file);
+      }
+      rowDelta.commit();
+
+
+      AppendFiles appendFiles = table.newAppend();
+      for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
+        appendFiles.appendFile(file);
+      }
+      appendFiles.commit();
     }
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
-    private final UnkeyedTable table;
-    private final StructType dsSchema;
+    protected final UnkeyedTable table;
+    protected final StructType dsSchema;
+
 
     private final String unKeyedTmpDir;
 
-    private boolean isOverwrite;
+    private final boolean isOverwrite;
 
 
     WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, String unKeyedTmpDir) {
@@ -207,7 +225,15 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       // TODO: issues-173 - support upsert data writer
-      return null;
+      StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
+          !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
+      UnkeyedPosDeleteSparkWriter<InternalRow> internalRowUnkeyedPosDeleteSparkWriter = TaskWriters.of(table)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newBasePosDeleteWriter();
+
+      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedPosDeleteSparkWriter, dsSchema);
     }
   }
 }
