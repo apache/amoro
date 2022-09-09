@@ -180,10 +180,12 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
 
       AppendFiles appendFiles = table.newAppend();
-      for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
-        appendFiles.appendFile(file);
+      if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
+          appendFiles.appendFile(file);
+        }
+        appendFiles.commit();
       }
-      appendFiles.commit();
     }
   }
 
