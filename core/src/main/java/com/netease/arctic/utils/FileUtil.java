@@ -100,26 +100,6 @@ public class FileUtil {
   }
 
   /**
-   * parse unkeyed file meta from file name
-   * @param fileName unkeyed file name 
-   * @return DataFileType base or pos-delete
-   */
-  public static DataFileType parseUnkeyedFileTypeFromFileName(String fileName) {
-    fileName = FileUtil.getFileName(fileName);
-    int index = fileName.indexOf('-');
-    if (index > 0) {
-      String fileType = fileName.substring(0, index);
-      try {
-        return DataFileType.ofShortName(fileType);
-      } catch (IllegalArgumentException e) {
-        return DataFileType.BASE_FILE;
-      }
-    } else {
-      return DataFileType.BASE_FILE;
-    }
-  }
-
-  /**
    * parse keyed file meta from file name
    * @param fileName - keyed file name
    * @return fileMeta

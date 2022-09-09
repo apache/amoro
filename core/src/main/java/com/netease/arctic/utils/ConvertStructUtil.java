@@ -18,6 +18,7 @@
 
 package com.netease.arctic.utils;
 
+import com.netease.arctic.ams.api.NotSupportedException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
@@ -26,10 +27,12 @@ import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 
@@ -71,18 +74,73 @@ public class ConvertStructUtil {
       });
       amsDataFile.setUpperBounds(amsUpperBounds);
     }
+
+
+    /*
+    Iceberg file has 3 types(FileContent) : DATA, POSITION_DELETES, EQUALITY_DELETES
+    Arctic file has 4 types(DataFileType): BASE_FILE, INSERT_FILE, EQ_DELETE_FILE, POS_DELETE_FILE 
+    i.  for iceberg DATA file, arctic keyed table has 3 file type: BASE_FILE, INSERT_FILE, EQ_DELETE_FILE;
+        and arctic unkeyed table has 1 file type: BASE_FILE
+    ii. for iceberg POSITION_DELETES file, arctic file type is POS_DELETE_FILE
+    iii.for iceberg EQUALITY_DELETES files, arctic is unsupported now
+     */
     if (table.isKeyedTable()) {
-      DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(dataFile.path().toString());
-      amsDataFile.setFileType(fileMeta.type().name());
-      amsDataFile.setIndex(fileMeta.node().index());
-      amsDataFile.setMask(fileMeta.node().mask());
-      return amsDataFile;
+      FileContent content = dataFile.content();
+      if (content == FileContent.DATA) {
+        DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(dataFile.path().toString());
+        validateArcticFileType(content, dataFile.path().toString(), fileMeta.type());
+        amsDataFile.setFileType(fileMeta.type().name());
+        amsDataFile.setIndex(fileMeta.node().index());
+        amsDataFile.setMask(fileMeta.node().mask());
+      } else if (content == FileContent.POSITION_DELETES) {
+        DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(dataFile.path().toString());
+        amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
+        if (fileMeta.type() == DataFileType.POS_DELETE_FILE) {
+          amsDataFile.setIndex(fileMeta.node().index());
+          amsDataFile.setMask(fileMeta.node().mask());
+        } else if (fileMeta.type() == DataFileType.BASE_FILE) {
+          // if arctic file type from fileName is BASE_FILE, the file may be written by iceberg writer, we set 
+          // index and mast to 0
+          amsDataFile.setIndex(0);
+          amsDataFile.setMask(0);
+        } else {
+          throw new IllegalArgumentException(
+              "iceberg file content should not be POSITION_DELETES for " + dataFile.path().toString());
+        }
+      } else {
+        throw new UnsupportedOperationException(
+            "not support file content now: " + content + ", " + dataFile.path().toString());
+      }
     } else {
-      DataFileType dataFileType = FileUtil.parseUnkeyedFileTypeFromFileName(dataFile.path().toString());
-      amsDataFile.setFileType(dataFileType.name());
+      FileContent content = dataFile.content();
+      if (content == FileContent.DATA) {
+        amsDataFile.setFileType(DataFileType.BASE_FILE.name());
+      } else if (content == FileContent.POSITION_DELETES) {
+        amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
+      } else {
+        throw new UnsupportedOperationException(
+            "not support file content now: " + content + ", " + dataFile.path().toString());
+      }
       amsDataFile.setIndex(0);
       amsDataFile.setMask(0);
-      return amsDataFile;
+    }
+    return amsDataFile;
+  }
+
+  private static void validateArcticFileType(FileContent content, String path, DataFileType type) {
+    switch (type) {
+      case BASE_FILE:
+      case INSERT_FILE:
+      case EQ_DELETE_FILE:
+        Preconditions.checkArgument(content == FileContent.DATA,
+            "%s, File content should be POSITION_DELETES, but is %s", path, content);
+        break;
+      case POS_DELETE_FILE:
+        Preconditions.checkArgument(content == FileContent.POSITION_DELETES,
+            "%s, File content should be POSITION_DELETES, but is %s", path, content);
+        break;
+      default:
+        throw new IllegalArgumentException("Unknown file type: " + type);
     }
   }
 

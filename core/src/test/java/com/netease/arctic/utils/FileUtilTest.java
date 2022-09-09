@@ -39,26 +39,6 @@ public class FileUtilTest {
         "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
     Assert.assertEquals("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", fileDir);
   }
-  
-  @Test
-  public void testGetUnkeyedFileTypeFromFileName() {
-    String fileName = "PD-00000-0-98e42a3a-5ab8-4b15-b9a5-28e6d25720db-0000000001.parquet";
-    Assert.assertEquals(DataFileType.POS_DELETE_FILE, FileUtil.parseUnkeyedFileTypeFromFileName(fileName));
-    
-    String fileName2 = "PDD-00000-0-98e42a3a-5ab8-4b15-b9a5-28e6d25720db-0000000001.parquet";
-    Assert.assertEquals(DataFileType.BASE_FILE, FileUtil.parseUnkeyedFileTypeFromFileName(fileName2));
-
-    String fileName3 = "B-00000-0-98e42a3a-5ab8-4b15-b9a5-28e6d25720db-0000000001.parquet";
-    Assert.assertEquals(DataFileType.BASE_FILE, FileUtil.parseUnkeyedFileTypeFromFileName(fileName3));
-
-    String fileName4 = "0000000001.parquet";
-    Assert.assertEquals(DataFileType.BASE_FILE, FileUtil.parseUnkeyedFileTypeFromFileName(fileName4));
-
-    String fileName5 =
-        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/PD-00000-0-98e42a3a-5ab8-4b15-b9a5" +
-            "-28e6d25720db-0000000001.parquet";
-    Assert.assertEquals(DataFileType.POS_DELETE_FILE, FileUtil.parseUnkeyedFileTypeFromFileName(fileName5));
-  }
 
   @Test
   public void testGetKeyedFileMetaFromFileName() {
