@@ -170,7 +170,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
       for (List<DataFile> files : packed) {
         if (CollectionUtils.isNotEmpty(files)) {
           collector.add(buildOptimizeTask(null,
-              Collections.emptyList(), Collections.emptyList(), files, Collections.emptyList(), taskPartitionConfig));
+              Collections.emptyList(), Collections.emptyList(), files, posDeleteFiles, taskPartitionConfig));
         }
       }
     }
