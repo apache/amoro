@@ -153,7 +153,8 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   private List<BaseOptimizeTask> collectUnKeyedTableTasks(String partition, List<DataFile> fileList) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
 
-    if (needOptimize(Collections.emptyList(), fileList)) {
+    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
+    if (needOptimize(posDeleteFiles, fileList)) {
       String group = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
