@@ -173,10 +173,12 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public void commit(WriterCommitMessage[] messages) {
       RowDelta rowDelta = table.newRowDelta();
-      for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
-        rowDelta.addDeletes(file);
+      if (WriteTaskDeleteFilesCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+          rowDelta.addDeletes(file);
+        }
+        rowDelta.commit();
       }
-      rowDelta.commit();
 
 
       AppendFiles appendFiles = table.newAppend();
