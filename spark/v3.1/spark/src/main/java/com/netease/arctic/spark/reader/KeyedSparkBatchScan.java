@@ -26,6 +26,7 @@ import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
@@ -52,8 +53,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistics {
   private static final Logger LOG = LoggerFactory.getLogger(KeyedSparkBatchScan.class);
@@ -283,7 +282,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
       this.caseSensitive = caseSensitive;
       this.io = table.io();
       this.keySpec = table.primaryKeySpec();
-      this.nameMapping = table.properties().get(DEFAULT_NAME_MAPPING);
+      this.nameMapping = table.properties().get(TableProperties.DEFAULT_NAME_MAPPING);
     }
   }
 }
