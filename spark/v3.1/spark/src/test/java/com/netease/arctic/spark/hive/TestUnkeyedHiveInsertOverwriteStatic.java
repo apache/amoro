@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.hive;
 
-
 import com.netease.arctic.spark.SparkTestBase;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.thrift.TException;
@@ -30,9 +29,11 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
+public class TestUnkeyedHiveInsertOverwriteStatic extends SparkTestBase {
+
   private final String database = "db";
   private final String table = "testA";
+  private final String table2 = "testB";
 
   private String contextOverwriteMode;
 
@@ -47,10 +48,15 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
-        " dt string , \n" +
-        " primary key (id) \n" +
+        " dt string \n" +
         ") using arctic \n" +
         " partitioned by ( dt ) \n", database, table);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " data string , \n " +
+        " dt string \n" +
+        ") using arctic \n", database, table2);
 
 
     sql("insert overwrite {0}.{1} values \n" +
@@ -64,6 +70,7 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
   public void after() {
     sql("use " + catalogNameHive);
     sql("drop table {0}.{1}", database, table);
+    sql("drop table {0}.{1}", database, table2);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
   }
 
@@ -73,7 +80,7 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
     sql("insert overwrite {0}.{1} values \n" +
         "(4, ''aaa'',  ''2021-1-1''), \n " +
         "(5, ''bbb'',  ''2021-1-2''), \n " +
-        "(6, ''ccc'',  ''2021-1-2'') \n ", database, table);
+        "(6, ''ccc'',  ''2021-1-1'') \n ", database, table);
 
     rows = sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(3, rows.size());
@@ -114,4 +121,22 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
     Assert.assertEquals(5, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6, 2, 3);
   }
+
+  @Test
+  public void testInsertOverwriteNoPartitionTb() throws TException {
+    sql("insert overwrite {0}.{1} values \n" +
+        "(4, ''aaa'',  ''2021-1-1''), \n " +
+        "(5, ''bbb'',  ''2021-1-2''), \n " +
+        "(6, ''ccc'',  ''2021-1-1'') \n ", database, table2);
+
+    rows = sql("select * from {0}.{1}", database, table2);
+    Assert.assertEquals(3, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6);
+
+    sql("use spark_catalog");
+    rows = sql("select * from {0}.{1}", database, table2);
+    Assert.assertEquals(3, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6);
+  }
+
 }

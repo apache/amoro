@@ -138,7 +138,7 @@ public class ArcticSparkUtils {
   private static Transform toTransformsFromPrimary(ArcticSparkTable arcticSparkTable, PrimaryKeySpec primaryKeySpec) {
     int numBucket = PropertyUtil.propertyAsInt(arcticSparkTable.properties(),
         TableProperties.BASE_FILE_INDEX_HASH_BUCKET, TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
-    return Expressions.bucket(numBucket, primaryKeySpec.fieldNames().toArray(new String[0]));
+    return Expressions.bucket(numBucket, primaryKeySpec.fieldNames().get(0));
   }
 
   public static Object convertConstant(Type type, Object value) {

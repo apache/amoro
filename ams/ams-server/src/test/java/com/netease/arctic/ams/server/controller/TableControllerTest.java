@@ -26,10 +26,13 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.server.AmsRestServer;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
+import com.netease.arctic.ams.server.exception.ForbiddenException;
+import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSDataFileInfo;
@@ -55,14 +58,17 @@ import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.ams.server.utils.Utils;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
+import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.testtools.JavalinTest;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -191,6 +197,21 @@ public class TableControllerTest {
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
+    });
+  }
+
+  @Test
+  public void testSinglePageToken() throws Exception {
+    mockService(catalogName, database, table);
+    JavalinTest.test((app, client) -> {
+      app.get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature",
+              TableController::getTableDetailTabToken);
+      String url = String.format("/tables/catalogs/%s/dbs/%s/tables/%s/signature", catalogName, database,table);
+      final okhttp3.Response resp = client.get(String.format(url), x -> {});
+      OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
+      LOG.info("xxx: {}", JSONObject.toJSONString(result));
+      assert result.getCode() == 200;
+      assert Utils.generateTablePageToken(catalogName,database,table).equals(result.getResult());
     });
   }
 
