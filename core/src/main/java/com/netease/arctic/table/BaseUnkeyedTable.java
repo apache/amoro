@@ -27,6 +27,7 @@ import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TracedAppendFiles;
 import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedOverwriteFiles;
+import com.netease.arctic.trace.TracedReplacePartitions;
 import com.netease.arctic.trace.TracedRewriteFiles;
 import com.netease.arctic.trace.TracedRowDelta;
 import com.netease.arctic.trace.TracedSchemaUpdate;
@@ -262,7 +263,13 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    return icebergTable.newReplacePartitions();
+    ReplacePartitions replacePartitions = icebergTable.newReplacePartitions();
+    if (client != null) {
+      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      return new TracedReplacePartitions(replacePartitions, tracer);
+    } else {
+      return replacePartitions;
+    }
   }
 
   @Override

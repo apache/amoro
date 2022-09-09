@@ -58,12 +58,10 @@ public class SnapshotFileUtil {
       deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
     }
 
-    if (table instanceof BaseTable) {
-      table.io().doAs(() -> {
-        getDeleteFiles(table, snapshot, addFiles, deleteFiles);
-        return null;
-      });
-    }
+    table.io().doAs(() -> {
+      getDeleteFiles(table, snapshot, addFiles, deleteFiles);
+      return null;
+    });
 
     LOG.debug("{} snapshot get {} add files count and {} delete file count.",
         snapshot.snapshotId(), addFiles.size(), deleteFiles.size());
