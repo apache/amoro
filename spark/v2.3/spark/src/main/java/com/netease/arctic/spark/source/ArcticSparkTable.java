@@ -93,7 +93,7 @@ public class ArcticSparkTable implements DataSourceTable {
         throw new UnsupportedOperationException("Not support now!");
       }
     } else {
-      throw new UnsupportedOperationException("Table is neither keyed nor unkeyed");
+      throw new UnsupportedOperationException("Illegal table type!");
     }
     return Optional.empty();
   }

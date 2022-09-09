@@ -126,10 +126,11 @@ public class SparkTestContext extends ExternalResource {
         .getPackage()
         .getImplementationVersion();
 
+    configs.put("hive.exec.dynamic.partition", "true");
+    configs.put("hive.exec.dynamic.partition.mode", "nonstrict");
     configs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
     configs.put("spark.sql.catalogImplementation", "hive");
-    configs.put("spark.sql.hive.metastore.version", hiveVersion);
-    configs.put("spark.sql.hive.metastore.jars", "maven");
+    configs.put("spark.sql.hive.metastore.version", "1.2.1");
     configs.put("arctic.sql.delegate-hive-table", "true");
     //hive.metastore.client.capability.check
     configs.put("hive.metastore.client.capability.check", "false");
@@ -145,8 +146,9 @@ public class SparkTestContext extends ExternalResource {
     catalogName = arctic_hive.getCatalogName();
     ams.handler().createCatalog(arctic_hive);
 
-    configs.put("spark.sql.catalog." + catalogName, ArcticCatalog.class.getName());
-    configs.put("spark.sql.catalog." + catalogName + ".url", amsUrl + "/" + catalogName);
+    configs.put("arctic.catalog." + catalogName, ArcticCatalog.class.getName());
+    configs.put("arctic.catalog.type", "hive");
+    configs.put("arctic.catalog.url" , amsUrl + "/" + catalogName);
     return configs;
   }
 

@@ -41,7 +41,6 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
     System.out.println("spark.sql.sources.partitionOverwriteMode = " + contextOverwriteMode);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", "STATIC");
 
-    sql("use " + catalogName);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -61,7 +60,6 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
 
   @After
   public void after() {
-    sql("use " + catalogName);
     sql("drop table {0}.{1}", database, table);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
   }
@@ -84,10 +82,6 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
         (short) -1);
     Assert.assertEquals(2, partitions.size());
 
-    sql("use spark_catalog");
-    rows = sql("select * from {0}.{1}", database, table);
-    Assert.assertEquals(3, rows.size());
-    assertContainIdSet(rows, 0, 4, 5, 6);
   }
 
   @Test
@@ -108,9 +102,5 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
         (short) -1);
     Assert.assertEquals(3, partitions.size());
 
-    sql("use spark_catalog");
-    rows = sql("select * from {0}.{1} order by id", database, table);
-    Assert.assertEquals(5, rows.size());
-    assertContainIdSet(rows, 0, 4, 5, 6, 2, 3);
   }
 }
