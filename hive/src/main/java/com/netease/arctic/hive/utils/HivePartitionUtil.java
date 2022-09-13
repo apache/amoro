@@ -65,7 +65,7 @@ public class HivePartitionUtil {
     for (int i = 0; i < spec.partitionType().fields().size(); i++) {
       Types.NestedField field = spec.partitionType().fields().get(i);
       pathBuilder.append(field.name()).append("=").append(partitionValues.get(i));
-      if (i > 0) {
+      if (i < spec.partitionType().fields().size() - 1) {
         pathBuilder.append("/");
       }
     }
