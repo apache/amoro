@@ -189,12 +189,12 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       super(identifier, schema);
     }
 
-    boolean allowExsitedHiveTable = false;
+    boolean allowExistedHiveTable = false;
 
     @Override
     public TableBuilder withProperty(String key, String value) {
       if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")) {
-        allowExsitedHiveTable = true;
+        allowExistedHiveTable = true;
       } else {
         this.properties.put(key, value);
       }
@@ -206,7 +206,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       super.doCreateCheck();
       try {
-        if (allowExsitedHiveTable) {
+        if (allowExistedHiveTable) {
           LOG.info("No need to check hive table exist");
         } else {
           org.apache.hadoop.hive.metastore.api.Table hiveTable =
@@ -281,7 +281,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       Map<String, String> metaProperties = meta.properties;
       try {
         hiveClientPool.run(client -> {
-          if (allowExsitedHiveTable) {
+          if (allowExistedHiveTable) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
@@ -329,7 +329,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       });
       try {
         hiveClientPool.run(client -> {
-          if (allowExsitedHiveTable) {
+          if (allowExistedHiveTable) {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = client.getTable(tableIdentifier.getDatabase(),
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
@@ -387,7 +387,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     @Override
     protected void doRollbackCreateTable(TableMeta meta) {
       super.doRollbackCreateTable(meta);
-      if (allowExsitedHiveTable) {
+      if (allowExistedHiveTable) {
         LOG.info("No need to drop hive table");
         com.netease.arctic.ams.api.TableIdentifier tableIdentifier = meta.getTableIdentifier();
         try {
