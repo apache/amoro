@@ -1,6 +1,6 @@
 # 表配置
 
-这里列出了当前表的所有参数，可以在[创建表](table-management.md##_2)时指定它的值，也可以通过[修改表](table-properties.md##_4)动态修改它的值。
+这里列出了当前表的所有参数，可以在[创建表](table-management.md##_2)时指定它的值，也可以通过[修改表](table-management.md##_4)动态修改它的值。
 
 ### 表读取配置
 
