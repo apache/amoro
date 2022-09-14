@@ -8,11 +8,18 @@ import org.junit.Test;
 
 public class TestUnkeyedTableDml extends SparkTestBase {
   private final String database = "db_hive";
-  private final String table = "test";
+  private final String tableA = "testA";
+  private final String tableB = "testB";
 
-  protected String createTableTemplate = "create table {0}.{1}( \n" +
+  protected String createTableTemplateA = "create table {0}.{1}( \n" +
       " id int, \n" +
       " name string, \n" +
+      " data string) \n" +
+      " using arctic partitioned by (data) ;";
+
+  protected String createTableTemplateB = "create table {0}.{1}( \n" +
+      " id int, \n" +
+      " point double, \n" +
       " data string) \n" +
       " using arctic partitioned by (data) ;";
 
@@ -20,41 +27,74 @@ public class TestUnkeyedTableDml extends SparkTestBase {
   public void prepare() {
     sql("use " + catalogNameHive);
     sql("create database if not exists " + database);
-    sql(createTableTemplate, database, table);
+    sql(createTableTemplateA, database, tableA);
   }
 
   @After
   public void cleanUpTable() {
-    sql("drop table " + database + "." + table);
+    sql("drop table " + database + "." + tableA);
     sql("drop database " + database);
   }
 
   @Test
   public void testUpdate() {
-    sql("insert into " + database + "." + table +
+    sql("insert into " + database + "." + tableA +
         " values (1, 'aaa', '1' ) , " +
         "(2, 'bbb', '2'), " +
         "(3, 'ccc', '1') ");
 
-    sql("update {0}.{1} set name = \"ddd\" where id = 3", database, table);
-    rows = sql("select id, name from {0}.{1} where id = 3", database, table);
+    sql("update {0}.{1} set name = \"ddd\" where id = 3", database, tableA);
+    rows = sql("select id, name from {0}.{1} where id = 3", database, tableA);
 
     Assert.assertEquals(1, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
-    sql("select * from {0}.{1} ", database, table);
+    sql("select * from {0}.{1} ", database, tableA);
     Assert.assertEquals(3, rows.size());
 
   }
 
   @Test
+  public void testUpdateDiffColType() {
+    sql(createTableTemplateB, database, tableB);
+    sql("insert into " + database + "." + tableB +
+        " values (1, 1.1, 'aaa' ) , " +
+        "(2,  1.2, 'bbb'), " +
+        "(3, 1.1, 'ccc') ");
+
+    sql("update {0}.{1} set point = 1.3 where id = 3", database, tableB);
+    rows = sql("select id, point from {0}.{1} where id = 3", database, tableB);
+
+    Assert.assertEquals(1, rows.size());
+    Assert.assertEquals(1.3, rows.get(0)[1]);
+    sql("select * from {0}.{1} ", database, tableB);
+    Assert.assertEquals(3, rows.size());
+    sql("drop table " + database + "." + tableB);
+
+  }
+
+  @Test
+  public void testUpdateAnyPartitions() {
+    sql("insert into " + database + "." + tableA +
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2'), " +
+        "(3, 'ccc', '1') ");
+
+    sql("update {0}.{1} as t set name = ''ddd'' where data =  ''1'' or data =''2''", database, tableA);
+    rows = sql("select * from {0}.{1} ", database, tableA);
+
+    Assert.assertEquals(3, rows.size());
+    Assert.assertEquals("ddd", rows.get(0)[1]);
+  }
+
+  @Test
   public void testDelete() {
-    sql("insert into " + database + "." + table +
+    sql("insert into " + database + "." + tableA +
         " values (1, 'aaa', '1' ) , " +
         "(2, 'bbb', '2' ), " +
         "(3, 'ccc', '1' ) ");
 
-    sql("delete from {0}.{1} where id = 3", database, table);
-    rows = sql("select id, name from {0}.{1} order by id", database, table);
+    sql("delete from {0}.{1} where id = 3", database, tableA);
+    rows = sql("select id, name from {0}.{1} order by id", database, tableA);
 
     Assert.assertEquals(2, rows.size());
     Assert.assertEquals(1, rows.get(0)[0]);
@@ -62,13 +102,28 @@ public class TestUnkeyedTableDml extends SparkTestBase {
   }
 
   @Test
+  public void testDeleteAnyPartition() {
+    sql("insert into " + database + "." + tableA +
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2' ), " +
+        "(3, 'ccc', '3' ), " +
+        "(4, 'ddd', '1' ) ");
+
+    sql("delete from {0}.{1} where data = ''1'' or data = ''2''", database, tableA);
+    rows = sql("select id, name from {0}.{1} order by id", database, tableA);
+
+    Assert.assertEquals(1, rows.size());
+    Assert.assertEquals(3, rows.get(0)[0]);
+  }
+
+  @Test
   public void testInsert() {
-    sql("insert into " + database + "." + table +
+    sql("insert into " + database + "." + tableA +
         " values (1, 'aaa', 'abcd' ) , " +
         "(2, 'bbb', 'bbcd'), " +
         "(3, 'ccc', 'cbcd') ");
 
-    rows = sql("select * from {0}.{1} ", database, table);
+    rows = sql("select * from {0}.{1} ", database, tableA);
 
     Assert.assertEquals(3, rows.size());
   }
