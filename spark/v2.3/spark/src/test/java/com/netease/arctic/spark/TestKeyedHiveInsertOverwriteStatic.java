@@ -31,7 +31,7 @@ import java.util.List;
 
 public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
   private final String database = "db";
-  private final String table = "testA";
+  private final String table = "testa";
 
   private String contextOverwriteMode;
 
