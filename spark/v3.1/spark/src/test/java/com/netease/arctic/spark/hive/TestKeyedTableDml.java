@@ -136,7 +136,6 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql("drop table if exists " + database + "." + doubleColTable);
   }
 
-
   @Test
   public void testUpdateAnyPartitions() {
     sql("update {0}.{1} set name = \"ddd\" where data = ''abcd'' or data = ''cbcd''", database, notUpsertTable);
@@ -145,6 +144,15 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(2, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
     Assert.assertEquals("ddd", rows.get(1)[1]);
+  }
+
+  @Test
+  public void testUpdatePartitionField() {
+    sql("update {0}.{1} set data = \"ddd\" where id = 3", database, notUpsertTable);
+    rows = sql("select id, data from {0}.{1} where id = 3", database, notUpsertTable);
+
+    Assert.assertEquals(1, rows.size());
+    Assert.assertEquals("ddd", rows.get(0)[1]);
   }
 
   @Test

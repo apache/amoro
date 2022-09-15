@@ -31,11 +31,11 @@ public class TestUnkeyedTableDml extends SparkTestBase {
     sql(createTableTemplateA, database, tableA);
   }
 
-  @After
-  public void cleanUpTable() {
-    sql("drop table " + database + "." + tableA);
-    sql("drop database " + database);
-  }
+//  @After
+//  public void cleanUpTable() {
+//    sql("drop table " + database + "." + tableA);
+//    sql("drop database " + database);
+//  }
 
   @Test
   public void testUpdate() {
@@ -85,6 +85,20 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
     Assert.assertEquals(3, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
+  }
+
+  @Test
+  public void testUpdatePartitionField() {
+    sql("insert into " + database + "." + tableA +
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2'), " +
+        "(3, 'ccc', '1') ");
+
+    sql("update {0}.{1} set data = ''3'' where id = 1", database, tableA);
+    rows = sql("select id, data from {0}.{1} where id =1", database, tableA);
+
+    Assert.assertEquals(1, rows.size());
+    Assert.assertEquals("3", rows.get(0)[1]);
   }
 
   @Test
