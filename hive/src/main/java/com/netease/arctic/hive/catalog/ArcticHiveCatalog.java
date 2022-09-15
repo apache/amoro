@@ -247,7 +247,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
       meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
       // default 1 day
-      meta.putToProperties(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000");
+      if (!meta.properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL)) {
+        meta.putToProperties(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000");
+      }
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
