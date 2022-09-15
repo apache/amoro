@@ -31,11 +31,11 @@ public class TestUnkeyedTableDml extends SparkTestBase {
     sql(createTableTemplateA, database, tableA);
   }
 
-//  @After
-//  public void cleanUpTable() {
-//    sql("drop table " + database + "." + tableA);
-//    sql("drop database " + database);
-//  }
+  @After
+  public void cleanUpTable() {
+    sql("drop table " + database + "." + tableA);
+    sql("drop database " + database);
+  }
 
   @Test
   public void testUpdate() {
