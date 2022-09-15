@@ -80,6 +80,17 @@ public class SortedPosDeleteWriter<T> implements Closeable {
     this(appenderFactory, fileFactory, format, mask, index, partitionKey, DEFAULT_RECORDS_NUM_THRESHOLD);
   }
 
+  public SortedPosDeleteWriter(FileAppenderFactory<T> appenderFactory,
+                               OutputFileFactory fileFactory,
+                               FileFormat format,
+                               StructLike partitionKey) {
+    this.appenderFactory = appenderFactory;
+    this.fileFactory = fileFactory;
+    this.format = format;
+    this.writerKey = new TaskWriterKey(partitionKey, null, DataFileType.POS_DELETE_FILE);
+    this.recordsNumThreshold = DEFAULT_RECORDS_NUM_THRESHOLD;
+  }
+
   public void delete(CharSequence path, long pos) {
     delete(path, pos, null);
   }
