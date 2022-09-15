@@ -14,6 +14,7 @@ public class TestKeyedTableDml extends SparkTestBase {
   private final String doubleColTable = "doubleColTable";
   private final String upsertTable = "testUpsert";
   private final String insertTable = "testInsert";
+  private final String unPartitionTable = "unPartitionTable";
 
   protected String createNotUpsertTableTemplate = "create table {0}.{1}( \n" +
       " id int, \n" +
@@ -144,6 +145,26 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(2, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
     Assert.assertEquals("ddd", rows.get(1)[1]);
+  }
+
+  @Test
+  public void testUpdateUnPartitions() {
+    sql( "create table {0}.{1}( \n" +
+        " id int, \n" +
+        " name string, \n" +
+        " data string, primary key(id)) \n" +
+        " using arctic ", database, unPartitionTable);
+    sql("insert into " + database + "." + unPartitionTable +
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2'), " +
+        "(3, 'ccc', '1') ");
+
+    sql("update {0}.{1} as t set name = ''ddd'' where data =  ''1'' or data =''2''", database, unPartitionTable);
+    rows = sql("select * from {0}.{1} ", database, unPartitionTable);
+
+    Assert.assertEquals(3, rows.size());
+    Assert.assertEquals("ddd", rows.get(0)[1]);
+    sql("drop table " + database + "." + unPartitionTable);
   }
 
   @Test

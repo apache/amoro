@@ -10,6 +10,7 @@ public class TestUnkeyedTableDml extends SparkTestBase {
   private final String database = "db_hive";
   private final String tableA = "testA";
   private final String tableB = "testB";
+  private final String unPartitionTable = "unPartitionTable";
 
   protected String createTableTemplateA = "create table {0}.{1}( \n" +
       " id int, \n" +
@@ -84,6 +85,26 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
     Assert.assertEquals(3, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
+  }
+
+  @Test
+  public void testUpdateUnPartitions() {
+    sql( "create table {0}.{1}( \n" +
+        " id int, \n" +
+        " name string, \n" +
+        " data string) \n" +
+        " using arctic ", database, unPartitionTable);
+    sql("insert into " + database + "." + unPartitionTable +
+        " values (1, 'aaa', '1' ) , " +
+        "(2, 'bbb', '2'), " +
+        "(3, 'ccc', '1') ");
+
+    sql("update {0}.{1} as t set name = ''ddd'' where data =  ''1'' or data =''2''", database, unPartitionTable);
+    rows = sql("select * from {0}.{1} ", database, unPartitionTable);
+
+    Assert.assertEquals(3, rows.size());
+    Assert.assertEquals("ddd", rows.get(0)[1]);
+    sql("drop table " + database + "." + unPartitionTable);
   }
 
   @Test

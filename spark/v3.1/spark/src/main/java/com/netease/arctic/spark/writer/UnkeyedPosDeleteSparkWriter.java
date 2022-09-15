@@ -24,7 +24,9 @@ import org.apache.spark.sql.catalyst.InternalRow;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.spark.sql.types.DataTypes.IntegerType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
@@ -41,7 +43,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
   private final long recordsNumThreshold;
   private final Schema schema;
   private final ArcticTable table;
-  private WriteResult writeResult;
+  private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
 
   private int records = 0;
 
@@ -71,15 +73,18 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
     StructLike structLike = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema)).wrap(internalRow.getRow());
     PartitionKey partitionKey = new PartitionKey(table.spec(), schema);
     partitionKey.partition(structLike);
-    SortedPosDeleteWriter<InternalRow> writer = new SortedPosDeleteWriter<>(appenderFactory,
-        fileFactory,
-        format, partitionKey);
+    if (writerMap.get(partitionKey) == null) {
+      SortedPosDeleteWriter<InternalRow> writer = new SortedPosDeleteWriter<>(appenderFactory,
+          fileFactory,
+          format, partitionKey);
+      writerMap.putIfAbsent(partitionKey, writer);
+    }
     if (internalRow.getChangeAction() == ChangeAction.DELETE) {
+      SortedPosDeleteWriter<InternalRow> deleteWriter = writerMap.get(partitionKey);
       int numFields = internalRow.getRow().numFields();
       Object file = internalRow.getRow().get(numFields - 2, StringType);
       Object pos = internalRow.getRow().get(numFields - 1, IntegerType);
-      writer.delete(file.toString(), Long.parseLong(pos.toString()), null);
-      completedDeleteFiles.addAll(writer.complete());
+      deleteWriter.delete(file.toString(), Long.parseLong(pos.toString()), null);
     } else {
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
           TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
@@ -100,6 +105,9 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
 
   @Override
   public WriteResult complete() throws IOException {
+    for (Map.Entry<PartitionKey, SortedPosDeleteWriter<InternalRow>> entry : writerMap.entrySet()) {
+      completedDeleteFiles.addAll(entry.getValue().complete());
+    }
     close();
 
     return WriteResult.builder()
@@ -109,27 +117,5 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
 
   @Override
   public void close() throws IOException {
-  }
-
-  private static class PosRow<R> {
-    private final long pos;
-    private final InternalRow row;
-
-    static <R> UnkeyedPosDeleteSparkWriter.PosRow<InternalRow> of(long pos, InternalRow row) {
-      return new UnkeyedPosDeleteSparkWriter.PosRow<>(pos, row);
-    }
-
-    private PosRow(long pos, InternalRow row) {
-      this.pos = pos;
-      this.row = row;
-    }
-
-    long pos() {
-      return pos;
-    }
-
-    InternalRow row() {
-      return row;
-    }
   }
 }
