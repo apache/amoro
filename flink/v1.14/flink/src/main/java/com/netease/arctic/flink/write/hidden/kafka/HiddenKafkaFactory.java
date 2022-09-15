@@ -37,9 +37,9 @@ public class HiddenKafkaFactory<T> implements LogMsgFactory<T> {
   @Override
   public Producer<T> createProducer(
       Properties producerConfig,
+      String topic,
       LogDataJsonSerialization<T> logDataJsonSerialization,
       ShuffleHelper helper) {
-    final String topic = producerConfig.getProperty(TableProperties.LOG_STORE_MESSAGE_TOPIC);
     checkNotNull(topic);
     return new HiddenKafkaProducer<>(
         producerConfig,
