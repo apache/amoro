@@ -49,7 +49,8 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
     long current = System.currentTimeMillis();
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
-    List<DataFile> needMajorOptimizeFiles = partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>());
+    List<DataFile> needMajorOptimizeFiles =
+        partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>());
     List<DataFile> smallFiles = filterSmallFiles(partitionToPath, needMajorOptimizeFiles);
 
     // check whether partition need plan by files info
