@@ -48,7 +48,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy {
         propertiesMap, writeOptions, ifNotExists) :: Nil
 
     case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-      if provider.get.equals("arctic") =>
+      if provider.get != null && provider.get.equals("arctic") =>
         CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
 
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended) =>
