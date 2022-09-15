@@ -78,7 +78,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     testKeyedTable.updateProperties()
-        .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
@@ -190,7 +190,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     testNoPartitionTable.updateProperties()
-        .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,

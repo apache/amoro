@@ -72,7 +72,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
         });
 
     testKeyedTable.updateProperties().
-        set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0").commit();
+        set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
