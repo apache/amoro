@@ -69,7 +69,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testMinorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
     insertChangeDeleteFiles(testKeyedTable, 3);
     List<DataFile> dataFiles = insertChangeDataFiles(testKeyedTable,4);
 
@@ -137,7 +137,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
     insertChangeDeleteFiles(testNoPartitionTable, 3);
     List<DataFile> dataFiles = insertChangeDataFiles(testNoPartitionTable, 4);
 

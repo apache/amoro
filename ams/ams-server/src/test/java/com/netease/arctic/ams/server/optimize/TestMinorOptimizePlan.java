@@ -47,7 +47,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testMinorOptimize() throws IOException {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
     insertChangeDeleteFiles(testKeyedTable,3);
     insertChangeDataFiles(testKeyedTable,4);
 

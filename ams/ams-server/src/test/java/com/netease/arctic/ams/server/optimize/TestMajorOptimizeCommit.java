@@ -61,7 +61,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   @Test
   public void testMajorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();

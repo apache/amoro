@@ -58,7 +58,7 @@ import java.util.stream.Collectors;
 public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testKeyedTableMajorOptimize() throws IOException {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         new TableOptimizeRuntime(testKeyedTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
@@ -75,7 +75,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testKeyedTableFullOptimize() throws IOException {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     testKeyedTable.updateProperties()
         .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
@@ -170,7 +170,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableMajorOptimize() throws IOException {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testNoPartitionTable,
         new TableOptimizeRuntime(testNoPartitionTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
@@ -187,7 +187,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableFullOptimize() throws IOException {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     testNoPartitionTable.updateProperties()
         .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")

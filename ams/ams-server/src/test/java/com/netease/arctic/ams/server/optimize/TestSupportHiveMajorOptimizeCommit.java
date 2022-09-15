@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveHasPosDeleteCommit() throws Exception {
-    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
@@ -148,7 +148,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     Set<String> oldDataFilesPath = new HashSet<>();
     testKeyedHiveTable.baseTable().newScan().planFiles()
@@ -341,7 +341,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testUnPartitionKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
 
     Set<String> oldDataFilesPath = new HashSet<>();
     testUnPartitionKeyedHiveTable.baseTable().newScan().planFiles()

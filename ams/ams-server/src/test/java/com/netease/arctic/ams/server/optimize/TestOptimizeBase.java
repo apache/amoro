@@ -101,7 +101,8 @@ public interface TestOptimizeBase {
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
                                                     long transactionId,
                                                     List<DataFileInfo> baseDataFilesInfo,
-                                                    List<DataFileInfo> posDeleteFilesInfo) throws IOException {
+                                                    List<DataFileInfo> posDeleteFilesInfo,
+                                                    boolean allNodeDelete) throws IOException {
     List<DataFile> dataFiles = insertTableBaseDataFiles(arcticTable, transactionId - 1, baseDataFilesInfo);
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
@@ -113,6 +114,10 @@ public interface TestOptimizeBase {
           .collect(Collectors.groupingBy(dataFile ->
               DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
+        if (!allNodeDelete) {
+          allNodeDelete = true;
+          continue;
+        }
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
 

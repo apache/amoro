@@ -51,7 +51,26 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     testKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
+
+    SupportHiveFullOptimizePlan supportHiveFullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
+        new TableOptimizeRuntime(testKeyedHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = supportHiveFullOptimizePlan.plan();
+    Assert.assertEquals(4, tasks.size());
+    Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(10, tasks.get(0).getBaseFiles().size());
+    Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
+  public void testKeyedTableFullMajorOptimizeSupportHiveNotAllHavePosDelete() throws IOException {
+    testKeyedHiveTable.updateProperties()
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .commit();
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo, false);
 
     SupportHiveFullOptimizePlan supportHiveFullOptimizePlan = new SupportHiveFullOptimizePlan(testKeyedHiveTable,
         new TableOptimizeRuntime(testKeyedHiveTable.id()), baseDataFilesInfo, posDeleteFilesInfo,

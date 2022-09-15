@@ -65,7 +65,8 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     long current = System.currentTimeMillis();
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
-    List<DataFile> baseFiles = partitionFileTree.get(partitionToPath).getBaseFiles();
+    List<DataFile> baseFiles = new ArrayList<>();
+    partitionFileTree.get(partitionToPath).collectBaseFiles(baseFiles);
     long inHiveSmallFileCount = 0;
     long notInHiveFileCount = 0;
     for (DataFile baseFile : baseFiles) {
