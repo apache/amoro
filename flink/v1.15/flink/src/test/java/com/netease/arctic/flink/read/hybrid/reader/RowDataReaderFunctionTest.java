@@ -26,6 +26,7 @@ import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BaseArcticFileScanTask;
+import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
@@ -139,15 +140,17 @@ public class RowDataReaderFunctionTest extends ContinuousSplitPlannerImplTest {
   }
 
   protected void writeUpdate(List<RowData> input) throws IOException {
-    //write change update
-    {
-      TaskWriter<RowData> taskWriter = createTaskWriter(false);
+    writeUpdate(input, testKeyedTable);
+  }
 
-      for (RowData record : input) {
-        taskWriter.write(record);
-      }
-      commit(testKeyedTable, taskWriter.complete(), false);
+  protected void writeUpdate(List<RowData> input, KeyedTable table) throws IOException {
+    //write change update
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(table, ROW_TYPE, TRANSACTION_ID.getAndIncrement(), false);
+
+    for (RowData record : input) {
+      taskWriter.write(record);
     }
+    commit(table, taskWriter.complete(), false);
   }
 
   protected List<RowData> updateRecords() {
