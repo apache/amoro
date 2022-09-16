@@ -105,7 +105,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   }
 
   @Override
-  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return true;
   }
 }
