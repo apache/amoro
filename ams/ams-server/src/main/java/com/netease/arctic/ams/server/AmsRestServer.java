@@ -246,19 +246,21 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-    "/ams/v1/login",
-    "/",
-    "/overview",
-    "/introduce",
-    "/table",
-    "/optimize",
-    "/login",
-    "/terminal",
-    "/index.html",
-    "/favicon.ico",
-    "/js/*",
-    "/img/*",
-    "/css/*"
+      "/ams/v1/login",
+      "/",
+      "/overview",
+      "/introduce",
+      "/tables",
+      "/optimizers",
+      "/login",
+      "/terminal",
+      "/hive-tables/upgrade",
+      "/hive-tables",
+      "/index.html",
+      "/favicon.ico",
+      "/js/*",
+      "/img/*",
+      "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {
