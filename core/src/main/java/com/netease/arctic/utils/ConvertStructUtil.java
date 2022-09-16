@@ -83,40 +83,26 @@ public class ConvertStructUtil {
     ii. for iceberg POSITION_DELETES file, arctic file type is POS_DELETE_FILE
     iii.for iceberg EQUALITY_DELETES file, arctic is unsupported now
      */
-    if (table.isKeyedTable()) {
-      FileContent content = dataFile.content();
-      if (content == FileContent.DATA) {
-        DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(dataFile.path().toString());
-        validateArcticFileType(content, dataFile.path().toString(), fileMeta.type());
-        amsDataFile.setFileType(fileMeta.type().name());
+    FileContent content = dataFile.content();
+    if (content == FileContent.DATA) {
+      DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(dataFile.path().toString());
+      validateArcticFileType(content, dataFile.path().toString(), fileMeta.type());
+      amsDataFile.setFileType(fileMeta.type().name());
+      amsDataFile.setIndex(fileMeta.node().index());
+      amsDataFile.setMask(fileMeta.node().mask());
+    } else if (content == FileContent.POSITION_DELETES) {
+      DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(dataFile.path().toString());
+      amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
+      if (fileMeta.type() == DataFileType.POS_DELETE_FILE || fileMeta.type() == DataFileType.BASE_FILE) {
         amsDataFile.setIndex(fileMeta.node().index());
         amsDataFile.setMask(fileMeta.node().mask());
-      } else if (content == FileContent.POSITION_DELETES) {
-        DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(dataFile.path().toString());
-        amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
-        if (fileMeta.type() == DataFileType.POS_DELETE_FILE || fileMeta.type() == DataFileType.BASE_FILE) {
-          amsDataFile.setIndex(fileMeta.node().index());
-          amsDataFile.setMask(fileMeta.node().mask());
-        } else {
-          throw new IllegalArgumentException(
-              "iceberg file content should not be POSITION_DELETES for " + dataFile.path().toString());
-        }
       } else {
-        throw new UnsupportedOperationException(
-            "not support file content now: " + content + ", " + dataFile.path().toString());
+        throw new IllegalArgumentException(
+            "iceberg file content should not be POSITION_DELETES for " + dataFile.path().toString());
       }
     } else {
-      FileContent content = dataFile.content();
-      if (content == FileContent.DATA) {
-        amsDataFile.setFileType(DataFileType.BASE_FILE.name());
-      } else if (content == FileContent.POSITION_DELETES) {
-        amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
-      } else {
-        throw new UnsupportedOperationException(
-            "not support file content now: " + content + ", " + dataFile.path().toString());
-      }
-      amsDataFile.setIndex(0);
-      amsDataFile.setMask(0);
+      throw new UnsupportedOperationException(
+          "not support file content now: " + content + ", " + dataFile.path().toString());
     }
     return amsDataFile;
   }
