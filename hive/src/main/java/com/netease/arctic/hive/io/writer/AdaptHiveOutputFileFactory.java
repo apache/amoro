@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive.io.writer;
 
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
@@ -128,8 +129,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
               transactionId, partitionId, taskId, fileCount.incrementAndGet()));
     } else {
       return format.addExtension(
-          String.format("%s-%05d-%d-%s-%010d",
-              key.getFileType().shortName(), partitionId, taskId, unKeyedTableNameUUID, fileCount.incrementAndGet()));
+          String.format("%d-%s-%d-%05d-%d-%s-%010d", DataTreeNode.of(0, 0).getId(), key.getFileType().shortName(),
+              0, partitionId, taskId, unKeyedTableNameUUID, fileCount.incrementAndGet()));
     }
   }
 

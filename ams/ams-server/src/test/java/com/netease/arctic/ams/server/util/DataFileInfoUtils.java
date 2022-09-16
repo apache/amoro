@@ -65,7 +65,7 @@ public class DataFileInfoUtils {
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(deleteFile.recordCount());
     dataFileInfo.setType(DataFileType.POS_DELETE_FILE.name());
-    DataTreeNode node = FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString());
+    DataTreeNode node = FileUtil.parseFileNodeFromFileName(deleteFile.path().toString());
     dataFileInfo.setIndex(node.getIndex());
     dataFileInfo.setMask(node.getMask());
     dataFileInfo.setCommitTime(commitTime);

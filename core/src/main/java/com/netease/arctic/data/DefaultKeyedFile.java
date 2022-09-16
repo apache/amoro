@@ -49,7 +49,7 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   private void parse() {
-    this.meta = FileUtil.parseKeyedFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
+    this.meta = FileUtil.parseFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
     if (internalFile.lowerBounds() != null) {
       ByteBuffer minOffsetBuffer = internalFile.lowerBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
       if (minOffsetBuffer != null) {

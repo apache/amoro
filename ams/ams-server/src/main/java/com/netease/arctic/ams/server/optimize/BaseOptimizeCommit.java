@@ -346,7 +346,7 @@ public class BaseOptimizeCommit {
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
-        return FileUtil.parseKeyedFileNodeFromFileName(contentFile.path().toString());
+        return FileUtil.parseFileNodeFromFileName(contentFile.path().toString());
       }
 
       return null;
@@ -354,7 +354,7 @@ public class BaseOptimizeCommit {
 
     return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtil::toInternalTableFile)
         .filter(posDeleteFile ->
-            newFileNodes.contains(FileUtil.parseKeyedFileNodeFromFileName(posDeleteFile.path().toString())))
+            newFileNodes.contains(FileUtil.parseFileNodeFromFileName(posDeleteFile.path().toString())))
         .collect(Collectors.toSet());
   }
 
@@ -375,7 +375,7 @@ public class BaseOptimizeCommit {
     StructLikeMap<Long> result = StructLikeMap.create(arcticTable.spec().partitionType());
 
     for (ContentFile<?> minorAddFile : minorAddFiles) {
-      long transactionId = FileUtil.parseKeyedFileTidFromFileName(minorAddFile.path().toString());
+      long transactionId = FileUtil.parseFileTidFromFileName(minorAddFile.path().toString());
       if (transactionId != 0) {
         long minTransactionId = transactionId;
         if (result.get(minorAddFile.partition()) != null) {

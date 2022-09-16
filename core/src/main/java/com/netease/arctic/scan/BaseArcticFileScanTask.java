@@ -54,7 +54,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this.baseFile = baseFile;
     this.posDeleteFiles = posDeleteFiles == null ?
         Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
-          DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(s.path().toString());
+          DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(s.path().toString());
           return fileMeta.node().index() == baseFile.node().index() &&
             fileMeta.node().mask() == baseFile.node().mask();
         }).collect(Collectors.toList());

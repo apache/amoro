@@ -33,17 +33,17 @@ import java.util.stream.Collectors;
 public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor<F> {
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
     return new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(dataFile ->
-        FileUtil.parseKeyedFileNodeFromFileName(dataFile.path().toString()))));
+        FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
   }
 
   protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<DeleteFile> deleteFiles) {
     return new HashMap<>(deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->
-        FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString()))));
+        FileUtil.parseFileNodeFromFileName(deleteFile.path().toString()))));
   }
 
   protected long getMaxTransactionId(List<DataFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> FileUtil.parseKeyedFileTidFromFileName(file.path().toString())).max();
+        .mapToLong(file -> FileUtil.parseFileTidFromFileName(file.path().toString())).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }

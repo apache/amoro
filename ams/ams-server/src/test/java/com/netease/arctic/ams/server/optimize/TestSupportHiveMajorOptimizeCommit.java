@@ -213,7 +213,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
-      DataTreeNode dataTreeNode = FileUtil.parseKeyedFileNodeFromFileName(baseFile.path().toString());
+      DataTreeNode dataTreeNode = FileUtil.parseFileNodeFromFileName(baseFile.path().toString());
       TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
@@ -263,7 +263,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
-      DataTreeNode dataTreeNode = FileUtil.parseKeyedFileNodeFromFileName(baseFile.path().toString());
+      DataTreeNode dataTreeNode = FileUtil.parseFileNodeFromFileName(baseFile.path().toString());
       TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());

@@ -254,12 +254,12 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         sourceNodes = Collections.singletonList(subTree.getNode());
       }
       Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-          .map(dataFile -> FileUtil.parseKeyedFileNodeFromFileName(dataFile.path().toString()))
+          .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
           .collect(Collectors.toSet());
       List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
           .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
           .filter(deleteFile ->
-              baseFileNodes.contains(FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString())))
+              baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
           .collect(Collectors.toList());
       // if no insert files and no eq-delete file, skip
       if (CollectionUtils.isEmpty(insertFiles) && CollectionUtils.isEmpty(deleteFiles)) {
@@ -281,7 +281,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     StructLike partition = dataFile.partition();
     String partitionToPath = arcticTable.spec().partitionToPath(partition);
     Long currentValue = changeTableMaxTransactionId.get(partitionToPath);
-    long transactionId = FileUtil.parseKeyedFileTidFromFileName(dataFile.path().toString());
+    long transactionId = FileUtil.parseFileTidFromFileName(dataFile.path().toString());
     if (currentValue == null) {
       changeTableMaxTransactionId.put(partitionToPath, transactionId);
     } else {

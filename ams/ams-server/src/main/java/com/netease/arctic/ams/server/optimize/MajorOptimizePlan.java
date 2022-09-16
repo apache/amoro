@@ -265,12 +265,12 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> FileUtil.parseKeyedFileNodeFromFileName(dataFile.path().toString()))
+            .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString())))
+                baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
         if (needOptimize(posDeleteFiles, baseFiles)) {

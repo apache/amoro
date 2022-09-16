@@ -44,14 +44,28 @@ public class FileUtilTest {
   public void testGetKeyedFileMetaFromFileName() {
     String fileName =
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet";
-    DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(fileName);
+    DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(fileName);
     Assert.assertEquals(DataFileType.INSERT_FILE, fileMeta.type());
     Assert.assertEquals(DataTreeNode.of(3,1), fileMeta.node());
     Assert.assertEquals(2, fileMeta.transactionId());
 
-    Assert.assertEquals(DataFileType.INSERT_FILE, FileUtil.parseKeyedFileTypeFromFileName(fileName));
-    Assert.assertEquals(DataTreeNode.of(3,1), FileUtil.parseKeyedFileNodeFromFileName(fileName));
-    Assert.assertEquals(2, FileUtil.parseKeyedFileTidFromFileName(fileName));
+    Assert.assertEquals(DataFileType.INSERT_FILE, FileUtil.parseFileTypeFromFileName(fileName));
+    Assert.assertEquals(DataTreeNode.of(3,1), FileUtil.parseFileNodeFromFileName(fileName));
+    Assert.assertEquals(2, FileUtil.parseFileTidFromFileName(fileName));
+  }
+
+  @Test
+  public void testGetUnKeyedFileMetaFromFileName() {
+    String fileName =
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/1-I-0-00000-941953957-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet";
+    DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(fileName);
+    Assert.assertEquals(DataFileType.INSERT_FILE, fileMeta.type());
+    Assert.assertEquals(DataTreeNode.of(0,0), fileMeta.node());
+    Assert.assertEquals(0, fileMeta.transactionId());
+
+    Assert.assertEquals(DataFileType.INSERT_FILE, FileUtil.parseFileTypeFromFileName(fileName));
+    Assert.assertEquals(DataTreeNode.of(0,0), FileUtil.parseFileNodeFromFileName(fileName));
+    Assert.assertEquals(0, FileUtil.parseFileTidFromFileName(fileName));
   }
 
 }

@@ -191,7 +191,7 @@ public class TableExpireService implements ITableExpireService {
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
             .filter(dataFileInfo ->
-                FileUtil.parseKeyedFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
+                FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
             .collect(Collectors.toList()));
       }
     } else {
@@ -202,7 +202,7 @@ public class TableExpireService implements ITableExpireService {
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           deleteFiles.addAll(partitionDataFiles.stream()
               .filter(dataFileInfo ->
-                  FileUtil.parseKeyedFileTidFromFileName(dataFileInfo.getPath()) <= value)
+                  FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= value)
               .collect(Collectors.toList()));
         }
       });

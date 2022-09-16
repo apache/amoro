@@ -33,7 +33,7 @@ import java.util.regex.Pattern;
 
 public class FileUtil {
 
-  private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-(\\d+)\\.\\w+";
+  private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-.*";
   private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
 
   /**
@@ -104,7 +104,7 @@ public class FileUtil {
    * @param fileName - keyed file name
    * @return fileMeta
    */
-  public static DefaultKeyedFile.FileMeta parseKeyedFileMetaFromFileName(String fileName) {
+  public static DefaultKeyedFile.FileMeta parseFileMetaFromFileName(String fileName) {
     fileName = FileUtil.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long nodeId = 1;
@@ -124,7 +124,7 @@ public class FileUtil {
    * @param fileName fileName
    * @return DataFileType
    */
-  public static DataFileType parseKeyedFileTypeFromFileName(String fileName) {
+  public static DataFileType parseFileTypeFromFileName(String fileName) {
     fileName = FileUtil.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     DataFileType type = DataFileType.BASE_FILE;
@@ -139,7 +139,7 @@ public class FileUtil {
    * @param fileName fileName
    * @return transaction id
    */
-  public static long parseKeyedFileTidFromFileName(String fileName) {
+  public static long parseFileTidFromFileName(String fileName) {
     fileName = FileUtil.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long transactionId = 0L;
@@ -154,7 +154,7 @@ public class FileUtil {
    * @param fileName fileName
    * @return node id
    */
-  public static DataTreeNode parseKeyedFileNodeFromFileName(String fileName) {
+  public static DataTreeNode parseFileNodeFromFileName(String fileName) {
     fileName = FileUtil.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long nodeId = 1;
