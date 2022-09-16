@@ -51,10 +51,10 @@ arctic.ams.database.type: mysql                                          #系统
 
 **2.初始化 MySQL 表**
 
-根据`conf/mysql/ams-init.sql`初始化AMS所需表：
+根据`conf/mysql/{arctic-version}-init.sql`初始化AMS所需表：
 
 ```shell
-mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_HOME_DIR}/conf/mysql/ams-init.sql
+mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_HOME_DIR}/conf/mysql/{arctic-version}-init.sql
 ```
 
 ???+ 注意
