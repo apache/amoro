@@ -100,10 +100,12 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   protected TaskWriterKey buildWriterKey(T row) {
     StructLike structLike = asStructLike(row);
     partitionKey.partition(structLike);
-    DataTreeNode node = null;
+    DataTreeNode node;
     if (primaryKey != null) {
       primaryKey.primaryKey(structLike);
       node = primaryKey.treeNode(mask);
+    } else {
+      node = DataTreeNode.ROOT;
     }
     return new TaskWriterKey(partitionKey, node, DataFileType.BASE_FILE);
   }

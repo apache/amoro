@@ -37,6 +37,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
+  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId) throws IOException {
     TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withTransactionId(transactionId)
@@ -93,9 +94,14 @@ public interface TestOptimizeBase {
   }
 
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
-                                                    long transactionId,
+                                                    Long transactionId,
                                                     List<DataFile> dataFiles,
                                                     Set<DataTreeNode> targetNodes) throws IOException {
+    if (arcticTable.isKeyedTable()) {
+      Preconditions.checkNotNull(transactionId);
+    } else {
+      Preconditions.checkArgument(transactionId == null);
+    }
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();

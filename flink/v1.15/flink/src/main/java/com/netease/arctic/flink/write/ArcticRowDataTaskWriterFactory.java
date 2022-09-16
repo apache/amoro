@@ -53,14 +53,18 @@ public class ArcticRowDataTaskWriterFactory implements TaskWriterFactory<RowData
     this.mask = mask;
   }
 
-  public void setTransactionId(long transactionId) {
+  public void setTransactionId(Long transactionId) {
     this.transactionId = transactionId;
   }
 
   @Override
   public void initialize(int taskId, int attemptId) {
-    Preconditions.checkNotNull(transactionId, "TransactionId should be set first. " +
-        "Invoke setTransactionId() before this method");
+    if (table.isKeyedTable()) {
+      Preconditions.checkNotNull(transactionId, "TransactionId should be set first. " +
+          "Invoke setTransactionId() before this method");
+    } else {
+      Preconditions.checkArgument(transactionId == null, "TransactionId should be null for unkeyed table.");
+    }
     this.taskId = taskId;
     this.attemptId = attemptId;
   }

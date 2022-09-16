@@ -70,7 +70,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     this.table = table;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withTransactionId(long transactionId) {
+  public AdaptHiveGenericTaskWriterBuilder withTransactionId(Long transactionId) {
     this.transactionId = transactionId;
     return this;
   }
@@ -110,8 +110,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
+    preconditions();
     UnkeyedTable baseTable = this.table.isKeyedTable() ? table.asKeyedTable().baseTable() : table.asUnkeyedTable();
-    Preconditions.checkNotNull(transactionId);
     FileFormat fileFormat = FileFormat.valueOf((baseTable.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -130,6 +130,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   }
 
   private GenericBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
+    preconditions();
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -172,9 +173,9 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     if (table.isUnkeyedTable()) {
       throw new IllegalArgumentException("UnKeyed table UnSupport change writer");
     }
+    preconditions();
     KeyedTable table = (KeyedTable) this.table;
 
-    Preconditions.checkNotNull(transactionId);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.CHANGE_FILE_FORMAT,
         TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
@@ -192,6 +193,14 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
             table.changeTable().encryption(), partitionId, taskId, transactionId),
         table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
         changeAction);
+  }
+
+  private void preconditions() {
+    if (table.isKeyedTable()) {
+      Preconditions.checkNotNull(transactionId);
+    } else {
+      Preconditions.checkArgument(transactionId == null);
+    }
   }
 
   public static AdaptHiveGenericTaskWriterBuilder builderFor(ArcticTable table) {

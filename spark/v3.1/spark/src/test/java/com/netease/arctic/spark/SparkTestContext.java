@@ -478,7 +478,7 @@ public class SparkTestContext extends ExternalResource {
       throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(1);
+        .withTransactionId(table.isKeyedTable() ? 1L : null);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record : records) {
@@ -502,7 +502,7 @@ public class SparkTestContext extends ExternalResource {
     return Arrays.asList(dataFiles);
   }
 
-  public void adaptHiveInsertPosDeleteFiles(long transactionId, List<DataFile> dataFiles, ArcticTable table)
+  public void adaptHiveInsertPosDeleteFiles(Long transactionId, List<DataFile> dataFiles, ArcticTable table)
       throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));

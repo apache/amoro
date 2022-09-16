@@ -18,11 +18,11 @@
 
 package com.netease.arctic.hive.io.writer;
 
-import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -30,7 +30,6 @@ import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
 
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -73,11 +72,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final int partitionId;
   private final long taskId;
-  private final Long transactionId;
+  private final long transactionId;
 
   private String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
-
-  private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
@@ -97,7 +94,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.encryptionManager = encryptionManager;
     this.partitionId = partitionId;
     this.taskId = taskId;
-    this.transactionId = transactionId;
+    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
   }
 
   public AdaptHiveOutputFileFactory(
@@ -117,21 +114,14 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.encryptionManager = encryptionManager;
     this.partitionId = partitionId;
     this.taskId = taskId;
-    this.transactionId = transactionId;
+    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
     this.unKeyedTmpDir = unKeyedTmpDir;
   }
 
-
   private String generateFilename(TaskWriterKey key) {
-    if (key.getTreeNode() != null) {
-      return format.addExtension(
-          String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
-              transactionId, partitionId, taskId, fileCount.incrementAndGet()));
-    } else {
-      return format.addExtension(
-          String.format("%d-%s-%d-%05d-%d-%s-%010d", DataTreeNode.of(0, 0).getId(), key.getFileType().shortName(),
-              0, partitionId, taskId, unKeyedTableNameUUID, fileCount.incrementAndGet()));
-    }
+    return format.addExtension(
+        String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
+            transactionId, partitionId, taskId, fileCount.incrementAndGet()));
   }
 
   private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {

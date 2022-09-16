@@ -50,7 +50,7 @@ public class TaskWriterTest extends TableTestBase {
   @Test
   public void testBaseWriter() throws IOException {
     GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1).buildBaseWriter();
+        .withTransactionId(1L).buildBaseWriter();
 
     for (Record record : writeRecords()) {
       writer.write(record);
@@ -62,7 +62,7 @@ public class TaskWriterTest extends TableTestBase {
   @Test
   public void testBasePosDeleteWriter() throws IOException {
     SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
+        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
 
     writer.delete(FILE_A.path(), 1);
     writer.delete(FILE_A.path(), 3);
@@ -95,7 +95,7 @@ public class TaskWriterTest extends TableTestBase {
   @Test
   public void testChangeWriter() throws IOException {
     GenericChangeTaskWriter writer =   GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1).buildChangeWriter();
+        .withTransactionId(1L).buildChangeWriter();
 
 
     for (Record record : writeRecords()) {

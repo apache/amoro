@@ -201,9 +201,9 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private abstract static class AbstractWriterFactory implements DataWriterFactory, Serializable {
     protected final KeyedTable table;
     protected final StructType dsSchema;
-    protected final long transactionId;
+    protected final Long transactionId;
 
-    AbstractWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+    AbstractWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
@@ -212,7 +212,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private static class BaseWriterFactory extends AbstractWriterFactory {
 
-    BaseWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+    BaseWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
       super(table, dsSchema, transactionId);
     }
 

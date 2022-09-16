@@ -99,9 +99,9 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private static class WriterFactory implements DataWriterFactory, Serializable {
     private final KeyedTable table;
     private final StructType dsSchema;
-    private final long transactionId;
+    private final Long transactionId;
 
-    private WriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+    private WriterFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;

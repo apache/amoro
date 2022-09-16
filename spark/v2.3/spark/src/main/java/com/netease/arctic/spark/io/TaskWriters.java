@@ -71,7 +71,7 @@ public class TaskWriters {
     return new TaskWriters(table);
   }
 
-  public TaskWriters withTransactionId(long transactionId) {
+  public TaskWriters withTransactionId(Long transactionId) {
     this.transactionId = transactionId;
     return this;
   }
@@ -120,7 +120,7 @@ public class TaskWriters {
         .writeHive(isHiveTable)
         .build();
 
-    OutputFileFactory outputFileFactory = null;
+    OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
@@ -151,6 +151,8 @@ public class TaskWriters {
   private void preconditions() {
     if (table.isKeyedTable()) {
       Preconditions.checkState(transactionId != null, "Transaction id is not set");
+    } else {
+      Preconditions.checkState(transactionId == null, "Transaction id should be null");
     }
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");

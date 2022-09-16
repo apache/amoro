@@ -51,7 +51,8 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, long transactionId, List<DataFileInfo> baseDataFilesInfo) throws IOException {
+  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId,
+                                                  List<DataFileInfo> baseDataFilesInfo) throws IOException {
     TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withTransactionId(transactionId)
@@ -76,7 +77,7 @@ public interface TestOptimizeBase {
 
   default List<DataFile> insertOptimizeTargetDataFiles(ArcticTable arcticTable,
                                                        OptimizeType optimizeType,
-                                                       long transactionId) throws IOException {
+                                                       Long transactionId) throws IOException {
     WriteOperationKind writeOperationKind = WriteOperationKind.MAJOR_OPTIMIZE;
     switch (optimizeType) {
       case FullMajor:
@@ -99,7 +100,7 @@ public interface TestOptimizeBase {
   }
 
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
-                                                    long transactionId,
+                                                    Long transactionId,
                                                     List<DataFileInfo> baseDataFilesInfo,
                                                     List<DataFileInfo> posDeleteFilesInfo) throws IOException {
     List<DataFile> dataFiles = insertTableBaseDataFiles(arcticTable, transactionId - 1, baseDataFilesInfo);
@@ -143,7 +144,7 @@ public interface TestOptimizeBase {
 
   default List<DeleteFile> insertOptimizeTargetDeleteFiles(ArcticTable arcticTable,
                                                            List<DataFile> dataFiles,
-                                                           long transactionId) throws IOException {
+                                                           Long transactionId) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
