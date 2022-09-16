@@ -12,12 +12,17 @@ import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Binder;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.v2.reader.DataReader;
 import org.apache.spark.sql.sources.v2.reader.DataReaderFactory;
@@ -29,7 +34,6 @@ import org.apache.spark.sql.sources.v2.reader.SupportsReportStatistics;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
@@ -38,25 +42,46 @@ import java.util.Iterator;
 import java.util.List;
 
 
-public class ArcticReader implements DataSourceReader,
+public class ArcticKeyedSparkReader implements DataSourceReader,
     SupportsPushDownFilters, SupportsPushDownRequiredColumns, SupportsReportStatistics {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticReader.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticKeyedSparkReader.class);
   private static final Filter[] NO_FILTERS = new Filter[0];
-
   private final KeyedTable table;
-
-  private Schema expectedSchema = null;
+  private Schema schema = null;
   private StructType requestedProjection;
-  private StructType readSchema = null;
   private final boolean caseSensitive;
   private List<Expression> filterExpressions = null;
   private Filter[] pushedFilters = NO_FILTERS;
-  private List<CombinedScanTask> tasks = null;
 
-  public ArcticReader(KeyedTable table, Schema expectedSchema, boolean caseSensitive) {
+  private StructType readSchema = null;
+  private List<CombinedScanTask> tasks = null;
+  private final Schema expectedSchema;
+
+  public ArcticKeyedSparkReader(SparkSession spark, KeyedTable table) {
     this.table = table;
-    this.expectedSchema = expectedSchema;
-    this.caseSensitive = caseSensitive;
+    this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
+    this.expectedSchema = lazySchema();
+  }
+
+  private Schema lazySchema() {
+    if (schema == null) {
+      if (requestedProjection != null) {
+        // the projection should include all columns that will be returned,
+        // including those only used in filters
+        this.schema = SparkSchemaUtil.prune(table.schema(),
+            requestedProjection, filterExpression(), caseSensitive);
+      } else {
+        this.schema = table.schema();
+      }
+    }
+    return schema;
+  }
+
+  private Expression filterExpression() {
+    if (filterExpressions != null) {
+      return filterExpressions.stream().reduce(Expressions.alwaysTrue(), Expressions::and);
+    }
+    return Expressions.alwaysTrue();
   }
 
   @Override
@@ -119,6 +144,7 @@ public class ArcticReader implements DataSourceReader,
     return readSchema;
   }
 
+
   @Override
   public List<DataReaderFactory<Row>> createDataReaderFactories() {
     List<CombinedScanTask> scanTasks = tasks();
@@ -167,10 +193,10 @@ public class ArcticReader implements DataSourceReader,
 
   private static class RowReader implements DataReader<Row> {
 
-    ArcticSparkDataReader reader;
+    ArcticSparkKeyedDataReader reader;
     Iterator<KeyedTableScanTask> scanTasks;
     KeyedTableScanTask currentScanTask;
-    CloseableIterator<Row> currentIterator = CloseableIterator.empty();
+    CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
     Row current;
 
     RowReader(ArcticFileIO fileIO,
@@ -180,7 +206,7 @@ public class ArcticReader implements DataSourceReader,
               String nameMapping,
               boolean caseSensitive,
               CombinedScanTask combinedScanTask) {
-      reader = new ArcticSparkDataReader(
+      reader = new ArcticSparkKeyedDataReader(
           fileIO, tableSchema, projectedSchema, primaryKeySpec,
           nameMapping, caseSensitive);
       scanTasks = combinedScanTask.tasks().iterator();
@@ -190,7 +216,8 @@ public class ArcticReader implements DataSourceReader,
     public boolean next() throws IOException {
       while (true) {
         if (currentIterator.hasNext()) {
-          this.current = currentIterator.next();
+          InternalRow next = currentIterator.next();
+          this.current = RowFactory.create(next);
           return true;
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();
