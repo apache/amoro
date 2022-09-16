@@ -23,10 +23,17 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
+import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.AdaptHiveGenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
@@ -45,6 +52,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
@@ -70,7 +78,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     testKeyedTable.updateProperties()
-        .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
@@ -88,7 +96,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testUnKeyedTableMajorOptimize() {
-    insertUnKeyedTableDataFiles();
+    insertUnKeyedTableDataFiles(testTable);
 
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
@@ -108,7 +116,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     testTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    insertUnKeyedTableDataFiles();
+    insertUnKeyedTableDataFiles(testTable);
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testTable,
         new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
@@ -119,6 +127,43 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(2, tasks.size());
     Assert.assertEquals(5, tasks.get(0).getBaseFileCnt());
     Assert.assertEquals(0, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
+  public void testUnKeyedTableMajorOptimizeWithPosDelete() throws Exception {
+    insertUnKeyedTablePosDeleteFiles(testTable);
+
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testTable,
+        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.Major, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(2, tasks.size());
+    Assert.assertEquals(5, tasks.get(0).getBaseFileCnt());
+    Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
+    Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
+    Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
+  }
+
+  @Test
+  public void testUnKeyedTableFullOptimizeWithPosDelete() throws Exception {
+    testTable.updateProperties()
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .commit();
+    insertUnKeyedTablePosDeleteFiles(testTable);
+
+    FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testTable,
+        new TableOptimizeRuntime(testTable.id()), baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = fullOptimizePlan.plan();
+
+    Assert.assertEquals(OptimizeType.FullMajor, tasks.get(0).getTaskId().getType());
+    Assert.assertEquals(2, tasks.size());
+    Assert.assertEquals(5, tasks.get(0).getBaseFileCnt());
+    Assert.assertEquals(1, tasks.get(0).getPosDeleteFiles().size());
     Assert.assertEquals(0, tasks.get(0).getInsertFileCnt());
     Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
   }
@@ -145,7 +190,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
 
     testNoPartitionTable.updateProperties()
-        .set(TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,
@@ -161,18 +206,51 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(0, tasks.get(0).getDeleteFileCnt());
   }
 
-  private void insertUnKeyedTableDataFiles() {
+  private List<DataFile> insertUnKeyedTableDataFiles(ArcticTable arcticTable) {
     List<DataFile> dataFiles = insertUnKeyedTableDataFile(FILE_A.partition(), LocalDateTime.of(2022, 1, 1, 12, 0, 0), 5);
     dataFiles.addAll(insertUnKeyedTableDataFile(FILE_B.partition(), LocalDateTime.of(2022, 1, 2, 12, 0, 0), 5));
 
-    AppendFiles appendFiles = testTable.newAppend();
+    AppendFiles appendFiles = arcticTable.asUnkeyedTable().newAppend();
     dataFiles.forEach(appendFiles::appendFile);
     appendFiles.commit();
 
     long commitTime = System.currentTimeMillis();
     baseDataFilesInfo = dataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, testTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, arcticTable))
         .collect(Collectors.toList());
+
+    return dataFiles;
+  }
+
+  private void insertUnKeyedTablePosDeleteFiles(ArcticTable arcticTable) throws Exception {
+    List<DataFile> dataFiles = insertUnKeyedTableDataFiles(arcticTable);
+
+    Map<StructLike, List<DataFile>> dataFilesPartitionMap =
+        new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
+    List<DeleteFile> deleteFiles = new ArrayList<>();
+    for (Map.Entry<StructLike, List<DataFile>> dataFilePartitionMap : dataFilesPartitionMap.entrySet()) {
+      StructLike partition = dataFilePartitionMap.getKey();
+      List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
+      SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
+          .withTransactionId(0)
+          .buildBasePosDeleteWriter(0, 0, partition);
+      for (DataFile partitionFile : partitionFiles) {
+        // write pos delete
+        posDeleteWriter.delete(partitionFile.path(), 0);
+      }
+      deleteFiles.addAll(posDeleteWriter.complete());
+    }
+
+    UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
+        arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+    RowDelta rowDelta = baseTable.newRowDelta();
+    deleteFiles.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+
+    long commitTime = System.currentTimeMillis();
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, arcticTable))
+        .collect(Collectors.toList()));
   }
 
   private List<DataFile> insertUnKeyedTableDataFile(StructLike partitionData, LocalDateTime opTime, int count) {

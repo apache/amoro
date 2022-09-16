@@ -43,6 +43,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
@@ -181,7 +182,8 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
     }
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema,
-            primaryKeySpec, null, false, IdentityPartitionConverters::convertConstant, sourceNodes, false);
+            primaryKeySpec, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+            false, IdentityPartitionConverters::convertConstant, sourceNodes, false);
 
     KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(fileScanTasks);
     return arcticDataReader.readDeletedData(keyedTableScanTask);

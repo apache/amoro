@@ -26,6 +26,7 @@ import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
@@ -225,7 +226,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     RowReader(ArcticInputPartition task) {
       reader = new ArcticSparkKeyedDataReader(
           task.io, task.tableSchema, task.expectedSchema, task.keySpec,
-          null, task.caseSensitive
+          task.nameMapping, task.caseSensitive
       );
       scanTasks = task.combinedScanTask.tasks().iterator();
     }
@@ -268,6 +269,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
     final Schema expectedSchema;
     final Schema tableSchema;
     final PrimaryKeySpec keySpec;
+    final String nameMapping;
 
     ArcticInputPartition(
         CombinedScanTask combinedScanTask,
@@ -280,6 +282,7 @@ public class KeyedSparkBatchScan implements Scan, Batch, SupportsReportStatistic
       this.caseSensitive = caseSensitive;
       this.io = table.io();
       this.keySpec = table.primaryKeySpec();
+      this.nameMapping = table.properties().get(TableProperties.DEFAULT_NAME_MAPPING);
     }
   }
 }

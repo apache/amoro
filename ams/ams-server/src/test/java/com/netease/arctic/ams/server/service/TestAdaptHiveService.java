@@ -147,7 +147,8 @@ public class TestAdaptHiveService {
     serDeInfo.setSerializationLib(HiveTableProperties.PARQUET_ROW_FORMAT_SERDE);
     storageDescriptor.setSerdeInfo(serDeInfo);
     List<FieldSchema> partitions = new ArrayList<>();
-    schema.add(new FieldSchema("dt", "string", null));
+    partitions.add(new FieldSchema("dt", "string", null));
+    partitions.add(new FieldSchema("ts", "string", null));
 
     PARTITION_TABLE.setDbName(HIVE_DB_NAME);
     PARTITION_TABLE.setTableName(HIVE_TABLE_ID.getTableName());
@@ -164,13 +165,11 @@ public class TestAdaptHiveService {
     NO_PARTITION_TABLE.setDbName(HIVE_DB_NAME);
     NO_PARTITION_TABLE.setTableName(UN_PARTITION_HIVE_TABLE_ID.getTableName());
     NO_PARTITION_TABLE.setSd(storageDescriptor);
-    NO_PARTITION_TABLE.setPartitionKeys(partitions);
     hms.getClient().createTable(NO_PARTITION_TABLE);
 
     NO_PARTITION_TABLE_2.setDbName(HIVE_DB_NAME);
     NO_PARTITION_TABLE_2.setTableName(UN_PARTITION_HIVE_PK_TABLE_ID.getTableName());
     NO_PARTITION_TABLE_2.setSd(storageDescriptor);
-    NO_PARTITION_TABLE_2.setPartitionKeys(partitions);
     hms.getClient().createTable(NO_PARTITION_TABLE_2);
 
     StorageDescriptor wrongSd = new StorageDescriptor();

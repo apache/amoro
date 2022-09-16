@@ -43,6 +43,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
@@ -155,7 +156,8 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
 
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema, primaryKeySpec,
-            null, false, IdentityPartitionConverters::convertConstant, sourceNodes, false);
+            table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
+            IdentityPartitionConverters::convertConstant, sourceNodes, false);
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {

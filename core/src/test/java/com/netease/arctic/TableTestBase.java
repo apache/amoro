@@ -111,6 +111,13 @@ public class TableTestBase {
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
 
+  protected static final DataFile FILE_D = DataFiles.builder(SPEC)
+      .withPath("/path/to/data-d.parquet")
+      .withFileSizeInBytes(0)
+      .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
+      .withRecordCount(2) // needs at least one record or else metrics will filter it out
+      .build();
+
   protected ArcticCatalog testCatalog;
   protected UnkeyedTable testTable;
   protected KeyedTable testKeyedTable;

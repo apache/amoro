@@ -117,7 +117,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
     BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
-    optimizeCommit.commit(tableOptimizeRuntime);
+    optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
     Set<String> newDeleteFilesPath = new HashSet<>();
@@ -181,7 +181,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
     BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testNoPartitionTable, partitionTasks);
-    optimizeCommit.commit(tableOptimizeRuntime);
+    optimizeCommit.commit(testNoPartitionTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
     Set<String> newDeleteFilesPath = new HashSet<>();
