@@ -80,9 +80,10 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
         inHiveSmallFileCount++;
       }
     }
-    // check whether partition need plan by files info
-    // for no pos-delete, there are files in not hive location or small file count bigger than 2 in hive location
-    // for has pos-delete, need full optimize
+    // check whether partition need plan by files info.
+    // if partition has no pos-delete file, and there are files in not hive location or
+    // small file count greater than 2 in hive location, partition need plan
+    // if partition has pos-delete, partition need plan
     boolean partitionNeedPlan =
         CollectionUtils.isNotEmpty(posDeleteFiles) || inHiveSmallFileCount >= 2 || notInHiveFileCount > 0;
 

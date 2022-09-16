@@ -23,11 +23,13 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeLocationKind;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -39,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
@@ -47,7 +50,19 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testMinorOptimize() throws IOException {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo, true);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1);
+    baseDataFilesInfo.addAll(baseDataFiles.stream()
+        .map(dataFile ->
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
+        .collect(Collectors.toList()));
+
+    Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFiles, targetNodes);
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile ->
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
+        .collect(Collectors.toList()));
     insertChangeDeleteFiles(testKeyedTable,3);
     insertChangeDataFiles(testKeyedTable,4);
 

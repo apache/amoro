@@ -53,9 +53,9 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
         partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>());
     List<DataFile> smallFiles = filterSmallFiles(partitionToPath, needMajorOptimizeFiles);
 
-    // check whether partition need plan by files info
-    // for no pos-delete, there are files in not hive location
-    // for has pos-delete, there are small file count bigger than 2 in not hive location
+    // check whether partition need plan by files info.
+    // if partition has no pos-delete file, and there are files in not hive location, need plan
+    // if partition has pos-delete, and there are small file count greater than 2 in not hive location, need plan
     boolean hasPos = CollectionUtils.isNotEmpty(posDeleteFiles) && smallFiles.size() >= 2;
     boolean noPos = CollectionUtils.isEmpty(posDeleteFiles) && CollectionUtils.isNotEmpty(needMajorOptimizeFiles);
     boolean partitionNeedPlan = hasPos || noPos;

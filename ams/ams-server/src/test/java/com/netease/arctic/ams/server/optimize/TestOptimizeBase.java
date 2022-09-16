@@ -18,9 +18,7 @@
 
 package com.netease.arctic.ams.server.optimize;
 
-import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -46,12 +44,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, long transactionId, List<DataFileInfo> baseDataFilesInfo) throws IOException {
+  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
     TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withTransactionId(transactionId)
@@ -66,11 +65,6 @@ public interface TestOptimizeBase {
     baseDataFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
 
-    long commitTime = System.currentTimeMillis();
-
-    baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, arcticTable))
-        .collect(Collectors.toList()));
     return baseDataFiles;
   }
 
@@ -100,10 +94,8 @@ public interface TestOptimizeBase {
 
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
                                                     long transactionId,
-                                                    List<DataFileInfo> baseDataFilesInfo,
-                                                    List<DataFileInfo> posDeleteFilesInfo,
-                                                    boolean allNodeDelete) throws IOException {
-    List<DataFile> dataFiles = insertTableBaseDataFiles(arcticTable, transactionId - 1, baseDataFilesInfo);
+                                                    List<DataFile> dataFiles,
+                                                    Set<DataTreeNode> targetNodes) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -114,12 +106,11 @@ public interface TestOptimizeBase {
           .collect(Collectors.groupingBy(dataFile ->
               DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
-        if (!allNodeDelete) {
-          allNodeDelete = true;
-          continue;
-        }
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
+        if (!targetNodes.contains(key)) {
+          continue;
+        }
 
         // write pos delete
         SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
@@ -137,11 +128,6 @@ public interface TestOptimizeBase {
     RowDelta rowDelta = baseTable.newRowDelta();
     deleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.commit();
-
-    long commitTime = System.currentTimeMillis();
-    posDeleteFilesInfo.addAll(deleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, arcticTable.asKeyedTable()))
-        .collect(Collectors.toList()));
 
     return deleteFiles;
   }
