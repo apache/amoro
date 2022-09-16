@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -63,10 +62,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               .map(fileByte -> (DataFile) SerializationUtil.toInternalTableFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
-              .mapToLong(dataFile -> {
-                DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString());
-                return fileMeta.transactionId();
-              })
+              .mapToLong(dataFile -> FileUtil.parseKeyedFileTidFromFileName(dataFile.path().toString()))
               .max()
               .orElse(0L);
 

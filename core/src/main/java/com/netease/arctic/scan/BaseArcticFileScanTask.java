@@ -20,6 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
@@ -29,8 +30,6 @@ import org.apache.iceberg.expressions.Expressions;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static com.netease.arctic.data.DefaultKeyedFile.parseMetaFromFileName;
 
 /**
  * Base implementation of {@link ArcticFileScanTask}
@@ -55,7 +54,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this.baseFile = baseFile;
     this.posDeleteFiles = posDeleteFiles == null ?
         Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
-          DefaultKeyedFile.FileMeta fileMeta = parseMetaFromFileName(s.path().toString());
+          DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(s.path().toString());
           return fileMeta.node().index() == baseFile.node().index() &&
             fileMeta.node().mask() == baseFile.node().mask();
         }).collect(Collectors.toList());

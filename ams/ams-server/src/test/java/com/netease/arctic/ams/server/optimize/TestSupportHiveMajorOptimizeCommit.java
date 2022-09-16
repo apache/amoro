@@ -24,9 +24,11 @@ import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -211,8 +213,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
-      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(baseFile.path().toString());
-      TreeNode treeNode = new TreeNode(fileMeta.node().getMask(), fileMeta.node().getIndex());
+      DataTreeNode dataTreeNode = FileUtil.parseKeyedFileNodeFromFileName(baseFile.path().toString());
+      TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
@@ -261,8 +263,8 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       ContentFile<?> baseFile = SerializationUtil.toInternalTableFile(task.getBaseFiles().get(0));
-      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(baseFile.path().toString());
-      TreeNode treeNode = new TreeNode(fileMeta.node().getMask(), fileMeta.node().getIndex());
+      DataTreeNode dataTreeNode = FileUtil.parseKeyedFileNodeFromFileName(baseFile.path().toString());
+      TreeNode treeNode = new TreeNode(dataTreeNode.getMask(), dataTreeNode.getIndex());
       List<DataFile> targetFiles = resultFiles.get(treeNode);
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);

@@ -26,7 +26,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
@@ -200,7 +200,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
   private Map<TreeNode, List<DeleteFile>> generateTargetFiles(List<DataFile> dataFiles) throws Exception {
     List<DeleteFile> deleteFiles = insertOptimizeTargetDeleteFiles(testKeyedTable, dataFiles, 5);
     return deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->  {
-      DataTreeNode dataTreeNode = DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node();
+      DataTreeNode dataTreeNode = FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString());
       return new TreeNode(dataTreeNode.mask(), dataTreeNode.index());
     }));
   }

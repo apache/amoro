@@ -24,11 +24,11 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -346,7 +346,7 @@ public class BaseOptimizeCommit {
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
-        return DefaultKeyedFile.parseMetaFromFileName(contentFile.path().toString()).node();
+        return FileUtil.parseKeyedFileNodeFromFileName(contentFile.path().toString());
       }
 
       return null;
@@ -354,7 +354,7 @@ public class BaseOptimizeCommit {
 
     return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtil::toInternalTableFile)
         .filter(posDeleteFile ->
-            newFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(posDeleteFile.path().toString()).node()))
+            newFileNodes.contains(FileUtil.parseKeyedFileNodeFromFileName(posDeleteFile.path().toString())))
         .collect(Collectors.toSet());
   }
 
@@ -375,9 +375,9 @@ public class BaseOptimizeCommit {
     StructLikeMap<Long> result = StructLikeMap.create(arcticTable.spec().partitionType());
 
     for (ContentFile<?> minorAddFile : minorAddFiles) {
-      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(minorAddFile.path().toString());
-      if (fileMeta.transactionId() != 0) {
-        long minTransactionId = fileMeta.transactionId();
+      long transactionId = FileUtil.parseKeyedFileTidFromFileName(minorAddFile.path().toString());
+      if (transactionId != 0) {
+        long minTransactionId = transactionId;
         if (result.get(minorAddFile.partition()) != null) {
           minTransactionId = Math.min(minTransactionId, result.get(minorAddFile.partition()));
         }

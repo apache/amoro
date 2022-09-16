@@ -25,6 +25,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PartitionField;
@@ -64,7 +65,7 @@ public class DataFileInfoUtils {
     dataFileInfo.setSpecId(arcticTable.spec().specId());
     dataFileInfo.setRecordCount(deleteFile.recordCount());
     dataFileInfo.setType(DataFileType.POS_DELETE_FILE.name());
-    DataTreeNode node = DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node();
+    DataTreeNode node = FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString());
     dataFileInfo.setIndex(node.getIndex());
     dataFileInfo.setMask(node.getMask());
     dataFileInfo.setCommitTime(commitTime);

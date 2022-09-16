@@ -19,7 +19,7 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -33,17 +33,17 @@ import java.util.stream.Collectors;
 public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor<F> {
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
     return new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(dataFile ->
-        DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+        FileUtil.parseKeyedFileNodeFromFileName(dataFile.path().toString()))));
   }
 
   protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<DeleteFile> deleteFiles) {
     return new HashMap<>(deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->
-        DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node())));
+        FileUtil.parseKeyedFileNodeFromFileName(deleteFile.path().toString()))));
   }
 
   protected long getMaxTransactionId(List<DataFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> DefaultKeyedFile.parseMetaFromFileName(file.path().toString()).transactionId()).max();
+        .mapToLong(file -> FileUtil.parseKeyedFileTidFromFileName(file.path().toString())).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }

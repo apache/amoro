@@ -94,14 +94,9 @@ public class ConvertStructUtil {
       } else if (content == FileContent.POSITION_DELETES) {
         DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseKeyedFileMetaFromFileName(dataFile.path().toString());
         amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
-        if (fileMeta.type() == DataFileType.POS_DELETE_FILE) {
+        if (fileMeta.type() == DataFileType.POS_DELETE_FILE || fileMeta.type() == DataFileType.BASE_FILE) {
           amsDataFile.setIndex(fileMeta.node().index());
           amsDataFile.setMask(fileMeta.node().mask());
-        } else if (fileMeta.type() == DataFileType.BASE_FILE) {
-          // if arctic file type from fileName is BASE_FILE, the file may be written by iceberg writer, we set 
-          // index and mast to 0
-          amsDataFile.setIndex(0);
-          amsDataFile.setMask(0);
         } else {
           throw new IllegalArgumentException(
               "iceberg file content should not be POSITION_DELETES for " + dataFile.path().toString());

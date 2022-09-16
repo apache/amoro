@@ -31,17 +31,12 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Default implementation of {@link PrimaryKeyedFile}, wrapping a {@link DataFile} and parsing extra information from
  * file name.
  */
 public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
-
-  public static final String FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-(\\d+)\\.\\w+";
-  private static final Pattern FILE_NAME_PATTERN = Pattern.compile(FILE_NAME_PATTERN_STRING);
 
   private final DataFile internalFile;
 
@@ -54,7 +49,7 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   private void parse() {
-    meta = parseMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
+    this.meta = FileUtil.parseKeyedFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
     if (internalFile.lowerBounds() != null) {
       ByteBuffer minOffsetBuffer = internalFile.lowerBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
       if (minOffsetBuffer != null) {
@@ -213,22 +208,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   @Override
   public int hashCode() {
     return Objects.hash(internalFile.path());
-  }
-
-  @Deprecated
-  public static FileMeta parseMetaFromFileName(String fileName) {
-    fileName = FileUtil.getFileName(fileName);
-    Matcher matcher = FILE_NAME_PATTERN.matcher(fileName);
-    long nodeId = 1;
-    DataFileType type = DataFileType.BASE_FILE;
-    long transactionId = 0L;
-    if (matcher.matches()) {
-      nodeId = Long.parseLong(matcher.group(1));
-      type = DataFileType.ofShortName(matcher.group(2));
-      transactionId = Long.parseLong(matcher.group(3));
-    }
-    DataTreeNode node = DataTreeNode.ofId(nodeId);
-    return new FileMeta(transactionId, type, node);
   }
 
   public static class FileMeta {
