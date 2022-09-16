@@ -11,7 +11,10 @@ import java.io.IOException;
 import java.util.Map;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({})
+@Suite.SuiteClasses({
+    TestCreateTableDDL.class,
+    TestKeyedHiveInsertOverwriteDynamic.class
+})
 public class ArcticSparkMainTest {
     @BeforeClass
     public static void suiteSetup() throws IOException, ClassNotFoundException {

@@ -51,8 +51,9 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
         "(2, ''bbb'',  ''2021-1-2''), \n " +
         "(3, ''ccc'',  ''2021-1-3'') \n ", database, table);
 
-
+    sql("set spark.arctic.sql.delegate.enable = false");
     sql("select * from {0}.{1} order by id", database, table);
+    sql("set spark.arctic.sql.delegate.enable = true");
 
     contextOverwriteMode = spark.conf().get("spark.sql.sources.partitionOverwriteMode");
     System.out.println("spark.sql.sources.partitionOverwriteMode = " + contextOverwriteMode);
@@ -71,11 +72,13 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
     sql("insert overwrite table {0}.{1} values \n" +
         "(4, ''aaa'',  ''2021-1-1''), \n " +
         "(5, ''bbb'',  ''2021-1-2''), \n " +
-        "(6, ''ccc'',  ''2021-1-2'') \n ", database, table);
+        "(6, ''ccc'',  ''2021-1-1'') \n ", database, table);
 
+    sql("set spark.arctic.sql.delegate.enable = false");
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6, 3);
+    sql("set spark.arctic.sql.delegate.enable = true");
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,
@@ -91,9 +94,11 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
         "(5, ''bbb'',  ''2021-1-4''), \n " +
         "(6, ''ccc'',  ''2021-1-4'') \n ", database, table);
 
+    sql("set spark.arctic.sql.delegate.enable = false");
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
     Assert.assertEquals(6, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6);
+    sql("set spark.arctic.sql.delegate.enable = true");
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,
