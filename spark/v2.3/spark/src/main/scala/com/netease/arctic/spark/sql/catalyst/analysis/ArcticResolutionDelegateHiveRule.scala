@@ -83,7 +83,7 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
     } else {
       SaveMode.Append
     }
-    val optWriter = table.createWriter("", query.schema, mode, null)
+    val optWriter = table.createWriter("", table.schema, mode, null)
     if(!optWriter.isPresent){
       throw AnalysisException.message(s"failed to create writer for table ${tableDesc.identifier}")
     }
