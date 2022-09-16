@@ -18,92 +18,109 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.TableIdentifier;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestKeyedTableDMLInsertOverwriteStatic extends SparkTestBase {
+import java.io.IOException;
+import java.util.List;
+
+public class TestUnkeyedHiveInsertOverwriteStatic extends SparkTestBase {
 
   private final String database = "db";
   private final String table = "testA";
-  private KeyedTable keyedTable;
-  private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final String table2 = "testB";
 
   private String contextOverwriteMode;
 
   @Before
-  public void before() {
+  public void before() throws IOException {
     contextOverwriteMode = spark.conf().get("spark.sql.sources.partitionOverwriteMode");
     System.out.println("spark.sql.sources.partitionOverwriteMode = " + contextOverwriteMode);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", "STATIC");
 
-    sql("use " + catalogName);
     sql("create database if not exists {0}", database);
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
-        " dt string , \n" +
-        " primary key (id) \n" +
+        " dt string \n" +
         ") using arctic \n" +
         " partitioned by ( dt ) \n", database, table);
 
-    keyedTable = loadTable(identifier).asKeyedTable();
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " data string , \n " +
+        " dt string \n" +
+        ") using arctic \n", database, table2);
+
 
     sql("insert overwrite {0}.{1} values \n" +
         "(1, ''aaa'',  ''2021-1-1''), \n " +
         "(2, ''bbb'',  ''2021-1-2''), \n " +
         "(3, ''ccc'',  ''2021-1-3'') \n ", database, table);
 
-    writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
-        newRecord(keyedTable, 4, "ddd", "2021-1-1"),
-        newRecord(keyedTable, 5, "eee", "2021-1-2"),
-        newRecord(keyedTable, 6, "666", "2021-1-3"),
-        newRecord(keyedTable, 1024, "1024", "2021-1-4")
-    ));
   }
 
   @After
   public void after() {
     sql("drop table {0}.{1}", database, table);
+    sql("drop table {0}.{1}", database, table2);
     sql("set spark.sql.sources.partitionOverwriteMode = {0}", contextOverwriteMode);
   }
 
   @Test
-  public void testInsertOverwriteAllPartitionByValue() {
+  public void testInsertOverwriteAllPartitionByValue() throws TException {
     // insert overwrite by values, no partition expr
     sql("insert overwrite {0}.{1} values \n" +
-        "(7, ''aaa'',  ''2021-1-1''), \n " +
-        "(8, ''bbb'',  ''2021-1-2''), \n " +
-        "(9, ''ccc'',  ''2021-1-2'') \n ", database, table);
+        "(4, ''aaa'',  ''2021-1-1''), \n " +
+        "(5, ''bbb'',  ''2021-1-2''), \n " +
+        "(6, ''ccc'',  ''2021-1-1'') \n ", database, table);
 
     rows = sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(3, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6);
 
-    assertContainIdSet(rows, 0, 7, 8, 9);
+    List<Partition> partitions = hms.getClient().listPartitions(
+        database,
+        table,
+        (short) -1);
+    Assert.assertEquals(2, partitions.size());
   }
 
   @Test
-  public void testInsertOverwriteSomePartitionByValue() {
-    // insert overwrite by values, with partition expr
-    // expect 1 partition replaced, 2 partition keep
-    // expect
-    // P[1]=> [7,8,9]
-    // P[2]=> [2,5]
-    // P[3]=> [3,6]
-    // P[4]=> [1024]
+  public void testInsertOverwriteSomePartitionByValue() throws TException {
     sql("insert overwrite {0}.{1} \n" +
         "partition( dt = ''2021-1-1'')  values \n" +
-        "(7, ''aaa''), \n " +
-        "(8, ''bbb''), \n " +
-        "(9, ''ccc'') \n ", database, table);
+        "(4, ''aaa''), \n " +
+        "(5, ''bbb''), \n " +
+        "(6, ''ccc'') \n ", database, table);
 
     rows = sql("select * from {0}.{1} order by id", database, table);
-    Assert.assertEquals(8, rows.size());
-    assertContainIdSet(rows, 0, 7, 8, 9, 2, 5, 3, 6, 1024);
+    Assert.assertEquals(5, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6, 2, 3);
+
+    List<Partition> partitions = hms.getClient().listPartitions(
+        database,
+        table,
+        (short) -1);
+    Assert.assertEquals(3, partitions.size());
+
   }
+
+  @Test
+  public void testInsertOverwriteNoPartitionTb() throws TException {
+    sql("insert overwrite {0}.{1} values \n" +
+        "(4, ''aaa'',  ''2021-1-1''), \n " +
+        "(5, ''bbb'',  ''2021-1-2''), \n " +
+        "(6, ''ccc'',  ''2021-1-1'') \n ", database, table2);
+
+    rows = sql("select * from {0}.{1}", database, table2);
+    Assert.assertEquals(3, rows.size());
+    assertContainIdSet(rows, 0, 4, 5, 6);
+
+  }
+
 }
