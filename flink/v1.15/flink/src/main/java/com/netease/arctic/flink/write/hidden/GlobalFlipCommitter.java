@@ -82,6 +82,7 @@ public class GlobalFlipCommitter {
     private final LogDataJsonSerialization<RowData> logDataJsonSerialization;
     private final LogMsgFactory<RowData> factory;
     private final Properties producerConfig;
+    private final String topic;
     private final ShuffleHelper helper;
     private transient LogMsgFactory.Producer<RowData> producer;
 
@@ -91,6 +92,7 @@ public class GlobalFlipCommitter {
         LogData.FieldGetterFactory<RowData> fieldGetterFactory,
         LogMsgFactory<RowData> factory,
         Properties producerConfig,
+        String topic,
         ShuffleHelper helper) {
       this.numberOfTasks = numberOfTasks;
       this.factory = checkNotNull(factory);
@@ -99,6 +101,7 @@ public class GlobalFlipCommitter {
           checkNotNull(fieldGetterFactory)
       );
       this.producerConfig = producerConfig;
+      this.topic = topic;
       this.helper = helper;
     }
 
@@ -148,6 +151,7 @@ public class GlobalFlipCommitter {
         producer =
             factory.createProducer(
                 producerConfig,
+                topic,
                 logDataJsonSerialization,
                 helper);
         producer.open();

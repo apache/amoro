@@ -40,7 +40,6 @@ import java.util.UUID;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -107,10 +106,10 @@ public class HiddenKafkaProducerTest extends BaseLogTest {
         checkNotNull(fieldGetterFactory));
 
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
-    properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     LogMsgFactory.Producer<RowData> producer =
         new HiddenKafkaFactory<RowData>().createProducer(
             properties,
+            topic,
             logDataJsonSerialization,
             null);
     producer.open();
