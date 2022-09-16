@@ -34,7 +34,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,7 +42,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> hiveFiles = insertHiveDataFiles(testUnPartitionKeyedHiveTable, 1);
-    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2, new ArrayList<>());
+    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2);
 
     DeleteFiles deleteHiveFiles = testUnPartitionKeyedHiveTable.baseTable().newDelete();
     for (DataFile hiveFile : hiveFiles) {
@@ -59,7 +58,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3, new ArrayList<>());
+    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3);
     for (DataFile s3File : s3Files) {
       Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(s3File.path().toString()));
     }

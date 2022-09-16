@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.TreeNode;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
@@ -69,7 +70,18 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testMinorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1);
+    baseDataFilesInfo.addAll(baseDataFiles.stream()
+        .map(dataFile ->
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
+        .collect(Collectors.toList()));
+
+    Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFiles, targetNodes);
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
+        .collect(Collectors.toList()));
     insertChangeDeleteFiles(testKeyedTable, 3);
     List<DataFile> dataFiles = insertChangeDataFiles(testKeyedTable,4);
 
@@ -137,7 +149,19 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testNoPartitionTable, 1);
+    baseDataFilesInfo.addAll(baseDataFiles.stream()
+        .map(dataFile ->
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testNoPartitionTable))
+        .collect(Collectors.toList()));
+
+    Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFiles, targetNodes);
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile ->
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testNoPartitionTable.asKeyedTable()))
+        .collect(Collectors.toList()));
     insertChangeDeleteFiles(testNoPartitionTable, 3);
     List<DataFile> dataFiles = insertChangeDataFiles(testNoPartitionTable, 4);
 
