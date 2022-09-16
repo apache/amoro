@@ -174,7 +174,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       for (DataFile file : files(messages)) {
         overwriteBaseFiles.addFile(file);
       }
-
       overwriteBaseFiles.commit();
     }
   }

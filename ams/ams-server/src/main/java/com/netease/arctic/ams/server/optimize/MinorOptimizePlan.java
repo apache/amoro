@@ -106,6 +106,11 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   }
 
   @Override
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+    throw new UnsupportedOperationException("Minor optimize not check with this method");
+  }
+
+  @Override
   public void addOptimizeFilesTree() {
     addChangeFilesIntoFileTree();
     addBaseFileIntoFileTree();
