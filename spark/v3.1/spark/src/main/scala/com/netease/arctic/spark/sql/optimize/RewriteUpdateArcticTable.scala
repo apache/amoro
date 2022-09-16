@@ -24,7 +24,7 @@ import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColu
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, AttributeReference, EqualTo, Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, AttributeReference, Cast, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -145,8 +145,13 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
                                     scanPlan: LogicalPlan,
                                     assignments: Seq[Assignment]): LogicalPlan = {
     val output = relation.output
-    val assignmentMap = assignments.map(a =>
-      a.key.asInstanceOf[AttributeReference].name -> a.value
+    val assignmentMap = assignments.map(
+      a =>
+        if (a.value.dataType.catalogString.equals(a.key.dataType.catalogString)) {
+          a.key.asInstanceOf[AttributeReference].name -> a.value
+        } else {
+          a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
+        }
     ).toMap
     val outputWithValues = output.map( a => {
       if(assignmentMap.contains(a.name)) {
@@ -162,8 +167,13 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
                                                     scanPlan: LogicalPlan,
                                                     assignments: Seq[Assignment]): LogicalPlan = {
     val output = relation.output
-    val assignmentMap = assignments.map(a =>
-      a.key.asInstanceOf[AttributeReference].name -> a.value
+    val assignmentMap = assignments.map(
+      a =>
+        if (a.value.dataType.catalogString.equals(a.key.dataType.catalogString)) {
+          a.key.asInstanceOf[AttributeReference].name -> a.value
+        } else {
+          a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
+        }
     ).toMap
     val outputWithValues = output.map(a => {
       if (assignmentMap.contains(a.name)) {

@@ -42,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
@@ -114,7 +115,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
         FILE_SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanContext.scanStartupMode())) {
       keyedTable.refresh();
       Snapshot snapshot = keyedTable.changeTable().currentSnapshot();
-      enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshot.snapshotId(), null));
+      long snapshotId = snapshot == null ? EARLIEST_SNAPSHOT_ID : snapshot.snapshotId();
+      enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshotId, null));
       LOG.info("{} is {}, the current snapshot id of the change table {}  is {}.",
           FILE_SCAN_STARTUP_MODE.key(), FILE_SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshot.snapshotId());
     }
