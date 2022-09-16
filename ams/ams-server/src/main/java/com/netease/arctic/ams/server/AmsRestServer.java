@@ -75,13 +75,14 @@ public class AmsRestServer {
       });
 
       //redirect the static page url to index.html
+      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/overview", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/introduce", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/table", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimize", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/tables", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/optimizers", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/hive-tables", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimizing", "/static/index.html", Location.CLASSPATH);
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
