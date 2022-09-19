@@ -68,14 +68,10 @@ public class HiveLocationUtils {
                                              String baseLocation,
                                              StructLike partitionData,
                                              Long transactionId) {
-    String dir;
-    if (arcticTable.isUnkeyedTable()) {
-      dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
-    } else {
-      dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
-      dir = String.format("%s/%s", dir, HiveTableUtil.getRandomSubDir());
+    String dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
+    if (arcticTable.isKeyedTable()) {
+      dir = String.format("%s_%s", dir, HiveTableUtil.getRandomSubDir());
     }
-
     return dir;
   }
 }
