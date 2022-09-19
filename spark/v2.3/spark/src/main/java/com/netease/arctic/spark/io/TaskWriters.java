@@ -47,7 +47,6 @@ public class TaskWriters {
   private long taskId = 0;
   private StructType dsSchema;
 
-  private String unKeyedTmpDir;
   private final boolean isHiveTable;
   private final FileFormat fileFormat;
   private final long fileSize;
@@ -91,11 +90,6 @@ public class TaskWriters {
     return this;
   }
 
-  public TaskWriters withUnKeyedTmpDir(String unKeyedTmpDir) {
-    this.unKeyedTmpDir = unKeyedTmpDir;
-    return this;
-  }
-
   public TaskWriter<InternalRow> newBaseWriter(boolean isOverwrite) {
     preconditions();
 
@@ -129,7 +123,7 @@ public class TaskWriters {
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId, unKeyedTmpDir);
+          encryptionManager, partitionId, taskId, transactionId);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),

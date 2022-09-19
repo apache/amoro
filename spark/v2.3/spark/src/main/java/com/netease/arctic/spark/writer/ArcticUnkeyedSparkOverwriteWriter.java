@@ -18,11 +18,11 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
@@ -61,7 +61,7 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
-  private final String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
+  private final long transactionId = IdGenerator.randomId();
   protected Expression overwriteExpr = null;
   private WriteMode writeMode = null;
 
@@ -92,27 +92,27 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, unKeyedTmpDir);
+    return new WriterFactory(table, dsSchema, transactionId);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
-    private final String unKeyedTmpDir;
+    private final long transactionId;
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, String unKeyedTmpDir) {
+    WriterFactory(UnkeyedTable table, StructType dsSchema, long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
-      this.unKeyedTmpDir = unKeyedTmpDir;
+      this.transactionId = transactionId;
     }
 
     @Override
     public DataWriter createDataWriter(int partitionId, int attemptNumber) {
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withPartitionId(partitionId)
+          .withTransactionId(transactionId)
           .withTaskId(TaskContext.get().taskAttemptId())
           .withDataSourceSchema(dsSchema)
-          .withUnKeyedTmpDir(unKeyedTmpDir)
           .newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
     }

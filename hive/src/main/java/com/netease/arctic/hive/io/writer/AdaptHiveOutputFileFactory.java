@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private final String baseLocation;
-  private String customizeDir;
+  private final String customizeDir;
   private final PartitionSpec partitionSpec;
   private final FileFormat format;
   private final ArcticFileIO io;
