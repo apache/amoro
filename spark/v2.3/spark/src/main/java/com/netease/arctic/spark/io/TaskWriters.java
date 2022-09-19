@@ -20,10 +20,8 @@ package com.netease.arctic.spark.io;
 
 import com.netease.arctic.hive.io.writer.AdaptHiveOutputFileFactory;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -49,10 +47,12 @@ public class TaskWriters {
   private long taskId = 0;
   private StructType dsSchema;
 
+  private String unKeyedTmpDir;
   private final boolean isHiveTable;
   private final FileFormat fileFormat;
   private final long fileSize;
   private final long mask;
+
 
   protected TaskWriters(ArcticTable table) {
     this.table = table;
@@ -91,6 +91,11 @@ public class TaskWriters {
     return this;
   }
 
+  public TaskWriters withUnKeyedTmpDir(String unKeyedTmpDir) {
+    this.unKeyedTmpDir = unKeyedTmpDir;
+    return this;
+  }
+
   public TaskWriter<InternalRow> newBaseWriter(boolean isOverwrite) {
     preconditions();
 
@@ -124,7 +129,7 @@ public class TaskWriters {
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId);
+          encryptionManager, partitionId, taskId, transactionId, unKeyedTmpDir);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),
@@ -136,17 +141,6 @@ public class TaskWriters {
         table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
   }
 
-  public ChangeTaskWriter<InternalRow> newChangeWriter() {
-    preconditions();
-    // TODO: issues-173 - support change writer for upsert
-    return null;
-  }
-
-  public SortedPosDeleteWriter newBasePosDeleteWriter() {
-    preconditions();
-    // TODO: issues-173 - support change writer for upsert
-    return null;
-  }
 
   private void preconditions() {
     if (table.isKeyedTable()) {

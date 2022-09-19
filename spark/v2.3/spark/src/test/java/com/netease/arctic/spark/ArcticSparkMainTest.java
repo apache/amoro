@@ -13,7 +13,9 @@ import java.util.Map;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     TestCreateTableDDL.class,
-    TestKeyedHiveInsertOverwriteDynamic.class
+    TestKeyedHiveTableInsertOverwriteDynamic.class,
+    TestKeyedHiveTableMergeOnRead.class,
+    TestUnkeyedHiveTableInsertOverwriteDynamic.class
 })
 public class ArcticSparkMainTest {
     @BeforeClass
