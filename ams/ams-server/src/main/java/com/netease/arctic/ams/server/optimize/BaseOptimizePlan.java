@@ -29,7 +29,6 @@ import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
-import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -39,7 +38,6 @@ import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.StructLike;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -275,7 +273,7 @@ public abstract class BaseOptimizePlan {
     Map<String, String> properties = new HashMap<>();
     properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
-    properties.put(OptimizeTaskProperties.CUSTOMIZE_DIR, taskConfig.getCustomizeDir());
+    properties.put(OptimizeTaskProperties.CUSTOM_SUB_DIR, taskConfig.getCustomSubDir());
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -333,14 +331,11 @@ public abstract class BaseOptimizePlan {
     return partitionTaskRunning.get(partition) != null && partitionTaskRunning.get(partition);
   }
 
-  protected String constructCustomizeDir(String baseLocation,
-                                         StructLike partitionData,
-                                         Long transactionId) {
+  protected String constructCustomSubDir(long transactionId) {
     String dir = "";
     if (isCustomizeDir) {
-      return HiveLocationUtils.constructCustomizeDir(this.arcticTable, baseLocation, partitionData, transactionId);
+      return HiveTableUtil.newHiveSubDir(transactionId);
     }
-
     return dir;
   }
 }

@@ -89,13 +89,16 @@ public class HiveTableUtil {
   }
 
   public static String newHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                           StructLike partitionData, Long transactionId) {
+                                           StructLike partitionData, String subDir) {
     if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s", hiveLocation, "" + transactionId);
+      return String.format("%s/%s", hiveLocation, subDir);
     } else {
-      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData),
-          "" + transactionId);
+      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), subDir);
     }
+  }
+  
+  public static String newHiveSubDir(long transactionId) {
+    return System.currentTimeMillis() + "_" + transactionId;
   }
 
   public static StorageDescriptor storageDescriptor(

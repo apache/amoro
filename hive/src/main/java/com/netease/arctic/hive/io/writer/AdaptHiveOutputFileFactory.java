@@ -54,7 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private final String baseLocation;
-  private final String customizeDir;
+  private final String subDir;
   private final PartitionSpec partitionSpec;
   private final FileFormat format;
   private final ArcticFileIO io;
@@ -74,21 +74,20 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId) {
-    this(baseLocation, null, partitionSpec, format, io, encryptionManager, partitionId, taskId, transactionId);
+    this(baseLocation, partitionSpec, format, io, encryptionManager, partitionId, taskId, transactionId, null);
   }
 
   public AdaptHiveOutputFileFactory(
       String baseLocation,
-      String customizeDir,
       PartitionSpec partitionSpec,
       FileFormat format,
       ArcticFileIO io,
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,
-      Long transactionId) {
+      Long transactionId,
+      String subDir) {
     this.baseLocation = baseLocation;
-    this.customizeDir = customizeDir;
     this.partitionSpec = partitionSpec;
     this.format = format;
     this.io = io;
@@ -96,6 +95,11 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
+    if (subDir == null) {
+      this.subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
+    } else {
+      this.subDir = subDir;
+    }
   }
 
   private String generateFilename(TaskWriterKey key) {
@@ -105,11 +109,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
-    if (StringUtils.isNotEmpty(customizeDir)) {
-      return String.format("%s/%s", customizeDir, fileName);
-    }
     return String.format("%s/%s",
-        HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId), fileName);
+        HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, subDir), fileName);
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {

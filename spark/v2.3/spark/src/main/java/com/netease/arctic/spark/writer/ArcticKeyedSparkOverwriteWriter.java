@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
@@ -61,6 +62,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private final KeyedTable table;
   private final StructType dsSchema;
   private final long transactionId;
+  private final String subDir;
   protected Expression overwriteExpr = null;
 
   private WriteMode writeMode = null;
@@ -69,6 +71,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
+    this.subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
   }
 
   @Override
@@ -93,18 +96,20 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, transactionId);
+    return new WriterFactory(table, dsSchema, transactionId, subDir);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
     private final KeyedTable table;
     private final StructType dsSchema;
-    private final Long transactionId;
+    private final long transactionId;
+    private final String subDir;
 
-    private WriterFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
+    private WriterFactory(KeyedTable table, StructType dsSchema, long transactionId, String subDir) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
+      this.subDir = subDir;
     }
 
     @Override
@@ -114,6 +119,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
           .withPartitionId(partitionId)
           .withTaskId(TaskContext.get().taskAttemptId())
           .withDataSourceSchema(dsSchema)
+          .withSubDir(subDir)
           .newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
     }

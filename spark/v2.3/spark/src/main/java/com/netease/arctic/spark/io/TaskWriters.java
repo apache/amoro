@@ -51,6 +51,7 @@ public class TaskWriters {
   private final FileFormat fileFormat;
   private final long fileSize;
   private final long mask;
+  private String subDir;
 
 
   protected TaskWriters(ArcticTable table) {
@@ -89,6 +90,11 @@ public class TaskWriters {
     this.dsSchema = dsSchema;
     return this;
   }
+  
+  public TaskWriters withSubDir(String subDir) {
+    this.subDir = subDir;
+    return this;
+  }
 
   public TaskWriter<InternalRow> newBaseWriter(boolean isOverwrite) {
     preconditions();
@@ -123,7 +129,7 @@ public class TaskWriters {
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId);
+          encryptionManager, partitionId, taskId, transactionId, subDir);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),

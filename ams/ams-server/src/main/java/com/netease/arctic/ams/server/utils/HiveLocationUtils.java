@@ -64,11 +64,7 @@ public class HiveLocationUtils {
     return hiveLocations;
   }
 
-  public static String constructCustomizeDir(ArcticTable arcticTable,
-                                             String baseLocation,
-                                             StructLike partitionData,
-                                             Long transactionId) {
-    return String.format("%s_%s", HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData,
-        transactionId), System.currentTimeMillis() + "");
+  public static String constructCustomSubDir(Long transactionId) {
+    return HiveTableUtil.newHiveSubDir(transactionId);
   }
 }

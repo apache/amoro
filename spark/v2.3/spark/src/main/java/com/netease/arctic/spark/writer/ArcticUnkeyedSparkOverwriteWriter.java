@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
@@ -62,6 +63,7 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
   private final UnkeyedTable table;
   private final StructType dsSchema;
   private final long transactionId = IdGenerator.randomId();
+  private final String subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
   protected Expression overwriteExpr = null;
   private WriteMode writeMode = null;
 
@@ -92,18 +94,20 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, transactionId);
+    return new WriterFactory(table, dsSchema, transactionId, subDir);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
     private final long transactionId;
+    private final String subDir;
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, long transactionId) {
+    WriterFactory(UnkeyedTable table, StructType dsSchema, long transactionId, String subDir) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
+      this.subDir = subDir;
     }
 
     @Override
@@ -113,6 +117,7 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
           .withTransactionId(transactionId)
           .withTaskId(TaskContext.get().taskAttemptId())
           .withDataSourceSchema(dsSchema)
+          .withSubDir(subDir)
           .newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
     }

@@ -34,6 +34,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
@@ -226,11 +227,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime,
-        constructCustomizeDir(arcticTable.asUnkeyedTable().location(),
-            arcticTable.spec().isUnpartitioned() ?
-                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
-            null));
+        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
@@ -257,11 +254,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime,
-        constructCustomizeDir(arcticTable.asKeyedTable().baseLocation(),
-            arcticTable.spec().isUnpartitioned() ?
-                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
-            null));
+        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks

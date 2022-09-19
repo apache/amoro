@@ -259,8 +259,8 @@ public class BaseTaskExecutor implements Serializable {
         throw new IllegalStateException("check file cnt error");
       }
 
-      String customizeDir = properties.get(OptimizeTaskProperties.CUSTOMIZE_DIR);
-      nodeTask.setCustomizeDir(customizeDir);
+      String customSubDir = properties.get(OptimizeTaskProperties.CUSTOM_SUB_DIR);
+      nodeTask.setCustomSubDir(customSubDir);
     }
 
     return nodeTask;

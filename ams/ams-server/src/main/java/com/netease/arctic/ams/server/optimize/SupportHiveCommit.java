@@ -84,9 +84,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                partitionPath = HiveLocationUtils.constructCustomizeDir(arcticTable,
-                    ((SupportHive) arcticTable).hiveLocation(), targetFile.partition(),
+                String subDir = HiveTableUtil.newHiveSubDir(
                     arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+                partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), targetFile.partition(), subDir);
                 HivePartitionUtil
                     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
                         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));

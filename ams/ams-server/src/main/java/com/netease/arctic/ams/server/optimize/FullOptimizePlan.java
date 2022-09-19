@@ -28,18 +28,14 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -171,10 +167,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
           null, group, historyId, partitionOptimizeType.get(partition), createTime,
-          constructCustomizeDir(arcticTable.asUnkeyedTable().location(),
-              arcticTable.spec().isUnpartitioned() ?
-                  TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
-              arcticTable.isKeyedTable() ? getMaxTransactionId(fileList) : IdGenerator.randomId()));
+          constructCustomSubDir(arcticTable.isKeyedTable() ? getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
       long taskSize =
           PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
@@ -204,10 +197,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     treeRoot.collectBaseFiles(allBaseFiles);
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
         null, group, historyId, partitionOptimizeType.get(partition), createTime,
-        constructCustomizeDir(arcticTable.asKeyedTable().baseLocation(),
-            arcticTable.spec().isUnpartitioned() ?
-                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
-            arcticTable.isKeyedTable() ? getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
+        constructCustomSubDir(arcticTable.isKeyedTable() ? getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitSubTree(subTrees, new CanSplitFileTree());

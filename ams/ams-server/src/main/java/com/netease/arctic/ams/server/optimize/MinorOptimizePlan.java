@@ -245,11 +245,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
-        group, historyId, OptimizeType.Minor, createTime,
-        constructCustomizeDir(arcticTable.asKeyedTable().baseLocation(),
-            arcticTable.spec().isUnpartitioned() ?
-                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
-            null));
+        group, historyId, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
