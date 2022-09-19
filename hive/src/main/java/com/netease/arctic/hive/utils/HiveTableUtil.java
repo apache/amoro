@@ -91,15 +91,11 @@ public class HiveTableUtil {
   public static String newHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
                                            StructLike partitionData, Long transactionId) {
     if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s", hiveLocation, "txid=" + transactionId);
+      return String.format("%s/%s", hiveLocation, "" + transactionId);
     } else {
       return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData),
-          "txid=" + transactionId);
+          "" + transactionId);
     }
-  }
-
-  public static String getRandomSubDir() {
-    return System.currentTimeMillis() + "_" + UUID.randomUUID();
   }
 
   public static StorageDescriptor storageDescriptor(

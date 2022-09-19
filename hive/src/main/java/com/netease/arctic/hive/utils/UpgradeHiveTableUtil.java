@@ -44,7 +44,7 @@ public class UpgradeHiveTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(UpgradeHiveTableUtil.class);
 
-  private static final String DEFAULT_TXID = "txid=0";
+  private static final String DEFAULT_TXID = "0";
 
   /**
    * Upgrade a hive table to an Arctic table.

@@ -70,7 +70,7 @@ public class HiveLocationUtils {
                                              Long transactionId) {
     String dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
     if (arcticTable.isKeyedTable()) {
-      dir = String.format("%s_%s", dir, HiveTableUtil.getRandomSubDir());
+      dir = String.format("%s_%s", dir, System.currentTimeMillis() + "");
     }
     return dir;
   }

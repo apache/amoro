@@ -41,14 +41,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
- *                            -| txid=${txid}
+ *                            -| ${txid}
  *
  * For adapt hive table without partitions the dir construct is :
  *    ${table_location}
  *            -| change
  *            -| base
  *            -| hive
- *                  -| txid=${txid}
+ *                  -| ${txid}
  * txId of unkeyed table is random long.
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
