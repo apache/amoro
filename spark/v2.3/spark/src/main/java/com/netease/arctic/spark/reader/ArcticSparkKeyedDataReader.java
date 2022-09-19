@@ -21,7 +21,6 @@ package com.netease.arctic.spark.reader;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.reader.BaseArcticDataReader;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
-import com.netease.arctic.spark.SparkRowWrapper;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
@@ -30,7 +29,6 @@ import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.data.SparkParquetReaders;
 import org.apache.parquet.schema.MessageType;
-import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
 

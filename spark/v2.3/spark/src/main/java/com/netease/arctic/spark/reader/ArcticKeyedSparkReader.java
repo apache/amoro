@@ -1,9 +1,28 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.spark.util.ArcticSparkUtil;
 import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -18,7 +37,6 @@ import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
@@ -31,9 +49,13 @@ import org.apache.spark.sql.sources.v2.reader.Statistics;
 import org.apache.spark.sql.sources.v2.reader.SupportsPushDownFilters;
 import org.apache.spark.sql.sources.v2.reader.SupportsPushDownRequiredColumns;
 import org.apache.spark.sql.sources.v2.reader.SupportsReportStatistics;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.collection.JavaConverters;
+import scala.collection.Seq;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
@@ -199,6 +221,8 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
     CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
     Row current;
 
+    Schema expectedSchema;
+
     RowReader(ArcticFileIO fileIO,
               Schema tableSchema,
               Schema projectedSchema,
@@ -210,6 +234,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
           fileIO, tableSchema, projectedSchema, primaryKeySpec,
           nameMapping, caseSensitive);
       scanTasks = combinedScanTask.tasks().iterator();
+      expectedSchema = projectedSchema;
     }
 
     @Override
@@ -217,7 +242,10 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
       while (true) {
         if (currentIterator.hasNext()) {
           InternalRow next = currentIterator.next();
-          this.current = RowFactory.create(next);
+          StructType structType = SparkSchemaUtil.convert(expectedSchema);
+          Seq<Object> objectSeq = next.toSeq(structType);
+          Object[] objects = JavaConverters.seqAsJavaListConverter(objectSeq).asJava().toArray();
+          this.current = RowFactory.create(ArcticSparkUtil.convertRowObject(objects));
           return true;
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();
