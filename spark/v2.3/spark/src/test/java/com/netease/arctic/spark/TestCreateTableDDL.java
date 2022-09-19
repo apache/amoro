@@ -38,8 +38,8 @@ import java.util.List;
 public class TestCreateTableDDL extends SparkTestBase {
 
   private final String database = "db_def";
-  private final String tableA = "testA";
-  private final String tableB = "testB";
+  private final String tableA = "testa";
+  private final String tableB = "testb";
 
   @Before
   public void prepare() {

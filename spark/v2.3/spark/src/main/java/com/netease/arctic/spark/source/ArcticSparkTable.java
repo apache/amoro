@@ -18,12 +18,14 @@
 
 package com.netease.arctic.spark.source;
 
+import com.netease.arctic.spark.reader.ArcticKeyedSparkReader;
 import com.netease.arctic.spark.writer.ArcticKeyedSparkOverwriteWriter;
 import com.netease.arctic.spark.writer.ArcticUnkeyedSparkOverwriteWriter;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.SaveMode;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
@@ -36,6 +38,7 @@ public class ArcticSparkTable implements DataSourceTable {
   private final StructType requestedSchema;
   private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
+  private SparkSession lazySpark = null;
 
   public static DataSourceTable ofArcticTable(ArcticTable table) {
     return new ArcticSparkTable(table, false);
@@ -55,6 +58,12 @@ public class ArcticSparkTable implements DataSourceTable {
     }
   }
 
+  private SparkSession sparkSession() {
+    if (lazySpark == null) {
+      this.lazySpark = SparkSession.builder().getOrCreate();
+    }
+    return lazySpark;
+  }
 
   @Override
   public StructType schema() {
@@ -72,7 +81,11 @@ public class ArcticSparkTable implements DataSourceTable {
 
   @Override
   public DataSourceReader createReader(DataSourceOptions options) {
-    return null;
+    if (arcticTable.isKeyedTable()) {
+      return new ArcticKeyedSparkReader(sparkSession(), arcticTable.asKeyedTable());
+    } else {
+      return null;
+    }
   }
 
   @Override
