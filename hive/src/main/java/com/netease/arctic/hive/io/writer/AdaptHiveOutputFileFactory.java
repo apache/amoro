@@ -23,7 +23,6 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -41,14 +40,14 @@ import java.util.concurrent.atomic.AtomicLong;
  *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
- *                            -| ${txid}
+ *                            -| ${timestamp}_{txid}
  *
  * For adapt hive table without partitions the dir construct is :
  *    ${table_location}
  *            -| change
  *            -| base
  *            -| hive
- *                  -| ${txid}
+ *                  -| ${timestamp}_{txid}
  * txId of unkeyed table is random long.
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
