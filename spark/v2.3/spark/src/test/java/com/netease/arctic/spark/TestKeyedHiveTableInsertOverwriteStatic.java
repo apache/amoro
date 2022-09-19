@@ -29,7 +29,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
+public class TestKeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
   private final String database = "db";
   private final String table = "testa";
 
