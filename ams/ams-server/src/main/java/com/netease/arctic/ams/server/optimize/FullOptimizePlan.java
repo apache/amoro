@@ -143,7 +143,13 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     return false;
   }
 
-  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  /**
+   * check whether node task need to build
+   * @param posDeleteFiles pos-delete files in node
+   * @param baseFiles base files in node
+   * @return whether the node task need to build. If true, build task, otherwise skip.
+   */
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     List<DataFile> smallFiles = baseFiles.stream().filter(file -> file.fileSizeInBytes() <=
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
             TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
@@ -154,7 +160,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
-    if (needOptimize(posDeleteFiles, fileList)) {
+    if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
       String group = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
@@ -202,7 +208,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
                 baseFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node()))
             .collect(Collectors.toList());
 
-        if (needOptimize(posDeleteFiles, baseFiles)) {
+        if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
           collector.add(buildOptimizeTask(sourceNodes,
               Collections.emptyList(), Collections.emptyList(), baseFiles, posDeleteFiles, taskPartitionConfig));
         }

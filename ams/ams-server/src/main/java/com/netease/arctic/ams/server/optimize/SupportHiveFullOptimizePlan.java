@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.DataFileInfo;
+import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
@@ -32,6 +33,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +61,12 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
   }
 
   @Override
-  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  protected boolean partitionNeedPlan(String partitionToPath) {
+    long current = System.currentTimeMillis();
+
+    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
+    List<DataFile> baseFiles = new ArrayList<>();
+    partitionFileTree.get(partitionToPath).collectBaseFiles(baseFiles);
     long inHiveSmallFileCount = 0;
     long notInHiveFileCount = 0;
     for (DataFile baseFile : baseFiles) {
@@ -73,6 +80,32 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
         inHiveSmallFileCount++;
       }
     }
-    return CollectionUtils.isNotEmpty(posDeleteFiles) || inHiveSmallFileCount >= 2 || notInHiveFileCount > 0;
+    // check whether partition need plan by files info.
+    // if partition has no pos-delete file, and there are files in not hive location or
+    // small file count greater than 2 in hive location, partition need plan
+    // if partition has pos-delete, partition need plan
+    boolean partitionNeedPlan =
+        CollectionUtils.isNotEmpty(posDeleteFiles) || inHiveSmallFileCount >= 2 || notInHiveFileCount > 0;
+
+    // check position delete file total size
+    if (checkPosDeleteTotalSize(partitionToPath) && partitionNeedPlan) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
+      return true;
+    }
+
+    // check full optimize interval
+    if (checkFullOptimizeInterval(current, partitionToPath) && partitionNeedPlan) {
+      partitionOptimizeType.put(partitionToPath, OptimizeType.FullMajor);
+      return true;
+    }
+
+    LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, partitionNeedPlan is {}",
+        tableId(), getOptimizeType(), partitionToPath, partitionNeedPlan);
+    return false;
+  }
+
+  @Override
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+    return true;
   }
 }

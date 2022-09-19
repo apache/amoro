@@ -103,7 +103,20 @@ public abstract class BaseOptimizePlan {
     this.historyId = UUID.randomUUID().toString();
   }
 
+  /**
+   * check whether partition need to plan
+   * @param partitionToPath target partition
+   * @return whether partition need to plan. if true, partition try to plan, otherwise skip.
+   */
   protected abstract boolean partitionNeedPlan(String partitionToPath);
+
+  /**
+   * check whether node task need to build
+   * @param posDeleteFiles pos-delete files in node
+   * @param baseFiles base files in node
+   * @return whether the node task need to build. If true, build task, otherwise skip.
+   */
+  protected abstract boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles);
 
   protected abstract void addOptimizeFilesTree();
 
