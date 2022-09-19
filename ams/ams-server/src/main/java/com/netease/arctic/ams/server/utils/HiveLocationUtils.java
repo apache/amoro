@@ -68,10 +68,7 @@ public class HiveLocationUtils {
                                              String baseLocation,
                                              StructLike partitionData,
                                              Long transactionId) {
-    String dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
-    if (arcticTable.isKeyedTable()) {
-      dir = String.format("%s_%s", dir, System.currentTimeMillis() + "");
-    }
-    return dir;
+    return String.format("%s_%s", HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData,
+        transactionId), System.currentTimeMillis() + "");
   }
 }
