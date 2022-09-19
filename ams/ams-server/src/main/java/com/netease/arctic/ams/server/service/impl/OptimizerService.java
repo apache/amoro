@@ -19,7 +19,10 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OptimizerDescriptor;
+import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
@@ -37,6 +40,8 @@ import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -63,6 +68,13 @@ public class OptimizerService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
       return optimizerMapper.selectOptimizer(jobId);
+    }
+  }
+
+  public Optimizer getOptimizer(String jobName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
+      return optimizerMapper.selectOptimizerByName(jobName);
     }
   }
 
@@ -174,6 +186,19 @@ public class OptimizerService extends IJDBCService {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
       optimizerMapper.deleteOptimizerByName(optimizerName);
     }
+  }
+
+  public OptimizerDescriptor registerOptimizer(OptimizerRegisterInfo registerInfo) throws InvalidObjectException {
+    OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(registerInfo.getOptimizerGroupName());
+    if (optimizerGroupInfo == null) {
+      throw new InvalidObjectException("optimizer group not found");
+    }
+    String currentTime = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date());
+    String optimizerName = "arctic_optimizer_" + currentTime;
+    insertOptimizer(optimizerName, optimizerGroupInfo.getId(), optimizerGroupInfo.getName(),
+        TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
+        registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
+    return getOptimizer(optimizerName).convertToDescriptor();
   }
 }
 

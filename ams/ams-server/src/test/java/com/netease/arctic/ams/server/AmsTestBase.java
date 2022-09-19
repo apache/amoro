@@ -42,6 +42,7 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
+import com.netease.arctic.ams.server.service.TestOptimizerService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
@@ -84,23 +85,24 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
-    OptimizerControllerTest.class,
-    TableControllerTest.class,
-    TerminalControllerTest.class,
-    TestDDLTracerService.class,
-    LoginControllerTest.class,
-    TestExpiredFileClean.class,
-    TestMajorOptimizeCommit.class,
-    TestMajorOptimizePlan.class,
-    TestMinorOptimizeCommit.class,
-    TestMinorOptimizePlan.class,
-    TestOrphanFileClean.class,
-    TestFileInfoCacheService.class,
-    TestSupportHiveMajorOptimizePlan.class,
-    TestSupportHiveMajorOptimizeCommit.class,
-    TestSupportHiveSyncService.class,
-    TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class})
+    // OptimizerControllerTest.class,
+    // TableControllerTest.class,
+    // TerminalControllerTest.class,
+    // TestDDLTracerService.class,
+    // LoginControllerTest.class,
+    // TestExpiredFileClean.class,
+    // TestMajorOptimizeCommit.class,
+    // TestMajorOptimizePlan.class,
+    // TestMinorOptimizeCommit.class,
+    // TestMinorOptimizePlan.class,
+    // TestOrphanFileClean.class,
+    // TestFileInfoCacheService.class,
+    // TestSupportHiveMajorOptimizePlan.class,
+    // TestSupportHiveMajorOptimizeCommit.class,
+    // TestSupportHiveSyncService.class,
+    // TestExpiredFileCleanSupportHive.class,
+    // TestOrphanFileCleanSupportHive.class,
+    TestOptimizerService.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,

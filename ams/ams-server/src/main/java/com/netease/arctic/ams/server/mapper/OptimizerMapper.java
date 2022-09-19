@@ -92,7 +92,7 @@ public interface OptimizerMapper {
 
 
   @Select("select job_id,queue_name,queue_id,job_status,core_number,memory,parallelism,container,jobmanager_url," +
-          "optimizer_instance, optimizer_state_info " +
+          "optimizer_instance, optimizer_state_info,update_time " +
           "from optimize_job where job_id = #{jobId}")
   @Results({
           @Result(property = "jobId", column = "job_id"),
@@ -105,9 +105,29 @@ public interface OptimizerMapper {
           @Result(property = "container", column = "container"),
           @Result(property = "jobmanagerUrl", column = "jobmanager_url"),
           @Result(property = "instance", column = "optimizer_instance"),
-          @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class)
+          @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class),
+          @Result(property = "updateTime", column = "update_time")
   })
   Optimizer selectOptimizer(@Param("jobId") Long jobId);
+
+  @Select("select job_id,queue_name,queue_id,job_status,core_number,memory,parallelism,container,jobmanager_url," +
+      "optimizer_instance, optimizer_state_info,update_time " +
+      "from optimize_job where job_name = #{jobName}")
+  @Results({
+      @Result(property = "jobId", column = "job_id"),
+      @Result(property = "groupName", column = "queue_name"),
+      @Result(property = "queueId", column = "queue_id"),
+      @Result(property = "jobStatus", column = "job_status"),
+      @Result(property = "coreNumber", column = "core_number"),
+      @Result(property = "memory", column = "memory"),
+      @Result(property = "parallelism", column = "parallelism"),
+      @Result(property = "container", column = "container"),
+      @Result(property = "jobmanagerUrl", column = "jobmanager_url"),
+      @Result(property = "instance", column = "optimizer_instance"),
+      @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class),
+      @Result(property = "updateTime", column = "update_time")
+  })
+  Optimizer selectOptimizerByName(@Param("jobName") String jobName);
 
   @Update("update optimize_job set" +
           " optimizer_instance = #{instance}, optimizer_state_info = #{state,typeHandler=com.netease.arctic.ams" +
