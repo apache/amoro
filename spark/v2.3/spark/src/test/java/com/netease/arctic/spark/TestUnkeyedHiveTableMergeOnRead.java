@@ -15,7 +15,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-public class TestHiveUnkeyedTableMergeOnRead extends SparkTestBase {
+public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
   private final String database = "db";
   private final String table = "testa";
   private UnkeyedTable unkeyedTable;
@@ -66,6 +66,12 @@ public class TestHiveUnkeyedTableMergeOnRead extends SparkTestBase {
         table,
         (short) -1);
     Assert.assertEquals(2, partitions.size());
+    //disable arctic
+    sql("set spark.arctic.sql.delegate.enable = false");
+    sql("select * from {0}.{1} order by id", database, table);
+    Assert.assertEquals(4, rows.size());
+    assertContainIdSet(rows, 0, 7, 8, 9, 10);
+    sql("set spark.arctic.sql.delegate.enable = true");
   }
 
   @Test
@@ -93,6 +99,11 @@ public class TestHiveUnkeyedTableMergeOnRead extends SparkTestBase {
     sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(10, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
-
+    //disable arctic
+    sql("set spark.arctic.sql.delegate.enable = false");
+    sql("select * from {0}.{1} order by id", database, table);
+    Assert.assertEquals(4, rows.size());
+    assertContainIdSet(rows, 0, 7, 8, 9, 10);
+    sql("set spark.arctic.sql.delegate.enable = true");
   }
 }

@@ -13,8 +13,8 @@ import java.util.Map;
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
     TestCreateTableDDL.class,
-    TestKeyedHiveInsertOverwriteDynamic.class,
-    TestHiveKeyedTableMergeOnRead.class
+    TestKeyedHiveTableInsertOverwriteDynamic.class,
+    TestKeyedHiveTableMergeOnRead.class
 })
 public class ArcticSparkMainTest {
     @BeforeClass

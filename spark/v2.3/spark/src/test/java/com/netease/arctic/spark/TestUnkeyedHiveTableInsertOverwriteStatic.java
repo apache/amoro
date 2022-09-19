@@ -28,7 +28,7 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-public class TestUnkeyedHiveInsertOverwriteStatic extends SparkTestBase {
+public class TestUnkeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
 
   private final String database = "db";
   private final String table = "testA";
