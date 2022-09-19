@@ -23,6 +23,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -53,6 +54,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private final String baseLocation;
+  private String customizeDir;
   private final PartitionSpec partitionSpec;
   private final FileFormat format;
   private final ArcticFileIO io;
@@ -72,7 +74,21 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId) {
+    this(baseLocation, null, partitionSpec, format, io, encryptionManager, partitionId, taskId, transactionId);
+  }
+
+  public AdaptHiveOutputFileFactory(
+      String baseLocation,
+      String customizeDir,
+      PartitionSpec partitionSpec,
+      FileFormat format,
+      ArcticFileIO io,
+      EncryptionManager encryptionManager,
+      int partitionId,
+      long taskId,
+      Long transactionId) {
     this.baseLocation = baseLocation;
+    this.customizeDir = customizeDir;
     this.partitionSpec = partitionSpec;
     this.format = format;
     this.io = io;
@@ -89,6 +105,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
+    if (StringUtils.isNotEmpty(customizeDir)) {
+      return String.format("%s/%s", customizeDir, fileName);
+    }
     return String.format("%s/%s",
         HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId), fileName);
   }

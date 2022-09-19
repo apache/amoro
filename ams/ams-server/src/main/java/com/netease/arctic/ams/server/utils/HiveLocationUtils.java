@@ -19,10 +19,12 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.StructLike;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,5 +62,20 @@ public class HiveLocationUtils {
     }
 
     return hiveLocations;
+  }
+
+  public static String constructCustomizeDir(ArcticTable arcticTable,
+                                             String baseLocation,
+                                             StructLike partitionData,
+                                             Long transactionId) {
+    String dir;
+    if (arcticTable.isUnkeyedTable()) {
+      dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
+    } else {
+      dir = HiveTableUtil.newHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
+      dir = String.format("%s/%s", dir, HiveTableUtil.getRandomSubDir());
+    }
+
+    return dir;
   }
 }

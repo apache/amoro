@@ -4,6 +4,7 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -83,12 +84,9 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                partitionPath = arcticTable.isKeyedTable() ?
-                    HiveTableUtil.newHiveDataLocation(
-                        ((SupportHive) arcticTable).hiveLocation(), arcticTable.asKeyedTable().baseTable().spec(),
-                        targetFile.partition(), maxTransactionId) :
-                    HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                        arcticTable.asUnkeyedTable().spec(), targetFile.partition(), IdGenerator.randomId());
+                partitionPath = HiveLocationUtils.constructCustomizeDir(arcticTable,
+                    ((SupportHive) arcticTable).hiveLocation(), targetFile.partition(),
+                    arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
                 HivePartitionUtil
                     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
                         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
