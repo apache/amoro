@@ -33,7 +33,7 @@ import org.apache.iceberg.io.OutputFile;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * For Keyed adapt hive with partitions the dir construct is :
+ * For adapt hive table with partitions the dir construct is :
  *    ${table_location}
  *            -| change
  *            -| base
@@ -42,26 +42,13 @@ import java.util.concurrent.atomic.AtomicLong;
  *                 -| ${partition_name2}
  *                            -| txid=${txid}
  *
- * For Keyed adapt hive without partitions the dir construct is :
+ * For adapt hive table without partitions the dir construct is :
  *    ${table_location}
  *            -| change
  *            -| base
  *            -| hive
  *                  -| txid=${txid}
- *
- * For UnKeyed adapt hive with partitions the dir construct is :
- *    ${table_location}
- *            -| base
- *            -| hive
- *                 -| ${partition_name1}
- *                 -| ${partition_name2}
- *                            -| ${timestamp_uuid}
- *
- * For Keyed adapt hive without partitions the dir construct is :
- *    ${table_location}
- *            -| base
- *            -| hive
- *                  -| ${timestamp_uuid}
+ * txId of unkeyed table is random long.
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
@@ -73,8 +60,6 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final int partitionId;
   private final long taskId;
   private final long transactionId;
-
-  private String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
@@ -97,45 +82,19 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
   }
 
-  public AdaptHiveOutputFileFactory(
-      String baseLocation,
-      PartitionSpec partitionSpec,
-      FileFormat format,
-      ArcticFileIO io,
-      EncryptionManager encryptionManager,
-      int partitionId,
-      long taskId,
-      Long transactionId,
-      String unKeyedTmpDir) {
-    this.baseLocation = baseLocation;
-    this.partitionSpec = partitionSpec;
-    this.format = format;
-    this.io = io;
-    this.encryptionManager = encryptionManager;
-    this.partitionId = partitionId;
-    this.taskId = taskId;
-    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
-    this.unKeyedTmpDir = unKeyedTmpDir;
-  }
-
   private String generateFilename(TaskWriterKey key) {
     return format.addExtension(
         String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
             transactionId, partitionId, taskId, fileCount.incrementAndGet()));
   }
 
-  private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {
-    String dir;
-    if (key.getTreeNode() == null) {
-      dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, unKeyedTmpDir);
-    } else {
-      dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId);
-    }
-    return String.format("%s/%s", dir, fileName);
+  private String fileLocation(StructLike partitionData, String fileName) {
+    return String.format("%s/%s",
+        HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId), fileName);
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {
-    String fileLocation = fileLocation(key.getPartitionKey(), generateFilename(key), key);
+    String fileLocation = fileLocation(key.getPartitionKey(), generateFilename(key));
     OutputFile outputFile = io.newOutputFile(fileLocation);
     return encryptionManager.encrypt(outputFile);
   }

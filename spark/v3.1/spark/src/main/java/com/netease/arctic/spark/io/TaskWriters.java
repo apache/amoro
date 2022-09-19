@@ -23,7 +23,6 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.spark.writer.UnkeyedPosDeleteSparkWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -32,10 +31,8 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
@@ -43,13 +40,8 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import scala.collection.JavaConversions;
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
 
-import java.util.List;
 import java.util.Locale;
 
 public class TaskWriters {
@@ -59,12 +51,10 @@ public class TaskWriters {
   private long taskId = 0;
   private StructType dsSchema;
 
-  private String unKeyedTmpDir;
   private final boolean isHiveTable;
   private final FileFormat fileFormat;
   private final long fileSize;
   private final long mask;
-
 
   protected TaskWriters(ArcticTable table) {
     this.table = table;
@@ -103,11 +93,6 @@ public class TaskWriters {
     return this;
   }
 
-  public TaskWriters withUnKeyedTmpDir(String unKeyedTmpDir) {
-    this.unKeyedTmpDir = unKeyedTmpDir;
-    return this;
-  }
-
   public TaskWriter<InternalRow> newBaseWriter(boolean isOverwrite) {
     preconditions();
 
@@ -141,7 +126,7 @@ public class TaskWriters {
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId, unKeyedTmpDir);
+          encryptionManager, partitionId, taskId, transactionId);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),
@@ -198,11 +183,7 @@ public class TaskWriters {
   }
 
   private void preconditions() {
-    if (table.isKeyedTable()) {
-      Preconditions.checkState(transactionId != null, "Transaction id is not set");
-    } else {
-      Preconditions.checkState(transactionId == null, "Transaction id should be null");
-    }
+    Preconditions.checkState(transactionId != null, "Transaction id is not set");
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");
     Preconditions.checkState(dsSchema != null, "Data source schema is not set");

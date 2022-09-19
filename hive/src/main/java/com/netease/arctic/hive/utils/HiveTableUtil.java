@@ -90,27 +90,14 @@ public class HiveTableUtil {
     return tableLocation + "/hive";
   }
 
-  public static String newKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                                StructLike partitionData, Long transactionId) {
+  public static String newHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
+                                           StructLike partitionData, Long transactionId) {
     if (partitionSpec.isUnpartitioned()) {
       return String.format("%s/%s", hiveLocation, "txid=" + transactionId);
     } else {
       return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData),
           "txid=" + transactionId);
     }
-  }
-
-  public static String newUnKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                                  StructLike partitionData, String subDir) {
-    if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s", hiveLocation, subDir);
-    } else {
-      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), subDir);
-    }
-  }
-
-  public static String getRandomSubDir() {
-    return System.currentTimeMillis() + "_" + UUID.randomUUID();
   }
 
   public static StorageDescriptor storageDescriptor(

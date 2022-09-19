@@ -18,9 +18,9 @@
 
 package com.netease.arctic.spark.writer;
 
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -42,10 +42,7 @@ import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
@@ -61,7 +58,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
-  private final String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
+  private final long transactionId = IdGenerator.randomId();
 
   public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
     this.table = table;
@@ -111,7 +108,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, false, unKeyedTmpDir);
+      return new WriterFactory(table, dsSchema, false, transactionId);
     }
 
     @Override
@@ -128,7 +125,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true, unKeyedTmpDir);
+      return new WriterFactory(table, dsSchema, true, transactionId);
     }
 
     @Override
@@ -150,7 +147,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true, unKeyedTmpDir);
+      return new WriterFactory(table, dsSchema, true, transactionId);
     }
 
     @Override
@@ -167,7 +164,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   private class UpsertWrite extends BaseBatchWrite {
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new DeltaUpsertWriteFactory(table, dsSchema, unKeyedTmpDir);
+      return new DeltaUpsertWriteFactory(table, dsSchema, transactionId);
     }
 
     @Override
@@ -195,26 +192,25 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
 
-
-    private final String unKeyedTmpDir;
+    private final long transactionId;
 
     private final boolean isOverwrite;
 
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, String unKeyedTmpDir) {
+    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.isOverwrite = isOverwrite;
-      this.unKeyedTmpDir = unKeyedTmpDir;
+      this.transactionId = transactionId;
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withPartitionId(partitionId)
+          .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .withUnKeyedTmpDir(unKeyedTmpDir)
           .newBaseWriter(this.isOverwrite);
       return new SimpleInternalRowDataWriter(writer);
     }
@@ -222,8 +218,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private static class DeltaUpsertWriteFactory extends WriterFactory {
 
-    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema, String unKeyedTmpDir) {
-      super(table, dsSchema, false, unKeyedTmpDir);
+    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, false, transactionId);
     }
 
     @Override
