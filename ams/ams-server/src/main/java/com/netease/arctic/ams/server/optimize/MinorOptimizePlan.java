@@ -29,6 +29,7 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -36,6 +37,7 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -242,7 +244,11 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
-        group, historyId, OptimizeType.Minor, createTime);
+        group, historyId, OptimizeType.Minor, createTime,
+        constructCustomizeDir(arcticTable.asKeyedTable().baseLocation(),
+            arcticTable.spec().isUnpartitioned() ?
+                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
+            null, HiveTableUtil.getRandomSubDir()));
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks

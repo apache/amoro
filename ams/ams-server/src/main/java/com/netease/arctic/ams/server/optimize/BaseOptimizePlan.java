@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.TreeNode;
+import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.FilesStatistics;
@@ -30,12 +31,14 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.StructLike;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,6 +68,8 @@ public abstract class BaseOptimizePlan {
   protected final long currentTime;
   protected final Map<String, Boolean> partitionTaskRunning;
   protected final String historyId;
+  // Whether to customize the directory
+  protected boolean isCustomizeDir;
 
   // partition -> fileTree
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
@@ -101,6 +106,7 @@ public abstract class BaseOptimizePlan {
     this.snapshotIsCached = snapshotIsCached;
     this.partitionTaskRunning = partitionTaskRunning;
     this.historyId = UUID.randomUUID().toString();
+    this.isCustomizeDir = false;
   }
 
   /**
@@ -266,8 +272,9 @@ public abstract class BaseOptimizePlan {
 
     // table ams url
     Map<String, String> properties = new HashMap<>();
-    properties.put("all-file-cnt", (optimizeTask.getBaseFiles().size() +
+    properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
+    properties.put(OptimizeTaskProperties.CUSTOMIZE_DIR, taskConfig.getCustomizeDir());
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -323,5 +330,22 @@ public abstract class BaseOptimizePlan {
 
   protected boolean anyTaskRunning(String partition) {
     return partitionTaskRunning.get(partition) != null && partitionTaskRunning.get(partition);
+  }
+
+  protected String constructCustomizeDir(String baseLocation,
+                                         StructLike partitionData,
+                                         Long transactionId,
+                                         String tmpDir) {
+    String dir = "";
+    if (isCustomizeDir) {
+      if (arcticTable.isUnkeyedTable()) {
+        dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, tmpDir);
+      } else {
+        dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, arcticTable.spec(), partitionData, transactionId);
+        dir = String.format("%s/%s", dir, tmpDir);
+      }
+    }
+
+    return dir;
   }
 }

@@ -29,12 +29,15 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -222,7 +225,11 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+        null, group, historyId, partitionOptimizeType.get(partition), createTime,
+        constructCustomizeDir(arcticTable.asUnkeyedTable().location(),
+            arcticTable.spec().isUnpartitioned() ?
+                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
+            null, HiveTableUtil.getRandomSubDir()));
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
@@ -249,7 +256,11 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+        null, group, historyId, partitionOptimizeType.get(partition), createTime,
+        constructCustomizeDir(arcticTable.asKeyedTable().baseLocation(),
+            arcticTable.spec().isUnpartitioned() ?
+                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
+            null, HiveTableUtil.getRandomSubDir()));
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks

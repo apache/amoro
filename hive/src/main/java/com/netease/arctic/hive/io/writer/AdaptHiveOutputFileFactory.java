@@ -22,6 +22,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -66,6 +67,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private final String baseLocation;
+  private String customizeDir;
   private final PartitionSpec partitionSpec;
   private final FileFormat format;
   private final ArcticFileIO io;
@@ -101,6 +103,27 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   public AdaptHiveOutputFileFactory(
       String baseLocation,
+      String customizeDir,
+      PartitionSpec partitionSpec,
+      FileFormat format,
+      ArcticFileIO io,
+      EncryptionManager encryptionManager,
+      int partitionId,
+      long taskId,
+      Long transactionId) {
+    this.baseLocation = baseLocation;
+    this.customizeDir = customizeDir;
+    this.partitionSpec = partitionSpec;
+    this.format = format;
+    this.io = io;
+    this.encryptionManager = encryptionManager;
+    this.partitionId = partitionId;
+    this.taskId = taskId;
+    this.transactionId = transactionId;
+  }
+
+  public AdaptHiveOutputFileFactory(
+      String baseLocation,
       PartitionSpec partitionSpec,
       FileFormat format,
       ArcticFileIO io,
@@ -120,6 +143,28 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.unKeyedTmpDir = unKeyedTmpDir;
   }
 
+  public AdaptHiveOutputFileFactory(
+      String baseLocation,
+      String customizeDir,
+      PartitionSpec partitionSpec,
+      FileFormat format,
+      ArcticFileIO io,
+      EncryptionManager encryptionManager,
+      int partitionId,
+      long taskId,
+      Long transactionId,
+      String unKeyedTmpDir) {
+    this.baseLocation = baseLocation;
+    this.customizeDir = customizeDir;
+    this.partitionSpec = partitionSpec;
+    this.format = format;
+    this.io = io;
+    this.encryptionManager = encryptionManager;
+    this.partitionId = partitionId;
+    this.taskId = taskId;
+    this.transactionId = transactionId;
+    this.unKeyedTmpDir = unKeyedTmpDir;
+  }
 
   private String generateFilename(TaskWriterKey key) {
     if (key.getTreeNode() != null) {
@@ -135,11 +180,16 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {
     String dir;
-    if (key.getTreeNode() == null) {
-      dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, unKeyedTmpDir);
+    if (StringUtils.isNotEmpty(customizeDir)) {
+      dir = customizeDir;
     } else {
-      dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId);
+      if (key.getTreeNode() == null) {
+        dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, unKeyedTmpDir);
+      } else {
+        dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId);
+      }
     }
+
     return String.format("%s/%s", dir, fileName);
   }
 

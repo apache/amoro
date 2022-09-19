@@ -29,12 +29,15 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -48,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,9 +62,9 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(FullOptimizePlan.class);
 
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                           List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
-                           Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                           Predicate<Long> snapshotIsCached) {
+                          List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
+                          Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                          Predicate<Long> snapshotIsCached) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, Collections.emptyList(), posDeleteFileList,
         partitionTaskRunning, queueId, currentTime, snapshotIsCached);
   }
@@ -99,8 +103,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   protected List<BaseOptimizeTask> collectTask(String partition) {
     List<BaseOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
-      // if Major, only optimize partitionNeedMajorOptimizeFiles.
-      // if Full Major, optimize all files in file tree.
+      // if Full, optimize all files in file tree.
       List<DataFile> fileList = partitionFileTree.get(partition).getBaseFiles();
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
@@ -145,8 +148,9 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
   /**
    * check whether node task need to build
+   *
    * @param posDeleteFiles pos-delete files in node
-   * @param baseFiles base files in node
+   * @param baseFiles      base files in node
    * @return whether the node task need to build. If true, build task, otherwise skip.
    */
   protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
@@ -164,7 +168,11 @@ public class FullOptimizePlan extends BaseOptimizePlan {
       String group = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
-          null, group, historyId, partitionOptimizeType.get(partition), createTime);
+          null, group, historyId, partitionOptimizeType.get(partition), createTime,
+          constructCustomizeDir(arcticTable.asUnkeyedTable().location(),
+              arcticTable.spec().isUnpartitioned() ?
+                  TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
+              getMaxTransactionId(fileList), HiveTableUtil.getRandomSubDir()));
 
       long taskSize =
           PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
@@ -188,9 +196,16 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+
     treeRoot.completeTree(false);
+    List<DataFile> allBaseFiles = new ArrayList<>();
+    treeRoot.collectBaseFiles(allBaseFiles);
+    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+        null, group, historyId, partitionOptimizeType.get(partition), createTime,
+        constructCustomizeDir(arcticTable.asKeyedTable().baseLocation(),
+            arcticTable.spec().isUnpartitioned() ?
+                TablePropertyUtil.EMPTY_STRUCT : DataFiles.data(arcticTable.spec(), partition),
+            getMaxTransactionId(allBaseFiles), HiveTableUtil.getRandomSubDir()));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitSubTree(subTrees, new CanSplitFileTree());
@@ -266,6 +281,16 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
     LOG.debug("{} ==== {} add {} base files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, baseOptimizeFiles.size(), partitionFileTree.size());
+  }
+
+  private long getMaxTransactionId(List<DataFile> dataFiles) {
+    OptionalLong maxTransactionId = dataFiles.stream()
+        .mapToLong(file -> DefaultKeyedFile.parseMetaFromFileName(file.path().toString()).transactionId()).max();
+    if (maxTransactionId.isPresent()) {
+      return maxTransactionId.getAsLong();
+    }
+
+    return 0;
   }
 
   static class CanSplitFileTree implements Predicate<FileTree> {

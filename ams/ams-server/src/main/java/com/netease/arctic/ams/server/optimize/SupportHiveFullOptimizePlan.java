@@ -22,6 +22,8 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -34,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +61,8 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     hiveLocation = ((SupportHive) arcticTable).hiveLocation();
     excludeLocations.add(hiveLocation);
+
+    this.isCustomizeDir = true;
   }
 
   @Override
@@ -67,17 +72,28 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
     List<DataFile> baseFiles = new ArrayList<>();
     partitionFileTree.get(partitionToPath).collectBaseFiles(baseFiles);
-    long inHiveSmallFileCount = 0;
-    long notInHiveFileCount = 0;
+    Map<DataTreeNode, Long> nodeSmallFileCount = new HashMap<>();
+    boolean nodeHaveTwoSmallFiles = false;
+    boolean notInHiveFile = false;
     for (DataFile baseFile : baseFiles) {
       boolean inHive = baseFile.path().toString().contains(((SupportHive) arcticTable).hiveLocation());
       if (!inHive) {
-        notInHiveFileCount++;
+        notInHiveFile = true;
+        LOG.info("table {} has in not hive location files", arcticTable.id());
+        break;
       } else if (baseFile.fileSizeInBytes() <=
           PropertyUtil.propertyAsLong(arcticTable.properties(),
               TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
               TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)) {
-        inHiveSmallFileCount++;
+        DataTreeNode node = DefaultKeyedFile.parseMetaFromFileName(baseFile.path().toString()).node();
+        if (nodeSmallFileCount.get(node) != null) {
+          nodeHaveTwoSmallFiles = true;
+          LOG.info("table {} has greater than 2 small files in (mask:{}, node :{}) in hive location",
+              arcticTable.id(), node.mask(), node.index());
+          break;
+        } else {
+          nodeSmallFileCount.put(node, 1L);
+        }
       }
     }
     // check whether partition need plan by files info.
@@ -85,7 +101,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
     // small file count greater than 2 in hive location, partition need plan
     // if partition has pos-delete, partition need plan
     boolean partitionNeedPlan =
-        CollectionUtils.isNotEmpty(posDeleteFiles) || inHiveSmallFileCount >= 2 || notInHiveFileCount > 0;
+        CollectionUtils.isNotEmpty(posDeleteFiles) || nodeHaveTwoSmallFiles || notInHiveFile;
 
     // check position delete file total size
     if (checkPosDeleteTotalSize(partitionToPath) && partitionNeedPlan) {

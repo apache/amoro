@@ -123,6 +123,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(getMaxTransactionId(task.dataFiles()))
         .withTaskId(task.getAttemptId())
+        .withCustomizeDir(task.getCustomizeDir())
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;

@@ -30,16 +30,18 @@ public class TaskConfig {
   private final String group;
   private final String historyId;
   private final long createTime;
+  private final String customizeDir;
 
   public TaskConfig(String partition, @Nullable Long maxTransactionId,
                     String group, String historyId,
-                    OptimizeType optimizeType, long createTime) {
+                    OptimizeType optimizeType, long createTime, @Nullable String customizeDir) {
     this.optimizeType = optimizeType;
     this.partition = partition;
     this.maxTransactionId = maxTransactionId;
     this.group = group;
     this.historyId = historyId;
     this.createTime = createTime;
+    this.customizeDir = customizeDir;
   }
 
   public OptimizeType getOptimizeType() {
@@ -65,5 +67,9 @@ public class TaskConfig {
 
   public long getCreateTime() {
     return createTime;
+  }
+
+  public String getCustomizeDir() {
+    return customizeDir;
   }
 }

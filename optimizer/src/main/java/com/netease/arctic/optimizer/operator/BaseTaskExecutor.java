@@ -27,6 +27,7 @@ import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
@@ -250,13 +251,16 @@ public class BaseTaskExecutor implements Serializable {
 
     Map<String, String> properties = task.getProperties();
     if (properties != null) {
-      String allFileCnt = properties.get("all-file-cnt");
+      String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
       int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() + nodeTask.deleteFiles().size();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);
         throw new IllegalStateException("check file cnt error");
       }
+
+      String customizeDir = properties.get(OptimizeTaskProperties.CUSTOMIZE_DIR);
+      nodeTask.setCustomizeDir(customizeDir);
     }
 
     return nodeTask;

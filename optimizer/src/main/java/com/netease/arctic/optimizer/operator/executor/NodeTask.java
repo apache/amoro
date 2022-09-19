@@ -49,6 +49,7 @@ public class NodeTask {
   private OptimizeTaskId taskId;
   private TableIdentifier tableIdentifier;
   private int attemptId;
+  private String customizeDir;
 
   public NodeTask() {
   }
@@ -150,6 +151,14 @@ public class NodeTask {
     this.attemptId = attemptId;
   }
 
+  public String getCustomizeDir() {
+    return customizeDir;
+  }
+
+  public void setCustomizeDir(String customizeDir) {
+    this.customizeDir = customizeDir;
+  }
+
   public OptimizeType getOptimizeType() {
     return taskId.getType();
   }
@@ -164,6 +173,7 @@ public class NodeTask {
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
         .add("posDeleteFiles", posDeleteFiles.size())
+        .add("customizeDir", customizeDir)
         .toString();
   }
 }

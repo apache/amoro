@@ -65,6 +65,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private int partitionId = 0;
   private int taskId = 0;
   private ChangeAction changeAction = ChangeAction.INSERT;
+  private String customizeDir;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -87,6 +88,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   public AdaptHiveGenericTaskWriterBuilder withChangeAction(ChangeAction changeAction) {
     this.changeAction = changeAction;
+    return this;
+  }
+
+  public AdaptHiveGenericTaskWriterBuilder withCustomizeDir(String customizeDir) {
+    this.customizeDir = customizeDir;
     return this;
   }
 
@@ -156,8 +162,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     }
 
     OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
-        new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-            encryptionManager, partitionId, taskId, transactionId) :
+        new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), customizeDir, table.spec(), fileFormat,
+            table.io(), encryptionManager, partitionId, taskId, transactionId) :
         new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId);
     FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?

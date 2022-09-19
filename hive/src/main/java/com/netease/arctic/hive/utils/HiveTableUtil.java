@@ -20,8 +20,6 @@ package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;

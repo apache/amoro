@@ -21,12 +21,15 @@ package com.netease.arctic.utils;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Collections;
 import java.util.Set;
 
 public class FileUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
 
   /**
    * Parse file name form file path
@@ -77,6 +80,7 @@ public class FileUtil {
 
     if (io.isEmptyDirectory(directoryPath)) {
       io.deleteFileWithResult(directoryPath, true);
+      LOG.debug("success delete empty directory {}", directoryPath);
       deleteEmptyDirectory(io, parent, exclude);
     }
   }
