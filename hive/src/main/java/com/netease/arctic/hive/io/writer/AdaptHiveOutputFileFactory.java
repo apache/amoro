@@ -74,7 +74,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final long taskId;
   private final Long transactionId;
 
-  private String unKeyedTmpDir = HiveTableUtil.getRandomSubDir();
+  private String tmpDir = HiveTableUtil.getRandomSubDir();
 
   private final String unKeyedTableNameUUID = UUID.randomUUID().toString();
 
@@ -108,7 +108,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId,
-      String unKeyedTmpDir) {
+      String tmpDir) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
     this.format = format;
@@ -117,7 +117,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId;
-    this.unKeyedTmpDir = unKeyedTmpDir;
+    this.tmpDir = tmpDir;
   }
 
 
@@ -136,9 +136,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private String fileLocation(StructLike partitionData, String fileName, TaskWriterKey key) {
     String dir;
     if (key.getTreeNode() == null) {
-      dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, unKeyedTmpDir);
+      dir = HiveTableUtil.newUnKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, tmpDir);
     } else {
-      dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId);
+      dir = HiveTableUtil.newKeyedHiveDataLocation(baseLocation, partitionSpec, partitionData, transactionId, tmpDir);
     }
     return String.format("%s/%s", dir, fileName);
   }

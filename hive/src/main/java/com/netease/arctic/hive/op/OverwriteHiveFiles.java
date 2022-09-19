@@ -490,7 +490,8 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     // create a new empty location for hive
     String newLocation;
     if (txId > 0) {
-      newLocation = HiveTableUtil.newKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null, txId);
+      newLocation = HiveTableUtil.newKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null,
+          txId, HiveTableUtil.getRandomSubDir());
     } else {
       newLocation = HiveTableUtil.newUnKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null,
           HiveTableUtil.getRandomSubDir());

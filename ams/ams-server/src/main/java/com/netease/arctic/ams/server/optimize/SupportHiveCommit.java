@@ -89,7 +89,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                 partitionPath = arcticTable.isKeyedTable() ?
                     HiveTableUtil.newKeyedHiveDataLocation(
                         ((SupportHive) arcticTable).hiveLocation(), arcticTable.asKeyedTable().baseTable().spec(),
-                        targetFile.partition(), maxTransactionId) :
+                        targetFile.partition(), maxTransactionId, HiveTableUtil.getRandomSubDir()) :
                     HiveTableUtil.newUnKeyedHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
                         arcticTable.asUnkeyedTable().spec(), targetFile.partition(), HiveTableUtil.getRandomSubDir());
                 HivePartitionUtil

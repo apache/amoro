@@ -91,12 +91,12 @@ public class HiveTableUtil {
   }
 
   public static String newKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                                StructLike partitionData, Long transactionId) {
+                                                StructLike partitionData, Long transactionId, String tmpSuffix) {
     if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s", hiveLocation, "txid=" + transactionId);
+      return String.format("%s/%s", hiveLocation, "txid=" + transactionId + "_" + tmpSuffix);
     } else {
       return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData),
-          "txid=" + transactionId);
+          "txid=" + transactionId + "_" + tmpSuffix);
     }
   }
 
