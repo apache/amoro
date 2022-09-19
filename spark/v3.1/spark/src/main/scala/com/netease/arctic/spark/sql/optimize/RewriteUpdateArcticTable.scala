@@ -111,6 +111,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
         if (a.table().isKeyedTable) {
           val updatedRowsQuery = buildKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
           val primaries = a.table().asKeyedTable().primaryKeySpec().fieldNames()
+          validatePrimaryKey(primaries, assignments)
           val joinCondition = buildJoinCondition(primaries, r, updatedRowsQuery)
           Join(matchedRowsQuery, updatedRowsQuery, Inner, Some(joinCondition), JoinHint.NONE)
         } else {
@@ -124,6 +125,17 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           Union(deleteQuery, insertQuery)
         }
     }
+  }
+
+  def validatePrimaryKey(primaries: util.List[String], assignments: Seq[Assignment]): Unit = {
+    assignments.map(_.key).foreach(
+      f => {
+        val name = f.asInstanceOf[AttributeReference].name
+        if (primaries.contains(name)) {
+          throw new UnsupportedOperationException(s"primary key: ${name} can not be updated")
+        }
+      }
+    )
   }
 
   protected def toOutputAttrs(schema: StructType, attrs: Seq[AttributeReference]): Seq[AttributeReference] = {

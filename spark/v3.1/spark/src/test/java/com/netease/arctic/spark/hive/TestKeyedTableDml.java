@@ -156,6 +156,12 @@ public class TestKeyedTableDml extends SparkTestBase {
   }
 
   @Test
+  public void testUpdatePrimaryField() {
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("update {0}.{1} set id = 1 where data = ''abcd''", database, notUpsertTable));
+  }
+
+  @Test
   public void testUpdateUnPartitions() {
     sql( "create table {0}.{1}( \n" +
         " id int, \n" +
