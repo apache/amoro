@@ -169,13 +169,13 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     properties = Maps.newHashMap(properties);
     Schema convertSchema;
     SparkSession sparkSession = SparkSession.active();
-    if (!Boolean.parseBoolean(
+    if (Boolean.parseBoolean(
             sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
                     USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
-      convertSchema = SparkSchemaUtil.convert(schema, false);
-    } else {
       sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
       convertSchema = SparkSchemaUtil.convert(schema, true);
+    } else {
+      convertSchema = SparkSchemaUtil.convert(schema, false);
     }
     Schema icebergSchema = checkAndConvertSchema(
             convertSchema, properties);

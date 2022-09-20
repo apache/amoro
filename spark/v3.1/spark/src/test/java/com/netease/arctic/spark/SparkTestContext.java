@@ -192,6 +192,7 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.sql.warehouse.dir", testSparkDir.getAbsolutePath());
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "471859200");
+    sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
 
     sparkConfigs.putAll(configs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));
