@@ -199,8 +199,11 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     private final boolean isOverwrite;
 
-
-    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, long transactionId, String hiveSubdirectory) {
+    WriterFactory(UnkeyedTable table,
+                  StructType dsSchema,
+                  boolean isOverwrite,
+                  long transactionId,
+                  String hiveSubdirectory) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.isOverwrite = isOverwrite;
