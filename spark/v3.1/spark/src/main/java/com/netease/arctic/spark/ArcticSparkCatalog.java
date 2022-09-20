@@ -67,7 +67,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.spark.SparkSQLProperties.*;
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkUtil.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
