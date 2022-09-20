@@ -33,6 +33,11 @@ import java.util.Set;
 public class HiveLocationUtils {
   private static final Logger LOG = LoggerFactory.getLogger(HiveLocationUtils.class);
 
+  /**
+   * get table hive table/partition location
+   * @param table target table
+   * @return hive table/partition location
+   */
   public static Set<String> getHiveLocation(ArcticTable table) {
     Set<String> hiveLocations = new HashSet<>();
     if (TableTypeUtil.isHive(table)) {

@@ -28,7 +28,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -40,6 +39,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -478,7 +478,7 @@ public class SparkTestContext extends ExternalResource {
       throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(1);
+        .withTransactionId(table.isKeyedTable() ? 1L : null);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record : records) {
@@ -502,7 +502,7 @@ public class SparkTestContext extends ExternalResource {
     return Arrays.asList(dataFiles);
   }
 
-  public void adaptHiveInsertPosDeleteFiles(long transactionId, List<DataFile> dataFiles, ArcticTable table)
+  public void adaptHiveInsertPosDeleteFiles(Long transactionId, List<DataFile> dataFiles, ArcticTable table)
       throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
@@ -512,7 +512,7 @@ public class SparkTestContext extends ExternalResource {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();

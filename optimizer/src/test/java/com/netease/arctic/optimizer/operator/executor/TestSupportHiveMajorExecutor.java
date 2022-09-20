@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBase {
   @Test
   public void testMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testKeyedHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -55,7 +55,7 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
 
   @Test
   public void testNoPosDeleteMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testKeyedHiveTable, 2, baseDataFilesInfo);
+    insertTableBaseDataFiles(testKeyedHiveTable, 2L, baseDataFilesInfo);
     NodeTask nodeTask = constructNodeTask(testKeyedHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -71,7 +71,7 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
 
   @Test
   public void testFullMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testKeyedHiveTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -87,7 +87,7 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
 
   @Test
   public void testUnKeyedTableMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testHiveTable, 1, baseDataFilesInfo);
+    insertTableBaseDataFiles(testHiveTable, null, baseDataFilesInfo);
     NodeTask nodeTask = constructNodeTask(testHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -103,7 +103,7 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
 
   @Test
   public void testUnKeyedTableFullMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testHiveTable, 1, baseDataFilesInfo);
+    insertTableBaseDataFiles(testHiveTable, null, baseDataFilesInfo);
     NodeTask nodeTask = constructNodeTask(testHiveTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -119,7 +119,7 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
 
   @Test
   public void testNoPartitionTableMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testUnPartitionKeyedHiveTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -135,7 +135,7 @@ public class TestSupportHiveMajorExecutor extends TestSupportHiveMajorOptimizeBa
 
   @Test
   public void testNoPartitionTableFullMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testUnPartitionKeyedHiveTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);

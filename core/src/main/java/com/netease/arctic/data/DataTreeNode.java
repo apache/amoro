@@ -38,6 +38,8 @@ public final class DataTreeNode implements Serializable {
   private long mask;
   private long index;
 
+  public static final DataTreeNode ROOT = new DataTreeNode(0, 0);
+
   public static DataTreeNode of(long mask, long index) {
     return new DataTreeNode(mask, index);
   }

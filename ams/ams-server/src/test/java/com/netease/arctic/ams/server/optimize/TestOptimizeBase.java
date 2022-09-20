@@ -20,13 +20,13 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -37,6 +37,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {
+  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId) throws IOException {
     TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withTransactionId(transactionId)
@@ -93,9 +94,14 @@ public interface TestOptimizeBase {
   }
 
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
-                                                    long transactionId,
+                                                    Long transactionId,
                                                     List<DataFile> dataFiles,
                                                     Set<DataTreeNode> targetNodes) throws IOException {
+    if (arcticTable.isKeyedTable()) {
+      Preconditions.checkNotNull(transactionId);
+    } else {
+      Preconditions.checkArgument(transactionId == null);
+    }
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -104,7 +110,7 @@ public interface TestOptimizeBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
@@ -143,7 +149,7 @@ public interface TestOptimizeBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();

@@ -55,7 +55,7 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
     {
       AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
           .builderFor(testKeyedHiveTable)
-          .withTransactionId(1);
+          .withTransactionId(1L);
 
       Assert.assertTrue(builder.buildWriter(ChangeLocationKind.INSTANT) instanceof GenericChangeTaskWriter);
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
@@ -69,8 +69,7 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
     }
     {
       AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
-          .builderFor(testHiveTable)
-          .withTransactionId(1);
+          .builderFor(testHiveTable);
 
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof GenericBaseTaskWriter);
@@ -153,7 +152,7 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
   public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(1);
+        .withTransactionId(table.isKeyedTable() ? 1L : null);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record: records) {

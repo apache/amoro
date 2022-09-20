@@ -30,16 +30,19 @@ public class TaskConfig {
   private final String group;
   private final String historyId;
   private final long createTime;
+  private final String customHiveSubdirectory;
 
   public TaskConfig(String partition, @Nullable Long maxTransactionId,
                     String group, String historyId,
-                    OptimizeType optimizeType, long createTime) {
+                    OptimizeType optimizeType, long createTime,
+                    @Nullable String customHiveSubdirectory) {
     this.optimizeType = optimizeType;
     this.partition = partition;
     this.maxTransactionId = maxTransactionId;
     this.group = group;
     this.historyId = historyId;
     this.createTime = createTime;
+    this.customHiveSubdirectory = customHiveSubdirectory;
   }
 
   public OptimizeType getOptimizeType() {
@@ -65,5 +68,9 @@ public class TaskConfig {
 
   public long getCreateTime() {
     return createTime;
+  }
+
+  public String getCustomHiveSubdirectory() {
+    return customHiveSubdirectory;
   }
 }

@@ -80,7 +80,7 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
       FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
           .buildFor(testKeyedHiveTable)
           .withFlinkSchema(FlinkSchemaUtil.convert(testKeyedHiveTable.schema()))
-          .withTransactionId(1);
+          .withTransactionId(1L);
 
       Assert.assertTrue(builder.buildWriter(ChangeLocationKind.INSTANT) instanceof FlinkChangeTaskWriter);
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
@@ -95,8 +95,7 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
     {
       FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
           .buildFor(testHiveTable)
-          .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()))
-          .withTransactionId(1);
+          .withFlinkSchema(FlinkSchemaUtil.convert(testHiveTable.schema()));
 
       Assert.assertTrue(builder.buildWriter(BaseLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
       Assert.assertTrue(builder.buildWriter(HiveLocationKind.INSTANT) instanceof FlinkBaseTaskWriter);
@@ -180,7 +179,7 @@ public class AdaptHiveWriterTest extends HiveTableTestBase {
     FlinkTaskWriterBuilder builder = FlinkTaskWriterBuilder
         .buildFor(table)
         .withFlinkSchema(FlinkSchemaUtil.convert(table.schema()))
-        .withTransactionId(1);
+        .withTransactionId(table.isKeyedTable() ? 1L : null);
 
     TaskWriter<RowData> changeWrite = builder.buildWriter(locationKind);
     for (RowData record: records) {

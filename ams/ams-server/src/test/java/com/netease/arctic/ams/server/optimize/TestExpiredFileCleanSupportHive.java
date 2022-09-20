@@ -42,7 +42,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> hiveFiles = insertHiveDataFiles(testUnPartitionKeyedHiveTable, 1);
-    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2);
+    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L);
 
     DeleteFiles deleteHiveFiles = testUnPartitionKeyedHiveTable.baseTable().newDelete();
     for (DataFile hiveFile : hiveFiles) {
@@ -58,7 +58,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3);
+    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3L);
     for (DataFile s3File : s3Files) {
       Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(s3File.path().toString()));
     }

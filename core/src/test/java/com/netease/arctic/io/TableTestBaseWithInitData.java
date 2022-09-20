@@ -51,7 +51,7 @@ public class TableTestBaseWithInitData extends TableTestBase {
     //write base
     {
       GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(1).buildBaseWriter();
+          .withTransactionId(1L).buildBaseWriter();
 
       for (Record record : baseRecords()) {
         writer.write(record);
@@ -67,7 +67,7 @@ public class TableTestBaseWithInitData extends TableTestBase {
     // write position delete
     {
       SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(4).buildBasePosDeleteWriter(3, 3, dataFileForPositionDelete.partition());
+          .withTransactionId(4L).buildBasePosDeleteWriter(3, 3, dataFileForPositionDelete.partition());
       writer.delete(dataFileForPositionDelete.path().toString(), 0);
       DeleteFile posDeleteFiles = writer.complete().stream().findAny().get();
       this.deleteFileOfPositionDelete = posDeleteFiles;
@@ -77,7 +77,7 @@ public class TableTestBaseWithInitData extends TableTestBase {
     //write change insert
     {
       GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(2).buildChangeWriter();
+          .withTransactionId(2L).buildChangeWriter();
       for (Record record : changeInsertRecords()) {
         writer.write(record);
       }
@@ -92,7 +92,7 @@ public class TableTestBaseWithInitData extends TableTestBase {
     //write change delete
     {
       GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-          .withTransactionId(3).withChangeAction(ChangeAction.DELETE).buildChangeWriter();
+          .withTransactionId(3L).withChangeAction(ChangeAction.DELETE).buildChangeWriter();
       for (Record record : changeDeleteRecords()) {
         writer.write(record);
       }

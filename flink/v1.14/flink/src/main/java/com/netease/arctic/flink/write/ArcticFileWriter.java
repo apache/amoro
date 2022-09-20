@@ -115,12 +115,14 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     taskWriterFactory.initialize(subTaskId, attemptId);
   }
 
-  private long getTransactionId() {
-    long transaction = -1;
+  private Long getTransactionId() {
+    Long transaction;
     if (table.isKeyedTable()) {
       String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
       transaction = table.asKeyedTable().beginTransaction(signature);
       LOG.info("table:{}, signature:{}, transactionId:{}", table.name(), signature, transaction);
+    } else {
+      transaction = null;
     }
     return transaction;
   }

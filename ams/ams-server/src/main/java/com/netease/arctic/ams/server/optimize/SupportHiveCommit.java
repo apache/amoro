@@ -4,7 +4,7 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
@@ -12,6 +12,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -63,10 +64,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               .map(fileByte -> (DataFile) SerializationUtil.toInternalTableFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
-              .mapToLong(dataFile -> {
-                DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString());
-                return fileMeta.transactionId();
-              })
+              .mapToLong(dataFile -> FileUtil.parseFileTidFromFileName(dataFile.path().toString()))
               .max()
               .orElse(0L);
 
@@ -86,12 +84,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                partitionPath = arcticTable.isKeyedTable() ?
-                    HiveTableUtil.newKeyedHiveDataLocation(
-                        ((SupportHive) arcticTable).hiveLocation(), arcticTable.asKeyedTable().baseTable().spec(),
-                        targetFile.partition(), maxTransactionId) :
-                    HiveTableUtil.newUnKeyedHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                        arcticTable.asUnkeyedTable().spec(), targetFile.partition(), HiveTableUtil.getRandomSubDir());
+                String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
+                    arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+                partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
                 HivePartitionUtil
                     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
                         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
