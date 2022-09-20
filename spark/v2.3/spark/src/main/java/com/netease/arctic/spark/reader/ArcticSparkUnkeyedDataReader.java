@@ -8,7 +8,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.spark.data.SparkParquetReaders;
 import org.apache.parquet.schema.MessageType;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
@@ -31,7 +30,7 @@ public class ArcticSparkUnkeyedDataReader extends BaseIcebergDataReader<Internal
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectedSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> SparkParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
+    return fileSchema -> SparkParquetV2Readers.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override

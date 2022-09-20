@@ -213,7 +213,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
     ArcticSparkKeyedDataReader reader;
     Iterator<KeyedTableScanTask> scanTasks;
     KeyedTableScanTask currentScanTask;
-    CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
+    CloseableIterator<Row> currentIterator = CloseableIterator.empty();
     Row current;
 
     Schema expectedSchema;
@@ -236,7 +236,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
     public boolean next() throws IOException {
       while (true) {
         if (currentIterator.hasNext()) {
-          this.current = ArcticSparkUtil.convertInterRowToRow(currentIterator.next(), expectedSchema);
+          this.current = currentIterator.next();
           return true;
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();

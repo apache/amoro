@@ -27,15 +27,16 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.spark.data.SparkParquetReaders;
+import org.apache.iceberg.spark.SparkStructLike;
 import org.apache.parquet.schema.MessageType;
+import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
 
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkKeyedDataReader extends BaseArcticDataReader<InternalRow> {
+public class ArcticSparkKeyedDataReader extends BaseArcticDataReader<Row> {
 
   public ArcticSparkKeyedDataReader(
       ArcticFileIO fileIO,
@@ -52,14 +53,13 @@ public class ArcticSparkKeyedDataReader extends BaseArcticDataReader<InternalRow
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> SparkParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema -> SparkParquetV2Readers.buildReader(projectSchema, fileSchema, idToConstant);
   }
 
   @Override
-  protected Function<Schema, Function<InternalRow, StructLike>> toStructLikeFunction() {
+  protected Function<Schema, Function<Row, StructLike>> toStructLikeFunction() {
     return schema -> {
-      final StructType structType = SparkSchemaUtil.convert(schema);
-      return row -> new SparkInternalRowWrapper(structType).wrap(row);
+      return row -> new SparkStructLike(schema.asStruct()).wrap(row);
     };
   }
 }
