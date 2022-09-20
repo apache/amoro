@@ -71,7 +71,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
-    this.subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
+    this.subDir = HiveTableUtil.newHiveSubdirectory(this.transactionId);
   }
 
   @Override

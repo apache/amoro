@@ -63,7 +63,7 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
   private final UnkeyedTable table;
   private final StructType dsSchema;
   private final long transactionId = IdGenerator.randomId();
-  private final String subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
+  private final String subDir = HiveTableUtil.newHiveSubdirectory(this.transactionId);
   protected Expression overwriteExpr = null;
   private WriteMode writeMode = null;
 
