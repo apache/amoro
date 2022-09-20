@@ -35,6 +35,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
@@ -50,6 +51,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.spark.SparkSQLProperties.*;
+import static org.apache.iceberg.spark.SparkUtil.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
@@ -148,11 +150,14 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       Map<String, String> properties) throws TableAlreadyExistsException {
     properties = Maps.newHashMap(properties);
     Schema convertSchema;
-    if (Boolean.parseBoolean(properties.getOrDefault(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-            USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
-      convertSchema = SparkSchemaUtil.convert(schema, true);
-    } else {
+    SparkSession sparkSession = SparkSession.active();
+    if (!Boolean.parseBoolean(
+            sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+                    USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
       convertSchema = SparkSchemaUtil.convert(schema, false);
+    } else {
+      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
+      convertSchema = SparkSchemaUtil.convert(schema, true);
     }
     Schema icebergSchema = checkAndConvertSchema(
             convertSchema, properties);

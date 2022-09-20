@@ -26,5 +26,5 @@ public class SparkSQLProperties {
           "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
 
   public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT =
-          "true";
+          "false";
 }

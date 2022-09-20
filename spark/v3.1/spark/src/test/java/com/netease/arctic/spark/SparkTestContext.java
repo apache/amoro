@@ -539,4 +539,39 @@ public class SparkTestContext extends ExternalResource {
       throw new IllegalStateException("Table is neither keyed nor unkeyed");
     }
   }
+
+  protected void withSQLConf(Map<String, String> conf, Action action) {
+    SQLConf sqlConf = SQLConf.get();
+
+    Map<String, String> currentConfValues = Maps.newHashMap();
+    conf.keySet().forEach(confKey -> {
+      if (sqlConf.contains(confKey)) {
+        String currentConfValue = sqlConf.getConfString(confKey);
+        currentConfValues.put(confKey, currentConfValue);
+      }
+    });
+
+    conf.forEach((confKey, confValue) -> {
+      if (SQLConf.staticConfKeys().contains(confKey)) {
+        throw new RuntimeException("Cannot modify the value of a static config: " + confKey);
+      }
+      sqlConf.setConfString(confKey, confValue);
+    });
+
+    try {
+      action.invoke();
+    } finally {
+      conf.forEach((confKey, confValue) -> {
+        if (currentConfValues.containsKey(confKey)) {
+          sqlConf.setConfString(confKey, currentConfValues.get(confKey));
+        } else {
+          sqlConf.unsetConf(confKey);
+        }
+      });
+    }
+  }
+
+  protected interface Action {
+    void invoke();
+  }
 }
