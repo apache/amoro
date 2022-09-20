@@ -22,12 +22,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -43,12 +38,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
-import org.apache.spark.sql.connector.catalog.Identifier;
-import org.apache.spark.sql.connector.catalog.NamespaceChange;
-import org.apache.spark.sql.connector.catalog.SupportsNamespaces;
-import org.apache.spark.sql.connector.catalog.Table;
-import org.apache.spark.sql.connector.catalog.TableCatalog;
-import org.apache.spark.sql.connector.catalog.TableChange;
+import org.apache.spark.sql.connector.catalog.*;
 import org.apache.spark.sql.connector.catalog.TableChange.ColumnChange;
 import org.apache.spark.sql.connector.catalog.TableChange.RemoveProperty;
 import org.apache.spark.sql.connector.catalog.TableChange.SetProperty;
@@ -56,15 +46,10 @@ import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.spark.SparkSQLProperties.*;
 
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
@@ -162,9 +147,15 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
     properties = Maps.newHashMap(properties);
+    Schema convertSchema;
+    if (Boolean.parseBoolean(properties.getOrDefault(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+            USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
+      convertSchema = SparkSchemaUtil.convert(schema, true);
+    } else {
+      convertSchema = SparkSchemaUtil.convert(schema, false);
+    }
     Schema icebergSchema = checkAndConvertSchema(
-        SparkSchemaUtil.convert(schema, false),
-        properties);
+            convertSchema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
     TableBuilder builder = catalog.newTableBuilder(identifier, icebergSchema);
     PartitionSpec spec = Spark3Util.toPartitionSpec(icebergSchema, transforms);
