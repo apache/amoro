@@ -86,6 +86,7 @@ public class FileUtil {
       return;
     }
 
+    LOG.debug("current path {} and parent path {} not in exclude.", directoryPath, parent);
     if (io.isEmptyDirectory(directoryPath)) {
       io.deleteFileWithResult(directoryPath, true);
       LOG.debug("success delete empty directory {}", directoryPath);

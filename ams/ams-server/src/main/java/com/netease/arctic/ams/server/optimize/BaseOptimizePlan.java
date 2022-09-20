@@ -273,7 +273,7 @@ public abstract class BaseOptimizePlan {
     Map<String, String> properties = new HashMap<>();
     properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
-    properties.put(OptimizeTaskProperties.CUSTOM_SUB_DIR, taskConfig.getCustomSubDir());
+    properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, taskConfig.getCustomHiveSubdirectory());
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -331,10 +331,10 @@ public abstract class BaseOptimizePlan {
     return partitionTaskRunning.get(partition) != null && partitionTaskRunning.get(partition);
   }
 
-  protected String constructCustomSubDir(long transactionId) {
+  protected String constructCustomHiveSubdirectory(long transactionId) {
     String dir = "";
     if (isCustomizeDir) {
-      return HiveTableUtil.newHiveSubDir(transactionId);
+      return HiveTableUtil.newHiveSubdirectory(transactionId);
     }
     return dir;
   }

@@ -58,13 +58,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final StructType dsSchema;
 
   private final long transactionId;
-  private final String subDir;
+  private final String hiveSubdirectory;
 
   KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
-    this.subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
+    this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
   }
 
   @Override
@@ -140,7 +140,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, transactionId, subDir);
+      return new BaseWriterFactory(table, dsSchema, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -165,7 +165,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, transactionId, subDir);
+      return new BaseWriterFactory(table, dsSchema, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -215,11 +215,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private static class BaseWriterFactory extends AbstractWriterFactory {
 
-    protected final String subDir;
+    protected final String hiveSubdirectory;
 
-    BaseWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId, String subDir) {
+    BaseWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId, String hiveSubdirectory) {
       super(table, dsSchema, transactionId);
-      this.subDir = subDir;
+      this.hiveSubdirectory = hiveSubdirectory;
     }
 
     @Override
@@ -229,7 +229,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .withSubDir(subDir)
+          .withHiveSubdirectory(hiveSubdirectory)
           .newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
     }

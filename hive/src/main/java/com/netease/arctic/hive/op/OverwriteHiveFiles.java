@@ -492,10 +492,10 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     String newLocation;
     if (txId > 0) {
       newLocation = HiveTableUtil.newHiveDataLocation(table.hiveLocation(), table.spec(), null,
-          HiveTableUtil.newHiveSubDir(txId));
+          HiveTableUtil.newHiveSubdirectory(txId));
     } else {
       newLocation = HiveTableUtil.newHiveDataLocation(table.hiveLocation(), table.spec(), null,
-          HiveTableUtil.newHiveSubDir(txId));
+          HiveTableUtil.newHiveSubdirectory(txId));
     }
     OutputFile file = table.io().newOutputFile(newLocation + "/.keep");
     try {
