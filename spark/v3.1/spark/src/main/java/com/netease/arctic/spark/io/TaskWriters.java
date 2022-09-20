@@ -50,7 +50,7 @@ public class TaskWriters {
   private int partitionId = 0;
   private long taskId = 0;
   private StructType dsSchema;
-  private String sudDir;
+  private String hiveSubdirectory;
 
   private final boolean isHiveTable;
   private final FileFormat fileFormat;
@@ -94,8 +94,8 @@ public class TaskWriters {
     return this;
   }
   
-  public TaskWriters withSubDir(String subDir) {
-    this.sudDir = subDir;
+  public TaskWriters withHiveSubdirectory(String hiveSubdirectory) {
+    this.hiveSubdirectory = hiveSubdirectory;
     return this;
   }
 
@@ -132,7 +132,7 @@ public class TaskWriters {
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId, sudDir);
+          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),

@@ -49,7 +49,7 @@ public class NodeTask {
   private OptimizeTaskId taskId;
   private TableIdentifier tableIdentifier;
   private int attemptId;
-  private String customSubDir;
+  private String customHiveSubdirectory;
 
   public NodeTask() {
   }
@@ -151,12 +151,12 @@ public class NodeTask {
     this.attemptId = attemptId;
   }
 
-  public String getCustomSubDir() {
-    return customSubDir;
+  public String getCustomHiveSubdirectory() {
+    return customHiveSubdirectory;
   }
 
-  public void setCustomSubDir(String customSubDir) {
-    this.customSubDir = customSubDir;
+  public void setCustomHiveSubdirectory(String customHiveSubdirectory) {
+    this.customHiveSubdirectory = customHiveSubdirectory;
   }
 
   public OptimizeType getOptimizeType() {
@@ -173,7 +173,7 @@ public class NodeTask {
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
         .add("posDeleteFiles", posDeleteFiles.size())
-        .add("customSubDir", customSubDir)
+        .add("customHiveSubdirectory", customHiveSubdirectory)
         .toString();
   }
 }

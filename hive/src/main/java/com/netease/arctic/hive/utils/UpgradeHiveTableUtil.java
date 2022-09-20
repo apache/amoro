@@ -120,7 +120,7 @@ public class UpgradeHiveTableUtil {
       for (int i = 0; i < partitionLocations.size(); i++) {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
-        String newLocation = hiveDataLocation + "/" + partition + "/" + HiveTableUtil.newHiveSubDir(DEFAULT_TXID);
+        String newLocation = hiveDataLocation + "/" + partition + "/" + HiveTableUtil.newHiveSubdirectory(DEFAULT_TXID);
         arcticTable.io().mkdirs(newLocation);
         for (FileStatus fileStatus : arcticTable.io().list(oldLocation)) {
           if (!fileStatus.isDirectory()) {

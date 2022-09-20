@@ -65,7 +65,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private int partitionId = 0;
   private int taskId = 0;
   private ChangeAction changeAction = ChangeAction.INSERT;
-  private String customSubDir;
+  private String customHiveSubdirectory;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -91,8 +91,8 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     return this;
   }
 
-  public AdaptHiveGenericTaskWriterBuilder withCustomSubDir(String customSubDir) {
-    this.customSubDir = customSubDir;
+  public AdaptHiveGenericTaskWriterBuilder withCustomHiveSubdirectory(String customHiveSubdirectory) {
+    this.customHiveSubdirectory = customHiveSubdirectory;
     return this;
   }
 
@@ -164,7 +164,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
     OutputFileFactory outputFileFactory = locationKind == HiveLocationKind.INSTANT ?
         new AdaptHiveOutputFileFactory(((SupportHive) table).hiveLocation(), table.spec(), fileFormat,
-            table.io(), encryptionManager, partitionId, taskId, transactionId, customSubDir) :
+            table.io(), encryptionManager, partitionId, taskId, transactionId, customHiveSubdirectory) :
         new CommonOutputFileFactory(baseLocation, table.spec(), fileFormat, table.io(),
             encryptionManager, partitionId, taskId, transactionId);
     FileAppenderFactory<Record> appenderFactory = TableTypeUtil.isHive(table) ?

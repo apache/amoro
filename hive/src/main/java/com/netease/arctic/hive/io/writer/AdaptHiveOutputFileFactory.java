@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private final String baseLocation;
-  private final String subDir;
+  private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
   private final FileFormat format;
   private final ArcticFileIO io;
@@ -85,7 +85,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       int partitionId,
       long taskId,
       Long transactionId,
-      String subDir) {
+      String hiveSubDirectory) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
     this.format = format;
@@ -94,10 +94,10 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionId = partitionId;
     this.taskId = taskId;
     this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
-    if (subDir == null) {
-      this.subDir = HiveTableUtil.newHiveSubDir(this.transactionId);
+    if (hiveSubDirectory == null) {
+      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
     } else {
-      this.subDir = subDir;
+      this.hiveSubDirectory = hiveSubDirectory;
     }
   }
 
@@ -109,7 +109,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private String fileLocation(StructLike partitionData, String fileName) {
     return String.format("%s/%s",
-        HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, subDir), fileName);
+        HiveTableUtil.newHiveDataLocation(baseLocation, partitionSpec, partitionData, hiveSubDirectory), fileName);
   }
 
   public EncryptedOutputFile newOutputFile(TaskWriterKey key) {

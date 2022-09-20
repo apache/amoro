@@ -226,6 +226,7 @@ public class TableExpireService implements ITableExpireService {
   public static void expireSnapshots(UnkeyedTable arcticInternalTable,
                                      long olderThan,
                                      Set<String> exclude) {
+    LOG.debug("start expire snapshots, the exclude is {}", exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();

@@ -60,7 +60,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   private final UnkeyedTable table;
   private final StructType dsSchema;
   private final long transactionId = IdGenerator.randomId();
-  private final String subDir = HiveTableUtil.newHiveSubDir(transactionId);
+  private final String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
 
   public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
     this.table = table;
@@ -127,7 +127,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true, transactionId, subDir);
+      return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -149,7 +149,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true, transactionId, subDir);
+      return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -195,17 +195,17 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     protected final StructType dsSchema;
 
     private final long transactionId;
-    private final String subDir;
+    private final String hiveSubdirectory;
 
     private final boolean isOverwrite;
 
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, long transactionId, String subDir) {
+    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite, long transactionId, String hiveSubdirectory) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.isOverwrite = isOverwrite;
       this.transactionId = transactionId;
-      this.subDir = subDir;
+      this.hiveSubdirectory = hiveSubdirectory;
     }
 
     @Override
@@ -215,7 +215,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
-          .withSubDir(subDir)
+          .withHiveSubdirectory(hiveSubdirectory)
           .newBaseWriter(this.isOverwrite);
       return new SimpleInternalRowDataWriter(writer);
     }

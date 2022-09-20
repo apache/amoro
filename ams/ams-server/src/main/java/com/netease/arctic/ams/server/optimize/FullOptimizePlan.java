@@ -167,7 +167,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
           null, group, historyId, partitionOptimizeType.get(partition), createTime,
-          constructCustomSubDir(arcticTable.isKeyedTable() ? getMaxTransactionId(fileList) : IdGenerator.randomId()));
+          constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ? getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
       long taskSize =
           PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
@@ -197,7 +197,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     treeRoot.collectBaseFiles(allBaseFiles);
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
         null, group, historyId, partitionOptimizeType.get(partition), createTime,
-        constructCustomSubDir(arcticTable.isKeyedTable() ? getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
+        constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ? getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitSubTree(subTrees, new CanSplitFileTree());
