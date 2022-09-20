@@ -60,7 +60,7 @@ import java.util.stream.Collectors;
 public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testKeyedTableMajorOptimize() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
@@ -68,7 +68,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));
@@ -88,7 +88,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testKeyedTableFullOptimize() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
@@ -96,7 +96,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));
@@ -194,7 +194,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableMajorOptimize() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testNoPartitionTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testNoPartitionTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testNoPartitionTable))
@@ -202,7 +202,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
             DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testNoPartitionTable.asKeyedTable()))
@@ -223,7 +223,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableFullOptimize() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testNoPartitionTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testNoPartitionTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testNoPartitionTable))
@@ -231,7 +231,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
             DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testNoPartitionTable.asKeyedTable()))
@@ -280,7 +280,6 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
       StructLike partition = dataFilePartitionMap.getKey();
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-          .withTransactionId(0)
           .buildBasePosDeleteWriter(0, 0, partition);
       for (DataFile partitionFile : partitionFiles) {
         // write pos delete

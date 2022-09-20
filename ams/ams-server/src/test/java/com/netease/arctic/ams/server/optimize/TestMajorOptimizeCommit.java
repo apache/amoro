@@ -64,7 +64,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   @Test
   public void testMajorOptimizeCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
@@ -72,7 +72,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));

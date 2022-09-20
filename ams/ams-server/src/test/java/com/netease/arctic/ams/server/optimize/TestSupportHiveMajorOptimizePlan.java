@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
 public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
   @Test
   public void testKeyedTableMajorOptimizeSupportHive() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
         .collect(Collectors.toList()));
@@ -60,7 +60,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     testKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
@@ -68,7 +68,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
             DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedHiveTable.asKeyedTable()))
@@ -91,7 +91,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     testKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
@@ -100,7 +100,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
     targetNodes.remove(DataTreeNode.ofId(4));
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
             DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedHiveTable.asKeyedTable()))
@@ -120,7 +120,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
 
   @Test
   public void testUnKeyedTableMajorOptimizeSupportHive() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, null);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testHiveTable))
         .collect(Collectors.toList()));
@@ -142,7 +142,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     testHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, null);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testHiveTable))
         .collect(Collectors.toList()));
@@ -161,7 +161,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
 
   @Test
   public void testNoPartitionTableMajorOptimizeSupportHive() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable))
@@ -184,7 +184,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
     testUnPartitionKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1);
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
             DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable))

@@ -20,8 +20,6 @@ package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HiveTableProperties;
-import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.SerDeInfo;
@@ -90,27 +88,17 @@ public class HiveTableUtil {
     return tableLocation + "/hive";
   }
 
-  public static String newKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                                StructLike partitionData, Long transactionId) {
+  public static String newHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
+                                           StructLike partitionData, String hiveSubdirectory) {
     if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s", hiveLocation, "txid=" + transactionId);
+      return String.format("%s/%s", hiveLocation, hiveSubdirectory);
     } else {
-      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData),
-          "txid=" + transactionId);
+      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), hiveSubdirectory);
     }
   }
-
-  public static String newUnKeyedHiveDataLocation(String hiveLocation, PartitionSpec partitionSpec,
-                                                  StructLike partitionData, String subDir) {
-    if (partitionSpec.isUnpartitioned()) {
-      return String.format("%s/%s", hiveLocation, subDir);
-    } else {
-      return String.format("%s/%s/%s", hiveLocation, partitionSpec.partitionToPath(partitionData), subDir);
-    }
-  }
-
-  public static String getRandomSubDir() {
-    return System.currentTimeMillis() + "_" + UUID.randomUUID();
+  
+  public static String newHiveSubdirectory(long transactionId) {
+    return System.currentTimeMillis() + "_" + transactionId;
   }
 
   public static StorageDescriptor storageDescriptor(
