@@ -21,15 +21,29 @@ package com.netease.arctic.spark.util;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.RuntimeConfig;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.BinaryType;
+import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.unsafe.types.UTF8String;
+import scala.collection.JavaConverters;
+import scala.collection.Seq;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
+import java.util.List;
 
 public class ArcticSparkUtil {
   public static final String CATALOG_URL = "arctic.catalog.url";
@@ -76,18 +90,28 @@ public class ArcticSparkUtil {
     return value;
   }
 
-  public static Object[] convertRowObject(Object[] objects) {
+  public static Object[] convertRowObject(Object[] objects, Schema schema) {
     for (int i = 0; i < objects.length; i++) {
       Object object = objects[i];
+      Type type = schema.columns().get(i).type();
       if (object instanceof UTF8String) {
         objects[i] = object.toString();
       } else if (object instanceof Decimal) {
         objects[i] = ((Decimal) object).toJavaBigDecimal();
       } else if (object instanceof BinaryType) {
         objects[i] = ByteBuffer.wrap((byte[]) object);
+      } else if (object instanceof Long && type.typeId() == Type.TypeID.TIMESTAMP) {
+        objects[i] = new Timestamp((Long) object);
       }
     }
     return objects;
+  }
+
+  public static Row convertInterRowToRow(InternalRow internalRow, Schema schema) {
+    StructType structType = SparkSchemaUtil.convert(schema);
+    Seq<Object> objectSeq = internalRow.toSeq(structType);
+    Object[] objects = JavaConverters.seqAsJavaListConverter(objectSeq).asJava().toArray();
+    return RowFactory.create(convertRowObject(objects, schema));
   }
 
 }

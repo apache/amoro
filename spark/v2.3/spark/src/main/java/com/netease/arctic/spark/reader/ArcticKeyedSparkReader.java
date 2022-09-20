@@ -38,7 +38,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
@@ -52,9 +51,6 @@ import org.apache.spark.sql.sources.v2.reader.SupportsReportStatistics;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
@@ -240,11 +236,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
     public boolean next() throws IOException {
       while (true) {
         if (currentIterator.hasNext()) {
-          InternalRow next = currentIterator.next();
-          StructType structType = SparkSchemaUtil.convert(expectedSchema);
-          Seq<Object> objectSeq = next.toSeq(structType);
-          Object[] objects = JavaConverters.seqAsJavaListConverter(objectSeq).asJava().toArray();
-          this.current = RowFactory.create(ArcticSparkUtil.convertRowObject(objects));
+          this.current = ArcticSparkUtil.convertInterRowToRow(currentIterator.next(), expectedSchema);
           return true;
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();

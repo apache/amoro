@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.source;
 
 import com.netease.arctic.spark.reader.ArcticKeyedSparkReader;
+import com.netease.arctic.spark.reader.ArcticUnkeyedSparkReader;
 import com.netease.arctic.spark.writer.ArcticKeyedSparkOverwriteWriter;
 import com.netease.arctic.spark.writer.ArcticUnkeyedSparkOverwriteWriter;
 import com.netease.arctic.table.ArcticTable;
@@ -84,7 +85,7 @@ public class ArcticSparkTable implements DataSourceTable {
     if (arcticTable.isKeyedTable()) {
       return new ArcticKeyedSparkReader(sparkSession(), arcticTable.asKeyedTable());
     } else {
-      return null;
+      return new ArcticUnkeyedSparkReader(sparkSession(), arcticTable.asUnkeyedTable());
     }
   }
 

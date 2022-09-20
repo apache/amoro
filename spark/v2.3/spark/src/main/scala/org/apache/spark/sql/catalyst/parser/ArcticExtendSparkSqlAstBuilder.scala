@@ -681,9 +681,9 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
       .map(typedVisit[Expression])
 
     // Create either a transform or a regular query.
-    val specType = Option(kind).map(_.getType).getOrElse(SqlBaseParser.SELECT)
+    val specType = Option(kind).map(_.getType).getOrElse(ArcticSparkSqlParser.SELECT)
     specType match {
-      case SqlBaseParser.MAP | SqlBaseParser.REDUCE | SqlBaseParser.TRANSFORM =>
+      case ArcticSparkSqlParser.MAP | ArcticSparkSqlParser.REDUCE | ArcticSparkSqlParser.TRANSFORM =>
         // Transform
 
         // Add where.
@@ -713,7 +713,7 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
           withScriptIOSchema(
             ctx, inRowFormat, recordWriter, outRowFormat, recordReader, schemaLess))
 
-      case SqlBaseParser.SELECT =>
+      case ArcticSparkSqlParser.SELECT =>
         // Regular select
 
         // Add lateral views.
@@ -802,21 +802,21 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     val right = plan(ctx.right)
     val all = Option(ctx.setQuantifier()).exists(_.ALL != null)
     ctx.operator.getType match {
-      case SqlBaseParser.UNION if all =>
+      case ArcticSparkSqlParser.UNION if all =>
         Union(left, right)
-      case SqlBaseParser.UNION =>
+      case ArcticSparkSqlParser.UNION =>
         Distinct(Union(left, right))
-      case SqlBaseParser.INTERSECT if all =>
+      case ArcticSparkSqlParser.INTERSECT if all =>
         throw new ParseException("INTERSECT ALL is not supported.", ctx)
-      case SqlBaseParser.INTERSECT =>
+      case ArcticSparkSqlParser.INTERSECT =>
         Intersect(left, right)
-      case SqlBaseParser.EXCEPT if all =>
+      case ArcticSparkSqlParser.EXCEPT if all =>
         throw new ParseException("EXCEPT ALL is not supported.", ctx)
-      case SqlBaseParser.EXCEPT =>
+      case ArcticSparkSqlParser.EXCEPT =>
         Except(left, right)
-      case SqlBaseParser.SETMINUS if all =>
+      case ArcticSparkSqlParser.SETMINUS if all =>
         throw new ParseException("MINUS ALL is not supported.", ctx)
-      case SqlBaseParser.SETMINUS =>
+      case ArcticSparkSqlParser.SETMINUS =>
         Except(left, right)
     }
   }
@@ -1228,8 +1228,8 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
   override def visitLogicalBinary(ctx: LogicalBinaryContext): Expression = withOrigin(ctx) {
     val expressionType = ctx.operator.getType
     val expressionCombiner = expressionType match {
-      case SqlBaseParser.AND => And.apply _
-      case SqlBaseParser.OR => Or.apply _
+      case ArcticSparkSqlParser.AND => And.apply _
+      case ArcticSparkSqlParser.OR => Or.apply _
     }
 
     // Collect all similar left hand contexts.
@@ -1297,19 +1297,19 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     val right = expression(ctx.right)
     val operator = ctx.comparisonOperator().getChild(0).asInstanceOf[TerminalNode]
     operator.getSymbol.getType match {
-      case SqlBaseParser.EQ =>
+      case ArcticSparkSqlParser.EQ =>
         EqualTo(left, right)
-      case SqlBaseParser.NSEQ =>
+      case ArcticSparkSqlParser.NSEQ =>
         EqualNullSafe(left, right)
-      case SqlBaseParser.NEQ | SqlBaseParser.NEQJ =>
+      case ArcticSparkSqlParser.NEQ | ArcticSparkSqlParser.NEQJ =>
         Not(EqualTo(left, right))
-      case SqlBaseParser.LT =>
+      case ArcticSparkSqlParser.LT =>
         LessThan(left, right)
-      case SqlBaseParser.LTE =>
+      case ArcticSparkSqlParser.LTE =>
         LessThanOrEqual(left, right)
-      case SqlBaseParser.GT =>
+      case ArcticSparkSqlParser.GT =>
         GreaterThan(left, right)
-      case SqlBaseParser.GTE =>
+      case ArcticSparkSqlParser.GTE =>
         GreaterThanOrEqual(left, right)
     }
   }
@@ -1348,26 +1348,26 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
 
     // Create the predicate.
     ctx.kind.getType match {
-      case SqlBaseParser.BETWEEN =>
+      case ArcticSparkSqlParser.BETWEEN =>
         // BETWEEN is translated to lower <= e && e <= upper
         invertIfNotDefined(And(
           GreaterThanOrEqual(e, expression(ctx.lower)),
           LessThanOrEqual(e, expression(ctx.upper))))
-      case SqlBaseParser.IN if ctx.query != null =>
+      case ArcticSparkSqlParser.IN if ctx.query != null =>
         invertIfNotDefined(In(e, Seq(ListQuery(plan(ctx.query)))))
-      case SqlBaseParser.IN =>
+      case ArcticSparkSqlParser.IN =>
         invertIfNotDefined(In(e, ctx.expression.asScala.map(expression)))
-      case SqlBaseParser.LIKE =>
+      case ArcticSparkSqlParser.LIKE =>
         invertIfNotDefined(Like(e, expression(ctx.pattern)))
-      case SqlBaseParser.RLIKE =>
+      case ArcticSparkSqlParser.RLIKE =>
         invertIfNotDefined(RLike(e, expression(ctx.pattern)))
-      case SqlBaseParser.NULL if ctx.NOT != null =>
+      case ArcticSparkSqlParser.NULL if ctx.NOT != null =>
         IsNotNull(e)
-      case SqlBaseParser.NULL =>
+      case ArcticSparkSqlParser.NULL =>
         IsNull(e)
-      case SqlBaseParser.DISTINCT if ctx.NOT != null =>
+      case ArcticSparkSqlParser.DISTINCT if ctx.NOT != null =>
         EqualNullSafe(e, expression(ctx.right))
-      case SqlBaseParser.DISTINCT =>
+      case ArcticSparkSqlParser.DISTINCT =>
         Not(EqualNullSafe(e, expression(ctx.right)))
     }
   }
@@ -1388,25 +1388,25 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     val left = expression(ctx.left)
     val right = expression(ctx.right)
     ctx.operator.getType match {
-      case SqlBaseParser.ASTERISK =>
+      case ArcticSparkSqlParser.ASTERISK =>
         Multiply(left, right)
-      case SqlBaseParser.SLASH =>
+      case ArcticSparkSqlParser.SLASH =>
         Divide(left, right)
-      case SqlBaseParser.PERCENT =>
+      case ArcticSparkSqlParser.PERCENT =>
         Remainder(left, right)
-      case SqlBaseParser.DIV =>
+      case ArcticSparkSqlParser.DIV =>
         Cast(Divide(left, right), LongType)
-      case SqlBaseParser.PLUS =>
+      case ArcticSparkSqlParser.PLUS =>
         Add(left, right)
-      case SqlBaseParser.MINUS =>
+      case ArcticSparkSqlParser.MINUS =>
         Subtract(left, right)
-      case SqlBaseParser.CONCAT_PIPE =>
+      case ArcticSparkSqlParser.CONCAT_PIPE =>
         Concat(left :: right :: Nil)
-      case SqlBaseParser.AMPERSAND =>
+      case ArcticSparkSqlParser.AMPERSAND =>
         BitwiseAnd(left, right)
-      case SqlBaseParser.HAT =>
+      case ArcticSparkSqlParser.HAT =>
         BitwiseXor(left, right)
-      case SqlBaseParser.PIPE =>
+      case ArcticSparkSqlParser.PIPE =>
         BitwiseOr(left, right)
     }
   }
@@ -1420,11 +1420,11 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
   override def visitArithmeticUnary(ctx: ArithmeticUnaryContext): Expression = withOrigin(ctx) {
     val value = expression(ctx.valueExpression)
     ctx.operator.getType match {
-      case SqlBaseParser.PLUS =>
+      case ArcticSparkSqlParser.PLUS =>
         value
-      case SqlBaseParser.MINUS =>
+      case ArcticSparkSqlParser.MINUS =>
         UnaryMinus(value)
-      case SqlBaseParser.TILDE =>
+      case ArcticSparkSqlParser.TILDE =>
         BitwiseNot(value)
     }
   }
@@ -1480,9 +1480,9 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
             s"doesn't support with option ${opt.getText}.", ctx)
         }
         opt.getType match {
-          case SqlBaseParser.BOTH => funcID
-          case SqlBaseParser.LEADING => funcID.copy(funcName = "ltrim")
-          case SqlBaseParser.TRAILING => funcID.copy(funcName = "rtrim")
+          case ArcticSparkSqlParser.BOTH => funcID
+          case ArcticSparkSqlParser.LEADING => funcID.copy(funcName = "ltrim")
+          case ArcticSparkSqlParser.TRAILING => funcID.copy(funcName = "rtrim")
           case _ => throw new ParseException("Function trim doesn't support with " +
             s"type ${opt.getType}. Please use BOTH, LEADING or Trailing as trim type", ctx)
         }
@@ -1544,8 +1544,8 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     // RANGE/ROWS BETWEEN ...
     val frameSpecOption = Option(ctx.windowFrame).map { frame =>
       val frameType = frame.frameType.getType match {
-        case SqlBaseParser.RANGE => RangeFrame
-        case SqlBaseParser.ROWS => RowFrame
+        case ArcticSparkSqlParser.RANGE => RangeFrame
+        case ArcticSparkSqlParser.ROWS => RowFrame
       }
 
       SpecifiedWindowFrame(
@@ -1571,15 +1571,15 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
     }
 
     ctx.boundType.getType match {
-      case SqlBaseParser.PRECEDING if ctx.UNBOUNDED != null =>
+      case ArcticSparkSqlParser.PRECEDING if ctx.UNBOUNDED != null =>
         UnboundedPreceding
-      case SqlBaseParser.PRECEDING =>
+      case ArcticSparkSqlParser.PRECEDING =>
         UnaryMinus(value)
-      case SqlBaseParser.CURRENT =>
+      case ArcticSparkSqlParser.CURRENT =>
         CurrentRow
-      case SqlBaseParser.FOLLOWING if ctx.UNBOUNDED != null =>
+      case ArcticSparkSqlParser.FOLLOWING if ctx.UNBOUNDED != null =>
         UnboundedFollowing
-      case SqlBaseParser.FOLLOWING =>
+      case ArcticSparkSqlParser.FOLLOWING =>
         value
     }
   }
@@ -1960,11 +1960,11 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
    */
   override def visitComplexDataType(ctx: ComplexDataTypeContext): DataType = withOrigin(ctx) {
     ctx.complex.getType match {
-      case SqlBaseParser.ARRAY =>
+      case ArcticSparkSqlParser.ARRAY =>
         ArrayType(typedVisit(ctx.dataType(0)))
-      case SqlBaseParser.MAP =>
+      case ArcticSparkSqlParser.MAP =>
         MapType(typedVisit(ctx.dataType(0)), typedVisit(ctx.dataType(1)))
-      case SqlBaseParser.STRUCT =>
+      case ArcticSparkSqlParser.STRUCT =>
         StructType(Option(ctx.complexColTypeList).toSeq.flatMap(visitComplexColTypeList))
     }
   }
