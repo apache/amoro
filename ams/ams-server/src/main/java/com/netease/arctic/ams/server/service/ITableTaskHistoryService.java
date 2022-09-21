@@ -41,4 +41,6 @@ public interface ITableTaskHistoryService {
   void deleteTaskHistory(TableIdentifier identifier);
 
   void deleteTaskHistoryWithHistoryId(TableIdentifier identifier, String taskHistoryId);
+
+  void expireTaskHistory(TableIdentifier identifier, String latestTaskHistoryId, long expireTime);
 }

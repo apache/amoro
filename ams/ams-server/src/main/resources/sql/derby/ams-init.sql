@@ -222,12 +222,14 @@ CREATE TABLE optimize_task_history (
     db_name varchar(64) NOT NULL,
     table_name varchar(64) NOT NULL,
     task_history_id varchar(40) DEFAULT NULL,
+    task_trace_id varchar(40) DEFAULT NULL,
+    task_attempt_id varchar(40) DEFAULT NULL,
     start_time timestamp DEFAULT NULL,
     end_time timestamp DEFAULT NULL,
     cost_time bigint DEFAULT NULL,
     queue_id int DEFAULT NULL,
     task_group_id varchar(40) DEFAULT NULL,
-    UNIQUE (task_history_id, task_group_id)
+    PRIMARY KEY (task_attempt_id)
 );
 
 CREATE TABLE database_metadata (

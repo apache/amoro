@@ -24,6 +24,8 @@ public class TableTaskHistory {
   private TableIdentifier tableIdentifier;
   private String taskGroupId;
   private String taskHistoryId;
+  private String taskTraceId;
+  private String taskAttemptId;
   private long startTime;
   private long endTime;
   private long costTime;
@@ -51,6 +53,22 @@ public class TableTaskHistory {
 
   public void setTaskHistoryId(String taskHistoryId) {
     this.taskHistoryId = taskHistoryId;
+  }
+
+  public String getTaskTraceId() {
+    return taskTraceId;
+  }
+
+  public void setTaskTraceId(String taskTraceId) {
+    this.taskTraceId = taskTraceId;
+  }
+
+  public String getTaskAttemptId() {
+    return taskAttemptId;
+  }
+
+  public void setTaskAttemptId(String taskAttemptId) {
+    this.taskAttemptId = taskAttemptId;
   }
 
   public long getStartTime() {
@@ -95,6 +113,8 @@ public class TableTaskHistory {
         ", endTime=" + endTime +
         ", costTime=" + costTime +
         ", queueId=" + queueId +
+        ", taskTraceId=" + taskTraceId +
+        ", taskAttemptId=" + taskAttemptId +
         '}';
   }
 }

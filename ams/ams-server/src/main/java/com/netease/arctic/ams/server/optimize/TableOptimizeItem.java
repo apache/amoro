@@ -568,7 +568,6 @@ public class TableOptimizeItem extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(false)) {
       Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
       Map<String, OptimizeType> optimizeTypMap = optimizeCommit.getPartitionOptimizeType();
-      Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
 
       // commit
       OptimizeTasksMapper optimizeTasksMapper =
@@ -581,8 +580,6 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       OptimizeHistoryMapper optimizeHistoryMapper =
           getMapper(sqlSession, OptimizeHistoryMapper.class);
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
 
       try {
         tasks.values().stream().flatMap(Collection::stream)
@@ -621,13 +618,6 @@ public class TableOptimizeItem extends IJDBCService {
         optimizeHistoryMapper.insertOptimizeHistory(record);
       } catch (Throwable t) {
         LOG.warn("failed to persist optimize history after commit, ignore. " + getTableIdentifier(), t);
-        sqlSession.rollback(true);
-      }
-
-      try {
-        commitTableTaskHistory.forEach((key, value) -> taskHistoryMapper.updateTaskHistory(value));
-      } catch (Exception e) {
-        LOG.warn("failed to persist task history after commit, ignore. " + getTableIdentifier(), e);
         sqlSession.rollback(true);
       }
 

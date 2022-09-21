@@ -627,6 +627,11 @@ public class OptimizeQueueService extends IJDBCService {
           latestCostTime = latestCostTime + currentTime - latestTaskHistory.getStartTime();
         }
       }
+
+      if (currentTime - latestStartTime == 0) {
+        return BigDecimal.valueOf(Long.MAX_VALUE);
+      }
+
       BigDecimal currentQuota = new BigDecimal(latestCostTime)
           .divide(new BigDecimal(currentTime - latestStartTime),
               2,

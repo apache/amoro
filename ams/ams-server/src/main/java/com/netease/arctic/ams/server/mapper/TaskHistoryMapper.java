@@ -35,7 +35,7 @@ public interface TaskHistoryMapper {
   String TABLE_NAME = "optimize_task_history";
 
   @Select("select catalog_name, db_name, table_name, task_group_id, task_history_id," +
-      "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
+      "task_trace_id, task_attempt_id, start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
       "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
       "and table_name = #{tableIdentifier.tableName} and task_history_id = #{historyId}")
   @Results({
@@ -44,6 +44,8 @@ public interface TaskHistoryMapper {
       @Result(column = "table_name", property = "tableIdentifier.tableName"),
       @Result(column = "task_group_id", property = "taskGroupId"),
       @Result(column = "task_history_id", property = "taskHistoryId"),
+      @Result(column = "task_trace_id", property = "taskTraceId"),
+      @Result(column = "task_attempt_id", property = "taskAttemptId"),
       @Result(column = "start_time", property = "startTime",
           typeHandler = Long2TsConvertor.class),
       @Result(column = "end_time", property = "endTime",
@@ -55,12 +57,14 @@ public interface TaskHistoryMapper {
                                            @Param("historyId") String historyId);
 
   @Insert("insert into " + TABLE_NAME + "(catalog_name, db_name, table_name, task_group_id, " +
-      "task_history_id, start_time, end_time, cost_time, queue_id) values ( " +
+      "task_history_id, task_trace_id, task_attempt_id, start_time, end_time, cost_time, queue_id) values ( " +
       "#{taskHistory.tableIdentifier.catalog}, " +
       "#{taskHistory.tableIdentifier.database}, " +
       "#{taskHistory.tableIdentifier.tableName}, " +
       "#{taskHistory.taskGroupId}, " +
       "#{taskHistory.taskHistoryId}, " +
+      "#{taskHistory.taskTraceId}, " +
+      "#{taskHistory.taskAttemptId}, " +
       "#{taskHistory.startTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}," +
       "#{taskHistory.endTime, " +
@@ -76,15 +80,11 @@ public interface TaskHistoryMapper {
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}, " +
       "cost_time = #{taskHistory.costTime} " +
       "where " +
-      "catalog_name = #{taskHistory.tableIdentifier.catalog} and " +
-      "db_name = #{taskHistory.tableIdentifier.database} and " +
-      "table_name = #{taskHistory.tableIdentifier.tableName} and " +
-      "task_history_id = #{taskHistory.taskHistoryId} and " +
-      "task_group_id = #{taskHistory.taskGroupId}")
+      "task_attempt_id = #{taskHistory.taskAttemptId}")
   void updateTaskHistory(@Param("taskHistory") TableTaskHistory taskHistory);
 
   @Select("select catalog_name, db_name, table_name, task_group_id, task_history_id," +
-      "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
+      "task_trace_id, task_attempt_id, start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
       "queue_id = #{queueId} " +
       "and start_time < #{endTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
       "and (end_time > #{startTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
@@ -95,6 +95,8 @@ public interface TaskHistoryMapper {
       @Result(column = "table_name", property = "tableIdentifier.tableName"),
       @Result(column = "task_group_id", property = "taskGroupId"),
       @Result(column = "task_history_id", property = "taskHistoryId"),
+      @Result(column = "task_trace_id", property = "taskTraceId"),
+      @Result(column = "task_attempt_id", property = "taskAttemptId"),
       @Result(column = "start_time", property = "startTime",
           typeHandler = Long2TsConvertor.class),
       @Result(column = "end_time", property = "endTime",
@@ -107,7 +109,7 @@ public interface TaskHistoryMapper {
                                                            @Param("endTime") long endTime);
 
   @Select("select catalog_name, db_name, table_name, task_group_id, task_history_id," +
-      "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
+      "task_trace_id, task_attempt_id, start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
       "start_time < #{endTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
       "and (end_time > #{startTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
       "or end_time is null)")
@@ -117,6 +119,8 @@ public interface TaskHistoryMapper {
       @Result(column = "table_name", property = "tableIdentifier.tableName"),
       @Result(column = "task_group_id", property = "taskGroupId"),
       @Result(column = "task_history_id", property = "taskHistoryId"),
+      @Result(column = "task_trace_id", property = "taskTraceId"),
+      @Result(column = "task_attempt_id", property = "taskAttemptId"),
       @Result(column = "start_time", property = "startTime",
           typeHandler = Long2TsConvertor.class),
       @Result(column = "end_time", property = "endTime",
@@ -128,7 +132,7 @@ public interface TaskHistoryMapper {
                                                  @Param("endTime") long endTime);
 
   @Select("select catalog_name, db_name, table_name, task_group_id, task_history_id," +
-      "start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
+      "task_trace_id, task_attempt_id, start_time, end_time, cost_time, queue_id from " + TABLE_NAME + " where " +
       "catalog_name = #{tableIdentifier.catalog} and " +
       "db_name = #{tableIdentifier.database} and " +
       "table_name = #{tableIdentifier.tableName} " +
@@ -141,6 +145,8 @@ public interface TaskHistoryMapper {
       @Result(column = "table_name", property = "tableIdentifier.tableName"),
       @Result(column = "task_group_id", property = "taskGroupId"),
       @Result(column = "task_history_id", property = "taskHistoryId"),
+      @Result(column = "task_trace_id", property = "taskTraceId"),
+      @Result(column = "task_attempt_id", property = "taskAttemptId"),
       @Result(column = "start_time", property = "startTime",
           typeHandler = Long2TsConvertor.class),
       @Result(column = "end_time", property = "endTime",
@@ -162,5 +168,10 @@ public interface TaskHistoryMapper {
       "and table_name = #{tableIdentifier.tableName} and task_history_id = #{historyId}")
   void deleteTaskHistoryWithHistoryId(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                       @Param("historyId") String historyId);
-  
+
+  @Delete("delete from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName} and task_history_id != #{latestTaskHistoryId} " +
+      "and end_time < #{expireTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  void expireTaskHistory(TableIdentifier identifier, String latestTaskHistoryId, long expireTime);
 }
