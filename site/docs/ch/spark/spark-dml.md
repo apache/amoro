@@ -61,12 +61,35 @@ partition( dt = '2021-1-1')  values
 
 ### Insert into
 
-要向表添加新数据，请使用`INSERT INTO`
+#### 无主键表
+要向无主键表添加新数据，请使用`INSERT INTO`
 
 ```sql
 INSERT INTO arctic_catalog.db.sample VALUES (1, 'a'), (2, 'b')
 
 INSERT INTO prod.db.table SELECT ...
+```
+
+#### 有主键表
+向有主键表添加新数据，可以根据配置`write.upsert.enable`参数，来控制是否开启`UPSERT`功能。
+
+`UPSERT`开启后，主键相同的行存在时执行`UPDATE`操作，不存在时执行`INSERT`操作
+
+`UPSERT`关闭后，仅执行`INSERT`操作
+
+```sql
+CREATE TABLE arctic_catalog.db.keyedTable (
+    id int,
+    data string,
+    primary key (id))
+USING arctic
+TBLPROPERTIES ('write.upsert.enable' = 'true')
+```
+
+```sql
+INSERT INTO arctic_catalog.db.keyedTable VALUES (1, 'a'), (2, 'b')
+
+INSERT INTO prod.db.keyedTable SELECT ...
 ```
 
 
