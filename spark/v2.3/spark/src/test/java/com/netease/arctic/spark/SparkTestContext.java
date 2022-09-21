@@ -349,7 +349,7 @@ public class SparkTestContext extends ExternalResource {
       this.rows = new ArrayList<>();
       return ImmutableList.of();
     }
-    result.show();
+    result.show(false);
     this.rows = rows.stream()
         .map(row -> IntStream.range(0, row.size())
             .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))

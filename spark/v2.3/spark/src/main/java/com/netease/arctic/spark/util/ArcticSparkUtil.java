@@ -18,32 +18,26 @@
 
 package com.netease.arctic.spark.util;
 
+import com.netease.arctic.spark.reader.SparkParquetV2Readers;
 import org.apache.avro.generic.GenericData;
-import org.apache.avro.util.Utf8;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Type;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.RuntimeConfig;
-import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.encoders.RowEncoder;
 import org.apache.spark.sql.types.BinaryType;
-import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.unsafe.types.UTF8String;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
-import java.sql.Timestamp;
-import java.util.List;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ArcticSparkUtil {
   public static final String CATALOG_URL = "arctic.catalog.url";
@@ -70,12 +64,12 @@ public class ArcticSparkUtil {
     switch (type.typeId()) {
       case DECIMAL:
         return Decimal.apply((BigDecimal) value);
-      case STRING:
+/*      case STRING:
         if (value instanceof Utf8) {
           Utf8 utf8 = (Utf8) value;
           return UTF8String.fromBytes(utf8.getBytes(), 0, utf8.getByteLength());
         }
-        return UTF8String.fromString(value.toString());
+        return UTF8String.fromString(value.toString());*/
       case FIXED:
         if (value instanceof byte[]) {
           return value;
@@ -94,22 +88,50 @@ public class ArcticSparkUtil {
     for (int i = 0; i < objects.length; i++) {
       Object object = objects[i];
       Type type = schema.columns().get(i).type();
-      if (object instanceof UTF8String) {
+      /*if (object instanceof UTF8String) {
         objects[i] = object.toString();
+      } else*/
+      if (object instanceof Double) {
+        objects[i] = new BigDecimal((Double) object).doubleValue();
+      } else if (object instanceof Float) {
+        objects[i] = new BigDecimal((Float) object).floatValue();
       } else if (object instanceof Decimal) {
         objects[i] = ((Decimal) object).toJavaBigDecimal();
       } else if (object instanceof BinaryType) {
         objects[i] = ByteBuffer.wrap((byte[]) object);
-      } else if (object instanceof Long && type.typeId() == Type.TypeID.TIMESTAMP) {
-        objects[i] = new Timestamp((Long) object);
+      } /*else if (object instanceof Long && type.typeId() == Type.TypeID.TIMESTAMP) {
+        objects[i] = DateTimeUtils.toJavaTimestamp((Long) object);
+      }*/ else if (object instanceof SparkParquetV2Readers.ReusableMapData) {
+        Object[] keyArray = ((SparkParquetV2Readers.ReusableMapData) object).keyArray().array();
+        Object[] valueArray = ((SparkParquetV2Readers.ReusableMapData) object).valueArray().array();
+        Map map = new HashMap();
+        for (int j = 0; j < keyArray.length; j++) {
+          if (keyArray[j] instanceof UTF8String) {
+            keyArray[j] = keyArray[j].toString();
+          }
+          if (valueArray[j] instanceof UTF8String) {
+            valueArray[j] = valueArray[j].toString();
+          }
+          map.put(keyArray[j], valueArray[j]);
+        }
+        scala.collection.Map scalaMap = (scala.collection.Map) JavaConverters.mapAsScalaMapConverter(map).asScala();
+        objects[i] = scalaMap;
+      } else if (object instanceof SparkParquetV2Readers.ReusableArrayData) {
+        Object[] array = ((SparkParquetV2Readers.ReusableArrayData) object).array();
+        for (int j = 0; j < array.length; j++) {
+          if (array[j] instanceof UTF8String) {
+            array[j] = array[j].toString();
+          }
+        }
+        Seq seq = JavaConverters.asScalaIteratorConverter(Arrays.asList(array).iterator()).asScala().toSeq();
+        objects[i] = seq;
       }
     }
     return objects;
   }
 
-  public static Row convertInterRowToRow(InternalRow internalRow, Schema schema) {
-    StructType structType = SparkSchemaUtil.convert(schema);
-    Seq<Object> objectSeq = internalRow.toSeq(structType);
+  public static Row convertInterRowToRow(Row row, Schema schema) {
+    Seq<Object> objectSeq = row.toSeq();
     Object[] objects = JavaConverters.seqAsJavaListConverter(objectSeq).asJava().toArray();
     return RowFactory.create(convertRowObject(objects, schema));
   }

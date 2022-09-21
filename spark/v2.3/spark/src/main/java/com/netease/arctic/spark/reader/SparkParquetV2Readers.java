@@ -23,10 +23,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.parquet.ParquetSchemaUtil;
@@ -61,12 +63,16 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.sql.catalyst.util.ArrayBasedMapData;
 import org.apache.spark.sql.catalyst.util.ArrayData;
+import org.apache.spark.sql.catalyst.util.DateTimeUtils;
 import org.apache.spark.sql.catalyst.util.GenericArrayData;
 import org.apache.spark.sql.catalyst.util.MapData;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
+import scala.collection.JavaConverters;
+import scala.collection.Seq;
+import scala.collection.mutable.ArrayBuffer;
 
 public class SparkParquetV2Readers {
   private SparkParquetV2Readers() {
@@ -79,8 +85,8 @@ public class SparkParquetV2Readers {
 
   @SuppressWarnings("unchecked")
   public static ParquetValueReader<Row> buildReader(Schema expectedSchema,
-                                                            MessageType fileSchema,
-                                                            Map<Integer, ?> idToConstant) {
+                                                    MessageType fileSchema,
+                                                    Map<Integer, ?> idToConstant) {
     if (ParquetSchemaUtil.hasIds(fileSchema)) {
       return (ParquetValueReader<Row>)
           TypeWithSchemaVisitor.visit(expectedSchema.asStruct(), fileSchema,
@@ -199,7 +205,7 @@ public class SparkParquetV2Readers {
       Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName())) - 1;
 
-      return new ArrayReader<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
+      return new ArrayReaderScala<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
     }
 
     @Override
@@ -217,7 +223,7 @@ public class SparkParquetV2Readers {
       Type valueType = repeatedKeyValue.getType(1);
       int valueD = type.getMaxDefinitionLevel(path(valueType.getName())) - 1;
 
-      return new MapReader<>(repeatedD, repeatedR,
+      return new MapReaderScala<>(repeatedD, repeatedR,
           ParquetValueReaders.option(keyType, keyD, keyReader),
           ParquetValueReaders.option(valueType, valueD, valueReader));
     }
@@ -350,14 +356,14 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class TimestampMillisReader extends UnboxedReader<Long> {
+  private static class TimestampMillisReader extends UnboxedReader<Timestamp> {
     TimestampMillisReader(ColumnDescriptor desc) {
       super(desc);
     }
 
     @Override
-    public Long read(Long ignored) {
-      return readLong();
+    public Timestamp read(Timestamp ignored) {
+      return DateTimeUtils.toJavaTimestamp(readLong());
     }
 
     @Override
@@ -366,7 +372,7 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class TimestampInt96Reader extends UnboxedReader<Long> {
+  private static class TimestampInt96Reader extends UnboxedReader<Timestamp> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
     TimestampInt96Reader(ColumnDescriptor desc) {
@@ -374,8 +380,8 @@ public class SparkParquetV2Readers {
     }
 
     @Override
-    public Long read(Long ignored) {
-      return readLong();
+    public Timestamp read(Timestamp ignored) {
+      return DateTimeUtils.toJavaTimestamp(readLong());
     }
 
     @Override
@@ -389,21 +395,112 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class StringReader extends PrimitiveReader<UTF8String> {
+  private static class StringReader extends PrimitiveReader<String> {
     StringReader(ColumnDescriptor desc) {
       super(desc);
     }
 
     @Override
-    public UTF8String read(UTF8String ignored) {
+    public String read(String reuse) {
       Binary binary = column.nextBinary();
       ByteBuffer buffer = binary.toByteBuffer();
       if (buffer.hasArray()) {
         return UTF8String.fromBytes(
-            buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining());
+            buffer.array(), buffer.arrayOffset() + buffer.position(), buffer.remaining()).toString();
       } else {
-        return UTF8String.fromBytes(binary.getBytes());
+        return UTF8String.fromBytes(binary.getBytes()).toString();
       }
+    }
+  }
+
+  private static class ArrayReaderScala<E> extends RepeatedReader<ArrayBuffer, ArrayBuffer, E> {
+
+    private int readPos = 0;
+    private int writePos = 0;
+
+    protected ArrayReaderScala(int definitionLevel, int repetitionLevel, ParquetValueReader<E> reader) {
+      super(definitionLevel, repetitionLevel, reader);
+    }
+
+    @Override
+    protected ArrayBuffer newListData(ArrayBuffer reuse) {
+      this.readPos = 0;
+      this.writePos = 0;
+      return new ArrayBuffer();
+    }
+
+    @Override
+    protected E getElement(ArrayBuffer list) {
+      E value = null;
+      if (readPos < list.size()) {
+        value = (E) list.apply(readPos);
+      }
+
+      readPos += 1;
+
+      return value;
+    }
+
+    @Override
+    protected void addElement(ArrayBuffer list, E element) {
+      Object[] array = {element};
+      Seq seq = JavaConverters.asScalaIteratorConverter(Arrays.asList(array).iterator()).asScala().toSeq();
+      list.insert(writePos, seq);
+
+      writePos += 1;
+    }
+
+    @Override
+    protected ArrayBuffer buildList(ArrayBuffer list) {
+      return list;
+    }
+
+
+  }
+
+  private static class MapReaderScala<K, V> extends RepeatedKeyValueReader<scala.collection.mutable.Map, scala.collection.mutable.Map, K, V> {
+    private int readPos = 0;
+    private int writePos = 0;
+
+    private final ReusableEntry<K, V> entry = new ReusableEntry<>();
+    private final ReusableEntry<K, V> nullEntry = new ReusableEntry<>();
+
+    protected MapReaderScala(int definitionLevel, int repetitionLevel, ParquetValueReader<K> keyReader, ParquetValueReader<V> valueReader) {
+      super(definitionLevel, repetitionLevel, keyReader, valueReader);
+    }
+
+    @Override
+    protected scala.collection.mutable.Map newMapData(scala.collection.mutable.Map reuse) {
+      this.readPos = 0;
+      this.writePos = 0;
+
+      return new scala.collection.mutable.HashMap();
+    }
+
+    @Override
+    protected Map.Entry<K, V> getPair(scala.collection.mutable.Map map) {
+      Map.Entry<K, V> kv = nullEntry;
+      if (readPos < map.size()) {
+        entry.set((K) map.keys().toSeq().apply(readPos), (V) map.values().toSeq().apply(readPos));
+        kv = entry;
+      }
+
+      readPos += 1;
+
+      return kv;
+    }
+
+    @Override
+    protected void addPair(scala.collection.mutable.Map map, K key, V value) {
+
+      map.update(key, value);
+
+      writePos += 1;
+    }
+
+    @Override
+    protected scala.collection.mutable.Map buildMap(scala.collection.mutable.Map map) {
+      return map;
     }
   }
 
@@ -553,7 +650,7 @@ public class SparkParquetV2Readers {
 
   }
 
-  private static class ReusableMapData extends MapData {
+  public static class ReusableMapData extends MapData {
     private final ReusableArrayData keys;
     private final ReusableArrayData values;
     private int numElements;
@@ -599,7 +696,7 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class ReusableArrayData extends ArrayData {
+  public static class ReusableArrayData extends ArrayData {
     private static final Object[] EMPTY = new Object[0];
 
     private Object[] values = EMPTY;

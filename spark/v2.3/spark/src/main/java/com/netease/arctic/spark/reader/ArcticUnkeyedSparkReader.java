@@ -2,7 +2,6 @@ package com.netease.arctic.spark.reader;
 
 
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.spark.util.ArcticSparkUtil;
 import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.CombinedScanTask;
@@ -22,9 +21,7 @@ import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.v2.reader.DataReader;
 import org.apache.spark.sql.sources.v2.reader.DataReaderFactory;
@@ -36,8 +33,6 @@ import org.apache.spark.sql.sources.v2.reader.SupportsReportStatistics;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -210,7 +205,7 @@ public class ArcticUnkeyedSparkReader implements DataSourceReader,
     ArcticSparkUnkeyedDataReader reader;
     Iterator<FileScanTask> scanTasks;
     FileScanTask currentScanTask;
-    CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
+    CloseableIterator<Row> currentIterator = CloseableIterator.empty();
     Row current;
     Schema expectedSchema;
 
@@ -231,7 +226,7 @@ public class ArcticUnkeyedSparkReader implements DataSourceReader,
     public boolean next() throws IOException {
       while (true) {
         if (currentIterator.hasNext()) {
-          this.current = ArcticSparkUtil.convertInterRowToRow(currentIterator.next(), expectedSchema);
+          this.current = currentIterator.next();
           return true;
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();
