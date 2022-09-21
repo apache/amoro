@@ -70,11 +70,23 @@ CREATE TABLE arctic_catalog.db.sample
 USING arctic
 AS SELECT ...
 ```
+???+note "CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及properties不会从源表中继承，需单独配置。"
+
+创建带主键、分区、preoperties的表，可以使用如下语法：
+
+```
+CREATE TABLE arctic_catalog.db.sample
+PRIMARY KEY(id) USING arctic 
+PARTITIONED BY (pt)  
+TBLPROPERTIES (''prop1''=''val1'', ''prop2''=''val2'')
+AS SELECT ...
+```
 
 ???+danger "CREATE TABLE ... AS SELECT 在当前版本没有原子性保证"
 
 ## CREATE TABLE ... LIKE
 
+`CREATE TABLE ... LIKE` 语法会将表结构包括主键、分区以及表配置复制到新表中，但不会复制数据。
 
 ``` 
 CREATE TABLE arctic_catalog.db.sample

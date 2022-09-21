@@ -74,7 +74,7 @@ insert overwrite test3 values
 ( 3, "bbb", timestamp('2022-1-3 00:00:00'));
 ```
 
-> 在当前版本中, 只在无主键表上支持 insert into 语法
+> 在当前版本中, 在有主键表和无主键表上都支持 insert into 语法
 
 > 如果使用 static 类型的 Overwrite, 不能在分区上定义函数。
 

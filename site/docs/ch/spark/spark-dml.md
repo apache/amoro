@@ -69,12 +69,11 @@ INSERT INTO arctic_catalog.db.sample VALUES (1, 'a'), (2, 'b')
 INSERT INTO prod.db.table SELECT ...
 ```
 
-???+note "INSERT INTO 语法在当前版本只支持无主键表"
 
 
 ### Delete from
 
-Arctic Spark 支持对无主键表的 `DELETE FROM` 语法用于删除表中数据
+Arctic Spark 支持对有主键和无主键表的 `DELETE FROM` 语法用于删除表中数据
 
 ```sql
 DELETE FROM arctic_catalog.db.sample
@@ -87,11 +86,10 @@ DELETE FROM arctic_catalog.db.sample AS t1
 WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 ```
 
-???+note "DELETE FROM 语法在当前版本只支持无主键表"
 
 ### Update 
 
-支持`UPDATE`语句对无主键表的进行更新
+支持`UPDATE`语句对有主键表和无主键表的进行更新
 
 更新语句使用`SELECT`来匹配要更新的行
 
@@ -109,7 +107,7 @@ SET order_status = 'returned'
 WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 ```
 
-???+note "UPDATE 语法在当前版本只支持无主键表"
+
 
 ### MERGE INTO
 
@@ -136,4 +134,4 @@ WHEN NOT MATCHED THEN INSERT *
 
 ```
 
-???+note "UPDATE 语法在当前版本只支持无主键表"
+???+note "MERGE INTO 语法在当前版本只支持无主键表"
