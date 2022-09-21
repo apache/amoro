@@ -41,10 +41,6 @@ public interface TableTransactionMetaMapper {
   Long getTxIdBySign(@Param("tableIdentifier") TableIdentifier tableIdentifier,
       @Param("sign") String sign);
 
-  @Select("select max(transaction_id) from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, " +
-      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
-  Long getCurrentTxId(@Param("tableIdentifier") TableIdentifier tableIdentifier);
-
   @Delete("delete from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
   void deleteTableTx(@Param("tableIdentifier") TableIdentifier tableIdentifier);
