@@ -1,5 +1,5 @@
 # 表管理
-[AMS Dashboard](http://localhost:1630) 中提供了命令行工具`Terminal`帮组用户快速完成表的创建、修改与删除操作。
+[AMS Dashboard](http://localhost:1630) 中提供了命令行工具 `Terminal` 帮组用户快速完成表的创建、修改与删除操作。
 同时还可以在 [Spark](../spark/spark-ddl.md) 和 [Flink](../flink/flink-ddl.md) 等引擎中使用 SQL 完成表的管理。
 
 ## 升级 Hive 表
@@ -16,7 +16,7 @@ Arctic 从 v0.3.1 版本开始支持了 Hive 表，可以对已有的 Hive 表�
 在升级界面为表选择主键，并添加额外的参数，之后点击 `OK` 完成 Hive 表的升级操作。
 
 ## 新建表
-登录 [AMS Dashboard](http://localhost:1630) 后，进入`Terminal`，输入建表语句并执行即可完成表的创建。
+登录 [AMS Dashboard](http://localhost:1630) 后，进入 `Terminal`，输入建表语句并执行即可完成表的创建。
 下面是一个建表的例子：
 
 ```sql
@@ -49,7 +49,7 @@ Logstore 的相关配置是通过表的额外属性在表创建之时写入表�
 
 ## 修改表
 
-登录 [AMS Dashboard](http://localhost:1630) 后，进入`Terminal`，输入修改语句并执行即可完成表的修改。
+登录 [AMS Dashboard](http://localhost:1630) 后，进入 `Terminal`，输入修改语句并执行即可完成表的修改。
 下面是一个新增字段的的例子：
 
 ```sql
@@ -60,7 +60,7 @@ ALTER TABLE test_db.test_log_store ADD COLUMN new_column string comment 'new_col
 
 ## 删除表
 
-登录 [AMS Dashboard](http://localhost:1630) 后，进入`Terminal`，输入修改语句并执行即可完成表的修改。
+登录 [AMS Dashboard](http://localhost:1630) 后，进入 `Terminal`，输入修改语句并执行即可完成表的修改。
 下面是一个删除表的的例子：
 
 ```sql
