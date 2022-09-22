@@ -20,6 +20,18 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
   private final String table = "testa";
   private UnkeyedTable unkeyedTable;
   private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+  private final List<Object[]> files = Lists.newArrayList(
+      new Object[]{1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2"}
+  );
 
   @Before
   public void before() {
@@ -31,7 +43,6 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
     sql("drop table {0}.{1}", database, table);
     sql("drop database if exists " + database);
   }
-
 
 
   @Test
@@ -46,20 +57,23 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
         " partitioned by ( dt ) \n", database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
     writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(unkeyedTable.schema(), files.get(0)),
+        newRecord(unkeyedTable.schema(), files.get(1)),
+        newRecord(unkeyedTable.schema(), files.get(2)),
+        newRecord(unkeyedTable.schema(), files.get(3)),
+        newRecord(unkeyedTable.schema(), files.get(4)),
+        newRecord(unkeyedTable.schema(), files.get(5))
     ));
     writeHive(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(unkeyedTable.schema(), files.get(6)),
+        newRecord(unkeyedTable.schema(), files.get(7)),
+        newRecord(unkeyedTable.schema(), files.get(8)),
+        newRecord(unkeyedTable.schema(), files.get(9))
     ));
-    sql("select * from {0}.{1} order by id", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files,
+        rows);
     Assert.assertEquals(10, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
@@ -70,7 +84,10 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
     Assert.assertEquals(2, partitions.size());
     //disable arctic
     sql("set spark.arctic.sql.delegate.enable = false");
-    sql("select * from {0}.{1} order by id", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files.subList(6, files.size()),
+        rows);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
     sql("set spark.arctic.sql.delegate.enable = true");
@@ -87,25 +104,31 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
         ") using arctic \n", database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
     writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(unkeyedTable.schema(), files.get(0)),
+        newRecord(unkeyedTable.schema(), files.get(1)),
+        newRecord(unkeyedTable.schema(), files.get(2)),
+        newRecord(unkeyedTable.schema(), files.get(3)),
+        newRecord(unkeyedTable.schema(), files.get(4)),
+        newRecord(unkeyedTable.schema(), files.get(5))
     ));
     writeHive(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(unkeyedTable.schema(), files.get(6)),
+        newRecord(unkeyedTable.schema(), files.get(7)),
+        newRecord(unkeyedTable.schema(), files.get(8)),
+        newRecord(unkeyedTable.schema(), files.get(9))
     ));
-    sql("select * from {0}.{1} order by id", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files,
+        rows);
     Assert.assertEquals(10, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     //disable arctic
     sql("set spark.arctic.sql.delegate.enable = false");
-    sql("select * from {0}.{1} order by id", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files.subList(6, files.size()),
+        rows);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
     sql("set spark.arctic.sql.delegate.enable = true");

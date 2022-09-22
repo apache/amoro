@@ -24,7 +24,6 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.iceberg.DataFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -40,6 +39,19 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
   private final String table = "test_mora";
   private KeyedTable keyedTable;
   private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, table);
+
+  private final List<Object[]> files = Lists.newArrayList(
+      new Object[]{1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"},
+      new Object[]{9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"},
+      new Object[]{10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2"}
+  );
 
   @Before
   public void before() {
@@ -66,24 +78,28 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
     keyedTable = loadTable(identifier).asKeyedTable();
 
     writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(keyedTable, 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(keyedTable, 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(keyedTable, files.get(0)),
+        newRecord(keyedTable, files.get(1)),
+        newRecord(keyedTable, files.get(2)),
+        newRecord(keyedTable, files.get(3)),
+        newRecord(keyedTable, files.get(4)),
+        newRecord(keyedTable, files.get(5))
     ));
     writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(keyedTable, 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(keyedTable, files.get(6)),
+        newRecord(keyedTable, files.get(7)),
+        newRecord(keyedTable, files.get(8)),
+        newRecord(keyedTable, files.get(9))
     ));
     writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1")
+        newRecord(keyedTable, files.get(0))
     ));
 
-    sql("select * from {0}.{1} order by id", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+
+    assertEquals("Should have rows matching the expected rows",
+        files.subList(1, files.size()),
+        rows);
     Assert.assertEquals(9, rows.size());
     assertContainIdSet(rows, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 
@@ -95,6 +111,9 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
     //disable arctic
     sql("set spark.arctic.sql.delegate.enable = false");
     sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files.subList(6, files.size()),
+        rows);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
     sql("set spark.arctic.sql.delegate.enable = true");
@@ -114,29 +133,34 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
     keyedTable = loadTable(identifier).asKeyedTable();
 
     writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(keyedTable, 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(keyedTable, 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(keyedTable, files.get(0)),
+        newRecord(keyedTable, files.get(1)),
+        newRecord(keyedTable, files.get(2)),
+        newRecord(keyedTable, files.get(3)),
+        newRecord(keyedTable, files.get(4)),
+        newRecord(keyedTable, files.get(5))
     ));
-
     writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
-        newRecord(keyedTable, 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
-        newRecord(keyedTable, 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
+        newRecord(keyedTable, files.get(6)),
+        newRecord(keyedTable, files.get(7)),
+        newRecord(keyedTable, files.get(8)),
+        newRecord(keyedTable, files.get(9))
     ));
     writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1")
+        newRecord(keyedTable, files.get(0))
     ));
-    sql("select * from {0}.{1} order by id", database, table);
+    rows = sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files.subList(1, files.size()),
+        rows);
     Assert.assertEquals(9, rows.size());
     assertContainIdSet(rows, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     //disable arctic
     sql("set spark.arctic.sql.delegate.enable = false");
     sql("select * from {0}.{1} order by id", database, table);
+    assertEquals("Should have rows matching the expected rows",
+        files.subList(6, files.size()),
+        rows);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
     sql("set spark.arctic.sql.delegate.enable = true");
