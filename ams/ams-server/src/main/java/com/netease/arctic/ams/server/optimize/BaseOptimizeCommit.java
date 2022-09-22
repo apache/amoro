@@ -22,7 +22,6 @@ import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
@@ -60,7 +59,6 @@ public class BaseOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizeCommit.class);
   protected final ArcticTable arcticTable;
   protected final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
-  protected final Map<String, TableTaskHistory> commitTableTaskHistory = new HashMap<>();
   protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
 
   public BaseOptimizeCommit(ArcticTable arcticTable,
@@ -71,10 +69,6 @@ public class BaseOptimizeCommit {
 
   public Map<String, List<OptimizeTaskItem>> getCommittedTasks() {
     return optimizeTasksToCommit;
-  }
-
-  public Map<String, TableTaskHistory> getCommitTableTaskHistory() {
-    return commitTableTaskHistory;
   }
 
   public boolean commit(long baseSnapshotId) throws Exception {
@@ -124,27 +118,6 @@ public class BaseOptimizeCommit {
             majorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), new HashSet<>()));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
           }
-
-          String taskGroupId = task.getOptimizeTask().getTaskGroup();
-          String taskHistoryId = task.getOptimizeTask().getTaskHistoryId();
-          String historyKey = taskHistoryId + "#" + taskGroupId;
-          TableTaskHistory tableTaskHistory = commitTableTaskHistory.get(historyKey);
-          if (tableTaskHistory != null) {
-            tableTaskHistory.setCostTime(tableTaskHistory.getCostTime() + task.getOptimizeRuntime().getCostTime());
-            tableTaskHistory.setStartTime(Math.min(tableTaskHistory.getStartTime(),
-                task.getOptimizeRuntime().getExecuteTime()));
-            tableTaskHistory.setEndTime(Math.max(tableTaskHistory.getEndTime(),
-                task.getOptimizeRuntime().getReportTime()));
-          } else {
-            tableTaskHistory = new TableTaskHistory();
-            tableTaskHistory.setTableIdentifier(arcticTable.id());
-            tableTaskHistory.setTaskGroupId(taskGroupId);
-            tableTaskHistory.setTaskHistoryId(taskHistoryId);
-            tableTaskHistory.setCostTime(task.getOptimizeRuntime().getCostTime());
-            tableTaskHistory.setStartTime(task.getOptimizeRuntime().getExecuteTime());
-            tableTaskHistory.setEndTime(task.getOptimizeRuntime().getReportTime());
-          }
-          commitTableTaskHistory.put(historyKey, tableTaskHistory);
         }
       }
 

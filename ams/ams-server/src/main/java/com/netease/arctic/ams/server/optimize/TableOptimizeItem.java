@@ -33,7 +33,6 @@ import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
-import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
@@ -42,7 +41,6 @@ import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -505,7 +503,6 @@ public class TableOptimizeItem extends IJDBCService {
   private void optimizeTasksClear(BaseOptimizeCommit optimizeCommit) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
-      Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
 
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
@@ -513,16 +510,6 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, InternalTableFilesMapper.class);
       TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      try {
-        commitTableTaskHistory.forEach((key, value) ->
-            taskHistoryMapper.deleteTaskHistoryWithHistoryId(value.getTableIdentifier(), value.getTaskHistoryId()));
-      } catch (Exception e) {
-        LOG.warn("failed to delete task history after commit failed, ignore. " + getTableIdentifier(), e);
-        sqlSession.rollback(true);
-      }
 
       try {
         // persist partition optimize time
