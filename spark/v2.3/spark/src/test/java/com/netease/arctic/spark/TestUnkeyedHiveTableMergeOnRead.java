@@ -39,23 +39,25 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
+        " salary double , \n" +
+        " money float , \n" +
         " dt string \n" +
         ") using arctic \n" +
         " partitioned by ( dt ) \n", database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
     writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 1, "aaa", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 2, "bbb", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 3, "ccc", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 4, "ddd", "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 5, "eee", "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 6, "fff", "2021-1-2")
+        newRecord(unkeyedTable.schema(), 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(unkeyedTable.schema(), 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(unkeyedTable.schema(), 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     writeHive(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 7, "aaa_hive", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 8, "bbb_hive", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 9, "ccc_hive", "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 10, "ddd_hive", "2021-1-2")
+        newRecord(unkeyedTable.schema(), 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(unkeyedTable.schema(), 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(10, rows.size());
@@ -79,22 +81,24 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
+        " salary double , \n" +
+        " money float , \n" +
         " dt string \n" +
         ") using arctic \n", database, table);
     unkeyedTable = loadTable(identifier).asUnkeyedTable();
     writeHive(unkeyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 1, "aaa", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 2, "bbb", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 3, "ccc", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 4, "ddd", "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 5, "eee", "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 6, "fff", "2021-1-2")
+        newRecord(unkeyedTable.schema(), 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(unkeyedTable.schema(), 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(unkeyedTable.schema(), 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     writeHive(unkeyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(unkeyedTable.schema(), 7, "aaa_hive", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 8, "bbb_hive", "2021-1-1"),
-        newRecord(unkeyedTable.schema(), 9, "ccc_hive", "2021-1-2"),
-        newRecord(unkeyedTable.schema(), 10, "ddd_hive", "2021-1-2")
+        newRecord(unkeyedTable.schema(), 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(unkeyedTable.schema(), 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(unkeyedTable.schema(), 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(10, rows.size());

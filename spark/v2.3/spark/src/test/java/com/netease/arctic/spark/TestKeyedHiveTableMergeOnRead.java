@@ -57,6 +57,8 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
+        " salary double , \n" +
+        " money float , \n" +
         " dt string , \n" +
         " primary key (id) \n" +
         ") using arctic \n" +
@@ -64,21 +66,21 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
     keyedTable = loadTable(identifier).asKeyedTable();
 
     writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", "2021-1-1"),
-        newRecord(keyedTable, 2, "bbb", "2021-1-1"),
-        newRecord(keyedTable, 3, "ccc", "2021-1-1"),
-        newRecord(keyedTable, 4, "ddd", "2021-1-2"),
-        newRecord(keyedTable, 5, "eee", "2021-1-2"),
-        newRecord(keyedTable, 6, "fff", "2021-1-2")
+        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(keyedTable, 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(keyedTable, 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 7, "aaa_hive", "2021-1-1"),
-        newRecord(keyedTable, 8, "bbb_hive", "2021-1-1"),
-        newRecord(keyedTable, 9, "ccc_hive", "2021-1-2"),
-        newRecord(keyedTable, 10, "ddd_hive", "2021-1-2")
+        newRecord(keyedTable, 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(keyedTable, 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", "2021-1-1")
+        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1")
     ));
 
     sql("select * from {0}.{1} order by id", database, table);
@@ -104,28 +106,30 @@ public class TestKeyedHiveTableMergeOnRead extends SparkTestBase {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " data string , \n " +
+        " salary double , \n" +
+        " money float , \n" +
         " dt string , \n" +
         " primary key (id) \n" +
         ") using arctic \n", database, table);
     keyedTable = loadTable(identifier).asKeyedTable();
 
-    List<DataFile> dataFiles = writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", "2021-1-1"),
-        newRecord(keyedTable, 2, "bbb", "2021-1-1"),
-        newRecord(keyedTable, 3, "ccc", "2021-1-1"),
-        newRecord(keyedTable, 4, "ddd", "2021-1-2"),
-        newRecord(keyedTable, 5, "eee", "2021-1-2"),
-        newRecord(keyedTable, 6, "fff", "2021-1-2")
+    writeHive(keyedTable, BaseLocationKind.INSTANT, Lists.newArrayList(
+        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 2, "bbb", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 3, "ccc", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 4, "ddd", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(keyedTable, 5, "eee", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(keyedTable, 6, "fff", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
 
     writeHive(keyedTable, HiveLocationKind.INSTANT, Lists.newArrayList(
-        newRecord(keyedTable, 7, "aaa_hive", "2021-1-1"),
-        newRecord(keyedTable, 8, "bbb_hive", "2021-1-1"),
-        newRecord(keyedTable, 9, "ccc_hive", "2021-1-2"),
-        newRecord(keyedTable, 10, "ddd_hive", "2021-1-2")
+        newRecord(keyedTable, 7, "aaa_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 8, "bbb_hive", new Double(12345.123), new Float(12.11), "2021-1-1"),
+        newRecord(keyedTable, 9, "ccc_hive", new Double(12345.123), new Float(12.11), "2021-1-2"),
+        newRecord(keyedTable, 10, "ddd_hive", new Double(12345.123), new Float(12.11), "2021-1-2")
     ));
     writeChange(identifier, ChangeAction.DELETE, Lists.newArrayList(
-        newRecord(keyedTable, 1, "aaa", "2021-1-1")
+        newRecord(keyedTable, 1, "aaa", new Double(12345.123), new Float(12.11), "2021-1-1")
     ));
     sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(9, rows.size());
