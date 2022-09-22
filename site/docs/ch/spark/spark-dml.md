@@ -2,7 +2,7 @@
 
 ## Query
 
-使用 `Select` 语句查询 arctic 表
+使用 `Select` 语句查询 Arctic 表
 
 ```sql 
 SELECT * FROM arctic_catalog.db.sample
@@ -23,11 +23,11 @@ SELECT * FROM arctic_catalog.db.sample.change
 
 `INSERT OVERWRITE`可以用查询的结果替换表中的数据
 
-Spark默认的覆盖模式是static
+Spark 默认的覆盖模式是 Static
 
-Dynamic覆盖模式通过设置`spark.sql.sources.partitionOverwriteMode=dynamic`
+Dynamic 覆盖模式通过设置`spark.sql.sources.partitionOverwriteMode=dynamic`
 
-为了演示`dynamic overwrite`和`static overwrite`的行为，由以下DDL定义一张测试表:
+为了演示 `dynamic overwrite` 和 `static overwrite` 的行为，由以下DDL定义一张测试表:
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -39,7 +39,7 @@ USING arctic
 PARTITIONED BY (days(ts))
 ```
 
-当 Spark 的覆盖模式是 dynamic 时，由`SELECT`查询生成的行的分区将被替换。
+当 Spark 的覆盖模式是 Dynamic 时，由 `SELECT` 查询生成的行的分区将被替换。
 
 ```sql
 INSERT OVERWRITE arctic_catalog.db.sample values 
@@ -48,7 +48,7 @@ INSERT OVERWRITE arctic_catalog.db.sample values
 (3, 'ccc',  timestamp(' 2022-1-3 09:00:00 '))
 ```
 
-当 Spark 的覆盖模式为static 时，该`PARTITION`子句将转换为从表中`SELECT`的结果集。如果`PARTITION`省略该子句，则将替换所有分区
+当 Spark 的覆盖模式为 Static 时，该 `PARTITION` 子句将转换为从表中 `SELECT` 的结果集。如果 `PARTITION` 省略该子句，则将替换所有分区
 
 ```sql
 INSERT OVERWRITE arctic_catalog.db.sample 
@@ -56,12 +56,13 @@ partition( dt = '2021-1-1')  values
 (1, 'aaa'), (2, 'bbb'), (3, 'ccc') 
 ```
 
-???+note "在static 模式下，不支持在分区字段上定义 transform"
+???+note "在 Static 模式下，不支持在分区字段上定义 transform"
 
 
 ### Insert into
 
-要向表添加新数据，请使用`INSERT INTO`
+#### 无主键表
+要向无主键表添加新数据，请使用 `INSERT INTO`
 
 ```sql
 INSERT INTO arctic_catalog.db.sample VALUES (1, 'a'), (2, 'b')
@@ -69,12 +70,33 @@ INSERT INTO arctic_catalog.db.sample VALUES (1, 'a'), (2, 'b')
 INSERT INTO prod.db.table SELECT ...
 ```
 
-???+note "INSERT INTO 语法在当前版本只支持无主键表"
+#### 有主键表
+向有主键表添加新数据，可以根据配置 `write.upsert.enable` 参数，来控制是否开启 `UPSERT` 功能。
+
+`UPSERT` 开启后，主键相同的行存在时执行 `UPDATE` 操作，不存在时执行 `INSERT` 操作
+
+`UPSERT` 关闭后，仅执行 `INSERT` 操作
+
+```sql
+CREATE TABLE arctic_catalog.db.keyedTable (
+    id int,
+    data string,
+    primary key (id))
+USING arctic
+TBLPROPERTIES ('write.upsert.enable' = 'true')
+```
+
+```sql
+INSERT INTO arctic_catalog.db.keyedTable VALUES (1, 'a'), (2, 'b')
+
+INSERT INTO prod.db.keyedTable SELECT ...
+```
+
 
 
 ### Delete from
 
-Arctic Spark 支持对无主键表的 `DELETE FROM` 语法用于删除表中数据
+Arctic Spark 支持 `DELETE FROM` 语法用于删除表中数据
 
 ```sql
 DELETE FROM arctic_catalog.db.sample
@@ -87,13 +109,12 @@ DELETE FROM arctic_catalog.db.sample AS t1
 WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 ```
 
-???+note "DELETE FROM 语法在当前版本只支持无主键表"
 
 ### Update 
 
-支持`UPDATE`语句对无主键表的进行更新
+支持 `UPDATE` 语句对表进行更新
 
-更新语句使用`SELECT`来匹配要更新的行
+更新语句使用 `SELECT` 来匹配要更新的行
 
 ```sql
 UPDATE arctic_catalog.db.sample
@@ -109,7 +130,7 @@ SET order_status = 'returned'
 WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 ```
 
-???+note "UPDATE 语法在当前版本只支持无主键表"
+
 
 ### MERGE INTO
 
@@ -136,4 +157,4 @@ WHEN NOT MATCHED THEN INSERT *
 
 ```
 
-???+note "UPDATE 语法在当前版本只支持无主键表"
+???+note "MERGE INTO 语法在当前版本只支持无主键表"

@@ -10,7 +10,7 @@
 
 ## 存储结构
 
-Arctic 在核心特性的实现上会使用 delete file 来存储 row-level 的行级变更以减少数据更新时的写放大问题，同时在实时场景下会有频繁的数据写入操作，这就需要 Tablestore 具有较好的ACID特性，
+Arctic 在核心特性的实现上会使用 delete file 来存储 row-level 的行级变更以减少数据更新时的写放大问题，同时在实时场景下会有频繁的数据写入操作，这就需要 Tablestore 具有较好的 ACID 特性，
 然而这些都是 Hive table 现阶段所不具备的，为了支持完整的 Arctic 特性，在实现上 Basetore 在保持兼容 Hive 元数据的基础上仍然会使用到 Iceberg 以提供 ACID 的特性。具体结构如下：
 
 ![Hive Format Structure](../images/format/hive-format-structure.png){:height="60%" width="60%"}
