@@ -100,7 +100,7 @@ public class TaskWriters {
   }
 
   public TaskWriter<InternalRow> newBaseWriter(boolean isOverwrite) {
-    preconditions();
+    preconditions(true);
 
     String baseLocation;
     EncryptionManager encryptionManager;
@@ -145,7 +145,7 @@ public class TaskWriters {
   }
 
   public ChangeTaskWriter<InternalRow> newChangeWriter() {
-    preconditions();
+    preconditions(true);
     String changeLocation;
     EncryptionManager encryptionManager;
     Schema schema;
@@ -178,7 +178,7 @@ public class TaskWriters {
   }
 
   public UnkeyedPosDeleteSparkWriter<InternalRow> newBasePosDeleteWriter() {
-    preconditions();
+    preconditions(false);
     Schema schema = table.schema();
     InternalRowFileAppenderFactory build = new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(),
         schema, dsSchema).build();
@@ -188,8 +188,10 @@ public class TaskWriters {
         fileFormat, schema);
   }
 
-  private void preconditions() {
-    Preconditions.checkState(transactionId != null, "Transaction id is not set");
+  private void preconditions(boolean needTxId) {
+    if (needTxId) {
+      Preconditions.checkState(transactionId != null, "Transaction id is not set");
+    }
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");
     Preconditions.checkState(dsSchema != null, "Data source schema is not set");
