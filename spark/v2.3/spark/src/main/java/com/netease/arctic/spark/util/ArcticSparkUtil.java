@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.util;
 
-import com.netease.arctic.spark.reader.SparkParquetV2Readers;
+import com.netease.arctic.spark.parquet.SparkParquetRowReaders;
 import org.apache.avro.generic.GenericData;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.Schema;
@@ -64,12 +64,6 @@ public class ArcticSparkUtil {
     switch (type.typeId()) {
       case DECIMAL:
         return Decimal.apply((BigDecimal) value);
-        /*case STRING:
-        if (value instanceof Utf8) {
-          Utf8 utf8 = (Utf8) value;
-          return UTF8String.fromBytes(utf8.getBytes(), 0, utf8.getByteLength());
-        }
-        return UTF8String.fromString(value.toString());*/
       case FIXED:
         if (value instanceof byte[]) {
           return value;
@@ -99,9 +93,9 @@ public class ArcticSparkUtil {
         objects[i] = ((Decimal) object).toJavaBigDecimal();
       } else if (object instanceof BinaryType) {
         objects[i] = ByteBuffer.wrap((byte[]) object);
-      } else if (object instanceof SparkParquetV2Readers.ReusableMapData) {
-        Object[] keyArray = ((SparkParquetV2Readers.ReusableMapData) object).keyArray().array();
-        Object[] valueArray = ((SparkParquetV2Readers.ReusableMapData) object).valueArray().array();
+      } else if (object instanceof SparkParquetRowReaders.ReusableMapData) {
+        Object[] keyArray = ((SparkParquetRowReaders.ReusableMapData) object).keyArray().array();
+        Object[] valueArray = ((SparkParquetRowReaders.ReusableMapData) object).valueArray().array();
         Map map = new HashMap();
         for (int j = 0; j < keyArray.length; j++) {
           if (keyArray[j] instanceof UTF8String) {
@@ -114,8 +108,8 @@ public class ArcticSparkUtil {
         }
         scala.collection.Map scalaMap = (scala.collection.Map) JavaConverters.mapAsScalaMapConverter(map).asScala();
         objects[i] = scalaMap;
-      } else if (object instanceof SparkParquetV2Readers.ReusableArrayData) {
-        Object[] array = ((SparkParquetV2Readers.ReusableArrayData) object).array();
+      } else if (object instanceof SparkParquetRowReaders.ReusableArrayData) {
+        Object[] array = ((SparkParquetRowReaders.ReusableArrayData) object).array();
         for (int j = 0; j < array.length; j++) {
           if (array[j] instanceof UTF8String) {
             array[j] = array[j].toString();

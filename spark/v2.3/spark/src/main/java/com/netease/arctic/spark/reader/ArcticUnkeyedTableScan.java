@@ -41,10 +41,10 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-public class ArcticUnkeyedSparkReader implements DataSourceReader,
+public class ArcticUnkeyedTableScan implements DataSourceReader,
     SupportsPushDownFilters, SupportsPushDownRequiredColumns, SupportsReportStatistics {
 
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticUnkeyedSparkReader.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticUnkeyedTableScan.class);
   private static final Filter[] NO_FILTERS = new Filter[0];
   private final UnkeyedTable table;
   private Schema schema = null;
@@ -57,7 +57,7 @@ public class ArcticUnkeyedSparkReader implements DataSourceReader,
   private List<CombinedScanTask> tasks = null;
   private final Schema expectedSchema;
 
-  public ArcticUnkeyedSparkReader(SparkSession spark, UnkeyedTable table) {
+  public ArcticUnkeyedTableScan(SparkSession spark, UnkeyedTable table) {
     this.table = table;
     this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
     this.expectedSchema = lazySchema();

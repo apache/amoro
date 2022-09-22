@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.netease.arctic.spark.reader;
+package com.netease.arctic.spark.parquet;
 
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -75,8 +75,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
-public class SparkParquetV2Readers {
-  private SparkParquetV2Readers() {
+public class SparkParquetRowReaders {
+  private SparkParquetRowReaders() {
   }
 
   public static ParquetValueReader<Row> buildReader(Schema expectedSchema,
@@ -445,8 +445,7 @@ public class SparkParquetV2Readers {
 
     @Override
     protected void addElement(ArrayBuffer list, E element) {
-      Object[] array = {element};
-      Seq seq = JavaConverters.asScalaIteratorConverter(Arrays.asList(array).iterator()).asScala().toSeq();
+      Seq seq = JavaConverters.asScalaIteratorConverter(Arrays.asList(element).iterator()).asScala().toSeq();
       list.insert(writePos, seq);
 
       writePos += 1;
@@ -508,115 +507,6 @@ public class SparkParquetV2Readers {
     }
   }
 
-  private static class ArrayReader<E> extends RepeatedReader<ArrayData, ReusableArrayData, E> {
-    private int readPos = 0;
-    private int writePos = 0;
-
-    ArrayReader(int definitionLevel, int repetitionLevel, ParquetValueReader<E> reader) {
-      super(definitionLevel, repetitionLevel, reader);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected ReusableArrayData newListData(ArrayData reuse) {
-      this.readPos = 0;
-      this.writePos = 0;
-
-      if (reuse instanceof ReusableArrayData) {
-        return (ReusableArrayData) reuse;
-      } else {
-        return new ReusableArrayData();
-      }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected E getElement(ReusableArrayData list) {
-      E value = null;
-      if (readPos < list.capacity()) {
-        value = (E) list.values[readPos];
-      }
-
-      readPos += 1;
-
-      return value;
-    }
-
-    @Override
-    protected void addElement(ReusableArrayData reused, E element) {
-      if (writePos >= reused.capacity()) {
-        reused.grow();
-      }
-
-      reused.values[writePos] = element;
-
-      writePos += 1;
-    }
-
-    @Override
-    protected ArrayData buildList(ReusableArrayData list) {
-      list.setNumElements(writePos);
-      return list;
-    }
-  }
-
-  private static class MapReader<K, V> extends RepeatedKeyValueReader<MapData, ReusableMapData, K, V> {
-    private int readPos = 0;
-    private int writePos = 0;
-
-    private final ReusableEntry<K, V> entry = new ReusableEntry<>();
-    private final ReusableEntry<K, V> nullEntry = new ReusableEntry<>();
-
-    MapReader(int definitionLevel, int repetitionLevel,
-              ParquetValueReader<K> keyReader, ParquetValueReader<V> valueReader) {
-      super(definitionLevel, repetitionLevel, keyReader, valueReader);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected ReusableMapData newMapData(MapData reuse) {
-      this.readPos = 0;
-      this.writePos = 0;
-
-      if (reuse instanceof ReusableMapData) {
-        return (ReusableMapData) reuse;
-      } else {
-        return new ReusableMapData();
-      }
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    protected Map.Entry<K, V> getPair(ReusableMapData map) {
-      Map.Entry<K, V> kv = nullEntry;
-      if (readPos < map.capacity()) {
-        entry.set((K) map.keys.values[readPos], (V) map.values.values[readPos]);
-        kv = entry;
-      }
-
-      readPos += 1;
-
-      return kv;
-    }
-
-    @Override
-    protected void addPair(ReusableMapData map, K key, V value) {
-      if (writePos >= map.capacity()) {
-        map.grow();
-      }
-
-      map.keys.values[writePos] = key;
-      map.values.values[writePos] = value;
-
-      writePos += 1;
-    }
-
-    @Override
-    protected MapData buildMap(ReusableMapData map) {
-      map.setNumElements(writePos);
-      return map;
-    }
-  }
 
   private static class RowReader extends StructReader<Row, GenericRow> {
     private final int numFields;
