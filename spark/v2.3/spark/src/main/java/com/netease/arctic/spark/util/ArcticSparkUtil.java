@@ -64,7 +64,7 @@ public class ArcticSparkUtil {
     switch (type.typeId()) {
       case DECIMAL:
         return Decimal.apply((BigDecimal) value);
-/*      case STRING:
+        /*case STRING:
         if (value instanceof Utf8) {
           Utf8 utf8 = (Utf8) value;
           return UTF8String.fromBytes(utf8.getBytes(), 0, utf8.getByteLength());
@@ -99,9 +99,7 @@ public class ArcticSparkUtil {
         objects[i] = ((Decimal) object).toJavaBigDecimal();
       } else if (object instanceof BinaryType) {
         objects[i] = ByteBuffer.wrap((byte[]) object);
-      } /*else if (object instanceof Long && type.typeId() == Type.TypeID.TIMESTAMP) {
-        objects[i] = DateTimeUtils.toJavaTimestamp((Long) object);
-      }*/ else if (object instanceof SparkParquetV2Readers.ReusableMapData) {
+      } else if (object instanceof SparkParquetV2Readers.ReusableMapData) {
         Object[] keyArray = ((SparkParquetV2Readers.ReusableMapData) object).keyArray().array();
         Object[] valueArray = ((SparkParquetV2Readers.ReusableMapData) object).valueArray().array();
         Map map = new HashMap();

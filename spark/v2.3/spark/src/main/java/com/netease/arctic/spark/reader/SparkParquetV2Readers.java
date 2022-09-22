@@ -19,16 +19,6 @@
 
 package com.netease.arctic.spark.reader;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.parquet.ParquetSchemaUtil;
@@ -73,6 +63,17 @@ import org.apache.spark.unsafe.types.UTF8String;
 import scala.collection.JavaConverters;
 import scala.collection.Seq;
 import scala.collection.mutable.ArrayBuffer;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.sql.Timestamp;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 
 public class SparkParquetV2Readers {
   private SparkParquetV2Readers() {
@@ -205,7 +206,8 @@ public class SparkParquetV2Readers {
       Type elementType = repeated.getType(0);
       int elementD = type.getMaxDefinitionLevel(path(elementType.getName())) - 1;
 
-      return new ArrayReaderScala<>(repeatedD, repeatedR, ParquetValueReaders.option(elementType, elementD, elementReader));
+      return new ArrayReaderScala<>(repeatedD, repeatedR,
+          ParquetValueReaders.option(elementType, elementD, elementReader));
     }
 
     @Override
@@ -458,14 +460,16 @@ public class SparkParquetV2Readers {
 
   }
 
-  private static class MapReaderScala<K, V> extends RepeatedKeyValueReader<scala.collection.mutable.Map, scala.collection.mutable.Map, K, V> {
+  private static class MapReaderScala<K, V> extends
+      RepeatedKeyValueReader<scala.collection.mutable.Map, scala.collection.mutable.Map, K, V> {
     private int readPos = 0;
     private int writePos = 0;
 
     private final ReusableEntry<K, V> entry = new ReusableEntry<>();
     private final ReusableEntry<K, V> nullEntry = new ReusableEntry<>();
 
-    protected MapReaderScala(int definitionLevel, int repetitionLevel, ParquetValueReader<K> keyReader, ParquetValueReader<V> valueReader) {
+    protected MapReaderScala(int definitionLevel, int repetitionLevel,
+                             ParquetValueReader<K> keyReader, ParquetValueReader<V> valueReader) {
       super(definitionLevel, repetitionLevel, keyReader, valueReader);
     }
 
