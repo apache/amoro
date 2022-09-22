@@ -94,7 +94,7 @@ LIKE arctic_catalog.db.sample2
 USING arctic
 ```
 
-???+note "因为 primary key 不是 spark 标准语法，所以如果源表是 arctic 表，且有主键，新建表可以复制主键这部分的schema信息，如果是其他类型的表，则无法复制"
+???+note "因为 primary key 不是 Spark 标准语法，所以如果源表是 Arctic 表，且有主键，新建表可以复制主键这部分的 schema 信息，如果是其他类型的表，则无法复制"
 ## REPLACE TABLE ... AS SELECT
 
 ???+note "REPLACE TABLE ... AS SELECT 语法在当前版本只支持无主键表"
