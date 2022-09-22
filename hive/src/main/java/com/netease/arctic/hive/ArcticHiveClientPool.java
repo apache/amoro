@@ -111,19 +111,4 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HiveMetaStoreClient, TE
   protected void close(HiveMetaStoreClient client) {
     client.close();
   }
-
-  // @Override
-  // protected HiveMetaStoreClient newClient() {
-  //   return metaStore.doAs(() -> super.newClient());
-  // }
-  //
-  // @Override
-  // protected HiveMetaStoreClient reconnect(HiveMetaStoreClient client) {
-  //   try {
-  //     return metaStore.doAs(() -> super.reconnect(client));
-  //   } catch (Exception e) {
-  //     LOG.error("hive metastore client reconnected failed", e);
-  //     throw e;
-  //   }
-  // }
 }
