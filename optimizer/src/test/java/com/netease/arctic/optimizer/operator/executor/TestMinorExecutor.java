@@ -52,7 +52,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testMinorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     insertChangeDeleteFiles(3);
     insertChangeDataFiles(4);
 
@@ -71,7 +71,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableMinorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     insertChangeDeleteFiles(3);
     insertChangeDataFiles(4);
 

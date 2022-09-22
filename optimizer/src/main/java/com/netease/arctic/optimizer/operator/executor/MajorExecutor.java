@@ -120,9 +120,16 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
   }
 
   private Iterable<DataFile> optimizeTable(CloseableIterator<Record> recordIterator) throws Exception {
+    Long transactionId;
+    if (table.isKeyedTable()) {
+      transactionId = getMaxTransactionId(task.dataFiles());
+    } else {
+      transactionId = null;
+    }
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-        .withTransactionId(getMaxTransactionId(task.dataFiles()))
+        .withTransactionId(transactionId)
         .withTaskId(task.getAttemptId())
+        .withCustomHiveSubdirectory(task.getCustomHiveSubdirectory())
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;

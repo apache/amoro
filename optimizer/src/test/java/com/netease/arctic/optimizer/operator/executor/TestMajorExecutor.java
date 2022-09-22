@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 public class TestMajorExecutor extends TestBaseOptimizeBase {
   @Test
   public void testMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testKeyedTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -55,7 +55,7 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testFullMajorExecutor() throws Exception {
-      insertBasePosDeleteFiles(testKeyedTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+      insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
       NodeTask nodeTask = constructNodeTask(testKeyedTable, OptimizeType.FullMajor);
       String[] arg = new String[0];
       OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -71,7 +71,7 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testUnKeyedTableMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testTable, 1, baseDataFilesInfo);
+    insertTableBaseDataFiles(testTable, null, baseDataFilesInfo);
     NodeTask nodeTask = constructNodeTask(testTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -87,7 +87,7 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testUnKeyedTableFullMajorExecutor() throws Exception {
-    insertTableBaseDataFiles(testTable, 1, baseDataFilesInfo);
+    insertTableBaseDataFiles(testTable, null, baseDataFilesInfo);
     NodeTask nodeTask = constructNodeTask(testTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -103,7 +103,7 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testNoPartitionTable, OptimizeType.Major);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -119,7 +119,7 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
 
   @Test
   public void testNoPartitionTableFullMajorExecutor() throws Exception {
-    insertBasePosDeleteFiles(testNoPartitionTable, 2, baseDataFilesInfo, posDeleteFilesInfo);
+    insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFilesInfo, posDeleteFilesInfo);
     NodeTask nodeTask = constructNodeTask(testNoPartitionTable, OptimizeType.FullMajor);
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);

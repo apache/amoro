@@ -21,7 +21,6 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
@@ -29,6 +28,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -51,7 +51,8 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, long transactionId, List<DataFileInfo> baseDataFilesInfo) throws IOException {
+  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId,
+                                                  List<DataFileInfo> baseDataFilesInfo) throws IOException {
     TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withTransactionId(transactionId)
@@ -76,7 +77,7 @@ public interface TestOptimizeBase {
 
   default List<DataFile> insertOptimizeTargetDataFiles(ArcticTable arcticTable,
                                                        OptimizeType optimizeType,
-                                                       long transactionId) throws IOException {
+                                                       Long transactionId) throws IOException {
     WriteOperationKind writeOperationKind = WriteOperationKind.MAJOR_OPTIMIZE;
     switch (optimizeType) {
       case FullMajor:
@@ -99,7 +100,7 @@ public interface TestOptimizeBase {
   }
 
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
-                                                    long transactionId,
+                                                    Long transactionId,
                                                     List<DataFileInfo> baseDataFilesInfo,
                                                     List<DataFileInfo> posDeleteFilesInfo) throws IOException {
     List<DataFile> dataFiles = insertTableBaseDataFiles(arcticTable, transactionId - 1, baseDataFilesInfo);
@@ -111,7 +112,7 @@ public interface TestOptimizeBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
@@ -143,7 +144,7 @@ public interface TestOptimizeBase {
 
   default List<DeleteFile> insertOptimizeTargetDeleteFiles(ArcticTable arcticTable,
                                                            List<DataFile> dataFiles,
-                                                           long transactionId) throws IOException {
+                                                           Long transactionId) throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
     List<DeleteFile> deleteFiles = new ArrayList<>();
@@ -152,7 +153,7 @@ public interface TestOptimizeBase {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();

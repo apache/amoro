@@ -39,10 +39,7 @@ public class ArcticTransactionService extends IJDBCService {
           TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
           TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
           Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
-          Long currentTxId = mapper.getCurrentTxId(tableIdentifier);
-          if (currentTxId == null) {
-            currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
-          }
+          Long currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
           Long finalTxId = currentTxId + 1;
           if (!StringUtils.isEmpty(transactionSignature)) {
             Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);

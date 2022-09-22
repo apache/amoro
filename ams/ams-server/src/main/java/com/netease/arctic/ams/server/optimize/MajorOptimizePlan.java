@@ -29,12 +29,17 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.IdGenerator;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -222,7 +227,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
@@ -249,7 +254,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
@@ -260,12 +265,12 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())
+            .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node()))
+                baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
         if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {

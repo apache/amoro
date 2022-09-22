@@ -191,7 +191,7 @@ public class TableExpireService implements ITableExpireService {
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
             .filter(dataFileInfo ->
-                DefaultKeyedFile.parseMetaFromFileName(dataFileInfo.getPath()).transactionId() <= maxTransactionId)
+                FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
             .collect(Collectors.toList()));
       }
     } else {
@@ -202,7 +202,7 @@ public class TableExpireService implements ITableExpireService {
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           deleteFiles.addAll(partitionDataFiles.stream()
               .filter(dataFileInfo ->
-                  DefaultKeyedFile.parseMetaFromFileName(dataFileInfo.getPath()).transactionId() <= value)
+                  FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= value)
               .collect(Collectors.toList()));
         }
       });
@@ -226,6 +226,7 @@ public class TableExpireService implements ITableExpireService {
   public static void expireSnapshots(UnkeyedTable arcticInternalTable,
                                      long olderThan,
                                      Set<String> exclude) {
+    LOG.debug("start expire snapshots, the exclude is {}", exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();

@@ -39,4 +39,15 @@ public class IdGenerator {
     }
     return upstreamId;
   }
+
+  /**
+   * generate a random id
+   * @return random id
+   */
+  public static long randomId() {
+    UUID uuid = UUID.randomUUID();
+    long mostSignificantBits = uuid.getMostSignificantBits();
+    long leastSignificantBits = uuid.getLeastSignificantBits();
+    return (mostSignificantBits ^ leastSignificantBits) & Long.MAX_VALUE;
+  }
 }

@@ -44,7 +44,7 @@ public class UpgradeHiveTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(UpgradeHiveTableUtil.class);
 
-  private static final String DEFAULT_TXID = "txid=0";
+  private static final long DEFAULT_TXID = 0L;
 
   /**
    * Upgrade a hive table to an Arctic table.
@@ -120,7 +120,7 @@ public class UpgradeHiveTableUtil {
       for (int i = 0; i < partitionLocations.size(); i++) {
         String partition = partitions.get(i);
         String oldLocation = partitionLocations.get(i);
-        String newLocation = hiveDataLocation + "/" + partition + "/" + DEFAULT_TXID;
+        String newLocation = hiveDataLocation + "/" + partition + "/" + HiveTableUtil.newHiveSubdirectory(DEFAULT_TXID);
         arcticTable.io().mkdirs(newLocation);
         for (FileStatus fileStatus : arcticTable.io().list(oldLocation)) {
           if (!fileStatus.isDirectory()) {
