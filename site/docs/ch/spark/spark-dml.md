@@ -71,11 +71,11 @@ INSERT INTO prod.db.table SELECT ...
 ```
 
 #### 有主键表
-向有主键表添加新数据，可以根据配置`write.upsert.enable`参数，来控制是否开启`UPSERT`功能。
+向有主键表添加新数据，可以根据配置 `write.upsert.enable` 参数，来控制是否开启 `UPSERT` 功能。
 
-`UPSERT`开启后，主键相同的行存在时执行`UPDATE`操作，不存在时执行`INSERT`操作
+`UPSERT` 开启后，主键相同的行存在时执行 `UPDATE` 操作，不存在时执行 `INSERT` 操作
 
-`UPSERT`关闭后，仅执行`INSERT`操作
+`UPSERT` 关闭后，仅执行 `INSERT` 操作
 
 ```sql
 CREATE TABLE arctic_catalog.db.keyedTable (
