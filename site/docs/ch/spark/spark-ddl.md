@@ -2,8 +2,8 @@
 
 ## CREATE TABLE
 
-在 Arctic Catalog 下使用 `USING arctic` 指定使用 Arctic 数据源即可通过 `CREATE TABLE` 语句创建 Arctic 表。 
-如果 Catalog 的类型是 hive ，则创建的是 hive 兼容表。
+在 Arctic Catalog 下使用 `USING ARCTIC` 指定使用 Arctic 数据源即可通过 `CREATE TABLE` 语句创建 Arctic 表。 
+如果 Catalog 的类型是 Hive ，则创建的是 Hive 兼容表。
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -15,7 +15,7 @@ CREATE TABLE arctic_catalog.db.sample (
 ### PRIMARY KEY
 
 在 `CREATE TABLE` 语句中使用 `PRIMARY KEY` 指定主键列，这样即可创建有主键表。
-Arctic 将通过 MOR( Merge on read) 和 Optimize 实现主键列上的唯一性。
+Arctic 将通过 MOR(Merge on read) 和 Optimize 实现主键列上的唯一性。
 
 ```sql
 CREATE TABLE arctic_catalog.db.sample (
@@ -57,10 +57,10 @@ PARTITIONED BY (bucket(16, id), days(ts), category)
 * month(ts): 截取时间类型字段作为分区值， 精度到 month
 * days(ts) or date(ts): 截取时间类型字段作为分区值，精度到 day
 * hours(ts) or date_hour(ts): 截图时间类型字段作为分区值，精度到 hour
-* bucket(N, col) : 取某一列上的 hash 值作为分区值
+* bucket(N, col): 取某一列上的 hash 值作为分区值
 * truncate(L, col): 截取某一列上前 L 个字符作为分区值
 
-> hive 类型的 Catalog 不支持分区表达式。
+> Hive 类型的 Catalog 不支持分区表达式。
 
 ## CREATE TABLE ... AS SELECT 
 
@@ -110,7 +110,7 @@ AS SELECT ...
 ## DROP TABLE
 
 ```sql
-DROP TABLE  arctic_catalog.db.sample;
+DROP TABLE arctic_catalog.db.sample;
 ```
 
 ## ALTER TABLE
@@ -128,7 +128,7 @@ ALTER TABLE arctic_catalog.db.sample SET TBLPROPERTIES (
     'read.split.target-size'='268435456'
 );
 ```
-使用`UNSET` 可以移除 properties:
+使用 `UNSET` 可以移除 properties:
 ```sql
 ALTER TABLE arctic_catalog.db.sample UNSET TBLPROPERTIES ('read.split.target-size');
 ```
@@ -167,7 +167,7 @@ ADD COLUMN points map<struct<x: int>, struct<a: int>>;
 ALTER TABLE arctic_catalog.db.sample
 ADD COLUMN points.value.b int;
 ```
-可以通过添加`FIRST`或`AFTER`子句在任何位置添加列:
+可以通过添加 `FIRST` 或 `AFTER` 子句在任何位置添加列:
 ```sql
 ALTER TABLE arctic_catalog.db.sample
 ADD COLUMN new_column bigint AFTER other_column;
@@ -181,18 +181,18 @@ ADD COLUMN nested.new_column bigint FIRST;
 ALTER TABLE arctic_catalog.db.sample RENAME COLUMN data TO payload;
 ```
 ### ALTER TABLE ... ALTER COLUMN
-Alter column 可以用于加宽类型，使字段成为可选字段，设置注释和重新排序字段。
+Alter COLUMN 可以用于加宽类型，使字段成为可选字段，设置注释和重新排序字段。
 ```sql
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double;
 ```
-若要从结构中添加或删除列，请使用带有嵌套列名的`ADD COLUMN`或`DROP COLUMN`。
+若要从结构中添加或删除列，请使用带有嵌套列名的 `ADD COLUMN` 或 `DROP COLUMN`。
 
-Column注释也可以使用`ALTER COLUMN`更新:
+Column 注释也可以使用 `ALTER COLUMN` 更新:
 ```sql
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement TYPE double COMMENT 'unit is bytes per second';
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN measurement COMMENT 'unit is kilobytes per second';
 ```
-允许使用`FIRST`和`AFTER`子句对结构中的顶级列或列进行重新排序:
+允许使用 `FIRST` 和 `AFTER` 子句对结构中的顶级列或列进行重新排序:
 ```sql
 ALTER TABLE arctic_catalog.db.sample ALTER COLUMN col FIRST;
 ```

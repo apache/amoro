@@ -29,7 +29,7 @@ ${SPARK_HOME}/bin/spark-sql \
 
 在 Spark SQL 命令行中，可以通过 `CREATE TABLE` 语句执行建表命令。
 
-在执行建表操作前，请先创建 database 。
+在执行建表操作前，请先创建 database。
 
 ```
 -- switch to arctic catalog defined in spark conf
@@ -54,11 +54,11 @@ create table test2 (id int, data string, ts timestamp) using arctic partitioned 
 create table test3 (id int, data string, ts timestamp, primary key(id)) using arctic partitioned by (days(ts));
 ```
 
-更多表相关DDL，请参考 [SPARK DDL](spark-ddl.md)
+更多表相关 DDL，请参考 [SPARK DDL](spark-ddl.md)
 
 ## 写入
 
-如果您使用SparkSQL, 可以通过 `INSERT OVERWRITE` 或 `INSERT` SQL语句向 Arctic 表写入数据。
+如果您使用 SparkSQL, 可以通过 `INSERT OVERWRITE` 或 `INSERT` SQL语句向 Arctic 表写入数据。
 
 ```
 -- insert values into unkeyed table
@@ -75,7 +75,7 @@ insert overwrite test3 values
 ```
 
 
-> 如果使用 static 类型的 Overwrite, 不能在分区上定义函数。
+> 如果使用 Static 类型的 Overwrite, 不能在分区上定义函数。
 
 或者可以在 jar 任务中使用 DataFrame Api 向 Arctic 表写入数据
 
@@ -102,7 +102,7 @@ group by data;
 select count(1) as count, data
 from test_db.test3.change group by data;
 ```
-> 此处change表没有数据，结果返回空
+> 此处 change 表没有数据，结果返回空
 
 或者也可以在 jar 任务中使用 DataFrame Api 查询 Arctic 表
 
