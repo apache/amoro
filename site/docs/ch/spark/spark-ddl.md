@@ -70,9 +70,9 @@ CREATE TABLE arctic_catalog.db.sample
 USING arctic
 AS SELECT ...
 ```
-???+note "CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及properties不会从源表中继承，需单独配置。"
+???+note "CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及 properties 不会从源表中继承，需单独配置。"
 
-创建带主键、分区、preoperties的表，可以使用如下语法：
+创建带主键、分区、preoperties 的表，可以使用如下语法：
 
 ```
 CREATE TABLE arctic_catalog.db.sample

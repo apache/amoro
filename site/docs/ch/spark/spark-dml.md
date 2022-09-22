@@ -96,7 +96,7 @@ INSERT INTO prod.db.keyedTable SELECT ...
 
 ### Delete from
 
-Arctic Spark 支持对有主键和无主键表的 `DELETE FROM` 语法用于删除表中数据
+Arctic Spark 支持 `DELETE FROM` 语法用于删除表中数据
 
 ```sql
 DELETE FROM arctic_catalog.db.sample
@@ -112,7 +112,7 @@ WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 
 ### Update 
 
-支持`UPDATE`语句对有主键表和无主键表的进行更新
+支持`UPDATE`语句对表进行更新
 
 更新语句使用`SELECT`来匹配要更新的行
 
