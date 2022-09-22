@@ -8,4 +8,4 @@ Arctic 使用 [GitHub issues](https://github.com/NetEase/arctic/issues) 跟踪�
 ## 联系我们
 
 如果你也对 LakeHouse，数据湖 Format 感兴趣，欢迎加群交流，我们欢迎与任何组织、团队以及个人共同成长，也真诚希望通过开源帮助用户更好地把数据湖 Format 用起来。
-加入 Arctic 交流群：微信添加`kllnn999`为好友，注明`Arctic交流`。
+加入 Arctic 交流群：微信添加 `kllnn999` 为好友，注明 `Arctic交流`。
