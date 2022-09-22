@@ -59,7 +59,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
-  private final long transactionId = IdGenerator.randomId();
+  private static final long transactionId = IdGenerator.randomId();
   private final String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
 
   public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
@@ -237,6 +237,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
       UnkeyedPosDeleteSparkWriter<InternalRow> internalRowUnkeyedPosDeleteSparkWriter = TaskWriters.of(table)
           .withPartitionId(partitionId)
+          .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
           .newBasePosDeleteWriter();
