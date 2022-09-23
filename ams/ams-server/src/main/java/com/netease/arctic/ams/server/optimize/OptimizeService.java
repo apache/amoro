@@ -381,9 +381,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Map<TableIdentifier, TableOptimizeRuntime> collector = new HashMap<>();
     List<TableOptimizeRuntime> tableOptimizeRuntimes = selectTableOptimizeRuntimes();
     for (TableOptimizeRuntime runtime : tableOptimizeRuntimes) {
-      // TODO TEMP: force plan when arctic server restart
-      runtime.setCurrentSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-      runtime.setCurrentChangeSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
       collector.put(runtime.getTableIdentifier(), runtime);
     }
     return collector;
