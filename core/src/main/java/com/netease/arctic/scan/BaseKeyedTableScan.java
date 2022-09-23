@@ -22,6 +22,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
@@ -42,7 +43,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,9 +116,8 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     split();
     LOG.info("planning table {} split end", table.id());
     // 3.combine node task (FileScanTask List -> CombinedScanTask)
-    CloseableIterable<CombinedScanTask> tasksIterable = combineNode(CloseableIterable.withNoopClose(splitTasks),
+    return combineNode(CloseableIterable.withNoopClose(splitTasks),
         splitSize, lookBack, openFileCost);
-    return tasksIterable;
   }
 
   private CloseableIterable<FileScanTask> planFiles(UnkeyedTable internalTable) {
@@ -131,9 +130,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
 
   private void split() {
     fileScanTasks.forEach((structLike, fileScanTasks1) -> {
-      Iterator<NodeFileScanTask> it = fileScanTasks1.iterator();
-      while (it.hasNext()) {
-        NodeFileScanTask task = it.next();
+      for (NodeFileScanTask task : fileScanTasks1) {
         if (task.cost() <= splitSize) {
           splitTasks.add(task);
           continue;
@@ -145,7 +142,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         CloseableIterable<NodeFileScanTask> tasksIterable = splitNode(CloseableIterable.withNoopClose(task.dataTasks()),
             task.arcticEquityDeletes(), splitSize, lookBack, openFileCost);
         List<NodeFileScanTask> tasks =
-            org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList(tasksIterable);
+            Lists.newArrayList(tasksIterable);
         splitTasks.addAll(tasks);
       }
     });
@@ -189,7 +186,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     // planfiles() cannot guarantee the uniqueness of the file,
     // so Set<path> here is used to remove duplicate files
     Set<String> pathSets = new HashSet<>();
-    keyedTableTasks.stream().forEach(task -> {
+    keyedTableTasks.forEach(task -> {
       if (!pathSets.contains(task.file().path().toString())) {
         pathSets.add(task.file().path().toString());
         DataTreeNode treeNode = task.file().node();
@@ -230,14 +227,14 @@ public class BaseKeyedTableScan implements KeyedTableScan {
       List<ArcticFileScanTask> baseTasks) {
     ListMultimap<StructLike, ArcticFileScanTask> filesGroupedByPartition
         = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
-    StructLikeMap<Long> partitionMaxTxId = table.partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(table);
 
     // filter change files according to max transaction id
     changeTasks.forEach(task -> {
       StructLike structLike = task.file().partition();
-      Long txId = null;
+      Long txId;
       if (structLike.size() == 0) {
-        txId = partitionMaxTxId.get(null);
+        txId = partitionMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT);
       } else {
         txId = partitionMaxTxId.get(task.file().partition());
       }
@@ -248,9 +245,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
       }
     });
 
-    baseTasks.forEach(task -> {
-      filesGroupedByPartition.put(task.file().partition(), task);
-    });
+    baseTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
     return filesGroupedByPartition.asMap();
   }
 }

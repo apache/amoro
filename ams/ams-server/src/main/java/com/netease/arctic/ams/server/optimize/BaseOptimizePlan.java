@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.TreeNode;
+import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.FilesStatistics;
@@ -30,6 +31,7 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.utils.SerializationUtil;
@@ -65,6 +67,8 @@ public abstract class BaseOptimizePlan {
   protected final long currentTime;
   protected final Map<String, Boolean> partitionTaskRunning;
   protected final String historyId;
+  // Whether to customize the directory
+  protected boolean isCustomizeDir;
 
   // partition -> fileTree
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
@@ -101,12 +105,26 @@ public abstract class BaseOptimizePlan {
     this.snapshotIsCached = snapshotIsCached;
     this.partitionTaskRunning = partitionTaskRunning;
     this.historyId = UUID.randomUUID().toString();
+    this.isCustomizeDir = false;
   }
 
+  /**
+   * check whether partition need to plan
+   * @param partitionToPath target partition
+   * @return whether partition need to plan. if true, partition try to plan, otherwise skip.
+   */
   protected abstract boolean partitionNeedPlan(String partitionToPath);
 
+  /**
+   * check whether node task need to build
+   * @param posDeleteFiles pos-delete files in node
+   * @param baseFiles base files in node
+   * @return whether the node task need to build. If true, build task, otherwise skip.
+   */
+  protected abstract boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles);
+
   protected abstract void addOptimizeFilesTree();
-  
+
   protected abstract OptimizeType getOptimizeType();
 
   protected abstract List<BaseOptimizeTask> collectTask(String partition);
@@ -173,11 +191,11 @@ public abstract class BaseOptimizePlan {
   }
 
   protected BaseOptimizeTask buildOptimizeTask(@Nullable List<DataTreeNode> sourceNodes,
-                                            List<DataFile> insertFiles,
-                                            List<DataFile> deleteFiles,
-                                            List<DataFile> baseFiles,
-                                            List<DeleteFile> posDeleteFiles,
-                                            TaskConfig taskConfig) {
+                                               List<DataFile> insertFiles,
+                                               List<DataFile> deleteFiles,
+                                               List<DataFile> baseFiles,
+                                               List<DeleteFile> posDeleteFiles,
+                                               TaskConfig taskConfig) {
     // build task
     BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
     optimizeTask.setTaskGroup(taskConfig.getGroup());
@@ -250,14 +268,12 @@ public abstract class BaseOptimizePlan {
     if (taskConfig.getMaxTransactionId() != null) {
       optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
     }
-    if (taskConfig.getOptimizeType() == OptimizeType.FullMajor) {
-      optimizeTask.setIsDeletePosDelete(1);
-    }
 
     // table ams url
     Map<String, String> properties = new HashMap<>();
-    properties.put("all-file-cnt", (optimizeTask.getBaseFiles().size() +
+    properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +
         optimizeTask.getInsertFiles().size() + optimizeTask.getDeleteFiles().size()) + "");
+    properties.put(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY, taskConfig.getCustomHiveSubdirectory());
     optimizeTask.setProperties(properties);
     return optimizeTask;
   }
@@ -272,7 +288,7 @@ public abstract class BaseOptimizePlan {
       snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
       if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-                "wait file cache sync latest file info", snapshot.snapshotId());
+            "wait file cache sync latest file info", snapshot.snapshotId());
         return false;
       }
     }
@@ -313,5 +329,13 @@ public abstract class BaseOptimizePlan {
 
   protected boolean anyTaskRunning(String partition) {
     return partitionTaskRunning.get(partition) != null && partitionTaskRunning.get(partition);
+  }
+
+  protected String constructCustomHiveSubdirectory(long transactionId) {
+    String dir = "";
+    if (isCustomizeDir) {
+      return HiveTableUtil.newHiveSubdirectory(transactionId);
+    }
+    return dir;
   }
 }

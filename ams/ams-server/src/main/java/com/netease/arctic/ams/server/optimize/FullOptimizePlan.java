@@ -28,10 +28,11 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalLong;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -58,9 +60,9 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(FullOptimizePlan.class);
 
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                           List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
-                           Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
-                           Predicate<Long> snapshotIsCached) {
+                          List<DataFileInfo> baseTableFileList, List<DataFileInfo> posDeleteFileList,
+                          Map<String, Boolean> partitionTaskRunning, int queueId, long currentTime,
+                          Predicate<Long> snapshotIsCached) {
     super(arcticTable, tableOptimizeRuntime, baseTableFileList, Collections.emptyList(), posDeleteFileList,
         partitionTaskRunning, queueId, currentTime, snapshotIsCached);
   }
@@ -99,8 +101,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   protected List<BaseOptimizeTask> collectTask(String partition) {
     List<BaseOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
-      // if Major, only optimize partitionNeedMajorOptimizeFiles.
-      // if Full Major, optimize all files in file tree.
+      // if Full, optimize all files in file tree.
       List<DataFile> fileList = partitionFileTree.get(partition).getBaseFiles();
       result = collectUnKeyedTableTasks(partition, fileList);
       // init files
@@ -126,8 +127,8 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
         0 : partitionPosDeleteFiles.get(partitionToPath).stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
     return posDeleteSize >= PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES,
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT);
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES,
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT);
   }
 
   protected boolean checkFullOptimizeInterval(long current, String partitionToPath) {
@@ -143,7 +144,14 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     return false;
   }
 
-  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  /**
+   * check whether node task need to build
+   *
+   * @param posDeleteFiles pos-delete files in node
+   * @param baseFiles      base files in node
+   * @return whether the node task need to build. If true, build task, otherwise skip.
+   */
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     List<DataFile> smallFiles = baseFiles.stream().filter(file -> file.fileSizeInBytes() <=
         PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
             TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
@@ -153,11 +161,14 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   private List<BaseOptimizeTask> collectUnKeyedTableTasks(String partition, List<DataFile> fileList) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
 
-    if (needOptimize(Collections.emptyList(), fileList)) {
+    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
+    if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
       String group = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
-          null, group, historyId, partitionOptimizeType.get(partition), createTime);
+          null, group, historyId, partitionOptimizeType.get(partition), createTime,
+          constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
+              getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
       long taskSize =
           PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
@@ -169,7 +180,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
       for (List<DataFile> files : packed) {
         if (CollectionUtils.isNotEmpty(files)) {
           collector.add(buildOptimizeTask(null,
-              Collections.emptyList(), Collections.emptyList(), files, Collections.emptyList(), taskPartitionConfig));
+              Collections.emptyList(), Collections.emptyList(), files, posDeleteFiles, taskPartitionConfig));
         }
       }
     }
@@ -181,9 +192,14 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+
     treeRoot.completeTree(false);
+    List<DataFile> allBaseFiles = new ArrayList<>();
+    treeRoot.collectBaseFiles(allBaseFiles);
+    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+        null, group, historyId, partitionOptimizeType.get(partition), createTime,
+        constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
+            getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
     treeRoot.splitSubTree(subTrees, new CanSplitFileTree());
@@ -193,15 +209,15 @@ public class FullOptimizePlan extends BaseOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())
+            .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node()))
+                baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
-        if (needOptimize(posDeleteFiles, baseFiles)) {
+        if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
           collector.add(buildOptimizeTask(sourceNodes,
               Collections.emptyList(), Collections.emptyList(), baseFiles, posDeleteFiles, taskPartitionConfig));
         }
@@ -259,6 +275,16 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
     LOG.debug("{} ==== {} add {} base files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, baseOptimizeFiles.size(), partitionFileTree.size());
+  }
+
+  private long getMaxTransactionId(List<DataFile> dataFiles) {
+    OptionalLong maxTransactionId = dataFiles.stream()
+        .mapToLong(file -> FileUtil.parseFileTidFromFileName(file.path().toString())).max();
+    if (maxTransactionId.isPresent()) {
+      return maxTransactionId.getAsLong();
+    }
+
+    return 0;
   }
 
   static class CanSplitFileTree implements Predicate<FileTree> {

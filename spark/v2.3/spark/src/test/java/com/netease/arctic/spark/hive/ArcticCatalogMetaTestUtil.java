@@ -21,6 +21,7 @@ package com.netease.arctic.spark.hive;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hive.conf.HiveConf;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -30,8 +31,8 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SparkCatalogMetaTestUtil {
-  public static CatalogMeta createArcticCatalog(File arcticBaseDir) throws IOException {
+public class ArcticCatalogMetaTestUtil {
+  public static CatalogMeta createArcticCatalog(File arcticBaseDir, HiveConf entries) throws IOException {
     CatalogMeta meta = new CatalogMeta();
     meta.setCatalogName("arctic_default");
     meta.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HIVE);
@@ -48,7 +49,7 @@ public class SparkCatalogMetaTestUtil {
         encodingSite(new Configuration()));
     storageConfig.put(
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
-        encodingSite(new Configuration()));
+        encodingSite(entries));
     meta.setStorageConfigs(storageConfig);
 
     meta.putToAuthConfigs(

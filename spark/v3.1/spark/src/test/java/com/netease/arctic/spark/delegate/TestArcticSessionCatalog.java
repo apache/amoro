@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *  *
+ *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *  *
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +22,9 @@ import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.SparkTestContext;
 import java.io.IOException;
 import java.util.Map;
+
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.junit.After;
@@ -138,8 +140,31 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table3);
   }
 
+  @Test
+  public void testCreateTableLikeUsingSparkCatalog() {
+    sql("set spark.arctic.sql.delegate.enable=true");
+    sql("use spark_catalog");
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp , \n" +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table3);
 
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, table2, database, table3);
+    sql("desc table {0}.{1}", database, table2);
+    assertDescResult(rows, Lists.newArrayList("id"));
 
+    sql("desc table extended {0}.{1}", database, table2);
+    assertDescResult(rows, Lists.newArrayList("id"));
 
+    sql("drop table {0}.{1}", database, table2);
+
+    sql("drop table {0}.{1}", database, table3);
+  }
 
 }

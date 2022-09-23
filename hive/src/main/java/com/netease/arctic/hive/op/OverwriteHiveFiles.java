@@ -26,6 +26,7 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -490,10 +491,11 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     // create a new empty location for hive
     String newLocation;
     if (txId > 0) {
-      newLocation = HiveTableUtil.newKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null, txId);
+      newLocation = HiveTableUtil.newHiveDataLocation(table.hiveLocation(), table.spec(), null,
+          HiveTableUtil.newHiveSubdirectory(txId));
     } else {
-      newLocation = HiveTableUtil.newUnKeyedHiveDataLocation(table.hiveLocation(), table.spec(), null,
-          HiveTableUtil.getRandomSubDir());
+      newLocation = HiveTableUtil.newHiveDataLocation(table.hiveLocation(), table.spec(), null,
+          HiveTableUtil.newHiveSubdirectory(txId));
     }
     OutputFile file = table.io().newOutputFile(newLocation + "/.keep");
     try {

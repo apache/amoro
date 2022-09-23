@@ -43,6 +43,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
@@ -119,9 +120,16 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
   }
 
   private Iterable<DataFile> optimizeTable(CloseableIterator<Record> recordIterator) throws Exception {
+    Long transactionId;
+    if (table.isKeyedTable()) {
+      transactionId = getMaxTransactionId(task.dataFiles());
+    } else {
+      transactionId = null;
+    }
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
-        .withTransactionId(getMaxTransactionId(task.dataFiles()))
+        .withTransactionId(transactionId)
         .withTaskId(task.getAttemptId())
+        .withCustomHiveSubdirectory(task.getCustomHiveSubdirectory())
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
@@ -155,7 +163,8 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
 
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema, primaryKeySpec,
-            null, false, IdentityPartitionConverters::convertConstant, sourceNodes, false);
+            table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
+            IdentityPartitionConverters::convertConstant, sourceNodes, false);
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {

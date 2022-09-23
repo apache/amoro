@@ -165,6 +165,25 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
+  public void testTracedReplacePartitions() {
+    testTable.newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .appendFile(FILE_C)
+        .commit();
+
+    testTable.newReplacePartitions()
+        .addFile(FILE_D)
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(2, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[]{FILE_D},
+        new org.apache.iceberg.DataFile[]{FILE_C});
+  }
+
+  @Test
   public void testTraceOverwriteInTx() {
     testTable.newFastAppend()
         .appendFile(FILE_A)
@@ -336,7 +355,7 @@ public class TableTracerTest extends TableTestBase {
     testKeyedTable.baseTable().newAppend().appendFile(FILE_A).commit();
 
     SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
+        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
     writer.delete(FILE_A.path(), 1);
     writer.delete(FILE_A.path(), 3);
     writer.delete(FILE_A.path(), 5);
@@ -364,7 +383,7 @@ public class TableTracerTest extends TableTestBase {
     testKeyedTable.baseTable().newAppend().appendFile(FILE_A).commit();
 
     SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
+        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
     writer.delete(FILE_A.path(), 1);
     writer.delete(FILE_A.path(), 3);
     writer.delete(FILE_A.path(), 5);

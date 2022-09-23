@@ -4,16 +4,25 @@ import com.netease.arctic.spark.SparkTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
+import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.sql.Timestamp;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
 
 public class TestCreateTableDDL extends SparkTestBase {
   private final String database = "db_hive";
@@ -410,5 +419,119 @@ public class TestCreateTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, tableB);
     rows = sql("show tables");
     Assert.assertEquals(0, rows.size());
+  }
+
+  @Test
+  public void testCreateKeyedTableLike() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp , \n" +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+    sql("desc table {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("desc table extended {0}.{1}", database, tableA);
+    assertDescResult(rows, Lists.newArrayList("id"));
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateUnKeyedTableLike() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp " +
+        ") using arctic \n" +
+        " partitioned by ( ts ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, tableA, database, tableB);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifier).schema().asStruct());
+
+    sql("drop table {0}.{1}", database, tableA);
+
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateNewTableShouldHaveTimestampWithoutZone() {
+    withSQLConf(ImmutableMap.of(
+            USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES, "true"), () -> {
+      TableIdentifier identifier = TableIdentifier.of(catalogNameHive, database, tableA);
+
+      sql("create table {0}.{1} ( \n" +
+              " id int , \n" +
+              " name string , \n " +
+              " ts timestamp , \n" +
+              " primary key (id) \n" +
+              ") using arctic \n" +
+              " partitioned by ( ts ) \n" +
+              " tblproperties ( \n" +
+              " ''props.test1'' = ''val1'', \n" +
+              " ''props.test2'' = ''val2'' ) ", database, tableA);
+      Types.StructType expectedSchema = Types.StructType.of(
+              Types.NestedField.required(1, "id", Types.IntegerType.get()),
+              Types.NestedField.optional(2, "name", Types.StringType.get()),
+              Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
+      Assert.assertEquals("Schema should match expected",
+              expectedSchema, loadTable(identifier).schema().asStruct());
+      List<Object[]> values = ImmutableList.of(
+              row(1L, toTimestamp("2021-01-01T00:00:00.0"), toTimestamp("2021-02-01T00:00:00.0")),
+              row(2L, toTimestamp("2021-01-01T00:00:00.0"), toTimestamp("2021-02-01T00:00:00.0")),
+              row(3L, toTimestamp("2021-01-01T00:00:00.0"), toTimestamp("2021-02-01T00:00:00.0"))
+      );
+      sql("INSERT INTO {0}.{1} VALUES {2}", database, tableA, rowToSqlValues(values));
+
+      rows = sql("SELECT * FROM {0}.{1} ORDER BY id", database, tableA);
+      Assert.assertEquals(3, rows.size());
+      sql("drop table {0}.{1}", database, tableA);
+    });
+  }
+
+  private String rowToSqlValues(List<Object[]> rows) {
+    List<String> rowValues = rows.stream().map(row -> {
+      List<String> columns = Arrays.stream(row).map(value -> {
+        if (value instanceof Long) {
+          return value.toString();
+        } else if (value instanceof Timestamp) {
+          return String.format("timestamp '%s'", value);
+        }
+        throw new RuntimeException("Type is not supported");
+      }).collect(Collectors.toList());
+      return "(" + Joiner.on(",").join(columns) + ")";
+    }).collect(Collectors.toList());
+    return Joiner.on(",").join(rowValues);
+  }
+
+  protected Object[] row(Object... values) {
+    return values;
+  }
+
+  private Timestamp toTimestamp(String value) {
+    return new Timestamp(DateTime.parse(value).getMillis());
   }
 }

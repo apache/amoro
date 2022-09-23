@@ -28,7 +28,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -40,6 +39,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -185,10 +185,14 @@ public class SparkTestContext extends ExternalResource {
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
     sparkConfigs.put("spark.executor.heartbeatInterval", "300s");
+    sparkConfigs.put("spark.cores.max", "6");
+    sparkConfigs.put("spark.executor.cores", "2");
+    sparkConfigs.put("spark.default.parallelism", "12");
     sparkConfigs.put("spark.network.timeout", "500s");
     sparkConfigs.put("spark.sql.warehouse.dir", testSparkDir.getAbsolutePath());
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "471859200");
+    sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
 
     sparkConfigs.putAll(configs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));
@@ -475,7 +479,7 @@ public class SparkTestContext extends ExternalResource {
       throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(1);
+        .withTransactionId(table.isKeyedTable() ? 1L : null);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record : records) {
@@ -499,7 +503,7 @@ public class SparkTestContext extends ExternalResource {
     return Arrays.asList(dataFiles);
   }
 
-  public void adaptHiveInsertPosDeleteFiles(long transactionId, List<DataFile> dataFiles, ArcticTable table)
+  public void adaptHiveInsertPosDeleteFiles(Long transactionId, List<DataFile> dataFiles, ArcticTable table)
       throws IOException {
     Map<StructLike, List<DataFile>> dataFilesPartitionMap =
         new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(ContentFile::partition)));
@@ -509,7 +513,7 @@ public class SparkTestContext extends ExternalResource {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())));
+              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();
@@ -535,5 +539,40 @@ public class SparkTestContext extends ExternalResource {
     } else {
       throw new IllegalStateException("Table is neither keyed nor unkeyed");
     }
+  }
+
+  protected void withSQLConf(Map<String, String> conf, Action action) {
+    SQLConf sqlConf = SQLConf.get();
+
+    Map<String, String> currentConfValues = Maps.newHashMap();
+    conf.keySet().forEach(confKey -> {
+      if (sqlConf.contains(confKey)) {
+        String currentConfValue = sqlConf.getConfString(confKey);
+        currentConfValues.put(confKey, currentConfValue);
+      }
+    });
+
+    conf.forEach((confKey, confValue) -> {
+      if (SQLConf.staticConfKeys().contains(confKey)) {
+        throw new RuntimeException("Cannot modify the value of a static config: " + confKey);
+      }
+      sqlConf.setConfString(confKey, confValue);
+    });
+
+    try {
+      action.invoke();
+    } finally {
+      conf.forEach((confKey, confValue) -> {
+        if (currentConfValues.containsKey(confKey)) {
+          sqlConf.setConfString(confKey, currentConfValues.get(confKey));
+        } else {
+          sqlConf.unsetConf(confKey);
+        }
+      });
+    }
+  }
+
+  protected interface Action {
+    void invoke();
   }
 }

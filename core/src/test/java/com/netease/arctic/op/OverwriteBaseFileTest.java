@@ -22,6 +22,7 @@ import com.netease.arctic.TableTestBase;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -87,7 +88,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     ));
 
     // init. 3 partition with init txId
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     Assert.assertEquals(initTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
     ).longValue());
@@ -125,7 +126,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
         .commit();
     // overwrite all partition and add new data file
 
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     // expect result: all partition with new txId
     Assert.assertEquals(txId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
@@ -177,7 +178,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     overwrite.commit();
     // overwrite all partition and add new data file
 
-    StructLikeMap<Long> partitionMaxTxId = testKeyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     // expect result: 1,2 partition with new txId, 3 partition use old txId
     Assert.assertEquals(txId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")

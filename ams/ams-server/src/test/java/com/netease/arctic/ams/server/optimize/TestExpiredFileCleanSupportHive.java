@@ -19,10 +19,9 @@
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
-import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
@@ -35,7 +34,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,7 +42,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> hiveFiles = insertHiveDataFiles(testUnPartitionKeyedHiveTable, 1);
-    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2, new ArrayList<>());
+    List<DataFile> s2Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L);
 
     DeleteFiles deleteHiveFiles = testUnPartitionKeyedHiveTable.baseTable().newDelete();
     for (DataFile hiveFile : hiveFiles) {
@@ -60,13 +58,13 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
     }
     deleteIcebergFiles.commit();
 
-    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3, new ArrayList<>());
+    List<DataFile> s3Files = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 3L);
     for (DataFile s3File : s3Files) {
       Assert.assertTrue(testUnPartitionKeyedHiveTable.io().exists(s3File.path().toString()));
     }
 
     Set<String> hiveLocation = new HashSet<>();
-    if (HiveTableUtil.isHive(testUnPartitionKeyedHiveTable)) {
+    if (TableTypeUtil.isHive(testUnPartitionKeyedHiveTable)) {
       hiveLocation.add(FileUtil.getFileDir(hiveFiles.get(0).path().toString()));
     }
     TableExpireService.expireSnapshots(testUnPartitionKeyedHiveTable.baseTable(), System.currentTimeMillis(), hiveLocation);

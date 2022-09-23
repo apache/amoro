@@ -18,6 +18,8 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
@@ -33,7 +35,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
 import scala.collection.JavaConverters
-import scala.collection.JavaConverters.seqAsJavaList
+import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaList}
 
 case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
@@ -56,6 +58,12 @@ case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
 
     case ReplaceData(relation, batchWrite, query) =>
       ReplaceDataExec(batchWrite, refreshCache(relation), planLater(query)) :: Nil
+
+    case ReplaceArcticData(table: DataSourceV2Relation, query, options) =>
+      table.table match {
+        case t: ArcticSparkTable =>
+          AppendDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),refreshCache(table)) :: Nil
+      }
 
     case MergeInto(mergeIntoParams, output, child) =>
       MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil

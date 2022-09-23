@@ -1,55 +1,55 @@
 CREATE TABLE `catalog_metadata`
 (
     `catalog_id`         int(11) NOT NULL AUTO_INCREMENT,
-    `catalog_name`       varchar(64) NOT NULL,
-    `display_name`       varchar(64) DEFAULT NULL,
-    `catalog_type`       varchar(64) NOT NULL,
-    `storage_configs`    mediumtext,
-    `auth_configs`       mediumtext,
-    `catalog_properties` mediumtext,
+    `catalog_name`       varchar(64) NOT NULL COMMENT 'catalog name',
+    `display_name`       varchar(64) DEFAULT NULL COMMENT 'display name of catalog',
+    `catalog_type`       varchar(64) NOT NULL COMMENT 'catalog type like hive/hadoop',
+    `storage_configs`    mediumtext COMMENT 'base64 code of storage configs',
+    `auth_configs`       mediumtext COMMENT 'base64 code of auth configs',
+    `catalog_properties` mediumtext COMMENT 'catalog properties',
     PRIMARY KEY (`catalog_id`),
     UNIQUE KEY `catalog_metadata_catalog_name_uindex` (`catalog_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'catalog metadata';
 
 CREATE TABLE `container_metadata`
 (
-    `name`       varchar(64) NOT NULL,
-    `type`       varchar(64) NOT NULL,
-    `properties` mediumtext,
+    `name`       varchar(64) NOT NULL COMMENT 'container name',
+    `type`       varchar(64) NOT NULL COMMENT 'container type like flink/local',
+    `properties` mediumtext COMMENT 'container properties',
     PRIMARY KEY (`name`,`type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'container metadata';
 
 CREATE TABLE `database_metadata`
 (
     `db_id`        int(11) NOT NULL AUTO_INCREMENT,
-    `catalog_name` varchar(64) NOT NULL,
-    `db_name`      varchar(64) NOT NULL,
+    `catalog_name` varchar(64) NOT NULL COMMENT 'catalog name',
+    `db_name`      varchar(64) NOT NULL COMMENT 'database name',
     PRIMARY KEY (`db_id`),
     UNIQUE KEY `database_name_uindex` (`catalog_name`,`db_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';
 
 CREATE TABLE `file_info_cache`
 (
-    `primary_key_md5`   varchar(64) NOT NULL,
-    `table_identifier`   varchar(64) NOT NULL,
-    `add_snapshot_id`    bigint(20) NOT NULL,
-    `parent_snapshot_id` bigint(20) NOT NULL,
-    `delete_snapshot_id` bigint(20) DEFAULT NULL,
-    `inner_table`        varchar(64)          DEFAULT NULL,
-    `file_path`          varchar(400)         NOT NULL,
-    `file_type`          varchar(64)          DEFAULT NULL,
-    `file_size`          bigint(20) DEFAULT NULL,
-    `file_mask`          bigint(20) DEFAULT NULL,
-    `file_index`         bigint(20) DEFAULT NULL,
-    `spec_id`            bigint(20) DEFAULT NULL,
-    `record_count`       bigint(20) DEFAULT NULL,
-    `partition_name`     varchar(256)         DEFAULT NULL,
-    `action`             varchar(64)          DEFAULT NULL,
-    `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `watermark`          timestamp  NULL DEFAULT NULL,
+    `primary_key_md5`   varchar(64) NOT NULL COMMENT 'generate md5 with table_identifier+inner_table+file_path+partition_name as primary_key',
+    `table_identifier`   varchar(64) NOT NULL COMMENT 'table full name with catalog.db.table',
+    `add_snapshot_id`    bigint(20) NOT NULL COMMENT 'the snapshot id who add this file',
+    `parent_snapshot_id` bigint(20) NOT NULL COMMENT 'parent snapshot of add_snapshot_id',
+    `delete_snapshot_id` bigint(20) DEFAULT NULL COMMENT 'the snapshot id who delete this file',
+    `inner_table`        varchar(64)          DEFAULT NULL COMMENT 'table type like change/base',
+    `file_path`          varchar(400)         NOT NULL COMMENT 'table type like change/base',
+    `file_type`          varchar(64)          DEFAULT NULL COMMENT 'absolute file path',
+    `file_size`          bigint(20) DEFAULT NULL COMMENT 'file size',
+    `file_mask`          bigint(20) DEFAULT NULL COMMENT 'file mask',
+    `file_index`         bigint(20) DEFAULT NULL COMMENT 'file index',
+    `spec_id`            bigint(20) DEFAULT NULL COMMENT 'file spec id',
+    `record_count`       bigint(20) DEFAULT NULL COMMENT 'file record count',
+    `partition_name`     varchar(256)         DEFAULT NULL COMMENT 'the partition name which file belongs to',
+    `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
+    `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'file commit time',
+    `watermark`          timestamp  NULL DEFAULT NULL COMMENT 'file max event time',
     PRIMARY KEY (`primary_key_md5`),
     KEY  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'cache files info of table';
 
 CREATE TABLE `optimize_file`
 (
@@ -107,22 +107,22 @@ CREATE TABLE `optimize_history`
 CREATE TABLE `optimize_job`
 (
     `job_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `job_name`             varchar(1024) DEFAULT NULL,
-    `queue_id`             int(11) DEFAULT NULL,
-    `queue_name`           varchar(1024) DEFAULT NULL,
-    `job_start_time`       varchar(1024) DEFAULT NULL,
-    `job_fail_time`        varchar(1024) DEFAULT NULL,
-    `job_status`           varchar(16)   DEFAULT NULL,
-    `core_number`          int(11) DEFAULT NULL,
-    `memory`               bigint(30) DEFAULT NULL,
-    `parallelism`          int(11) DEFAULT NULL,
-    `jobmanager_url`       varchar(1024) DEFAULT NULL,
-    `optimizer_instance`   blob,
-    `optimizer_state_info` mediumtext,
-    `container`            varchar(50)   DEFAULT '',
-    `update_time` timestamp not null default CURRENT_TIMESTAMP,
+    `job_name`             varchar(1024) DEFAULT NULL COMMENT 'job name',
+    `queue_id`             int(11) DEFAULT NULL COMMENT 'queue id',
+    `queue_name`           varchar(1024) DEFAULT NULL COMMENT 'queue name',
+    `job_start_time`       varchar(1024) DEFAULT NULL COMMENT 'job start time',
+    `job_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'job fail time',
+    `job_status`           varchar(16)   DEFAULT NULL COMMENT 'job status',
+    `core_number`          int(11) DEFAULT NULL COMMENT 'total number of all CPU resources',
+    `memory`               bigint(30) DEFAULT NULL COMMENT 'job use memory size',
+    `parallelism`          int(11) DEFAULT NULL COMMENT 'job parallelism',
+    `jobmanager_url`       varchar(1024) DEFAULT NULL COMMENT 'jobmanager url',
+    `optimizer_instance`   blob COMMENT 'optimizer instance bytes, use to deserialize optimizer instance',
+    `optimizer_state_info` mediumtext COMMENT 'optimizer state info, contains like yarn application id and flink job id',
+    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this job belongs to',
+    `update_time` timestamp not null default CURRENT_TIMESTAMP COMMENT 'update time',
     PRIMARY KEY (`job_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Job info of optimize';
 
 CREATE TABLE `optimize_group`
 (
@@ -178,38 +178,38 @@ CREATE TABLE `optimize_task`
 
 CREATE TABLE `snapshot_info_cache`
 (
-    `table_identifier`   varchar(64) NOT NULL,
-    `snapshot_id`        bigint(20) NOT NULL,
-    `parent_snapshot_id` bigint(20) NOT NULL,
-    `action`             varchar(64)          DEFAULT NULL,
-    `inner_table`        varchar(64)          NOT NULL,
-    `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `table_identifier`   varchar(64) NOT NULL COMMENT 'table full name with catalog.db.table',
+    `snapshot_id`        bigint(20) NOT NULL COMMENT 'snapshot id',
+    `parent_snapshot_id` bigint(20) NOT NULL COMMENT 'parent snapshot id',
+    `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
+    `inner_table`        varchar(64)          NOT NULL COMMENT 'table type like change/base',
+    `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'snapshot commit time',
     PRIMARY KEY (`table_identifier`,`inner_table`,`snapshot_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'cache snapshot info of table';
 
 CREATE TABLE `table_metadata`
 (
-    `catalog_name`    varchar(64) NOT NULL,
-    `db_name`         varchar(64) NOT NULL,
-    `table_name`      varchar(64) NOT NULL,
-    `primary_key`     varchar(256) DEFAULT NULL,
-    `sort_key`        varchar(256) DEFAULT NULL,
-    `table_location`  varchar(256) DEFAULT NULL,
-    `base_location`   varchar(256) DEFAULT NULL,
-    `delta_location`  varchar(256) DEFAULT NULL,
-    `properties`      text,
-    `meta_store_site` mediumtext,
-    `hdfs_site`       mediumtext,
-    `core_site`       mediumtext,
-    `hbase_site`      mediumtext,
-    `auth_method`     varchar(32)  DEFAULT NULL,
-    `hadoop_username` varchar(64)  DEFAULT NULL,
-    `krb_keytab`      text,
-    `krb_conf`        text,
-    `krb_principal`   text,
-    `current_tx_id`   bigint(20) DEFAULT NULL,
+    `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
+    `db_name`         varchar(64) NOT NULL COMMENT 'Database name',
+    `table_name`      varchar(64) NOT NULL COMMENT 'Table name',
+    `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
+    `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
+    `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
+    `base_location`   varchar(256) DEFAULT NULL COMMENT 'Base table location',
+    `delta_location`  varchar(256) DEFAULT NULL COMMENT 'change table location',
+    `properties`      text COMMENT 'Table properties',
+    `meta_store_site` mediumtext COMMENT 'base64 code of meta store site',
+    `hdfs_site`       mediumtext COMMENT 'base64 code of hdfs site',
+    `core_site`       mediumtext COMMENT 'base64 code of core site',
+    `hbase_site`      mediumtext COMMENT 'base64 code of hbase site',
+    `auth_method`     varchar(32)  DEFAULT NULL COMMENT 'auth method like KERBEROS/SIMPLE',
+    `hadoop_username` varchar(64)  DEFAULT NULL COMMENT 'hadpp username when auth method is SIMPLE',
+    `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
+    `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
+    `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
+    `current_tx_id`   bigint(20) DEFAULT NULL COMMENT 'current transaction id',
     PRIMARY KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
 
 CREATE TABLE `optimize_table_runtime`
 (
@@ -237,17 +237,16 @@ CREATE TABLE `optimize_task_history`
     `cost_time`       bigint(20) DEFAULT NULL COMMENT 'Task cost time',
     `queue_id`        int(11) DEFAULT NULL COMMENT 'Task queue id',
     `task_group_id`   varchar(40) DEFAULT NULL COMMENT 'Task group id',
-    PRIMARY KEY (`task_history_id`,`task_group_id`),
     KEY               `task_group_id_index` (`task_history_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of each optimize task';
 
 CREATE TABLE `table_transaction_meta`
 (
-    `table_identifier` varchar(256) NOT NULL,
-    `transaction_id`   bigint(20) NOT NULL,
-    `signature`        varchar(256) NOT NULL,
-    `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `table_identifier` varchar(256) NOT NULL COMMENT 'table full name with catalog.db.table',
+    `transaction_id`   bigint(20) NOT NULL COMMENT 'allocated transaction id',
+    `signature`        varchar(256) NOT NULL COMMENT 'transaction request signature',
+    `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'transaction allocate time',
     PRIMARY KEY (`table_identifier`,`transaction_id`),
     UNIQUE KEY `signature_unique` (`table_identifier`,`signature`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'transaction meta info of table';
 

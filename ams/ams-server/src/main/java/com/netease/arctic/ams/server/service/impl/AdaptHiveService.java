@@ -46,7 +46,7 @@ public class AdaptHiveService {
   private static final ThreadPoolExecutor executor = new ThreadPoolExecutor(CORE_POOL_SIZE, CORE_POOL_SIZE * 2,
       QUEUE_CAPACITY, TimeUnit.SECONDS, new LinkedBlockingDeque<>(5));
 
-  public Object upgradeHiveTable(ArcticHiveCatalog ac, TableIdentifier tableIdentifier,
+  public Object upgradeHiveTable(ArcticHiveCatalog arcticHiveCatalog, TableIdentifier tableIdentifier,
                                  UpgradeHiveMeta upgradeHiveMeta) {
     LOG.info("Start to upgrade hive table to arctic" + tableIdentifier.toString());
     executor.submit(() -> {
@@ -54,7 +54,8 @@ public class AdaptHiveService {
       try {
         List<String> pkList = upgradeHiveMeta.getPkList().stream()
             .map(UpgradeHiveMeta.PrimaryKeyField::getFieldName).collect(Collectors.toList());
-        UpgradeHiveTableUtil.upgradeHiveTable(ac, tableIdentifier, pkList, upgradeHiveMeta.getProperties());
+        UpgradeHiveTableUtil.upgradeHiveTable(arcticHiveCatalog, tableIdentifier,
+            pkList, upgradeHiveMeta.getProperties());
         runningInfoCache.get(tableIdentifier).setStatus(UpgradeStatus.SUCCESS.toString());
       } catch (Throwable t) {
         LOG.error("Failed to upgrade hive table to arctic ", t);

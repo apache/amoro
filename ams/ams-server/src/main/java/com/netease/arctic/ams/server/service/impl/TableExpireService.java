@@ -32,13 +32,14 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.hadoop.fs.Path;
@@ -115,7 +116,7 @@ public class TableExpireService implements ITableExpireService {
                 TableProperties.CHANGE_SNAPSHOT_KEEP_MINUTES_DEFAULT)) * 60 * 1000;
 
         Set<String> hiveLocation = new HashSet<>();
-        if (HiveTableUtil.isHive(arcticTable)) {
+        if (TableTypeUtil.isHive(arcticTable)) {
           hiveLocation = HiveLocationUtils.getHiveLocation(arcticTable);
         }
 
@@ -168,7 +169,7 @@ public class TableExpireService implements ITableExpireService {
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
-    StructLikeMap<Long> baseMaxTransactionId = keyedTable.partitionMaxTransactionId();
+    StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
     if (MapUtils.isEmpty(baseMaxTransactionId)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
       return;
@@ -186,11 +187,11 @@ public class TableExpireService implements ITableExpireService {
       List<DataFileInfo> partitionDataFiles =
           partitionDataFileMap.get(null);
 
-      Long maxTransactionId = baseMaxTransactionId.get(null);
+      Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
             .filter(dataFileInfo ->
-                DefaultKeyedFile.parseMetaFromFileName(dataFileInfo.getPath()).transactionId() <= maxTransactionId)
+                FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
             .collect(Collectors.toList()));
       }
     } else {
@@ -201,7 +202,7 @@ public class TableExpireService implements ITableExpireService {
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           deleteFiles.addAll(partitionDataFiles.stream()
               .filter(dataFileInfo ->
-                  DefaultKeyedFile.parseMetaFromFileName(dataFileInfo.getPath()).transactionId() <= value)
+                  FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= value)
               .collect(Collectors.toList()));
         }
       });
@@ -225,6 +226,7 @@ public class TableExpireService implements ITableExpireService {
   public static void expireSnapshots(UnkeyedTable arcticInternalTable,
                                      long olderThan,
                                      Set<String> exclude) {
+    LOG.debug("start expire snapshots, the exclude is {}", exclude);
     final AtomicInteger toDeleteFiles = new AtomicInteger(0);
     final AtomicInteger deleteFiles = new AtomicInteger(0);
     Set<String> parentDirectory = new HashSet<>();

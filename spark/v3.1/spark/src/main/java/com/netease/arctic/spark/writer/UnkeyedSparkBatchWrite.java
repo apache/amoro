@@ -18,12 +18,16 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.ReplacePartitions;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.util.PropertyUtil;
@@ -34,9 +38,11 @@ import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.DataWriterFactory;
 import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
@@ -53,6 +59,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
+  private final long transactionId = IdGenerator.randomId();
+  private final String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
 
   public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
     this.table = table;
@@ -102,7 +110,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, false);
+      return new WriterFactory(table, dsSchema, false, transactionId, null);
     }
 
     @Override
@@ -119,7 +127,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true);
+      return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -141,7 +149,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new WriterFactory(table, dsSchema, true);
+      return new WriterFactory(table, dsSchema, true, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -158,34 +166,59 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   private class UpsertWrite extends BaseBatchWrite {
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new DeltaUpsertWriteFactory(table, dsSchema);
+      return new DeltaUpsertWriteFactory(table, dsSchema, transactionId);
     }
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      // TODO: issue #173 - implement upsert commit
-      throw new UnsupportedOperationException("Upsert write is not supported");
+      RowDelta rowDelta = table.newRowDelta();
+      if (WriteTaskDeleteFilesCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+          rowDelta.addDeletes(file);
+        }
+        rowDelta.commit();
+      }
+
+
+      AppendFiles appendFiles = table.newAppend();
+      if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
+          appendFiles.appendFile(file);
+        }
+        appendFiles.commit();
+      }
     }
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
-    private final UnkeyedTable table;
-    private final StructType dsSchema;
+    protected final UnkeyedTable table;
+    protected final StructType dsSchema;
 
-    private boolean isOverwrite;
+    private final long transactionId;
+    private final String hiveSubdirectory;
 
-    WriterFactory(UnkeyedTable table, StructType dsSchema, boolean isOverwrite) {
+    private final boolean isOverwrite;
+
+    WriterFactory(UnkeyedTable table,
+                  StructType dsSchema,
+                  boolean isOverwrite,
+                  long transactionId,
+                  String hiveSubdirectory) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.isOverwrite = isOverwrite;
+      this.transactionId = transactionId;
+      this.hiveSubdirectory = hiveSubdirectory;
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withPartitionId(partitionId)
+          .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
+          .withHiveSubdirectory(hiveSubdirectory)
           .newBaseWriter(this.isOverwrite);
       return new SimpleInternalRowDataWriter(writer);
     }
@@ -193,14 +226,22 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private static class DeltaUpsertWriteFactory extends WriterFactory {
 
-    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema) {
-      super(table, dsSchema, false);
+    DeltaUpsertWriteFactory(UnkeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, false, transactionId, null);
     }
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
       // TODO: issues-173 - support upsert data writer
-      return null;
+      StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
+          !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
+      UnkeyedPosDeleteSparkWriter<InternalRow> internalRowUnkeyedPosDeleteSparkWriter = TaskWriters.of(table)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newBasePosDeleteWriter();
+
+      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedPosDeleteSparkWriter, dsSchema);
     }
   }
 }

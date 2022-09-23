@@ -29,12 +29,17 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.IdGenerator;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -106,20 +111,16 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     List<BaseOptimizeTask> result;
     if (arcticTable.isUnkeyedTable()) {
       // if Major, only optimize partitionNeedMajorOptimizeFiles.
-      // if Full Major, optimize all files in file tree.
       List<DataFile> fileList = partitionNeedMajorOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
       result = collectUnKeyedTableTasks(partition, fileList);
-      // init files
-      partitionNeedMajorOptimizeFiles.put(partition, Collections.emptyList());
-      partitionFileTree.get(partition).initFiles();
     } else {
       FileTree treeRoot = partitionFileTree.get(partition);
       result = collectKeyedTableTasks(partition, treeRoot);
-      // init files
-      partitionNeedMajorOptimizeFiles.put(partition, Collections.emptyList());
-      partitionPosDeleteFiles.put(partition, Collections.emptyList());
-      partitionFileTree.get(partition).initFiles();
     }
+    // init files
+    partitionNeedMajorOptimizeFiles.put(partition, Collections.emptyList());
+    partitionPosDeleteFiles.put(partition, Collections.emptyList());
+    partitionFileTree.get(partition).initFiles();
 
     return result;
   }
@@ -226,21 +227,25 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
 
-    long taskSize =
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
-            TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
-    Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
-    int taskCnt = (int) (sum / taskSize) + 1;
-    List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
-        .pack(fileList, DataFile::fileSizeInBytes);
-    for (List<DataFile> files : packed) {
-      if (CollectionUtils.isNotEmpty(files)) {
-        collector.add(buildOptimizeTask(null,
-            Collections.emptyList(), Collections.emptyList(), files, Collections.emptyList(), taskPartitionConfig));
+    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
+    if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
+      long taskSize =
+          PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
+              TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
+      Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
+      int taskCnt = (int) (sum / taskSize) + 1;
+      List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
+          .pack(fileList, DataFile::fileSizeInBytes);
+      for (List<DataFile> files : packed) {
+        if (CollectionUtils.isNotEmpty(files)) {
+          collector.add(buildOptimizeTask(null,
+              Collections.emptyList(), Collections.emptyList(), files, posDeleteFiles, taskPartitionConfig));
+        }
       }
     }
+
     return collector;
   }
 
@@ -249,7 +254,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     String group = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime);
+        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
@@ -260,15 +265,15 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())
+            .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node()))
+                baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
-        if (needOptimize(posDeleteFiles, baseFiles)) {
+        if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
           collector.add(buildOptimizeTask(sourceNodes,
               Collections.emptyList(), Collections.emptyList(), baseFiles, posDeleteFiles, taskPartitionConfig));
         }
@@ -278,7 +283,13 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
     return collector;
   }
 
-  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+  /**
+   * check whether node task need to build
+   * @param posDeleteFiles pos-delete files in node
+   * @param baseFiles base files in node
+   * @return whether the node task need to build. If true, build task, otherwise skip.
+   */
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     return baseFiles.size() >= 2;
   }
 

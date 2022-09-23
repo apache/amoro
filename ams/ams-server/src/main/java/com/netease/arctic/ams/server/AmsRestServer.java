@@ -30,9 +30,12 @@ import com.netease.arctic.ams.server.exception.ForbiddenException;
 import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.service.impl.ApiTokenService;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
+import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
+import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
+import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
@@ -72,13 +75,14 @@ public class AmsRestServer {
       });
 
       //redirect the static page url to index.html
+      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/overview", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/introduce", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/table", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimize", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/tables", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/optimizers", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/hive-tables", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimizing", "/static/index.html", Location.CLASSPATH);
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
@@ -89,14 +93,20 @@ public class AmsRestServer {
     // before
     app.before(ctx -> {
       String uriPath = ctx.path();
-      if (needApiKeyCheck(uriPath)) {
-        checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
-                ctx.queryParam("signature"), ctx.queryParamMap());
-      } else if (needLoginCheck(uriPath)) {
-        if (null == ctx.sessionAttribute("user")) {
-          LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
-              ctx.sessionAttributeMap()));
-          throw new ForbiddenException();
+      String token = ctx.queryParam("token");
+      // if token of api request is not empty, so we check the query by token first
+      if (uriPath.startsWith("/api/") && StringUtils.isNotEmpty(token)) {
+        Utils.checkSinglePageToken(ctx);
+      } else {
+        if (needApiKeyCheck(uriPath)) {
+          checkApiToken(ctx.method(), ctx.url(), ctx.queryParam("apiKey"),
+                  ctx.queryParam("signature"), ctx.queryParamMap());
+        } else if (needLoginCheck(uriPath)) {
+          if (null == ctx.sessionAttribute("user")) {
+            LOG.info("session info: {}", ctx.sessionAttributeMap() == null ? null : JSONObject.toJSONString(
+                    ctx.sessionAttributeMap()));
+            throw new ForbiddenException();
+          }
         }
       }
     });
@@ -172,6 +182,7 @@ public class AmsRestServer {
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions", TableController::getTablePartitions);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
                 TableController::getPartitionFileListInfo);
+        get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/signature", TableController::getTableDetailTabToken);
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
@@ -227,7 +238,7 @@ public class AmsRestServer {
       ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, "internal error!", ""));
     });
   }
-  
+
   public static void stopRestServer() {
     if (app != null) {
       app.stop();
@@ -235,19 +246,21 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-    "/ams/v1/login",
-    "/",
-    "/overview",
-    "/introduce",
-    "/table",
-    "/optimize",
-    "/login",
-    "/terminal",
-    "/index.html",
-    "/favicon.ico",
-    "/js/*",
-    "/img/*",
-    "/css/*"
+      "/ams/v1/login",
+      "/",
+      "/overview",
+      "/introduce",
+      "/tables",
+      "/optimizers",
+      "/login",
+      "/terminal",
+      "/hive-tables/upgrade",
+      "/hive-tables",
+      "/index.html",
+      "/favicon.ico",
+      "/js/*",
+      "/img/*",
+      "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {
@@ -270,7 +283,7 @@ public class AmsRestServer {
   }
 
   private static void checkApiToken(String requestMethod, String requestUrl, String apiKey, String signature,
-                             Map<String, List<String>> params) {
+                                    Map<String, List<String>> params) {
     String plainText;
     String encryptString;
     String signCal;

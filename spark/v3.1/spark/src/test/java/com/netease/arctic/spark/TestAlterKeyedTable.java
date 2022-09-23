@@ -204,7 +204,19 @@ public class TestAlterKeyedTable extends SparkTestBase {
     Assert.assertEquals("val1", keyedTable.properties().get("test.props1"));
     Assert.assertEquals("new-value", keyedTable.properties().get("test.props2"));
     Assert.assertEquals("val3", keyedTable.properties().get("test.props3"));
+  }
 
+  @Test
+  public void testAlterTableUnsetProperties() {
+    sql("ALTER TABLE {0}.{1} SET TBLPROPERTIES " +
+        "( ''test.props2'' = ''new-value'', ''test.props3'' = ''val3'' )", database, tableName);
+    sql("ALTER TABLE {0}.{1} UNSET TBLPROPERTIES " +
+        "( ''test.props2'' )", database, tableName);
 
+    ArcticTable keyedTable = loadTable(catalogNameArctic, database, tableName);
+
+    Assert.assertEquals("val1", keyedTable.properties().get("test.props1"));
+    Assert.assertNull(keyedTable.properties().get("test.props2"));
+    Assert.assertEquals("val3", keyedTable.properties().get("test.props3"));
   }
 }

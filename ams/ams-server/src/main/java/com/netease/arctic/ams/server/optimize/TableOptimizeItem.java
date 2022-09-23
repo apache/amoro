@@ -28,8 +28,12 @@ import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.OptimizeType;
+import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
+import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
+import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
+import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
@@ -41,7 +45,6 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
-import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
@@ -51,11 +54,12 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.utils.HiveTableUtil;
+import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -130,6 +134,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Initial optimize tasks.
+   *
    * @param optimizeTasks -
    */
   public void initOptimizeTasks(List<OptimizeTaskItem> optimizeTasks) {
@@ -141,6 +146,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Initial TableOptimizeRuntime.
+   *
    * @param runtime -
    * @return this for chain
    */
@@ -189,6 +195,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get table identifier.
+   *
    * @return TableIdentifier
    */
   public TableIdentifier getTableIdentifier() {
@@ -197,7 +204,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Arctic Table, refresh if expired.
-   * @return  ArcticTable
+   *
+   * @return ArcticTable
    */
   public ArcticTable getArcticTable() {
     if (arcticTable == null) {
@@ -208,6 +216,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get arcticTable, refresh immediately or not.
+   *
    * @param forceRefresh - refresh immediately
    * @return ArcticTable
    */
@@ -218,7 +227,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * If arctic table is KeyedTable.
-   * 
+   *
    * @return true/false
    */
   public boolean isKeyedTable() {
@@ -230,6 +239,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get cached quota, cache will be updated when arctic table refresh.
+   *
    * @return quota
    */
   public double getQuotaCache() {
@@ -270,6 +280,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Update optimize task result, Failed or Prepared.
+   *
    * @param optimizeTaskStat - optimizeTaskStat
    */
   public void updateOptimizeTaskStat(OptimizeTaskStat optimizeTaskStat) {
@@ -309,6 +320,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Build current table optimize info.
+   *
    * @return TableOptimizeInfo
    */
   public TableOptimizeInfo buildTableOptimizeInfo() {
@@ -490,60 +502,174 @@ public class TableOptimizeItem extends IJDBCService {
     }
   }
 
-  private void optimizeTasksCommitted(
-      Map<String, List<OptimizeTaskItem>> tasks, long commitTime, Map<String, OptimizeType> optimizeTypMap) {
-    tasks.values().stream().flatMap(Collection::stream)
-        .forEach(task -> task.onCommitted(commitTime));
+  private void optimizeTasksClear(BaseOptimizeCommit optimizeCommit) {
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
+      Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
 
-    tasks.keySet().forEach(
-        partition -> {
-          OptimizeType optimizeType = optimizeTypMap.get(partition);
-          switch (optimizeType) {
-            case Minor:
-              tableOptimizeRuntime.putLatestMinorOptimizeTime(partition, commitTime);
-              break;
-            case Major:
-              tableOptimizeRuntime.putLatestMajorOptimizeTime(partition, commitTime);
-              break;
-            case FullMajor:
-              tableOptimizeRuntime.putLatestFullOptimizeTime(partition, commitTime);
-              break;
-          }
-        });
-    try {
-      // persist partition optimize time
-      persistTableOptimizeRuntime();
-    } catch (Throwable t) {
-      LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
-    }
+      OptimizeTasksMapper optimizeTasksMapper =
+          getMapper(sqlSession, OptimizeTasksMapper.class);
+      InternalTableFilesMapper internalTableFilesMapper =
+          getMapper(sqlSession, InternalTableFilesMapper.class);
+      TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
+          getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
 
-    try {
-      // persist optimize task history
-      OptimizeHistory record = buildOptimizeRecord(tasks, commitTime);
-      insertOptimizeRecord(record);
-    } catch (Throwable t) {
-      LOG.warn("failed to persist optimize history after commit, ignore. " + getTableIdentifier(), t);
-    }
+      try {
+        commitTableTaskHistory.forEach((key, value) ->
+            taskHistoryMapper.deleteTaskHistoryWithHistoryId(value.getTableIdentifier(), value.getTaskHistoryId()));
+      } catch (Exception e) {
+        LOG.warn("failed to delete task history after commit failed, ignore. " + getTableIdentifier(), e);
+        sqlSession.rollback(true);
+      }
 
-    tasksLock.lock();
-    try {
-      tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
-          .forEach(this::removeOptimizeTask);
-      updateTableOptimizeStatus();
-    } catch (Throwable t) {
-      LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
-          t);
-    } finally {
-      tasksLock.unlock();
+      try {
+        // persist partition optimize time
+        tableOptimizeRuntime.setRunning(false);
+        tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
+      } catch (Throwable t) {
+        LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
+        sqlSession.rollback(true);
+        tableOptimizeRuntime.setRunning(true);
+      }
+
+      tasksLock.lock();
+      List<OptimizeTaskItem> removedList = new ArrayList<>();
+      try {
+        tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
+            .forEach(optimizeTaskId -> {
+              OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
+              if (removed != null) {
+                removedList.add(removed);
+                optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
+                internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
+              }
+              LOG.info("{} removed", optimizeTaskId);
+            });
+      } catch (Throwable t) {
+        for (OptimizeTaskItem optimizeTaskItem : removedList) {
+          optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
+        }
+        tableOptimizeRuntime.setRunning(true);
+        LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
+            t);
+        sqlSession.rollback(true);
+      } finally {
+        tasksLock.unlock();
+      }
+
+      sqlSession.commit(true);
     }
   }
 
-  private void insertOptimizeRecord(OptimizeHistory record) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
+  private void optimizeTasksCommitted(BaseOptimizeCommit optimizeCommit,
+                                      long commitTime) {
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
+      Map<String, OptimizeType> optimizeTypMap = optimizeCommit.getPartitionOptimizeType();
+      Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
+
+      // commit
+      OptimizeTasksMapper optimizeTasksMapper =
+          getMapper(sqlSession, OptimizeTasksMapper.class);
+      OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
+          getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
+      InternalTableFilesMapper internalTableFilesMapper =
+          getMapper(sqlSession, InternalTableFilesMapper.class);
+      TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
+          getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       OptimizeHistoryMapper optimizeHistoryMapper =
           getMapper(sqlSession, OptimizeHistoryMapper.class);
-      optimizeHistoryMapper.insertOptimizeHistory(record);
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
+
+      try {
+        tasks.values().stream().flatMap(Collection::stream)
+            .forEach(taskItem -> {
+              BaseOptimizeTaskRuntime newRuntime = taskItem.getOptimizeRuntime().clone();
+              newRuntime.setCommitTime(commitTime);
+              newRuntime.setStatus(OptimizeStatus.Committed);
+              // after commit, task will be deleted, there is no need to update
+              optimizeTaskRuntimesMapper.updateOptimizeTaskRuntime(newRuntime);
+              taskItem.setOptimizeRuntime(newRuntime);
+            });
+      } catch (Exception e) {
+        LOG.warn("failed to persist taskOptimizeRuntime after commit, ignore. " + getTableIdentifier(), e);
+        sqlSession.rollback(true);
+      }
+
+      tasks.keySet().forEach(
+          partition -> {
+            OptimizeType optimizeType = optimizeTypMap.get(partition);
+            switch (optimizeType) {
+              case Minor:
+                tableOptimizeRuntime.putLatestMinorOptimizeTime(partition, commitTime);
+                break;
+              case Major:
+                tableOptimizeRuntime.putLatestMajorOptimizeTime(partition, commitTime);
+                break;
+              case FullMajor:
+                tableOptimizeRuntime.putLatestFullOptimizeTime(partition, commitTime);
+                break;
+            }
+          });
+
+      try {
+        // persist optimize task history
+        OptimizeHistory record = buildOptimizeRecord(tasks, commitTime);
+        optimizeHistoryMapper.insertOptimizeHistory(record);
+      } catch (Throwable t) {
+        LOG.warn("failed to persist optimize history after commit, ignore. " + getTableIdentifier(), t);
+        sqlSession.rollback(true);
+      }
+
+      try {
+        commitTableTaskHistory.forEach((key, value) -> taskHistoryMapper.updateTaskHistory(value));
+      } catch (Exception e) {
+        LOG.warn("failed to persist task history after commit, ignore. " + getTableIdentifier(), e);
+        sqlSession.rollback(true);
+      }
+
+      try {
+        // persist partition optimize time
+        tableOptimizeRuntime.setRunning(false);
+        tableOptimizeRuntimeMapper.updateTableOptimizeRuntime(tableOptimizeRuntime);
+      } catch (Throwable t) {
+        LOG.warn("failed to persist tableOptimizeRuntime after commit, ignore. " + getTableIdentifier(), t);
+        sqlSession.rollback(true);
+        tableOptimizeRuntime.setRunning(true);
+      }
+
+      tasksLock.lock();
+      List<OptimizeTaskItem> removedList = new ArrayList<>();
+      try {
+        tasks.values().stream().flatMap(Collection::stream).map(OptimizeTaskItem::getTaskId)
+            .forEach(optimizeTaskId -> {
+              OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
+              if (removed != null) {
+                removedList.add(removed);
+                optimizeTasksMapper.deleteOptimizeTask(optimizeTaskId.getTraceId());
+                internalTableFilesMapper.deleteOptimizeTaskFile(optimizeTaskId);
+              }
+              LOG.info("{} removed", optimizeTaskId);
+            });
+      } catch (Throwable t) {
+        for (OptimizeTaskItem optimizeTaskItem : removedList) {
+          optimizeTasks.put(optimizeTaskItem.getTaskId(), optimizeTaskItem);
+        }
+        tableOptimizeRuntime.setRunning(true);
+        LOG.warn("failed to remove optimize task after commit, ignore. " + getTableIdentifier(),
+            t);
+        sqlSession.rollback(true);
+      } finally {
+        tasksLock.unlock();
+      }
+
+      sqlSession.commit(true);
     }
+
+    updateTableOptimizeStatus();
   }
 
   private OptimizeHistory buildOptimizeRecord(Map<String, List<OptimizeTaskItem>> tasks, long commitTime) {
@@ -594,25 +720,12 @@ public class TableOptimizeItem extends IJDBCService {
     if (isKeyedTable()) {
       KeyedTable keyedHiveTable = getArcticTable(true).asKeyedTable();
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(keyedHiveTable.baseTable()));
-      record.setBaseTableMaxTransactionId(keyedHiveTable.maxTransactionId().toString());
+      record.setBaseTableMaxTransactionId(TablePropertyUtil.getPartitionMaxTransactionId(keyedHiveTable).toString());
     } else {
       getArcticTable(true);
       record.setSnapshotInfo(TableStatCollector.buildBaseTableSnapshotInfo(getArcticTable(true).asUnkeyedTable()));
     }
     return record;
-  }
-
-  private void removeOptimizeTask(OptimizeTaskId optimizeTaskId) {
-    tasksLock.lock();
-    try {
-      OptimizeTaskItem removed = optimizeTasks.remove(optimizeTaskId);
-      if (removed != null) {
-        removed.clearOptimizeTask();
-      }
-      LOG.info("{} removed", optimizeTaskId);
-    } finally {
-      tasksLock.unlock();
-    }
   }
 
   /**
@@ -698,6 +811,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Commit optimize tasks.
+   *
    * @throws Exception -
    */
   public void commitOptimizeTasks() throws Exception {
@@ -719,20 +833,20 @@ public class TableOptimizeItem extends IJDBCService {
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
         BaseOptimizeCommit optimizeCommit;
-        if (HiveTableUtil.isHive(getArcticTable())) {
+        if (TableTypeUtil.isHive(getArcticTable())) {
           optimizeCommit = new SupportHiveCommit(getArcticTable(true),
               tasksToCommit, OptimizeTaskItem::persistTargetFiles);
         } else {
           optimizeCommit = new BaseOptimizeCommit(getArcticTable(true), tasksToCommit);
         }
-        long commitTime = optimizeCommit.commit(tableOptimizeRuntime);
-        optimizeTasksCommitted(
-            optimizeCommit.getCommittedTasks(), commitTime, optimizeCommit.getPartitionOptimizeType());
-        Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
-        ITableTaskHistoryService tableTaskHistoryService = ServiceContainer.getTableTaskHistoryService();
-        commitTableTaskHistory.forEach((key, value) -> tableTaskHistoryService.updateTaskHistory(value));
-        tableOptimizeRuntime.setRunning(false);
-        persistTableOptimizeRuntime();
+
+        boolean committed = optimizeCommit.commit(tableOptimizeRuntime.getCurrentSnapshotId());
+        if (committed) {
+          long commitTime = System.currentTimeMillis();
+          optimizeTasksCommitted(optimizeCommit, commitTime);
+        } else {
+          optimizeTasksClear(optimizeCommit);
+        }
       } else {
         LOG.info("{} get no tasks to commit", tableIdentifier);
       }
@@ -743,6 +857,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get all optimize tasks.
+   *
    * @return list of all optimize tasks
    */
   public List<OptimizeTaskItem> getOptimizeTasks() {
@@ -751,7 +866,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Full Plan.
-   * @param queueId -
+   *
+   * @param queueId     -
    * @param currentTime -
    * @return -
    */
@@ -773,7 +889,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Major Plan.
-   * @param queueId -
+   *
+   * @param queueId     -
    * @param currentTime -
    * @return -
    */
@@ -795,7 +912,8 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get Minor Plan.
-   * @param queueId -
+   *
+   * @param queueId     -
    * @param currentTime -
    * @return -
    */
@@ -815,6 +933,7 @@ public class TableOptimizeItem extends IJDBCService {
 
   /**
    * Get optimizeRuntime.
+   *
    * @return -
    */
   public TableOptimizeRuntime getTableOptimizeRuntime() {

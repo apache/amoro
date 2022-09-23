@@ -49,6 +49,8 @@ public class TestKeyedTableDDL extends SparkTestBase {
         " id int , \n" +
         " name string , \n " +
         " point struct<x: double NOT NULL, y: double NOT NULL> , \n " +
+        " maps map<string, string>, \n " +
+        " arrays array<string>, \n " +
         " ts timestamp , \n" +
         " primary key (id) \n" +
         ") using arctic \n" +

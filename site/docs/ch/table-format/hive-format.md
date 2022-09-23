@@ -10,7 +10,7 @@
 
 ## 存储结构
 
-Arctic 在核心特性的实现上会使用 delete file 来存储 row-level 的行级变更以减少数据更新时的写放大问题，同时在实时场景下会有频繁的数据写入操作，这就需要 Tablestore 具有较好的ACID特性，
+Arctic 在核心特性的实现上会使用 delete file 来存储 row-level 的行级变更以减少数据更新时的写放大问题，同时在实时场景下会有频繁的数据写入操作，这就需要 Tablestore 具有较好的 ACID 特性，
 然而这些都是 Hive table 现阶段所不具备的，为了支持完整的 Arctic 特性，在实现上 Basetore 在保持兼容 Hive 元数据的基础上仍然会使用到 Iceberg 以提供 ACID 的特性。具体结构如下：
 
 ![Hive Format Structure](../images/format/hive-format-structure.png){:height="60%" width="60%"}
@@ -51,5 +51,8 @@ Hive 表的结构仍然会存储在 Hive Meta Store 中，Arctic 在不同引擎
 
 ## 结构优化
 
-[结构优化](table-store.md/#_3) 中所描述的所有过程对于使用 Hive 作为 Basestore 的表仍然受用，值得注意的是 Major Optimize 中在优化整个表（或分区）下的所有文件时会将文件写入到 hive location 下，以达到更新 Hive 原生读取内容的目的。
+[结构优化](../table-store/#_3) 中所描述的所有过程对于使用 Hive 作为 Basestore 的表仍然受用，详细过程如下：
+
+* Major Optimize 在表（或分区）下没有 position-delete 文件时，会合并非 Hive 目录下的小文件，并将输出文件移动到 Hive 表（或分区）当前的目录
+* Full Optimize 则会合并表（或分区）下所有的文件，将合并后的新文件写到临时目录，在提交时 alter Hive location，以达到更新 Hive 原生读取内容的目的
 

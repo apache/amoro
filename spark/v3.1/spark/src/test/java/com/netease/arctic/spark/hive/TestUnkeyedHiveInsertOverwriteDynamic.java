@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.hive;
 
+import com.netease.arctic.spark.SparkTestBase;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.thrift.TException;
 import org.junit.After;

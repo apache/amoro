@@ -39,6 +39,8 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException;
@@ -59,9 +61,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
+import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
+import static org.apache.iceberg.spark.SparkUtil.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
 
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
@@ -159,7 +167,18 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
     properties = Maps.newHashMap(properties);
-    Schema icebergSchema = SparkSchemaUtil.convert(schema, false);
+    Schema convertSchema;
+    SparkSession sparkSession = SparkSession.active();
+    if (Boolean.parseBoolean(
+            sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+                    USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
+      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
+      convertSchema = SparkSchemaUtil.convert(schema, true);
+    } else {
+      convertSchema = SparkSchemaUtil.convert(schema, false);
+    }
+    Schema icebergSchema = checkAndConvertSchema(
+            convertSchema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
     TableBuilder builder = catalog.newTableBuilder(identifier, icebergSchema);
     PartitionSpec spec = Spark3Util.toPartitionSpec(icebergSchema, transforms);
@@ -185,6 +204,26 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException(ident);
     }
+  }
+
+  private Schema checkAndConvertSchema(Schema schema, Map<String, String> properties) {
+    if (properties.containsKey("primary.keys")) {
+      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(schema)
+          .addDescription(properties.get("primary.keys"))
+          .build();
+      List<String> primaryKeys = primaryKeySpec.fieldNames();
+      Set<String> pkSet = new HashSet<>(primaryKeys);
+      List<Types.NestedField> columnsWithPk = new ArrayList<>();
+      schema.columns().forEach(nestedField -> {
+        if (pkSet.contains(nestedField.name())) {
+          columnsWithPk.add(nestedField.asRequired());
+        } else {
+          columnsWithPk.add(nestedField);
+        }
+      });
+      return new Schema(columnsWithPk);
+    }
+    return schema;
   }
 
   private boolean isIdentifierLocation(String location, Identifier identifier) {
@@ -222,6 +261,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       if (change instanceof ColumnChange) {
         schemaChanges.add(change);
       } else if (change instanceof SetProperty) {
+        propertyChanges.add(change);
+      } else if (change instanceof RemoveProperty) {
         propertyChanges.add(change);
       } else {
         throw new UnsupportedOperationException("Cannot apply unknown table change: " + change);

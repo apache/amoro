@@ -23,12 +23,13 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.io.writer.SortedPosDeleteWriter;
+import com.netease.arctic.spark.writer.UnkeyedPosDeleteSparkWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.SchemaUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -36,6 +37,7 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.FileAppenderFactory;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.StructType;
@@ -48,6 +50,7 @@ public class TaskWriters {
   private int partitionId = 0;
   private long taskId = 0;
   private StructType dsSchema;
+  private String hiveSubdirectory;
 
   private final boolean isHiveTable;
   private final FileFormat fileFormat;
@@ -71,7 +74,7 @@ public class TaskWriters {
     return new TaskWriters(table);
   }
 
-  public TaskWriters withTransactionId(long transactionId) {
+  public TaskWriters withTransactionId(Long transactionId) {
     this.transactionId = transactionId;
     return this;
   }
@@ -88,6 +91,11 @@ public class TaskWriters {
 
   public TaskWriters withDataSourceSchema(StructType dsSchema) {
     this.dsSchema = dsSchema;
+    return this;
+  }
+  
+  public TaskWriters withHiveSubdirectory(String hiveSubdirectory) {
+    this.hiveSubdirectory = hiveSubdirectory;
     return this;
   }
 
@@ -120,11 +128,11 @@ public class TaskWriters {
         .writeHive(isHiveTable)
         .build();
 
-    OutputFileFactory outputFileFactory = null;
+    OutputFileFactory outputFileFactory;
     if (isHiveTable && isOverwrite) {
       outputFileFactory = new AdaptHiveOutputFileFactory(
           ((SupportHive) table).hiveLocation(), table.spec(), fileFormat, table.io(),
-          encryptionManager, partitionId, taskId, transactionId);
+          encryptionManager, partitionId, taskId, transactionId, hiveSubdirectory);
     } else {
       outputFileFactory = new CommonOutputFileFactory(
           baseLocation, table.spec(), fileFormat, table.io(),
@@ -138,20 +146,50 @@ public class TaskWriters {
 
   public ChangeTaskWriter<InternalRow> newChangeWriter() {
     preconditions();
-    // TODO: issues-173 - support change writer for upsert
-    return null;
+    String changeLocation;
+    EncryptionManager encryptionManager;
+    Schema schema;
+    PrimaryKeySpec primaryKeySpec = null;
+    Table icebergTable;
+
+    if (table.isKeyedTable()) {
+      KeyedTable keyedTable = table.asKeyedTable();
+      changeLocation = keyedTable.changeLocation();
+      encryptionManager = keyedTable.changeTable().encryption();
+      schema = SchemaUtil.changeWriteSchema(keyedTable.changeTable().schema());
+      primaryKeySpec = keyedTable.primaryKeySpec();
+      icebergTable = keyedTable.baseTable();
+    } else {
+      throw new UnsupportedOperationException("Unkeyed table does not support change writer");
+    }
+    FileAppenderFactory<InternalRow> appenderFactory = InternalRowFileAppenderFactory
+        .builderFor(icebergTable, schema, SparkSchemaUtil.convert(schema))
+        .writeHive(isHiveTable)
+        .build();
+
+    OutputFileFactory outputFileFactory;
+    outputFileFactory = new CommonOutputFileFactory(
+        changeLocation, table.spec(), fileFormat, table.io(),
+        encryptionManager, partitionId, taskId, transactionId);
+
+    return new ArcticSparkChangeTaskWriter(fileFormat, appenderFactory,
+        outputFileFactory,
+        table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
   }
 
-  public SortedPosDeleteWriter newBasePosDeleteWriter() {
+  public UnkeyedPosDeleteSparkWriter<InternalRow> newBasePosDeleteWriter() {
     preconditions();
-    // TODO: issues-173 - support change writer for upsert
-    return null;
+    Schema schema = table.schema();
+    InternalRowFileAppenderFactory build = new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(),
+        schema, dsSchema).build();
+    return new UnkeyedPosDeleteSparkWriter<>(table, build,
+        new CommonOutputFileFactory(table.location(), table.spec(), fileFormat, table.io(),
+            table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId),
+        fileFormat, schema);
   }
 
   private void preconditions() {
-    if (table.isKeyedTable()) {
-      Preconditions.checkState(transactionId != null, "Transaction id is not set");
-    }
+    Preconditions.checkState(transactionId != null, "Transaction id is not set");
     Preconditions.checkState(partitionId >= 0, "Partition id is not set");
     Preconditions.checkState(taskId >= 0, "Task id is not set");
     Preconditions.checkState(dsSchema != null, "Data source schema is not set");

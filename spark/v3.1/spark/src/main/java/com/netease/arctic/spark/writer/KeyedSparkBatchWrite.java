@@ -18,9 +18,11 @@
 
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
+import com.netease.arctic.spark.table.SupportsUpsert;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -34,9 +36,11 @@ import org.apache.spark.sql.connector.write.DataWriter;
 import org.apache.spark.sql.connector.write.DataWriterFactory;
 import org.apache.spark.sql.connector.write.PhysicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriterCommitMessage;
+import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Map;
 
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
@@ -54,11 +58,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final StructType dsSchema;
 
   private final long transactionId;
+  private final String hiveSubdirectory;
 
   KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
+    this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
   }
 
   @Override
@@ -134,7 +140,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, transactionId);
+      return new BaseWriterFactory(table, dsSchema, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -159,7 +165,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, transactionId);
+      return new BaseWriterFactory(table, dsSchema, transactionId, hiveSubdirectory);
     }
 
     @Override
@@ -171,7 +177,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       for (DataFile file : files(messages)) {
         overwriteBaseFiles.addFile(file);
       }
-
       overwriteBaseFiles.commit();
     }
   }
@@ -183,7 +188,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new ChangeWriteFactory(table, dsSchema, transactionId);
+      return new UpsertChangeFactory(table, dsSchema, transactionId);
     }
 
     @Override
@@ -199,9 +204,9 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private abstract static class AbstractWriterFactory implements DataWriterFactory, Serializable {
     protected final KeyedTable table;
     protected final StructType dsSchema;
-    protected final long transactionId;
+    protected final Long transactionId;
 
-    AbstractWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+    AbstractWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
       this.table = table;
       this.dsSchema = dsSchema;
       this.transactionId = transactionId;
@@ -210,8 +215,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private static class BaseWriterFactory extends AbstractWriterFactory {
 
-    BaseWriterFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+    protected final String hiveSubdirectory;
+
+    BaseWriterFactory(KeyedTable table, StructType dsSchema, Long transactionId, String hiveSubdirectory) {
       super(table, dsSchema, transactionId);
+      this.hiveSubdirectory = hiveSubdirectory;
     }
 
     @Override
@@ -221,6 +229,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
+          .withHiveSubdirectory(hiveSubdirectory)
           .newBaseWriter(true);
       return new SimpleInternalRowDataWriter(writer);
     }
@@ -240,7 +249,27 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
           .newChangeWriter();
-      return new SimpleInternalRowDataWriter(writer);
+      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, false);
+    }
+  }
+
+  private static class UpsertChangeFactory extends AbstractWriterFactory {
+
+    UpsertChangeFactory(KeyedTable table, StructType dsSchema, long transactionId) {
+      super(table, dsSchema, transactionId);
+    }
+
+    @Override
+    public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      StructType schema = new StructType(Arrays.stream(dsSchema.fields())
+          .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newChangeWriter();
+      return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
     }
   }
 }

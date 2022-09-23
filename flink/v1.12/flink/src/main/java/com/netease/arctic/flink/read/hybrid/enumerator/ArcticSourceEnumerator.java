@@ -21,6 +21,7 @@ package com.netease.arctic.flink.read.hybrid.enumerator;
 import com.netease.arctic.flink.read.hybrid.assigner.ShuffleSplitAssigner;
 import com.netease.arctic.flink.read.hybrid.assigner.SplitAssigner;
 import com.netease.arctic.flink.read.hybrid.reader.HybridSplitReader;
+import com.netease.arctic.flink.read.hybrid.reader.ReaderStartedEvent;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
 import com.netease.arctic.flink.read.hybrid.split.TemporalJoinSplits;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
+import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
@@ -101,6 +103,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       this.temporalJoinSplits = enumState.temporalJoinSplits();
     }
     this.dimTable = dimTable;
+    LOG.info("dimTable: {}", dimTable);
   }
 
   @Override
@@ -112,7 +115,8 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
         FILE_SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanContext.scanStartupMode())) {
       keyedTable.refresh();
       Snapshot snapshot = keyedTable.changeTable().currentSnapshot();
-      enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshot.snapshotId(), null));
+      long snapshotId = snapshot == null ? EARLIEST_SNAPSHOT_ID : snapshot.snapshotId();
+      enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshotId, null));
       LOG.info("{} is {}, the current snapshot id of the change table {}  is {}.",
           FILE_SCAN_STARTUP_MODE.key(), FILE_SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshot.snapshotId());
     }
@@ -188,6 +192,14 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       if (dimTable) {
         checkAndNotifyReader(finishedSplitIds);
       }
+    } else if (sourceEvent instanceof ReaderStartedEvent) {
+      if (!dimTable || temporalJoinSplits == null || !temporalJoinSplits.hasNotifiedReader()) {
+        return;
+      }
+      // If tm failover, the reader may not be notified and watermark will not be retrieved in reader.
+      sourceEventBeforeFirstPlan = true;
+      LOG.info("send InitializationFinishedEvent to reader again.");
+      context.sendEventToSourceReader(subtaskId, InitializationFinishedEvent.INSTANCE);
     } else {
       throw new IllegalArgumentException(String.format("Received unknown event from subtask %d: %s",
           subtaskId, sourceEvent.getClass().getCanonicalName()));

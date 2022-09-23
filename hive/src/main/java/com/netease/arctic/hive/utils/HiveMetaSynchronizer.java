@@ -52,6 +52,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -73,8 +74,8 @@ public class HiveMetaSynchronizer {
   public static void syncHiveSchemaToArctic(ArcticTable table, HMSClient hiveClient) {
     try {
       Table hiveTable = hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
-      List<FieldSchema> fieldSchemas =  hiveTable.getSd().getCols();
-      Schema hiveSchema = org.apache.iceberg.hive.HiveSchemaUtil.convert(fieldSchemas);
+      Schema hiveSchema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable, table.isKeyedTable() ?
+          table.asKeyedTable().primaryKeySpec().fieldNames() : new ArrayList<>());
       UpdateSchema updateSchema = table.updateSchema();
       boolean update = updateStructSchema(table.id(), updateSchema, null,
           table.schema().asStruct(), hiveSchema.asStruct());

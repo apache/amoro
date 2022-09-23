@@ -26,7 +26,9 @@ import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.FlinkSink;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -45,7 +47,12 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
+import org.apache.flink.streaming.api.operators.ChainingStrategy;
+import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
 import org.apache.flink.streaming.api.operators.collect.ClientAndIterator;
+import org.apache.flink.streaming.api.watermark.Watermark;
+import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
@@ -56,6 +63,9 @@ import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,6 +80,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -207,6 +218,44 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     assertRecords(testFailoverTable, expected, Duration.ofMillis(10), 12000);
   }
 
+  @Test(timeout = 30000)
+  public void testDimTaskManagerFailover() throws Exception {
+    List<RowData> updated = updateRecords();
+    writeUpdate(updated);
+    List<RowData> records = generateRecords(2, 1);
+    writeUpdate(records);
+
+    ArcticSource<RowData> arcticSource = initArcticDimSource(true);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    env.setRestartStrategy(RestartStrategies.fixedDelayRestart(10, 0));
+
+    DataStream<RowData> input = env.fromSource(
+            arcticSource,
+            WatermarkStrategy.noWatermarks(),
+            "ArcticParallelSource")
+        .setParallelism(PARALLELISM);
+
+    WatermarkAwareFailWrapper.wrapWithFailureAfter(input);
+
+    JobClient jobClient = env.executeAsync("Dim Arctic Source Failover Test");
+    JobID jobId = jobClient.getJobID();
+
+    WatermarkAwareFailWrapper.waitToFail();
+    triggerFailover(
+        FailoverType.TM,
+        jobId,
+        WatermarkAwareFailWrapper::continueProcessing,
+        miniClusterResource.getMiniCluster());
+
+    while (WatermarkAwareFailWrapper.watermarkCounter.get() != PARALLELISM) {
+      Thread.sleep(1000);
+      LOG.info("wait for watermark after failover");
+    }
+    Assert.assertEquals(Long.MAX_VALUE, WatermarkAwareFailWrapper.getWatermarkAfterFailover());
+  }
+
   @Test
   public void testArcticContinuousSource() throws Exception {
     ArcticSource<RowData> arcticSource = initArcticSource(true);
@@ -228,6 +277,54 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
     assertArrayEquals(excepts2(), actualResult);
     jobClient.cancel();
+  }
+
+  @Test
+  public void testArcticContinuousSourceWithEmptyChangeInInit() throws Exception {
+    TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
+    KeyedTable table = testCatalog
+        .newTableBuilder(tableId, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/" + tableId.getTableName())
+        .withPartitionSpec(SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    TaskWriter<RowData> taskWriter = createTaskWriter(true);
+    List<RowData> baseData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 1, StringData.fromString("john"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 2, StringData.fromString("lily"), TimestampData.fromLocalDateTime(ldt)));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 3, StringData.fromString("jake"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 4, StringData.fromString("sam"), TimestampData.fromLocalDateTime(ldt.plusDays(1))));
+    }};
+    for (RowData record : baseData) {
+      taskWriter.write(record);
+    }
+    commit(table, taskWriter.complete(), true);
+
+    ArcticSource<RowData> arcticSource = initArcticSource(true, FILE_SCAN_STARTUP_MODE_EARLIEST, tableId);
+    StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+    // enable checkpoint
+    env.enableCheckpointing(1000);
+    ClientAndIterator<RowData> clientAndIterator = executeAndCollectWithClient(env, arcticSource);
+
+    JobClient jobClient = clientAndIterator.client;
+
+    List<RowData> actualResult = collectRecordsFromUnboundedStream(clientAndIterator, baseData.size());
+
+    Assert.assertEquals(new HashSet<>(baseData), new HashSet<>(actualResult));
+
+    LOG.info("begin write update_before update_after data and commit new snapshot to change table.");
+    writeUpdate(updateRecords(), table);
+    writeUpdate(updateRecords(), table);
+
+    actualResult = collectRecordsFromUnboundedStream(clientAndIterator, excepts2().length * 2);
+    jobClient.cancel();
+
+    Assert.assertEquals(new HashSet<>(updateRecords()), new HashSet<>(actualResult));
   }
 
   @Test
@@ -483,15 +580,54 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
         false);
   }
 
+  private ArcticSource<RowData> initArcticSource(boolean isStreaming, String scanStartupMode,
+                                                 TableIdentifier tableIdentifier) {
+    ArcticTableLoader tableLoader = ArcticTableLoader.of(tableIdentifier, catalogBuilder);
+    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, scanStartupMode);
+    ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
+    ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction(table.asKeyedTable());
+    TypeInformation<RowData> typeInformation = InternalTypeInfo.of(FlinkSchemaUtil.convert(table.schema()));
+
+    return new ArcticSource<>(
+        tableLoader,
+        arcticScanContext,
+        rowDataReaderFunction,
+        typeInformation,
+        table.name(),
+        false);
+  }
+
+  private ArcticSource<RowData> initArcticDimSource(boolean isStreaming) {
+    ArcticTableLoader tableLoader = initLoader();
+    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, FILE_SCAN_STARTUP_MODE_EARLIEST);
+    ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction();
+    Schema schema = testKeyedTable.schema();
+    Schema schemaWithWm = TypeUtil.join(schema,
+        new Schema(Types.NestedField.of(-1, true, "opt", Types.TimestampType.withoutZone())));
+    TypeInformation<RowData> typeInformation = InternalTypeInfo.of(FlinkSchemaUtil.convert(schemaWithWm));
+
+    return new ArcticSource<>(
+        tableLoader,
+        arcticScanContext,
+        rowDataReaderFunction,
+        typeInformation,
+        testKeyedTable.name(),
+        true);
+  }
+
   private RowDataReaderFunction initRowDataReadFunction() {
+    return initRowDataReadFunction(testKeyedTable);
+  }
+
+  private RowDataReaderFunction initRowDataReadFunction(KeyedTable keyedTable) {
     return new RowDataReaderFunction(
         new Configuration(),
-        testKeyedTable.schema(),
-        testKeyedTable.schema(),
-        testKeyedTable.primaryKeySpec(),
+        keyedTable.schema(),
+        keyedTable.schema(),
+        keyedTable.primaryKeySpec(),
         null,
         true,
-        testKeyedTable.io()
+        keyedTable.io()
     );
   }
 
@@ -539,4 +675,84 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
       continueProcessing.complete(null);
     }
   }
+
+  private static class WatermarkAwareFailWrapper {
+
+    private static WatermarkFailoverTestOperator op;
+    private static long watermarkAfterFailover = -1;
+    private static AtomicInteger watermarkCounter = new AtomicInteger(0);
+
+    public static long getWatermarkAfterFailover() {
+      return watermarkAfterFailover;
+    }
+
+    private static DataStream<RowData> wrapWithFailureAfter(DataStream<RowData> stream) {
+      op = new WatermarkFailoverTestOperator();
+      return stream.transform("watermark failover", TypeInformation.of(RowData.class), op);
+    }
+
+    private static void waitToFail() throws InterruptedException {
+      op.waitToFail();
+    }
+
+    private static void continueProcessing() {
+      op.continueProcessing();
+    }
+
+    static class WatermarkFailoverTestOperator extends AbstractStreamOperator<RowData>
+        implements OneInputStreamOperator<RowData, RowData> {
+
+      private static final long serialVersionUID = 1L;
+      private static boolean fail = false;
+      private static boolean failoverHappened = false;
+
+      public WatermarkFailoverTestOperator() {
+        super();
+        chainingStrategy = ChainingStrategy.ALWAYS;
+      }
+
+      private void waitToFail() throws InterruptedException {
+        while (!fail) {
+          LOG.info("Waiting to fail");
+          Thread.sleep(1000);
+        }
+      }
+
+      private void continueProcessing() {
+        failoverHappened = true;
+        LOG.info("failover happened");
+      }
+
+      @Override
+      public void open() throws Exception {
+        super.open();
+      }
+
+      @Override
+      public void processElement(StreamRecord<RowData> element) throws Exception {
+        output.collect(element);
+      }
+
+      @Override
+      public void processWatermark(Watermark mark) throws Exception {
+        LOG.info("processWatermark: {}", mark);
+        if (!failoverHappened && mark.getTimestamp() > 0) {
+          fail = true;
+        }
+        if (failoverHappened) {
+          LOG.info("failover happened, watermark: {}", mark);
+          Assert.assertEquals(Long.MAX_VALUE, mark.getTimestamp());
+          if (watermarkAfterFailover == -1) {
+            watermarkAfterFailover = mark.getTimestamp();
+          } else {
+            watermarkAfterFailover = Math.min(watermarkAfterFailover, mark.getTimestamp());
+          }
+          watermarkCounter.incrementAndGet();
+        }
+        super.processWatermark(mark);
+      }
+    }
+  }
+
 }
+

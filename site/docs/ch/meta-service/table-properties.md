@@ -1,6 +1,6 @@
 # 表配置
 
-这里列出了当前表的所有参数，可以在[创建表](table-management.md##_2)时指定它的值，也可以通过[修改表](table-properties.md##_4)动态修改它的值。
+这里列出了当前表的所有参数，可以在[创建表](table-management.md##_2)时指定它的值，也可以通过[修改表](table-management.md##_4)动态修改它的值。
 
 ### 表读取配置
 
@@ -28,20 +28,20 @@
 
 ### 结构优化配置
 
-| 配置名称                                          | 默认值             | 描述                                |
-|-----------------------------------------------|-----------------|-----------------------------------|
-| optimize.enable                               | true            | 是否开启结构优化                          |
-| optimize.group                                | default         | 结构优化所属的组                          |
-| optimize.quota                                | 0.1             | 表所能占用的结构优化资源量                     |
-| optimize.num-retries                          | 5               | 结构优化失败时的重试次数                      |
-| optimize.small-file-size-bytes-threshold      | 16777216（16MB）  | 结构优化时判断是否为小文件的阈值                  |
-| optimize.major.trigger.max-interval           | 86400000（1天）    | 触发 major optimize 的最长时间间隔         |
-| optimize.major.trigger.delete-file-size-bytes | 67108864（64MB）  | 触发 major optimize 的 delete 文件大小阈值 |
-| optimize.major.trigger.small-file-count       | 12              | 触发 major optimize 的小文件数数量         |
-| optimize.minor.trigger.max-interval           | 3600000（1小时）    | 触发 minor optimize 的最长时间间隔         |
-| optimize.minor.trigger.delete-file-count      | 12              | 触发 minor optimize 的 delete 文件个数阈值 |
-| optimize.major.max-task-file-size-bytes       | 1073741824（1GB） | major optimize 最大的任务大小            |
-| optimize.full.trigger.max-interval            | -1（关闭）          | 触发 full optimize 的最长时间间隔          |
+| 配置名称                                         | 默认值             | 描述                                |
+|----------------------------------------------|-----------------|-----------------------------------|
+| optimize.enable                              | true            | 是否开启结构优化                          |
+| optimize.group                               | default         | 结构优化所属的组                          |
+| optimize.quota                               | 0.1             | 表所能占用的结构优化资源量                     |
+| optimize.num-retries                         | 5               | 结构优化失败时的重试次数                      |
+| optimize.small-file-size-bytes-threshold     | 16777216（16MB）  | 结构优化时判断是否为小文件的阈值                  |
+| optimize.major.trigger.max-interval          | 86400000（1天）    | 触发 major optimize 的最长时间间隔         |
+| optimize.full.trigger.delete-file-size-bytes | 67108864（64MB）  | 触发 full optimize 的 delete 文件大小阈值  |
+| optimize.major.trigger.small-file-count      | 12              | 触发 major optimize 的小文件数数量         |
+| optimize.minor.trigger.max-interval          | 3600000（1小时）    | 触发 minor optimize 的最长时间间隔         |
+| optimize.minor.trigger.delete-file-count     | 12              | 触发 minor optimize 的 delete 文件个数阈值 |
+| optimize.major.max-task-file-size-bytes      | 1073741824（1GB） | major optimize 最大的任务大小            |
+| optimize.full.trigger.max-interval           | -1（关闭）          | 触发 full optimize 的最长时间间隔          |
 
 ### 数据清理相关参数
 

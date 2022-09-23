@@ -19,8 +19,6 @@
 package com.netease.arctic.spark;
 
 import org.apache.iceberg.StructLike;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.types.BinaryType;
 import org.apache.spark.sql.types.DataType;
@@ -37,17 +35,17 @@ import java.util.stream.Stream;
  * this class copied from iceberg  org.apache.iceberg.spark.source.InternalRowWrapper
  * for InternalRowWrapper is not public class
  */
-public class SparkRowWrapper implements StructLike {
+public class SparkInternalRowWrapper implements StructLike {
   private final DataType[] types;
-  private final BiFunction<Row, Integer, ?>[] getters;
-  private Row row = null;
+  private final BiFunction<InternalRow, Integer, ?>[] getters;
+  private InternalRow row = null;
 
-  public SparkRowWrapper(StructType rowType) {
+  public SparkInternalRowWrapper(StructType rowType) {
     this.types = Stream.of(rowType.fields())
         .map(StructField::dataType)
         .toArray(DataType[]::new);
     this.getters = Stream.of(types)
-        .map(SparkRowWrapper::getter)
+        .map(SparkInternalRowWrapper::getter)
         .toArray(BiFunction[]::new);
   }
 
@@ -64,32 +62,35 @@ public class SparkRowWrapper implements StructLike {
       return javaClass.cast(getters[pos].apply(row, pos));
     }
 
-    return javaClass.cast(row.get(pos));
+    return javaClass.cast(row.get(pos, types[pos]));
   }
 
   @Override
   public <T> void set(int pos, T value) {
-    row = RowFactory.create(pos, value);
+    row.update(pos, value);
   }
 
 
-  public SparkRowWrapper wrap(Row row) {
-    this.row = row;
+  public SparkInternalRowWrapper wrap(InternalRow internalRow) {
+    this.row = internalRow;
     return this;
   }
 
-  private static BiFunction<Row, Integer, ?> getter(DataType type) {
+  private static BiFunction<InternalRow, Integer, ?> getter(DataType type) {
     if (type instanceof StringType) {
-      return Row::getString;
+      return (row, pos) -> row.getUTF8String(pos).toString();
     } else if (type instanceof DecimalType) {
-      return Row::getDecimal;
+      DecimalType decimal = (DecimalType) type;
+      return (row, pos) ->
+          row.getDecimal(pos, decimal.precision(), decimal.scale()).toJavaBigDecimal();
     } else if (type instanceof BinaryType) {
-      return (row, pos) -> ByteBuffer.wrap(new byte[]{row.getByte(pos)});
+      return (row, pos) -> ByteBuffer.wrap(row.getBinary(pos));
     } else if (type instanceof StructType) {
       StructType structType = (StructType) type;
-      SparkRowWrapper nestedWrapper = new SparkRowWrapper(structType);
-      return (row, pos) -> nestedWrapper.wrap(row.getStruct(pos));
+      SparkInternalRowWrapper nestedWrapper = new SparkInternalRowWrapper(structType);
+      return (row, pos) -> nestedWrapper.wrap(row.getStruct(pos, structType.size()));
     }
+
     return null;
   }
 }

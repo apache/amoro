@@ -6,7 +6,7 @@
   
 要使用 Docker 以及 Docker-Compose，您需要安装 [Docker CLI](https://docs.docker.com/get-docker/) 以及 [Docker Compose CLI](https://github.com/docker/compose-cli/blob/main/INSTALL.md)。  
   
-如果您已经万事俱备，请新建一个名为`docker-compose.yml`的文件，并写入以下内容。您也可以在 [docker-compose.yml](https://github.com/NetEase/arctic/tree/master/docker/docker-compose.yml) 处查看。  
+如果您已经万事俱备，请新建一个名为 `docker-compose.yml` 的文件，并写入以下内容。您也可以在 [docker-compose.yml](https://github.com/NetEase/arctic/tree/master/docker/docker-compose.yml) 处查看。  
 ```yaml
 version: "3"
 services:
@@ -40,7 +40,7 @@ networks:
   arctic_network:
     driver: bridge
 ```
-然后，请在您的 docker-compose.yml 文件所在目录下，使用以下命令启动 docker 容器：
+然后，请在您的 `docker-compose.yml` 文件所在目录下，使用以下命令启动 docker 容器（如果您想保证自己使用的是最新的镜像，请删掉本地镜像后再执行以下命令）：
 ```shell
 docker-compose up -d
 ```
@@ -65,7 +65,7 @@ AMS 中的 optimizer 负责自动为表进行结构优化，AMS默认配置下�
 
 ## 建表
 
-登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面， 在SQL 输入框中输入下面的 SQL 并执行：
+登录并进入[AMS Dashboard](http://localhost:1630)，通过左侧菜单进入 `Terminal` 页面， 在 SQL 输入框中输入下面的 SQL 并执行：
 
 ```sql
 create database test_db;
@@ -102,7 +102,7 @@ docker exec -it arctic_flink /bin/bash
 ```
 **2.启动 Flink 实时任务**  
 
-在 Flink SQL Client 中输入下面的 SQL（由于 Flink SQL Client 暂不支持批量输入 SQL 语句，下面的 SQL 需要逐条输入SQL Client）:
+在 Flink SQL Client 中输入下面的 SQL（由于 Flink SQL Client 暂不支持批量输入 SQL 语句，下面的 SQL 需要逐条输入 SQL Client）:
 
 ```sql
 -- 创建 catalog
@@ -196,7 +196,7 @@ DELETE|3|lee|2022-07-01 10:11:00
 
 **1.查询已有数据**
 
-登录并进入 [AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，如果按照流程完成了[实时写入与读取](#_2)，在SQL窗口输入并执行如下SQL：
+登录并进入 [AMS Dashboard](http://localhost:1630)，通过左侧菜单进入`Terminal`页面，如果按照流程完成了[实时写入与读取](#_2)，在SQL窗口输入并执行如下 SQL：
 
 ```sql
 select * from test_db.test_table order by id;
@@ -214,7 +214,7 @@ select * from test_db.test_table order by id;
 +---+-----+-------------------+
 ```
 
-如若未完成[实时写入与读取](#_2)，也可以通过下面的SQL补充数据：
+如若未完成[实时写入与读取](#_2)，也可以通过下面的 SQL 补充数据：
 
 ```sql
 insert overwrite 
@@ -227,7 +227,7 @@ values
 
 **2.批量修改数据**
 
-可以通过下执行下面的SQL批量修改表中的数据：
+可以通过下执行下面的 SQL 批量修改表中的数据：
 
 ```sql
 set spark.sql.sources.partitionOverwriteMode=DYNAMIC;
@@ -263,7 +263,7 @@ select * from test_db.test_table order by id;
 **1.查看结构优化状态**
 
 启动 optimizer 之后，表的结构优化会自动触发。
-登录并进入 [AMS Dashboard](http://localhost:1630)，从左侧菜单进入到`Optimizing`页面，在`Tables`目录下可以看到当前所有表的结构优化状态。
+登录并进入 [AMS Dashboard](http://localhost:1630)，从左侧菜单进入到 `Optimizing` 页面，在 `Tables` 目录下可以看到当前所有表的结构优化状态。
 
 ![table_optimizing](images/table_optimizing.png)
 
@@ -283,7 +283,7 @@ select * from test_db.test_table order by id;
 
 **2.查看结构优化历史**
 
-从左侧菜单进入到`Tables`页面，选择测试表并进入到`Optimized目录`可以看到表的历史结构优化记录。
+从左侧菜单进入到 `Tables` 页面，选择测试表并进入到 `Optimized目录` 可以看到表的历史结构优化记录。
 如果已经完成[实时写入与读取](#_2)，测试表预期会进行3次结构优化，分别是2次 minor optimize, 一次 major optimize。
 
 ![optimize_history](images/optimize_history.png)
