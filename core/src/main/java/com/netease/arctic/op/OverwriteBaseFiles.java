@@ -122,12 +122,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     // step1: overwrite data files
     if (!this.addFiles.isEmpty() || !this.deleteFiles.isEmpty()) {
       OverwriteFiles overwriteFiles = transaction.newOverwrite();
-      if (conflictDetectionFilter != null) {
+
+      if (conflictDetectionFilter != null && baseTable.currentSnapshot() != null) {
         overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
-      }
-      if (baseTable.currentSnapshot() != null) {
         overwriteFiles.validateFromSnapshot(baseTable.currentSnapshot().snapshotId());
       }
+
       for (DataFile d : this.addFiles) {
         overwriteFiles.addFile(d);
         partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();

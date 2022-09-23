@@ -301,10 +301,10 @@ public class BaseOptimizeCommit {
       // overwrite DataFiles
       OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
       overwriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      overwriteFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
       deleteDataFiles.forEach(overwriteFiles::deleteFile);
       addDataFiles.forEach(overwriteFiles::addFile);
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+        overwriteFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
         overwriteFiles.validateFromSnapshot(baseSnapshotId);
       }
       overwriteFiles.commit();
