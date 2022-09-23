@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.io;
 
-import com.netease.arctic.spark.hive.AdaptHiveSparkParquetWriters;
+import com.netease.arctic.spark.parquet.AdaptHiveSparkParquetWriters;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;

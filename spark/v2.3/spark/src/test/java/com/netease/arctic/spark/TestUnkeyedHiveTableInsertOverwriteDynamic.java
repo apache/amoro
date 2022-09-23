@@ -71,10 +71,10 @@ public class TestUnkeyedHiveTableInsertOverwriteDynamic extends SparkTestBase {
         "(4, ''aaa'',  ''2021-1-1''), \n " +
         "(5, ''bbb'',  ''2021-1-2''), \n " +
         "(6, ''ccc'',  ''2021-1-1'') \n ", database, table);
-/*  read by arctic(not work now)
+    //read by arctic(not work now)
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
     Assert.assertEquals(4, rows.size());
-    assertContainIdSet(rows, 0, 4, 5, 6, 3);*/
+    assertContainIdSet(rows, 0, 4, 5, 6, 3);
     //read by hive
     sql("set spark.arctic.sql.delegate.enable = false");
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
@@ -96,10 +96,10 @@ public class TestUnkeyedHiveTableInsertOverwriteDynamic extends SparkTestBase {
         "(5, ''bbb'',  ''2021-1-4''), \n " +
         "(6, ''ccc'',  ''2021-1-4'') \n ", database, table);
 
-/*  read by arctic(not work now)
+    //read by arctic
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
     Assert.assertEquals(6, rows.size());
-    assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6);*/
+    assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6);
     //read by hive
     sql("set spark.arctic.sql.delegate.enable = false");
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
