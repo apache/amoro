@@ -19,10 +19,9 @@
 package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseArcticDataReader;
+import com.netease.arctic.io.reader.BaseIcebergDataReader;
 import com.netease.arctic.spark.parquet.SparkParquetRowReaders;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
-import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.parquet.ParquetValueReader;
@@ -33,24 +32,22 @@ import org.apache.spark.sql.Row;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkKeyedDataReader extends BaseArcticDataReader<Row> {
-
-  public ArcticSparkKeyedDataReader(
+public class ArcticSparkUnkeyedDataReader extends BaseIcebergDataReader<Row> {
+  public ArcticSparkUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
-      PrimaryKeySpec primaryKeySpec,
       String nameMapping,
       boolean caseSensitive) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
+    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
         ArcticSparkUtil::convertConstant, false);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
+      Schema projectedSchema,
       Map<Integer, ?> idToConstant) {
-    return fileSchema -> SparkParquetRowReaders.buildReader(projectSchema, fileSchema, idToConstant);
+    return fileSchema -> SparkParquetRowReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override

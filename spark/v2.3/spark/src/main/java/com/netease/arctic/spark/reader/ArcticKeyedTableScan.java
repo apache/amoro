@@ -22,7 +22,6 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.scan.KeyedTableScanTask;
-import com.netease.arctic.spark.util.ArcticSparkUtil;
 import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -38,9 +37,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkFilters;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.Row;
-import org.apache.spark.sql.RowFactory;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
 import org.apache.spark.sql.sources.v2.reader.DataReader;
 import org.apache.spark.sql.sources.v2.reader.DataReaderFactory;
@@ -52,9 +49,6 @@ import org.apache.spark.sql.sources.v2.reader.SupportsReportStatistics;
 import org.apache.spark.sql.types.StructType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.collection.JavaConverters;
-import scala.collection.Seq;
-
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
@@ -63,9 +57,9 @@ import java.util.Iterator;
 import java.util.List;
 
 
-public class ArcticKeyedSparkReader implements DataSourceReader,
+public class ArcticKeyedTableScan implements DataSourceReader,
     SupportsPushDownFilters, SupportsPushDownRequiredColumns, SupportsReportStatistics {
-  private static final Logger LOG = LoggerFactory.getLogger(ArcticKeyedSparkReader.class);
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticKeyedTableScan.class);
   private static final Filter[] NO_FILTERS = new Filter[0];
   private final KeyedTable table;
   private Schema schema = null;
@@ -78,7 +72,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
   private List<CombinedScanTask> tasks = null;
   private final Schema expectedSchema;
 
-  public ArcticKeyedSparkReader(SparkSession spark, KeyedTable table) {
+  public ArcticKeyedTableScan(SparkSession spark, KeyedTable table) {
     this.table = table;
     this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
     this.expectedSchema = lazySchema();
@@ -217,7 +211,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
     ArcticSparkKeyedDataReader reader;
     Iterator<KeyedTableScanTask> scanTasks;
     KeyedTableScanTask currentScanTask;
-    CloseableIterator<InternalRow> currentIterator = CloseableIterator.empty();
+    CloseableIterator<Row> currentIterator = CloseableIterator.empty();
     Row current;
 
     Schema expectedSchema;
@@ -240,11 +234,7 @@ public class ArcticKeyedSparkReader implements DataSourceReader,
     public boolean next() throws IOException {
       while (true) {
         if (currentIterator.hasNext()) {
-          InternalRow next = currentIterator.next();
-          StructType structType = SparkSchemaUtil.convert(expectedSchema);
-          Seq<Object> objectSeq = next.toSeq(structType);
-          Object[] objects = JavaConverters.seqAsJavaListConverter(objectSeq).asJava().toArray();
-          this.current = RowFactory.create(ArcticSparkUtil.convertRowObject(objects));
+          this.current = currentIterator.next();
           return true;
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();
