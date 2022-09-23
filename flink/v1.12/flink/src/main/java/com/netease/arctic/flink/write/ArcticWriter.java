@@ -181,6 +181,17 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
   }
 
   @Override
+  public void processWatermark(Watermark mark) throws Exception {
+    if (logWriter != null) {
+      logWriter.processWatermark(mark);
+    }
+    if (fileWriter instanceof Input) {
+      ((Input) fileWriter).processWatermark(mark);
+    }
+    super.processWatermark(mark);
+  }
+
+  @Override
   public void dispose() throws Exception {
     super.dispose();
     if (logWriter != null) {

@@ -174,11 +174,11 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     OperatorSubtaskState state2;
     byte[] jobId = IdGenerator.generateUpstreamId();
     try (OneInputStreamOperatorInternTest<RowData, RowData> harness0 =
-        createProducer(3, 0, jobId, topic);
-        OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
-            createProducer(3, 1, jobId, topic);
-        OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
-            createProducer(3, 2, jobId, topic)
+             createProducer(3, 0, jobId, topic);
+         OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
+             createProducer(3, 1, jobId, topic);
+         OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
+             createProducer(3, 2, jobId, topic)
     ) {
       harness0.setup();
       harness0.initializeEmptyState();
@@ -243,11 +243,11 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
 
     // failover restore from chp-1
     try (OneInputStreamOperatorInternTest<RowData, RowData> harness0 =
-        createProducer(3, 0, jobId, 1L, topic);
-        OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
-            createProducer(3, 1, jobId, 1L, topic);
-        OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
-            createProducer(3, 2, jobId, 1L, topic)
+             createProducer(3, 0, jobId, 1L, topic);
+         OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
+             createProducer(3, 1, jobId, 1L, topic);
+         OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
+             createProducer(3, 2, jobId, 1L, topic)
     ) {
       harness0.setup();
       harness0.initializeState(state0);
@@ -316,21 +316,21 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     sub.setField(8, (int) LocalDate.of(2022, 5, 5).toEpochDay());
     sub.setField(9, TimestampData.fromLocalDateTime(LocalDateTime.of(2022, 12, 12, 13, 14, 14, 987654234)));
     sub.setField(10, TimestampData.fromInstant(Instant.parse("2022-12-13T13:33:44.98765432Z")));
-    sub.setField(11, new byte[] {1});
-    sub.setField(12, new byte[] {'1'});
-    sub.setField(13, new byte[] {2});
+    sub.setField(11, new byte[]{1});
+    sub.setField(12, new byte[]{'1'});
+    sub.setField(13, new byte[]{2});
 
-    GenericArrayData fSubList = new GenericArrayData(new long[] {112L, 123L});
+    GenericArrayData fSubList = new GenericArrayData(new long[]{112L, 123L});
     sub.setField(14, fSubList);
 
-    GenericArrayData fSubList2 = new GenericArrayData(new int[] {112, 123});
+    GenericArrayData fSubList2 = new GenericArrayData(new int[]{112, 123});
     sub.setField(15, fSubList2);
 
     GenericRowData subStruct = new GenericRowData(3);
     subStruct.setField(0, false);
     subStruct.setField(1, 112);
     subStruct.setField(2, 123L);
-    GenericArrayData structList = new GenericArrayData(new GenericRowData[] {subStruct});
+    GenericArrayData structList = new GenericArrayData(new GenericRowData[]{subStruct});
     sub.setField(16, structList);
 
     GenericMapData map = new GenericMapData(new HashMap<StringData, StringData>() {{
@@ -489,7 +489,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     return harness;
   }
 
-  private static Properties getPropertiesByTopic(String topic) {
+  public static Properties getPropertiesByTopic(String topic) {
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");

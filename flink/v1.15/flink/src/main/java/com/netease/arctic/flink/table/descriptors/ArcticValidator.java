@@ -28,7 +28,9 @@ import org.apache.flink.table.catalog.CatalogBaseTable;
 import org.apache.flink.table.descriptors.ConnectorDescriptorValidator;
 import org.apache.flink.table.descriptors.DescriptorProperties;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.util.Preconditions;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +46,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String ARCTIC_EMIT_LOG = "log";
   public static final String ARCTIC_EMIT_FILE = "file";
 
-  public static final String ARCTIC_EMIT_MODE = "arctic.emit.mode";
+  public static final String ARCTIC_EMIT_AUTO = "auto";
 
   public static final String ARCTIC_READ_FILE = "file";
   public static final String ARCTIC_READ_LOG = "log";
@@ -138,27 +140,56 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .defaultValue(false)
           .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
+
+  public static final ConfigOption<String> ARCTIC_EMIT_MODE =
+      ConfigOptions.key("arctic.emit.mode")
+          .stringType()
+          .defaultValue(ARCTIC_EMIT_AUTO)
+          .withDescription("file, log, auto. e.g.\n" +
+              "'file' means only writing data into filestore.\n" +
+              "'log' means only writing data into logstore.\n" +
+              "'file,log' means writing data into both filestore and logstore.\n" +
+              "'auto' means writing data into filestore if the logstore of the arctic table is disabled;" +
+              " Also means writing data into both filestore and logstore if the logstore of the arctic table" +
+              " is enabled.\n" +
+              "'auto' is recommended.");
+
+
+  public static final ConfigOption<Duration> AUTO_EMIT_LOGSTORE_WATERMARK_GAP =
+      ConfigOptions.key("arctic.emit.auto-write-to-logstore.watermark-gap")
+          .durationType()
+          .noDefaultValue()
+          .withDescription("Only enabled when 'arctic.emit.mode'='auto', if the watermark of the arctic writers" +
+              " is greater than the current system timestamp subtracts the specific value, writers will also write" +
+              " data into the logstore.\n" +
+              "This value must be greater than 0.");
+
   @Override
   public void validate(DescriptorProperties properties) {
-    String emitMode = properties.getString(ARCTIC_EMIT_MODE);
+    String emitMode = properties.getString(ARCTIC_EMIT_MODE.key());
     if (StringUtils.isBlank(emitMode)) {
       throw new ValidationException(
           "None value for property '" +
-              ARCTIC_EMIT_MODE);
+              ARCTIC_EMIT_MODE.key());
     }
 
-    List<String> modeList = Arrays.asList(ARCTIC_EMIT_FILE, ARCTIC_EMIT_LOG);
-    for (String mode : emitMode.split(",")) {
+    String[] actualEmitModes = emitMode.split(",");
+    List<String> modeList = Arrays.asList(ARCTIC_EMIT_FILE, ARCTIC_EMIT_LOG, ARCTIC_EMIT_AUTO);
+    for (String mode : actualEmitModes) {
       if (!modeList.contains(mode)) {
         throw new ValidationException(
             "Unknown value for property '" +
-                ARCTIC_EMIT_MODE +
+                ARCTIC_EMIT_MODE.key() +
                 "'.\n" +
                 "Supported values are " +
                 modeList.stream().collect(Collectors.toMap(v -> v, v -> DescriptorProperties.noValidation())).keySet() +
                 " but was: " +
                 mode);
       }
+
+      Preconditions.checkArgument(
+          !ARCTIC_EMIT_AUTO.equals(mode) || actualEmitModes.length == 1,
+          "The value of property '" + ARCTIC_EMIT_MODE.key() + "' must be only 'auto' when it is included.");
     }
   }
 
