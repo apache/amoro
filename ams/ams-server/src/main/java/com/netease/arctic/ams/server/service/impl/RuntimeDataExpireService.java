@@ -62,7 +62,8 @@ public class RuntimeDataExpireService {
     tableMetadata.forEach(meta -> {
       TableIdentifier identifier = meta.getTableIdentifier();
       try {
-        TableOptimizeRuntime tableOptimizeRuntime = optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
+        TableOptimizeRuntime tableOptimizeRuntime =
+            optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
         tableTaskHistoryService.expireTaskHistory(identifier,
             tableOptimizeRuntime.getLatestTaskHistoryId(),
             System.currentTimeMillis() - this.taskHistoryDataExpireInterval);

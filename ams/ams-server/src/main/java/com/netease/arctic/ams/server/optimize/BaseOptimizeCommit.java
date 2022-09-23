@@ -166,8 +166,10 @@ public class BaseOptimizeCommit {
       LOG.error("file count check failed. baseFileCount/baseFileCnt is {}/{}, " +
               "insertFileCount/insertFileCnt is {}/{}, deleteFileCount/deleteFileCnt is {}/{}, " +
               "posDeleteFileCount/posDeleteFileCnt is {}/{}, targetFileCount/newFileCnt is {}/{}",
-          baseFileCount, task.getOptimizeTask().getBaseFileCnt(), insertFileCount, task.getOptimizeTask().getInsertFileCnt(),
-          deleteFileCount, task.getOptimizeTask().getDeleteFileCnt(), posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
+          baseFileCount, task.getOptimizeTask().getBaseFileCnt(),
+          insertFileCount, task.getOptimizeTask().getInsertFileCnt(),
+          deleteFileCount, task.getOptimizeTask().getDeleteFileCnt(),
+          posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
           targetFileCount, task.getOptimizeRuntime().getNewFileCnt());
     }
     return result;
