@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.MetaException;
@@ -473,7 +474,16 @@ public class OptimizeQueueService extends IJDBCService {
           }
         } else {
           if (tables.contains(task.getTableIdentifier())) {
-            task.setFiles();
+            try {
+              // load files from sysdb
+              task.setFiles();
+            } catch (Exception e) {
+              task.clearFiles();
+              LOG.error("{} failed to load files from sysdb, try put task back into queue", task.getTaskId(), e);
+              if (!tasks.offer(task)) {
+                task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
+              }
+            }
             TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
               insertTableTaskHistory(tableTaskHistory);
@@ -481,6 +491,9 @@ public class OptimizeQueueService extends IJDBCService {
               LOG.error("failed to insert tableTaskHistory, {} ignore", tableTaskHistory, e);
             }
             return task.getOptimizeTask();
+          } else {
+            LOG.warn("get task {} from queue {} but table {} not in this queue",
+                task.getTaskId(), queueName(), task.getTableIdentifier());
           }
         }
       }
