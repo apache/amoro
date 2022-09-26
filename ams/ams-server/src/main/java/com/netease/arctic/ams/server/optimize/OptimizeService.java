@@ -428,6 +428,15 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     return toCommitTables.take();
   }
 
+  @Override
+  public void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizeHistoryMapper optimizeHistoryMapper =
+          getMapper(sqlSession, OptimizeHistoryMapper.class);
+      optimizeHistoryMapper.expireOptimizeHistory(tableIdentifier, expireTime);
+    }
+  }
+
   private List<BaseOptimizeTaskRuntime> selectAllOptimizeTaskRuntimes() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =

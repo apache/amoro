@@ -38,8 +38,13 @@ public class RuntimeDataExpireService {
   private final IOptimizeService optimizeService;
   private final ITableTaskHistoryService tableTaskHistoryService;
 
+  // 1 days
   Long txDataExpireInterval = 24 * 60 * 60 * 1000L;
+  // 7 days
   Long taskHistoryDataExpireInterval = 7 * 24 * 60 * 60 * 1000L;
+  // 30 days
+  Long optimizeHistoryDataExpireInterval = 30 * 24 * 60 * 60 * 1000L;
+
 
   public RuntimeDataExpireService() {
     this.transactionService = ServiceContainer.getArcticTransactionService();
@@ -69,6 +74,17 @@ public class RuntimeDataExpireService {
             System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
       } catch (Exception e) {
         LOG.error("failed to expire and clear table_task_history table", e);
+      }
+    });
+
+    // expire and clear optimize_history table
+    tableMetadata.forEach(meta -> {
+      TableIdentifier identifier = meta.getTableIdentifier();
+      try {
+        optimizeService.expireOptimizeHistory(identifier,
+            System.currentTimeMillis() - this.optimizeHistoryDataExpireInterval);
+      } catch (Exception e) {
+        LOG.error("failed to expire and clear optimize_history table", e);
       }
     });
   }

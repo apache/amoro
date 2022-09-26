@@ -140,4 +140,10 @@ public interface OptimizeHistoryMapper {
 
   @Select("select max(history_id) from " + TABLE_NAME)
   Long maxOptimizeHistoryId();
+
+  @Delete("delete from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName} " +
+      "and commit_time < #{expireTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
 }
