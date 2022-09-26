@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
-import com.netease.arctic.spark.source.{ArcticSource, SupportsDynamicOverwrite}
+import com.netease.arctic.spark.source.{ArcticSource}
 import com.netease.arctic.spark.sql.execution.{CreateArcticTableAsSelectCommand, CreateArcticTableCommand, DropArcticTableCommand}
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
 import org.apache.spark.sql.arctic.AnalysisException
@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
 import org.apache.spark.sql.execution.command.DropTableCommand
-import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, WriteToDataSourceV2}
+import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation}
 import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
@@ -99,7 +99,7 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
     val table = arctic.loadTable(tableDesc.identifier)
     val query = addStaticPartitionColumns(table.schema(), i.partition, i.query)
     if (i.overwrite) {
-      OverwriteArcticTableDynamic(table, query)
+      OverwriteArcticTableDynamic(i, table, query)
     } else {
       throw AnalysisException.message(
         s"Cannot write, INSERT INTO is not supported for table: ${tableDesc.identifier}")

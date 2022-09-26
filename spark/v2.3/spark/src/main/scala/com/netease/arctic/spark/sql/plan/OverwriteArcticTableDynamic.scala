@@ -20,9 +20,10 @@ package com.netease.arctic.spark.sql.plan
 
 import com.netease.arctic.spark.source.ArcticSparkTable
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan}
 
 case class OverwriteArcticTableDynamic(
+    i: InsertIntoTable,
     table: ArcticSparkTable,
     query: LogicalPlan) extends LogicalPlan {
   override def output: Seq[Attribute] = Seq.empty

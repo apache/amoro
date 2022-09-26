@@ -18,19 +18,18 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
-import com.netease.arctic.spark.source.{ArcticSparkTable, SupportsDynamicOverwrite}
+import com.netease.arctic.spark.source.{SupportsDynamicOverwrite}
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.{SaveMode, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.datasources.v2.WriteToDataSourceV2Exec
-import org.apache.spark.sql.sources.v2.writer.DataSourceWriter
 
 case class ArcticStrategies() extends Strategy {
   def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-    case OverwriteArcticTableDynamic(table, query) =>
-      val optWriter = table.createWriter("", table.schema, SaveMode.Overwrite, null)
+    case OverwriteArcticTableDynamic(i, table, query) =>
+      val optWriter = table.createWriter("", query.schema, SaveMode.Overwrite, null)
       if (!optWriter.isPresent) {
         throw AnalysisException.message(s"failed to create writer for table ${table.identifier}")
       }

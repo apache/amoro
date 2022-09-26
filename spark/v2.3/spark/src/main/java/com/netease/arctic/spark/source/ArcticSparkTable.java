@@ -48,7 +48,7 @@ public class ArcticSparkTable implements DataSourceTable {
   }
 
   public ArcticSparkTable(ArcticTable arcticTable, TableIdentifier identifier, StructType requestedSchema,
-      boolean refreshEagerly) {
+                          boolean refreshEagerly) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
     this.refreshEagerly = refreshEagerly;
@@ -64,6 +64,10 @@ public class ArcticSparkTable implements DataSourceTable {
       this.lazySpark = SparkSession.builder().getOrCreate();
     }
     return lazySpark;
+  }
+
+  public String name() {
+    return arcticTable.id().toString();
   }
 
   public TableIdentifier identifier() {

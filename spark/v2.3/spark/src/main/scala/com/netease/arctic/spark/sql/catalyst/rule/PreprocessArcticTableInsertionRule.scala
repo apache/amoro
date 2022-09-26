@@ -20,10 +20,13 @@ package com.netease.arctic.spark.sql.catalyst.rule
 
 import com.netease.arctic.spark.source.ArcticSparkTable
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
-import com.netease.arctic.table.ArcticTable
-import org.apache.spark.sql.{AnalysisException, SparkSession}
+import org.apache.spark.sql.arctic.AnalysisException
+import org.apache.spark.sql.catalyst.catalog.HiveTableRelation
+import org.apache.spark.sql.catalyst.optimizer.PropagateEmptyRelation.conf
+import org.apache.spark.sql.{SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.datasources.{DDLPreprocessingUtils, PartitioningUtils}
 
 
 /**
@@ -33,13 +36,41 @@ import org.apache.spark.sql.catalyst.rules.Rule
  */
 case class PreprocessArcticTableInsertionRule(spark: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case i @ OverwriteArcticTableDynamic(table, query) if query.resolved =>
-      val newQuery = process(table, query)
-      i
+    case a @ OverwriteArcticTableDynamic(i, table, query) if query.resolved =>
+      val tableRelation = i.table
+      tableRelation match {
+        case relation: HiveTableRelation =>
+          val metadata = relation.tableMeta
+          val newQuery = process(i, table, query, metadata.partitionColumnNames)
+          a.copy(query = newQuery)
+        case _ => a
+      }
   }
 
 
-  def process(table: ArcticSparkTable, query: LogicalPlan): LogicalPlan = {
-    query
+  def process(
+      insert: InsertIntoTable,
+      table: ArcticSparkTable,
+      query: LogicalPlan,
+      partColNames: Seq[String]): LogicalPlan = {
+
+    val normalizedPartSpec = PartitioningUtils.normalizePartitionSpec(
+      insert.partition, partColNames, table.name(), conf.resolver)
+
+    val staticPartCols = normalizedPartSpec.filter(_._2.isDefined).keySet
+    val expectedColumns = insert.table.output.filterNot(a => staticPartCols.contains(a.name))
+
+    if (expectedColumns.length != query.schema.size) {
+      throw AnalysisException.message(s"${table.name()} requires that the data to be inserted have the same number of columns as the " +
+        s"target table: target table has ${insert.table.output.size} column(s) but the " +
+        s"inserted data has ${insert.query.output.length + staticPartCols.size} column(s), " +
+        s"including ${staticPartCols.size} partition column(s) having constant value(s).")
+    }
+
+    val newQuery = DDLPreprocessingUtils.castAndRenameQueryOutput(
+      query, expectedColumns, conf)
+
+    newQuery
+
   }
 }
