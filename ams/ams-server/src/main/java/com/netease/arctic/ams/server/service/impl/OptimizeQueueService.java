@@ -614,7 +614,7 @@ public class OptimizeQueueService extends IJDBCService {
         return BigDecimal.ZERO;
       }
 
-      long latestCostTime = 0;
+      long totalCostTime = 0;
       long latestStartTime = 0;
       for (TableTaskHistory latestTaskHistory : latestTaskHistories) {
         if (latestStartTime == 0 || latestStartTime > latestTaskHistory.getStartTime()) {
@@ -622,9 +622,9 @@ public class OptimizeQueueService extends IJDBCService {
         }
 
         if (latestTaskHistory.getCostTime() != 0) {
-          latestCostTime = latestCostTime + latestTaskHistory.getCostTime();
+          totalCostTime = totalCostTime + latestTaskHistory.getCostTime();
         } else {
-          latestCostTime = latestCostTime + currentTime - latestTaskHistory.getStartTime();
+          totalCostTime = totalCostTime + currentTime - latestTaskHistory.getStartTime();
         }
       }
 
@@ -632,7 +632,7 @@ public class OptimizeQueueService extends IJDBCService {
         return BigDecimal.valueOf(Long.MAX_VALUE);
       }
 
-      BigDecimal currentQuota = new BigDecimal(latestCostTime)
+      BigDecimal currentQuota = new BigDecimal(totalCostTime)
           .divide(new BigDecimal(currentTime - latestStartTime),
               2,
               RoundingMode.HALF_UP);

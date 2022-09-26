@@ -57,35 +57,6 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
   }
 
   @Override
-  public void updateTaskHistory(TableTaskHistory taskHistory) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-      taskHistoryMapper.updateTaskHistory(taskHistory);
-    }
-  }
-
-  @Override
-  public List<TableTaskHistory> selectTaskHistoryByQueueIdAndTime(int queueId, long startTime, long endTime) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      return taskHistoryMapper.selectTaskHistoryByQueueIdAndTime(queueId, startTime, endTime);
-    }
-  }
-
-  @Override
-  public List<TableTaskHistory> selectTaskHistoryByTime(long startTime, long endTime) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      return taskHistoryMapper.selectTaskHistoryByTime(startTime, endTime);
-    }
-  }
-
-  @Override
   public List<TableTaskHistory> selectTaskHistoryByTableIdAndTime(TableIdentifier identifier,
                                                                   long startTime,
                                                                   long endTime) {

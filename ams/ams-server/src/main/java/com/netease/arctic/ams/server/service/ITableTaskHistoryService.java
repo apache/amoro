@@ -28,12 +28,6 @@ public interface ITableTaskHistoryService {
 
   void insertTaskHistory(TableTaskHistory taskHistory);
 
-  void updateTaskHistory(TableTaskHistory taskHistory);
-
-  List<TableTaskHistory> selectTaskHistoryByQueueIdAndTime(int queueId, long startTime, long endTime);
-
-  List<TableTaskHistory> selectTaskHistoryByTime(long startTime, long endTime);
-
   List<TableTaskHistory> selectTaskHistoryByTableIdAndTime(TableIdentifier identifier,
                                                            long startTime,
                                                            long endTime);
