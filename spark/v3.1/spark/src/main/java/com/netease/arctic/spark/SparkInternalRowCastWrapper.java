@@ -39,7 +39,11 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
     this.schema = newSchema;
     this.middle = newSchema.size() / 2;
-    this.changeAction = changeAction;
+    if (row.isNullAt(0)) {
+      this.changeAction = ChangeAction.INSERT;
+    } else {
+      this.changeAction = changeAction;
+    }
     this.isDelete = isDelete;
     this.isUpsert = true;
   }
