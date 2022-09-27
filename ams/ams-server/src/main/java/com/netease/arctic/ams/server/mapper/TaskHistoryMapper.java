@@ -62,7 +62,7 @@ public interface TaskHistoryMapper {
       "#{taskHistory.tableIdentifier.catalog}, " +
       "#{taskHistory.tableIdentifier.database}, " +
       "#{taskHistory.tableIdentifier.tableName}, " +
-      "#{taskHistory.task_plan_group}, " +
+      "#{taskHistory.taskPlanGroup}, " +
       "#{taskHistory.startTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}," +
       "#{taskHistory.endTime, " +

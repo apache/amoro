@@ -105,7 +105,7 @@ CREATE TABLE optimize_table_runtime (
     latest_major_optimize_time clob(64m),
     latest_full_optimize_time clob(64m),
     latest_minor_optimize_time clob(64m),
-    latest_task_history_id varchar(40) DEFAULT NULL,
+    latest_task_plan_group varchar(40) DEFAULT NULL,
     optimize_status varchar(20) DEFAULT 'Idle',
     optimize_status_start_time timestamp DEFAULT NULL,
     current_change_snapshotId bigint DEFAULT NULL,
@@ -160,7 +160,7 @@ CREATE TABLE file_info_cache (
 
 CREATE TABLE optimize_file (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-    optimize_type varchar(5) NOT NULL,
+    optimize_type varchar(10) NOT NULL,
     trace_id varchar(40) NOT NULL,
     file_type varchar(16) NOT NULL,
     is_target int DEFAULT 0,
@@ -218,18 +218,17 @@ CREATE TABLE table_transaction_meta (
 );
 
 CREATE TABLE optimize_task_history (
-    catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
-    task_history_id varchar(40) DEFAULT NULL,
-    task_trace_id varchar(40) DEFAULT NULL,
-    task_attempt_id varchar(40) DEFAULT NULL,
-    start_time timestamp DEFAULT NULL,
-    end_time timestamp DEFAULT NULL,
-    cost_time bigint DEFAULT NULL,
-    queue_id int DEFAULT NULL,
-    task_group_id varchar(40) DEFAULT NULL,
-    PRIMARY KEY (task_attempt_id)
+    task_trace_id     varchar(50) NOT NULL,
+    retry             int NOT NULL,
+    task_plan_group   varchar(40) NOT NULL,
+    catalog_name      varchar(64) NOT NULL,
+    db_name           varchar(64) NOT NULL,
+    table_name        varchar(64) NOT NULL,
+    start_time        timestamp DEFAULT NULL,
+    end_time          timestamp DEFAULT NULL,
+    cost_time         bigint DEFAULT NULL,
+    queue_id          int DEFAULT NULL,
+    PRIMARY KEY (task_trace_id, retry)
 );
 
 CREATE TABLE database_metadata (
@@ -256,4 +255,3 @@ CREATE TABLE ddl_record
     ddl_type       varchar(256) NOT NULL,
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
