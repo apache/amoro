@@ -35,7 +35,7 @@ import java.util.Map;
 public class Utils {
   private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
-  private static String[] TOKEN_WRITE_LIST = {
+  private static String[] TOKEN_WHITE_LIST = {
       "/login/current",
       "/versionInfo"
   };
@@ -112,7 +112,7 @@ public class Utils {
     if (StringUtils.isNotEmpty(token)) {
       // regex extract  catalog, db, table
       String url = ctx.req.getRequestURI();
-      for (String whiteListUrl : TOKEN_WRITE_LIST) {
+      for (String whiteListUrl : TOKEN_WHITE_LIST) {
         if (url.contains(whiteListUrl)) {
           return;
         }
