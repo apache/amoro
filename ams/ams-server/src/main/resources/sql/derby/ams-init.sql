@@ -17,14 +17,14 @@ CREATE TABLE catalog_metadata(
     PRIMARY KEY (catalog_id)
     );
 
-CREATE TABLE optimize_job (
-    job_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-    job_name varchar(1024) DEFAULT NULL,
+CREATE TABLE optimizer (
+    optimizer_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    optimizer_name varchar(1024) DEFAULT NULL,
     queue_id bigint DEFAULT NULL,
     queue_name varchar(1024) DEFAULT NULL,
-    job_start_time varchar(1024) DEFAULT NULL,
-    job_fail_time varchar(1024) DEFAULT NULL,
-    job_status varchar(16) DEFAULT NULL,
+    optimizer_start_time varchar(1024) DEFAULT NULL,
+    optimizer_fail_time varchar(1024) DEFAULT NULL,
+    optimizer_status varchar(16) DEFAULT NULL,
     core_number bigint DEFAULT NULL,
     memory bigint DEFAULT NULL,
     parallelism bigint DEFAULT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE optimize_job (
     optimizer_state_info clob(64m),
     container varchar(50) DEFAULT '',
     update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (job_id)
+    PRIMARY KEY (optimizer_id)
     );
 
 CREATE TABLE container_metadata (
@@ -63,7 +63,7 @@ CREATE TABLE optimize_task (
     db_name varchar(64) NOT NULL,
     table_name varchar(64) NOT NULL,
     partition varchar(128) DEFAULT NULL,
-    task_group varchar(40) DEFAULT NULL,
+    task_commit_group varchar(40) DEFAULT NULL,
     max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
     create_time timestamp DEFAULT NULL,
     properties clob(64m),
@@ -78,7 +78,7 @@ CREATE TABLE optimize_task (
     pos_delete_file_size bigint DEFAULT NULL,
     source_nodes varchar(2048) DEFAULT NULL,
     is_delete_pos_delete int DEFAULT NULL,
-    task_history_id varchar(40) DEFAULT NULL,
+    task_plan_group varchar(40) DEFAULT NULL,
     status varchar(16) DEFAULT NULL,
     pending_time timestamp DEFAULT NULL,
     execute_time timestamp DEFAULT NULL,

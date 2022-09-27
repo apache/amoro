@@ -24,7 +24,7 @@ import com.netease.arctic.table.TableIdentifier;
 import java.util.List;
 
 public interface ITableTaskHistoryService {
-  List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String historyId);
+  List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String taskPlanGroup);
 
   void insertTaskHistory(TableTaskHistory taskHistory);
 
@@ -34,7 +34,7 @@ public interface ITableTaskHistoryService {
 
   void deleteTaskHistory(TableIdentifier identifier);
 
-  void deleteTaskHistoryWithHistoryId(TableIdentifier identifier, String taskHistoryId);
+  void deleteTaskHistoryWithPlanGroup(TableIdentifier identifier, String taskPlanGroup);
 
   void expireTaskHistory(TableIdentifier identifier, String latestTaskHistoryId, long expireTime);
 }

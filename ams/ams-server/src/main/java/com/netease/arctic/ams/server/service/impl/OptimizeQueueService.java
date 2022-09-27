@@ -603,13 +603,13 @@ public class OptimizeQueueService extends IJDBCService {
     private BigDecimal evalQuotaRate(TableIdentifier tableId, long currentTime) throws NoSuchObjectException {
       TableOptimizeItem tableItem;
       tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableId);
-      String latestHistoryId = tableItem.getTableOptimizeRuntime().getLatestTaskHistoryId();
-      if (StringUtils.isEmpty(latestHistoryId)) {
+      String latestTaskPlanGroup = tableItem.getTableOptimizeRuntime().getLatestTaskPlanGroup();
+      if (StringUtils.isEmpty(latestTaskPlanGroup)) {
         return BigDecimal.ZERO;
       }
 
       List<TableTaskHistory> latestTaskHistories =
-          ServiceContainer.getTableTaskHistoryService().selectTaskHistory(tableId, latestHistoryId);
+          ServiceContainer.getTableTaskHistoryService().selectTaskHistory(tableId, latestTaskPlanGroup);
       if (CollectionUtils.isEmpty(latestTaskHistories)) {
         return BigDecimal.ZERO;
       }
@@ -674,7 +674,7 @@ public class OptimizeQueueService extends IJDBCService {
           tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
         }
 
-        tableItem.getTableOptimizeRuntime().setLatestTaskHistoryId(optimizeTasks.get(0).getTaskHistoryId());
+        tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
         tableItem.getTableOptimizeRuntime().setRunning(true);
         tableItem.persistTableOptimizeRuntime();
       }

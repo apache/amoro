@@ -22,9 +22,9 @@ import java.sql.Timestamp;
 import java.util.Map;
 
 public class Optimizer {
-  private int jobId;
+  private int optimizerId;
   private String groupName;
-  private TableTaskStatus jobStatus;
+  private TableTaskStatus optimizerStatus;
   private int coreNumber;
   private long memory;
   private int parallelism;
@@ -44,20 +44,20 @@ public class Optimizer {
     this.groupName = groupName;
   }
 
-  public int getJobId() {
-    return jobId;
+  public int getOptimizerId() {
+    return optimizerId;
   }
 
-  public void setJobId(int jobId) {
-    this.jobId = jobId;
+  public void setOptimizerId(int optimizerId) {
+    this.optimizerId = optimizerId;
   }
 
-  public TableTaskStatus getJobStatus() {
-    return jobStatus;
+  public TableTaskStatus getOptimizerStatus() {
+    return optimizerStatus;
   }
 
-  public void setJobStatus(TableTaskStatus jobStatus) {
-    this.jobStatus = jobStatus;
+  public void setOptimizerStatus(TableTaskStatus optimizerStatus) {
+    this.optimizerStatus = optimizerStatus;
   }
 
   public int getCoreNumber() {

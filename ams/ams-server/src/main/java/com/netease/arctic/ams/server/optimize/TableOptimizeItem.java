@@ -287,9 +287,9 @@ public class TableOptimizeItem extends IJDBCService {
 
     OptimizeTaskItem optimizeTaskItem = optimizeTasks.get(optimizeTaskStat.getTaskId());
     Preconditions.checkNotNull(optimizeTaskItem, "can't find optimize task " + optimizeTaskStat.getTaskId());
-    LOG.info("{} task {} ==== updateMajorOptimizeTaskStat, group = {}, status = {}, attemptId={}",
+    LOG.info("{} task {} ==== updateMajorOptimizeTaskStat, commitGroup = {}, status = {}, attemptId={}",
         optimizeTaskItem.getTableIdentifier(), optimizeTaskItem.getOptimizeTask().getTaskId(),
-        optimizeTaskItem.getOptimizeTask().getTaskGroup(), optimizeTaskStat.getStatus(),
+        optimizeTaskItem.getOptimizeTask().getTaskCommitGroup(), optimizeTaskStat.getStatus(),
         optimizeTaskStat.getAttemptId());
     Preconditions.checkArgument(
         Objects.equals(optimizeTaskStat.getAttemptId(), optimizeTaskItem.getOptimizeRuntime().getAttemptId()),
@@ -716,10 +716,10 @@ public class TableOptimizeItem extends IJDBCService {
       Set<String> removedTaskHistory = new HashSet<>();
       for (OptimizeTaskItem task : toRemoved) {
         task.clearOptimizeTask();
-        removedTaskHistory.add(task.getOptimizeTask().getTaskHistoryId());
+        removedTaskHistory.add(task.getOptimizeTask().getTaskPlanGroup());
       }
-      for (String taskHistoryId : removedTaskHistory) {
-        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithHistoryId(tableIdentifier, taskHistoryId);
+      for (String taskPlanGroup : removedTaskHistory) {
+        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithPlanGroup(tableIdentifier, taskPlanGroup);
       }
       LOG.info("{} clear all optimize tasks", getTableIdentifier());
       updateTableOptimizeStatus();

@@ -70,7 +70,7 @@ public class RuntimeDataExpireService {
         TableOptimizeRuntime tableOptimizeRuntime =
             optimizeService.getTableOptimizeItem(identifier).getTableOptimizeRuntime();
         tableTaskHistoryService.expireTaskHistory(identifier,
-            tableOptimizeRuntime.getLatestTaskHistoryId(),
+            tableOptimizeRuntime.getLatestTaskPlanGroup(),
             System.currentTimeMillis() - this.taskHistoryDataExpireInterval);
       } catch (Exception e) {
         LOG.error("failed to expire and clear table_task_history table", e);

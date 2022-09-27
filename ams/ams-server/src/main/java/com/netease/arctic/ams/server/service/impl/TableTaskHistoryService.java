@@ -34,12 +34,12 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
   }
 
   @Override
-  public List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String historyId) {
+  public List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String taskPlanGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TaskHistoryMapper taskHistoryMapper =
           getMapper(sqlSession, TaskHistoryMapper.class);
 
-      return taskHistoryMapper.selectTaskHistory(identifier, historyId);
+      return taskHistoryMapper.selectTaskHistory(identifier, taskPlanGroup);
     }
   }
 
@@ -79,12 +79,12 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
   }
 
   @Override
-  public void deleteTaskHistoryWithHistoryId(TableIdentifier identifier, String taskHistoryId) {
+  public void deleteTaskHistoryWithPlanGroup(TableIdentifier identifier, String taskPlanGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TaskHistoryMapper taskHistoryMapper =
           getMapper(sqlSession, TaskHistoryMapper.class);
 
-      taskHistoryMapper.deleteTaskHistoryWithHistoryId(identifier, taskHistoryId);
+      taskHistoryMapper.deleteTaskHistoryWithPlanGroup(identifier, taskPlanGroup);
     }
   }
 

@@ -145,5 +145,6 @@ public interface OptimizeHistoryMapper {
       "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
       "and table_name = #{tableIdentifier.tableName} " +
       "and commit_time < #{expireTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
-  void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
+  void expireOptimizeHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+                             @Param("expireTime") long expireTime);
 }

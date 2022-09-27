@@ -117,7 +117,7 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setErrorMessage(null);
       persistTaskRuntime(newRuntime, false);
       optimizeRuntime = newRuntime;
-      return constructNewTableTaskHistory(currentTime, attemptId);
+      return constructNewTableTaskHistory(currentTime);
     } catch (Throwable t) {
       onFailed(new ErrorMessage(System.currentTimeMillis(),
           "internal error, failed to set task status to Executing, set to Failed"), 0);
@@ -318,13 +318,12 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
-  private TableTaskHistory constructNewTableTaskHistory(long currentTime, String attemptId) {
+  private TableTaskHistory constructNewTableTaskHistory(long currentTime) {
     TableTaskHistory tableTaskHistory = new TableTaskHistory();
     tableTaskHistory.setTableIdentifier(new TableIdentifier(optimizeTask.getTableIdentifier()));
-    tableTaskHistory.setTaskGroupId(optimizeTask.getTaskGroup());
-    tableTaskHistory.setTaskHistoryId(optimizeTask.getTaskHistoryId());
+    tableTaskHistory.setTaskPlanGroup(optimizeTask.getTaskPlanGroup());
     tableTaskHistory.setTaskTraceId(optimizeTask.getTaskId().getTraceId());
-    tableTaskHistory.setTaskAttemptId(attemptId);
+    tableTaskHistory.setRetry(optimizeRuntime.getRetry());
     tableTaskHistory.setStartTime(currentTime);
     tableTaskHistory.setQueueId(optimizeTask.getQueueId());
 
@@ -334,10 +333,9 @@ public class OptimizeTaskItem extends IJDBCService {
   private void updateTableTaskHistory() {
     TableTaskHistory tableTaskHistory = new TableTaskHistory();
     tableTaskHistory.setTableIdentifier(new TableIdentifier(optimizeTask.getTableIdentifier()));
-    tableTaskHistory.setTaskGroupId(optimizeTask.getTaskGroup());
-    tableTaskHistory.setTaskHistoryId(optimizeTask.getTaskHistoryId());
+    tableTaskHistory.setTaskPlanGroup(optimizeTask.getTaskPlanGroup());
     tableTaskHistory.setTaskTraceId(optimizeTask.getTaskId().getTraceId());
-    tableTaskHistory.setTaskAttemptId(optimizeRuntime.getAttemptId());
+    tableTaskHistory.setRetry(optimizeRuntime.getRetry());
     tableTaskHistory.setQueueId(optimizeTask.getQueueId());
 
     tableTaskHistory.setStartTime(optimizeRuntime.getExecuteTime());
@@ -349,9 +347,10 @@ public class OptimizeTaskItem extends IJDBCService {
       try {
         taskHistoryMapper.updateTaskHistory(tableTaskHistory);
       } catch (Exception e) {
-        LOG.error("failed to update task history, tableId is {}, attemptId is {}",
+        LOG.error("failed to update task history, tableId is {}, traceId is {}, retry times is {}",
             optimizeTask.getTableIdentifier(),
-            optimizeRuntime.getAttemptId());
+            optimizeTask.getTaskId().getTraceId(),
+            optimizeRuntime.getRetry());
       }
     }
   }

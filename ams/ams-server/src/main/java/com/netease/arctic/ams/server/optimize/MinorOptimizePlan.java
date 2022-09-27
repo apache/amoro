@@ -241,11 +241,11 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
-        group, historyId, OptimizeType.Minor, createTime, "");
+        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
