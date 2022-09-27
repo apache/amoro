@@ -27,11 +27,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Utils {
   private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+
+  private static String[] TOKEN_WRITE_LIST = {
+      "/login/current",
+      "/versionInfo"
+  };
 
   /**
    * @param addresses support type 127.0.0.1:2181/ddd,host2:2181,host3:2181/service
@@ -103,19 +110,28 @@ public class Utils {
     String token = ctx.queryParam("token");
 
     if (StringUtils.isNotEmpty(token)) {
-      // regrex extract  catalog, db, table
+      // regex extract  catalog, db, table
       String url = ctx.req.getRequestURI();
-      String catalog = null;
-      String db = null;
-      String table = null;
-      String[] splitResult = url.split("/");
-      for (int i = 0; i < splitResult.length; i++) {
-        if (splitResult[i].equals("catalogs")) {
-          catalog = splitResult[i + 1];
-        } else if (splitResult[i].equals("dbs")) {
-          db = splitResult[i + 1];
-        } else if (splitResult[i].equals("tables")) {
-          table = splitResult[i + 1];
+      for (String whiteListUrl : TOKEN_WRITE_LIST) {
+        if (url.contains(whiteListUrl)) {
+          return;
+        }
+      }
+      String catalog = ctx.queryParam("catalog");
+      String db = ctx.queryParam("db");
+      String table = ctx.queryParam("table");
+      if (StringUtils.isEmpty(catalog) &&
+          StringUtils.isEmpty(db) &&
+          StringUtils.isEmpty(table)) {
+        String[] splitResult = url.split("/");
+        for (int i = 0; i < splitResult.length; i++) {
+          if (splitResult[i].equals("catalogs")) {
+            catalog = splitResult[i + 1];
+          } else if (splitResult[i].equals("dbs")) {
+            db = splitResult[i + 1];
+          } else if (splitResult[i].equals("tables")) {
+            table = splitResult[i + 1];
+          }
         }
       }
       if (StringUtils.isEmpty(catalog) ||
