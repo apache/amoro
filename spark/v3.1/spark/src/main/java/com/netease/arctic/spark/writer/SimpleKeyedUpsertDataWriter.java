@@ -29,7 +29,7 @@ public class SimpleKeyedUpsertDataWriter implements DataWriter<InternalRow> {
   @Override
   public void write(InternalRow record) throws IOException {
     if (schema != null && !isDelete(schema) && isUpsert) {
-      SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema, ChangeAction.INSERT, false);
+      SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(record, schema, ChangeAction.UPDATE_AFTER, false);
       SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(record, schema, ChangeAction.DELETE, false);
       if (delete.getRow() != null) {
         writer.write(delete);

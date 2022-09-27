@@ -96,7 +96,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     } else {
       int middle = schema.size() / 2;
       List<Object> rows = new ArrayList<>();
-      if (changeAction.equals(ChangeAction.INSERT)) {
+      if (changeAction.equals(ChangeAction.UPDATE_AFTER)) {
         GenericInternalRow genericInternalRow = null;
         for (int i = middle; i < schema.size(); i++) {
           rows.add(row.get(i, dataTypeList.get(i)));
