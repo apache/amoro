@@ -41,10 +41,10 @@ import java.util.Map;
 public interface OptimizerMapper {
   String TABLE_NAME = "optimizer";
 
-  @Select("select optimizer_id as optimizerId," +
+  @Select("select optimizer_id as jobId," +
       "queue_name as groupName," +
       "queue_id as queueId," +
-      "optimizer_status as optimizerStatus," +
+      "optimizer_status as jobStatus," +
       "core_number as coreNumber," +
       "memory as memory," +
       "parallelism as parallelism," +
@@ -54,10 +54,10 @@ public interface OptimizerMapper {
       "'RUNNING' or optimizer_status = 'STARTING')")
   List<Optimizer> selectOptimizersByGroupName(String groupName);
 
-  @Select("select optimizer_id as optimizerId," +
+  @Select("select optimizer_id as jobId," +
       "queue_name as groupName," +
       "queue_id as queueId," +
-      "optimizer_status as optimizerStatus," +
+      "optimizer_status as jobStatus," +
       "core_number as coreNumber," +
       "memory as memory," +
       "parallelism as parallelism," +
@@ -96,10 +96,10 @@ public interface OptimizerMapper {
       "memory, parallelism, container, jobmanager_url, optimizer_instance, optimizer_state_info " +
       "from " + TABLE_NAME + " where optimizer_id = #{optimizerId}")
   @Results({
-      @Result(property = "optimizerId", column = "optimizer_id"),
+      @Result(property = "jobId", column = "optimizer_id"),
       @Result(property = "groupName", column = "queue_name"),
       @Result(property = "queueId", column = "queue_id"),
-      @Result(property = "optimizerStatus", column = "optimizer_status"),
+      @Result(property = "jobStatus", column = "optimizer_status"),
       @Result(property = "coreNumber", column = "core_number"),
       @Result(property = "memory", column = "memory"),
       @Result(property = "parallelism", column = "parallelism"),

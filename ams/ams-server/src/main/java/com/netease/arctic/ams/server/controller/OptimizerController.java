@@ -196,9 +196,9 @@ public class OptimizerController extends RestBaseController {
    * @pathParam jobId
    */
   public static void releaseOptimizer(Context ctx) {
-    String optimizerId = ctx.pathParam("jobId");
+    String jobId = ctx.pathParam("jobId");
     try {
-      ServiceContainer.getOptimizeExecuteService().stopOptimizer(Long.parseLong(optimizerId));
+      ServiceContainer.getOptimizeExecuteService().stopOptimizer(Long.parseLong(jobId));
       ctx.json(OkResponse.of("Success to release optimizer"));
     } catch (Exception e) {
       LOG.error("Failed to release optimizer", e);

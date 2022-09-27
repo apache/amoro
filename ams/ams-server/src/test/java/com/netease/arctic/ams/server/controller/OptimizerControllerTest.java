@@ -182,7 +182,7 @@ public class OptimizerControllerTest {
             2, 1024, 1, "test2");
     JavalinTest.test((app, client) -> {
       List<Optimizer> optimizers = optimizerService.getOptimizers();
-      long optimizerId = optimizers.get(0).getOptimizerId();
+      long optimizerId = optimizers.get(0).getJobId();
       ServiceContainer.getOptimizeExecuteService().startOptimizer(optimizerId);
       app.post("/{jobId}", OptimizerController::releaseOptimizer);
       final okhttp3.Response resp = client.post("/" + optimizerId);
