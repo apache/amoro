@@ -105,31 +105,6 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
         s"Cannot write, INSERT INTO is not supported for table: ${tableDesc.identifier}")
     }
   }
-//
-//  def createWriteToArcticSource(i: InsertIntoTable, tableDesc: CatalogTable): WriteToDataSourceV2 = {
-//    if (i.ifPartitionNotExists) {
-//      throw AnalysisException.message(
-//        s"Cannot write, IF NOT EXISTS is not supported for table: ${tableDesc.identifier}")
-//    }
-//
-//    val table = arctic.loadTable(tableDesc.identifier)
-//    val query = addStaticPartitionColumns(table.schema(), i.partition, i.query)
-//    val mode = if (i.overwrite) {
-//      SaveMode.Overwrite
-//    } else {
-//      SaveMode.Append
-//    }
-//    val optWriter = table.createWriter("", table.schema, mode, null)
-//    if (!optWriter.isPresent) {
-//      throw AnalysisException.message(s"failed to create writer for table ${tableDesc.identifier}")
-//    }
-//
-//    val writer = optWriter.get match {
-//      case w: SupportsDynamicOverwrite =>
-//        w.overwriteDynamicPartitions()
-//    }
-//    WriteToDataSourceV2(writer, query)
-//  }
 
   // add any static value as a literal column
   // part copied from spark-3.0 branch Analyzer.scala

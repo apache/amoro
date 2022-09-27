@@ -135,7 +135,7 @@ public class TestOptimizeWrite extends SparkTestBase {
             " TBLPROPERTIES(''write.distribution-mode'' = ''hash'', " +
             "''write.distribution.hash-mode'' = ''partition-key'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column1, column2 from {2}.{3}",
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
         database, sinkTable, database, sourceTable);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
@@ -162,7 +162,7 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''primary-key''," +
             "''base.file-index.hash-bucket'' = ''1'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column1, column2 from {2}.{3}",
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
         database, sinkTable, database, sourceTable);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
@@ -189,7 +189,7 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''primary-key''," +
             "''base.file-index.hash-bucket'' = ''2'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column1, column2 from {2}.{3}",
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
         database, sinkTable, database, sourceTable);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());

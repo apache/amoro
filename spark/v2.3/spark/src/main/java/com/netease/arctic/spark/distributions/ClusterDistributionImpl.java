@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.optimize;
+package com.netease.arctic.spark.distributions;
 
 public class ClusterDistributionImpl implements ClusteredDistribution{
 

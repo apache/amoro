@@ -18,10 +18,10 @@
 
 package com.netease.arctic.spark.util;
 
-import com.netease.arctic.spark.optimize.Distribution;
-import com.netease.arctic.spark.optimize.Distributions;
-import com.netease.arctic.spark.sql.expressions.Expressions;
-import com.netease.arctic.spark.optimize.Transform;
+import com.netease.arctic.spark.distributions.Distribution;
+import com.netease.arctic.spark.distributions.Distributions;
+import com.netease.arctic.spark.distributions.Expressions;
+import com.netease.arctic.spark.distributions.Transform;
 import com.netease.arctic.spark.parquet.SparkParquetRowReaders;
 import com.netease.arctic.spark.source.ArcticSparkTable;
 import com.netease.arctic.table.DistributionHashMode;

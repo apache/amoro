@@ -1,8 +1,7 @@
 package com.netease.arctic.spark
 
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
-import com.netease.arctic.spark.sql.catalyst.rule.{ArcticResolutionDelegateHiveRule, ArcticStrategies, PreprocessArcticTableInsertionRule}
-import com.netease.arctic.spark.sql.optimize.OptimizeWriteRule
+import com.netease.arctic.spark.sql.catalyst.rule.{ArcticResolutionDelegateHiveRule, ArcticStrategies, OptimizeWriteRule, PreprocessArcticTableInsertionRule}
 import org.apache.spark.sql.SparkSessionExtensions
 
 class ArcticSparkExtensions extends (SparkSessionExtensions => Unit){

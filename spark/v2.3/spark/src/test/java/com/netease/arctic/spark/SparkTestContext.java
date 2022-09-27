@@ -345,6 +345,7 @@ public class SparkTestContext extends ExternalResource {
     LOG.info("execute sql: " + sql);
     Dataset<Row> result = spark.sql(sql);
     List<Row> rows = result.collectAsList();
+    System.out.println(result.queryExecution());
     if (rows.size() < 1) {
       LOG.info("empty result");
       this.rows = new ArrayList<>();

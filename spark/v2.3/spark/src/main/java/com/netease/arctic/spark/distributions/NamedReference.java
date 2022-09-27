@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.optimize;
+package com.netease.arctic.spark.distributions;
 
 public interface NamedReference extends Expression {
   String[] fieldNames();

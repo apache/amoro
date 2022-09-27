@@ -1,4 +1,4 @@
-package com.netease.arctic.spark.optimize;
+package com.netease.arctic.spark.distributions;
 
 import org.apache.spark.annotation.InterfaceStability;
 import org.apache.spark.sql.types.DataType;
