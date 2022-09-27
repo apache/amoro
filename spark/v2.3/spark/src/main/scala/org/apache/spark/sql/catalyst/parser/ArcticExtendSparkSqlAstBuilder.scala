@@ -115,16 +115,20 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
         if (colOnlyPk.primaryKey() != null) {
           primary = visitPrimaryKey(colOnlyPk.primaryKey())
         }
+      case _ =>
     }
-    // set primary col not null
-    val fields = setPrimaryKeyNotNull(schema.get.toSeq, primary)
-    val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val provider = ctx.tableProvider.qualifiedName.getText
+    val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
 
+    // set primary col not null
+    var fields = Seq.empty[StructField]
+    if (schema.nonEmpty) {
+      fields = setPrimaryKeyNotNull(schema.get.toSeq, primary)
+    }
     // visit partitions and support arctic partition grammer
     if (ctx.partitionColumnNames == null) {
       finalSchema = Option(StructType.apply(fields))
-    } else if (isHiveGrammar(ctx.partitionColumnNames) ) {
+    } else if (isHiveGrammar(ctx.partitionColumnNames)) {
       val partitionSchema = visitHivePartitionFieldList(ctx.partitionColumnNames)
       finalSchema = Option(StructType.apply(fields ++ partitionSchema))
       partitionColumnNames = partitionSchema.map(p => p.name)
@@ -132,7 +136,7 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
       finalSchema = Option(StructType.apply(fields))
       partitionColumnNames = visitPartitionFieldList(ctx.partitionColumnNames)
     }
-    
+
     val properties = Option(ctx.tableProps).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val bucketSpec = ctx.bucketSpec().asScala.headOption.map(visitBucketSpec)
 
@@ -199,7 +203,6 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
       }
     }
   }
-
   override def visitPartitionFieldList(ctx: PartitionFieldListContext): Seq[String] = {
     ctx.fields.asScala.map {
       case p: PartitionColumnRefContext =>

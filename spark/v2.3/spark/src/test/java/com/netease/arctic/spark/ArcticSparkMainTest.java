@@ -17,7 +17,8 @@ import java.util.Map;
     TestKeyedHiveTableInsertOverwriteDynamic.class,
     TestKeyedHiveTableMergeOnRead.class,
     TestUnkeyedHiveTableInsertOverwriteDynamic.class,
-    TestUnkeyedHiveTableMergeOnRead.class
+    TestUnkeyedHiveTableMergeOnRead.class,
+    TestCreateTableAsSelect.class
 })
 public class ArcticSparkMainTest {
     @BeforeClass

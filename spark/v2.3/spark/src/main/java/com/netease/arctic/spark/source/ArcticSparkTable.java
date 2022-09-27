@@ -88,6 +88,10 @@ public class ArcticSparkTable implements DataSourceTable {
     return lazyTableSchema;
   }
 
+  public ArcticTable table() {
+    return arcticTable;
+  }
+
   @Override
   public DataSourceReader createReader(DataSourceOptions options) {
     if (arcticTable.isKeyedTable()) {
