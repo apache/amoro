@@ -95,7 +95,7 @@ public class AmsRestServer {
       String uriPath = ctx.path();
       String token = ctx.queryParam("token");
       // if token of api request is not empty, so we check the query by token first
-      if (uriPath.startsWith("/api/") && StringUtils.isNotEmpty(token)) {
+      if (StringUtils.isNotEmpty(token)) {
         Utils.checkSinglePageToken(ctx);
       } else {
         if (needApiKeyCheck(uriPath)) {
@@ -246,6 +246,7 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
+      "/ams/v1/versionInfo",
       "/ams/v1/login",
       "/",
       "/overview",
