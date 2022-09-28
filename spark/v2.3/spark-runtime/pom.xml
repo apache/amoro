@@ -199,47 +199,7 @@
                                     </shadedPattern>
                                 </relocation>
 
-                                <!-- relocation iceberg-spark3-extensions -->
-                                <relocation>
-                                    <pattern>org.apache.spark.sql.execution.datasources.v2</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.execution.datasources.v2
-                                    </shadedPattern>
-                                    <includes>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.AddPartitionFieldExec*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.CallExec*</include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.DropIdentifierFields*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.DropPartitionFieldExec*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.DynamicFileFilterWithCardinalityCheckExec*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.ExtendedBatchScanExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Implicits*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ExtendedDataSourceV2Strategy*
-                                        </include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.MergeIntoExec*</include>
-                                        <include>org.apache.spark.sql.execution.datasources.v2.ReplaceDataExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.ReplacePartitionFieldExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.SetIdentifierFieldsExec*
-                                        </include>
-                                        <include>
-                                            org.apache.spark.sql.execution.datasources.v2.SetWriteDistributionAndOrderingExec*
-                                        </include>
-                                    </includes>
-                                </relocation>
+
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst.analysis</pattern>
                                     <shadedPattern>
