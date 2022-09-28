@@ -72,7 +72,7 @@ public class TestArcticTransactionService {
     for (int i = 0; i < 10; i++) {
       new Thread(() -> {
         try {
-          long txId = transactionService.allocateTransactionId(identifier, "", 5);
+          long txId = transactionService.allocateTransactionId(identifier, "");
           txIds.add(txId);
           Assert.assertTrue(txId > 0);
         } finally {
@@ -83,9 +83,9 @@ public class TestArcticTransactionService {
     }
     latch.await();
     Assert.assertEquals(10, txIds.size());
-    long hasSignTxId = transactionService.allocateTransactionId(identifier, "sign", 5);
+    long hasSignTxId = transactionService.allocateTransactionId(identifier, "sign");
     for (int i = 0; i < 3; i++) {
-      long txId = transactionService.allocateTransactionId(identifier, "sign", 5);
+      long txId = transactionService.allocateTransactionId(identifier, "sign");
       Assert.assertEquals(hasSignTxId, txId);
     }
   }

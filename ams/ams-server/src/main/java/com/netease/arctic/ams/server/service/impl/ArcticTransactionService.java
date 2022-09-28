@@ -35,7 +35,7 @@ public class ArcticTransactionService extends IJDBCService {
 
   private static final ConcurrentHashMap<String, ReentrantLock> TABLE_LOCK_MAP = new ConcurrentHashMap<>();
 
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature, int retry) {
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
     ReentrantLock lock = TABLE_LOCK_MAP.putIfAbsent(tableIdentifier.toString(), new ReentrantLock());
     if (lock == null) {
       lock = TABLE_LOCK_MAP.get(tableIdentifier.toString());
@@ -52,7 +52,7 @@ public class ArcticTransactionService extends IJDBCService {
         com.netease.arctic.table.TableIdentifier identifier =
             new com.netease.arctic.table.TableIdentifier(tableIdentifier);
         TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-        TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
+        TableMetadata tableMetadata = tableMetadataMapper.loadTableMeta(identifier);
         TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
         Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
         Long currentTxId = tableMetadata.getCurrentTxId();
