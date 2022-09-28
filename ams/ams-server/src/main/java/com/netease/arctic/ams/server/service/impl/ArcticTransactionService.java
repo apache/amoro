@@ -23,15 +23,13 @@ import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableTransactionMetaMapper;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IJDBCService;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ArcticTransactionService extends IJDBCService {
 
