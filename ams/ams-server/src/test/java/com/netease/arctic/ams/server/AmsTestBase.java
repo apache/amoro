@@ -40,6 +40,7 @@ import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.TestArcticTransactionService;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
@@ -100,7 +101,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveMajorOptimizeCommit.class,
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class})
+    TestOrphanFileCleanSupportHive.class,
+    TestArcticTransactionService.class
+})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
