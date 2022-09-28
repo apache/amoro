@@ -20,7 +20,6 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
@@ -49,7 +48,6 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -107,7 +105,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
    */
   @Override
   protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
-    return super.getArcticTableMeta(identifier.toCaseInsensitive());
+    return super.getArcticTableMeta(identifier.toLowCaseIdentifier());
   }
 
   @Override
@@ -192,7 +190,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
-      super(identifier.toCaseInsensitive(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
+      super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
     }
 
     boolean allowExistedHiveTable = false;
