@@ -118,8 +118,9 @@ public class ArcticUtils {
     boolean streamEnable = PropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_LOG_STORE,
         TableProperties.ENABLE_LOG_STORE_DEFAULT);
     if (!streamEnable) {
-      throw new ValidationException(
-          "emit to kafka was set, but no kafka config be found, please set kafka config first");
+      throw new ValidationException(String.format(
+          "emit to kafka was set, but no kafka config be found, please set kafka config first. Then enable %s",
+          TableProperties.ENABLE_LOG_STORE));
     }
 
     String version = properties.getOrDefault(LOG_STORE_DATA_VERSION, LOG_STORE_DATA_VERSION_DEFAULT);
