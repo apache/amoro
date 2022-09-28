@@ -67,6 +67,8 @@ import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getSource
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getSourceTopics;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getStartupOptions;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.validateTableSourceOptions;
+import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
+import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FIELDS_PREFIX;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
@@ -149,6 +151,9 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:
+        Preconditions.checkArgument(PropertyUtil.propertyAsBoolean(arcticTable.properties(),
+                ENABLE_LOG_STORE, ENABLE_LOG_STORE_DEFAULT),
+            String.format("Read log should enable %s at first", ENABLE_LOG_STORE));
         arcticDynamicSource = createLogSource(arcticTable, context);
     }
 
