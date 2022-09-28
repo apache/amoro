@@ -18,17 +18,18 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
-import com.netease.arctic.spark.source.{ArcticSource}
+import com.netease.arctic.spark.source.ArcticSource
 import com.netease.arctic.spark.sql.execution.{CreateArcticTableAsSelectCommand, CreateArcticTableCommand, DropArcticTableCommand}
 import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
 import org.apache.spark.sql.arctic.AnalysisException
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
 import org.apache.spark.sql.execution.command.DropTableCommand
-import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
@@ -54,9 +55,10 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
         && tableDesc.provider.get.equalsIgnoreCase("arctic")
         && query.resolved && isDatasourceTable(tableDesc) =>
       CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
+
     // drop table
-    case DropTableCommand(tableName, ifExists, _, purge)
-      if arctic.tableExists(tableName) =>
+    case DropTableCommand(tableName, ifExists, isView, purge)
+      if arctic.isDelegateDropTable(tableName, isView) =>
       DropArcticTableCommand(arctic, tableName, ifExists, purge)
 
     // insert into data source table
@@ -153,4 +155,7 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
     val reader = arcticTable.createReader(null)
     reader
   }
+
+
+
 }

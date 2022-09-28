@@ -1,6 +1,6 @@
 package com.netease.arctic.spark.distributions;
 
-public class ClusterDistributionImpl implements ClusteredDistribution{
+public class ClusterDistributionImpl implements ClusteredDistribution {
 
   private Expression[] clusterExprs;
 

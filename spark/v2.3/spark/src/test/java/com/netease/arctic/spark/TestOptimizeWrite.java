@@ -24,9 +24,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
@@ -44,32 +41,35 @@ public class TestOptimizeWrite extends SparkTestBase {
 
   private final String database = "db";
   private final String sinkTable = "sink_table";
-  private final String sourceTable = "source_table";
+  private final String source = "v_source";
   private final TableIdentifier identifier = TableIdentifier.of(catalogName, database, sinkTable);
 
   @Before
   public void before() {
     sql("create database if not exists {0}", database);
-    sql("create table {0}.{1} ( \n" +
-            " id int , \n" +
-            " column1 string , \n " +
-            " column2 string, \n" +
-            " primary key (id) \n" +
-            ") using arctic \n" +
-            " partitioned by ( column2 ) \n" , database, sourceTable);
-    sql("insert overwrite table {0}.{1} values \n" +
-        "(1, ''aaa'',  ''aaa''), \n " +
-        "(2, ''bbb'',  ''aaa''), \n " +
-        "(3, ''aaa'',  ''bbb''), \n " +
-        "(4, ''bbb'',  ''bbb''), \n " +
-        "(5, ''aaa'',  ''ccc''), \n " +
-        "(6, ''bbb'',  ''ccc'') \n ", database, sourceTable);
+
+    List<Row> rows = Lists.newArrayList(
+        RowFactory.create(1, "aaa", "aaa"),
+        RowFactory.create(2, "bbb", "aaa"),
+        RowFactory.create(3, "aaa", "bbb"),
+        RowFactory.create(4, "bbb", "bbb"),
+        RowFactory.create(5, "aaa", "ccc"),
+        RowFactory.create(6, "bbb", "ccc")
+    );
+    StructType schema = new StructType()
+        .add("id", "int")
+        .add("column1", "string")
+        .add("column2", "string");
+    Dataset<Row> df = spark.createDataFrame(rows, schema);
+    df.repartition(new Column("column2"))
+        .createOrReplaceTempView(source);
+
   }
 
   @After
   public void cleanUpTable() {
+    sql("drop table {0}", source);
     sql("drop table {0}.{1}", database, sinkTable);
-    sql("drop table {0}.{1}", database, sourceTable);
     sql("drop database " + database);
   }
 
@@ -89,8 +89,8 @@ public class TestOptimizeWrite extends SparkTestBase {
             " partitioned by ( column1 ) \n" +
             " TBLPROPERTIES(''write.distribution-mode'' = ''none'') "
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
-        database, sinkTable, database, sourceTable);
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}",
+        database, sinkTable, source);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
     Assert.assertEquals(
@@ -114,8 +114,8 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''auto''," +
             "''base.file-index.hash-bucket'' = ''1'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
-        database, sinkTable, database, sourceTable);
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}",
+        database, sinkTable, source);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
     Assert.assertEquals(
@@ -135,8 +135,8 @@ public class TestOptimizeWrite extends SparkTestBase {
             " TBLPROPERTIES(''write.distribution-mode'' = ''hash'', " +
             "''write.distribution.hash-mode'' = ''partition-key'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
-        database, sinkTable, database, sourceTable);
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}",
+        database, sinkTable, source);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
     Assert.assertEquals(
@@ -162,8 +162,8 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''primary-key''," +
             "''base.file-index.hash-bucket'' = ''1'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
-        database, sinkTable, database, sourceTable);
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}",
+        database, sinkTable, source);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
     Assert.assertEquals(
@@ -189,8 +189,8 @@ public class TestOptimizeWrite extends SparkTestBase {
             "''write.distribution.hash-mode'' = ''primary-key''," +
             "''base.file-index.hash-bucket'' = ''2'')"
         , database, sinkTable);
-    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}.{3}",
-        database, sinkTable, database, sourceTable);
+    sql("insert overwrite table {0}.{1} SELECT id, column2, column1 from {2}",
+        database, sinkTable, source);
     rows = sql("select * from {0}.{1} order by id", database, sinkTable);
     Assert.assertEquals(6, rows.size());
     // Assert.assertEquals(
