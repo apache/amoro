@@ -47,7 +47,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
 
 
   @Override
-  public DataSourceTable createTable(
+  public ArcticSparkTable createTable(
       TableIdentifier identifier, StructType schema, List<String> partitions, Map<String, String> properties) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());

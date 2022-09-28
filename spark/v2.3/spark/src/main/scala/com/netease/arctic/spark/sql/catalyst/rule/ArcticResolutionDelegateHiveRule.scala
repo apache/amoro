@@ -18,9 +18,9 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
-import com.netease.arctic.spark.source.{ArcticSource}
-import com.netease.arctic.spark.sql.execution.{CreateArcticTableAsSelectCommand, CreateArcticTableCommand, DropArcticTableCommand}
-import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
+import com.netease.arctic.spark.source.ArcticSource
+import com.netease.arctic.spark.sql.execution.{CreateArcticTableCommand, DropArcticTableCommand}
+import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Literal}
@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
 import org.apache.spark.sql.execution.command.DropTableCommand
-import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
@@ -53,7 +53,9 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
       if tableDesc.provider.isDefined
         && tableDesc.provider.get.equalsIgnoreCase("arctic")
         && query.resolved && isDatasourceTable(tableDesc) =>
-      CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
+      val table = tableDesc.copy(schema = query.schema)
+      CreateArcticTableAsSelect(arctic, table, query)
+
     // drop table
     case DropTableCommand(tableName, ifExists, _, purge)
       if arctic.tableExists(tableName) =>
