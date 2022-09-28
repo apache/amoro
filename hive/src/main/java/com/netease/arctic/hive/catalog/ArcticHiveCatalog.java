@@ -362,7 +362,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       org.apache.hadoop.hive.metastore.api.Table newTable = new org.apache.hadoop.hive.metastore.api.Table(
           meta.getTableIdentifier().getTableName(),
           meta.getTableIdentifier().getDatabase(),
-          System.getProperty("user.name"),
+          meta.getProperties().getOrDefault("owner", System.getProperty("user.name")),
           (int) currentTimeMillis / 1000,
           (int) currentTimeMillis / 1000,
           Integer.MAX_VALUE,
