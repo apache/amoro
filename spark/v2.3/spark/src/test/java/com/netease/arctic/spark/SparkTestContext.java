@@ -343,7 +343,6 @@ public class SparkTestContext extends ExternalResource {
     LOG.info("execute sql: " + sql);
     Dataset<Row> result = spark.sql(sql);
     List<Row> rows = result.collectAsList();
-    System.out.println(result.queryExecution());
     if (rows.size() < 1) {
       LOG.info("empty result");
       this.rows = new ArrayList<>();
@@ -374,13 +373,9 @@ public class SparkTestContext extends ExternalResource {
   }
 
   protected void assertTableExist(TableIdentifier ident) {
-    try {
-      TableMeta meta = ams.handler().getTable(
-          ident.buildTableIdentifier());
-      Assert.assertNotNull(meta);
-    } catch (TException e) {
-      throw new IllegalStateException(e);
-    }
+    ArcticCatalog catalog = catalog(ident.getCatalog());
+    boolean exists = catalog.tableExists(ident);
+    Assert.assertTrue("table should exist", exists);
   }
 
   protected void assertTableNotExist(TableIdentifier identifier) {

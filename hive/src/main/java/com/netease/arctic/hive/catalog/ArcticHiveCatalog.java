@@ -102,6 +102,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     }
   }
 
+  /**
+   * HMS is case-insensitive for table name and database
+   */
+  @Override
+  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
+    return super.getArcticTableMeta(identifier.toCaseInsensitive());
+  }
+
   @Override
   public void dropDatabase(String databaseName) {
     try {
@@ -134,14 +142,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   }
 
   public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
-    TableMeta meta;
-    try {
-      meta = client.getTable(tableIdentifier.buildTableIdentifier());
-    } catch (NoSuchObjectException e) {
-      throw new NoSuchTableException(e, "load table failed %s.", tableIdentifier);
-    } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load table %s.", tableIdentifier), e);
-    }
+    TableMeta meta = getArcticTableMeta(tableIdentifier);
     super.doDropTable(meta, false);
   }
 
@@ -187,10 +188,13 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     return hiveClientPool;
   }
 
+
+
+
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
-      super(identifier, HiveSchemaUtil.changeFieldNameToLowercase(schema));
+      super(identifier.toCaseInsensitive(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
     }
 
     boolean allowExistedHiveTable = false;
