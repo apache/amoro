@@ -189,8 +189,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   }
 
 
-
-
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
