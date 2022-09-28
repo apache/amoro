@@ -14,6 +14,7 @@ import java.util.Map;
 @Suite.SuiteClasses({
     TestComplexType.class,
     TestCreateTableDDL.class,
+    TestCreateTableAsSelectDDL.class,
     TestKeyedHiveTableInsertOverwriteDynamic.class,
     TestKeyedHiveTableMergeOnRead.class,
     TestUnkeyedHiveTableInsertOverwriteDynamic.class,

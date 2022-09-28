@@ -115,13 +115,19 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
         if (colOnlyPk.primaryKey() != null) {
           primary = visitPrimaryKey(colOnlyPk.primaryKey())
         }
+      case _ => // do nothing
     }
-    // set primary col not null
-    val fields = setPrimaryKeyNotNull(schema.get.toSeq, primary)
     val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val provider = ctx.tableProvider.qualifiedName.getText
 
-    // visit partitions and support arctic partition grammer
+    // set primary col not null
+    val fields = if(schema.isDefined) {
+      setPrimaryKeyNotNull(schema.get.toSeq, primary)
+    } else {
+      Seq.empty[StructField]
+    }
+
+    // visit partitions and support arctic partition grammar
     if (ctx.partitionColumnNames == null) {
       finalSchema = Option(StructType.apply(fields))
     } else if (isHiveGrammar(ctx.partitionColumnNames) ) {

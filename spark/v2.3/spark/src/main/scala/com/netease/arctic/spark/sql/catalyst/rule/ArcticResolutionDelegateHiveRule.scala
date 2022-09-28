@@ -19,8 +19,8 @@
 package com.netease.arctic.spark.sql.catalyst.rule
 
 import com.netease.arctic.spark.source.ArcticSource
-import com.netease.arctic.spark.sql.execution.{CreateArcticTableAsSelectCommand, CreateArcticTableCommand, DropArcticTableCommand}
-import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
+import com.netease.arctic.spark.sql.execution.{CreateArcticTableCommand, DropArcticTableCommand}
+import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation, SessionCatalog}
@@ -54,7 +54,8 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
       if tableDesc.provider.isDefined
         && tableDesc.provider.get.equalsIgnoreCase("arctic")
         && query.resolved && isDatasourceTable(tableDesc) =>
-      CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
+      val table = tableDesc.copy(schema = query.schema)
+      CreateArcticTableAsSelect(arctic, table, query)
 
     // drop table
     case DropTableCommand(tableName, ifExists, isView, purge)
@@ -155,7 +156,4 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
     val reader = arcticTable.createReader(null)
     reader
   }
-
-
-
 }
