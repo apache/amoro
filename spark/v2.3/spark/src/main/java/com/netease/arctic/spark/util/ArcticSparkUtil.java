@@ -40,13 +40,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ArcticSparkUtil {
-  public static final String CATALOG_URL = "arctic.catalog.url";
+  public static final String CATALOG_URL = "spark.sql.arctic.catalog.url";
   public static final String SQL_DELEGATE_HIVE_TABLE = "spark.arctic.sql.delegate.enable";
 
   public static String catalogUrl(RuntimeConfig conf) {
     String catalogUrl = conf.get(CATALOG_URL, "");
     if (StringUtils.isBlank(catalogUrl)) {
-      throw new IllegalArgumentException("arctic.catalog.url is blank");
+      throw new IllegalArgumentException("spark.sql.arctic.catalog.url is blank");
     }
     return catalogUrl;
   }
