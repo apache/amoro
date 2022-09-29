@@ -42,6 +42,12 @@ public class TestKeyedTableDml extends SparkTestBase {
       " data string, primary key(id)) \n" +
       " using arctic ";
 
+  protected String createUppercaseTableTemplate = "create table {0}.{1}( \n" +
+      " ID int, \n" +
+      " NAME string, \n" +
+      " DATA string, primary key(ID))\n" +
+      " using arctic partitioned by (DATA) " ;
+
   @Before
   public void prepare() {
     sql("use " + catalogNameHive);
@@ -156,6 +162,12 @@ public class TestKeyedTableDml extends SparkTestBase {
   }
 
   @Test
+  public void testUpdatePrimaryField() {
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("update {0}.{1} set id = 1 where data = ''abcd''", database, notUpsertTable));
+  }
+
+  @Test
   public void testUpdateUnPartitions() {
     sql( "create table {0}.{1}( \n" +
         " id int, \n" +
@@ -183,5 +195,17 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(2, rows.size());
     Assert.assertEquals(1, rows.get(0)[0]);
     Assert.assertEquals(2, rows.get(1)[0]);
+  }
+
+  @Test
+  public void testCreateTableUppercase() {
+    sql(createUppercaseTableTemplate, database, "uppercase_table");
+    sql("insert into " + database + "." + "uppercase_table" +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
+    rows = sql("select id, name, data from {0}.{1} ", database, "uppercase_table");
+    Assert.assertEquals(3, rows.size());
+    sql("drop table if exists " + database + "." + "uppercase_table");
   }
 }

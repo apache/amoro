@@ -48,21 +48,32 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   public boolean partitionNeedPlan(String partitionToPath) {
     long current = System.currentTimeMillis();
 
+    List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partitionToPath, new ArrayList<>());
+    List<DataFile> needMajorOptimizeFiles =
+        partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>());
+    List<DataFile> smallFiles = filterSmallFiles(partitionToPath, needMajorOptimizeFiles);
+
+    // check whether partition need plan by files info.
+    // if partition has no pos-delete file, and there are files in not hive location, need plan
+    // if partition has pos-delete, and there are small file count greater than 2 in not hive location, need plan
+    boolean hasPos = CollectionUtils.isNotEmpty(posDeleteFiles) && smallFiles.size() >= 2;
+    boolean noPos = CollectionUtils.isEmpty(posDeleteFiles) && CollectionUtils.isNotEmpty(needMajorOptimizeFiles);
+    boolean partitionNeedPlan = hasPos || noPos;
+
     // check small data file count
-    List<DataFile> smallFiles = filterSmallFiles(partitionToPath,
-        partitionNeedMajorOptimizeFiles.getOrDefault(partitionToPath, new ArrayList<>()));
-    if (checkSmallFileCount(smallFiles)) {
+    if (checkSmallFileCount(smallFiles) && partitionNeedPlan) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       return true;
     }
 
     // check major optimize interval
-    if (checkMajorOptimizeInterval(current, partitionToPath)) {
+    if (checkMajorOptimizeInterval(current, partitionToPath) && partitionNeedPlan) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
       return true;
     }
 
-    LOG.debug("{} ==== don't need {} optimize plan, skip partition {}", tableId(), getOptimizeType(), partitionToPath);
+    LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, partitionNeedPlan is {}",
+        tableId(), getOptimizeType(), partitionToPath, partitionNeedPlan);
     return false;
   }
 
@@ -91,10 +102,8 @@ public class SupportHiveMajorOptimizePlan extends MajorOptimizePlan {
   }
 
   @Override
-  protected boolean needOptimize(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
-    boolean hasPos = CollectionUtils.isNotEmpty(posDeleteFiles) && baseFiles.size() >= 2;
-    boolean noPos = CollectionUtils.isEmpty(posDeleteFiles) && CollectionUtils.isNotEmpty(baseFiles);
-    return hasPos || noPos;
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+    return true;
   }
 
   private List<DataFile> filterSmallFiles(String partition, List<DataFile> dataFileList) {

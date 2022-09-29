@@ -45,7 +45,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Properties;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -66,6 +65,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   private transient Long ckpComplete;
   private final Schema schema;
   private final Properties producerConfig;
+  private final String topic;
   private final ShuffleHelper helper;
   protected final LogMsgFactory<RowData> factory;
   protected LogMsgFactory.Producer<RowData> producer;
@@ -94,7 +94,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
       ShuffleHelper helper) {
     this.schema = schema;
     this.producerConfig = checkNotNull(producerConfig);
-    this.producerConfig.put(LOG_STORE_MESSAGE_TOPIC, checkNotNull(topic));
+    this.topic = checkNotNull(topic);
     this.factory = factory;
     this.fieldGetterFactory = fieldGetterFactory;
     this.jobIdentify = jobId;
@@ -136,6 +136,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
                 fieldGetterFactory,
                 factory,
                 producerConfig,
+                topic,
                 helper));
     int parallelism = getRuntimeContext().getNumberOfParallelSubtasks();
 
@@ -173,6 +174,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     producer =
         factory.createProducer(
             producerConfig,
+            topic,
             logDataJsonSerialization,
             helper);
 

@@ -29,13 +29,16 @@ import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -103,6 +106,11 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     }
     LOG.debug("{} ==== don't need {} optimize plan, skip partition {}", tableId(), getOptimizeType(), partitionToPath);
     return false;
+  }
+
+  @Override
+  protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
+    throw new UnsupportedOperationException("Minor optimize not check with this method");
   }
 
   @Override
@@ -233,11 +241,11 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
-        group, historyId, OptimizeType.Minor, createTime);
+        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
@@ -254,12 +262,12 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         sourceNodes = Collections.singletonList(subTree.getNode());
       }
       Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-          .map(dataFile -> DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).node())
+          .map(dataFile -> FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))
           .collect(Collectors.toSet());
       List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
           .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
           .filter(deleteFile ->
-              baseFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(deleteFile.path().toString()).node()))
+              baseFileNodes.contains(FileUtil.parseFileNodeFromFileName(deleteFile.path().toString())))
           .collect(Collectors.toList());
       // if no insert files and no eq-delete file, skip
       if (CollectionUtils.isEmpty(insertFiles) && CollectionUtils.isEmpty(deleteFiles)) {
@@ -281,7 +289,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     StructLike partition = dataFile.partition();
     String partitionToPath = arcticTable.spec().partitionToPath(partition);
     Long currentValue = changeTableMaxTransactionId.get(partitionToPath);
-    long transactionId = DefaultKeyedFile.parseMetaFromFileName(dataFile.path().toString()).transactionId();
+    long transactionId = FileUtil.parseFileTidFromFileName(dataFile.path().toString());
     if (currentValue == null) {
       changeTableMaxTransactionId.put(partitionToPath, transactionId);
     } else {

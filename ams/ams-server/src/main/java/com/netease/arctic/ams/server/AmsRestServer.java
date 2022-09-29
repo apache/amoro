@@ -75,13 +75,14 @@ public class AmsRestServer {
       });
 
       //redirect the static page url to index.html
+      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/overview", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/introduce", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/table", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimize", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/tables", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/optimizers", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/hive-tables", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimizing", "/static/index.html", Location.CLASSPATH);
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
@@ -94,7 +95,7 @@ public class AmsRestServer {
       String uriPath = ctx.path();
       String token = ctx.queryParam("token");
       // if token of api request is not empty, so we check the query by token first
-      if (uriPath.startsWith("/api/") && StringUtils.isNotEmpty(token)) {
+      if (StringUtils.isNotEmpty(token)) {
         Utils.checkSinglePageToken(ctx);
       } else {
         if (needApiKeyCheck(uriPath)) {
@@ -245,19 +246,22 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-    "/ams/v1/login",
-    "/",
-    "/overview",
-    "/introduce",
-    "/table",
-    "/optimize",
-    "/login",
-    "/terminal",
-    "/index.html",
-    "/favicon.ico",
-    "/js/*",
-    "/img/*",
-    "/css/*"
+      "/ams/v1/versionInfo",
+      "/ams/v1/login",
+      "/",
+      "/overview",
+      "/introduce",
+      "/tables",
+      "/optimizers",
+      "/login",
+      "/terminal",
+      "/hive-tables/upgrade",
+      "/hive-tables",
+      "/index.html",
+      "/favicon.ico",
+      "/js/*",
+      "/img/*",
+      "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {

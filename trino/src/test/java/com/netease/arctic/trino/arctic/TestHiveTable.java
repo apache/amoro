@@ -65,7 +65,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   private final String TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE =
       "arctic." + UN_PARTITION_HIVE_PK_TABLE_ID.getDatabase() + "." + "\"" + UN_PARTITION_HIVE_PK_TABLE_ID.getTableName() + "#base\"";
 
-  private int txid = 1;
+  private long txid = 1;
 
   @Override
   protected QueryRunner createQueryRunner() throws Exception {
@@ -173,7 +173,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
         .withChangeAction(changeAction)
-        .withTransactionId(txid++);
+        .withTransactionId(table.isKeyedTable() ? txid++ : null);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record: records) {

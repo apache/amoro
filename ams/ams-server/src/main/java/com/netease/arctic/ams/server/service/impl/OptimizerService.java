@@ -64,10 +64,10 @@ public class OptimizerService extends IJDBCService {
     }
   }
 
-  public Optimizer getOptimizer(Long jobId) {
+  public Optimizer getOptimizer(Long optimizerId) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectOptimizer(jobId);
+      return optimizerMapper.selectOptimizer(optimizerId);
     }
   }
 
@@ -78,17 +78,17 @@ public class OptimizerService extends IJDBCService {
     }
   }
 
-  public void deleteOptimizer(Long jobId) {
+  public void deleteOptimizer(Long optimizerId) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      optimizerMapper.deleteOptimizer(jobId);
+      optimizerMapper.deleteOptimizer(optimizerId);
     }
   }
 
-  public void addOptimizerInstance(Long jobId, byte[] instance) {
+  public void addOptimizerInstance(Long optimizerId, byte[] instance) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      optimizerMapper.addOptimizerInstance(jobId, instance);
+      optimizerMapper.addOptimizerInstance(optimizerId, instance);
     }
   }
 
@@ -165,19 +165,19 @@ public class OptimizerService extends IJDBCService {
   }
 
   public void insertOptimizer(
-      String jobName, int queueId, String queueName, TableTaskStatus status, String startTime,
+      String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
       int coreNumber, long memory, int parallelism, String container) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      optimizerMapper.insertOptimizer(jobName, queueId, queueName, status, startTime, coreNumber, memory,
+      optimizerMapper.insertOptimizer(optimizerName, queueId, queueName, status, startTime, coreNumber, memory,
           parallelism, container);
     }
   }
 
-  public String selectJobIdByOptimizerName(String optimizerName) {
+  public String selectOptimizerIdByOptimizerName(String optimizerName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectJobIdByOptimizerName(optimizerName);
+      return optimizerMapper.selectOptimizerIdByOptimizerName(optimizerName);
     }
   }
 

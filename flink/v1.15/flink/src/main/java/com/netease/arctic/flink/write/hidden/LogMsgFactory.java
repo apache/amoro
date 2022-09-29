@@ -34,6 +34,7 @@ public interface LogMsgFactory<T> extends Serializable {
 
   Producer<T> createProducer(
       Properties producerConfig,
+      String topic,
       LogDataJsonSerialization<T> logDataJsonSerialization,
       ShuffleHelper helper);
 

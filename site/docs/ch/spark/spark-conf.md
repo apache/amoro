@@ -20,7 +20,7 @@ spark.sql.catalog.local_catalog.type = hadoop
 spark.sql.catalog.local_catalog.url=thrift://${AMS_HOST}:${AMS_PORT}/${AMS_CATALOG_NAME_HADOOP}
 ```
 
-配置完成后，您可以通过`catalogName.db.table`的方式来访问表。
+配置完成后，您可以通过 `catalogName.db.table` 的方式来访问表。
 
 
 ### 配置 Arctic Spark Session Catalog
@@ -30,7 +30,7 @@ spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkSessionCatal
 ```
 您可以把 Spark 内置的 Catalog：`spark_catalog`配置为您想要的 Catalog 类型来实现访问不同的表。  
 
-Arctic Spark 提供一个参数来控制 session catalog 的行为：`spark.arctic.sql.delegate.enable`，该参数默认为`true`。  
+Arctic Spark 提供一个参数来控制 session catalog 的行为：`spark.arctic.sql.delegate.enable`，该参数默认为 `true`。  
 
 您可以在 Spark 的配置文件中修改该配置，也可以在启动 Spark 时通过命令行参数 `--conf spark.arctic.sql.delegate.enable=${OPTION}` 来设置该参数。
 

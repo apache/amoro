@@ -82,9 +82,9 @@ public class TableProperties {
   public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.minor.trigger.max-interval";
   public static final long MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 3600_000; // 1h
 
-  public static final String MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
-      "optimize.major.trigger.delete-file-size-bytes";
-  public static final long MAJOR_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT = 67108864; // 64 MB
+  public static final String FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
+      "optimize.full.trigger.delete-file-size-bytes";
+  public static final long FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT = 67108864; // 64 MB
 
   public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
   public static final int MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT = 12; // 12
@@ -201,4 +201,6 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
+
+  public static final String OWNER = "owner";
 }

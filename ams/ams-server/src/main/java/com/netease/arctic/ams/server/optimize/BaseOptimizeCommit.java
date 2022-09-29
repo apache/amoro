@@ -22,13 +22,12 @@ import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -60,7 +59,6 @@ public class BaseOptimizeCommit {
   private static final Logger LOG = LoggerFactory.getLogger(BaseOptimizeCommit.class);
   protected final ArcticTable arcticTable;
   protected final Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit;
-  protected final Map<String, TableTaskHistory> commitTableTaskHistory = new HashMap<>();
   protected final Map<String, OptimizeType> partitionOptimizeType = new HashMap<>();
 
   public BaseOptimizeCommit(ArcticTable arcticTable,
@@ -71,10 +69,6 @@ public class BaseOptimizeCommit {
 
   public Map<String, List<OptimizeTaskItem>> getCommittedTasks() {
     return optimizeTasksToCommit;
-  }
-
-  public Map<String, TableTaskHistory> getCommitTableTaskHistory() {
-    return commitTableTaskHistory;
   }
 
   public boolean commit(long baseSnapshotId) throws Exception {
@@ -95,6 +89,10 @@ public class BaseOptimizeCommit {
       StructLikeMap<Long> maxTransactionIds = StructLikeMap.create(spec.partitionType());
       for (Map.Entry<String, List<OptimizeTaskItem>> entry : optimizeTasksToCommit.entrySet()) {
         for (OptimizeTaskItem task : entry.getValue()) {
+          if (!checkFileCount(task)) {
+            LOG.error("table {} file count not match", arcticTable.id());
+            throw new IllegalArgumentException("file count not match, can't commit");
+          }
           // tasks in partition
           if (task.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor) {
             task.getOptimizeRuntime().getTargetFiles().stream()
@@ -120,27 +118,6 @@ public class BaseOptimizeCommit {
             majorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), new HashSet<>()));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
           }
-
-          String taskGroupId = task.getOptimizeTask().getTaskGroup();
-          String taskHistoryId = task.getOptimizeTask().getTaskHistoryId();
-          String historyKey = taskHistoryId + "#" + taskGroupId;
-          TableTaskHistory tableTaskHistory = commitTableTaskHistory.get(historyKey);
-          if (tableTaskHistory != null) {
-            tableTaskHistory.setCostTime(tableTaskHistory.getCostTime() + task.getOptimizeRuntime().getCostTime());
-            tableTaskHistory.setStartTime(Math.min(tableTaskHistory.getStartTime(),
-                task.getOptimizeRuntime().getExecuteTime()));
-            tableTaskHistory.setEndTime(Math.max(tableTaskHistory.getEndTime(),
-                task.getOptimizeRuntime().getReportTime()));
-          } else {
-            tableTaskHistory = new TableTaskHistory();
-            tableTaskHistory.setTableIdentifier(arcticTable.id());
-            tableTaskHistory.setTaskGroupId(taskGroupId);
-            tableTaskHistory.setTaskHistoryId(taskHistoryId);
-            tableTaskHistory.setCostTime(task.getOptimizeRuntime().getCostTime());
-            tableTaskHistory.setStartTime(task.getOptimizeRuntime().getExecuteTime());
-            tableTaskHistory.setEndTime(task.getOptimizeRuntime().getReportTime());
-          }
-          commitTableTaskHistory.put(historyKey, tableTaskHistory);
         }
       }
 
@@ -171,6 +148,31 @@ public class BaseOptimizeCommit {
 
   public Map<String, OptimizeType> getPartitionOptimizeType() {
     return partitionOptimizeType;
+  }
+
+  private boolean checkFileCount(OptimizeTaskItem task) {
+    int baseFileCount = task.getOptimizeTask().getBaseFiles().size();
+    int insertFileCount = task.getOptimizeTask().getInsertFiles().size();
+    int deleteFileCount = task.getOptimizeTask().getDeleteFiles().size();
+    int posDeleteFileCount = task.getOptimizeTask().getPosDeleteFiles().size();
+    int targetFileCount = task.getOptimizeRuntime().getTargetFiles().size();
+
+    boolean result = baseFileCount == task.getOptimizeTask().getBaseFileCnt() &&
+        insertFileCount == task.getOptimizeTask().getInsertFileCnt() &&
+        deleteFileCount == task.getOptimizeTask().getDeleteFileCnt() &&
+        posDeleteFileCount == task.getOptimizeTask().getPosDeleteFileCnt() &&
+        targetFileCount == task.getOptimizeRuntime().getNewFileCnt();
+    if (!result) {
+      LOG.error("file count check failed. baseFileCount/baseFileCnt is {}/{}, " +
+              "insertFileCount/insertFileCnt is {}/{}, deleteFileCount/deleteFileCnt is {}/{}, " +
+              "posDeleteFileCount/posDeleteFileCnt is {}/{}, targetFileCount/newFileCnt is {}/{}",
+          baseFileCount, task.getOptimizeTask().getBaseFileCnt(),
+          insertFileCount, task.getOptimizeTask().getInsertFileCnt(),
+          deleteFileCount, task.getOptimizeTask().getDeleteFileCnt(),
+          posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
+          targetFileCount, task.getOptimizeRuntime().getNewFileCnt());
+    }
+    return result;
   }
 
   private void minorCommit(ArcticTable arcticTable,
@@ -299,10 +301,10 @@ public class BaseOptimizeCommit {
       // overwrite DataFiles
       OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
       overwriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      overwriteFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
       deleteDataFiles.forEach(overwriteFiles::deleteFile);
       addDataFiles.forEach(overwriteFiles::addFile);
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+        overwriteFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
         overwriteFiles.validateFromSnapshot(baseSnapshotId);
       }
       overwriteFiles.commit();
@@ -346,7 +348,7 @@ public class BaseOptimizeCommit {
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
-        return DefaultKeyedFile.parseMetaFromFileName(contentFile.path().toString()).node();
+        return FileUtil.parseFileNodeFromFileName(contentFile.path().toString());
       }
 
       return null;
@@ -354,7 +356,7 @@ public class BaseOptimizeCommit {
 
     return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtil::toInternalTableFile)
         .filter(posDeleteFile ->
-            newFileNodes.contains(DefaultKeyedFile.parseMetaFromFileName(posDeleteFile.path().toString()).node()))
+            newFileNodes.contains(FileUtil.parseFileNodeFromFileName(posDeleteFile.path().toString())))
         .collect(Collectors.toSet());
   }
 
@@ -375,9 +377,9 @@ public class BaseOptimizeCommit {
     StructLikeMap<Long> result = StructLikeMap.create(arcticTable.spec().partitionType());
 
     for (ContentFile<?> minorAddFile : minorAddFiles) {
-      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.parseMetaFromFileName(minorAddFile.path().toString());
-      if (fileMeta.transactionId() != 0) {
-        long minTransactionId = fileMeta.transactionId();
+      long transactionId = FileUtil.parseFileTidFromFileName(minorAddFile.path().toString());
+      if (transactionId != 0) {
+        long minTransactionId = transactionId;
         if (result.get(minorAddFile.partition()) != null) {
           minTransactionId = Math.min(minTransactionId, result.get(minorAddFile.partition()));
         }

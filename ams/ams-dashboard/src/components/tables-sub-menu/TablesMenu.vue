@@ -201,8 +201,9 @@ export default defineComponent({
           label: ele.catalogName
         }))
         if (state.catalogOptions.length) {
+          const index = state.catalogOptions.findIndex(ele => ele.value === storageCataDBTable.catalog)
           const query = route.query
-          state.curCatalog = storageCataDBTable.catalog || (query?.catalog)?.toString() || state.catalogOptions[0].value
+          state.curCatalog = index > -1 ? storageCataDBTable.catalog : (query?.catalog)?.toString() || state.catalogOptions[0].value
         }
         getAllDatabaseList()
       }).finally(() => {

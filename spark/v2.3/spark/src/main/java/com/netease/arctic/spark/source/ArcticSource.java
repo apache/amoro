@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.spark.source;
 
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -11,44 +29,25 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.RuntimeConfig;
-import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.TableIdentifier;
 import org.apache.spark.sql.catalyst.catalog.CatalogTable;
 import org.apache.spark.sql.internal.StaticSQLConf$;
 import org.apache.spark.sql.sources.DataSourceRegister;
-import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
-import org.apache.spark.sql.sources.v2.ReadSupport;
-import org.apache.spark.sql.sources.v2.WriteSupport;
-import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
-import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
-
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
-public class ArcticSource implements DataSourceRegister, DataSourceV2,
-    ReadSupport, WriteSupport, TableSupport {
+public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupport {
   @Override
   public String shortName() {
     return "arctic";
   }
 
-  @Override
-  public DataSourceReader createReader(DataSourceOptions options) {
-    return null;
-  }
 
   @Override
-  public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
-                                                 SaveMode mode, DataSourceOptions options) {
-    return Optional.empty();
-  }
-
-  @Override
-  public DataSourceTable createTable(
+  public ArcticSparkTable createTable(
       TableIdentifier identifier, StructType schema, List<String> partitions, Map<String, String> properties) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
@@ -70,7 +69,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
           .withProperties(properties)
           .create();
     }
-    return ArcticSparkTable.ofArcticTable(arcticTable);
+    return ArcticSparkTable.ofArcticTable(identifier, arcticTable);
   }
 
   private static PartitionSpec toPartitionSpec(List<String> partitionKeys, Schema icebergSchema) {
@@ -80,13 +79,13 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2,
   }
 
   @Override
-  public DataSourceTable loadTable(TableIdentifier identifier) {
+  public ArcticSparkTable loadTable(TableIdentifier identifier) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
         catalog.name(), identifier.database().get(), identifier.table());
     ArcticTable arcticTable = catalog.loadTable(tableId);
-    return ArcticSparkTable.ofArcticTable(arcticTable);
+    return ArcticSparkTable.ofArcticTable(identifier, arcticTable);
   }
 
   @Override

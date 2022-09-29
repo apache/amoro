@@ -8,11 +8,11 @@ import java.util.Map;
 
 public interface TableSupport {
 
-  DataSourceTable createTable(TableIdentifier identifier,
+  ArcticSparkTable createTable(TableIdentifier identifier,
                               StructType schema, List<String> partitions, Map<String, String> properties);
 
 
-  DataSourceTable loadTable(TableIdentifier identifier);
+  ArcticSparkTable loadTable(TableIdentifier identifier);
 
   boolean tableExists(TableIdentifier tableIdentifier);
 

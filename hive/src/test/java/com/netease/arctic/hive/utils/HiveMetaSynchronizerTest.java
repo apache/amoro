@@ -186,7 +186,7 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
                                         List<Record> records) throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(1);
+        .withTransactionId(table.isKeyedTable() ? 1L : null);
 
     TaskWriter<Record> writer = builder.buildWriter(locationKind);
     for (Record record : records) {

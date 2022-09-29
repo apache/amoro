@@ -26,6 +26,11 @@ import org.apache.iceberg.relocated.com.google.common.base.Objects;
  */
 public class ArcticEnumeratorOffset {
   public static final ArcticEnumeratorOffset EMPTY = of(Long.MIN_VALUE, Long.MIN_VALUE);
+
+  /**
+   * use Long.MIN_VALUE to indicate the earliest offset
+   */
+  public static final long EARLIEST_SNAPSHOT_ID = Long.MIN_VALUE;
   private Long changeSnapshotId;
   private Long snapshotTimestampMs;
 

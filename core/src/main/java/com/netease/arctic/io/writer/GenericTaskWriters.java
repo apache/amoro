@@ -56,7 +56,7 @@ public class GenericTaskWriters {
       this.table = table;
     }
 
-    public Builder withTransactionId(long transactionId) {
+    public Builder withTransactionId(Long transactionId) {
       this.transactionId = transactionId;
       return this;
     }
@@ -77,7 +77,7 @@ public class GenericTaskWriters {
     }
 
     public GenericBaseTaskWriter buildBaseWriter() {
-      Preconditions.checkNotNull(transactionId);
+      preconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
@@ -91,7 +91,7 @@ public class GenericTaskWriters {
     }
 
     public SortedPosDeleteWriter<Record> buildBasePosDeleteWriter(long mask, long index, StructLike partitionKey) {
-      Preconditions.checkNotNull(transactionId);
+      preconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.BASE_FILE_FORMAT,
           TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       GenericAppenderFactory appenderFactory =
@@ -109,7 +109,7 @@ public class GenericTaskWriters {
     }
 
     public GenericChangeTaskWriter buildChangeWriter() {
-      Preconditions.checkNotNull(transactionId);
+      preconditions();
       FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(TableProperties.CHANGE_FILE_FORMAT,
           TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
       long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
@@ -125,5 +125,12 @@ public class GenericTaskWriters {
           changeAction);
     }
 
+    private void preconditions() {
+      if (table.isKeyedTable()) {
+        Preconditions.checkNotNull(transactionId);
+      } else {
+        Preconditions.checkArgument(transactionId == null);
+      }
+    }
   }
 }
