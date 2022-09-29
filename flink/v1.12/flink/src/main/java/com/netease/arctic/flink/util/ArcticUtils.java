@@ -172,8 +172,8 @@ public class ArcticUtils {
   }
 
   public static boolean arcticFileWriterEnable(String arcticEmitMode) {
-    return arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_FILE)
-        || arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO);
+    return arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_FILE) ||
+        arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO);
   }
 
   public static boolean isToBase(boolean overwrite) {
