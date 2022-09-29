@@ -89,6 +89,7 @@
                                     <include>org.apache.commons:commons-lang3</include>
                                     <include>org.apache.commons:commons-collections</include>
                                     <include>com.github.ben-manes.caffeine:caffeine</include>
+                                    <include>org.spark-project.hive:hive-metastore</include>
                                 </includes>
                                 <excludes>
                                     <exclude>com.google.code.findbugs:jsr305</exclude>
@@ -302,21 +303,21 @@
                                     </includes>
                                 </relocation>
 
+<!--                                <relocation>-->
+<!--                                    <pattern>org.apache.hadoop.hive.metastore</pattern>-->
+<!--                                    <shadedPattern>-->
+<!--                                        com.netease.arctic.shade.org.apache.hadoop.hive.metastore-->
+<!--                                    </shadedPattern>-->
+<!--                                </relocation>-->
+                                <relocation>
+                                    <pattern>com.facebook.fb303</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.com.facebook.fb303</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>org.apache.hadoop.hive.metastore.HiveMetaStoreClient</pattern>
                                     <shadedPattern>
                                         com.netease.arctic.shade.org.apache.hadoop.hive.metastore.HiveMetaStoreClient
                                     </shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore
-                                    </shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>com.facebook.fb303</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.com.facebook.fb303</shadedPattern>
                                 </relocation>
 
                             </relocations>
