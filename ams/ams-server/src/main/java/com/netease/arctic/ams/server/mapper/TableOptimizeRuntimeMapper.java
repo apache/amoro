@@ -38,7 +38,7 @@ public interface TableOptimizeRuntimeMapper {
   String TABLE_NAME = "optimize_table_runtime";
 
   @Select("select catalog_name, db_name, table_name, current_snapshot_id, current_change_snapshotId," +
-      " latest_major_optimize_time, latest_full_optimize_time, latest_minor_optimize_time, latest_task_history_id," +
+      " latest_major_optimize_time, latest_full_optimize_time, latest_minor_optimize_time, latest_task_plan_group," +
       " optimize_status, optimize_status_start_time " +
       " from " + TABLE_NAME)
   @ConstructorArgs({
@@ -55,7 +55,7 @@ public interface TableOptimizeRuntimeMapper {
           typeHandler = MapLong2StringConverter.class),
       @Result(property = "latestMinorOptimizeTime", column = "latest_minor_optimize_time",
           typeHandler = MapLong2StringConverter.class),
-      @Result(property = "latestTaskHistoryId", column = "latest_task_history_id"),
+      @Result(property = "latestTaskPlanGroup", column = "latest_task_plan_group"),
       @Result(property = "optimizeStatus", column = "optimize_status"),
       @Result(property = "optimizeStatusStartTime", column = "optimize_status_start_time",
           typeHandler = Long2TsConvertor.class)
@@ -71,7 +71,7 @@ public interface TableOptimizeRuntimeMapper {
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}, " +
       "latest_minor_optimize_time = #{runtime.latestMinorOptimizeTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}, " +
-      "latest_task_history_id = #{runtime.latestTaskHistoryId, jdbcType=VARCHAR}, " +
+      "latest_task_plan_group = #{runtime.latestTaskPlanGroup, jdbcType=VARCHAR}, " +
       "optimize_status = #{runtime.optimizeStatus}, " +
       "optimize_status_start_time = #{runtime.optimizeStatusStartTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
@@ -89,7 +89,7 @@ public interface TableOptimizeRuntimeMapper {
 
   @Insert("insert into " + TABLE_NAME + " (catalog_name, db_name, table_name, " +
       "current_snapshot_id, current_change_snapshotId, latest_major_optimize_time, latest_full_optimize_time, " +
-      "latest_minor_optimize_time, latest_task_history_id, optimize_status, optimize_status_start_time) values ( " +
+      "latest_minor_optimize_time, latest_task_plan_group, optimize_status, optimize_status_start_time) values ( " +
       "#{runtime.tableIdentifier.catalog}, " +
       "#{runtime.tableIdentifier.database}, " +
       "#{runtime.tableIdentifier.tableName}, " +
@@ -101,7 +101,7 @@ public interface TableOptimizeRuntimeMapper {
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}," +
       "#{runtime.latestMinorOptimizeTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.MapLong2StringConverter}," +
-      "#{runtime.latestTaskHistoryId, jdbcType=VARCHAR}," +
+      "#{runtime.latestTaskPlanGroup, jdbcType=VARCHAR}," +
       "#{runtime.optimizeStatus}," +
       "#{runtime.optimizeStatusStartTime," +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}" +

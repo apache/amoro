@@ -86,4 +86,10 @@ public interface IOptimizeService {
    */
   TableIdentifier takeTableToCommit() throws InterruptedException;
 
+  /**
+   * expire and clean optimize history record
+   * @param tableIdentifier -
+   * @param expireTime min timestamp which record need to retain
+   */
+  void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
 }

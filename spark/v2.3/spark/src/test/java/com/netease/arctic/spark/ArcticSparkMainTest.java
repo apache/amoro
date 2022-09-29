@@ -12,10 +12,14 @@ import java.util.Map;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    TestComplexType.class,
     TestCreateTableDDL.class,
+    TestCreateTableAsSelectDDL.class,
     TestKeyedHiveTableInsertOverwriteDynamic.class,
     TestKeyedHiveTableMergeOnRead.class,
-    TestUnkeyedHiveTableInsertOverwriteDynamic.class
+    TestOptimizeWrite.class,
+    TestUnkeyedHiveTableInsertOverwriteDynamic.class,
+    TestUnkeyedHiveTableMergeOnRead.class
 })
 public class ArcticSparkMainTest {
     @BeforeClass

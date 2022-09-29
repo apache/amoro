@@ -113,7 +113,6 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
-      optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
         optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
@@ -121,6 +120,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
       finalTargetFiles.addAll(task.getInsertFiles());
       optimizeRuntime.setTargetFiles(finalTargetFiles);
+      optimizeRuntime.setNewFileCnt(finalTargetFiles.size());
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
       return new OptimizeTaskItem(task, optimizeRuntime);
@@ -189,7 +189,6 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
       optimizeRuntime.setStatus(OptimizeStatus.Prepared);
       optimizeRuntime.setReportTime(System.currentTimeMillis());
-      optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
         optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
@@ -197,6 +196,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
       finalTargetFiles.addAll(task.getInsertFiles());
       optimizeRuntime.setTargetFiles(finalTargetFiles);
+      optimizeRuntime.setNewFileCnt(finalTargetFiles.size());
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
       return new OptimizeTaskItem(task, optimizeRuntime);
