@@ -23,8 +23,8 @@ import com.netease.arctic.ams.api.OptimizeTask;
 public class BaseOptimizeTask extends OptimizeTask {
   public static final int INVALID_TRANSACTION_ID = -1;
 
-  protected String taskGroup;
-  protected String taskHistoryId;
+  protected String taskCommitGroup;
+  protected String taskPlanGroup;
   protected String partition;
 
   protected long baseFileSize;
@@ -45,20 +45,20 @@ public class BaseOptimizeTask extends OptimizeTask {
   public BaseOptimizeTask() {
   }
 
-  public String getTaskGroup() {
-    return taskGroup;
+  public String getTaskCommitGroup() {
+    return taskCommitGroup;
   }
 
-  public void setTaskGroup(String taskGroup) {
-    this.taskGroup = taskGroup;
+  public void setTaskCommitGroup(String taskCommitGroup) {
+    this.taskCommitGroup = taskCommitGroup;
   }
 
-  public String getTaskHistoryId() {
-    return taskHistoryId;
+  public String getTaskPlanGroup() {
+    return taskPlanGroup;
   }
 
-  public void setTaskHistoryId(String taskHistoryId) {
-    this.taskHistoryId = taskHistoryId;
+  public void setTaskPlanGroup(String taskPlanGroup) {
+    this.taskPlanGroup = taskPlanGroup;
   }
 
   public long getMaxChangeTransactionId() {
@@ -160,8 +160,8 @@ public class BaseOptimizeTask extends OptimizeTask {
   @Override
   public String toString() {
     return "BaseOptimizeTask{" +
-        "taskGroup='" + taskGroup + '\'' +
-        ", taskHistoryId='" + taskHistoryId + '\'' +
+        "taskCommitGroup='" + taskCommitGroup + '\'' +
+        ", taskPlanGroup='" + taskPlanGroup + '\'' +
         ", partition='" + partition + '\'' +
         ", baseFileSize=" + baseFileSize +
         ", insertFileSize=" + insertFileSize +
