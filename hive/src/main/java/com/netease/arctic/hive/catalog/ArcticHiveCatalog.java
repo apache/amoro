@@ -20,7 +20,6 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
@@ -49,7 +48,6 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -102,6 +100,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     }
   }
 
+  /**
+   * HMS is case-insensitive for table name and database
+   */
+  @Override
+  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
+    return super.getArcticTableMeta(identifier.toLowCaseIdentifier());
+  }
+
   @Override
   public void dropDatabase(String databaseName) {
     try {
@@ -134,14 +140,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   }
 
   public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
-    TableMeta meta;
-    try {
-      meta = client.getTable(tableIdentifier.buildTableIdentifier());
-    } catch (NoSuchObjectException e) {
-      throw new NoSuchTableException(e, "load table failed %s.", tableIdentifier);
-    } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load table %s.", tableIdentifier), e);
-    }
+    TableMeta meta = getArcticTableMeta(tableIdentifier);
     super.doDropTable(meta, false);
   }
 
@@ -187,10 +186,11 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     return hiveClientPool;
   }
 
+
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
-      super(identifier, HiveSchemaUtil.changeFieldNameToLowercase(schema));
+      super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
     }
 
     boolean allowExistedHiveTable = false;

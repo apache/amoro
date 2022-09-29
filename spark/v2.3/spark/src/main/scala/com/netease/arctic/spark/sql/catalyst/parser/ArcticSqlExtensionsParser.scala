@@ -18,8 +18,6 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-//import com.netease.arctic.spark.sql.parser.{ArcticSqlBaseBaseListener, ArcticSqlBaseLexer, ArcticSqlBaseParser}
-
 import com.netease.arctic.spark.sql.parser.ArcticSparkSqlParser.{NonReservedContext, QuotedIdentifierContext}
 import com.netease.arctic.spark.sql.parser.{ArcticSparkSqlBaseListener, ArcticSparkSqlLexer, ArcticSparkSqlParser}
 import org.antlr.v4.runtime._
@@ -28,7 +26,7 @@ import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.Expression
-import org.apache.spark.sql.catalyst.parser.{ArcticExtendSparkSqlAstBuilder, ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}

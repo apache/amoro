@@ -31,7 +31,10 @@ import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.RuntimeConfig;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.TableIdentifier;
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException;
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.catalog.CatalogTable;
+import org.apache.spark.sql.catalyst.catalog.SessionCatalog;
 import org.apache.spark.sql.internal.StaticSQLConf$;
 import org.apache.spark.sql.sources.DataSourceRegister;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
@@ -44,7 +47,6 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
   public String shortName() {
     return "arctic";
   }
-
 
   @Override
   public ArcticSparkTable createTable(
@@ -136,6 +138,25 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
         catalog.name(), identifier.database().get(), identifier.table());
     return catalog.tableExists(tableId);
+  }
+
+  public boolean isDelegateDropTable(TableIdentifier identifier, boolean isView) {
+    if (isView) {
+      return false;
+    }
+    SparkSession spark = SparkSession.getActiveSession().get();
+    SessionCatalog catalog = spark.sessionState().catalog();
+    if (catalog.isTemporaryTable(identifier) ||
+        identifier.database().isEmpty() ||
+        !catalog.tableExists(identifier)) {
+      return false;
+    }
+    try {
+      CatalogTable tableDesc = catalog.getTableMetadata(identifier);
+      return isDelegateTable(tableDesc);
+    } catch (NoSuchTableException | NoSuchDatabaseException e) {
+      return false;
+    }
   }
 
   private ArcticCatalog catalog(RuntimeConfig conf) {

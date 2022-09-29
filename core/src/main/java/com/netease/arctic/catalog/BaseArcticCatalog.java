@@ -291,7 +291,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     return tableMetaStore;
   }
 
-  private TableMeta getArcticTableMeta(TableIdentifier identifier) {
+  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
     TableMeta meta;
     try {
       meta = client.getTable(identifier.buildTableIdentifier());
