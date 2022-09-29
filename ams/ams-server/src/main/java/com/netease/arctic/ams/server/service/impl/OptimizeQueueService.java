@@ -616,18 +616,18 @@ public class OptimizeQueueService extends IJDBCService {
     private BigDecimal evalQuotaRate(TableIdentifier tableId, long currentTime) throws NoSuchObjectException {
       TableOptimizeItem tableItem;
       tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableId);
-      String latestHistoryId = tableItem.getTableOptimizeRuntime().getLatestTaskHistoryId();
-      if (StringUtils.isEmpty(latestHistoryId)) {
+      String latestTaskPlanGroup = tableItem.getTableOptimizeRuntime().getLatestTaskPlanGroup();
+      if (StringUtils.isEmpty(latestTaskPlanGroup)) {
         return BigDecimal.ZERO;
       }
 
       List<TableTaskHistory> latestTaskHistories =
-          ServiceContainer.getTableTaskHistoryService().selectTaskHistory(tableId, latestHistoryId);
+          ServiceContainer.getTableTaskHistoryService().selectTaskHistory(tableId, latestTaskPlanGroup);
       if (CollectionUtils.isEmpty(latestTaskHistories)) {
         return BigDecimal.ZERO;
       }
 
-      long latestCostTime = 0;
+      long totalCostTime = 0;
       long latestStartTime = 0;
       for (TableTaskHistory latestTaskHistory : latestTaskHistories) {
         if (latestStartTime == 0 || latestStartTime > latestTaskHistory.getStartTime()) {
@@ -635,12 +635,17 @@ public class OptimizeQueueService extends IJDBCService {
         }
 
         if (latestTaskHistory.getCostTime() != 0) {
-          latestCostTime = latestCostTime + latestTaskHistory.getCostTime();
+          totalCostTime = totalCostTime + latestTaskHistory.getCostTime();
         } else {
-          latestCostTime = latestCostTime + currentTime - latestTaskHistory.getStartTime();
+          totalCostTime = totalCostTime + currentTime - latestTaskHistory.getStartTime();
         }
       }
-      BigDecimal currentQuota = new BigDecimal(latestCostTime)
+
+      if (currentTime - latestStartTime == 0) {
+        return BigDecimal.valueOf(Long.MAX_VALUE);
+      }
+
+      BigDecimal currentQuota = new BigDecimal(totalCostTime)
           .divide(new BigDecimal(currentTime - latestStartTime),
               2,
               RoundingMode.HALF_UP);
@@ -682,7 +687,7 @@ public class OptimizeQueueService extends IJDBCService {
           tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
         }
 
-        tableItem.getTableOptimizeRuntime().setLatestTaskHistoryId(optimizeTasks.get(0).getTaskHistoryId());
+        tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
         tableItem.getTableOptimizeRuntime().setRunning(true);
         tableItem.persistTableOptimizeRuntime();
       }

@@ -36,7 +36,7 @@ public interface OptimizeTasksMapper {
   String TABLE_NAME = "optimize_task";
 
   @Select("select trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
-      " task_group, task_history_id, max_change_transaction_id," +
+      " task_commit_group, task_plan_group, max_change_transaction_id," +
       " source_nodes, create_time, properties, queue_id," +
       " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
       " insert_files, delete_files, base_files, pos_delete_files" +
@@ -48,8 +48,8 @@ public interface OptimizeTasksMapper {
       @Result(property = "taskId.traceId", column = "trace_id"),
       @Result(property = "taskId.type", column = "optimize_type"),
       @Result(property = "partition", column = "partition"),
-      @Result(property = "taskGroup", column = "task_group"),
-      @Result(property = "taskHistoryId", column = "task_history_id"),
+      @Result(property = "taskCommitGroup", column = "task_commit_group"),
+      @Result(property = "taskPlanGroup", column = "task_plan_group"),
       @Result(property = "maxChangeTransactionId", column = "max_change_transaction_id"),
       @Result(property = "queueId", column = "queue_id"),
       @Result(property = "insertFileSize", column = "insert_file_size"),
@@ -71,7 +71,7 @@ public interface OptimizeTasksMapper {
 
   @Insert("insert into " + TABLE_NAME + " (" +
       " trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
-      " task_group, task_history_id, max_change_transaction_id," +
+      " task_commit_group, task_plan_group, max_change_transaction_id," +
       " source_nodes, create_time, properties, queue_id," +
       " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
       " insert_files, delete_files, base_files, pos_delete_files," +
@@ -85,8 +85,8 @@ public interface OptimizeTasksMapper {
       " #{optimizeTask.tableIdentifier.database}," +
       " #{optimizeTask.tableIdentifier.tableName}," +
       " #{optimizeTask.partition}," +
-      " #{optimizeTask.taskGroup}," +
-      " #{optimizeTask.taskHistoryId}," +
+      " #{optimizeTask.taskCommitGroup}," +
+      " #{optimizeTask.taskPlanGroup}," +
       " #{optimizeTask.maxChangeTransactionId}," +
       " #{optimizeTask.sourceNodes, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.ListOfTreeNode2StringConverter}," +
