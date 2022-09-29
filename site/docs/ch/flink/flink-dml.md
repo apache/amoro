@@ -56,7 +56,6 @@ SELECT * FROM unkeyed /*+ OPTIONS('snapshot-id'='4411985347497777546')*/;
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|case-sensitive|false|Boolean|否|是否区分大小写|
 |snapshot-id<img width=100/>|(none)|Long|否|读指定 snapshot 的全量数据，只有在 streaming 为 false 或不配置时生效|
 |as-of-timestamp|(none)|Long|否|读小于该时间戳的最近一次 snapshot 的全量数据，只有在 streaming 为 false 或不配置时生效|
 |start-snapshot-id|(none)|Long|否|在 streaming 为 false 时，需配合 end-snapshot-id，读两个区间的增量数据(snapshot1, snapshot2]。<br>在 streaming 为 true 时，读该 snapshot 之后的增量数据，不指定则读当前快照之后（不包含当前）的增量数据|
@@ -131,7 +130,6 @@ Hint Options
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|case-sensitive|false|String|否|是否区分大小写。true：区分，false：不区分|
 |streaming|false|String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval|10s|String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
@@ -166,7 +164,6 @@ Hint Options
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|case-sensitive<img width=100/>|false|String|否|是否区分大小写。true：区分，false：不区分，|
 |arctic.emit.mode|file|String|否|数据写入模式，现阶段支持：file、log，默认为 file，支持同时写入，用逗号分割， 如：`'arctic.emit.mode' = 'file,log'`|
 |log.version|v1|String|否|log 数据格式。当前只有一个版本，可不填|
 |sink.parallelism|(none)|String|否|写入 file/log 并行度，file 提交算子的并行度始终为 1|
