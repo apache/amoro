@@ -113,12 +113,12 @@ public interface OptimizerMapper {
 
   @Select("select optimizer_id, queue_name, queue_id, optimizer_status, core_number, " +
       "memory, parallelism, container, jobmanager_url, optimizer_instance, optimizer_state_info ,update_time " +
-      "from " + TABLE_NAME + " where job_name = #{jobName}")
+      "from " + TABLE_NAME + " where optimizer_name = #{optimizerName}")
   @Results({
-      @Result(property = "jobId", column = "job_id"),
+      @Result(property = "jobId", column = "optimizer_id"),
       @Result(property = "groupName", column = "queue_name"),
       @Result(property = "queueId", column = "queue_id"),
-      @Result(property = "jobStatus", column = "job_status"),
+      @Result(property = "jobStatus", column = "optimizer_status"),
       @Result(property = "coreNumber", column = "core_number"),
       @Result(property = "memory", column = "memory"),
       @Result(property = "parallelism", column = "parallelism"),
@@ -128,7 +128,7 @@ public interface OptimizerMapper {
       @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class),
       @Result(property = "updateTime", column = "update_time")
   })
-  Optimizer selectOptimizerByName(@Param("jobName") String jobName);
+  Optimizer selectOptimizerByName(@Param("optimizerName") String optimizerName);
 
 
   @Update("update " + TABLE_NAME + " set" +
