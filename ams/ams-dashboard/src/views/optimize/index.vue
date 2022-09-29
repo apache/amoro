@@ -13,7 +13,7 @@
         />
       </div>
       <div class="btn-wrap">
-        <span class="g-ml-16 f-shink-0">{{$t('resourceOccupation')}}  <span class="text-color">{{groupInfo.occupationCore}}</span> {{$t('core')}} <span class="text-color">{{groupInfo.occupationMemory}}</span> G </span>
+        <span class="g-ml-16 f-shink-0">{{$t('resourceOccupation')}}  <span class="text-color">{{groupInfo.occupationCore}}</span> {{$t('core')}} <span class="text-color">{{groupInfo.occupationMemory}}</span> {{groupInfo.unit}}</span>
         <a-button type="primary" @click="expansionJob" class="g-ml-8">{{$t('scaleOut')}}</a-button>
       </div>
     </div>
@@ -48,6 +48,7 @@ import { usePagination } from '@/hooks/usePagination'
 import { getOptimizerGroups, getQueueResourceInfo } from '@/services/optimize.service'
 import ScaleOutModal from './components/ScaleOut.vue'
 import List from './components/List.vue'
+import { mbToSize } from '@/utils'
 
 export default defineComponent({
   name: 'Optimize',
@@ -74,7 +75,8 @@ export default defineComponent({
       ] as IMap<string | number>[],
       groupInfo: {
         occupationCore: 0,
-        occupationMemory: 0
+        occupationMemory: 0,
+        unit: ''
       } as IGroupItemInfo,
       activeTab: 'tables' as string,
       showScaleOutModal: false as boolean,
@@ -101,7 +103,13 @@ export default defineComponent({
 
     const getCurGroupInfo = async() => {
       const result = await getQueueResourceInfo(state.curGroupName || '')
-      state.groupInfo = { ...result }
+      const memory = mbToSize(result.occupationMemory || 0)
+      const memoryArr = memory.split(' ')
+      state.groupInfo = {
+        occupationCore: result.occupationCore,
+        occupationMemory: memoryArr[0],
+        unit: memoryArr[1] || ''
+      }
     }
 
     const expansionJob = () => {
