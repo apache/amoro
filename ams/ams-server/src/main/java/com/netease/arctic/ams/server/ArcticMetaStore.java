@@ -120,7 +120,7 @@ public class ArcticMetaStore {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
     }
   }
-  
+
   private static String getArcticHome() {
     String arcticHome = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key());
     if (arcticHome != null) {
@@ -201,7 +201,7 @@ public class ArcticMetaStore {
     residentThreads.forEach(Thread::interrupt);
     ThreadPool.shutdown();
   }
-  
+
   public static boolean isStarted() {
     return server != null && server.isServing();
   }
@@ -600,7 +600,9 @@ public class ArcticMetaStore {
       Container container = new Container();
       container.setName(optimize.getString(ConfigFileProperties.CONTAINER_NAME));
       container.setType(optimize.getString(ConfigFileProperties.CONTAINER_TYPE));
-      container.setProperties(optimize.getObject(ConfigFileProperties.CONTAINER_PROPERTIES, Map.class));
+      if (optimize.containsKey(ConfigFileProperties.CONTAINER_PROPERTIES)) {
+        container.setProperties(optimize.getObject(ConfigFileProperties.CONTAINER_PROPERTIES, Map.class));
+      }
 
       ServiceContainer.getOptimizeQueueService().insertContainer(container);
     }
