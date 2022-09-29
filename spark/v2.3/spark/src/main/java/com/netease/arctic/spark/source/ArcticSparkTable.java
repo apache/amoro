@@ -18,7 +18,8 @@
 
 package com.netease.arctic.spark.source;
 
-import com.netease.arctic.spark.reader.ArcticKeyedSparkReader;
+import com.netease.arctic.spark.reader.ArcticKeyedTableScan;
+import com.netease.arctic.spark.reader.ArcticUnkeyedTableScan;
 import com.netease.arctic.spark.writer.ArcticKeyedSparkOverwriteWriter;
 import com.netease.arctic.spark.writer.ArcticUnkeyedSparkOverwriteWriter;
 import com.netease.arctic.table.ArcticTable;
@@ -26,6 +27,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.catalyst.TableIdentifier;
 import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
@@ -34,21 +36,19 @@ import org.apache.spark.sql.types.StructType;
 import java.util.Optional;
 
 public class ArcticSparkTable implements DataSourceTable {
+  private final TableIdentifier identifier;
   private final ArcticTable arcticTable;
   private final StructType requestedSchema;
   private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
   private SparkSession lazySpark = null;
 
-  public static DataSourceTable ofArcticTable(ArcticTable table) {
-    return new ArcticSparkTable(table, false);
+  public static ArcticSparkTable ofArcticTable(TableIdentifier identifier, ArcticTable table) {
+    return new ArcticSparkTable(table, identifier, null, false);
   }
 
-  public ArcticSparkTable(ArcticTable arcticTable, boolean refreshEagerly) {
-    this(arcticTable, null, refreshEagerly);
-  }
-
-  public ArcticSparkTable(ArcticTable arcticTable, StructType requestedSchema, boolean refreshEagerly) {
+  public ArcticSparkTable(ArcticTable arcticTable, TableIdentifier identifier, StructType requestedSchema,
+                          boolean refreshEagerly) {
     this.arcticTable = arcticTable;
     this.requestedSchema = requestedSchema;
     this.refreshEagerly = refreshEagerly;
@@ -56,6 +56,7 @@ public class ArcticSparkTable implements DataSourceTable {
       // convert the requested schema to throw an exception if any requested fields are unknown
       SparkSchemaUtil.convert(arcticTable.schema(), requestedSchema);
     }
+    this.identifier = identifier;
   }
 
   private SparkSession sparkSession() {
@@ -63,6 +64,14 @@ public class ArcticSparkTable implements DataSourceTable {
       this.lazySpark = SparkSession.builder().getOrCreate();
     }
     return lazySpark;
+  }
+
+  public String name() {
+    return arcticTable.id().toString();
+  }
+
+  public TableIdentifier identifier() {
+    return this.identifier;
   }
 
   @Override
@@ -82,9 +91,9 @@ public class ArcticSparkTable implements DataSourceTable {
   @Override
   public DataSourceReader createReader(DataSourceOptions options) {
     if (arcticTable.isKeyedTable()) {
-      return new ArcticKeyedSparkReader(sparkSession(), arcticTable.asKeyedTable());
+      return new ArcticKeyedTableScan(sparkSession(), arcticTable.asKeyedTable());
     } else {
-      return null;
+      return new ArcticUnkeyedTableScan(sparkSession(), arcticTable.asUnkeyedTable());
     }
   }
 

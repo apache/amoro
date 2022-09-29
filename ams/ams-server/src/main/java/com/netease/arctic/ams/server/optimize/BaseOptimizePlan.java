@@ -66,7 +66,7 @@ public abstract class BaseOptimizePlan {
   protected final int queueId;
   protected final long currentTime;
   protected final Map<String, Boolean> partitionTaskRunning;
-  protected final String historyId;
+  protected final String planGroup;
   // Whether to customize the directory
   protected boolean isCustomizeDir;
 
@@ -104,7 +104,7 @@ public abstract class BaseOptimizePlan {
     this.currentTime = currentTime;
     this.snapshotIsCached = snapshotIsCached;
     this.partitionTaskRunning = partitionTaskRunning;
-    this.historyId = UUID.randomUUID().toString();
+    this.planGroup = UUID.randomUUID().toString();
     this.isCustomizeDir = false;
   }
 
@@ -198,8 +198,8 @@ public abstract class BaseOptimizePlan {
                                                TaskConfig taskConfig) {
     // build task
     BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
-    optimizeTask.setTaskGroup(taskConfig.getGroup());
-    optimizeTask.setTaskHistoryId(taskConfig.getHistoryId());
+    optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
+    optimizeTask.setTaskPlanGroup(taskConfig.getPlanGroup());
     optimizeTask.setCreateTime(taskConfig.getCreateTime());
 
     List<ByteBuffer> baseFileBytesList =

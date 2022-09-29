@@ -53,6 +53,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -76,6 +77,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 /**
  * Hidden log operator tests.
  */
+@Ignore
 public class HiddenLogOperatorsTest extends BaseLogTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static final String topic = "produce-consume-topic";

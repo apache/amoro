@@ -47,7 +47,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
 
 
   @Override
-  public DataSourceTable createTable(
+  public ArcticSparkTable createTable(
       TableIdentifier identifier, StructType schema, List<String> partitions, Map<String, String> properties) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
@@ -69,7 +69,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
           .withProperties(properties)
           .create();
     }
-    return ArcticSparkTable.ofArcticTable(arcticTable);
+    return ArcticSparkTable.ofArcticTable(identifier, arcticTable);
   }
 
   private static PartitionSpec toPartitionSpec(List<String> partitionKeys, Schema icebergSchema) {
@@ -79,13 +79,13 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
   }
 
   @Override
-  public DataSourceTable loadTable(TableIdentifier identifier) {
+  public ArcticSparkTable loadTable(TableIdentifier identifier) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
         catalog.name(), identifier.database().get(), identifier.table());
     ArcticTable arcticTable = catalog.loadTable(tableId);
-    return ArcticSparkTable.ofArcticTable(arcticTable);
+    return ArcticSparkTable.ofArcticTable(identifier, arcticTable);
   }
 
   @Override

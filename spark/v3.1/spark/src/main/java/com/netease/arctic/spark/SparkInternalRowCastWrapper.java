@@ -34,14 +34,27 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private List<DataType> dataTypeList;
 
   public SparkInternalRowCastWrapper(InternalRow row, StructType schema, ChangeAction changeAction, boolean isDelete) {
-    this.row = buildInternalRow(row, schema, changeAction);
     StructType newSchema = new StructType(Arrays.stream(schema.fields())
-        .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+            .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+    this.row = buildInternalRow(row, schema, changeAction);
     this.schema = newSchema;
     this.middle = newSchema.size() / 2;
-    this.changeAction = changeAction;
+    if (isUpsertRow(row, newSchema)) {
+      this.changeAction = ChangeAction.INSERT;
+    } else {
+      this.changeAction = changeAction;
+    }
     this.isDelete = isDelete;
     this.isUpsert = true;
+  }
+
+  private boolean isUpsertRow(InternalRow row, StructType schema) {
+    for (int i = 0; i < schema.size() / 2; i++) {
+      if (!row.isNullAt(i)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -96,7 +109,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     } else {
       int middle = schema.size() / 2;
       List<Object> rows = new ArrayList<>();
-      if (changeAction.equals(ChangeAction.INSERT)) {
+      if (changeAction.equals(ChangeAction.UPDATE_AFTER)) {
         GenericInternalRow genericInternalRow = null;
         for (int i = middle; i < schema.size(); i++) {
           rows.add(row.get(i, dataTypeList.get(i)));
@@ -108,7 +121,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         }
         return genericInternalRow;
       } else {
-        if (row.isNullAt(0)) {
+        if (isUpsertRow(row, schema)) {
           return null;
         } else {
           return row;

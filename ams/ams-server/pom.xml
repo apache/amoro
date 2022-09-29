@@ -560,6 +560,8 @@
                             <outputDirectory>
                                 ${project.build.directory}/arctic-ams-server-dependency/lib
                             </outputDirectory>
+                            <includeScope>compile</includeScope>
+                            <includeScope>runtime</includeScope>
                         </configuration>
                     </execution>
                 </executions>

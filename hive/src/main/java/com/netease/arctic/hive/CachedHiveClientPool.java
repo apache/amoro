@@ -54,7 +54,6 @@ public class CachedHiveClientPool implements HMSClient, Serializable {
   }
 
   private ArcticHiveClientPool clientPool() {
-    tableMetaStore.getHiveSiteLocation().ifPresent(HiveConf::setHiveSiteLocation);
     return clientPoolCache.get(tableMetaStore, k -> new ArcticHiveClientPool(tableMetaStore, clientPoolSize));
   }
 
