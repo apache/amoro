@@ -82,6 +82,7 @@
                                     <include>org.apache.iceberg:iceberg-bundled-guava</include>
 
                                     <include>org.apache.thrift:libthrift</include>
+                                    <include>org.apache.thrift:libfb303</include>
                                     <include>org.apache.avro:avro</include>
                                     <include>org.apache.parquet:parquet-avro</include>
                                     <include>org.apache.commons:commons-pool2</include>
@@ -299,6 +300,23 @@
                                         </include>
                                         <include>org.apache.spark.sql.catalyst.utils.SetAccumulator*</include>
                                     </includes>
+                                </relocation>
+
+                                <relocation>
+                                    <pattern>org.apache.hadoop.hive.metastore.HiveMetaStoreClient</pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shade.org.apache.hadoop.hive.metastore.HiveMetaStoreClient
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore</pattern>
+                                    <shadedPattern>
+                                        com.netease.arctic.shade.org.apache.hadoop.hive.metastore.api.ThriftHiveMetastore
+                                    </shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>com.facebook.fb303</pattern>
+                                    <shadedPattern>com.netease.arctic.shade.com.facebook.fb303</shadedPattern>
                                 </relocation>
 
                             </relocations>
