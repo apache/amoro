@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.service;
 import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
+import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.server.ArcticMetaStore;
@@ -29,6 +30,7 @@ import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -48,14 +50,12 @@ import static org.powermock.api.mockito.PowerMockito.when;
 })
 public class TestOptimizerService {
 
-  private static final int optimizerGroupId = 1;
   private static final String optimizerGroupName = "testGroup";
   private static final String containerName = "testContainer";
 
   @BeforeClass
-  public static void before() throws MetaException {
+  public static void before() throws MetaException, NoSuchObjectException {
     OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
-    optimizeQueueMeta.setQueueId(optimizerGroupId);
     optimizeQueueMeta.setName(optimizerGroupName);
     optimizeQueueMeta.setContainer(containerName);
     Map<String, String> properties = Maps.newHashMap();
@@ -70,7 +70,8 @@ public class TestOptimizerService {
     optimizerRegisterInfo.setCoreNumber(1);
     optimizerRegisterInfo.setMemorySize(1);
     OptimizerDescriptor descriptor = ServiceContainer.getOptimizerService().registerOptimizer(optimizerRegisterInfo);
-    Assert.assertEquals(descriptor.getGroupId(), optimizerGroupId);
+    int groupId = ServiceContainer.getOptimizerService().getOptimizerGroupInfo(optimizerGroupName).getId();
+    Assert.assertEquals(descriptor.getGroupId(), groupId);
     Assert.assertEquals(descriptor.getGroupName(), optimizerGroupName);
     Assert.assertEquals(descriptor.getContainer(), containerName);
     Assert.assertEquals(descriptor.getStatus(), TableTaskStatus.STARTING.name());
