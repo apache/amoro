@@ -36,9 +36,9 @@ export const bytesToSize = (size: number | null): string => {
 export const mbToSize = (size: number): string => {
   if (size === 0) { return '0' }
   const num = 1024 // byte
-  if (size < num) { return size + 'MB' }
-  if (size < Math.pow(num, 2)) { return (size / num).toFixed(2) + 'G' } // G
-  return (size / Math.pow(num, 2)).toFixed(2) + 'T' // T
+  if (size < num) { return size + ' MB' }
+  if (size < Math.pow(num, 2)) { return (size / num) + ' G' } // G
+  return (size / Math.pow(num, 2)) + ' T' // T
 }
 /**
  * Convert ms to d h min s
