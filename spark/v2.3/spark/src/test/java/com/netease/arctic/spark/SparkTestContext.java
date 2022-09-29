@@ -144,9 +144,9 @@ public class SparkTestContext extends ExternalResource {
     catalogName = arctic_hive.getCatalogName();
     ams.handler().createCatalog(arctic_hive);
 
-    configs.put("arctic.catalog." + catalogName, ArcticCatalog.class.getName());
-    configs.put("arctic.catalog.type", "hive");
-    configs.put("arctic.catalog.url" , amsUrl + "/" + catalogName);
+    configs.put("spark.sql.arctic.catalog." + catalogName, ArcticCatalog.class.getName());
+    configs.put("spark.sql.arctic.catalog.type", "hive");
+    configs.put("spark.sql.arctic.catalog.url" , amsUrl + "/" + catalogName);
     return configs;
   }
 

@@ -40,7 +40,7 @@ public class TableOptimizeRuntime {
   private final Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestFullOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
-  private String latestTaskHistoryId;
+  private String latestTaskPlanGroup;
   private volatile boolean isRunning;
 
   public TableOptimizeRuntime() {
@@ -152,12 +152,12 @@ public class TableOptimizeRuntime {
     this.currentChangeSnapshotId = currentChangeSnapshotId;
   }
 
-  public String getLatestTaskHistoryId() {
-    return latestTaskHistoryId;
+  public String getLatestTaskPlanGroup() {
+    return latestTaskPlanGroup;
   }
 
-  public void setLatestTaskHistoryId(String latestTaskHistoryId) {
-    this.latestTaskHistoryId = latestTaskHistoryId;
+  public void setLatestTaskPlanGroup(String latestTaskPlanGroup) {
+    this.latestTaskPlanGroup = latestTaskPlanGroup;
   }
 
   public boolean isRunning() {
@@ -179,7 +179,7 @@ public class TableOptimizeRuntime {
         ", latestMajorOptimizeTime=" + latestMajorOptimizeTime +
         ", latestFullOptimizeTime=" + latestFullOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
-        ", latestTaskHistoryId='" + latestTaskHistoryId + '\'' +
+        ", latestTaskPlanGroup='" + latestTaskPlanGroup + '\'' +
         ", isRunning=" + isRunning +
         '}';
   }

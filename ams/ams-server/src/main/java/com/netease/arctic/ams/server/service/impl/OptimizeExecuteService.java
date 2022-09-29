@@ -117,7 +117,8 @@ public class OptimizeExecuteService {
           ServiceContainer.getOptimizerService().getOptimizers();
       optimizers.forEach(optimizer -> {
         if ((optimizer.getUpdateTime().getTime() - currentTime) > OPTIMIZER_JOB_TIMEOUT) {
-          ServiceContainer.getOptimizerService().updateOptimizerStatus(optimizer.getJobId(), TableTaskStatus.FAILED);
+          ServiceContainer.getOptimizerService()
+              .updateOptimizerStatus(optimizer.getJobId(), TableTaskStatus.FAILED);
         }
       });
     }

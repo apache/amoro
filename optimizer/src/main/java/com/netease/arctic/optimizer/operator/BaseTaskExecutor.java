@@ -223,7 +223,8 @@ public class BaseTaskExecutor implements Serializable {
       message.append(error.getMessage());
       error = error.getCause();
     }
-    return message.toString();
+    String result = message.toString();
+    return result.length() > 4000 ? result.substring(0, 4000) : result;
   }
 
   private NodeTask constructTask(OptimizeTask task, int attemptId) {

@@ -208,7 +208,6 @@ public class TableExpireService implements ITableExpireService {
       });
     }
 
-
     List<PrimaryKeyedFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedTable.changeTable().specs().get((int) dataFileInfo.getSpecId());
 
