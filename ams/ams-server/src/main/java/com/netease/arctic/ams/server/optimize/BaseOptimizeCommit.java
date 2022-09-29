@@ -36,7 +36,6 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.exceptions.ValidationException;
@@ -298,25 +297,23 @@ public class BaseOptimizeCommit {
         throw new IllegalArgumentException("for major optimize, can't add delete files " + addDeleteFiles);
       }
 
-      // overwrite DataFiles
-      OverwriteFiles overwriteFiles = baseArcticTable.newOverwrite();
-      overwriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      deleteDataFiles.forEach(overwriteFiles::deleteFile);
-      addDataFiles.forEach(overwriteFiles::addFile);
+      // rewrite DataFiles
+      RewriteFiles dataFilesRewrite = baseArcticTable.newRewrite();
+      dataFilesRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-        overwriteFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
-        overwriteFiles.validateFromSnapshot(baseSnapshotId);
+        dataFilesRewrite.validateFromSnapshot(baseSnapshotId);
       }
-      overwriteFiles.commit();
+      dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
+      dataFilesRewrite.commit();
 
       // remove DeleteFiles
       if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
-        RewriteFiles rewriteFiles = baseArcticTable.newRewrite()
+        RewriteFiles removeDeleteFiles = baseArcticTable.newRewrite()
             .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
-        rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-        rewriteFiles.rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), addDeleteFiles);
+        removeDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        removeDeleteFiles.rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), addDeleteFiles);
         try {
-          rewriteFiles.commit();
+          removeDeleteFiles.commit();
         } catch (ValidationException e) {
           LOG.warn("Iceberg RewriteFiles commit failed, but ignore", e);
         }
