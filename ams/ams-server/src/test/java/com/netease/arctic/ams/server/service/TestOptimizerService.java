@@ -54,10 +54,6 @@ public class TestOptimizerService {
 
   @BeforeClass
   public static void before() throws MetaException {
-    OptimizeQueueService optimizeQueueService = new OptimizeQueueService();
-    when(ServiceContainer.getOptimizeQueueService()).thenReturn(optimizeQueueService);
-    OptimizerService optimizerService = new OptimizerService();
-    when(ServiceContainer.getOptimizerService()).thenReturn(optimizerService);
     OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
     optimizeQueueMeta.setQueueId(optimizerGroupId);
     optimizeQueueMeta.setName(optimizerGroupName);
