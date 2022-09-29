@@ -311,7 +311,8 @@ public class BaseOptimizeCommit {
         RewriteFiles removeDeleteFiles = baseArcticTable.newRewrite()
             .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
         removeDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-        removeDeleteFiles.rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), addDeleteFiles);
+        removeDeleteFiles
+            .rewriteFiles(Collections.emptySet(), deleteDeleteFiles, Collections.emptySet(), addDeleteFiles);
         try {
           removeDeleteFiles.commit();
         } catch (ValidationException e) {
