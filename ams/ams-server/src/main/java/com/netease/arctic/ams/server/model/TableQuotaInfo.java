@@ -60,7 +60,7 @@ public class TableQuotaInfo implements Comparable<TableQuotaInfo> {
 
   @Override
   public int compareTo(@NotNull TableQuotaInfo o) {
-    if (!quota.equals(o.getQuota())) {
+    if (quota.compareTo(o.getQuota()) != 0) {
       return quota.compareTo(o.getQuota());
     }
 

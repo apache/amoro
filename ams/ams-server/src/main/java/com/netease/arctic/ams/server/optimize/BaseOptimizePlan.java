@@ -301,7 +301,7 @@ public abstract class BaseOptimizePlan {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
       this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
     } else {
-      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
+      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
     }
 
     return tableChanged();
