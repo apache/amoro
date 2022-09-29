@@ -20,7 +20,6 @@ package com.netease.arctic.hive.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
@@ -35,6 +34,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -42,10 +42,12 @@ import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.IcebergSchemaUtil;
 import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.mapping.MappingUtil;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -98,6 +100,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     }
   }
 
+  /**
+   * HMS is case-insensitive for table name and database
+   */
+  @Override
+  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
+    return super.getArcticTableMeta(identifier.toLowCaseIdentifier());
+  }
+
   @Override
   public void dropDatabase(String databaseName) {
     try {
@@ -130,14 +140,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   }
 
   public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
-    TableMeta meta;
-    try {
-      meta = client.getTable(tableIdentifier.buildTableIdentifier());
-    } catch (NoSuchObjectException e) {
-      throw new NoSuchTableException(e, "load table failed %s.", tableIdentifier);
-    } catch (TException e) {
-      throw new IllegalStateException(String.format("failed load table %s.", tableIdentifier), e);
-    }
+    TableMeta meta = getArcticTableMeta(tableIdentifier);
     super.doDropTable(meta, false);
   }
 
@@ -183,21 +186,48 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     return hiveClientPool;
   }
 
+
   class ArcticHiveTableBuilder extends BaseArcticTableBuilder {
 
     public ArcticHiveTableBuilder(TableIdentifier identifier, Schema schema) {
-      super(identifier, schema);
+      super(identifier.toLowCaseIdentifier(), HiveSchemaUtil.changeFieldNameToLowercase(schema));
     }
 
     boolean allowExistedHiveTable = false;
 
     @Override
+    public TableBuilder withPartitionSpec(PartitionSpec partitionSpec) {
+      return super.withPartitionSpec(IcebergSchemaUtil.copyPartitionSpec(partitionSpec, schema));
+    }
+
+    @Override
+    public TableBuilder withSortOrder(SortOrder sortOrder) {
+      return super.withSortOrder(IcebergSchemaUtil.copySortOrderSpec(sortOrder, schema));
+    }
+
+    @Override
+    public TableBuilder withPrimaryKeySpec(PrimaryKeySpec primaryKeySpec) {
+      PrimaryKeySpec.Builder builder = PrimaryKeySpec.builderFor(schema);
+      primaryKeySpec.fields().forEach(primaryKeyField -> builder.addColumn(primaryKeyField.fieldName().toLowerCase(
+          Locale.ROOT)));
+      return super.withPrimaryKeySpec(builder.build());
+    }
+
+    @Override
     public TableBuilder withProperty(String key, String value) {
       if (key.equals(HiveTableProperties.ALLOW_HIVE_TABLE_EXISTED) && value.equals("true")) {
         allowExistedHiveTable = true;
+      } else if (key.equals(TableProperties.TABLE_EVENT_TIME_FIELD)) {
+        super.withProperty(key, value.toLowerCase(Locale.ROOT));
       } else {
-        this.properties.put(key, value);
+        super.withProperty(key, value);
       }
+      return this;
+    }
+
+    @Override
+    public TableBuilder withProperties(Map<String, String> properties) {
+      properties.forEach(this::withProperty);
       return this;
     }
 
@@ -362,7 +392,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       org.apache.hadoop.hive.metastore.api.Table newTable = new org.apache.hadoop.hive.metastore.api.Table(
           meta.getTableIdentifier().getTableName(),
           meta.getTableIdentifier().getDatabase(),
-          System.getProperty("user.name"),
+          meta.getProperties().getOrDefault(TableProperties.OWNER, System.getProperty("user.name")),
           (int) currentTimeMillis / 1000,
           (int) currentTimeMillis / 1000,
           Integer.MAX_VALUE,

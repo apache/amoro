@@ -26,6 +26,7 @@ import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
+import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
@@ -116,7 +117,7 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setErrorMessage(null);
       persistTaskRuntime(newRuntime, false);
       optimizeRuntime = newRuntime;
-      return constructTableTaskHistory(currentTime);
+      return constructNewTableTaskHistory(currentTime);
     } catch (Throwable t) {
       onFailed(new ErrorMessage(System.currentTimeMillis(),
           "internal error, failed to set task status to Executing, set to Failed"), 0);
@@ -155,6 +156,8 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setCostTime(costTime);
       persistTaskRuntime(newRuntime, false);
       optimizeRuntime = newRuntime;
+
+      updateTableTaskHistory();
     } finally {
       lock.unlock();
     }
@@ -179,6 +182,8 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setCostTime(costTime);
       persistTaskRuntime(newRuntime, true);
       optimizeRuntime = newRuntime;
+
+      updateTableTaskHistory();
     } finally {
       lock.unlock();
     }
@@ -313,15 +318,41 @@ public class OptimizeTaskItem extends IJDBCService {
     }
   }
 
-  private TableTaskHistory constructTableTaskHistory(long currentTime) {
+  private TableTaskHistory constructNewTableTaskHistory(long currentTime) {
     TableTaskHistory tableTaskHistory = new TableTaskHistory();
     tableTaskHistory.setTableIdentifier(new TableIdentifier(optimizeTask.getTableIdentifier()));
-    tableTaskHistory.setTaskGroupId(optimizeTask.getTaskGroup());
-    tableTaskHistory.setTaskHistoryId(optimizeTask.getTaskHistoryId());
+    tableTaskHistory.setTaskPlanGroup(optimizeTask.getTaskPlanGroup());
+    tableTaskHistory.setTaskTraceId(optimizeTask.getTaskId().getTraceId());
+    tableTaskHistory.setRetry(optimizeRuntime.getRetry());
     tableTaskHistory.setStartTime(currentTime);
     tableTaskHistory.setQueueId(optimizeTask.getQueueId());
 
     return tableTaskHistory;
+  }
+
+  private void updateTableTaskHistory() {
+    TableTaskHistory tableTaskHistory = new TableTaskHistory();
+    tableTaskHistory.setTableIdentifier(new TableIdentifier(optimizeTask.getTableIdentifier()));
+    tableTaskHistory.setTaskPlanGroup(optimizeTask.getTaskPlanGroup());
+    tableTaskHistory.setTaskTraceId(optimizeTask.getTaskId().getTraceId());
+    tableTaskHistory.setRetry(optimizeRuntime.getRetry());
+    tableTaskHistory.setQueueId(optimizeTask.getQueueId());
+
+    tableTaskHistory.setStartTime(optimizeRuntime.getExecuteTime());
+    tableTaskHistory.setEndTime(optimizeRuntime.getReportTime());
+    tableTaskHistory.setCostTime(optimizeRuntime.getCostTime());
+
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TaskHistoryMapper taskHistoryMapper = getMapper(sqlSession, TaskHistoryMapper.class);
+      try {
+        taskHistoryMapper.updateTaskHistory(tableTaskHistory);
+      } catch (Exception e) {
+        LOG.error("failed to update task history, tableId is {}, traceId is {}, retry times is {}",
+            optimizeTask.getTableIdentifier(),
+            optimizeTask.getTaskId().getTraceId(),
+            optimizeRuntime.getRetry());
+      }
+    }
   }
 
   public void persistOptimizeTask() {

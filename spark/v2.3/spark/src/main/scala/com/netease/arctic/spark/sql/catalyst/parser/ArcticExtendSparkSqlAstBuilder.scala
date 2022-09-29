@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,37 +16,37 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.catalyst.parser
+package com.netease.arctic.spark.sql.catalyst.parser
 
 import com.netease.arctic.spark.sql.parser.ArcticSparkSqlParser._
 import com.netease.arctic.spark.sql.parser.{ArcticSparkSqlBaseVisitor, ArcticSparkSqlParser}
+import com.netease.arctic.spark.sql.util.ImplicitHelper._
 import org.antlr.v4.runtime.tree.{ParseTree, RuleNode, TerminalNode}
 import org.antlr.v4.runtime.{ParserRuleContext, Token}
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{AnalysisException, SaveMode}
 import org.apache.spark.sql.catalyst.analysis.{MultiAlias, UnresolvedAlias, UnresolvedAttribute, UnresolvedExtractValue, UnresolvedFunction, UnresolvedGenerator, UnresolvedInlineTable, UnresolvedRegex, UnresolvedRelation, UnresolvedStar, UnresolvedSubqueryColumnAliases, UnresolvedTableValuedFunction}
-import org.apache.spark.sql.catalyst.catalog.{BucketSpec, CatalogStorageFormat, CatalogTable, CatalogTableType, CatalogUtils}
+import org.apache.spark.sql.catalyst.catalog._
 import org.apache.spark.sql.catalyst.expressions.aggregate.{First, Last}
 import org.apache.spark.sql.catalyst.expressions.{Add, Alias, And, Ascending, AttributeReference, BitwiseAnd, BitwiseNot, BitwiseOr, BitwiseXor, CaseWhen, Cast, Concat, CreateNamedStruct, CreateStruct, Cube, CurrentRow, Descending, Divide, EqualNullSafe, EqualTo, Exists, Expression, GreaterThan, GreaterThanOrEqual, In, IsNotNull, IsNull, LessThan, LessThanOrEqual, Like, ListQuery, Literal, Multiply, NamedExpression, Not, NullsFirst, NullsLast, Or, Predicate, RLike, RangeFrame, Remainder, Rollup, RowFrame, ScalarSubquery, SortOrder, SpecifiedWindowFrame, StringLocate, Subtract, UnaryMinus, UnboundedFollowing, UnboundedPreceding, UnresolvedWindowExpression, UnspecifiedFrame, WindowExpression, WindowSpec, WindowSpecDefinition, WindowSpecReference}
+import org.apache.spark.sql.catalyst.parser.ParseException
+import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, TableIdentifier}
 import org.apache.spark.sql.execution.datasources.{CreateTable, CreateTempViewUsing, DataSource}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{AnalysisException, SaveMode}
 import org.apache.spark.unsafe.types.CalendarInterval
-import org.apache.spark.util.random.RandomSampler
 
 import java.sql.{Date, Timestamp}
 import java.util.Locale
 import javax.xml.bind.DatatypeConverter
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-import org.apache.spark.sql.types.StructType
 
 class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
   extends ArcticSparkSqlBaseVisitor[AnyRef] with Logging{
-  import ParserUtils._
   
   def setPrimaryKeyNotNull(columns: Seq[StructField], primary: Seq[String]): Seq[StructField] = {
     columns.map(c =>
@@ -115,13 +115,19 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
         if (colOnlyPk.primaryKey() != null) {
           primary = visitPrimaryKey(colOnlyPk.primaryKey())
         }
+      case _ => // do nothing
     }
-    // set primary col not null
-    val fields = setPrimaryKeyNotNull(schema.get.toSeq, primary)
     val options = Option(ctx.options).map(visitPropertyKeyValues).getOrElse(Map.empty)
     val provider = ctx.tableProvider.qualifiedName.getText
 
-    // visit partitions and support arctic partition grammer
+    // set primary col not null
+    val fields = if(schema.isDefined) {
+      setPrimaryKeyNotNull(schema.get.toSeq, primary)
+    } else {
+      Seq.empty[StructField]
+    }
+
+    // visit partitions and support arctic partition grammar
     if (ctx.partitionColumnNames == null) {
       finalSchema = Option(StructType.apply(fields))
     } else if (isHiveGrammar(ctx.partitionColumnNames) ) {
@@ -973,7 +979,7 @@ class ArcticExtendSparkSqlAstBuilder(conf: SQLConf)
       // The range of fraction accepted by Sample is [0, 1]. Because Hive's block sampling
       // function takes X PERCENT as the input and the range of X is [0, 100], we need to
       // adjust the fraction.
-      val eps = RandomSampler.roundingEpsilon
+      val eps = 1e-6
       validate(fraction >= 0.0 - eps && fraction <= 1.0 + eps,
         s"Sampling fraction ($fraction) must be on interval [0, 1]",
         ctx)

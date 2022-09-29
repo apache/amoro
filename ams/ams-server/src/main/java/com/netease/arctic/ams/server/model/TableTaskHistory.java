@@ -22,8 +22,9 @@ import com.netease.arctic.table.TableIdentifier;
 
 public class TableTaskHistory {
   private TableIdentifier tableIdentifier;
-  private String taskGroupId;
-  private String taskHistoryId;
+  private String taskPlanGroup;
+  private String taskTraceId;
+  private int retry = 0;
   private long startTime;
   private long endTime;
   private long costTime;
@@ -37,20 +38,28 @@ public class TableTaskHistory {
     this.tableIdentifier = tableIdentifier;
   }
 
-  public String getTaskGroupId() {
-    return taskGroupId;
+  public String getTaskPlanGroup() {
+    return taskPlanGroup;
   }
 
-  public void setTaskGroupId(String taskGroupId) {
-    this.taskGroupId = taskGroupId;
+  public void setTaskPlanGroup(String taskPlanGroup) {
+    this.taskPlanGroup = taskPlanGroup;
   }
 
-  public String getTaskHistoryId() {
-    return taskHistoryId;
+  public int getRetry() {
+    return retry;
   }
 
-  public void setTaskHistoryId(String taskHistoryId) {
-    this.taskHistoryId = taskHistoryId;
+  public void setRetry(int retry) {
+    this.retry = retry;
+  }
+
+  public String getTaskTraceId() {
+    return taskTraceId;
+  }
+
+  public void setTaskTraceId(String taskTraceId) {
+    this.taskTraceId = taskTraceId;
   }
 
   public long getStartTime() {
@@ -89,12 +98,13 @@ public class TableTaskHistory {
   public String toString() {
     return "TableTaskHistory{" +
         "tableIdentifier=" + tableIdentifier +
-        ", taskGroupId='" + taskGroupId + '\'' +
-        ", taskHistoryId='" + taskHistoryId + '\'' +
+        ", taskPlanGroup='" + taskPlanGroup + '\'' +
         ", startTime=" + startTime +
         ", endTime=" + endTime +
         ", costTime=" + costTime +
         ", queueId=" + queueId +
+        ", taskTraceId=" + taskTraceId +
+        ", retry=" + retry +
         '}';
   }
 }
