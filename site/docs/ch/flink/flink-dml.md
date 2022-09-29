@@ -87,7 +87,7 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |--- |--- |--- |--- |--- |
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |properties.group.id|(none)|String|查询时可选，写入时可不填|读取 Kafka Topic 时使用的 group id|
-|scan.startup.mode<img width=90/>|(none)|Long|否|Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest-offset、latest-offset、group-offsets、timestamp、specific-offsets， 具体取值的含义可以参考[Flink官方手册](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/table/connectors/kafka.html#start-reading-position)|
+|scan.startup.mode<img width=90/>|(none)|String|否|Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest-offset、latest-offset、group-offsets、timestamp、specific-offsets， 具体取值的含义可以参考[Flink官方手册](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/table/connectors/kafka.html#start-reading-position)|
 |scan.startup.specific-offsets|(none)|String|否|scan.startup.mode 取值为 specific-offsets 时，为每个分区设置的起始 offset, 参考格式：partition:0,offset:42;partition:1,offset:300|
 |scan.startup.timestamp-millis|(none)|Long|否|scan.startup.mode 取值为 timestamp 时，初次启动时获取数据的起始时间戳（毫秒级）|
 |properties.*|(none)|String|否|Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs)|
