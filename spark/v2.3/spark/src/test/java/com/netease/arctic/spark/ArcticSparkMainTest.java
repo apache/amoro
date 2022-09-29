@@ -17,6 +17,7 @@ import java.util.Map;
     TestCreateTableAsSelectDDL.class,
     TestKeyedHiveTableInsertOverwriteDynamic.class,
     TestKeyedHiveTableMergeOnRead.class,
+    TestOptimizeWrite.class,
     TestUnkeyedHiveTableInsertOverwriteDynamic.class,
     TestUnkeyedHiveTableMergeOnRead.class
 })
