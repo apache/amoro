@@ -59,7 +59,8 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
     return metaStore.doAs(() -> {
           try {
             try {
-              return new HMSClientImpl(hiveConf);
+              HiveMetaStoreClient client = CLIENT_CTOR.newInstance(hiveConf);
+              return new HMSClientImpl(client);
             } catch (RuntimeException e) {
               // any MetaException would be wrapped into RuntimeException during reflection, so let's double-check type
               // here

@@ -63,7 +63,7 @@ public class HiveTableUtil {
   public static void persistTable(HMSClientPool hiveClient, org.apache.hadoop.hive.metastore.api.Table tbl) {
     try {
       hiveClient.run(client -> {
-        client.alter_table(tbl.getDbName(), tbl.getTableName(), tbl);
+        client.alterTable(tbl.getDbName(), tbl.getTableName(), tbl);
         return null;
       });
     } catch (TException | InterruptedException e) {
@@ -174,7 +174,7 @@ public class HiveTableUtil {
       hiveClient.run(client -> {
         Table newTable = loadHmsTable(hiveClient, tableIdentifier);
         newTable.getSd().setLocation(newPath);
-        client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
+        client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
         return null;
       });
     } catch (Exception e) {

@@ -22,7 +22,6 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
@@ -216,7 +215,7 @@ public class HivePartitionUtil {
       newPartition.getSd().setLocation(newPath);
       hiveClient.run((ClientPool.Action<Void, HMSClient, TException>) client -> {
         try {
-          client.alter_partition(tableIdentifier.getDatabase(),
+          client.alterPartition(tableIdentifier.getDatabase(),
               tableIdentifier.getTableName(),
               newPartition, null);
         } catch (ClassNotFoundException | NoSuchMethodException |
@@ -249,7 +248,7 @@ public class HivePartitionUtil {
           Table hiveTable = client.getTable(db, tableName);
           partition = newPartition(hiveTable, partitionValues, partitionLocation,
               dataFiles, accessTimestamp);
-          client.add_partition(partition);
+          client.addPartition(partition);
           return partition;
         }
       });

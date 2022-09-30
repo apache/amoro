@@ -230,7 +230,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
           tbl.getSd().setLocation(newDataLocation);
           HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
               .forEach((key, value) -> hiveTable.getParameters().put(key, value));
-          c.alter_table(db, tableName, tbl);
+          c.alterTable(db, tableName, tbl);
           return 0;
         });
       } catch (TException | InterruptedException e) {
@@ -244,7 +244,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       transactionalHMSClient.run(c -> {
         if (!rewritePartitions.isEmpty()) {
           try {
-            c.alter_partitions(db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
+            c.alterPartitions(db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
           } catch (InstantiationException | NoSuchMethodException |
                    InvocationTargetException | IllegalAccessException |
                    ClassNotFoundException e) {
@@ -252,7 +252,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
           }
         }
         if (!newPartitions.isEmpty()) {
-          c.add_partitions(Lists.newArrayList(newPartitions.values()));
+          c.addPartitions(Lists.newArrayList(newPartitions.values()));
         }
         return 0;
       });

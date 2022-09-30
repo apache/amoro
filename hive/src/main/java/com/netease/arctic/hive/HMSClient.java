@@ -43,7 +43,7 @@ public interface HMSClient {
 
   List<String> getAllDatabases() throws TException;
 
-  void alter_partition(String dbName, String tblName, Partition newPart, EnvironmentContext environmentContext)
+  void alterPartition(String dbName, String tblName, Partition newPart, EnvironmentContext environmentContext)
       throws InvalidOperationException, MetaException, TException, ClassNotFoundException,
       NoSuchMethodException, InvocationTargetException, IllegalAccessException;
 
@@ -56,8 +56,8 @@ public interface HMSClient {
   Table getTable(String dbName, String tableName) throws MetaException,
       TException, NoSuchObjectException;
 
-  void alter_table(String defaultDatabaseName, String tblName,
-                   Table table) throws InvalidOperationException, MetaException, TException;
+  void alterTable(String defaultDatabaseName, String tblName,
+                  Table table) throws InvalidOperationException, MetaException, TException;
 
   List<Partition> listPartitions(String dbName, String tblName,
                                  short maxParts) throws NoSuchObjectException, MetaException, TException;
@@ -86,19 +86,19 @@ public interface HMSClient {
   Database getDatabase(String databaseName)
       throws NoSuchObjectException, MetaException, TException;
 
-  Partition add_partition(Partition partition)
+  Partition addPartition(Partition partition)
       throws InvalidObjectException, AlreadyExistsException, MetaException, TException;
 
   boolean dropPartition(String dbName, String tblName, List<String> partVals,
                         PartitionDropOptions options) throws TException;
 
-  int add_partitions(List<Partition> partitions)
+  int addPartitions(List<Partition> partitions)
       throws InvalidObjectException, AlreadyExistsException, MetaException, TException;
 
 
   List<String> getAllTables(String dbName) throws MetaException, TException, UnknownDBException;
 
-  void alter_partitions(String dbName, String tblName, List<Partition> newParts, EnvironmentContext environmentContext)
+  void alterPartitions(String dbName, String tblName, List<Partition> newParts, EnvironmentContext environmentContext)
       throws TException, InstantiationException, IllegalAccessException, NoSuchMethodException,
       InvocationTargetException, ClassNotFoundException;
 

@@ -26,9 +26,9 @@ import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.common.DynMethods;
 import org.apache.thrift.TException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 public class HMSClientImpl implements HMSClient {
@@ -88,7 +88,7 @@ public class HMSClientImpl implements HMSClient {
   }
 
   @Override
-  public void alter_table(String defaultDatabaseName, String tblName, Table table) throws TException {
+  public void alterTable(String defaultDatabaseName, String tblName, Table table) throws TException {
     getClient().alter_table(defaultDatabaseName, tblName, table);
   }
 
@@ -136,7 +136,7 @@ public class HMSClientImpl implements HMSClient {
   }
 
   @Override
-  public Partition add_partition(Partition partition) throws TException {
+  public Partition addPartition(Partition partition) throws TException {
     return getClient().add_partition(partition);
   }
 
@@ -147,7 +147,7 @@ public class HMSClientImpl implements HMSClient {
   }
 
   @Override
-  public int add_partitions(List<Partition> partitions) throws TException {
+  public int addPartitions(List<Partition> partitions) throws TException {
     return getClient().add_partitions(partitions);
   }
 
@@ -158,37 +158,22 @@ public class HMSClientImpl implements HMSClient {
   }
 
   @Override
-  public void alter_partitions(String dbName, String tblName,
-                               List<Partition> newParts, EnvironmentContext environmentContext)
-      throws IllegalAccessException, NoSuchMethodException, InvocationTargetException, ClassNotFoundException {
-    String hiveVersion = HiveMetaStoreClient.class.getClassLoader()
-        .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
-        .getPackage().getImplementationVersion();
-    Class<HiveMetaStoreClient> hmsClass = HiveMetaStoreClient.class;
-    if (hiveVersion.equals("1.2.1.spark2")) {
-      hmsClass.getMethod("alter_partitions", String.class, String.class, List.class)
-          .invoke(getClient(), dbName, tblName, newParts);
-    } else if (hiveVersion.equals("2.1.1")) {
-      hmsClass.getMethod("alter_partitions", String.class, String.class, List.class, EnvironmentContext.class)
-          .invoke(getClient(), dbName, tblName, newParts, environmentContext);
-    }
-
+  public void alterPartitions(String dbName, String tblName,
+                              List<Partition> newParts, EnvironmentContext environmentContext) {
+    DynMethods.UnboundMethod alterPartitions = DynMethods.builder("alter_partitions")
+        .impl(HiveMetaStoreClient.class, String.class, String.class, List.class, EnvironmentContext.class)
+        .impl(HiveMetaStoreClient.class, String.class, String.class, List.class)
+        .build();
+    alterPartitions.invoke(getClient(), dbName, tblName, newParts, environmentContext);
   }
 
   @Override
-  public void alter_partition(String dbName, String tblName,
-                              Partition newPart, EnvironmentContext environmentContext)
-      throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    String hiveVersion = HiveMetaStoreClient.class.getClassLoader()
-        .loadClass("org.apache.hadoop.hive.metastore.HiveMetaStoreClient")
-        .getPackage().getImplementationVersion();
-    Class<HiveMetaStoreClient> hmsClass = HiveMetaStoreClient.class;
-    if (hiveVersion.equals("1.2.1.spark2")) {
-      hmsClass.getMethod("alter_partition", String.class, String.class, Partition.class)
-          .invoke(getClient(), dbName, tblName, newPart);
-    } else if (hiveVersion.equals("2.1.1")) {
-      hmsClass.getMethod("alter_partition", String.class, String.class, Partition.class, EnvironmentContext.class)
-          .invoke(getClient(), dbName, tblName, newPart, environmentContext);
-    }
+  public void alterPartition(String dbName, String tblName,
+                             Partition newPart, EnvironmentContext environmentContext) {
+    DynMethods.UnboundMethod alterPartition = DynMethods.builder("alter_partition")
+        .impl(HiveMetaStoreClient.class, String.class, String.class, Partition.class, EnvironmentContext.class)
+        .impl(HiveMetaStoreClient.class, String.class, String.class, Partition.class)
+        .build();
+    alterPartition.invoke(getClient(), dbName, tblName, newPart, environmentContext);
   }
 }

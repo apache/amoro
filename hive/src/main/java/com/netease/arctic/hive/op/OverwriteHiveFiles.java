@@ -444,7 +444,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
 
     if (!partitionToCreate.isEmpty()) {
       try {
-        transactionClient.run(c -> c.add_partitions(Lists.newArrayList(partitionToCreate.values())));
+        transactionClient.run(c -> c.addPartitions(Lists.newArrayList(partitionToCreate.values())));
       } catch (TException | InterruptedException e) {
         throw new RuntimeException(e);
       }
@@ -454,7 +454,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
       try {
         transactionClient.run(c ->  {
           try {
-            c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
+            c.alterPartitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
           } catch (InvocationTargetException | InstantiationException |
                    IllegalAccessException | NoSuchMethodException |
                    ClassNotFoundException e) {
@@ -485,7 +485,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
         hiveTable.getSd().setLocation(finalLocation);
         HiveTableUtil.generateTableProperties(commitTimestamp, addFiles)
             .forEach((key, value) -> hiveTable.getParameters().put(key, value));
-        c.alter_table(db, tableName, hiveTable);
+        c.alterTable(db, tableName, hiveTable);
         return 0;
       });
     } catch (TException | InterruptedException e) {
