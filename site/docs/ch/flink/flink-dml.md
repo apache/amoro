@@ -56,7 +56,6 @@ SELECT * FROM unkeyed /*+ OPTIONS('snapshot-id'='4411985347497777546')*/;
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|case-sensitive|false|Boolean|否|是否区分大小写|
 |snapshot-id<img width=100/>|(none)|Long|否|读指定 snapshot 的全量数据，只有在 streaming 为 false 或不配置时生效|
 |as-of-timestamp|(none)|Long|否|读小于该时间戳的最近一次 snapshot 的全量数据，只有在 streaming 为 false 或不配置时生效|
 |start-snapshot-id|(none)|Long|否|在 streaming 为 false 时，需配合 end-snapshot-id，读两个区间的增量数据(snapshot1, snapshot2]。<br>在 streaming 为 true 时，读该 snapshot 之后的增量数据，不指定则读当前快照之后（不包含当前）的增量数据|
@@ -88,7 +87,7 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |--- |--- |--- |--- |--- |
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |properties.group.id|(none)|String|查询时可选，写入时可不填|读取 Kafka Topic 时使用的 group id|
-|scan.startup.mode<img width=90/>|(none)|Long|否|Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest-offset、latest-offset、group-offsets、timestamp、specific-offsets， 具体取值的含义可以参考[Flink官方手册](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/table/connectors/kafka.html#start-reading-position)|
+|scan.startup.mode<img width=90/>|(none)|String|否|Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest-offset、latest-offset、group-offsets、timestamp、specific-offsets， 具体取值的含义可以参考[Flink官方手册](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/table/connectors/kafka.html#start-reading-position)|
 |scan.startup.specific-offsets|(none)|String|否|scan.startup.mode 取值为 specific-offsets 时，为每个分区设置的起始 offset, 参考格式：partition:0,offset:42;partition:1,offset:300|
 |scan.startup.timestamp-millis|(none)|Long|否|scan.startup.mode 取值为 timestamp 时，初次启动时获取数据的起始时间戳（毫秒级）|
 |properties.*|(none)|String|否|Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs)|
@@ -131,7 +130,6 @@ Hint Options
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|case-sensitive|false|String|否|是否区分大小写。true：区分，false：不区分|
 |streaming|false|String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval|10s|String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
@@ -166,7 +164,6 @@ Hint Options
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|case-sensitive<img width=100/>|false|String|否|是否区分大小写。true：区分，false：不区分，|
 |arctic.emit.mode|file|String|否|数据写入模式，现阶段支持：file、log，默认为 file，支持同时写入，用逗号分割， 如：`'arctic.emit.mode' = 'file,log'`|
 |log.version|v1|String|否|log 数据格式。当前只有一个版本，可不填|
 |sink.parallelism|(none)|String|否|写入 file/log 并行度，file 提交算子的并行度始终为 1|
