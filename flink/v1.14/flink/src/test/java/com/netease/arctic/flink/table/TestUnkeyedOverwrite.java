@@ -126,7 +126,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     sql("insert overwrite arcticCatalog." + db + "." + TABLE + " select * from input");
 
     Assert.assertEquals(
-        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE));
+        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */"));
   }
 
   @Test
@@ -167,7 +169,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
         " PARTITION (dt='2022-05-18') select id, name from input where dt = '2022-05-19'");
 
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE +
+        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */" +
             " where dt='2022-05-18'"));
   }
 
