@@ -22,7 +22,6 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
