@@ -19,6 +19,7 @@
 package com.netease.arctic.hive.utils;
 
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -99,7 +101,7 @@ public class HivePartitionUtil {
     return p;
   }
 
-  public static Partition getPartition(HMSClient hmsClient,
+  public static Partition getPartition(HMSClientPool hmsClient,
                                        ArcticTable arcticTable,
                                        List<String> partitionValues) {
     String db = arcticTable.id().getDatabase();
@@ -131,7 +133,7 @@ public class HivePartitionUtil {
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition objects
    */
-  public List<Partition> getHiveAllPartitions(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+  public List<Partition> getHiveAllPartitions(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client ->
           client.listPartitions(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), Short.MAX_VALUE));
@@ -152,7 +154,7 @@ public class HivePartitionUtil {
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition names
    */
-  public static List<String> getHivePartitionNames(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+  public static List<String> getHivePartitionNames(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client -> client.listPartitionNames(tableIdentifier.getDatabase(),
           tableIdentifier.getTableName(),
@@ -174,7 +176,7 @@ public class HivePartitionUtil {
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition locations
    */
-  public static List<String> getHivePartitionLocations(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+  public static List<String> getHivePartitionLocations(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client -> client.listPartitions(tableIdentifier.getDatabase(),
           tableIdentifier.getTableName(),
@@ -200,7 +202,7 @@ public class HivePartitionUtil {
    * @param partition A Hive partition name
    * @param newPath Target partition location
    */
-  public static void alterPartition(HMSClient hiveClient, TableIdentifier tableIdentifier,
+  public static void alterPartition(HMSClientPool hiveClient, TableIdentifier tableIdentifier,
                                     String partition, String newPath) throws IOException {
     try {
       LOG.info("alter table {} hive partition {} to new location {}",
@@ -212,10 +214,15 @@ public class HivePartitionUtil {
               partition));
       Partition newPartition = new Partition(oldPartition);
       newPartition.getSd().setLocation(newPath);
-      hiveClient.run((ClientPool.Action<Void, HiveMetaStoreClient, TException>) client -> {
-        client.alter_partition(tableIdentifier.getDatabase(),
-            tableIdentifier.getTableName(),
-            newPartition, null);
+      hiveClient.run((ClientPool.Action<Void, HMSClient, TException>) client -> {
+        try {
+          client.alter_partition(tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName(),
+              newPartition, null);
+        } catch (ClassNotFoundException | NoSuchMethodException |
+                 InvocationTargetException | IllegalAccessException e) {
+          throw new RuntimeException(e);
+        }
         return null;
       });
     } catch (Exception e) {
@@ -223,7 +230,7 @@ public class HivePartitionUtil {
     }
   }
   
-  public static void createPartitionIfAbsent(HMSClient hmsClient,
+  public static void createPartitionIfAbsent(HMSClientPool hmsClient,
                                              ArcticTable arcticTable,
                                              List<String> partitionValues,
                                              String partitionLocation,
@@ -251,7 +258,7 @@ public class HivePartitionUtil {
     }
   }
 
-  public static void dropPartition(HMSClient hmsClient,
+  public static void dropPartition(HMSClientPool hmsClient,
                                    ArcticTable arcticTable,
                                    Partition hivePartition) {
     try {
@@ -269,7 +276,7 @@ public class HivePartitionUtil {
     }
   }
 
-  public static void updatePartitionLocation(HMSClient hmsClient,
+  public static void updatePartitionLocation(HMSClientPool hmsClient,
                                              ArcticTable arcticTable,
                                              Partition hivePartition,
                                              String newLocation,

@@ -16,24 +16,11 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.hive.table;
+package com.netease.arctic.hive;
 
-import com.netease.arctic.hive.HMSClientPool;
+import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
+import org.apache.iceberg.ClientPool;
+import org.apache.thrift.TException;
 
-/**
- * Mix-in interface to mark task use hive as base store
- */
-public interface SupportHive {
-
-  /**
-   * Base path to store hive data files
-   * @return path to store hive file
-   */
-  String hiveLocation();
-
-  /**
-   * the client to operate hive table
-   * @return hive metastore client
-   */
-  HMSClientPool getHMSClient();
+public interface HMSClientPool extends ClientPool<HMSClient, TException> {
 }

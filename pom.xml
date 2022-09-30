@@ -301,7 +301,6 @@
                         <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                     </sourceDirectories>
                     <excludes>**\/gen-antlr\/</excludes>
-                    <excludes>org/apache/hadoop/hive/metastore/HiveMetaStoreClient.java</excludes>
                 </configuration>
                 <executions>
                     <execution>

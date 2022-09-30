@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
@@ -42,6 +42,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -52,8 +53,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
   private final boolean insideTransaction;
   private final ReplacePartitions delegate;
 
-  private final HMSClient hmsClient;
-  private final HMSClient transactionalHMSClient;
+  private final HMSClientPool hmsClient;
+  private final HMSClientPool transactionalHMSClient;
 
   private final UnkeyedHiveTable table;
   private final List<DataFile> addFiles = Lists.newArrayList();
@@ -70,8 +71,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       Transaction transaction,
       boolean insideTransaction,
       UnkeyedHiveTable table,
-      HMSClient client,
-      HMSClient transactionalClient) {
+      HMSClientPool client,
+      HMSClientPool transactionalClient) {
     this.transaction = transaction;
     this.insideTransaction = insideTransaction;
     this.delegate = transaction.newReplacePartitions();
@@ -242,7 +243,13 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     try {
       transactionalHMSClient.run(c -> {
         if (!rewritePartitions.isEmpty()) {
-          c.alter_partitions(db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
+          try {
+            c.alter_partitions(db, tableName, Lists.newArrayList(rewritePartitions.values()), null);
+          } catch (InstantiationException | NoSuchMethodException |
+                   InvocationTargetException | IllegalAccessException |
+                   ClassNotFoundException e) {
+            throw new RuntimeException(e);
+          }
         }
         if (!newPartitions.isEmpty()) {
           c.add_partitions(Lists.newArrayList(newPartitions.values()));

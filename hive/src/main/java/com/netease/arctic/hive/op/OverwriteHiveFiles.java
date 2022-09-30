@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
@@ -26,7 +26,6 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -53,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -71,8 +71,8 @@ public class OverwriteHiveFiles implements OverwriteFiles {
   private final boolean insideTransaction;
   private final OverwriteFiles delegate;
   private final UnkeyedHiveTable table;
-  private final HMSClient hmsClient;
-  private final HMSClient transactionClient;
+  private final HMSClientPool hmsClient;
+  private final HMSClientPool transactionClient;
   private final String db;
   private final String tableName;
 
@@ -91,7 +91,7 @@ public class OverwriteHiveFiles implements OverwriteFiles {
   private int commitTimestamp; // in seconds
 
   public OverwriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
-      HMSClient hmsClient, HMSClient transactionClient) {
+                            HMSClientPool hmsClient, HMSClientPool transactionClient) {
     this.transaction = transaction;
     this.insideTransaction = insideTransaction;
     this.delegate = transaction.newOverwrite();
@@ -453,7 +453,13 @@ public class OverwriteHiveFiles implements OverwriteFiles {
     if (!partitionToAlter.isEmpty()) {
       try {
         transactionClient.run(c ->  {
-          c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
+          try {
+            c.alter_partitions(db, tableName, Lists.newArrayList(partitionToAlter.values()), null);
+          } catch (InvocationTargetException | InstantiationException |
+                   IllegalAccessException | NoSuchMethodException |
+                   ClassNotFoundException e) {
+            throw new RuntimeException(e);
+          }
           return null;
         });
       } catch (TException | InterruptedException e) {

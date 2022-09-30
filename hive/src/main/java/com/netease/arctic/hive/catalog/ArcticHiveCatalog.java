@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
@@ -80,7 +81,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   @Override
   public List<String> listDatabases() {
     try {
-      return hiveClientPool.run(HiveMetaStoreClient::getAllDatabases);
+      return hiveClientPool.run(HMSClient::getAllDatabases);
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to list databases", e);
     }
@@ -182,7 +183,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
   }
 
-  public HMSClient getHMSClient() {
+  public HMSClientPool getHMSClient() {
     return hiveClientPool;
   }
 

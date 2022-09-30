@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.table.ArcticTable;
@@ -140,7 +140,7 @@ public class UpgradeHiveTableUtil {
    * @param tableIdentifier A table identifier
    * @return Support or not
    */
-  private static boolean formatCheck(HMSClient hiveClient, TableIdentifier tableIdentifier) throws IOException {
+  private static boolean formatCheck(HMSClientPool hiveClient, TableIdentifier tableIdentifier) throws IOException {
     AtomicBoolean isSupport = new AtomicBoolean(false);
     try {
       hiveClient.run(client -> {
