@@ -24,12 +24,7 @@ import com.netease.arctic.hive.HiveTableTestBase;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -126,7 +121,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     sql("insert overwrite arcticCatalog." + db + "." + TABLE + " select * from input");
 
     Assert.assertEquals(
-        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE));
+        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */"));
   }
 
   @Test
@@ -167,7 +164,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
         " PARTITION (dt='2022-05-18') select id, name from input where dt = '2022-05-19'");
 
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE +
+        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */" +
             " where dt='2022-05-18'"));
   }
 

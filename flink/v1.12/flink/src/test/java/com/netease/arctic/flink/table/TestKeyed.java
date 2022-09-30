@@ -33,12 +33,7 @@ import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
@@ -46,20 +41,10 @@ import org.junit.runners.Parameterized;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
-import static com.netease.arctic.table.TableProperties.LOCATION;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static com.netease.arctic.table.TableProperties.*;
 import static org.apache.flink.table.api.Expressions.$;
 
 @RunWith(Parameterized.class)
@@ -167,6 +152,7 @@ public class TestKeyed extends FlinkTestBase {
         sql("select id, name, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
+            ", 'streaming'='false'" +
             ")*/" +
             "");
 
@@ -225,7 +211,7 @@ public class TestKeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
 
@@ -278,10 +264,11 @@ public class TestKeyed extends FlinkTestBase {
         "select id, name from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE +
+            " /*+ OPTIONS('streaming'='false') */")));
 
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -325,7 +312,9 @@ public class TestKeyed extends FlinkTestBase {
         ")*/" + " select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
   }
 
   @Test
@@ -369,7 +358,9 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
   }
 
   @Test
@@ -417,7 +408,7 @@ public class TestKeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
     Set<Row> actual = new HashSet<>();
@@ -473,9 +464,11 @@ public class TestKeyed extends FlinkTestBase {
         "select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {

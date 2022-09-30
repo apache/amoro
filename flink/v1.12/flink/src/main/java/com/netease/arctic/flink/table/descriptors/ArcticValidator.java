@@ -68,9 +68,9 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY = "append-only";
   public static final String LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS = "all-kinds";
 
-  // file scan startup mode
-  public static final String FILE_SCAN_STARTUP_MODE_EARLIEST = "earliest";
-  public static final String FILE_SCAN_STARTUP_MODE_LATEST = "latest";
+  // scan startup mode
+  public static final String SCAN_STARTUP_MODE_EARLIEST = "earliest";
+  public static final String SCAN_STARTUP_MODE_LATEST = "latest";
 
   public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE =
       ConfigOptions.key("log.consistency.guarantee.enable")
@@ -98,10 +98,10 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .defaultValue(2048)
       .withDescription("The target number of records for Iceberg reader fetch batch.");
 
-  public static final ConfigOption<String> FILE_SCAN_STARTUP_MODE = ConfigOptions
+  public static final ConfigOption<String> SCAN_STARTUP_MODE = ConfigOptions
       .key("scan.startup.mode")
       .stringType()
-      .defaultValue(FILE_SCAN_STARTUP_MODE_EARLIEST)
+      .defaultValue(SCAN_STARTUP_MODE_LATEST)
       .withDescription("Optional startup mode for arctic source enumerator, valid enumerations are " +
           "\"earliest\" or \"latest\", \"earliest\": read earliest table data including base and change files from" +
           " the current snapshot, \"latest\": read all incremental data in the change table starting from the" +

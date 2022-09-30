@@ -83,14 +83,12 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 ```
 支持以下 Hint Options ：
 
-|Key|默认值|类型|是否必填|描述|
-|--- |--- |--- |--- |--- |
-|arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
-|properties.group.id|(none)|String|查询时可选，写入时可不填|读取 Kafka Topic 时使用的 group id|
-|scan.startup.mode<img width=90/>|(none)|String|否|Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest-offset、latest-offset、group-offsets、timestamp、specific-offsets， 具体取值的含义可以参考[Flink官方手册](https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/table/connectors/kafka.html#start-reading-position)|
-|scan.startup.specific-offsets|(none)|String|否|scan.startup.mode 取值为 specific-offsets 时，为每个分区设置的起始 offset, 参考格式：partition:0,offset:42;partition:1,offset:300|
-|scan.startup.timestamp-millis|(none)|Long|否|scan.startup.mode 取值为 timestamp 时，初次启动时获取数据的起始时间戳（毫秒级）|
-|properties.*|(none)|String|否|Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs)|
+|Key| 默认值    |类型|是否必填|描述|
+|--- |--------|--- |--- |---|
+|arctic.read.mode| file   |String|否| 指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
+|properties.group.id| (none) |String|查询时可选，写入时可不填| 读取 Kafka Topic 时使用的 group id|
+|scan.startup.mode<img width=90/>| latest |Long|否| Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest、latest。  'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取 |
+|properties.*| (none) |String|否| Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs) |
 
 ####非主键表 Filestore 数据
         
@@ -108,7 +106,7 @@ Hint Options
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|streaming|false|Boolean|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
+|streaming|true|Boolean|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval<img width=120/>|10s|Duration|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
 |start-snapshot-id|(none)|Long|否|从指定的 snapshot 开始读取增量数据（不包括 start-snapshot-id 的快照数据），不指定则读当前快照之后（不包含当前）的增量数据|
@@ -128,12 +126,12 @@ SELECT * FROM keyed /*+ OPTIONS('streaming'='true')*/ ;
 
 Hint Options
 
-|Key|默认值|类型|是否必填|描述|
-|--- |--- |--- |--- |--- |
-|streaming|false|String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
-|arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
-|monitor-interval|10s|String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
-|scan.startup.mode|earliest|String|否|arctic.read.mode = file 时可以配置：earliest和latest。'earliest'表示读取全量表数据，在streaming=true时会继续incremental pull；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据|
+|Key| 默认值 |类型|是否必填|描述|
+|--- |---|--- |--- |--- |
+|streaming| true |String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
+|arctic.read.mode| file |String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
+|monitor-interval| 10s |String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
+|scan.startup.mode| latest |String|否|arctic.read.mode = file 时可以配置：earliest和latest。'earliest'表示读取全量表数据，在streaming=true时会继续incremental pull；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据|
 
 ## Writing With SQL
 Arctic 表支持通过 Flink Sql 往 Log 或 File 写入数据
