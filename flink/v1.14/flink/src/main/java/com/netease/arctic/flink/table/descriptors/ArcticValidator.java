@@ -161,6 +161,20 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
               " data into the logstore.\n" +
               "This value must be greater than 0.");
 
+  public static final ConfigOption<Boolean> LOG_STORE_CATCH_UP =
+      ConfigOptions.key("log-store.catch-up")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will emit data to filestore and logstore. If it is false," +
+              " Arctic source will only emit data to filestore.");
+
+  public static final ConfigOption<Long> LOG_STORE_CATCH_UP_TIMESTAMP = ConfigOptions
+      .key("log-store.catch-up-timestamp")
+      .longType()
+      .defaultValue(0L)
+      .withDescription("Mark the time to start double writing (the logstore of arctic table catches up with the" +
+          " historical data).");
+
   @Override
   public void validate(DescriptorProperties properties) {
     String emitMode = properties.getString(ARCTIC_EMIT_MODE.key());

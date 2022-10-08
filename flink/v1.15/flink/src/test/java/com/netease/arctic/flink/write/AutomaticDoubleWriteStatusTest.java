@@ -26,7 +26,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 
 public class AutomaticDoubleWriteStatusTest extends FlinkTestBase {
   public ArcticTableLoader tableLoader;
@@ -42,13 +42,13 @@ public class AutomaticDoubleWriteStatusTest extends FlinkTestBase {
     Assert.assertFalse(status.isDoubleWrite());
     Assert.assertFalse(
         Boolean.parseBoolean(tableLoader.loadArcticTable().properties()
-            .getOrDefault(LOG_STORE_CATCH_UP, "false")));
+            .getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
     status.processWatermark(new Watermark(System.currentTimeMillis() - 9 * 1000));
     Assert.assertTrue(status.isDoubleWrite());
 
     Assert.assertTrue(status.isDoubleWrite());
     Assert.assertTrue(
         Boolean.parseBoolean(tableLoader.loadArcticTable().properties()
-            .getOrDefault(LOG_STORE_CATCH_UP, "false")));
+            .getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
   }
 }

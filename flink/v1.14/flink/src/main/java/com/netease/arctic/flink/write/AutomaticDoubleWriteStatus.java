@@ -30,9 +30,8 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 
-import static com.netease.arctic.table.TableProperties.LOG_STORE_CATCH_UP;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_CATCH_UP_DEFAULT;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_CATCH_UP_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP_TIMESTAMP;
 
 /**
  * This is an automatic logstore writer util class.
@@ -72,10 +71,10 @@ public class AutomaticDoubleWriteStatus implements Serializable {
     if (specification.shouldDoubleWrite(mark.getTimestamp())) {
       shouldDoubleWrite = true;
       LOG.info("processWatermark {}, subTaskId is {}, should double write is true.", mark, subtaskId);
-      LOG.info("begin update arctic table, set {} to true", LOG_STORE_CATCH_UP);
+      LOG.info("begin update arctic table, set {} to true", LOG_STORE_CATCH_UP.key());
       UpdateProperties updateProperties = table.updateProperties();
-      updateProperties.set(LOG_STORE_CATCH_UP, String.valueOf(true));
-      updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP, String.valueOf(System.currentTimeMillis()));
+      updateProperties.set(LOG_STORE_CATCH_UP.key(), String.valueOf(true));
+      updateProperties.set(LOG_STORE_CATCH_UP_TIMESTAMP.key(), String.valueOf(System.currentTimeMillis()));
       updateProperties.commit();
       LOG.info("end update arctic table.");
     }
@@ -85,7 +84,8 @@ public class AutomaticDoubleWriteStatus implements Serializable {
     table.refresh();
     Map<String, String> properties = table.properties();
     shouldDoubleWrite =
-        Boolean.parseBoolean(properties.getOrDefault(LOG_STORE_CATCH_UP, String.valueOf(LOG_STORE_CATCH_UP_DEFAULT)));
+        Boolean.parseBoolean(
+            properties.getOrDefault(LOG_STORE_CATCH_UP.key(), String.valueOf(LOG_STORE_CATCH_UP.defaultValue())));
     LOG.info("AutomaticDoubleWriteStatus sync, subTaskId: {}, should double write: {}", subtaskId, shouldDoubleWrite);
   }
 }

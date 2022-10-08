@@ -75,9 +75,9 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_STORE_CATCH_UP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_CATCH_UP;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 
 @RunWith(Parameterized.class)
@@ -154,7 +154,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
     } else {
       up.set(ENABLE_LOG_STORE, "false");
     }
-    up.set(LOG_STORE_CATCH_UP, "true");
+    up.set(LOG_STORE_CATCH_UP.key(), "true");
     up.commit();
 
     FlinkSink
@@ -202,7 +202,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
     List<WriteResult> results;
     testKeyedTable.refresh();
     Assert.assertFalse(Boolean.parseBoolean(
-        testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP, "false")));
+        testKeyedTable.properties().getOrDefault(LOG_STORE_CATCH_UP.key(), "false")));
     try (OneInputStreamOperatorInternTest<RowData, WriteResult> harness =
              createSingleProducer(1, jobId, topic, gap)) {
       DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

@@ -203,10 +203,4 @@ public class TableProperties {
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
 
   public static final String OWNER = "owner";
-
-  public static final String LOG_STORE_CATCH_UP = "log-store.catch-up";
-  public static final boolean LOG_STORE_CATCH_UP_DEFAULT = false;
-  public static final String LOG_STORE_CATCH_UP_TIMESTAMP = "log-store.catch-up-timestamp";
-  public static final long LOG_STORE_CATCH_UP_TIMESTAMP_DEFAULT = 0L;
-
 }
