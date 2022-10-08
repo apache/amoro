@@ -118,11 +118,7 @@ public class TableIdentifier implements Serializable {
     this.tableName = tableName;
   }
 
-  public TableIdentifier baseTableIdentifier() {
-    return TableIdentifier.of(catalog, database, tableName + "#base");
-  }
-
-  public TableIdentifier changeTableIdentifier() {
-    return TableIdentifier.of(catalog, database, tableName + "#change");
+  public TableIdentifier toLowCaseIdentifier() {
+    return new TableIdentifier(catalog, database.toLowerCase(), tableName.toLowerCase());
   }
 }

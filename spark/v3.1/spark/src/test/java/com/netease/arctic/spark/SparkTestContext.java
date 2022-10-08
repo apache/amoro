@@ -399,13 +399,8 @@ public class SparkTestContext extends ExternalResource {
   }
 
   protected void assertTableExist(TableIdentifier ident) {
-    try {
-      TableMeta meta = ams.handler().getTable(
-          ident.buildTableIdentifier());
-      Assert.assertNotNull(meta);
-    } catch (TException e) {
-      throw new IllegalStateException(e);
-    }
+    ArcticCatalog catalog = catalog(ident.getCatalog());
+    Assert.assertTrue("Table should exist", catalog.tableExists(ident));
   }
 
   protected void assertTableNotExist(TableIdentifier identifier) {
