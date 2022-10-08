@@ -18,6 +18,7 @@
 
 package com.netease.arctic.hive;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
@@ -26,12 +27,18 @@ import org.apache.hadoop.hive.metastore.api.EnvironmentContext;
 import org.apache.hadoop.hive.metastore.api.MetaException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.common.DynMethods;
 import org.apache.thrift.TException;
 
 import java.util.List;
 
 public class HMSClientImpl implements HMSClient {
+
+  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR = DynConstructors.builder()
+      .impl(HiveMetaStoreClient.class, HiveConf.class)
+      .impl(HiveMetaStoreClient.class, Configuration.class)
+      .build();
 
   private static HiveConf hiveConf;
 
@@ -49,7 +56,7 @@ public class HMSClientImpl implements HMSClient {
   public HiveMetaStoreClient getClient() {
     if (client == null) {
       try {
-        this.client = new HiveMetaStoreClient(hiveConf);
+        this.client = CLIENT_CTOR.newInstance(hiveConf);
       } catch (Exception e) {
         throw new RuntimeException(e);
       }

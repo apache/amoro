@@ -38,11 +38,6 @@ import org.slf4j.LoggerFactory;
 public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> {
   private final TableMetaStore metaStore;
 
-  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR = DynConstructors.builder()
-      .impl(HiveMetaStoreClient.class, HiveConf.class)
-      .impl(HiveMetaStoreClient.class, Configuration.class)
-      .build();
-
   private final HiveConf hiveConf;
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveClientPool.class);
 
@@ -59,8 +54,7 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
     return metaStore.doAs(() -> {
           try {
             try {
-              HiveMetaStoreClient client = CLIENT_CTOR.newInstance(hiveConf);
-              return new HMSClientImpl(client);
+              return new HMSClientImpl(hiveConf);
             } catch (RuntimeException e) {
               // any MetaException would be wrapped into RuntimeException during reflection, so let's double-check type
               // here
