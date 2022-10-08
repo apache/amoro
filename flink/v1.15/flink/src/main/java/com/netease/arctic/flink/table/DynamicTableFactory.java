@@ -62,7 +62,6 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
-import static com.netease.arctic.flink.read.source.ScanContext.STREAMING;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createKeyFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createValueFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
@@ -323,7 +322,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
   private Configuration transformOptions(Configuration options) {
     Configuration internalOptions = new Configuration(options);
     toKafkaOptions(internalOptions);
-    changeFileDefaultOptions(internalOptions);
     return internalOptions;
   }
 
@@ -340,12 +338,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         throw new ValidationException(String.format(
             "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
             SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, scanStartupMode));
-    }
-  }
-
-  private void changeFileDefaultOptions(Configuration internalOptions) {
-    if (!internalOptions.containsKey(STREAMING.key())) {
-      internalOptions.set(STREAMING, true);
     }
   }
 

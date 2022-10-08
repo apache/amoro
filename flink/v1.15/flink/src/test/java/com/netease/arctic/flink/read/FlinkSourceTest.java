@@ -110,6 +110,9 @@ public class FlinkSourceTest extends FlinkTestBase {
         .project(FLINK_SCHEMA)
         .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
         .flinkConf(conf)
+        .properties(new HashMap<String, String>() {{
+          put("streaming", "false");
+        }})
         .build().executeAndCollect();
 
     Set<RowData> rowData = new HashSet<>();
@@ -147,9 +150,6 @@ public class FlinkSourceTest extends FlinkTestBase {
         .project(FLINK_SCHEMA)
         .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
         .flinkConf(conf)
-        .properties(new HashMap<String, String>() {{
-          put("streaming", "true");
-        }})
         .build();
 
     ClientAndIterator<RowData> clientAndIterator =
@@ -241,6 +241,7 @@ public class FlinkSourceTest extends FlinkTestBase {
         .tableLoader(ArcticTableLoader.of(TABLE_ID, catalogBuilder))
         .flinkConf(conf)
         .properties(new HashMap<String, String>() {{
+          put("streaming", "false");
           put("snapshot-id", String.valueOf(s.snapshotId()));
         }})
         .build().executeAndCollect();
