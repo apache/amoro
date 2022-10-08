@@ -164,7 +164,8 @@ Hint Options
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|arctic.emit.mode|file|String|否|数据写入模式，现阶段支持：file、log，默认为 file，支持同时写入，用逗号分割， 如：`'arctic.emit.mode' = 'file,log'`|
+|arctic.emit.mode| auto   | String   |否| 数据写入模式，现阶段支持：file、log、auto 例如<br>'file' 表示仅将数据写入 filestore。<br>'log' 表示仅将数据写入 logstore。<br>'file,log' 表示将数据写入 filestore 和 logstore。<br>'auto' 表示如果 arctic 表的 logstore 被禁用，则只将数据写入 filestore；如果启用了 arctic 表的 logstore，意味着将数据写入 filestore 和 logstore。<br>推荐使用 'auto'。|
+|arctic.emit.auto-write-to-logstore.watermark-gap| (none) | Duration |否| 仅在'arctic.emit.mode'='auto'时启用，如果arctic writers的watermark大于当前系统时间戳减去特定值，writers 也会将数据写入 logstore。 默认：启动作业后立即启用 logstore 写入器。<br>该值必须大于 0。|
 |log.version|v1|String|否|log 数据格式。当前只有一个版本，可不填|
 |sink.parallelism|(none)|String|否|写入 file/log 并行度，file 提交算子的并行度始终为 1|
 |write.distribution-mode|hash|String|否|写入 Arctic 表的 distribution 模式。包括：none、hash|
