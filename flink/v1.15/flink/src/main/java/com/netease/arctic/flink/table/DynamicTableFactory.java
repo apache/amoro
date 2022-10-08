@@ -30,7 +30,6 @@ import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.catalog.CatalogTable;
@@ -67,10 +66,7 @@ import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createVal
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getSourceTopicPattern;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getSourceTopics;
-import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getStartupOptions;
-import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.validateTableSourceOptions;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.validateSourceTopic;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FIELDS_PREFIX;
@@ -114,7 +110,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     Configuration options = (Configuration) helper.getOptions();
-    options = transformOptions(options);
 
     InternalCatalogBuilder actualBuilder = internalCatalogBuilder;
     String actualCatalogName = internalCatalogName;
@@ -270,9 +265,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     final DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat =
         getValueDecodingFormat(helper);
 
-    validateTableSourceOptions(tableOptions);
+    validateSourceTopic(tableOptions);
 
-    final KafkaConnectorOptionsUtil.StartupOptions startupOptions = getStartupOptions(tableOptions);
     final Properties properties = getKafkaProperties(catalogTable.getOptions());
 
     // add topic-partition discovery
@@ -304,41 +298,13 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         getSourceTopics(tableOptions),
         getSourceTopicPattern(tableOptions),
         properties,
-        startupOptions.startupMode,
-        startupOptions.specificOffsets,
-        startupOptions.startupTimestampMillis,
+        tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE),
         false,
         arcticTable.isKeyedTable() &&
             arcticTable.asKeyedTable().primaryKeySpec().primaryKeyExisted(),
         schema,
         tableOptions,
         arcticTable.name());
-  }
-
-  /**
-   * Transform Arctic unified options to underlying options.
-   * Change underlying default option.
-   */
-  private Configuration transformOptions(Configuration options) {
-    Configuration internalOptions = new Configuration(options);
-    toKafkaOptions(internalOptions);
-    return internalOptions;
-  }
-
-  private void toKafkaOptions(Configuration internalOptions) {
-    String scanStartupMode = internalOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
-    switch (scanStartupMode) {
-      case SCAN_STARTUP_MODE_LATEST:
-        internalOptions.set(SCAN_STARTUP_MODE, KafkaConnectorOptions.ScanStartupMode.LATEST_OFFSET);
-        break;
-      case SCAN_STARTUP_MODE_EARLIEST:
-        internalOptions.set(SCAN_STARTUP_MODE, KafkaConnectorOptions.ScanStartupMode.EARLIEST_OFFSET);
-        break;
-      default:
-        throw new ValidationException(String.format(
-            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, scanStartupMode));
-    }
   }
 
 }

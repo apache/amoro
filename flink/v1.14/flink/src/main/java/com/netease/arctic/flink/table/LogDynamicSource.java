@@ -20,12 +20,14 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.read.FlinkKafkaConsumer;
 import com.netease.arctic.flink.read.LogKafkaConsumer;
+import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.connectors.kafka.config.StartupMode;
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper;
 import org.apache.flink.streaming.connectors.kafka.internals.KafkaTopicPartition;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.format.DecodingFormat;
 import org.apache.flink.table.connector.source.DynamicTableSource;
@@ -37,6 +39,7 @@ import org.apache.iceberg.types.Types;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -47,6 +50,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_ALL_KINDS;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
 
 /**
@@ -66,6 +71,56 @@ public class LogDynamicSource extends KafkaDynamicSource {
       .addContainedKind(RowKind.UPDATE_AFTER)
       .addContainedKind(RowKind.DELETE)
       .build();
+
+  LogDynamicSource(
+      DataType physicalDataType,
+      @Nullable DecodingFormat<DeserializationSchema<RowData>> keyDecodingFormat,
+      DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat,
+      int[] keyProjection,
+      int[] valueProjection,
+      @Nullable String keyPrefix,
+      @Nullable List<String> topics,
+      @Nullable Pattern topicPattern,
+      Properties properties,
+      String startupMode,
+      boolean upsertMode,
+      boolean tablePrimaryKeyExisted,
+      Schema schema,
+      ReadableConfig tableOptions,
+      String sourceName) {
+    this(
+        physicalDataType,
+        keyDecodingFormat,
+        valueDecodingFormat,
+        keyProjection,
+        valueProjection,
+        keyPrefix,
+        topics,
+        topicPattern,
+        properties,
+        toInternal(startupMode),
+        new HashMap<>(),
+        0L,
+        upsertMode,
+        tablePrimaryKeyExisted,
+        schema,
+        tableOptions,
+        sourceName
+    );
+  }
+
+  public static StartupMode toInternal(String startupMode) {
+    switch (startupMode) {
+      case SCAN_STARTUP_MODE_LATEST:
+        return StartupMode.LATEST;
+      case SCAN_STARTUP_MODE_EARLIEST:
+        return StartupMode.EARLIEST;
+      default:
+        throw new ValidationException(String.format(
+            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
+            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, startupMode));
+    }
+  }
 
   LogDynamicSource(
       DataType physicalDataType,

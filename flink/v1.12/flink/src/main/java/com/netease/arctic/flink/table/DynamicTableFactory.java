@@ -63,8 +63,6 @@ import java.util.Set;
 
 import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
 import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL_OPTION;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FIELDS_PREFIX;
@@ -72,8 +70,6 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_GROUP_ID;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_MODE;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_MODE_VALUE_EARLIEST;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_MODE_VALUE_LATEST;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_TOPIC_PARTITION_DISCOVERY;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SINK_PARTITIONER;
@@ -81,8 +77,7 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.TOP
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.VALUE_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createKeyFormatProjection;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createValueFormatProjection;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getStartupOptions;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateTableSourceOptions;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateSourceTopic;
 
 /**
  * A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink}
@@ -113,7 +108,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
     Configuration options = (Configuration) helper.getOptions();
-    options = transformOptions(options);
 
     InternalCatalogBuilder actualBuilder = internalCatalogBuilder;
     String actualCatalogName = internalCatalogName;
@@ -268,9 +262,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     final DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat =
         getValueDecodingFormat(helper);
 
-    validateTableSourceOptions(tableOptions);
+    validateSourceTopic(tableOptions);
 
-    final KafkaOptions.StartupOptions startupOptions = getStartupOptions(tableOptions);
     final Properties properties = KafkaOptions.getKafkaProperties(catalogTable.getOptions());
 
     // add topic-partition discovery
@@ -302,41 +295,13 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         KafkaOptions.getSourceTopics(tableOptions),
         KafkaOptions.getSourceTopicPattern(tableOptions),
         properties,
-        startupOptions.startupMode,
-        startupOptions.specificOffsets,
-        startupOptions.startupTimestampMillis,
+        tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE),
         false,
         arcticTable.isKeyedTable() &&
             arcticTable.asKeyedTable().primaryKeySpec().primaryKeyExisted(),
         schema,
         tableOptions,
         arcticTable.name());
-  }
-
-  /**
-   * Transform Arctic unified options to underlying options.
-   * Change underlying default option.
-   */
-  private Configuration transformOptions(Configuration options) {
-    Configuration internalOptions = new Configuration(options);
-    toKafkaOptions(internalOptions);
-    return internalOptions;
-  }
-
-  private void toKafkaOptions(Configuration internalOptions) {
-    String scanStartupMode = internalOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
-    switch (scanStartupMode) {
-      case SCAN_STARTUP_MODE_LATEST:
-        internalOptions.set(SCAN_STARTUP_MODE, SCAN_STARTUP_MODE_VALUE_LATEST);
-        break;
-      case SCAN_STARTUP_MODE_EARLIEST:
-        internalOptions.set(SCAN_STARTUP_MODE, SCAN_STARTUP_MODE_VALUE_EARLIEST);
-        break;
-      default:
-        throw new ValidationException(String.format(
-            "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,
-            SCAN_STARTUP_MODE_LATEST, SCAN_STARTUP_MODE_EARLIEST, scanStartupMode));
-    }
   }
 
 }
