@@ -199,6 +199,9 @@ public class TestKeyedTableDml extends SparkTestBase {
 
     rows = sql("select * from {0}.{1} where id = 1", database, notUpsertTable);
     Assert.assertEquals("dddd", rows.get(0)[1]);
+
+    rows = sql("select * from {0}.{1}.{2}.change where id = 1 and name = ''dddd''", catalogNameHive, database, notUpsertTable);
+    Assert.assertEquals(2, rows.size());
   }
 
   @Test
