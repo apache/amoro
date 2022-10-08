@@ -491,7 +491,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     return harness;
   }
 
-  private static Properties getPropertiesByTopic(String topic) {
+  public static Properties getPropertiesByTopic(String topic) {
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");
