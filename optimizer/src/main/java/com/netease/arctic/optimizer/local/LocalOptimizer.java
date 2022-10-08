@@ -151,7 +151,8 @@ public class LocalOptimizer implements StatefulOptimizer {
 
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
-    if (optimizerConfig.getOptimizerId() == null || optimizerConfig.getOptimizerId().isEmpty()) {
+    if (optimizerConfig.getOptimizerId() == null || optimizerConfig.getOptimizerId().isEmpty() ||
+        "unknown".equals(optimizerConfig.getOptimizerId())) {
       OptimizerUtil.register(optimizerConfig);
     }
     new LocalOptimizer().init(optimizerConfig);

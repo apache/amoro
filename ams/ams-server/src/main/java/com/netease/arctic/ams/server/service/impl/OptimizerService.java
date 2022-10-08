@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
 import com.netease.arctic.ams.server.model.Container;
@@ -53,14 +54,18 @@ public class OptimizerService extends IJDBCService {
   public List<Optimizer> getOptimizers(String optimizerGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectOptimizersByGroupName(optimizerGroup);
+      List<Optimizer> optimizers = optimizerMapper.selectOptimizersByGroupName(optimizerGroup);
+      optimizers.forEach(this::fillContainerType);
+      return optimizers;
     }
   }
 
   public List<Optimizer> getOptimizers() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectOptimizers();
+      List<Optimizer> optimizers = optimizerMapper.selectOptimizers();
+      optimizers.forEach(this::fillContainerType);
+      return optimizers;
     }
   }
 
@@ -101,6 +106,10 @@ public class OptimizerService extends IJDBCService {
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
+      if (container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
+        updateOptimizerStatus(reportData.getOptimizerId(), TableTaskStatus.RUNNING);
+        return;
+      }
       OptimizerFactory factory =
           ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
       com.netease.arctic.optimizer.Optimizer instance = factory.deserialize(optimizer.getInstance());
@@ -199,6 +208,16 @@ public class OptimizerService extends IJDBCService {
         TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
         registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
     return getOptimizer(optimizerName).convertToDescriptor();
+  }
+
+  private Optimizer fillContainerType(Optimizer optimizer) {
+    if (optimizer == null) {
+      return null;
+    }
+    OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
+    Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
+    optimizer.setContainerType(container.getType());
+    return optimizer;
   }
 }
 

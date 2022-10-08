@@ -628,7 +628,10 @@ public class ArcticMetaStore {
             "can not find such container config named" +
                 optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER));
       }
-      optimizeQueueMeta.properties = optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+      if (optimizeGroup.containsKey(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES)) {
+        optimizeQueueMeta.properties =
+            optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+      }
       boolean updated = false;
       for (OptimizeQueueMeta meta : optimizeQueueMetas) {
         if (meta.name.equals(optimizeQueueMeta.name)) {

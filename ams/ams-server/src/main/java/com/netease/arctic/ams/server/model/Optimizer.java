@@ -37,6 +37,8 @@ public class Optimizer {
 
   private String container;
 
+  private String containerType;
+
   public OptimizerDescriptor convertToDescriptor() {
     return new OptimizerDescriptor(jobId, Integer.parseInt(queueId), groupName, coreNumber, memory, container,
         jobStatus.name(), updateTime.getTime());
@@ -136,5 +138,13 @@ public class Optimizer {
 
   public void setUpdateTime(Timestamp updateTime) {
     this.updateTime = updateTime;
+  }
+
+  public String getContainerType() {
+    return containerType;
+  }
+
+  public void setContainerType(String containerType) {
+    this.containerType = containerType;
   }
 }

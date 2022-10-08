@@ -226,7 +226,8 @@ public class FlinkOptimizer implements StatefulOptimizer {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration());
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
 
-    if (optimizerConfig.getOptimizerId() == null || optimizerConfig.getOptimizerId().isEmpty()) {
+    if (optimizerConfig.getOptimizerId() == null || optimizerConfig.getOptimizerId().isEmpty() ||
+        "unknown".equals(optimizerConfig.getOptimizerId())) {
       OptimizerUtil.register(optimizerConfig);
     }
 
