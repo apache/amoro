@@ -36,6 +36,11 @@ import org.apache.iceberg.Schema;
 import java.time.Duration;
 import java.util.Properties;
 
+/**
+ * This is an automatic logstore writer util class.
+ * It will write logstore when the system current timestamp is greater than the watermark of all subtasks plus the
+ * {@link com.netease.arctic.flink.table.descriptors.ArcticValidator#AUTO_EMIT_LOGSTORE_WATERMARK_GAP} value.
+ */
 public class AutomaticLogWriter extends ArcticLogWriter {
   private final AutomaticDoubleWriteStatus status;
   private final ArcticLogWriter arcticLogWriter;
