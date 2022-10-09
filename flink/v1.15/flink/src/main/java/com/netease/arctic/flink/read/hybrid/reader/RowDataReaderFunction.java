@@ -24,10 +24,10 @@ import com.netease.arctic.flink.read.source.ChangeLogDataIterator;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.flink.read.source.FileScanTaskReader;
 import com.netease.arctic.flink.read.source.FlinkArcticDataReader;
+import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.flink.configuration.ReadableConfig;
-import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -110,18 +110,7 @@ public class RowDataReaderFunction extends DataIteratorReaderFunction<RowData> {
    * @param rowData It may have more columns than readSchema. Refer to {@link FlinkArcticDataReader}'s annotation.
    */
   RowData removeArcticMetaColumn(RowData rowData) {
-    GenericRowData newRowData = new GenericRowData(rowData.getRowKind(), columnSize);
-    if (rowData instanceof GenericRowData) {
-      GenericRowData before = (GenericRowData) rowData;
-      for (int i = 0; i < newRowData.getArity(); i++) {
-        newRowData.setField(i, before.getField(i));
-      }
-      return newRowData;
-    }
-    throw new UnsupportedOperationException(
-        String.format(
-            "Can't remove arctic meta column from this RowData %s",
-            rowData.getClass().getSimpleName()));
+    return ArcticUtils.removeArcticMetaColumn(rowData, columnSize);
   }
 
   RowData transformRowKind(ChangeLogDataIterator.ChangeActionTrans<RowData> trans) {

@@ -53,6 +53,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -120,6 +121,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     }
   }
 
+  @Ignore
   @Test
   public void testProducerFailoverWithoutRetract() throws Exception {
     String topic = "testProducerFailoverWithoutRetract";
@@ -166,6 +168,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     createConsumerWithoutRetract(true, 10, "test-gid", topic);
   }
 
+  @Ignore
   @Test
   public void testMultiParallelismFailoverConsistencyRead() throws Exception {
     String topic = "testMultiParallelismFailoverConsistencyRead";
