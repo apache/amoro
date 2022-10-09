@@ -33,6 +33,8 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
@@ -180,6 +182,21 @@ public class ArcticUtils {
     boolean toBase = overwrite;
     LOG.info("is write to base:{}", toBase);
     return toBase;
+  }
+
+  public static RowData removeArcticMetaColumn(RowData rowData, int columnSize) {
+    GenericRowData newRowData = new GenericRowData(rowData.getRowKind(), columnSize);
+    if (rowData instanceof GenericRowData) {
+      GenericRowData before = (GenericRowData) rowData;
+      for (int i = 0; i < newRowData.getArity(); i++) {
+        newRowData.setField(i, before.getField(i));
+      }
+      return newRowData;
+    }
+    throw new UnsupportedOperationException(
+        String.format(
+            "Can't remove arctic meta column from this RowData %s",
+            rowData.getClass().getSimpleName()));
   }
 
 }
