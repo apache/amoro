@@ -292,7 +292,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String startupMode = tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
     long startupTimestampMillis = 0L;
     if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
+      startupTimestampMillis = 
+          Preconditions.checkNotNull(tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
           String.format("'%s' should be set in '%s' mode",
               ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
     }
