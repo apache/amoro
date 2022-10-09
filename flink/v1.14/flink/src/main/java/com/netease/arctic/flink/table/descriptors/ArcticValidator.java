@@ -104,10 +104,12 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
       .stringType()
       .defaultValue(SCAN_STARTUP_MODE_LATEST)
       .withDescription(String.format("Optional startup mode for arctic source, valid values are " +
-              "\"earliest\" or \"latest\", \"timestamp\". If %s values %s, \"earliest\": read earliest table data including base and change files from" +
+              "\"earliest\" or \"latest\", \"timestamp\". If %s values %s, \"earliest\":" +
+              " read earliest table data including base and change files from" +
               " the current snapshot, \"latest\": read all incremental data in the change table starting from the" +
               " current snapshot (the current snapshot will be excluded), \"timestamp\" has not supported yet." +
-              " If %s values %s, \"earliest\": start from the earliest offset possible. \"latest\": start from the latest offset," +
+              " If %s values %s, \"earliest\": start from the earliest offset possible." +
+              " \"latest\": start from the latest offset," +
               " \"timestamp\": start from user-supplied timestamp for each partition.",
           ARCTIC_READ_MODE, ARCTIC_READ_FILE, ARCTIC_READ_MODE, ARCTIC_READ_LOG));
 
