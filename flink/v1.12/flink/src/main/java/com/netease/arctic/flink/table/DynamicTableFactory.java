@@ -290,9 +290,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     long startupTimestampMillis = 0L;
     if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
       startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(SCAN_STARTUP_TIMESTAMP_MILLIS),
-          String.format("'%s' should be set in '%s' mode", SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+          String.format("'%s' should be set in '%s' mode", 
+              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
     }
-    
+
     LOG.info("build log source");
     return new LogDynamicSource(
         physicalDataType,

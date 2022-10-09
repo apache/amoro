@@ -117,7 +117,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .noDefaultValue()
           .withDescription(
               "Optional timestamp used in case of \"timestamp\" startup mode");
-  
+
   public static final ConfigOption<Boolean> SUBMIT_EMPTY_SNAPSHOTS = ConfigOptions
       .key("submit.empty.snapshots")
       .booleanType()

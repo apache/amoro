@@ -288,12 +288,13 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     final int[] valueProjection = createValueFormatProjection(tableOptions, physicalDataType);
 
     final String keyPrefix = tableOptions.getOptional(KEY_FIELDS_PREFIX).orElse(null);
-    
+
     String startupMode = tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
     long startupTimestampMillis = 0L;
     if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
       startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
-          String.format("'%s' should be set in '%s' mode", ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+          String.format("'%s' should be set in '%s' mode",
+              ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
     }
 
     LOG.info("build log source");
@@ -316,5 +317,5 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         tableOptions,
         arcticTable.name());
   }
-  
+
 }
