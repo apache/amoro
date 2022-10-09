@@ -260,10 +260,6 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     }
 
     public ArcticScanContext build() {
-      Preconditions.checkArgument(Objects.isNull(startSnapshotId),
-          "keyed table doesn't support start-snapshot-id now");
-      Preconditions.checkArgument(Objects.isNull(endSnapshotId),
-          "keyed table doesn't support end-snapshot-id now");
       scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
       Preconditions.checkArgument(Objects.isNull(scanStartupMode) ||
               Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST) ||
