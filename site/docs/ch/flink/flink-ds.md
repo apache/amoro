@@ -19,7 +19,7 @@ TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "t
 ArcticTableLoader tableLoader = ArcticTableLoader.of(tableId, catalogBuilder);
 
 Map<String, String> properties = new HashMap<>();
-// 默认为 false。
+// 默认为 true。
 properties.put("streaming", "false");
 
 DataStream<RowData> batch = FlinkSource.forRowData()
@@ -115,7 +115,7 @@ TableIdentifier tableId = ...;
 ArcticTableLoader tableLoader = ...;
 
 Map<String, String> properties = new HashMap<>();
-// 默认为 false
+// 默认为 true
 properties.put("streaming", "true");
 
 DataStream<RowData> stream = FlinkSource.forRowData()

@@ -19,7 +19,6 @@
 package org.apache.iceberg.flink.source;
 
 import com.netease.arctic.flink.read.source.ArcticScanContext;
-import com.netease.arctic.flink.read.source.ScanContext;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
