@@ -22,6 +22,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.flink.source.ScanContext;
 
 import java.io.Serializable;
 import java.time.Duration;
@@ -29,7 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_FILE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
@@ -248,7 +253,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           .streaming(config.get(STREAMING))
           .monitorInterval(config.get(MONITOR_INTERVAL))
           .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
-          .scanStartupMode(properties.get(FILE_SCAN_STARTUP_MODE.key()));
+          .scanStartupMode(properties.get(SCAN_STARTUP_MODE.key()));
     }
 
     public ArcticScanContext build() {
@@ -256,6 +261,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           "keyed table doesn't support start-snapshot-id now");
       Preconditions.checkArgument(Objects.isNull(endSnapshotId),
           "keyed table doesn't support end-snapshot-id now");
+      scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
+      Preconditions.checkArgument(Objects.isNull(scanStartupMode) ||
+              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST) ||
+              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
+          String.format("only support %s, %s when %s is %s",
+              SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
       return new ArcticScanContext(caseSensitive, snapshotId, startSnapshotId,
           endSnapshotId, asOfTimestamp, splitSize, splitLookback,
           splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
