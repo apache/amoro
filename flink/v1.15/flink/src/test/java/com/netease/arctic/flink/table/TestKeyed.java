@@ -22,6 +22,7 @@ import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.ApiExpression;
@@ -185,7 +186,7 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), new HashSet<>(actual));
+    Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
   }
 
   @Test
