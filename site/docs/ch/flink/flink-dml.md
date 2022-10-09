@@ -87,7 +87,7 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |--- |--- |--- |--- |---|
 |arctic.read.mode| file |String|否| 指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |properties.group.id| (none) |String|查询时可选，写入时可不填| 读取 Kafka Topic 时使用的 group id|
-|scan.startup.mode<img width=90/>| latest |String|否| Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest、latest、timestamp。  'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'|
+|scan.startup.mode<img width=90/>| latest |String|否|有效值为earliest、latest、timestamp（读file暂未支持）。当arctic.read.mode = file 时仅支持earliest、latest。'earliest'表示读取全量表数据，在streaming=true时会继续incremental pull；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据。当arctic.read.mode = log 时，表示 Kafka 消费者初次启动时获取 offset 的模式，'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'|
 |scan.startup.timestamp-millis|(none)|Long|否|当'scan.startup.mode'='timestamp'时有效，从指定的Kafka时间读取数据，值为从1970 1月1日 00:00:00.000 GMT 开始的毫秒时间戳|
 |properties.*| (none) |String|否| Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs) |
 
@@ -132,7 +132,7 @@ Hint Options
 |streaming| true |String|否|以流的方式读取有界数据还是无解数据，false：读取有界数据，true：读取无界数据|
 |arctic.read.mode| file |String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval| 10s |String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
-|scan.startup.mode| latest |String|否|arctic.read.mode = file 时可以配置：earliest和latest。'earliest'表示读取全量表数据，在streaming=true时会继续incremental pull；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据|
+|scan.startup.mode| latest |String|否|有效值为earliest、latest、timestamp（读file暂未支持）。当arctic.read.mode = file 时仅支持earliest、latest。'earliest'表示读取全量表数据，在streaming=true时会继续incremental pull；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据。当arctic.read.mode = log 时，表示 Kafka 消费者初次启动时获取 offset 的模式，'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'|
 
 ## Writing With SQL
 Arctic 表支持通过 Flink Sql 往 Log 或 File 写入数据
