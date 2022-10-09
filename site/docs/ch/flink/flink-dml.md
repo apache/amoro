@@ -87,7 +87,8 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |--- |--- |--- |--- |---|
 |arctic.read.mode| file |String|否| 指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |properties.group.id| (none) |String|查询时可选，写入时可不填| 读取 Kafka Topic 时使用的 group id|
-|scan.startup.mode<img width=90/>| latest |Long|否| Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest、latest。  'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取 |
+|scan.startup.mode<img width=90/>| latest |String|否| Kafka 消费者初次启动时获取 offset 的模式，合法的取值包括：earliest、latest、timestamp。  'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'|
+|scan.startup.timestamp-millis|(none)|Long|否|当'scan.startup.mode'='timestamp'时有效，从指定的Kafka时间读取数据，值为从1970 1月1日 00:00:00.000 GMT 开始的毫秒时间戳|
 |properties.*| (none) |String|否| Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs) |
 
 ####非主键表 Filestore 数据

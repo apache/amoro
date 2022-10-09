@@ -56,6 +56,7 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -67,6 +68,7 @@ import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaP
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getSourceTopicPattern;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getSourceTopics;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.validateSourceTopic;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FIELDS_PREFIX;
@@ -286,6 +288,13 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     final int[] valueProjection = createValueFormatProjection(tableOptions, physicalDataType);
 
     final String keyPrefix = tableOptions.getOptional(KEY_FIELDS_PREFIX).orElse(null);
+    
+    String startupMode = tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
+    long startupTimestampMillis = 0L;
+    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
+      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
+          String.format("'%s' should be set in '%s' mode", ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+    }
 
     LOG.info("build log source");
     return new LogDynamicSource(
@@ -298,7 +307,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         getSourceTopics(tableOptions),
         getSourceTopicPattern(tableOptions),
         properties,
-        tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE),
+        startupMode,
+        startupTimestampMillis,
         false,
         arcticTable.isKeyedTable() &&
             arcticTable.asKeyedTable().primaryKeySpec().primaryKeyExisted(),

@@ -52,6 +52,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
 import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
 
 /**
@@ -83,6 +84,7 @@ public class LogDynamicSource extends KafkaDynamicSource {
       @Nullable Pattern topicPattern,
       Properties properties,
       String startupMode,
+      long startupTimestampMillis,
       boolean upsertMode,
       boolean tablePrimaryKeyExisted,
       Schema schema,
@@ -100,7 +102,7 @@ public class LogDynamicSource extends KafkaDynamicSource {
         properties,
         toInternal(startupMode),
         new HashMap<>(),
-        0L,
+        startupTimestampMillis,
         upsertMode,
         tablePrimaryKeyExisted,
         schema,
@@ -110,11 +112,14 @@ public class LogDynamicSource extends KafkaDynamicSource {
   }
 
   public static StartupMode toInternal(String startupMode) {
+    startupMode = startupMode.toLowerCase();
     switch (startupMode) {
       case SCAN_STARTUP_MODE_LATEST:
         return StartupMode.LATEST;
       case SCAN_STARTUP_MODE_EARLIEST:
         return StartupMode.EARLIEST;
+      case SCAN_STARTUP_MODE_TIMESTAMP:
+        return StartupMode.TIMESTAMP;
       default:
         throw new ValidationException(String.format(
             "%s only support '%s', '%s'. But input is '%s'", ArcticValidator.SCAN_STARTUP_MODE,

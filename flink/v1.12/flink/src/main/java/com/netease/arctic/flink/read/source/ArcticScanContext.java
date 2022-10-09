@@ -30,7 +30,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_FILE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_READ_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
@@ -257,6 +261,12 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           "keyed table doesn't support start-snapshot-id now");
       Preconditions.checkArgument(Objects.isNull(endSnapshotId),
           "keyed table doesn't support end-snapshot-id now");
+      scanStartupMode = scanStartupMode == null ? null : scanStartupMode.toLowerCase();
+      Preconditions.checkArgument(Objects.isNull(scanStartupMode) ||
+              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_EARLIEST) ||
+              Objects.equals(scanStartupMode, SCAN_STARTUP_MODE_LATEST),
+          String.format("only support %s, %s when %s is %s",
+              SCAN_STARTUP_MODE_EARLIEST, SCAN_STARTUP_MODE_LATEST, ARCTIC_READ_MODE, ARCTIC_READ_FILE));
       return new ArcticScanContext(caseSensitive, snapshotId, startSnapshotId,
           endSnapshotId, asOfTimestamp, splitSize, splitLookback,
           splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
