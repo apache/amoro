@@ -22,6 +22,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientImpl;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -196,11 +198,11 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     return Lists.newArrayList(complete.dataFiles());
   }
 
-  private static class TestHMSClient implements HMSClient {
+  private static class TestHMSClient implements HMSClientPool {
 
     @Override
-    public <R> R run(Action<R, HiveMetaStoreClient, TException> action) throws TException, InterruptedException {
-      return action.run(hms.getClient());
+    public <R> R run(Action<R, HMSClient, TException> action) throws TException, InterruptedException {
+      return action.run(new HMSClientImpl(hms.getClient()));
     }
   }
 }

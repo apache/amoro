@@ -35,13 +35,8 @@ import org.slf4j.LoggerFactory;
  * Extended implementation of {@link ClientPoolImpl} with {@link TableMetaStore} to support authenticated hive
  * cluster.
  */
-public class ArcticHiveClientPool extends ClientPoolImpl<HiveMetaStoreClient, TException> {
+public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> {
   private final TableMetaStore metaStore;
-
-  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR = DynConstructors.builder()
-      .impl(HiveMetaStoreClient.class, HiveConf.class)
-      .impl(HiveMetaStoreClient.class, Configuration.class)
-      .build();
 
   private final HiveConf hiveConf;
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveClientPool.class);
@@ -55,11 +50,11 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HiveMetaStoreClient, TE
   }
 
   @Override
-  protected HiveMetaStoreClient newClient() {
+  protected HMSClient newClient() {
     return metaStore.doAs(() -> {
           try {
             try {
-              return CLIENT_CTOR.newInstance(hiveConf);
+              return new HMSClientImpl(hiveConf);
             } catch (RuntimeException e) {
               // any MetaException would be wrapped into RuntimeException during reflection, so let's double-check type
               // here
@@ -84,7 +79,7 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HiveMetaStoreClient, TE
   }
 
   @Override
-  protected HiveMetaStoreClient reconnect(HiveMetaStoreClient client) {
+  protected HMSClient reconnect(HMSClient client) {
     try {
       return metaStore.doAs(() -> {
         try {
@@ -108,7 +103,7 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HiveMetaStoreClient, TE
   }
 
   @Override
-  protected void close(HiveMetaStoreClient client) {
+  protected void close(HMSClient client) {
     client.close();
   }
 }

@@ -150,7 +150,7 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
           ((SupportHive) arcticTable).getHMSClient().run(client -> {
             Table hiveTable = client.getTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName());
             hiveTable.getSd().setLocation(currentLocation);
-            client.alter_table(arcticTable.id().getDatabase(), arcticTable.id().getTableName(), hiveTable);
+            client.alterTable(arcticTable.id().getDatabase(), arcticTable.id().getTableName(), hiveTable);
             return null;
           });
         } catch (Exception e) {
