@@ -21,10 +21,13 @@ package com.netease.arctic.flink.write.hidden;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.table.ArcticTableLoader;
+import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.write.ArcticLogWriter;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonSerialization;
+import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
@@ -39,11 +42,13 @@ import org.apache.iceberg.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Properties;
 
+import static com.netease.arctic.flink.util.ArcticUtils.getMaxCommittedTransactionId;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -57,6 +62,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   public static final Logger LOG = LoggerFactory.getLogger(AbstractHiddenLogWriter.class);
 
   private static final long serialVersionUID = 1L;
+  public static final long EPIC_NO_INIT = 0L;
   private int subtaskId;
   private transient ListState<Long> checkpointedState;
   private transient ListState<String> hiddenLogJobIdentifyState;
@@ -78,8 +84,11 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
 
   protected FormatVersion logVersion = FormatVersion.FORMAT_VERSION_V1;
   protected byte[] jobIdentify;
-  // start from 1L, epicNo is similar to checkpoint id.
-  protected long epicNo = 1L;
+  // store transactionId
+  protected long epicNo = EPIC_NO_INIT;
+  @Nullable
+  protected ArcticTableLoader tableLoader;
+  protected transient ArcticTable table;
 
   protected transient LogData<RowData> logFlip;
 
@@ -90,7 +99,8 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
       LogMsgFactory<RowData> factory,
       LogData.FieldGetterFactory<RowData> fieldGetterFactory,
       byte[] jobId,
-      ShuffleHelper helper) {
+      ShuffleHelper helper,
+      @Nullable ArcticTableLoader tableLoader) {
     this.schema = schema;
     this.producerConfig = checkNotNull(producerConfig);
     this.topic = checkNotNull(topic);
@@ -98,11 +108,15 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     this.fieldGetterFactory = fieldGetterFactory;
     this.jobIdentify = jobId;
     this.helper = helper;
+    this.tableLoader = tableLoader;
   }
 
   @Override
   public void initializeState(StateInitializationContext context) throws Exception {
     super.initializeState(context);
+    if (tableLoader != null) {
+      table = ArcticUtils.loadArcticTable(tableLoader);
+    }
     subtaskId = getRuntimeContext().getIndexOfThisSubtask();
     checkpointedState =
         context.getOperatorStateStore()
@@ -139,32 +153,27 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
                 helper));
     int parallelism = getRuntimeContext().getNumberOfParallelSubtasks();
 
+    // send flip in init for all task
+    epicNo = getCommittedEpicNo(context, parallelism);
+
     if (context.isRestored() && parallelismSame(parallelism)) {
-      // get last ckp num from state when failover continuously
-      ckpComplete = checkpointedState.get().iterator().next();
-
       jobIdentify = hiddenLogJobIdentifyState.get().iterator().next().getBytes(StandardCharsets.UTF_8);
-
-      epicNo = ckpComplete;
-
-      logFlip = new LogRecordV1(
-          logVersion,
-          jobIdentify,
-          epicNo,
-          true,
-          ChangeAction.INSERT,
-          new GenericRowData(0)
-      );
-      // signal flip topic
-      shouldCheckFlipSent = true;
-      flipSentSucceed = flipCommitter.commit(subtaskId, logFlip);
-      // after send flip, epicNo + 1 The epicNo of the data sent by the subsequent processElement()
-      // method will be 1 larger than the flip.epicNo.
-      epicNo++;
     } else {
       hiddenLogJobIdentifyState.clear();
       hiddenLogJobIdentifyState.add(new String(jobIdentify, 0, jobIdentify.length, StandardCharsets.UTF_8));
     }
+
+    logFlip = new LogRecordV1(
+        logVersion,
+        jobIdentify,
+        epicNo,
+        true,
+        ChangeAction.INSERT,
+        new GenericRowData(0)
+    );
+    // signal flip topic
+    shouldCheckFlipSent = true;
+    flipSentSucceed = flipCommitter.commit(subtaskId, logFlip);
 
     logDataJsonSerialization = new LogDataJsonSerialization<>(
         checkNotNull(schema),
@@ -185,6 +194,32 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
         subtaskId,
         context.isRestored(),
         ckpComplete);
+
+    if (isLogOnly()) {
+      epicNo++;
+    }
+  }
+
+  public boolean isLogOnly() {
+    return table == null;
+  }
+  
+  public long getCommittedEpicNo(StateInitializationContext context, int parallelism) throws Exception {
+    if (isLogOnly()) {
+      // for the case which only write into log.
+      if (context.isRestored() && parallelismSame(parallelism)) {
+        // get last ckp num from state when failover continuously
+        ckpComplete = checkpointedState.get().iterator().next();
+        return ckpComplete;
+      }
+      return EPIC_NO_INIT;
+    }
+    return getMaxCommittedTransactionId(table, new String(jobIdentify)).orElse(EPIC_NO_INIT);
+  }
+
+  @Override
+  public void setTransactionId(Long transactionId) {
+    this.epicNo = transactionId;
   }
 
   private boolean parallelismSame(int parallelism) throws Exception {
@@ -258,7 +293,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
         context.getCheckpointId());
     checkpointedState.clear();
     checkpointedState.add(context.getCheckpointId());
-    epicNo++;
+    epicNo = context.getCheckpointId() + 1;
   }
 
   @Override

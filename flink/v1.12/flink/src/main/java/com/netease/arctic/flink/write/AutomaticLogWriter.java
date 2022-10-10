@@ -56,7 +56,7 @@ public class AutomaticLogWriter extends ArcticLogWriter {
       ArcticTableLoader tableLoader,
       Duration writeLogstoreWatermarkGap) {
     this.arcticLogWriter =
-        new HiddenLogWriter(schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper);
+        new HiddenLogWriter(schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper, tableLoader);
     this.status = new AutomaticDoubleWriteStatus(tableLoader, writeLogstoreWatermarkGap);
   }
 
@@ -121,6 +121,11 @@ public class AutomaticLogWriter extends ArcticLogWriter {
     if (status.isDoubleWrite()) {
       arcticLogWriter.notifyCheckpointAborted(checkpointId);
     }
+  }
+
+  @Override
+  public void setTransactionId(Long transactionId) {
+    arcticLogWriter.setTransactionId(transactionId);
   }
 
   @Override

@@ -37,23 +37,31 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.apache.iceberg.flink.sink.IcebergFilesCommitter;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION_DEFAULT;
+import static org.apache.iceberg.flink.sink.IcebergFilesCommitter.FLINK_JOB_ID;
+import static org.apache.iceberg.flink.sink.IcebergFilesCommitter.TRANSACTION_ID;
 
 /**
  * An util that loads arctic table, build arctic log writer and so on.
@@ -167,7 +175,8 @@ public class ArcticUtils {
           new HiddenKafkaFactory<>(),
           LogRecordV1.fieldGetterFactory,
           IdGenerator.generateUpstreamId(),
-          helper);
+          helper,
+          tableLoader);
     }
     throw new UnsupportedOperationException("don't support log version '" + version +
         "'. only support 'v1' or empty");
@@ -197,6 +206,79 @@ public class ArcticUtils {
         String.format(
             "Can't remove arctic meta column from this RowData %s",
             rowData.getClass().getSimpleName()));
+  }
+
+  public static Optional<Long> getMaxCommittedTransactionId(@Nullable ArcticTable table, String jobId) {
+    if (table == null) {
+      return Optional.empty();
+    }
+    if (table.isUnkeyedTable()) {
+      return getMaxCommittedTransactionIdFromTable(table.asUnkeyedTable(), jobId);
+    }
+    return getMaxCommittedTransactionIdFromTable(table.asKeyedTable().changeTable(), jobId);
+  }
+
+  public static Optional<Long> getMaxCommittedTransactionIdFromTable(Table table, String jobId) {
+    Snapshot snapshot = table.currentSnapshot();
+
+    while (snapshot != null) {
+      long crt = snapshot.snapshotId();
+      Map<String, String> summary = snapshot.summary();
+      String snapshotFlinkJobId = summary.get(FLINK_JOB_ID);
+      Long parentSnapshotId = snapshot.parentId();
+      snapshot = parentSnapshotId != null ? table.snapshot(parentSnapshotId) : null;
+
+
+      if (!jobId.equals(snapshotFlinkJobId)) {
+        continue;
+      }
+
+      String value = summary.get(TRANSACTION_ID);
+      if (value == null) {
+        continue;
+      }
+      String[] txs = value.split(IcebergFilesCommitter.TRANSACTION_ID_SEPARATOR);
+      long maxTx = Long.MIN_VALUE;
+      try {
+        for (String tx : txs) {
+          maxTx = Math.max(maxTx, Long.parseLong(tx));
+        }
+      } catch (Exception e) {
+        throw new IllegalStateException(String.format("there is invalid '%s' data in snapshot '%d', value: '%s'",
+            TRANSACTION_ID, crt, value));
+      }
+      return Optional.of(maxTx);
+    }
+
+    return Optional.empty();
+  }
+
+  public static boolean isTransactionCommitted(Table table, String jobId, String txId) {
+    Snapshot snapshot = table.currentSnapshot();
+
+    while (snapshot != null) {
+      Map<String, String> summary = snapshot.summary();
+      String snapshotFlinkJobId = summary.get(FLINK_JOB_ID);
+      Long parentSnapshotId = snapshot.parentId();
+      snapshot = parentSnapshotId != null ? table.snapshot(parentSnapshotId) : null;
+      
+      if (!jobId.equals(snapshotFlinkJobId)) {
+        continue;
+      }
+
+      String value = summary.get(TRANSACTION_ID);
+      if (value == null) {
+        continue;
+      }
+      String[] txs = value.split(IcebergFilesCommitter.TRANSACTION_ID_SEPARATOR);
+      for (String tx : txs) {
+        if (Objects.equals(txId, tx.trim())) {
+          return true;
+        }
+      }
+    }
+
+    return false;
   }
 
 }
