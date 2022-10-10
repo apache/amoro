@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
@@ -38,14 +38,13 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class HiveTableUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(HiveTableUtil.class);
 
   public static org.apache.hadoop.hive.metastore.api.Table loadHmsTable(
-      HMSClient hiveClient, TableIdentifier tableIdentifier) {
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
       return hiveClient.run(client -> client.getTable(
           tableIdentifier.getDatabase(),
@@ -61,10 +60,10 @@ public class HiveTableUtil {
     }
   }
 
-  public static void persistTable(HMSClient hiveClient, org.apache.hadoop.hive.metastore.api.Table tbl) {
+  public static void persistTable(HMSClientPool hiveClient, org.apache.hadoop.hive.metastore.api.Table tbl) {
     try {
       hiveClient.run(client -> {
-        client.alter_table(tbl.getDbName(), tbl.getTableName(), tbl);
+        client.alterTable(tbl.getDbName(), tbl.getTableName(), tbl);
         return null;
       });
     } catch (TException | InterruptedException e) {
@@ -129,7 +128,7 @@ public class HiveTableUtil {
    * @param tableIdentifier A table identifier
    * @return If table is existed in hive
    */
-  public boolean checkExist(HMSClient hiveClient, TableIdentifier tableIdentifier) {
+  public boolean checkExist(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     String database = tableIdentifier.getDatabase();
     String name = tableIdentifier.getTableName();
     try {
@@ -152,7 +151,7 @@ public class HiveTableUtil {
    * @param database Hive database
    * @return A List of table-names from hive database
    */
-  public static List<String> getAllHiveTables(HMSClient hiveClient, String database) {
+  public static List<String> getAllHiveTables(HMSClientPool hiveClient, String database) {
     try {
       return hiveClient.run(client -> client.getAllTables(database));
     } catch (TException e) {
@@ -169,13 +168,13 @@ public class HiveTableUtil {
    * @param hiveClient Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    */
-  public static void alterTableLocation(HMSClient hiveClient, TableIdentifier tableIdentifier,
+  public static void alterTableLocation(HMSClientPool hiveClient, TableIdentifier tableIdentifier,
                                         String newPath) throws IOException {
     try {
       hiveClient.run(client -> {
         Table newTable = loadHmsTable(hiveClient, tableIdentifier);
         newTable.getSd().setLocation(newPath);
-        client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
+        client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), newTable);
         return null;
       });
     } catch (Exception e) {

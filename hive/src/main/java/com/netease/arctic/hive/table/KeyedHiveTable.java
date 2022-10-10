@@ -20,7 +20,7 @@ package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.table.BaseKeyedTable;
@@ -33,14 +33,14 @@ import org.apache.iceberg.util.PropertyUtil;
  */
 public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
 
-  private final HMSClient hiveClient;
+  private final HMSClientPool hiveClient;
 
   public KeyedHiveTable(
       TableMeta tableMeta,
       String tableLocation,
       PrimaryKeySpec primaryKeySpec,
       AmsClient client,
-      HMSClient hiveClient,
+      HMSClientPool hiveClient,
       UnkeyedHiveTable baseTable,
       ChangeTable changeTable) {
     super(tableMeta, tableLocation, primaryKeySpec, client, baseTable, changeTable);
@@ -81,7 +81,7 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
   }
 
   @Override
-  public HMSClient getHMSClient() {
+  public HMSClientPool getHMSClient() {
     return hiveClient;
   }
 }
