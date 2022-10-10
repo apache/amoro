@@ -130,7 +130,7 @@ AMS 中添加自定义的 Optimizer Container，需要在`conf/config.yaml`中`c
 ### 自定义 Optimizer 的生命周期管理
 
 首先用户需要在AMS中配置Container和Optimizer group(参考[新增 optimizer group](meta-service/dashboard.md#flink))，其中container类型为external，
-且container的properties无需配置。
+且Container以及Optimizer group的properties无需配置。
 
 用户可以在本身已有的任务调度系统中管理Optimizer生命周期，只需提供以下Optimizer启动所需参数即可自动注册并启动Optimizer：
 ```text
