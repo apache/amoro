@@ -63,8 +63,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
     sql("create table {0}.{1} (" +
         " id int, data string, dt string, primary key (id) \n" +
         ") using arctic partitioned by (dt) ", database, table);
-
-    // test overwrite partitions
+    // table exists
     StructType structType = SparkSchemaUtil.convert(schema);
     df = spark.createDataFrame(
         Lists.newArrayList(
@@ -74,6 +73,44 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
         ), structType
     );
     df.write().format("arctic").mode(SaveMode.Overwrite).save(tablePath);
+
+    df = spark.read().format("arctic").load(tablePath);
+    df.show();
+    Assert.assertEquals(3, df.count());
+
+    // test overwrite dynamic
+    df = spark.createDataFrame(
+        Lists.newArrayList(
+            RowFactory.create(4, "aaa", "2020-1-3"),
+            RowFactory.create(5, "aaa", "2020-1-4"),
+            RowFactory.create(6, "aaa", "2020-1-5")
+        ), structType
+    );
+    df.write().format("arctic")
+        .option("write-mode", "overwrite-dynamic")
+        .mode(SaveMode.Overwrite)
+        .save(tablePath);
+    df = spark.read().format("arctic").load(tablePath);
+    df.show();
+    Assert.assertEquals(5, df.count());
+
+  }
+
+  @Test
+  public void testDFApiKeyedTable2() throws Exception {
+
+    // table not exists
+    StructType structType = SparkSchemaUtil.convert(schema);
+    df = spark.createDataFrame(
+        Lists.newArrayList(
+            RowFactory.create(1, "aaa", "2020-1-1"),
+            RowFactory.create(2, "bbb", "2020-1-2"),
+            RowFactory.create(3, "ccc", "2020-1-3")
+        ), structType
+    );
+    // table not exists, create table
+    df.write().format("arctic").option("partition.keys", "dt")
+        .option("primary.keys", "id").mode(SaveMode.Overwrite).save(tablePath);
 
     df = spark.read().format("arctic").load(tablePath);
     df.show();

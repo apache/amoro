@@ -51,6 +51,7 @@ import org.apache.spark.sql.sources.v2.WriteSupport;
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
+import scala.Option;
 
 import java.util.List;
 import java.util.Map;
@@ -193,25 +194,30 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
   @Override
   public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
                                                  SaveMode mode, DataSourceOptions options) {
-    ArcticTable arcticTable = getTableWithPath(options);
-    if (arcticTable.isKeyedTable()) {
-      if (mode == SaveMode.Overwrite) {
-        return Optional.of(new ArcticKeyedSparkOverwriteWriter(arcticTable.asKeyedTable(), schema, options));
-      } else if (mode == SaveMode.Append) {
-        // TODO: support keyed append
-        throw new UnsupportedOperationException("Not support now!");
-      }
-    } else if (arcticTable.isUnkeyedTable()) {
-      if (mode == SaveMode.Overwrite) {
-        return Optional.of(new ArcticUnkeyedSparkOverwriteWriter(arcticTable.asUnkeyedTable(), schema, options));
-      } else if (mode == SaveMode.Append) {
-        // TODO: support unkeyed append
-        throw new UnsupportedOperationException("Not support now!");
-      }
+    ArcticTable arcticTable = getOrCreateTableWithPath(options, schema);
+    return ArcticSparkTable.createWriterWithTable(arcticTable, jobId, schema, mode, options);
+  }
+
+  public ArcticTable getOrCreateTableWithPath(DataSourceOptions options, StructType schema) {
+    Preconditions.checkArgument(
+        options.asMap().containsKey("path"),
+        "Cannot open table: path is not set");
+    String path = options.get("path").get();
+    Preconditions.checkArgument(!path.contains("/"),
+        "invalid table identifier %s, contain '/'", path);
+    List<String> nameParts = Lists.newArrayList(path.split("\\."));
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), nameParts.get(0), nameParts.get(1));
+    if (!catalog.tableExists(tableId)) {
+      return createTable(new TableIdentifier(tableId.getTableName(), Option.apply(tableId.getDatabase())),
+          schema,
+          Lists.newArrayList(options.get("partition.keys").get()),
+          options.asMap()).table();
     } else {
-      throw new UnsupportedOperationException("Illegal table type!");
+      return catalog.loadTable(tableId);
     }
-    return Optional.empty();
   }
 
   public ArcticTable getTableWithPath(DataSourceOptions options) {
