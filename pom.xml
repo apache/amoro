@@ -67,6 +67,8 @@
         <curator.version>5.2.1</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
         <fastjson.version>1.2.75</fastjson.version>
+        <rocksdbjni.version>5.17.2</rocksdbjni.version>
+        <openjdk.jol.version>0.16</openjdk.jol.version>
     </properties>
 
     <dependencyManagement>
@@ -243,6 +245,18 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdbjni.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.openjdk.jol</groupId>
+                <artifactId>jol-core</artifactId>
+                <version>${openjdk.jol.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

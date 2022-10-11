@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,19 +16,34 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.scan;
+package com.netease.arctic.utils;
 
-import java.io.Serializable;
-import java.util.Collection;
 
 /**
- * A scan task made of several {@link KeyedTableScanTask}.
+ * <p>
+ * Exception thrown for Hoodie failures. The root of the exception hierarchy.
+ * </p>
+ * <p>
+ * Hoodie Write/Read clients will throw this exception if any of its operations fail. This is a runtime (unchecked)
+ * exception.
+ * </p>
  */
-public interface CombinedScanTask extends Serializable {
-  /**
-   * Return the {@link KeyedTableScanTask tasks} in this combined task.
-   *
-   * @return a Collection of FileScanTask instances.
-   */
-  Collection<KeyedTableScanTask> tasks();
+public class ArcticException extends RuntimeException {
+
+  public ArcticException() {
+    super();
+  }
+
+  public ArcticException(String message) {
+    super(message);
+  }
+
+  public ArcticException(String message, Throwable t) {
+    super(message, t);
+  }
+
+  public ArcticException(Throwable t) {
+    super(t);
+  }
+
 }

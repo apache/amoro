@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,19 +16,18 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.scan;
-
-import java.io.Serializable;
-import java.util.Collection;
+package com.netease.arctic.utils;
 
 /**
- * A scan task made of several {@link KeyedTableScanTask}.
+ * An interface to estimate the size of payload in memory.
+ * 
+ * @param <T>
  */
-public interface CombinedScanTask extends Serializable {
+public interface SizeEstimator<T> {
+
   /**
-   * Return the {@link KeyedTableScanTask tasks} in this combined task.
-   *
-   * @return a Collection of FileScanTask instances.
+   * This method is used to estimate the size of a payload in memory. The default implementation returns the total
+   * allocated size, in bytes, of the object and all other objects reachable from it
    */
-  Collection<KeyedTableScanTask> tasks();
+  long sizeEstimate(T t);
 }
