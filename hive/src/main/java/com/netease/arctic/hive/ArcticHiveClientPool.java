@@ -41,6 +41,11 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
   private final HiveConf hiveConf;
   private static final Logger LOG = LoggerFactory.getLogger(ArcticHiveClientPool.class);
 
+  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR = DynConstructors.builder()
+      .impl(HiveMetaStoreClient.class, HiveConf.class)
+      .impl(HiveMetaStoreClient.class, Configuration.class)
+      .build();
+
   public ArcticHiveClientPool(TableMetaStore tableMetaStore, int poolSize) {
     super(poolSize, TTransportException.class);
     this.hiveConf = new HiveConf(tableMetaStore.getConfiguration(), ArcticHiveClientPool.class);
@@ -54,7 +59,8 @@ public class ArcticHiveClientPool extends ClientPoolImpl<HMSClient, TException> 
     return metaStore.doAs(() -> {
           try {
             try {
-              return new HMSClientImpl(hiveConf);
+              HiveMetaStoreClient client = CLIENT_CTOR.newInstance(hiveConf);
+              return new HMSClientImpl(client);
             } catch (RuntimeException e) {
               // any MetaException would be wrapped into RuntimeException during reflection, so let's double-check type
               // here
