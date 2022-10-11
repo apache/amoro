@@ -169,7 +169,7 @@ public class TestKeyed extends FlinkTestBase {
         ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
-        sql("select id, name, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
+        sql("select id, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
             ", 'streaming'='false'" +
@@ -177,13 +177,13 @@ public class TestKeyed extends FlinkTestBase {
             "");
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+    expected.add(new Object[]{RowKind.INSERT, 1000004, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
         LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
         LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+    expected.add(new Object[]{RowKind.INSERT, 1000015, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
     Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
