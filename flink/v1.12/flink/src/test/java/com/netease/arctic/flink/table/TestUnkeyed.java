@@ -221,6 +221,7 @@ public class TestUnkeyed extends FlinkTestBase {
         DataUtil.toRowSet(data), new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
+            ", 'streaming'='false'" +
             ", 'snapshot-id'='" + s.snapshotId() + "'" +
             ")*/" +
             "")));
@@ -263,7 +264,6 @@ public class TestUnkeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='file'" +
-        ", 'streaming'='true'" +
         ", 'start-snapshot-id'='" + s.snapshotId() + "'" +
         ")*/" +
         "");
@@ -319,7 +319,7 @@ public class TestUnkeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
 
@@ -373,10 +373,10 @@ public class TestUnkeyed extends FlinkTestBase {
 
     Assert.assertEquals(
         DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE +
-            " /*+ OPTIONS('arctic.read.mode'='file') */"));
+            " /*+ OPTIONS('arctic.read.mode'='file', 'streaming'='false') */"));
 
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -435,12 +435,14 @@ public class TestUnkeyed extends FlinkTestBase {
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='file'" +
         ", 'snapshot-id'='" + s.snapshotId() + "'" +
+        ", 'streaming'='false'" +
         ")*/" +
         ""));
     Assert.assertEquals(DataUtil.toRowSet(expected), sqlSet("select * from arcticCatalog." + db + "." + TestUnkeyed.TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='file'" +
         ", 'as-of-timestamp'='" + s.timestampMillis() + "'" +
+        ", 'streaming'='false'" +
         ")*/" +
         ""));
   }
@@ -490,7 +492,6 @@ public class TestUnkeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TestUnkeyed.TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='file'" +
-        ", 'streaming'='true'" +
         ", 'start-snapshot-id'='" + s.snapshotId() + "'" +
         ")*/" +
         "");
@@ -554,7 +555,7 @@ public class TestUnkeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
 
@@ -608,9 +609,9 @@ public class TestUnkeyed extends FlinkTestBase {
         "select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='file') */"));
+        " /*+ OPTIONS('arctic.read.mode'='file', 'streaming'='false') */"));
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {

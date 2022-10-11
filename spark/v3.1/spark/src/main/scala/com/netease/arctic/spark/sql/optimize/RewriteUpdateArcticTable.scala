@@ -112,8 +112,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           val updatedRowsQuery = buildKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
           val primaries = a.table().asKeyedTable().primaryKeySpec().fieldNames()
           validatePrimaryKey(primaries, assignments)
-          val joinCondition = buildJoinCondition(primaries, r, updatedRowsQuery)
-          Join(matchedRowsQuery, updatedRowsQuery, Inner, Some(joinCondition), JoinHint.NONE)
+          updatedRowsQuery
         } else {
           val updatedRowsQuery = buildUnKeyedTableUpdateInsertProjection(valuesRelation, matchedRowsQuery, assignments)
           val deleteQuery = Project(Seq(Alias(Literal(SupportsUpsert.UPSERT_OP_VALUE_DELETE), SupportsUpsert.UPSERT_OP_COLUMN_NAME)())
@@ -165,7 +164,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           a.key.asInstanceOf[AttributeReference].name -> Cast(a.value, a.key.dataType)
         }
     ).toMap
-    val outputWithValues = output.map( a => {
+    val outputWithValues = relation.output ++ output.map( a => {
       if(assignmentMap.contains(a.name)) {
         Alias(assignmentMap(a.name), "_arctic_after_" + a.name)()
       } else {

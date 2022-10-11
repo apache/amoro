@@ -97,7 +97,7 @@ public class FlinkTestBase extends TableTestBase {
   public static final TableSchema FLINK_SCHEMA = TableSchema.builder()
       .field("id", DataTypes.INT())
       .field("name", DataTypes.STRING())
-      .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
+      .field("op_time", DataTypes.TIMESTAMP())
       .build();
   public static final RowType FLINK_ROW_TYPE = (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
 
@@ -282,6 +282,12 @@ public class FlinkTestBase extends TableTestBase {
   protected static RowData createRowData(Integer id, String name, String dateTime, RowKind rowKind) {
     return GenericRowData.ofKind(rowKind,
         id, StringData.fromString(name), TimestampData.fromLocalDateTime(LocalDateTime.parse(dateTime)));
+  }
+
+  protected static RowData createRowData(RowKind rowKind, Object... objects) {
+    return GenericRowData.ofKind(
+        rowKind, objects[0], StringData.fromString((String) objects[1]),
+        TimestampData.fromLocalDateTime((LocalDateTime) objects[2]));
   }
 
   protected static RowData createRowData(Integer id, String name, String dateTime) {
