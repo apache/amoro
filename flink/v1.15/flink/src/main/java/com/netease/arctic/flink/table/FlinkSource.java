@@ -163,9 +163,7 @@ public class FlinkSource {
       RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
           flinkConf,
           arcticTable.schema(),
-          projectedSchema == null ?
-              arcticTable.schema() :
-              TypeUtil.reassignIds(FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema()),
+          scanContext.project(),
           arcticTable.asKeyedTable().primaryKeySpec(),
           scanContext.nameMapping(),
           scanContext.caseSensitive(),
