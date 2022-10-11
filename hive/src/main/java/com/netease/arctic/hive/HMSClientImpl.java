@@ -35,18 +35,8 @@ import java.util.List;
 
 public class HMSClientImpl implements HMSClient {
 
-  private static final DynConstructors.Ctor<HiveMetaStoreClient> CLIENT_CTOR = DynConstructors.builder()
-      .impl(HiveMetaStoreClient.class, HiveConf.class)
-      .impl(HiveMetaStoreClient.class, Configuration.class)
-      .build();
-
-  private static HiveConf hiveConf;
-
   private HiveMetaStoreClient client;
 
-  public HMSClientImpl(HiveConf hiveConf) throws MetaException {
-    this.hiveConf = hiveConf;
-  }
 
   public HMSClientImpl(HiveMetaStoreClient client) {
     this.client = client;
@@ -54,13 +44,6 @@ public class HMSClientImpl implements HMSClient {
 
 
   public HiveMetaStoreClient getClient() {
-    if (client == null) {
-      try {
-        this.client = CLIENT_CTOR.newInstance(hiveConf);
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-    }
     return this.client;
   }
 
