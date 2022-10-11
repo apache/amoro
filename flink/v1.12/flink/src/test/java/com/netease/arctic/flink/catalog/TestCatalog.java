@@ -32,7 +32,7 @@ import java.util.List;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 
-public class TestCatalog  extends FlinkTestBase {
+public class TestCatalog extends FlinkTestBase {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -104,7 +104,9 @@ public class TestCatalog  extends FlinkTestBase {
 
     sql("INSERT INTO arcticCatalog." + DB + "." + TABLE +
         " SELECT * FROM default_catalog.default_database." + TABLE);
-    List<Row> rows = sql("SELECT * FROM arcticCatalog." + DB + "." + TABLE);
+    List<Row> rows = sql("SELECT * FROM arcticCatalog." + DB + "." + TABLE + " /*+ OPTIONS(" +
+        "'streaming'='false'" +
+        ") */");
     Assert.assertEquals(1, rows.size());
 
     sql("DROP TABLE " + DB + "." + TABLE);

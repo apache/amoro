@@ -7,16 +7,17 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
-package com.netease.arctic.flink.read.source;
+package org.apache.iceberg.flink.source;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
@@ -32,7 +33,8 @@ import java.util.Map;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
- * This is an iceberg source scan context.
+ * Copy from Iceberg. only change line 68 and expand the modifier.
+ * Context object with optional arguments for a Flink Scan.
  */
 public class ScanContext implements Serializable {
 
@@ -63,7 +65,7 @@ public class ScanContext implements Serializable {
       ConfigOptions.key("split-file-open-cost").longType().defaultValue(null);
 
   public static final ConfigOption<Boolean> STREAMING =
-      ConfigOptions.key("streaming").booleanType().defaultValue(false);
+      ConfigOptions.key("streaming").booleanType().defaultValue(true);
 
   public static final ConfigOption<Duration> MONITOR_INTERVAL =
       ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10));
@@ -84,10 +86,10 @@ public class ScanContext implements Serializable {
   protected final List<Expression> filters;
   protected final long limit;
 
-  protected ScanContext(boolean caseSensitive, Long snapshotId, Long startSnapshotId, Long endSnapshotId,
-                        Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
-                        boolean isStreaming, Duration monitorInterval, String nameMapping,
-                        Schema schema, List<Expression> filters, long limit) {
+  public ScanContext(boolean caseSensitive, Long snapshotId, Long startSnapshotId, Long endSnapshotId,
+                      Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
+                      boolean isStreaming, Duration monitorInterval, String nameMapping,
+                      Schema schema, List<Expression> filters, long limit) {
     this.caseSensitive = caseSensitive;
     this.snapshotId = snapshotId;
     this.startSnapshotId = startSnapshotId;
@@ -105,63 +107,63 @@ public class ScanContext implements Serializable {
     this.limit = limit;
   }
 
-  public boolean caseSensitive() {
+  boolean caseSensitive() {
     return caseSensitive;
   }
 
-  public Long snapshotId() {
+  Long snapshotId() {
     return snapshotId;
   }
 
-  public Long startSnapshotId() {
+  Long startSnapshotId() {
     return startSnapshotId;
   }
 
-  public Long endSnapshotId() {
+  Long endSnapshotId() {
     return endSnapshotId;
   }
 
-  public Long asOfTimestamp() {
+  Long asOfTimestamp() {
     return asOfTimestamp;
   }
 
-  public Long splitSize() {
+  Long splitSize() {
     return splitSize;
   }
 
-  public Integer splitLookback() {
+  Integer splitLookback() {
     return splitLookback;
   }
 
-  public Long splitOpenFileCost() {
+  Long splitOpenFileCost() {
     return splitOpenFileCost;
   }
 
-  public boolean isStreaming() {
+  boolean isStreaming() {
     return isStreaming;
   }
 
-  public Duration monitorInterval() {
+  Duration monitorInterval() {
     return monitorInterval;
   }
 
-  public String nameMapping() {
+  String nameMapping() {
     return nameMapping;
   }
 
-  public Schema project() {
+  Schema project() {
     return schema;
   }
 
-  public List<Expression> filters() {
+  List<Expression> filters() {
     return filters;
   }
 
-  public long limit() {
+  long limit() {
     return limit;
   }
 
-  public ScanContext copyWithAppendsBetween(long newStartSnapshotId, long newEndSnapshotId) {
+  ScanContext copyWithAppendsBetween(long newStartSnapshotId, long newEndSnapshotId) {
     return ScanContext.builder()
         .caseSensitive(caseSensitive)
         .useSnapshotId(null)
@@ -180,7 +182,7 @@ public class ScanContext implements Serializable {
         .build();
   }
 
-  public ScanContext copyWithSnapshotId(long newSnapshotId) {
+  ScanContext copyWithSnapshotId(long newSnapshotId) {
     return ScanContext.builder()
         .caseSensitive(caseSensitive)
         .useSnapshotId(newSnapshotId)
@@ -199,8 +201,8 @@ public class ScanContext implements Serializable {
         .build();
   }
 
-  public static ScanContext.Builder builder() {
-    return new ScanContext.Builder();
+  public static Builder builder() {
+    return new Builder();
   }
 
   public static class Builder {
@@ -222,77 +224,77 @@ public class ScanContext implements Serializable {
     private Builder() {
     }
 
-    ScanContext.Builder caseSensitive(boolean newCaseSensitive) {
+    Builder caseSensitive(boolean newCaseSensitive) {
       this.caseSensitive = newCaseSensitive;
       return this;
     }
 
-    ScanContext.Builder useSnapshotId(Long newSnapshotId) {
+    Builder useSnapshotId(Long newSnapshotId) {
       this.snapshotId = newSnapshotId;
       return this;
     }
 
-    ScanContext.Builder startSnapshotId(Long newStartSnapshotId) {
+    Builder startSnapshotId(Long newStartSnapshotId) {
       this.startSnapshotId = newStartSnapshotId;
       return this;
     }
 
-    ScanContext.Builder endSnapshotId(Long newEndSnapshotId) {
+    Builder endSnapshotId(Long newEndSnapshotId) {
       this.endSnapshotId = newEndSnapshotId;
       return this;
     }
 
-    ScanContext.Builder asOfTimestamp(Long newAsOfTimestamp) {
+    Builder asOfTimestamp(Long newAsOfTimestamp) {
       this.asOfTimestamp = newAsOfTimestamp;
       return this;
     }
 
-    ScanContext.Builder splitSize(Long newSplitSize) {
+    Builder splitSize(Long newSplitSize) {
       this.splitSize = newSplitSize;
       return this;
     }
 
-    ScanContext.Builder splitLookback(Integer newSplitLookback) {
+    Builder splitLookback(Integer newSplitLookback) {
       this.splitLookback = newSplitLookback;
       return this;
     }
 
-    ScanContext.Builder splitOpenFileCost(Long newSplitOpenFileCost) {
+    Builder splitOpenFileCost(Long newSplitOpenFileCost) {
       this.splitOpenFileCost = newSplitOpenFileCost;
       return this;
     }
 
-    ScanContext.Builder streaming(boolean streaming) {
+    Builder streaming(boolean streaming) {
       this.isStreaming = streaming;
       return this;
     }
 
-    ScanContext.Builder monitorInterval(Duration newMonitorInterval) {
+    Builder monitorInterval(Duration newMonitorInterval) {
       this.monitorInterval = newMonitorInterval;
       return this;
     }
 
-    ScanContext.Builder nameMapping(String newNameMapping) {
+    Builder nameMapping(String newNameMapping) {
       this.nameMapping = newNameMapping;
       return this;
     }
 
-    ScanContext.Builder project(Schema newProjectedSchema) {
+    Builder project(Schema newProjectedSchema) {
       this.projectedSchema = newProjectedSchema;
       return this;
     }
 
-    ScanContext.Builder filters(List<Expression> newFilters) {
+    Builder filters(List<Expression> newFilters) {
       this.filters = newFilters;
       return this;
     }
 
-    ScanContext.Builder limit(long newLimit) {
+    Builder limit(long newLimit) {
       this.limit = newLimit;
       return this;
     }
 
-    public ScanContext.Builder fromProperties(Map<String, String> properties) {
+    Builder fromProperties(Map<String, String> properties) {
       Configuration config = new Configuration();
       properties.forEach(config::setString);
 

@@ -50,7 +50,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
 
   @Parameterized.Parameters(name = "submitEmptySnapshots = {0}")
   public static Object[][] parameters() {
-    return new Object[][] {
+    return new Object[][]{
         {false},
         {true}
     };
@@ -75,6 +75,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
         null,
         false,
         (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
+
         tableLoader);
     OneInputStreamOperatorTestHarness<RowData, WriteResult> harness =
         new OneInputStreamOperatorTestHarness<>(
@@ -87,7 +88,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
   }
 
   public static TaskWriter<RowData> createUnkeyedTaskWriter(Table table, long targetFileSize, FileFormat format,
-                                                     RowType rowType) {
+                                                            RowType rowType) {
     TaskWriterFactory<RowData> taskWriterFactory = new RowDataTaskWriterFactory(
         SerializableTable.copyOf(table), rowType, targetFileSize, format, null);
     taskWriterFactory.initialize(1, 1);

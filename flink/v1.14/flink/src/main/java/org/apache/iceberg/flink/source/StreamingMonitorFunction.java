@@ -136,7 +136,7 @@ public class StreamingMonitorFunction extends RichSourceFunction<FlinkInputSplit
     if (snapshot != null && snapshot.snapshotId() != lastSnapshotId) {
       long snapshotId = snapshot.snapshotId();
 
-      com.netease.arctic.flink.read.source.ScanContext newScanContext;
+      ScanContext newScanContext;
       if (lastSnapshotId == INIT_LAST_SNAPSHOT_ID) {
         newScanContext = scanContext.copyWithSnapshotId(snapshotId);
       } else {
