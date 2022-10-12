@@ -227,3 +227,26 @@ This product includes code from Apache Iceberg.
 Copyright: 2011-2019 The Apache Software Foundation
 Home page: http://iceberg.apache.org/
 License: http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+
+This product includes code from Apache Hudi.
+
+* org.apache.hudi.common.util.collection.ExternalSpillableMap copied and modified to com.netease.arctic.utils.map.ExternalSpillableMap
+* org.apache.hudi.common.util.collection.DiskMap copied and modified to com.netease.arctic.utils.map.DiskMap
+* org.apache.hudi.common.util.collection.Pair copied and modified to com.netease.arctic.utils.Pair
+* org.apache.hudi.common.util.collection.ImmutablePair copied and modified to com.netease.arctic.utils.ImmutablePair
+* org.apache.hudi.common.util.collection.RocksDBBasedMap copied and modified to com.netease.arctic.utils.map.RocksDBBasedMap
+* org.apache.hudi.common.util.collection.RocksDBDAO copied and modified to com.netease.arctic.utils.map.RocksDBDAO
+* org.apache.hudi.common.util.collection.RocksDbDiskMap copied and modified to com.netease.arctic.utils.map.RocksDbDiskMap
+* org.apache.hudi.common.util.FileIOUtils copied and modified to com.netease.arctic.utils.FileIOUtils
+* org.apache.hudi.common.util.SizeEstimator copied and modified to com.netease.arctic.utils.SizeEstimator
+* org.apache.hudi.common.util.ValidationUtils copied and modified to com.netease.arctic.utils.ValidationUtils
+* org.apache.hudi.common.util.ObjectSizeCalculator copied and modified to com.netease.arctic.utils.ObjectSizeCalculator
+* org.apache.hudi.common.util.SerializationUtils copied and modified to com.netease.arctic.utils.SerializationUtils
+
+Copyright: 2022 The Apache Software Foundation
+Home page: https://hudi.apache.org/
+License: http://www.apache.org/licenses/LICENSE-2.0
+
+
