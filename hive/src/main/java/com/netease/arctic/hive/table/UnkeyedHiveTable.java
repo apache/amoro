@@ -25,6 +25,7 @@ import com.netease.arctic.hive.op.HiveOperationTransaction;
 import com.netease.arctic.hive.op.HiveSchemaUpdate;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.hive.op.ReplaceHivePartitions;
+import com.netease.arctic.hive.op.RewriteHiveFiles;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
@@ -114,6 +115,11 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   @Override
   public OverwriteHiveFiles newOverwrite() {
     return new OverwriteHiveFiles(super.newTransaction(), false, this, hiveClient, hiveClient);
+  }
+
+  @Override
+  public RewriteHiveFiles newRewrite() {
+    return new RewriteHiveFiles(super.newTransaction(), false, this, hiveClient, hiveClient);
   }
 
   @Override
