@@ -182,7 +182,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (!allTasksPrepared()) {
         return;
       }
-      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(tableIdentifier);
+      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(this);
       if (success) {
         waitCommit.set(true);
       }
@@ -768,7 +768,6 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public Map<String, List<OptimizeTaskItem>> getOptimizeTasksToCommit() {
     tasksLock.lock();
-    waitCommit.set(false);
     try {
       Map<String, List<OptimizeTaskItem>> collector = new HashMap<>();
       for (OptimizeTaskItem optimizeTaskItem : optimizeTasks.values()) {
@@ -782,16 +781,22 @@ public class TableOptimizeItem extends IJDBCService {
       }
       return collector;
     } finally {
+      setTableCanCommit();
       tasksLock.unlock();
     }
+  }
+  
+  public void setTableCanCommit() {
+    waitCommit.set(false);
   }
 
   /**
    * Commit optimize tasks.
    *
+   * @return true if set waitCommit to true
    * @throws Exception -
    */
-  public void commitOptimizeTasks() throws Exception {
+  public boolean commitOptimizeTasks() throws Exception {
     tasksCommitLock.lock();
 
     // check current base table snapshot whether changed when minor optimize
@@ -804,8 +809,10 @@ public class TableOptimizeItem extends IJDBCService {
       }
     }
 
+    boolean success;
     try {
       Map<String, List<OptimizeTaskItem>> tasksToCommit = getOptimizeTasksToCommit();
+      success = true;
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
@@ -830,6 +837,7 @@ public class TableOptimizeItem extends IJDBCService {
     } finally {
       tasksCommitLock.unlock();
     }
+    return success;
   }
 
   /**

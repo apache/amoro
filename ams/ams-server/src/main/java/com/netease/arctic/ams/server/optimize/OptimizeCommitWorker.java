@@ -36,19 +36,19 @@ public class OptimizeCommitWorker implements Runnable {
   @Override
   public void run() {
     LOG.info("{} start work", workerName);
-    TableIdentifier currentTable = null;
+    TableOptimizeItem currentTable = null;
     try {
       while (!ArcticMetaStore.isStarted()) {
         Thread.sleep(1000);
       }
       while (true) {
+        boolean commitSuccess = false;
         try {
-          TableIdentifier tableIdentifier = ServiceContainer.getOptimizeService().takeTableToCommit();
-          currentTable = tableIdentifier;
-          TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
-          LOG.info("{} start commit", tableIdentifier);
-          tableItem.checkTaskExecuteTimeout();
-          tableItem.commitOptimizeTasks();
+          TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService().takeTableToCommit();
+          currentTable = tableOptimizeItem;
+          LOG.info("{} start commit", tableOptimizeItem.getTableIdentifier());
+          tableOptimizeItem.checkTaskExecuteTimeout();
+          commitSuccess = tableOptimizeItem.commitOptimizeTasks();
         } catch (InterruptedException e) {
           throw e;
         } catch (NoSuchObjectException e) {
@@ -56,11 +56,16 @@ public class OptimizeCommitWorker implements Runnable {
         } catch (Throwable t) {
           LOG.error("{} {} unexpected commit error ", workerName, currentTable, t);
         } finally {
+          if (currentTable != null && !commitSuccess) {
+            currentTable.setTableCanCommit();
+          }
           currentTable = null;
         }
       }
     } catch (InterruptedException e) {
       LOG.info("{} was interrupted", workerName);
+    } catch (Throwable t) {
+      LOG.error("{} {} unexpected commit error ", workerName, currentTable, t);
     } finally {
       LOG.info("{} exit, current table {}", workerName, currentTable);
     }
