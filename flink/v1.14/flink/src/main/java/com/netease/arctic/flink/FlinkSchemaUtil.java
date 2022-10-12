@@ -18,21 +18,38 @@
 
 package com.netease.arctic.flink;
 
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.table.api.TableColumn;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
+import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * An util that converts flink table schema.
  */
 public class FlinkSchemaUtil {
+
+  private static final Logger LOG = LoggerFactory.getLogger(FlinkSchemaUtil.class);
+
   /**
    * Convert a {@link RowType} to a {@link TableSchema}.
    *
@@ -122,4 +139,76 @@ public class FlinkSchemaUtil {
     return RowType.of(fields);
   }
 
+  /**
+   * Primary key and partition key are the required fields for shuffle.
+   * The required fields should be added even though project push-down
+   */
+  public static List<Types.NestedField> addPrimaryAndPartitionKey(
+      List<Types.NestedField> projectedColumns, ArcticTable table) {
+    List<String> primaryKeys = table.isUnkeyedTable() ? Collections.EMPTY_LIST
+        : table.asKeyedTable().primaryKeySpec().fields().stream()
+        .map(PrimaryKeySpec.PrimaryKeyField::fieldName).collect(Collectors.toList());
+
+    List<Types.NestedField> columns = new ArrayList<>(projectedColumns);
+    Set<String> projectedNames = new HashSet<>();
+    Set<Integer> projectedIds = new HashSet<>();
+
+    projectedColumns.forEach((c) -> {
+      projectedNames.add(c.name());
+      projectedIds.add(c.fieldId());
+    });
+
+    primaryKeys.forEach(pk -> {
+      if (!projectedNames.contains(pk)) {
+        columns.add(table.schema().findField(pk));
+      }
+    });
+
+    Set<Integer> partitionIds = table.spec().identitySourceIds();
+    partitionIds.forEach(partition -> {
+      if (!projectedIds.contains(partition)) {
+        columns.add(table.schema().findField(partition));
+      }
+    });
+    LOG.info("Projected Columns after addPrimaryAndPartitionKey, columns:{}", columns);
+    return columns;
+  }
+
+  /**
+   * Primary key and partition key are the required fields for shuffle.
+   * The required fields should be added even though project push-down
+   *
+   * @param builder
+   * @param table
+   * @param tableSchema
+   * @param projectedColumns
+   */
+  public static void addPrimaryAndPartitionKey(
+      TableSchema.Builder builder, ArcticTable table, TableSchema tableSchema, String[] projectedColumns) {
+    Set<String> projectedNames = Arrays.stream(projectedColumns).collect(Collectors.toSet());
+
+    if (table.isKeyedTable()) {
+      List<String> pks = table.asKeyedTable().primaryKeySpec().fieldNames();
+      pks.forEach(pk -> {
+        if (projectedNames.contains(pk)) {
+          return;
+        }
+        builder.field(pk, tableSchema.getFieldDataType(pk)
+            .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
+      });
+    }
+
+    Set<String> partitionNames = Sets.newHashSet();
+    for (PartitionField field : table.spec().fields()) {
+      partitionNames.add(field.name());
+    }
+
+    partitionNames.forEach(p -> {
+      if (projectedNames.contains(p)) {
+        return;
+      }
+      builder.field(p, tableSchema.getFieldDataType(p)
+          .orElseThrow(() -> new ValidationException("Arctic partition key should be declared in table")));
+    });
+  }
 }

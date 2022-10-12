@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryAndPartitionKey;
 import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE_DEFAULT;
@@ -250,7 +251,11 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       projectionFields[i] = projectedFields[i][0];
     }
     final List<Types.NestedField> columns = readSchema.columns();
-    readSchema = new Schema(Arrays.stream(projectionFields).mapToObj(columns::get).collect(Collectors.toList()));
+    List<Types.NestedField> projectedColumns = Arrays.stream(projectionFields)
+        .mapToObj(columns::get)
+        .collect(Collectors.toList());
+
+    readSchema = new Schema(addPrimaryAndPartitionKey(projectedColumns, arcticTable));
     flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
       ((SupportsProjectionPushDown) arcticDynamicSource).applyProjection(projectedFields);
