@@ -2,6 +2,7 @@ package com.netease.arctic.hive.op;
 
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RewriteFiles;
@@ -29,6 +30,18 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   @Override
   SnapshotUpdate<?> getSnapshotUpdateDelegate() {
     return delegate;
+  }
+
+  @Override
+  public void commit() {
+    if (CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles)) {
+      delegate.commit();
+      if (!insideTransaction) {
+        transaction.commitTransaction();
+      }
+    } else {
+      super.commit();
+    }
   }
 
   @Override
