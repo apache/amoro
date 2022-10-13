@@ -66,9 +66,9 @@ public class ArcticSparkTable implements DataSourceTable {
     this.identifier = identifier;
   }
 
-  private static SparkSession sparkSession() {
+  private SparkSession sparkSession() {
     if (lazySpark == null) {
-      lazySpark = SparkSession.builder().getOrCreate();
+      this.lazySpark = SparkSession.builder().getOrCreate();
     }
     return lazySpark;
   }
@@ -119,7 +119,7 @@ public class ArcticSparkTable implements DataSourceTable {
 
   @Override
   public DataSourceReader createReader(DataSourceOptions options) {
-    return createReaderWithTable(arcticTable, options);
+    return createReaderWithTable(arcticTable, options, sparkSession());
   }
 
   @Override
@@ -128,11 +128,12 @@ public class ArcticSparkTable implements DataSourceTable {
     return createWriterWithTable(arcticTable, jobId, schema, mode, options);
   }
 
-  public static DataSourceReader createReaderWithTable(ArcticTable table, DataSourceOptions options) {
+  public static DataSourceReader createReaderWithTable(ArcticTable table, DataSourceOptions options,
+                                                       SparkSession spark) {
     if (table.isKeyedTable()) {
-      return new ArcticKeyedTableScan(sparkSession(), table.asKeyedTable());
+      return new ArcticKeyedTableScan(spark, table.asKeyedTable());
     } else {
-      return new ArcticUnkeyedTableScan(sparkSession(), table.asUnkeyedTable());
+      return new ArcticUnkeyedTableScan(spark, table.asUnkeyedTable());
     }
   }
 

@@ -23,7 +23,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.types.Types;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
@@ -60,7 +59,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTestBase {
   }
 
   @Test
-  public void testDFApiUnkeyedTable() throws Exception {
+  public void testDFApiUnkeyedTableOverwrite() throws Exception {
     sql("create table {0}.{1} (" +
         " id int, data string, dt string \n" +
         ") using arctic partitioned by (dt) ", database, table);
@@ -101,7 +100,7 @@ public class TestUnKeyedTableDataFrameAPI extends SparkTestBase {
   }
 
   @Test
-  public void testDFApiKeyedTable2() throws Exception {
+  public void testDFApiUnkeyedTableCreateAndOverwrite() throws Exception {
 
     // table not exists
     StructType structType = SparkSchemaUtil.convert(schema);

@@ -184,11 +184,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
   public DataSourceReader createReader(DataSourceOptions options) {
     ArcticTable arcticTable = getTableWithPath(options);
     SparkSession spark = SparkSession.getActiveSession().get();
-    if (arcticTable.isKeyedTable()) {
-      return new ArcticKeyedTableScan(spark, arcticTable.asKeyedTable());
-    } else {
-      return new ArcticUnkeyedTableScan(spark, arcticTable.asUnkeyedTable());
-    }
+    return ArcticSparkTable.createReaderWithTable(arcticTable, options, spark);
   }
 
   @Override

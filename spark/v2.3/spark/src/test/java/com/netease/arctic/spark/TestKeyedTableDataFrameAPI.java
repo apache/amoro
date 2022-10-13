@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
@@ -59,7 +58,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
 
 
   @Test
-  public void testDFApiKeyedTable() throws Exception {
+  public void testDFApiKeyedTableOverwrite() throws Exception {
     sql("create table {0}.{1} (" +
         " id int, data string, dt string, primary key (id) \n" +
         ") using arctic partitioned by (dt) ", database, table);
@@ -97,7 +96,7 @@ public class TestKeyedTableDataFrameAPI extends SparkTestBase {
   }
 
   @Test
-  public void testDFApiKeyedTable2() throws Exception {
+  public void testDFApiKeyedTableCreateAndOverwrite() throws Exception {
 
     // table not exists
     StructType structType = SparkSchemaUtil.convert(schema);
