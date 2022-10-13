@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class TestRewriteFiles extends HiveTableTestBase {
 
   @Test
-  public void testOverwriteUnkeyedPartitionTable() throws TException {
+  public void testRewriteUnkeyedPartitionTable() throws TException {
     UnkeyedTable table = testHiveTable;
     Map<String, String> partitionAndLocations = Maps.newHashMap();
 
@@ -54,7 +54,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
     applyUpdateHiveFiles(partitionAndLocations, s -> false, initFiles);
     assertHivePartitionLocations(partitionAndLocations, table);
 
-    // ================== test overwrite all partition
+    // ================== test rewrite all partition
     List<Map.Entry<String, String>> newFiles = Lists.newArrayList(
         Maps.immutableEntry("name=aaa", "/test_path/partition3/data-a3.parquet"),
         Maps.immutableEntry("name=ccc", "/test_path/partition4/data-c.parquet")
@@ -91,7 +91,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
     applyUpdateHiveFiles(partitionAndLocations, s -> false, initFiles);
     assertHivePartitionLocations(partitionAndLocations, table);
 
-    // ================== test overwrite all partition
+    // ================== test rewrite all partition
     List<Map.Entry<String, String>> newFiles = Lists.newArrayList(
         Maps.immutableEntry("name=aaa", "/test_path/partition3/data-a3.parquet"),
         Maps.immutableEntry("name=ccc", "/test_path/partition4/data-c.parquet")
@@ -141,7 +141,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
     rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
     rewriteFiles.commit();
 
-    String key = "test-overwrite-transaction";
+    String key = "test-rewrite-transaction";
     UpdateProperties updateProperties = tx.updateProperties();
     updateProperties.set(key, "true");
     updateProperties.commit();
@@ -197,7 +197,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
         table.partitionProperty().get(TablePropertyUtil.EMPTY_STRUCT)
             .get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
 
-    // ================== test overwrite table
+    // ================== test rewrite table
     List<Map.Entry<String, String>> newFiles = Lists.newArrayList(
         Maps.immutableEntry(null, "/test_path/hive_data_location_new/data-a3.parquet"),
         Maps.immutableEntry(null, "/test_path/hive_data_location_new/data-c.parquet")
