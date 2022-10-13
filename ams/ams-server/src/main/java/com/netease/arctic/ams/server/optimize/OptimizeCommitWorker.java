@@ -42,13 +42,12 @@ public class OptimizeCommitWorker implements Runnable {
         Thread.sleep(1000);
       }
       while (true) {
-        boolean commitSuccess = false;
         try {
           TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService().takeTableToCommit();
           currentTable = tableOptimizeItem;
           LOG.info("{} start commit", tableOptimizeItem.getTableIdentifier());
           tableOptimizeItem.checkTaskExecuteTimeout();
-          commitSuccess = tableOptimizeItem.commitOptimizeTasks();
+          tableOptimizeItem.commitOptimizeTasks();
         } catch (InterruptedException e) {
           throw e;
         } catch (NoSuchObjectException e) {
@@ -56,7 +55,7 @@ public class OptimizeCommitWorker implements Runnable {
         } catch (Throwable t) {
           LOG.error("{} {} unexpected commit error ", workerName, currentTable, t);
         } finally {
-          if (currentTable != null && !commitSuccess) {
+          if (currentTable != null) {
             currentTable.setTableCanCommit();
           }
           currentTable = null;

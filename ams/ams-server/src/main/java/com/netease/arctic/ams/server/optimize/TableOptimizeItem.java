@@ -781,7 +781,6 @@ public class TableOptimizeItem extends IJDBCService {
       }
       return collector;
     } finally {
-      setTableCanCommit();
       tasksLock.unlock();
     }
   }
@@ -793,10 +792,9 @@ public class TableOptimizeItem extends IJDBCService {
   /**
    * Commit optimize tasks.
    *
-   * @return true if set waitCommit to true
    * @throws Exception -
    */
-  public boolean commitOptimizeTasks() throws Exception {
+  public void commitOptimizeTasks() throws Exception {
     tasksCommitLock.lock();
 
     // check current base table snapshot whether changed when minor optimize
@@ -809,10 +807,8 @@ public class TableOptimizeItem extends IJDBCService {
       }
     }
 
-    boolean success;
     try {
       Map<String, List<OptimizeTaskItem>> tasksToCommit = getOptimizeTasksToCommit();
-      success = true;
       long taskCount = tasksToCommit.values().stream().mapToLong(Collection::size).sum();
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
@@ -837,7 +833,6 @@ public class TableOptimizeItem extends IJDBCService {
     } finally {
       tasksCommitLock.unlock();
     }
-    return success;
   }
 
   /**
