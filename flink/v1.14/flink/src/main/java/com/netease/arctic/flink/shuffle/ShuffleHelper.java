@@ -31,6 +31,8 @@ import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 
+import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
+
 /**
  * This helper operates to one arctic table and the data of the table.
  */
@@ -50,7 +52,7 @@ public class ShuffleHelper implements Serializable {
     PartitionKey partitionKey = null;
 
     if (table.spec() != null && !CollectionUtil.isNullOrEmpty(table.spec().fields())) {
-      partitionKey = new PartitionKey(table.spec(), schema);
+      partitionKey = new PartitionKey(projectPartition(table.spec(), schema), schema);
     }
     schema = addFieldsNotInArctic(schema, rowType);
 
@@ -127,7 +129,7 @@ public class ShuffleHelper implements Serializable {
   }
 
   public boolean isPartitionKeyExist() {
-    return partitionKey != null;
+    return partitionKey != null && partitionKey.size() > 0;
   }
 
   public int hashPartitionValue(RowData rowData) {

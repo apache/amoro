@@ -126,4 +126,55 @@ public class TestWatermark extends FlinkTestBase {
     Assert.assertEquals(DataUtil.toRowSet(expected), actual);
   }
 
+  @Test
+  public void testSelectWatermarkField() throws Exception {
+    sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
+
+    sql("CREATE TABLE IF NOT EXISTS %s (" +
+            " id bigint, user_id int, name STRING, category string, op_time timestamp, is_true boolean" +
+            ", PRIMARY KEY (id, user_id) NOT ENFORCED) PARTITIONED BY(category, name) WITH %s",
+        table, toWithClause(tableProperties));
+
+    TableSchema flinkSchema = TableSchema.builder()
+        .field("id", DataTypes.BIGINT())
+        .field("user_id", DataTypes.INT())
+        .field("name", DataTypes.STRING())
+        .field("category", DataTypes.STRING())
+        .field("op_time", DataTypes.TIMESTAMP(3))
+        .field("is_true", DataTypes.BOOLEAN())
+        .build();
+    RowType rowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
+    KeyedTable keyedTable = (KeyedTable) ArcticUtils.loadArcticTable(
+        ArcticTableLoader.of(TableIdentifier.of(TEST_CATALOG_NAME, DB, TABLE), catalogBuilder));
+    TaskWriter<RowData> taskWriter = createKeyedTaskWriter(keyedTable, rowType, 1, true);
+    List<RowData> baseData = new ArrayList<RowData>() {{
+      add(GenericRowData.ofKind(
+          RowKind.INSERT, 2L, 123, StringData.fromString("a"), StringData.fromString("a"),
+          TimestampData.fromLocalDateTime(LocalDateTime.parse("2022-06-17T10:08:11.0")), true));
+    }};
+    for (RowData record : baseData) {
+      taskWriter.write(record);
+    }
+    commit(keyedTable, taskWriter.complete(), true);
+
+    sql("create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s", table);
+
+    TableResult result = exec("select is_true, tt from d");
+
+    CommonTestUtils.waitUntilJobManagerIsInitialized(() -> result.getJobClient().get().getJobStatus().get());
+    Set<Row> actual = new HashSet<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      Row row = iterator.next();
+      actual.add(row);
+    }
+    result.getJobClient().ifPresent(JobClient::cancel);
+
+    List<Object[]> expected = new LinkedList<>();
+    expected.add(new Object[]{true, LocalDateTime.parse("2022-06-17T10:08:11")});
+    Assert.assertEquals(DataUtil.toRowSet(expected), actual);
+  }
+
 }

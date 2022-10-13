@@ -23,7 +23,6 @@ import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.api.datastream.DataStream;
-import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.connector.ChangelogMode;
@@ -52,7 +51,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryAndPartitionKey;
+import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
@@ -62,7 +61,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticFileSource.class);
-  
+
   private int[] projectedFields;
   private long limit;
   private List<Expression> filters;
@@ -141,9 +140,9 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
           projectedColumns,
           Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new));
 
-      addPrimaryAndPartitionKey(builder, table, tableSchema, projectedColumns);
+      addPrimaryKey(builder, table, tableSchema, projectedColumns);
       TableSchema ts = builder.build();
-      LOG.info("TableSchema builder after addPrimaryAndPartitionKey, schema:{}", ts);
+      LOG.info("TableSchema builder after addPrimaryKey, schema:{}", ts);
       return ts;
     }
   }

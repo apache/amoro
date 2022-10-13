@@ -28,8 +28,6 @@ import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
-import org.apache.iceberg.PartitionField;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,10 +138,10 @@ public class FlinkSchemaUtil {
   }
 
   /**
-   * Primary key and partition key are the required fields for shuffle.
-   * The required fields should be added even though project push-down
+   * Primary keys are the required fields to guarantee that readers can read keyed table in right order, due to the
+   * automatic scaling in/out of nodes. The required fields should be added even though projection push down
    */
-  public static List<Types.NestedField> addPrimaryAndPartitionKey(
+  public static List<Types.NestedField> addPrimaryKey(
       List<Types.NestedField> projectedColumns, ArcticTable table) {
     List<String> primaryKeys = table.isUnkeyedTable() ? Collections.EMPTY_LIST
         : table.asKeyedTable().primaryKeySpec().fields().stream()
@@ -151,12 +149,8 @@ public class FlinkSchemaUtil {
 
     List<Types.NestedField> columns = new ArrayList<>(projectedColumns);
     Set<String> projectedNames = new HashSet<>();
-    Set<Integer> projectedIds = new HashSet<>();
 
-    projectedColumns.forEach((c) -> {
-      projectedNames.add(c.name());
-      projectedIds.add(c.fieldId());
-    });
+    projectedColumns.forEach(c -> projectedNames.add(c.name()));
 
     primaryKeys.forEach(pk -> {
       if (!projectedNames.contains(pk)) {
@@ -164,51 +158,30 @@ public class FlinkSchemaUtil {
       }
     });
 
-    Set<Integer> partitionIds = table.spec().identitySourceIds();
-    partitionIds.forEach(partition -> {
-      if (!projectedIds.contains(partition)) {
-        columns.add(table.schema().findField(partition));
-      }
-    });
-    LOG.info("Projected Columns after addPrimaryAndPartitionKey, columns:{}", columns);
+    LOG.info("Projected Columns after addPrimaryKey, columns:{}", columns);
     return columns;
   }
 
   /**
-   * Primary key and partition key are the required fields for shuffle.
-   * The required fields should be added even though project push-down
-   *
-   * @param builder
-   * @param table
-   * @param tableSchema
-   * @param projectedColumns
+   * Primary keys are the required fields to guarantee that readers can read keyed table in right order, due to the
+   * automatic scaling in/out of nodes. The required fields should be added even though projection push down
    */
-  public static void addPrimaryAndPartitionKey(
+  public static void addPrimaryKey(
       TableSchema.Builder builder, ArcticTable table, TableSchema tableSchema, String[] projectedColumns) {
     Set<String> projectedNames = Arrays.stream(projectedColumns).collect(Collectors.toSet());
 
-    if (table.isKeyedTable()) {
-      List<String> pks = table.asKeyedTable().primaryKeySpec().fieldNames();
-      pks.forEach(pk -> {
-        if (projectedNames.contains(pk)) {
-          return;
-        }
-        builder.field(pk, tableSchema.getFieldDataType(pk)
-            .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
-      });
+    if (!table.isKeyedTable()) {
+      return;
     }
 
-    Set<String> partitionNames = Sets.newHashSet();
-    for (PartitionField field : table.spec().fields()) {
-      partitionNames.add(field.name());
-    }
-
-    partitionNames.forEach(p -> {
-      if (projectedNames.contains(p)) {
+    List<String> pks = table.asKeyedTable().primaryKeySpec().fieldNames();
+    pks.forEach(pk -> {
+      if (projectedNames.contains(pk)) {
         return;
       }
-      builder.field(p, tableSchema.getFieldDataType(p)
-          .orElseThrow(() -> new ValidationException("Arctic partition key should be declared in table")));
+      builder.field(pk, tableSchema.getFieldDataType(pk)
+          .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
     });
   }
+
 }
