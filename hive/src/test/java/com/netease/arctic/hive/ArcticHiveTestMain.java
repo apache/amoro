@@ -23,6 +23,7 @@ import com.netease.arctic.hive.io.TestAdaptHiveWriter;
 import com.netease.arctic.hive.op.AutoSyncHiveTest;
 import com.netease.arctic.hive.op.TestHiveSchemaUpdate;
 import com.netease.arctic.hive.op.TestOverwriteFiles;
+import com.netease.arctic.hive.op.TestRewriteFiles;
 import com.netease.arctic.hive.op.TestRewritePartitions;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizerTest;
 import org.junit.AfterClass;
@@ -35,6 +36,7 @@ import org.junit.runners.Suite;
     TestArcticHiveCatalog.class,
     TestRewritePartitions.class,
     TestOverwriteFiles.class,
+    TestRewriteFiles.class,
     TestHiveSchemaUpdate.class,
     HiveMetaSynchronizerTest.class,
     TestAdaptHiveWriter.class,
