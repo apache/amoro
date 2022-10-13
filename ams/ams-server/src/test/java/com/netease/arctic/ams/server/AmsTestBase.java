@@ -84,23 +84,23 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
-//    OptimizerControllerTest.class,
-//    TableControllerTest.class,
-//    TerminalControllerTest.class,
-//    TestDDLTracerService.class,
-//    LoginControllerTest.class,
-//    TestExpiredFileClean.class,
-//    TestMajorOptimizeCommit.class,
-//    TestMajorOptimizePlan.class,
-//    TestMinorOptimizeCommit.class,
-//    TestMinorOptimizePlan.class,
-//    TestOrphanFileClean.class,
-//    TestFileInfoCacheService.class,
-//    TestSupportHiveMajorOptimizePlan.class,
-    TestSupportHiveMajorOptimizeCommit.class
-//    TestSupportHiveSyncService.class,
-//    TestExpiredFileCleanSupportHive.class,
-    })
+    OptimizerControllerTest.class,
+    TableControllerTest.class,
+    TerminalControllerTest.class,
+    TestDDLTracerService.class,
+    LoginControllerTest.class,
+    TestExpiredFileClean.class,
+    TestMajorOptimizeCommit.class,
+    TestMajorOptimizePlan.class,
+    TestMinorOptimizeCommit.class,
+    TestMinorOptimizePlan.class,
+    TestOrphanFileClean.class,
+    TestFileInfoCacheService.class,
+    TestSupportHiveMajorOptimizePlan.class,
+    TestSupportHiveMajorOptimizeCommit.class,
+    TestSupportHiveSyncService.class,
+    TestExpiredFileCleanSupportHive.class,
+    TestOrphanFileCleanSupportHive.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
