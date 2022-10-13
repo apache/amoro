@@ -116,7 +116,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public RewriteFiles newRewrite() {
-    return wrapped.newRewrite();
+    return new RewriteHiveFiles(wrapped, true, unkeyedHiveTable, client, transactionalClient);
   }
 
   @Override
