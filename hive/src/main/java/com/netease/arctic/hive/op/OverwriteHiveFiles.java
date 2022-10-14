@@ -51,7 +51,7 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   @Override
   public OverwriteFiles overwriteByRowFilter(Expression expr) {
     Preconditions.checkArgument(!table.spec().isUnpartitioned() || expr == Expressions.alwaysTrue(),
-        "Unpartition support hive table don't support overwriteByRowFilter");
+        "Unpartitioned hive table support alwaysTrue expression only");
     delegate.overwriteByRowFilter(expr);
     this.expr = expr;
     return this;
