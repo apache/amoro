@@ -58,13 +58,9 @@ const css = {
         'border-color-base': '#e8e8f0',
         'border-radius-base': '2px',
         'border-color-split': '#e8e8f0',
-        'border-color-dev': '#e5e5e5',
-        'disabled-color': '#a9a9b8',
-        'disabled-bg': '#f2f2f5',
-        'heading-color': '#102048',
+        'header-color': 'rgba(0, 0, 0, 0.85)',
         'text-color': '#79809a',
         'text-color-secondary': '#c0c0ca',
-        hover_bgcolor: '#f5f8ff',
         'font-size-base': '14px'
       },
       javascriptEnabled: true

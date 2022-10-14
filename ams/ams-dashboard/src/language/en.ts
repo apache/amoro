@@ -18,6 +18,8 @@
 
 export default {
   overview: 'Overview',
+  catalogs: 'Catalogs',
+  catalog: 'Catalog',
   tables: 'Tables',
   optimizing: 'Optimizing',
   terminal: 'Terminal',
@@ -126,5 +128,10 @@ export default {
   errorMessage: 'Error Message',
   copySuccess: 'Copy Success',
   duplicateKey: 'duplicate key',
-  lastUpgradingFailed: 'Last Upgrading Failed'
+  lastUpgradingFailed: 'Last Upgrading Failed',
+  data: 'Data',
+  resourceCpu: 'Resource Cpu',
+  resourceMemory: 'Resource Memory',
+  resourceUsage: 'Resource Usage',
+  top10: 'Top 10'
 }

@@ -2,7 +2,7 @@
   <div class="tables-menu g-flex">
     <div class="database-list">
       <div class="select-catalog g-flex-jsb">
-        <span class="label">{{$t('cluster')}}</span>
+        <span class="label">{{$t('catalog')}}</span>
         <a-select
           v-model:value="curCatalog"
           :options="catalogOptions"

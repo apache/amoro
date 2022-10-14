@@ -16,7 +16,7 @@ export default defineComponent({
     },
     height: {
       type: String,
-      default: '230px'
+      default: '350px'
     },
     loading: {
       type: Boolean,

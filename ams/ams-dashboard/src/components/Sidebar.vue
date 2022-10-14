@@ -12,12 +12,7 @@
     >
       <a-menu-item v-for="item in menuList" :key="item.key" @click="navClick(item)" @mouseenter="mouseenter(item)" :class="{'active-color': (store.isShowTablesMenu && item.key === 'tables')}">
         <template #icon>
-          <DashboardOutlined v-if="item.icon === 'DashboardOutlined'" />
-          <TableOutlined v-if="item.icon === 'TableOutlined'" />
-          <svg-icon v-if="item.icon === 'ScheduleOutlined'" icon-class="optimizing" class="svg-icon" />
-          <SettingOutlined v-if="item.icon === 'SettingOutlined'" />
-          <SettingOutlined v-if="item.icon === 'SettingOutlined'" />
-          <svg-icon v-if="item.icon === 'ConsoleSqlOutlined'" icon-class="terminal" class="svg-icon" />
+          <svg-icon :icon-class="item.icon" class="svg-icon" />
         </template>
         <span>{{ $t(item.title) }}</span>
       </a-menu-item>
@@ -34,13 +29,6 @@
 
 <script lang="ts">
 import { computed, defineComponent, nextTick, reactive, toRefs, watchEffect } from 'vue'
-import {
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
-  DashboardOutlined,
-  TableOutlined,
-  SettingOutlined
-} from '@ant-design/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
 import TableMenu from '@/components/tables-sub-menu/TablesMenu.vue'
@@ -56,11 +44,6 @@ interface MenuItem {
 export default defineComponent({
   name: 'Sidebar',
   components: {
-    MenuFoldOutlined,
-    MenuUnfoldOutlined,
-    DashboardOutlined,
-    TableOutlined,
-    SettingOutlined,
     TableMenu
   },
   setup () {
@@ -85,31 +68,36 @@ export default defineComponent({
         }
       ]
       const allMenu : MenuItem[] = [
-        // {
-        //   key: 'overview',
-        //   title: t('overview'),
-        //   icon: 'DashboardOutlined'
-        // },
+        {
+          key: 'overview',
+          title: t('overview'),
+          icon: 'overview'
+        },
+        {
+          key: 'catalogs',
+          title: t('catalogs'),
+          icon: 'catalogs'
+        },
         {
           key: 'tables',
           title: t('tables'),
-          icon: 'TableOutlined'
+          icon: 'tables'
         },
         {
           key: 'optimizers',
           title: t('optimizers'),
-          icon: 'ScheduleOutlined'
+          icon: 'optimizers'
         },
         {
           key: 'terminal',
           title: t('terminal'),
-          icon: 'ConsoleSqlOutlined'
+          icon: 'terminal'
+        },
+        {
+          key: 'settings',
+          title: t('settings'),
+          icon: 'settings'
         }
-        // {
-        //   key: 'settings',
-        //   title: t('settings'),
-        //   icon: 'SettingOutlined'
-        // }
       ]
       return hasToken.value ? menu : allMenu
     })
@@ -193,10 +181,10 @@ export default defineComponent({
     }
     :deep(.ant-menu-item) {
       margin: 0;
-      padding-left: 30px !important;
+      padding-left: 16px !important;
       .ant-menu-title-content {
         width: 100%;
-        margin-left: 12px;
+        margin-left: 8px;
       }
       &.active {
         background-color: @primary-color;
@@ -210,7 +198,7 @@ export default defineComponent({
       }
     }
     .logo {
-      padding: 12px 0 18px 24px;
+      padding: 16px 0 20px 16px;
       overflow: hidden;
       background-color: #001529;
     }
@@ -228,6 +216,9 @@ export default defineComponent({
       top: 8px;
       font-size: 18px;
       padding: 0 24px;
+    }
+    .svg-icon {
+      font-size: 16px;
     }
   }
   .tables-menu-wrap {

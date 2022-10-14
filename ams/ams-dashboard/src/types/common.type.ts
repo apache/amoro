@@ -212,6 +212,18 @@ export interface IOptimizeResourceTableItem {
   resourceAllocation: string
 }
 
+export interface ITimeInfo {
+  yTitle: string;
+  colors: string[];
+  name: string[];
+}
+
+export interface IChartLineData {
+  timeLine: string[]
+  data1: number[] | string[]
+  data2: number[] | string[]
+}
+
 export enum debugResultBgcMap {
   Created = '#f5f5f5',
   Failed = '#fff2f0',
