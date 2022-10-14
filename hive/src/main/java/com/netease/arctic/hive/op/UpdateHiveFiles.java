@@ -22,6 +22,7 @@ import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
@@ -98,7 +99,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     }
 
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
-    boolean isNoHiveDataFiles = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles);
+    boolean isNoHiveDataFiles = CollectionUtils.isEmpty(addFiles)
+        && CollectionUtils.isEmpty(deleteFiles) && expr != Expressions.alwaysTrue();
 
     getSnapshotUpdateDelegate().commit();
     if (!isNoHiveDataFiles) {
