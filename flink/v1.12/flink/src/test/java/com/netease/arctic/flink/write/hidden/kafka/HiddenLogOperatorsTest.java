@@ -77,7 +77,6 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 /**
  * Hidden log operator tests.
  */
-@Ignore
 public class HiddenLogOperatorsTest extends BaseLogTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static final String topic = "produce-consume-topic";
@@ -122,6 +121,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     }
   }
 
+  @Ignore
   @Test
   public void testProducerFailoverWithoutRetract() throws Exception {
     String topic = "testProducerFailoverWithoutRetract";
@@ -168,6 +168,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     createConsumerWithoutRetract(true, 10, "test-gid", topic);
   }
 
+  @Ignore
   @Test
   public void testMultiParallelismFailoverConsistencyRead() throws Exception {
     String topic = "testMultiParallelismFailoverConsistencyRead";
@@ -491,7 +492,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     return harness;
   }
 
-  private static Properties getPropertiesByTopic(String topic) {
+  public static Properties getPropertiesByTopic(String topic) {
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");

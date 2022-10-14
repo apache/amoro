@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.hive.CachedHiveClientPool;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.KeyedHiveTable;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
@@ -38,7 +39,6 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.FileFormat;
@@ -80,7 +80,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
   @Override
   public List<String> listDatabases() {
     try {
-      return hiveClientPool.run(HiveMetaStoreClient::getAllDatabases);
+      return hiveClientPool.run(HMSClient::getAllDatabases);
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to list databases", e);
     }
@@ -182,7 +182,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
   }
 
-  public HMSClient getHMSClient() {
+  public HMSClientPool getHMSClient() {
     return hiveClientPool;
   }
 
@@ -319,7 +319,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.putAll(constructProperties());
             hiveTable.setParameters(hiveParameters);
-            client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
+            client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
           } else {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
             hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
@@ -367,7 +367,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.putAll(constructProperties());
             hiveTable.setParameters(hiveParameters);
-            client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
+            client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
           } else {
             org.apache.hadoop.hive.metastore.api.Table hiveTable = newHiveTable(meta);
             hiveTable.setSd(HiveTableUtil.storageDescriptor(schema, partitionSpec, hiveLocation,
@@ -428,7 +428,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
                 tableIdentifier.getTableName());
             Map<String, String> hiveParameters = hiveTable.getParameters();
             hiveParameters.remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
-            client.alter_table(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
+            client.alterTable(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), hiveTable);
             return null;
           });
         } catch (TException | InterruptedException e) {

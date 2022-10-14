@@ -188,6 +188,23 @@ public class TestKeyedTableDml extends SparkTestBase {
   }
 
   @Test
+  public void testUpdateUnUpsertTable() {
+    sql("insert into " + database + "." + notUpsertTable +
+            " values (1, 'aaa', 'abcd' ) , " +
+            "(2, 'bbb', 'bbcd'), " +
+            "(3, 'ccc', 'cbcd') ");
+    rows = sql("select * from {0}.{1} ", database, notUpsertTable);
+    Assert.assertEquals(6, rows.size());
+    sql("update {0}.{1} as t set name = ''dddd'' where id = 1", database, notUpsertTable);
+
+    rows = sql("select * from {0}.{1} where id = 1", database, notUpsertTable);
+    Assert.assertEquals("dddd", rows.get(0)[1]);
+
+    rows = sql("select * from {0}.{1}.{2}.change where id = 1 and name = ''dddd''", catalogNameHive, database, notUpsertTable);
+    Assert.assertEquals(2, rows.size());
+  }
+
+  @Test
   public void testDelete() {
     sql("delete from {0}.{1} where id = 3", database, notUpsertTable);
     rows = sql("select id, name from {0}.{1} order by id", database, notUpsertTable);

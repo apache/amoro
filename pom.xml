@@ -24,7 +24,7 @@
 
     <groupId>com.netease.arctic</groupId>
     <artifactId>arctic-parent</artifactId>
-    <version>0.3.1</version>
+    <version>0.3.2-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <modules>
@@ -301,7 +301,6 @@
                         <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                     </sourceDirectories>
                     <excludes>**\/gen-antlr\/</excludes>
-                    <excludes>org/apache/hadoop/hive/metastore/HiveMetaStoreClient.java</excludes>
                 </configuration>
                 <executions>
                     <execution>

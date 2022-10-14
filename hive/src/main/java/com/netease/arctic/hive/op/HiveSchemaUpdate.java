@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.op;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -39,10 +39,10 @@ import java.util.Locale;
  */
 public class HiveSchemaUpdate implements UpdateSchema {
   private final ArcticTable arcticTable;
-  private final HMSClient hiveClient;
+  private final HMSClientPool hiveClient;
   private final UpdateSchema updateSchema;
 
-  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClient hiveClient, UpdateSchema updateSchema) {
+  public HiveSchemaUpdate(ArcticTable arcticTable, HMSClientPool hiveClient, UpdateSchema updateSchema) {
     this.arcticTable = arcticTable;
     this.hiveClient = hiveClient;
     this.updateSchema = updateSchema;

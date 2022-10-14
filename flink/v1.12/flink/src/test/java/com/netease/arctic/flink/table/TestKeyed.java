@@ -22,6 +22,7 @@ import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.ApiExpression;
@@ -164,23 +165,24 @@ public class TestKeyed extends FlinkTestBase {
         ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
-        sql("select id, name, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
+        sql("select id, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
+            ", 'streaming'='false'" +
             ")*/" +
             "");
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+    expected.add(new Object[]{RowKind.INSERT, 1000004, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
         LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
         LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
+    expected.add(new Object[]{RowKind.INSERT, 1000015, LocalDateTime.parse("2022-06-17T10:10:11.0"),
         LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), new HashSet<>(actual));
+    Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
   }
 
   @Test
@@ -225,7 +227,7 @@ public class TestKeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
 
@@ -278,10 +280,11 @@ public class TestKeyed extends FlinkTestBase {
         "select id, name from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE +
+            " /*+ OPTIONS('streaming'='false') */")));
 
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -325,7 +328,9 @@ public class TestKeyed extends FlinkTestBase {
         ")*/" + " select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
   }
 
   @Test
@@ -369,7 +374,9 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
   }
 
   @Test
@@ -417,7 +424,7 @@ public class TestKeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
     Set<Row> actual = new HashSet<>();
@@ -473,9 +480,11 @@ public class TestKeyed extends FlinkTestBase {
         "select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {

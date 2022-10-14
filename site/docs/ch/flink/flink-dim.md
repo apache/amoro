@@ -81,6 +81,7 @@ CREATE TABLE orders (
 
 * 主表：Flink DataGen 数据源，设置数据生成速率为10000条/秒
 * 维表：初始数据量为10G大小，共1580万条记录数的 Arctic 表，并且有新的数据不断流入，流入速率为100条/秒
+* Flink 版本：1.14.5
 * Flink 任务配置
     * 并发度：8
     * TaskManager 数量：8

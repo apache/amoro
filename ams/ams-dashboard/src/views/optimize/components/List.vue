@@ -111,7 +111,7 @@ async function getOptimizersList () {
     const { list, total } = result
     pagination.total = total;
     (list || []).forEach((p: IOptimizeResourceTableItem, index: number) => {
-      p.resourceAllocation = `${p.coreNumber}${t('core')} ${mbToSize(p.memory)}`
+      p.resourceAllocation = `${p.coreNumber} ${t('core')} ${mbToSize(p.memory)}`
       p.index = (pagination.current - 1) * pagination.pageSize + index + 1
       optimizersList.push(p)
     })

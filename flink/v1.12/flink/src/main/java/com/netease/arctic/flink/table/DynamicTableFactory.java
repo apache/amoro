@@ -28,6 +28,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.api.TableSchema;
@@ -56,29 +57,29 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
 import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL;
 import static com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator.METASTORE_URL_OPTION;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE_DEFAULT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FIELDS_PREFIX;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.KEY_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.PROPS_GROUP_ID;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_MODE;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_SPECIFIC_OFFSETS;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_STARTUP_TIMESTAMP_MILLIS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SCAN_TOPIC_PARTITION_DISCOVERY;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.SINK_PARTITIONER;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.TOPIC;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.VALUE_FORMAT;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createKeyFormatProjection;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.createValueFormatProjection;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.getStartupOptions;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateTableSourceOptions;
+import static org.apache.flink.streaming.connectors.kafka.table.KafkaOptions.validateSourceTopic;
 
 /**
  * A factory generates {@link ArcticDynamicSource} and {@link ArcticDynamicSink}
@@ -107,31 +108,32 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     ObjectIdentifier identifier = context.getObjectIdentifier();
     ObjectPath objectPath;
 
-    Map<String, String> options = catalogTable.getOptions();
+    FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
+    Configuration options = (Configuration) helper.getOptions();
 
     InternalCatalogBuilder actualBuilder = internalCatalogBuilder;
     String actualCatalogName = internalCatalogName;
 
     // It denotes create table by ddl 'connector' option, not through arcticCatalog.db.tableName
     if (actualBuilder == null || actualCatalogName == null) {
-      String metastoreUrl = options.get(METASTORE_URL);
+      String metastoreUrl = options.get(METASTORE_URL_OPTION);
       Preconditions.checkNotNull(metastoreUrl, String.format("%s should be set", METASTORE_URL));
       actualBuilder = InternalCatalogBuilder.builder().metastoreUrl(metastoreUrl);
 
-      actualCatalogName = options.get(ArcticValidator.ARCTIC_CATALOG.key());
+      actualCatalogName = options.get(ArcticValidator.ARCTIC_CATALOG);
       Preconditions.checkNotNull(actualCatalogName, String.format("%s should be set",
           ArcticValidator.ARCTIC_CATALOG.key()));
     }
 
     if (options.containsKey(ArcticValidator.ARCTIC_DATABASE.key()) &&
         options.containsKey(ArcticValidator.ARCTIC_TABLE.key())) {
-      objectPath = new ObjectPath(options.get(ArcticValidator.ARCTIC_DATABASE.key()),
-          options.get(ArcticValidator.ARCTIC_TABLE.key()));
+      objectPath = new ObjectPath(options.get(ArcticValidator.ARCTIC_DATABASE),
+          options.get(ArcticValidator.ARCTIC_TABLE));
     } else {
       objectPath = new ObjectPath(identifier.getDatabaseName(), identifier.getObjectName());
     }
 
-    ArcticTableLoader tableLoader = createTableLoader(objectPath, actualCatalogName, actualBuilder, options);
+    ArcticTableLoader tableLoader = createTableLoader(objectPath, actualCatalogName, actualBuilder, options.toMap());
 
     ArcticTable arcticTable = ArcticUtils.loadArcticTable(tableLoader);
     ScanTableSource arcticDynamicSource;
@@ -146,14 +148,14 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:
         LOG.info("build file reader");
-        arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, context.getConfiguration());
+        arcticDynamicSource = new ArcticFileSource(tableLoader, tableSchema, arcticTable, options);
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:
         Preconditions.checkArgument(PropertyUtil.propertyAsBoolean(arcticTable.properties(),
                 ENABLE_LOG_STORE, ENABLE_LOG_STORE_DEFAULT),
             String.format("Read log should enable %s at first", ENABLE_LOG_STORE));
-        arcticDynamicSource = createLogSource(arcticTable, context);
+        arcticDynamicSource = createLogSource(arcticTable, context, options);
     }
 
     return new ArcticDynamicSource(identifier.getObjectName(), arcticDynamicSource, arcticTable, tableSchema,
@@ -212,7 +214,6 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     options.add(PROPS_BOOTSTRAP_SERVERS);
     options.add(PROPS_GROUP_ID);
     options.add(SCAN_STARTUP_MODE);
-    options.add(SCAN_STARTUP_SPECIFIC_OFFSETS);
     options.add(SCAN_STARTUP_TIMESTAMP_MILLIS);
     options.add(SINK_PARTITIONER);
     options.add(ArcticValidator.ARCTIC_CATALOG);
@@ -252,20 +253,19 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
                     DeserializationFormatFactory.class, VALUE_FORMAT));
   }
 
-  private LogDynamicSource createLogSource(ArcticTable arcticTable, Context context) {
+  private LogDynamicSource createLogSource(ArcticTable arcticTable, Context context, ReadableConfig tableOptions) {
     CatalogTable catalogTable = context.getCatalogTable();
     TableSchema physicalSchema = TableSchemaUtils.getPhysicalSchema(catalogTable.getSchema());
     Schema schema = FlinkSchemaUtil.convert(physicalSchema);
+
     FactoryUtil.TableFactoryHelper helper = FactoryUtil.createTableFactoryHelper(this, context);
-
-    ReadableConfig tableOptions = helper.getOptions();
-
     final Optional<DecodingFormat<DeserializationSchema<RowData>>> keyDecodingFormat =
         getKeyDecodingFormat(helper);
     final DecodingFormat<DeserializationSchema<RowData>> valueDecodingFormat =
         getValueDecodingFormat(helper);
-    validateTableSourceOptions(tableOptions);
-    final KafkaOptions.StartupOptions startupOptions = getStartupOptions(tableOptions);
+
+    validateSourceTopic(tableOptions);
+
     final Properties properties = KafkaOptions.getKafkaProperties(catalogTable.getOptions());
 
     // add topic-partition discovery
@@ -286,6 +286,14 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     final String keyPrefix = tableOptions.getOptional(KEY_FIELDS_PREFIX).orElse(null);
 
+    String startupMode = tableOptions.get(SCAN_STARTUP_MODE);
+    long startupTimestampMillis = 0L;
+    if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
+      startupTimestampMillis = Preconditions.checkNotNull(tableOptions.get(SCAN_STARTUP_TIMESTAMP_MILLIS),
+          String.format("'%s' should be set in '%s' mode", 
+              SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+    }
+
     LOG.info("build log source");
     return new LogDynamicSource(
         physicalDataType,
@@ -297,9 +305,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         KafkaOptions.getSourceTopics(tableOptions),
         KafkaOptions.getSourceTopicPattern(tableOptions),
         properties,
-        startupOptions.startupMode,
-        startupOptions.specificOffsets,
-        startupOptions.startupTimestampMillis,
+        startupMode,
+        startupTimestampMillis,
         false,
         arcticTable.isKeyedTable() &&
             arcticTable.asKeyedTable().primaryKeySpec().primaryKeyExisted(),

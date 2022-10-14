@@ -89,8 +89,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_EARLIEST;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -305,7 +305,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     }
     commit(table, taskWriter.complete(), true);
 
-    ArcticSource<RowData> arcticSource = initArcticSource(true, FILE_SCAN_STARTUP_MODE_EARLIEST, tableId);
+    ArcticSource<RowData> arcticSource = initArcticSource(true, SCAN_STARTUP_MODE_EARLIEST, tableId);
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
     // enable checkpoint
     env.enableCheckpointing(1000);
@@ -558,11 +558,11 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
   }
 
   private ArcticSource<RowData> initArcticSource(boolean isStreaming) {
-    return initArcticSource(isStreaming, FILE_SCAN_STARTUP_MODE_EARLIEST);
+    return initArcticSource(isStreaming, SCAN_STARTUP_MODE_EARLIEST);
   }
 
   private ArcticSource<RowData> initArcticSourceWithLatest() {
-    return initArcticSource(true, FILE_SCAN_STARTUP_MODE_LATEST);
+    return initArcticSource(true, SCAN_STARTUP_MODE_LATEST);
   }
 
   private ArcticSource<RowData> initArcticSource(boolean isStreaming, String scanStartupMode) {
@@ -599,7 +599,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
   private ArcticSource<RowData> initArcticDimSource(boolean isStreaming) {
     ArcticTableLoader tableLoader = initLoader();
-    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, FILE_SCAN_STARTUP_MODE_EARLIEST);
+    ArcticScanContext arcticScanContext = initArcticScanContext(isStreaming, SCAN_STARTUP_MODE_EARLIEST);
     ReaderFunction<RowData> rowDataReaderFunction = initRowDataReadFunction();
     Schema schema = testKeyedTable.schema();
     Schema schemaWithWm = TypeUtil.join(schema,

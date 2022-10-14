@@ -20,6 +20,7 @@
 package org.apache.iceberg.flink.source;
 
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
+import com.netease.arctic.flink.util.ArcticUtils;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.FileScanTask;
@@ -49,7 +50,9 @@ import org.apache.iceberg.util.PartitionUtil;
 import java.util.Map;
 
 /**
- * Copy from iceberg. Just change #line 130 to adapt hive flink parquet readers.
+ * Copy from iceberg.
+ * Adopt AdaptHiveFlinkParquetReaders to adapt hive flink parquet readers.
+ * Remove additional column.
  */
 public class RowDataIterator extends DataIterator<RowData> {
 
@@ -57,14 +60,17 @@ public class RowDataIterator extends DataIterator<RowData> {
   private final Schema projectedSchema;
   private final String nameMapping;
   private final boolean caseSensitive;
+  private final int columnSize;
 
   public RowDataIterator(CombinedScanTask task, FileIO io, EncryptionManager encryption, Schema tableSchema,
-                  Schema projectedSchema, String nameMapping, boolean caseSensitive) {
+                         Schema projectedSchema, String nameMapping, boolean caseSensitive) {
     super(task, io, encryption);
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
+    // Add file offset column after readSchema. Refer to this#wrapArcticFileOffsetColumnMeta
+    this.columnSize = projectedSchema.columns().size();
   }
 
   @Override
@@ -78,6 +84,11 @@ public class RowDataIterator extends DataIterator<RowData> {
     CloseableIterable<RowData> iterable = deletes.filter(newIterable(task, deletes.requiredSchema(), idToConstant));
 
     return iterable.iterator();
+  }
+
+  @Override
+  public RowData next() {
+    return ArcticUtils.removeArcticMetaColumn(super.next(), columnSize);
   }
 
   private CloseableIterable<RowData> newIterable(FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {

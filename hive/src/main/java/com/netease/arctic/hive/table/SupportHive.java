@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.table;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 
 /**
  * Mix-in interface to mark task use hive as base store
@@ -35,5 +35,5 @@ public interface SupportHive {
    * the client to operate hive table
    * @return hive metastore client
    */
-  HMSClient getHMSClient();
+  HMSClientPool getHMSClient();
 }
