@@ -20,12 +20,20 @@ package com.netease.arctic.spark.delegate;
 
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.SparkTestContext;
+import com.netease.arctic.table.TableIdentifier;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -165,6 +173,35 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table2);
 
     sql("drop table {0}.{1}", database, table3);
+  }
+
+
+  @Test
+  public void testCreateTableAsSelect() {
+    sql("set spark.arctic.sql.delegate.enable=true");
+    String table = "test_create_table_as_select";
+    List<Row> tempRows = com.google.common.collect.Lists.newArrayList(
+        RowFactory.create(1L, "a", "2020-01-01"),
+        RowFactory.create(2L, "b", "2021-01-01"),
+        RowFactory.create(3L, "c", "2022-01-01")
+    );
+    Schema schema = new Schema(
+        com.google.common.collect.Lists.newArrayList(
+            Types.NestedField.of(1, false, "id", Types.LongType.get(), ""),
+            Types.NestedField.of(2, false, "name", Types.StringType.get(), ""),
+            Types.NestedField.of(3, false, "pt", Types.StringType.get(), "")
+        )
+    );
+    TableIdentifier arcticTableId = TableIdentifier.of(catalogNameHive, database, table);
+    Dataset<Row> df = spark.createDataFrame(tempRows, SparkSchemaUtil.convert(schema));
+    df.registerTempTable("tmp");
+
+    sql("create table {0}.{1} primary key (id) using arctic as select * from tmp", database, table);
+    rows = sql("select id, name, pt from {0}.{1}", database, table);
+    assertContainIdSet(rows,0, 1L, 2L, 3L);
+    assertTableExist(arcticTableId);
+
+    sql("drop table {0}.{1}", database, table);
   }
 
 }
