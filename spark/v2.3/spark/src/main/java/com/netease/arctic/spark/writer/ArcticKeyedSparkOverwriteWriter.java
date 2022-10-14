@@ -36,6 +36,7 @@ import org.apache.iceberg.util.Tasks;
 import org.apache.spark.TaskContext;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
+import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriterFactory;
@@ -67,7 +68,13 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   private WriteMode writeMode = null;
 
-  public ArcticKeyedSparkOverwriteWriter(KeyedTable table, StructType dsSchema) {
+  private DataSourceOptions options;
+
+  public ArcticKeyedSparkOverwriteWriter(KeyedTable table, StructType dsSchema, DataSourceOptions options) {
+    this.options = options;
+    if (options != null && options.asMap().containsKey(WriteMode.WRITE_MODE_KEY)) {
+      this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY).get());
+    }
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
