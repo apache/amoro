@@ -75,7 +75,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private ScheduledTasks<TableIdentifier, OptimizeCheckTask> checkTasks;
 
-  private final BlockingQueue<TableIdentifier> toCommitTables = new ArrayBlockingQueue<>(1000);
+  private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private static final long DEFAULT_CACHE_REFRESH_TIME = 60_000; // 1min
   private final Map<TableIdentifier, TableOptimizeItem> cachedTables = new HashMap<>();
@@ -419,12 +419,12 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   }
 
   @Override
-  public boolean triggerOptimizeCommit(TableIdentifier tableIdentifier) {
-    return toCommitTables.offer(tableIdentifier);
+  public boolean triggerOptimizeCommit(TableOptimizeItem tableOptimizeItem) {
+    return toCommitTables.offer(tableOptimizeItem);
   }
 
   @Override
-  public TableIdentifier takeTableToCommit() throws InterruptedException {
+  public TableOptimizeItem takeTableToCommit() throws InterruptedException {
     return toCommitTables.take();
   }
 
