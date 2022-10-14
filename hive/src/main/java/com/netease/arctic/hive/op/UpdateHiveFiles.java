@@ -98,19 +98,17 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     }
 
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
-    if (CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles)) {
-      getSnapshotUpdateDelegate().commit();
-      if (!insideTransaction) {
-        transaction.commitTransaction();
-      }
-
-      return;
-    }
+    boolean isNoHiveDataFiles = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles);
 
     getSnapshotUpdateDelegate().commit();
-    commitPartitionProperties();
+    if (!isNoHiveDataFiles) {
+      commitPartitionProperties();
+    }
     if (!insideTransaction) {
       transaction.commitTransaction();
+    }
+    if (isNoHiveDataFiles) {
+      return;
     }
 
     if (table.spec().isUnpartitioned()) {

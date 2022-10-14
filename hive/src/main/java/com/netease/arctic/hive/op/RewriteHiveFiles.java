@@ -33,18 +33,6 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   }
 
   @Override
-  public void commit() {
-    if (CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles)) {
-      delegate.commit();
-      if (!insideTransaction) {
-        transaction.commitTransaction();
-      }
-    } else {
-      super.commit();
-    }
-  }
-
-  @Override
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
     delegate.rewriteFiles(filesToDelete, filesToAdd);
 
