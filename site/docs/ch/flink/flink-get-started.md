@@ -21,6 +21,15 @@ Flink Connector 包括：
 | 0.3.0             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.14-0.3.0.jar) |
 | 0.3.0             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.0-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.15-0.3.0.jar) |
 
+Kafka 作为 Logstore 版本说明：
+
+| Connector Version | Flink Version | Kafka Versions |
+| ----------------- |---------------|  ----------------- |
+| 0.3.0             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.0             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.0             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+
+
 对 Arctic 工程自行编译也可以获取该 runtime jar
 
 `mvn clean package -Pflink-1.14 -DskipTests`
