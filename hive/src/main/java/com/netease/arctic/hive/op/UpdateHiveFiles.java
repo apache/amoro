@@ -99,8 +99,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     }
 
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
-    boolean isNoHiveDataFiles = CollectionUtils.isEmpty(addFiles)
-        && CollectionUtils.isEmpty(deleteFiles) && expr != Expressions.alwaysTrue();
+    boolean isNoHiveDataFiles = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles) &&
+        expr != Expressions.alwaysTrue();
 
     getSnapshotUpdateDelegate().commit();
     if (!isNoHiveDataFiles) {
