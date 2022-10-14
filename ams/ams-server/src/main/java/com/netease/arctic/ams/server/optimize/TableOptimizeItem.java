@@ -182,7 +182,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (!allTasksPrepared()) {
         return;
       }
-      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(tableIdentifier);
+      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(this);
       if (success) {
         waitCommit.set(true);
       }
@@ -768,7 +768,6 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public Map<String, List<OptimizeTaskItem>> getOptimizeTasksToCommit() {
     tasksLock.lock();
-    waitCommit.set(false);
     try {
       Map<String, List<OptimizeTaskItem>> collector = new HashMap<>();
       for (OptimizeTaskItem optimizeTaskItem : optimizeTasks.values()) {
@@ -784,6 +783,10 @@ public class TableOptimizeItem extends IJDBCService {
     } finally {
       tasksLock.unlock();
     }
+  }
+  
+  public void setTableCanCommit() {
+    waitCommit.set(false);
   }
 
   /**
