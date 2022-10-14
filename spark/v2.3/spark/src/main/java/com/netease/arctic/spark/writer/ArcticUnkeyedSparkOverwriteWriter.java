@@ -37,6 +37,7 @@ import org.apache.iceberg.util.Tasks;
 import org.apache.spark.TaskContext;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
+import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriterFactory;
@@ -66,8 +67,13 @@ public class ArcticUnkeyedSparkOverwriteWriter implements SupportsWriteInternalR
   private final String subDir = HiveTableUtil.newHiveSubdirectory(this.transactionId);
   protected Expression overwriteExpr = null;
   private WriteMode writeMode = null;
+  private DataSourceOptions options;
 
-  public ArcticUnkeyedSparkOverwriteWriter(UnkeyedTable unkeyedTable, StructType dsSchema) {
+  public ArcticUnkeyedSparkOverwriteWriter(UnkeyedTable unkeyedTable, StructType dsSchema, DataSourceOptions options) {
+    this.options = options;
+    if (options != null && options.asMap().containsKey(WriteMode.WRITE_MODE_KEY)) {
+      this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY).get());
+    }
     this.table = unkeyedTable;
     this.dsSchema = dsSchema;
   }
