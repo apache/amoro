@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
@@ -98,7 +99,7 @@ public class BaseOptimizeCommit {
                 .map(SerializationUtil::toInternalTableFile)
                 .forEach(minorAddFiles::add);
 
-            minorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), minorAddFiles));
+            minorDeleteFiles.addAll(selectDeletedFiles(task, minorAddFiles));
 
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
             if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
@@ -114,7 +115,7 @@ public class BaseOptimizeCommit {
             task.getOptimizeRuntime().getTargetFiles().stream()
                 .map(SerializationUtil::toInternalTableFile)
                 .forEach(majorAddFiles::add);
-            majorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), new HashSet<>()));
+            majorDeleteFiles.addAll(selectDeletedFiles(task, new HashSet<>()));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
           }
         }
@@ -335,12 +336,14 @@ public class BaseOptimizeCommit {
     }
   }
 
-  private static Set<ContentFile<?>> selectDeletedFiles(BaseOptimizeTask optimizeTask,
+  private static Set<ContentFile<?>> selectDeletedFiles(OptimizeTaskItem taskItem,
                                                         Set<ContentFile<?>> addPosDeleteFiles) {
+    BaseOptimizeTask optimizeTask = taskItem.getOptimizeTask();
+    BaseOptimizeTaskRuntime optimizeTaskRuntime = taskItem.getOptimizeRuntime();
     switch (optimizeTask.getTaskId().getType()) {
       case FullMajor:
       case Major:
-        return selectMajorOptimizeDeletedFiles(optimizeTask);
+        return selectMajorOptimizeDeletedFiles(optimizeTask, optimizeTaskRuntime);
       case Minor:
         return selectMinorOptimizeDeletedFiles(optimizeTask, addPosDeleteFiles);
     }
@@ -364,12 +367,15 @@ public class BaseOptimizeCommit {
         .collect(Collectors.toSet());
   }
 
-  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
+  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask,
+                                                                     BaseOptimizeTaskRuntime optimizeTaskRuntime) {
     // add base deleted files
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
         .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
 
-    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor) {
+    // if full optimize or new DataFiles is empty, can delete DeleteFiles
+    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor ||
+        CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
     }
