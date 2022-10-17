@@ -80,7 +80,6 @@ public abstract class BaseOptimizePlan {
   // if not, the new added partitions will be ignored by mistake.
   // After plan files, current partitions of table will be set.
   protected final Set<String> currentPartitions = new HashSet<>();
-  protected final Set<String> allPartitions = new HashSet<>();
 
   // for base table or unKeyed table
   protected long currentBaseSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
