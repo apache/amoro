@@ -69,7 +69,7 @@ public class ShuffleHelper implements Serializable {
   /**
    * If using arctic table as build table, there will be an additional implicit field, valuing process time.
    *
-   * @param schema  The physical schema in Arctic table
+   * @param schema  The physical schema in Arctic table.
    * @param rowType Flink RowData type.
    * @return the Arctic Schema with additional implicit field.
    */
