@@ -26,6 +26,8 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.util.function.Consumer;
 
@@ -48,6 +50,8 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
 
   @Override
   public OverwriteFiles overwriteByRowFilter(Expression expr) {
+    Preconditions.checkArgument(!table.spec().isUnpartitioned() || expr == Expressions.alwaysTrue(),
+        "Unpartitioned hive table support alwaysTrue expression only");
     delegate.overwriteByRowFilter(expr);
     this.expr = expr;
     return this;
