@@ -33,6 +33,7 @@ export default {
   table: 'Table | Tables',
   size: 'Size',
   file: 'File',
+  files: 'Files',
   field: 'Field',
   type: 'Type',
   createTime: 'Create Time',
@@ -133,5 +134,6 @@ export default {
   resourceCpu: 'Resource Cpu',
   resourceMemory: 'Resource Memory',
   resourceUsage: 'Resource Usage',
-  top10: 'Top 10'
+  top10: 'Top 10',
+  numIndex: 'No.'
 }

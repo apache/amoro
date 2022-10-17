@@ -1,20 +1,25 @@
 <template>
   <div class="top-list-wrap">
     <div class="common-header">
-      <span class="name">{{`${$t('resourceUsage')} ${$t('tables')}`}}</span>
-      <a-select :options="timeOptions"></a-select>
+      <span class="name">{{`${$t('top10')} ${$t('tables')}`}}</span>
+      <a-select
+        v-model:value="filterType"
+        :options="filterOps"
+        @change="onChangeFilter"
+      />
     </div>
     <a-table
-      class="ant-table-common"
-      :columns="optimizerColumns"
-      :data-source="optimizersList"
+      :columns="columns"
+      :data-source="topList"
       :pagination="false"
       :loading="loading"
+      :scroll="{ y: scrollY }"
+      rowKey="tableName"
       >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.dataIndex === 'tableName'">
+        <template v-if="column.dataIndex === 'tableNameOnly'">
           <span class="primary-link" :title="record.tableName" @click="goTableDetail(record)">
-            {{ record.tableName }}
+            {{ record.tableNameOnly }}
           </span>
         </template>
         <template v-if="column.dataIndex === 'durationDisplay'">
@@ -26,44 +31,46 @@
     </a-table>
   </div>
 </template>
+
 <script lang="ts" setup>
 import { onMounted, reactive, ref, shallowReactive } from 'vue'
-import { IOptimizeResourceTableItem, IOptimizeTableItem } from '@/types/common.type'
-import { getOptimizerResourceList } from '@/services/optimize.service'
+import { ITopTableItem } from '@/types/common.type'
+import { getTopTables } from '@/services/overview.service'
 import { useI18n } from 'vue-i18n'
-import { usePagination } from '@/hooks/usePagination'
-import { formatMS2DisplayTime } from '@/utils'
+import { bytesToSize } from '@/utils'
 import { useRouter } from 'vue-router'
 
 const { t } = useI18n()
 const router = useRouter()
 
-const props = defineProps<{ curGroupName: string, type: string, needFresh: boolean }>()
-
+const scrollY = ref<number>(302)
 const loading = ref<boolean>(false)
-
-const optimizerColumns = shallowReactive([
-  { dataIndex: 'tableName', title: t('table'), ellipsis: true },
-  { dataIndex: 'jobStatus', title: t('status'), ellipsis: true },
-  { dataIndex: 'durationDisplay', title: t('duration'), ellipsis: true }
+const filterType = ref<string>('size')
+const filterOps = reactive([
+  { value: 'size', label: t('size') },
+  { value: 'files', label: t('files') }
 ])
-const pagination = reactive(usePagination())
-const optimizersList = reactive<IOptimizeResourceTableItem[]>([])
+const columns = shallowReactive([
+  { dataIndex: 'index', title: t('numIndex'), ellipsis: true, width: 60 },
+  { dataIndex: 'tableNameOnly', title: t('table'), ellipsis: true, scopedSlots: { customRender: 'tableNameOnly' } },
+  { dataIndex: 'displaySize', title: t('size'), ellipsis: true, width: '20%' },
+  { dataIndex: 'fileCnt', title: t('fileCnt'), ellipsis: true, width: '20%' }
+])
+const topList = reactive<ITopTableItem[]>([])
 
-async function getOptimizersList () {
+async function getTables () {
   try {
-    optimizersList.length = 0
+    topList.length = 0
     loading.value = true
     const params = {
-      optimizerGroup: props.curGroupName,
-      page: pagination.current,
-      pageSize: pagination.pageSize
+      orderBy: filterType.value
     }
-    const result = await getOptimizerResourceList(params)
-    const { list } = result;
-    (list || []).forEach((p: IOptimizeResourceTableItem) => {
-      p.durationDisplay = formatMS2DisplayTime(p.duration || 0)
-      optimizersList.push(p)
+    const result = await getTopTables(params);
+    (result || []).forEach((p: ITopTableItem, index: number) => {
+      p.index = index + 1
+      p.tableNameOnly = (p.tableName || '').split('.')[2]
+      p.displaySize = bytesToSize(p.size)
+      topList.push(p)
     })
   } catch (error) {
   } finally {
@@ -71,26 +78,36 @@ async function getOptimizersList () {
   }
 }
 
-function goTableDetail (record: IOptimizeTableItem) {
-  const { catalog, database, tableName } = record.tableIdentifier
-  router.push({
-    path: '/tables',
-    query: {
-      catalog,
-      db: database,
-      table: tableName
-    }
-  })
+function onChangeFilter() {
+  getTables()
+}
+
+function goTableDetail (record: ITopTableItem) {
+  try {
+    const { catalog, database, tableName } = (record.tableName || '').split('.')
+    router.push({
+      path: '/tables',
+      query: {
+        catalog,
+        db: database,
+        table: tableName
+      }
+    })
+  } catch (error) {
+  }
 }
 
 onMounted(() => {
-  getOptimizersList()
+  getTables()
 })
 </script>
 <style lang="less" scoped>
-.optimizing-list-wrap {
+.top-list-wrap {
   display: flex;
   flex: 1;
+  flex-direction: column;
+  padding: 0 24px 16px;
+  box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
   .primary-link {
     color: @primary-color;
     &:hover {

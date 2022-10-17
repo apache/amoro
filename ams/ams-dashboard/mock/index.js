@@ -638,5 +638,36 @@ module.exports = {
         ]
       }
     })
+  },
+  'GET /mock/ams/v1/overview/summary': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "catalogCnt": 2,
+        "tableCnt": 37944,
+        "tableTotalSize": 10585900,
+        "totalCpu": "6",
+        "totalMemory": 62464
+      }
+    })
+  },
+  'GET /mock/ams/v1/overview/top/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          "tableName": "trino_online_env_hive.spark_test.ctpri",
+          "size": 12938982,
+          "fileCnt": 57889
+        },
+        {
+          "tableName": "trino_online_env_hive.spark_test.ctpp_col",
+          "size": 329043290,
+          "fileCnt": 79910
+        }
+      ]
+    })
   }
 }

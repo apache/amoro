@@ -11,11 +11,17 @@
 <script lang="ts" setup>
 import { onMounted, reactive, ref } from 'vue'
 import Chart from '@/components/echarts/Chart.vue'
+import { getOptimizeResource } from '@/services/overview.service'
 
 const loading = ref<boolean>(false)
 const lineChartOptions = reactive([])
 
-function getLineChartData() {}
+async function getLineChartData() {
+  // const res = await getOptimizeResource({
+  //   startTime: 0,
+  //   endTime: 0
+  // })
+}
 
 onMounted(() => {
   getLineChartData()

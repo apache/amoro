@@ -5,6 +5,10 @@
       <ResourceUsage />
       <OptimizingTables />
     </div>
+    <div class="module-card g-flex">
+      <ResourceUsage />
+      <TopTables />
+    </div>
     <!-- <div class="echarts-wrap">
       <div class="line-chart">
         <line-chart key='chart1' />
@@ -50,13 +54,15 @@ import { IColumns } from '@/types/common.type'
 import ResourceCard from './ResourceCard.vue'
 import ResourceUsage from './ResourceUsage.vue'
 import OptimizingTables from './OptimizingTable.vue'
+import TopTables from './TopTables.vue'
 
 export default defineComponent({
   name: 'Overview',
   components: {
     ResourceCard,
     ResourceUsage,
-    OptimizingTables
+    OptimizingTables,
+    TopTables
     // LineChart
   },
   setup() {
@@ -148,6 +154,9 @@ export default defineComponent({
     line-height: 24px;
     font-weight: 500;
     color: @header-color;
+  }
+  .ant-select-selector {
+    border: 0 !important;
   }
 }
 </style>

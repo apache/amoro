@@ -2618,10 +2618,10 @@ ansi-styles@^4.0.0, ansi-styles@^4.1.0:
   dependencies:
     color-convert "^2.0.1"
 
-ant-design-vue@^3.1.1:
-  version "3.1.1"
-  resolved "https://registry.yarnpkg.com/ant-design-vue/-/ant-design-vue-3.1.1.tgz#429368057bc445975b3e6ee498915d5bd66e0e87"
-  integrity sha512-QcnESmPllfyPy4SavOlf1jml/bdmzCIcCgYWRwl0WKG5jbuuOQ0vhgfUCC2rI6R+84gb/qf4/0qoZnWcEyQziA==
+ant-design-vue@^3.2.0:
+  version "3.2.13"
+  resolved "https://registry.yarnpkg.com/ant-design-vue/-/ant-design-vue-3.2.13.tgz#2e2823d2ee84b83827816a5591c7bb7563852662"
+  integrity sha512-zO+0hhu5LN+UQOL9L+7Wlpj3WZcG6DT41OyuMJNS6Ja3impLNR2d1UwAVXr+eRdMd3TKd6dRc+KYn5/XTS9K8Q==
   dependencies:
     "@ant-design/colors" "^6.0.0"
     "@ant-design/icons-vue" "^6.1.0"
