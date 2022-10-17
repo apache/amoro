@@ -68,7 +68,7 @@ public class TestMultiDelegateSessionCatalog extends SparkTestContext {
         IcebergSparkSessionExtensions.class.getName() + "," + ArcticSparkExtensions.class.getName());
 
     configs.put("spark.sql.catalog.spark_catalog", MultiDelegateSessionCatalog.class.getName());
-    configs.put("spark.sql.catalog.spark_catalog.delegates", "arctic,iceberg");
+    configs.put("spark.sql.catalog.spark_catalog.delegates", "iceberg,arctic");
 
     configs.put("spark.sql.catalog.spark_catalog.arctic", ArcticSparkSessionCatalog.class.getName());
     configs.put("spark.sql.catalog.spark_catalog.arctic.url", amsUrl + "/" + catalogNameHive);

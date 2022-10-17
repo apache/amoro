@@ -308,7 +308,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       this.holder = catalog;
     }
 
-    private CatalogHolder<ArcticSparkCatalog> delegate;
+    private CatalogHolder<T> delegate;
 
     @Override
     public void setDelegateCatalog(CatalogPlugin delegate) {
@@ -316,7 +316,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
           delegate instanceof CatalogHolder,
           "delegate catalog must be CatalogHolder");
       ((CatalogExtension) holder).setDelegateCatalog(delegate);
-      this.delegate = (CatalogHolder<ArcticSparkCatalog>) delegate;
+      this.delegate = (CatalogHolder<T>) delegate;
     }
 
     @Override
