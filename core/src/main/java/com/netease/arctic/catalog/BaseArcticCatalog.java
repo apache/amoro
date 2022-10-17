@@ -330,6 +330,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
         String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
         builder.withBase64KrbAuth(keytab, krb5, principal);
       }
+
+      boolean disableAuth = PropertyUtil.propertyAsBoolean(this.catalogMeta.getAuthConfigs(),
+          CatalogMetaProperties.AUTH_CONFIGS_DISABLE, CatalogMetaProperties.AUTH_CONFIGS_DISABLE_DEFAULT);
+      builder.withDisableAuth(disableAuth);
     }
     return builder;
   }

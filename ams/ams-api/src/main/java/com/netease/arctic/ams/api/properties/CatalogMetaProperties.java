@@ -28,6 +28,9 @@ public class CatalogMetaProperties {
 
     public static final String STORAGE_CONFIGS_VALUE_TYPE_HDFS = "hdfs" ;
 
+    public static final String AUTH_CONFIGS_DISABLE = "auth.disable";
+    public static final boolean AUTH_CONFIGS_DISABLE_DEFAULT = false;
+
     public static final String AUTH_CONFIGS_KEY_TYPE = "auth.type" ;
     public static final String AUTH_CONFIGS_KEY_PRINCIPAL = "auth.kerberos.principal" ;
     public static final String AUTH_CONFIGS_KEY_KEYTAB = "auth.kerberos.keytab" ;

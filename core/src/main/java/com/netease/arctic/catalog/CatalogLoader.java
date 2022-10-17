@@ -25,10 +25,15 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.client.ArcticThriftUrl;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.table.TableMetaStore;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -92,6 +97,9 @@ public class CatalogLoader {
   public static ArcticCatalog load(AmsClient client, String catalogName, Map<String, String> props) {
     try {
       CatalogMeta catalogMeta = client.getCatalog(catalogName);
+      // engine can set catalog configs with catalog properties
+      setCatalogConfigsWithProperties(catalogMeta, props);
+
       String type = catalogMeta.getCatalogType();
       String catalogImpl;
       switch (type) {
@@ -155,5 +163,57 @@ public class CatalogLoader {
       throw new IllegalArgumentException(
           String.format("Cannot initialize Catalog, %s does not implement Catalog.", impl), e);
     }
+  }
+
+  private static void setCatalogConfigsWithProperties(CatalogMeta catalogMeta, Map<String, String> props) {
+    Map<String, String> authConfigs = catalogMeta.getAuthConfigs() == null ?
+        new HashMap<>() : catalogMeta.getAuthConfigs();
+    Map<String, String> storageConfigs = catalogMeta.getStorageConfigs() == null ?
+        new HashMap<>() : catalogMeta.getStorageConfigs();
+    String authMethod = props.get(TableMetaStore.AUTH_METHOD);
+    String coreSite = props.get(TableMetaStore.CORE_SITE);
+    String hdfsSite = props.get(TableMetaStore.HDFS_SITE);
+    String hiveSite = props.get(TableMetaStore.HIVE_SITE);
+    String disableAuth = props.get(CatalogMetaProperties.AUTH_CONFIGS_DISABLE);
+
+    if (StringUtils.isNotEmpty(coreSite)) {
+      storageConfigs.put(TableMetaStore.CORE_SITE, coreSite);
+    }
+    if (StringUtils.isNotEmpty(hdfsSite)) {
+      storageConfigs.put(TableMetaStore.HDFS_SITE, hdfsSite);
+    }
+    if (StringUtils.isNotEmpty(hiveSite)) {
+      storageConfigs.put(TableMetaStore.HIVE_SITE, hiveSite);
+    }
+    catalogMeta.setStorageConfigs(storageConfigs);
+
+    if (StringUtils.isNotEmpty(authMethod)) {
+      authConfigs.put(TableMetaStore.AUTH_METHOD, authMethod);
+      if (TableMetaStore.AUTH_METHOD_SIMPLE.equalsIgnoreCase(authMethod)) {
+        String simpleUserName = props.get(TableMetaStore.SIMPLE_USER_NAME);
+        authConfigs.put(TableMetaStore.SIMPLE_USER_NAME, simpleUserName);
+      } else if (TableMetaStore.AUTH_METHOD_KERBEROS.equalsIgnoreCase(authMethod)) {
+        String krbLoginUser = props.get(TableMetaStore.KEYTAB_LOGIN_USER);
+        String keytabPath = new Path(props.get(TableMetaStore.KEYTAB)).toString();
+        String krb5ConfPath = new Path(props.get(TableMetaStore.KRB5_CONF)).toString();
+        authConfigs.put(TableMetaStore.KEYTAB_LOGIN_USER, krbLoginUser);
+        authConfigs.put(TableMetaStore.KEYTAB, keytabPath);
+        authConfigs.put(TableMetaStore.KRB5_CONF, krb5ConfPath);
+      } else {
+        throw new RuntimeException(String.format("this %s=%s is not supported", TableMetaStore.AUTH_METHOD,
+            authMethod));
+      }
+    }
+
+    if (StringUtils.isNotEmpty(disableAuth)) {
+      if ("true".equalsIgnoreCase(disableAuth) || "false".equalsIgnoreCase(disableAuth)) {
+        authConfigs.put(CatalogMetaProperties.AUTH_CONFIGS_DISABLE, disableAuth);
+      } else {
+        throw new RuntimeException(String.format("this %s=%s is not supported, only support true or false",
+            CatalogMetaProperties.AUTH_CONFIGS_DISABLE, disableAuth));
+      }
+    }
+
+    catalogMeta.setAuthConfigs(authConfigs);
   }
 }

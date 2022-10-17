@@ -95,11 +95,11 @@ public class TableMetaStore implements Serializable {
   private final byte[] krbConf;
   private final String krbPrincipal;
 
-
   private transient Configuration configuration;
   private transient UserGroupInformation ugi;
   private transient Path confCachePath;
   private transient boolean ugiNotSupportReflect = false;
+  private transient boolean disableAuth = false;
 
   /**
    * For Kerberos authentication, krb5.conf and keytab files need
@@ -117,7 +117,7 @@ public class TableMetaStore implements Serializable {
 
   private TableMetaStore(
       byte[] metaStoreSite, byte[] hdfsSite, byte[] coreSite, String authMethod,
-      String hadoopUsername, byte[] krbKeyTab, byte[] krbConf, String krbPrincipal) {
+      String hadoopUsername, byte[] krbKeyTab, byte[] krbConf, String krbPrincipal, boolean disableAuth) {
     Preconditions.checkArgument(AUTH_METHOD_SIMPLE.equals(authMethod) || AUTH_METHOD_KERBEROS.equals(authMethod),
         "Error auth method:%s", authMethod);
     this.metaStoreSite = metaStoreSite;
@@ -128,6 +128,7 @@ public class TableMetaStore implements Serializable {
     this.krbKeyTab = krbKeyTab;
     this.krbConf = krbConf;
     this.krbPrincipal = krbPrincipal;
+    this.disableAuth = disableAuth;
   }
 
   private TableMetaStore(
@@ -296,6 +297,18 @@ public class TableMetaStore implements Serializable {
   }
 
   public <T> T doAs(Callable<T> callable) {
+    // if disableAuth, use process ugi to execute
+    if (disableAuth) {
+      try {
+        return callable.call();
+      } catch (Throwable e) {
+        if (e instanceof RuntimeException) {
+          throw (RuntimeException) e;
+        }
+        throw new RuntimeException("run with process ugi request failed.", e);
+      }
+    }
+
     return Objects.requireNonNull(getUGI()).doAs((PrivilegedAction<T>) () -> {
       try {
         return callable.call();
@@ -303,7 +316,7 @@ public class TableMetaStore implements Serializable {
         if (e instanceof RuntimeException) {
           throw (RuntimeException) e;
         }
-        throw new RuntimeException("run with ugi doAs request failed.", e);
+        throw new RuntimeException("run with catalog ugi doAs request failed.", e);
       }
     });
   }
@@ -420,6 +433,7 @@ public class TableMetaStore implements Serializable {
     private byte[] krbKeyTab;
     private byte[] krbConf;
     private String krbPrincipal;
+    private boolean disableAuth;
     private Map<String, String> properties = Maps.newHashMap();
     private Configuration configuration;
 
@@ -539,6 +553,11 @@ public class TableMetaStore implements Serializable {
           krbConf, krbPrincipal);
     }
 
+    public Builder withDisableAuth(boolean disableAuth) {
+      this.disableAuth = disableAuth;
+      return this;
+    }
+
     public Builder withProperties(Map<String, String> properties) {
       this.properties.putAll(properties);
       return this;
@@ -604,7 +623,7 @@ public class TableMetaStore implements Serializable {
       }
       TableMetaStore metaStore =
           new TableMetaStore(metaStoreSite, hdfsSite, coreSite, authMethod, hadoopUsername,
-              krbKeyTab, krbConf, krbPrincipal);
+              krbKeyTab, krbConf, krbPrincipal, disableAuth);
       // If the ugi object is not closed, it will lead to a memory leak, so here need to cache the metastore object
       TableMetaStore cachedMetaStore = objectCache.putIfAbsent(metaStore, metaStore);
       if (cachedMetaStore == null) {
