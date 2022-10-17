@@ -244,6 +244,9 @@ public class HMSMockServer {
     String derbyPath = getDerbyPath();
     LOG.info("DerbyPath: " + derbyPath);
     String derbyUrl = "jdbc:derby:;databaseName=" + derbyPath + ";create=true";
+    // when test iceberg with hive catalog, Exception `java.sql.SQLSyntaxErrorException: Table/View 'HIVE_LOCKS' does
+    // not exist.` will throw, this is a bug of hive scheamtools, see https://issues.apache.org/jira/browse/HIVE-21302.
+    // so we set up metastore first to avoid this bug.
     setupMetastoreDB(derbyUrl);
 
     serverConf.set(HiveConf.ConfVars.METASTORECONNECTURLKEY.varname, derbyUrl);
