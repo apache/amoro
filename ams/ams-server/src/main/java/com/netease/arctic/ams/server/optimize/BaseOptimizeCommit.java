@@ -303,11 +303,17 @@ public class BaseOptimizeCommit {
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
         dataFilesRewrite.validateFromSnapshot(baseSnapshotId);
       }
-      dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
+
+      // if add DataFiles is empty, the DeleteFiles are must exist and apply to old DataFiles
+      if (CollectionUtils.isEmpty(addDataFiles)) {
+        dataFilesRewrite.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
+      } else {
+        dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
+      }
       dataFilesRewrite.commit();
 
-      // remove DeleteFiles
-      if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
+      // if add DataFiles is not empty, should remove DeleteFiles additional, because DeleteFiles maybe aren't existed
+      if (CollectionUtils.isNotEmpty(addDataFiles) && CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
         RewriteFiles removeDeleteFiles = baseArcticTable.newRewrite()
             .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
         removeDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
