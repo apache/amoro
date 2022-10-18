@@ -109,7 +109,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       StructType schema,
       Transform[] partitions,
       Map<String, String> properties) throws TableAlreadyExistsException, NoSuchNamespaceException {
-    return null;
+    return this.delegateCatalog.stageCreate(ident, schema, partitions, properties);
   }
 
   @Override
@@ -118,7 +118,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       StructType schema,
       Transform[] partitions,
       Map<String, String> properties) throws NoSuchNamespaceException, NoSuchTableException {
-    return null;
+    return this.delegateCatalog.stageReplace(ident, schema, partitions, properties);
   }
 
   @Override
@@ -127,7 +127,7 @@ public class MultiDelegateSessionCatalog<T extends TableCatalog & SupportsNamesp
       StructType schema,
       Transform[] partitions,
       Map<String, String> properties) throws NoSuchNamespaceException {
-    return null;
+    return this.delegateCatalog.stageCreateOrReplace(ident, schema, partitions, properties);
   }
 
   @Override
