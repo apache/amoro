@@ -208,13 +208,13 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       expressions.add(experssion)
       i += 1
     }
-//    expressions.forEach(e => {
-//      if (joinCondition == null) {
-//        joinCondition = e
-//      } else {
-//        joinCondition = And(joinCondition, e)
-//      }
-//    });
+    expressions.forEach(e => {
+      if (joinCondition == null) {
+        joinCondition = e
+      } else {
+        joinCondition = And(joinCondition, e)
+      }
+    });
     joinCondition
   }
 
