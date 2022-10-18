@@ -252,7 +252,6 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
       ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
