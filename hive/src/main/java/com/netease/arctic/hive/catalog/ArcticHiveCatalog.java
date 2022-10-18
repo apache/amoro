@@ -268,14 +268,11 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     @Override
     protected KeyedHiveTable createKeyedTable(TableMeta meta) {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
-      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
-      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
-
-      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-      meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
+      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
+      fillTableProperties(meta);
+      String hiveLocation = meta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
       // default 1 day
       if (!meta.properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL)) {
         meta.putToProperties(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000");
@@ -342,11 +339,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
-      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
-
-      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
-      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      fillTableProperties(meta);
+      String hiveLocation = meta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
 
       Table table = tableMetaStore.doAs(() -> {
         try {
@@ -405,6 +399,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       newTable.getParameters().put("EXTERNAL", "TRUE"); // using the external table type also requires this
       return newTable;
+    }
+
+    @Override
+    protected void fillTableProperties(TableMeta meta) {
+      super.fillTableProperties(meta);
+      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
+      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
+      meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
     }
 
     @Override
