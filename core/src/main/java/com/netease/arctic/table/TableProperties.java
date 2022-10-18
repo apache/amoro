@@ -72,6 +72,9 @@ public class TableProperties {
 
   public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
   public static final int OPTIMIZE_RETRY_NUMBER_DEFAULT = 5;
+  
+  public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
+  public static final int OPTIMIZE_MAX_FILE_COUNT_DEFAULT = 100000;
 
   public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
   public static final long MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 86_400_000; // 1 day
