@@ -118,7 +118,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       long snapshotId = snapshot == null ? EARLIEST_SNAPSHOT_ID : snapshot.snapshotId();
       enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshotId, null));
       LOG.info("{} is {}, the current snapshot id of the change table {}  is {}.",
-          SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshot.snapshotId());
+          SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshotId);
     }
     if (snapshotDiscoveryIntervalMs > 0) {
       LOG.info(
