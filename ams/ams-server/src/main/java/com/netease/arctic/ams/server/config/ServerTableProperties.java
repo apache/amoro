@@ -27,9 +27,6 @@ import java.util.Set;
 public class ServerTableProperties {
 
   public static final Set<String> HIDDEN_EXPOSED = new HashSet<>();
-  
-  public static final String OPTIMIZE_FILE_COUNT_MAX = "optimize.file-count.max";
-  public static final int OPTIMIZE_FILE_COUNT_MAX_DEFAULT = 100000;
 
   static {
     HIDDEN_EXPOSED.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);

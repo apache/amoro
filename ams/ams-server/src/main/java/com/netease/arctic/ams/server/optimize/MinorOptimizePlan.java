@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.optimize;
 import com.google.common.collect.ImmutableList;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -44,13 +43,11 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -168,16 +165,22 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     }).filter(Objects::nonNull).collect(Collectors.toList());
 
     final int maxChangeFiles =
-        PropertyUtil.propertyAsInt(arcticTable.properties(), ServerTableProperties.OPTIMIZE_FILE_COUNT_MAX,
-            ServerTableProperties.OPTIMIZE_FILE_COUNT_MAX_DEFAULT);
+        PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.OPTIMIZE_MAX_FILE_COUNT,
+            TableProperties.OPTIMIZE_MAX_FILE_COUNT_DEFAULT);
     long maxTransactionIdLimit;
     if (unOptimizedChangeFiles.size() <= maxChangeFiles) {
       maxTransactionIdLimit = Long.MAX_VALUE;
+      // For normal cases, files count is less than optimize.max-file-count(default=100000), return all files
+      LOG.debug("{} start plan change files with all files, max-cnt limit {}, current file cnt {}", tableId(),
+          maxChangeFiles, unOptimizedChangeFiles.size());
     } else {
       List<Long> sortedTransactionIds = unOptimizedChangeFiles.stream().map(ChangeFileInfo::getTransactionId)
           .sorted(Long::compareTo)
           .collect(Collectors.toList());
       maxTransactionIdLimit = sortedTransactionIds.get(maxChangeFiles - 1);
+      // If files count is more than optimize.max-file-count, only keep files with small file transaction id
+      LOG.debug("{} start plan change files with max-cnt limit {}, current file cnt {}, less than transaction id {}",
+          tableId(), maxChangeFiles, unOptimizedChangeFiles.size(), maxTransactionIdLimit);
     }
 
     AtomicInteger addCnt = new AtomicInteger();
