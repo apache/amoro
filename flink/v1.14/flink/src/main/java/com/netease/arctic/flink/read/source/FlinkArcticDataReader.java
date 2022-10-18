@@ -85,7 +85,7 @@ public class FlinkArcticDataReader extends BaseIcebergDataReader<RowData> implem
   @Override
   public CloseableIterator<RowData> open(FileScanTask fileScanTask) {
     ArcticFileScanTask arcticFileScanTask = (ArcticFileScanTask) fileScanTask;
-    CloseableIterable<RowData> rowDataIterable = fileIO.doAs(() -> readData(arcticFileScanTask));
+    CloseableIterable<RowData> rowDataIterable = readData(arcticFileScanTask);
     return fileIO.doAs(rowDataIterable::iterator);
   }
 }
