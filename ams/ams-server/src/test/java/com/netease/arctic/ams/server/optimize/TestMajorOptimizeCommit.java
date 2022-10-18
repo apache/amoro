@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -122,6 +123,68 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
           newDataFilesPath.add((String) fileScanTask.file().path());
           fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
+    Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+    Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
+  }
+
+  @Test
+  public void testEmptyTargetFilesMajorOptimizeCommit() throws Exception {
+    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
+    baseDataFilesInfo.addAll(baseDataFiles.stream()
+        .map(dataFile ->
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
+        .collect(Collectors.toList()));
+
+    Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
+    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
+        .collect(Collectors.toList()));
+
+    Set<String> oldDataFilesPath = new HashSet<>();
+    Set<String> oldDeleteFilesPath = new HashSet<>();
+    testKeyedTable.baseTable().newScan().planFiles()
+        .forEach(fileScanTask -> {
+          oldDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
+        });
+
+    testKeyedTable.updateProperties().
+        set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0").commit();
+    TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
+        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
+      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      optimizeRuntime.setPreparedTime(System.currentTimeMillis());
+      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
+      optimizeRuntime.setReportTime(System.currentTimeMillis());
+      optimizeRuntime.setNewFileCnt(0);
+      optimizeRuntime.setNewFileSize(0);
+      optimizeRuntime.setTargetFiles(new ArrayList<>());
+      // 1min
+      optimizeRuntime.setCostTime(60 * 1000);
+      return new OptimizeTaskItem(task, optimizeRuntime);
+    }).collect(Collectors.toList());
+    Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
+        .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
+
+    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    optimizeCommit.commit(testKeyedTable.baseTable().currentSnapshot().snapshotId());
+
+    Set<String> newDataFilesPath = new HashSet<>();
+    Set<String> newDeleteFilesPath = new HashSet<>();
+    testKeyedTable.baseTable().newScan().planFiles()
+        .forEach(fileScanTask -> {
+          newDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
+        });
+    Assert.assertEquals(0, newDataFilesPath.size());
+    Assert.assertEquals(0, newDeleteFilesPath.size());
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
