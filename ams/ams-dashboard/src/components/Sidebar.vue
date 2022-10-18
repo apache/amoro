@@ -1,5 +1,5 @@
 <template>
-  <div class="side-bar">
+  <div :class="{'side-bar-collapsed': collapsed}" class="side-bar">
     <div :class="{'logo-collapsed': collapsed}" @mouseenter="toggleTablesMenu(false)" class="logo g-flex-ac">
       <img src="../assets/images/logo.svg" class="logo-img" alt="">
       <img v-show="!collapsed" src="../assets/images/arctic-dashboard.svg" class="arctic-name" alt="">
@@ -32,6 +32,7 @@ import { computed, defineComponent, nextTick, reactive, toRefs, watchEffect } fr
 import { useRoute, useRouter } from 'vue-router'
 import useStore from '@/store/index'
 import TableMenu from '@/components/tables-sub-menu/TablesMenu.vue'
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons-vue'
 import { useI18n } from 'vue-i18n'
 import { getQueryString } from '@/utils'
 
@@ -44,6 +45,8 @@ interface MenuItem {
 export default defineComponent({
   name: 'Sidebar',
   components: {
+    MenuFoldOutlined,
+    MenuUnfoldOutlined,
     TableMenu
   },
   setup () {
@@ -176,7 +179,17 @@ export default defineComponent({
       height: 100%;
       width: 200px;
       &.ant-menu-inline-collapsed {
-        width: 80px;
+        width: 64px;
+        .logo {
+          padding-left: 14px;
+        }
+        .ant-menu-item {
+          margin: 0;
+          padding-left: 22px !important;
+        }
+        .toggle-btn {
+          right: 2px;
+        }
       }
     }
     :deep(.ant-menu-item) {
@@ -212,10 +225,15 @@ export default defineComponent({
     }
     .toggle-btn {
       position: absolute;
-      right: -68px;
-      top: 8px;
+      right: 16px;
+      bottom: 24px;
       font-size: 18px;
       padding: 0 24px;
+    }
+    &.side-bar-collapsed {
+      .toggle-btn {
+        right: 2px;
+      }
     }
     .svg-icon {
       font-size: 16px;
@@ -229,7 +247,7 @@ export default defineComponent({
     bottom: 0;
     z-index: 100;
     &.collapsed-sub-menu {
-      left: 80px;
+      left: 64px;
     }
   }
 </style>
