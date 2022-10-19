@@ -36,9 +36,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -48,6 +48,7 @@ import java.util.stream.Collectors;
 public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);
 
+  private static final long POLL_TIMEOUT = 3;
   private final SplitEnumeratorContext<ArcticSplit> enumeratorContext;
 
   private int totalParallelism;
@@ -62,7 +63,7 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   /**
    * Key is subtaskId, Value is the queue of unAssigned arctic splits.
    */
-  private final Map<Integer, Queue<ArcticSplit>> subtaskSplitMap;
+  private final Map<Integer, PriorityBlockingQueue<ArcticSplit>> subtaskSplitMap;
 
 
   public ShuffleSplitAssigner(
@@ -98,8 +99,14 @@ public class ShuffleSplitAssigner implements SplitAssigner {
               totalParallelism, currentParallelism));
     }
     if (subtaskSplitMap.containsKey(subTaskId)) {
-      Queue<ArcticSplit> queue = subtaskSplitMap.get(subTaskId);
-      ArcticSplit arcticSplit = queue.poll();
+      PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.get(subTaskId);
+
+      ArcticSplit arcticSplit = null;
+      try {
+        arcticSplit = queue.poll(POLL_TIMEOUT, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        LOG.warn("interruptedException", e);
+      }
       if (arcticSplit == null) {
         LOG.debug("Subtask {}, couldn't retrieve arctic source split in the queue.", subTaskId);
         return Optional.empty();
@@ -127,7 +134,8 @@ public class ShuffleSplitAssigner implements SplitAssigner {
 
   void putArcticIntoQueue(ArcticSplit split) {
     int subtaskId = getSubtaskIdByArcticSplit(split);
-    Queue<ArcticSplit> queue = subtaskSplitMap.getOrDefault(subtaskId, new PriorityQueue<>());
+    PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
+    LOG.info("put split into queue: {}", split);
     queue.add(split);
     subtaskSplitMap.put(subtaskId, queue);
   }
