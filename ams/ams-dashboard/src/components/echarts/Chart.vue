@@ -1,12 +1,11 @@
 <template>
   <a-spin :spinning="loading">
-    <div ref="echart" :style="{ width: width, height: height }"></div>
+    <div ref="echart" :style="{ width: width, height: height }" class="timeline-echarts"></div>
   </a-spin>
 </template>
 <script lang="ts">
 import { defineComponent, onMounted, onBeforeUnmount, watch, ref, toRefs, reactive } from 'vue'
 import echarts from './index'
-// import * as echarts from 'echarts'
 
 export default defineComponent({
   props: {
@@ -36,18 +35,12 @@ export default defineComponent({
     const echartsInit = () => {
       echartsInst = echarts.init(state.echart)
       echartsInst.setOption({
-        ...props.options
-      })
-      echartsInst.on('mouseover', {}, () => {
-
-      })
-      echartsInst.on('mouseout', {}, () => {
-
+        ...options.value
       })
     }
     const echartsOptionsUpdate = () => {
       echartsInst.setOption({
-        ...props.options
+        ...options.value
       })
       echartsInst.resize()
     }
@@ -60,10 +53,10 @@ export default defineComponent({
 
     watch(
       () => options.value,
-      (options) => {
-        if (options) {
-          echartsOptionsUpdate()
-        }
+      (value) => {
+        value && echartsOptionsUpdate()
+      }, {
+        deep: true
       }
     )
 
@@ -82,3 +75,12 @@ export default defineComponent({
   }
 })
 </script>
+<style lang="less">
+.timeline-echarts {
+  .echarts-tooltip-dark {
+    background-color: rgba(0,0,0,.7) !important;
+    line-height: 20px !important;
+    border: 1px solid #E9EBF1 !important;
+  }
+}
+</style>

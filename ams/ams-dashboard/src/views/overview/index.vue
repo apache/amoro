@@ -6,7 +6,7 @@
       <OptimizingTables />
     </div>
     <div class="module-card g-flex">
-      <ResourceUsage />
+      <!-- <ResourceUsage /> -->
       <TopTables />
     </div>
     <!-- <div class="echarts-wrap">
@@ -154,9 +154,6 @@ export default defineComponent({
     line-height: 24px;
     font-weight: 500;
     color: @header-color;
-  }
-  .ant-select-selector {
-    border: 0 !important;
   }
 }
 </style>

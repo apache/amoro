@@ -1,5 +1,5 @@
 <template>
-  <div class="resource-card g-flex g-mr-16">
+  <div class="resource-card g-flex">
     <div class="card g-mr-16">
       <span class="card-name">{{$t('catalog')}}</span>
       <p class="card-value">{{summary.catalogCnt}}</p>

@@ -104,7 +104,7 @@ onMounted(() => {
 <style lang="less" scoped>
 .top-list-wrap {
   display: flex;
-  flex: 1;
+  width: 50%;
   flex-direction: column;
   padding: 0 24px 16px;
   box-shadow: 0 1px 4px rgb(0 21 41 / 8%);

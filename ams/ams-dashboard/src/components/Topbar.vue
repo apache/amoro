@@ -59,9 +59,9 @@ export default defineComponent ({
   .top-bar {
     height: 64px;
     display: flex;
+    flex: 1;
     align-items: center;
     justify-content: flex-end;
-    width: 100%;
     background: #fff;
     border-bottom: 1px solid #e8e8e8;
     box-shadow: 0 1px 4px rgb(0 21 41 / 8%);

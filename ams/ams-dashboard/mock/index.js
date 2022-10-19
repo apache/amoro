@@ -669,5 +669,34 @@ module.exports = {
         }
       ]
     })
+  },
+  'GET /mock/ams/v1/overview/metric/optimize/resource': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "timeLine": [
+          "10-09 14:48"
+        ],
+        "usedCpu": [
+          "83.24"
+        ],
+        "usedCpuDivision": [
+          "1828核/2196核"
+        ],
+        "usedCpuPercent": [
+          "83.24%"
+        ],
+        "usedMem": [
+          "83.24"
+        ],
+        "usedMemDivision": [
+          "1828核/2196核10364G"
+        ],
+        "usedMemPercent": [
+          "83.24%"
+        ]
+      }
+    })
   }
 }

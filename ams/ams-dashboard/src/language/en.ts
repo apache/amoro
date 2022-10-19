@@ -135,5 +135,8 @@ export default {
   resourceMemory: 'Resource Memory',
   resourceUsage: 'Resource Usage',
   top10: 'Top 10',
-  numIndex: 'No.'
+  numIndex: 'No.',
+  cpu: 'CPU',
+  memory: 'Memory',
+  lastTime: 'Last {time}'
 }

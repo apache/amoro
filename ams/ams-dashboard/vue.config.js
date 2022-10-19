@@ -16,7 +16,7 @@
   * limitations under the License.
   */
 
-// const webpack = require('webpack')
+const webpack = require('webpack')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -126,6 +126,7 @@ module.exports = {
     if (isProduction) {
       config.optimization.minimizer[0].options.terserOptions.compress.drop_console = true
     }
+    config.plugins.push(new webpack.ContextReplacementPlugin(/moment[/\\]locale$/, /zh-cn/))
     return { plugins }
   },
   pluginOptions
