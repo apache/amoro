@@ -87,7 +87,7 @@ public class ArcticCatalogFactory implements CatalogFactory {
     properties.add(METASTORE_URL);
 
     // storage config and authorization config
-    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_AMS_CONFIGS_DISABLE);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.LOAD_AUTH_FROM_AMS);
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
     properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH);

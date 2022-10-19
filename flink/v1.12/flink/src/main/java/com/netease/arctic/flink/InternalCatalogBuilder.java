@@ -20,7 +20,7 @@ package com.netease.arctic.flink;
 
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.utils.Base64Utils;
+import com.netease.arctic.utils.ConfigurationFileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.util.Preconditions;
@@ -81,7 +81,7 @@ public class InternalCatalogBuilder implements Serializable {
       switch (key) {
         case CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH:
           try {
-            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB, Base64Utils.encodeBase64(value));
+            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB, ConfigurationFileUtils.encodeConfigurationFileWithBase64(value));
           } catch (IOException e) {
             LOG.error("encode keytab file failed", e);
             throw new CatalogException("encode keytab file failed", e);
@@ -92,7 +92,7 @@ public class InternalCatalogBuilder implements Serializable {
           break;
         case CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH:
           try {
-            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5, Base64Utils.encodeBase64(value));
+            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5, ConfigurationFileUtils.encodeConfigurationFileWithBase64(value));
           } catch (IOException e) {
             LOG.error("encode krb5 file failed", e);
             throw new CatalogException("encode krb5 file failed", e);

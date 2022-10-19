@@ -66,11 +66,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -109,7 +107,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       }
     }
 
-    TableMetaStore.Builder builder = getMetaStoreBuilder();
+    TableMetaStore.Builder builder = getMetaStoreBuilder(properties);
     tableMetaStore = builder.build();
     tables = new HadoopTables(tableMetaStore.getConfiguration());
   }
@@ -303,7 +301,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
   }
 
-  protected TableMetaStore.Builder getMetaStoreBuilder() {
+  protected TableMetaStore.Builder getMetaStoreBuilder(Map<String, String> properties) {
     TableMetaStore.Builder builder = TableMetaStore.builder();
     if (this.catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = this.catalogMeta.getStorageConfigs();
@@ -330,11 +328,31 @@ public class BaseArcticCatalog implements ArcticCatalog {
         String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
         builder.withBase64KrbAuth(keytab, krb5, principal);
       }
-
-      boolean disableAuth = PropertyUtil.propertyAsBoolean(this.catalogMeta.getAuthConfigs(),
-          CatalogMetaProperties.AUTH_CONFIGS_DISABLE, CatalogMetaProperties.AUTH_CONFIGS_DISABLE_DEFAULT);
-      builder.withDisableAuth(disableAuth);
     }
+
+    boolean loadAuthFromAMS = PropertyUtil.propertyAsBoolean(properties,
+        CatalogMetaProperties.LOAD_AUTH_FROM_AMS, CatalogMetaProperties.LOAD_AUTH_FROM_AMS_DEFAULT);
+    String authType = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+    // if disable ams auth configs and no provide auth configs, use process auth configs
+    if (!loadAuthFromAMS) {
+      if (StringUtils.isEmpty(authType)) {
+        builder.withDisableAuth(true);
+      }
+    }
+
+    // cover auth configs from ams with auth configs in properties
+    if (StringUtils.isNotEmpty(authType)) {
+      if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
+        String hadoopUsername = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+        builder.withSimpleAuth(hadoopUsername);
+      } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
+        String krb5 = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+        String keytab = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+        String principal = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+        builder.withBase64KrbAuth(keytab, krb5, principal);
+      }
+    }
+
     return builder;
   }
 

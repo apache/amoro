@@ -46,7 +46,7 @@ public class ArcticCatalogFactoryOptions {
 
   // authorization configs
   public static final ConfigOption<String> AUTH_AMS_CONFIGS_DISABLE =
-      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_AMS_CONFIGS_DISABLE)
+      ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.LOAD_AUTH_FROM_AMS)
           .stringType().noDefaultValue();
   public static final ConfigOption<String> AUTH_METHOD =
       ConfigOptions.key(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE)

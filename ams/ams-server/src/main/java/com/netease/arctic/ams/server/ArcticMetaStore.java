@@ -49,7 +49,7 @@ import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
-import com.netease.arctic.utils.Base64Utils;
+import com.netease.arctic.utils.ConfigurationFileUtils;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -520,13 +520,13 @@ public class ArcticMetaStore {
         }
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE,
-            Base64Utils.encodeXmlBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_CORE_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_CORE_SITE)));
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE,
-            Base64Utils.encodeXmlBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HDFS_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HDFS_SITE)));
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
-            Base64Utils.encodeXmlBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HIVE_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HIVE_SITE)));
         catalogMeta.storageConfigs = storageConfig;
       }
 
@@ -550,12 +550,12 @@ public class ArcticMetaStore {
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_KEYTAB)) {
             authConfig.put(
                 CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
-                Base64Utils.encodeBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KEYTAB)));
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KEYTAB)));
           }
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_KRB5)) {
             authConfig.put(
                 CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
-                Base64Utils.encodeBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KRB5)));
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KRB5)));
           }
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_PRINCIPAL)) {
             authConfig.put(
