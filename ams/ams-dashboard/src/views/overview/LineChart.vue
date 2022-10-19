@@ -124,7 +124,7 @@ function setOptionData() {
       type: 'value',
       name: props.dataInfo.yTitle || '',
       nameTextStyle: {
-        color: 'var(--heading-color)',
+        color: '#102048',
         fontWeight: 'normal',
         fontSize: 12,
         lineHeight: 20
