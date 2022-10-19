@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
 public class ShuffleSplitAssigner implements SplitAssigner {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssigner.class);
 
-  private static final long POLL_TIMEOUT = 300;
+  private static final long POLL_TIMEOUT = 200;
   private final SplitEnumeratorContext<ArcticSplit> enumeratorContext;
 
   private int totalParallelism;
