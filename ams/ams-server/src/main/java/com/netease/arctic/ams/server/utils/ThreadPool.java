@@ -47,6 +47,8 @@ public class ThreadPool {
   private static ThreadPoolExecutor syncFileInfoCachePool;
   private static ScheduledExecutorService tableRuntimeDataExpirePool;
 
+  private static ScheduledExecutorService metricSummaryPool;
+
   public enum Type {
     OPTIMIZE_CHECK,
     COMMIT,
@@ -55,7 +57,8 @@ public class ThreadPool {
     SYNC_FILE_INFO_CACHE,
     OPTIMIZER_MONITOR,
     TABLE_RUNTIME_DATA_EXPIRE,
-    HIVE_SYNC
+    HIVE_SYNC,
+    METRIC_SUMMARY
   }
 
   public static synchronized ThreadPool initialize(Configuration conf) {
@@ -120,6 +123,12 @@ public class ThreadPool {
     tableRuntimeDataExpirePool = Executors.newScheduledThreadPool(
         1,
         tableRuntimeDataExpirePoolThreadFactory);
+
+    ThreadFactory metricSummaryPoolThreadFactory = new ThreadFactoryBuilder().setDaemon(false)
+        .setNameFormat("Metric Summary Worker %d").build();
+    metricSummaryPool = Executors.newScheduledThreadPool(
+        1,
+        metricSummaryPoolThreadFactory);
   }
 
   public static ScheduledExecutorService getPool(Type type) {
@@ -141,6 +150,8 @@ public class ThreadPool {
         return tableRuntimeDataExpirePool;
       case HIVE_SYNC:
         return supportHiveSyncPool;
+      case METRIC_SUMMARY:
+        return metricSummaryPool;
       default:
         throw new RuntimeException("ThreadPool not support this type: " + type);
     }
@@ -160,6 +171,7 @@ public class ThreadPool {
       syncFileInfoCachePool.shutdownNow();
       tableRuntimeDataExpirePool.shutdownNow();
       supportHiveSyncPool.shutdownNow();
+      metricSummaryPool.shutdownNow();
       self = null;
     }
   }

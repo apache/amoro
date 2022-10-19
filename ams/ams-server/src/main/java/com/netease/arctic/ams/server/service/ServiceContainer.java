@@ -39,6 +39,7 @@ import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
+import com.netease.arctic.ams.server.service.impl.TableMetricsStatisticService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
 
 public class ServiceContainer {
@@ -80,6 +81,8 @@ public class ServiceContainer {
   private static volatile AdaptHiveService adaptHiveService;
 
   private static volatile ISupportHiveSyncService supportHiveSyncService;
+
+  private static volatile TableMetricsStatisticService metricsStatisticService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
@@ -332,5 +335,16 @@ public class ServiceContainer {
       }
     }
     return containerMetaService;
+  }
+
+  public static TableMetricsStatisticService getTableMetricsStatisticService() {
+    if (metricsStatisticService == null) {
+      synchronized (ServiceContainer.class) {
+        if (metricsStatisticService == null) {
+          metricsStatisticService = new TableMetricsStatisticService();
+        }
+      }
+    }
+    return metricsStatisticService;
   }
 }

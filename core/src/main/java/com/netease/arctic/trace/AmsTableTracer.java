@@ -24,18 +24,21 @@ import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
+import com.netease.arctic.ams.api.TableMetric;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
+import java.util.Collections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +131,8 @@ public class AmsTableTracer implements TableTracer {
     TableCommitMeta commitMeta = new TableCommitMeta();
     commitMeta.setTableIdentifier(table.id().buildTableIdentifier());
     commitMeta.setAction(action);
-    String commitMetaSource = PropertyUtil.propertyAsString(snapshotSummary,
+    String commitMetaSource = PropertyUtil.propertyAsString(
+        snapshotSummary,
         com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER,
         com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
     commitMeta.setCommitMetaProducer(CommitMetaProducer.valueOf(commitMetaSource));
@@ -147,6 +151,7 @@ public class AmsTableTracer implements TableTracer {
           defaultTableChange.toTableChange(table, traceTable.currentSnapshot(), innerTable);
       if (tableChange.isPresent()) {
         commitMeta.addToChanges(tableChange.get());
+        commitMeta.setMetrics(genTableMetrics(traceTable));
         update = true;
       }
     }
@@ -233,7 +238,7 @@ public class AmsTableTracer implements TableTracer {
      * Build {@link TableChange} to report to ams.
      *
      * @param arcticTable arctic table which table change belongs
-     * @param snapshot  the snapshot produced in this operation
+     * @param snapshot    the snapshot produced in this operation
      * @param innerTable  inner table name
      * @return table change
      */
@@ -277,6 +282,21 @@ public class AmsTableTracer implements TableTracer {
         return Optional.empty();
       }
     }
+  }
+
+  public List<TableMetric> genTableMetrics(Table table) {
+    if (table.currentSnapshot() == null || table.currentSnapshot().summary() == null) {
+      return Collections.emptyList();
+    }
+    String datafileCount = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0");
+    String deleteFileCount = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0");
+    String dataSize = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_FILE_SIZE_PROP, "0");
+    List<TableMetric> tableMetrics = Lists.newArrayList();
+    tableMetrics.add(new TableMetric(innerTable,
+        SnapshotSummary.TOTAL_DATA_FILES_PROP,
+        Long.parseLong(datafileCount) + Long.parseLong(deleteFileCount) + ""));
+    tableMetrics.add(new TableMetric(innerTable, SnapshotSummary.TOTAL_FILE_SIZE_PROP, dataSize));
+    return tableMetrics;
   }
 
   private static com.netease.arctic.ams.api.UpdateColumn covert(UpdateColumn updateColumn) {

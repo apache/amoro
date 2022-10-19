@@ -255,3 +255,19 @@ CREATE TABLE ddl_record
     ddl_type       varchar(256) NOT NULL,
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE table_metric_statistics
+(
+    table_identifier varchar(384) NOT NULL,
+    inner_table varchar(64) NOT NULL,
+    metric_name      varchar(256),
+    metric_value     varchar(256),
+    commit_time      timestamp    NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE metric_statistics_summary
+(
+    metric_name      varchar(256),
+    metric_value     varchar(256),
+    commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

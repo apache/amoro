@@ -39,6 +39,12 @@ struct TableChange {
     5: i64 parentSnapshotId;
 }
 
+struct TableMetric {
+    1: string innerTable;
+    2: string metricName;
+    3: string metricValue;
+}
+
 // task commit info
 struct TableCommitMeta {
     1: arctic_commons.TableIdentifier tableIdentifier;
@@ -48,6 +54,7 @@ struct TableCommitMeta {
     5: map<string, string> properties;
     6: CommitMetaProducer commitMetaProducer;
     7: SchemaUpdateMeta schemaUpdateMeta;
+    8: list<TableMetric> metrics;
 }
 
 struct UpdateColumn {

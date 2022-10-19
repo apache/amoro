@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.TableMetricsStatisticService;
 import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.thrift.TException;
@@ -50,12 +51,14 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   private final CatalogMetadataService catalogMetadataService;
   private final FileInfoCacheService fileInfoCacheService;
   private final DDLTracerService ddlTracerService;
+  private final TableMetricsStatisticService metricsStatisticService;
 
   public ArcticTableMetastoreHandler(IMetaService metaService) {
     this.metaService = metaService;
     this.catalogMetadataService = ServiceContainer.getCatalogMetadataService();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.ddlTracerService = ServiceContainer.getDdlTracerService();
+    this.metricsStatisticService = ServiceContainer.getTableMetricsStatisticService();
   }
 
   @Override
@@ -183,6 +186,9 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     }
     if (commit.getSchemaUpdateMeta() != null) {
       ddlTracerService.commit(commit.getTableIdentifier(), commit.getSchemaUpdateMeta());
+    }
+    if (commit.getMetrics() != null && !commit.getMetrics().isEmpty()) {
+      metricsStatisticService.commitMetrics(identifier, commit.getMetrics());
     }
     try {
       fileInfoCacheService.commitCacheFileInfo(commit);
