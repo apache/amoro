@@ -20,10 +20,10 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
@@ -243,7 +243,7 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -296,7 +296,7 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -439,7 +439,7 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -499,6 +499,6 @@ public class TestKeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 }
