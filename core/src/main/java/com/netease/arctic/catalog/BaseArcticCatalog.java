@@ -62,6 +62,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -325,6 +326,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       if (this.catalogMeta.getAuthConfigs() != null) {
         Map<String, String> authConfigs = this.catalogMeta.getAuthConfigs();
         String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+        LOG.info("TableMetaStore use auth config in catalog meta, authType is {}", authType);
         if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
           String hadoopUsername = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
           builder.withSimpleAuth(hadoopUsername);
@@ -340,6 +342,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     // cover auth configs from ams with auth configs in properties
     String authType = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
     if (StringUtils.isNotEmpty(authType)) {
+      LOG.info("TableMetaStore use auth config in properties, authType is {}", authType);
       if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
         String hadoopUsername = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
         builder.withSimpleAuth(hadoopUsername);
