@@ -42,12 +42,15 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkFilters;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
@@ -56,6 +59,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TAB
 public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown,
     SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
 
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticFileSource.class);
+  
   private int[] projectedFields;
   private long limit;
   private List<Expression> filters;
@@ -127,9 +132,16 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     } else {
       String[] fullNames = tableSchema.getFieldNames();
       DataType[] fullTypes = tableSchema.getFieldDataTypes();
-      return TableSchema.builder().fields(
-          Arrays.stream(projectedFields).mapToObj(i -> fullNames[i]).toArray(String[]::new),
-          Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new)).build();
+
+      String[] projectedColumns = Arrays.stream(projectedFields).mapToObj(i -> fullNames[i]).toArray(String[]::new);
+      TableSchema.Builder builder = TableSchema.builder().fields(
+          projectedColumns,
+          Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new));
+
+      addPrimaryKey(builder, table, tableSchema, projectedColumns);
+      TableSchema ts = builder.build();
+      LOG.info("TableSchema builder after addPrimaryKey, schema:{}", ts);
+      return ts;
     }
   }
 
