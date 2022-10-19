@@ -409,12 +409,13 @@ public class TableMetaStore implements Serializable {
         Objects.equals(hadoopUsername, that.hadoopUsername) &&
         Arrays.equals(krbKeyTab, that.krbKeyTab) &&
         Arrays.equals(krbConf, that.krbConf) &&
-        Objects.equals(krbPrincipal, that.krbPrincipal);
+        Objects.equals(krbPrincipal, that.krbPrincipal) &&
+        Objects.equals(disableAuth, that.disableAuth);
   }
 
   @Override
   public int hashCode() {
-    int result = Objects.hash(authMethod, hadoopUsername, krbPrincipal);
+    int result = Objects.hash(disableAuth, authMethod, hadoopUsername, krbPrincipal);
     result = 31 * result + Arrays.hashCode(metaStoreSite);
     result = 31 * result + Arrays.hashCode(hdfsSite);
     result = 31 * result + Arrays.hashCode(coreSite);
@@ -434,7 +435,7 @@ public class TableMetaStore implements Serializable {
     private byte[] krbConf;
     private String krbPrincipal;
     private boolean disableAuth;
-    private Map<String, String> properties = Maps.newHashMap();
+    private final Map<String, String> properties = Maps.newHashMap();
     private Configuration configuration;
 
     public Builder withMetaStoreSitePath(String metaStoreSitePath) {
@@ -591,10 +592,10 @@ public class TableMetaStore implements Serializable {
           withMetaStoreSitePath(String.format("%s/%s", hadoopConfDir, properties.get(HIVE_SITE)));
         }
         if (properties.containsKey(KRB5_CONF)) {
-          krbConfPath = String.format(String.format("%s/%s", hadoopConfDir, properties.get(KRB5_CONF)));
+          krbConfPath = String.format("%s/%s", hadoopConfDir, properties.get(KRB5_CONF));
         }
         if (properties.containsKey(KEYTAB)) {
-          keyTabPath = String.format(String.format("%s/%s", hadoopConfDir, properties.get(KEYTAB)));
+          keyTabPath = String.format("%s/%s", hadoopConfDir, properties.get(KEYTAB));
         }
       }
       if (properties.containsKey(AUTH_METHOD)) {

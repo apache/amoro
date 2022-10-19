@@ -18,10 +18,16 @@
 
 package com.netease.arctic.flink;
 
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.utils.Base64Utils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.util.Preconditions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,6 +36,8 @@ import java.util.Map;
  * Build {@link com.netease.arctic.catalog.ArcticCatalog}.
  */
 public class InternalCatalogBuilder implements Serializable {
+  private static final Logger LOG = LoggerFactory.getLogger(InternalCatalogBuilder.class);
+
   private String metastoreUrl;
   private Map<String, String> properties = new HashMap<>(0);
 
@@ -66,7 +74,39 @@ public class InternalCatalogBuilder implements Serializable {
   }
 
   public InternalCatalogBuilder properties(Map<String, String> properties) {
-    this.properties = properties;
+    Map<String, String> finalProperties = new HashMap<>();
+    for (Map.Entry<String, String> property : properties.entrySet()) {
+      String key = property.getKey();
+      String value = property.getValue();
+      switch (key) {
+        case CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH:
+          try {
+            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB, Base64Utils.encodeBase64(value));
+          } catch (IOException e) {
+            LOG.error("encode keytab file failed", e);
+            throw new CatalogException("encode keytab file failed", e);
+          }
+          break;
+        case CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE:
+          finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB, value);
+          break;
+        case CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH:
+          try {
+            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5, Base64Utils.encodeBase64(value));
+          } catch (IOException e) {
+            LOG.error("encode krb5 file failed", e);
+            throw new CatalogException("encode krb5 file failed", e);
+          }
+          break;
+        case CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_ENCODE:
+          finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5, value);
+          break;
+        default:
+          finalProperties.put(key, value);
+          break;
+      }
+    }
+    this.properties = finalProperties;
     return this;
   }
 }
