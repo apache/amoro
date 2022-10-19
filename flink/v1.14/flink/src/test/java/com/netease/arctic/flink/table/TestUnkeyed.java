@@ -21,10 +21,10 @@ package com.netease.arctic.flink.table;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
@@ -274,7 +274,7 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
   }
 
@@ -331,7 +331,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -384,7 +384,7 @@ public class TestUnkeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -508,7 +508,7 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
     Assert.assertEquals(new HashSet<>(expected), actual);
   }
 
@@ -567,7 +567,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -619,7 +619,7 @@ public class TestUnkeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
 }

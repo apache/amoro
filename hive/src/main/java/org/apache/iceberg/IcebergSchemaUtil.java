@@ -54,4 +54,17 @@ public class IcebergSchemaUtil {
     });
     return builder.build();
   }
+
+  public static PartitionSpec projectPartition(PartitionSpec partitionSpec, Schema schema) {
+    PartitionSpec.Builder builder = PartitionSpec.builderFor(schema);
+
+    partitionSpec.fields().forEach(p -> {
+      if (schema.findField(p.sourceId()) == null) {
+        return;
+      }
+
+      builder.add(p.sourceId(), p.name(), p.transform().toString());
+    });
+    return builder.build();
+  }
 }
