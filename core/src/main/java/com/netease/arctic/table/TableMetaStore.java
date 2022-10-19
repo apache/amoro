@@ -118,7 +118,8 @@ public class TableMetaStore implements Serializable {
   private TableMetaStore(
       byte[] metaStoreSite, byte[] hdfsSite, byte[] coreSite, String authMethod,
       String hadoopUsername, byte[] krbKeyTab, byte[] krbConf, String krbPrincipal, boolean disableAuth) {
-    Preconditions.checkArgument(authMethod == null || AUTH_METHOD_SIMPLE.equals(authMethod) || AUTH_METHOD_KERBEROS.equals(authMethod),
+    Preconditions.checkArgument(
+        authMethod == null || AUTH_METHOD_SIMPLE.equals(authMethod) || AUTH_METHOD_KERBEROS.equals(authMethod),
         "Error auth method:%s", authMethod);
     this.metaStoreSite = metaStoreSite;
     this.hdfsSite = hdfsSite;
