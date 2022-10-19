@@ -81,7 +81,8 @@ public class InternalCatalogBuilder implements Serializable {
       switch (key) {
         case CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH:
           try {
-            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB, ConfigurationFileUtils.encodeConfigurationFileWithBase64(value));
+            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(value));
           } catch (IOException e) {
             LOG.error("encode keytab file failed", e);
             throw new CatalogException("encode keytab file failed", e);
@@ -92,7 +93,8 @@ public class InternalCatalogBuilder implements Serializable {
           break;
         case CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH:
           try {
-            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5, ConfigurationFileUtils.encodeConfigurationFileWithBase64(value));
+            finalProperties.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(value));
           } catch (IOException e) {
             LOG.error("encode krb5 file failed", e);
             throw new CatalogException("encode krb5 file failed", e);

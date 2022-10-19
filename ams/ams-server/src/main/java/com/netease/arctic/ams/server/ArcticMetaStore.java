@@ -117,7 +117,7 @@ public class ArcticMetaStore {
       LOG.error("MetaStore Thrift Server threw an exception...", t);
     }
   }
-  
+
   private static String getArcticHome() {
     String arcticHome = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key());
     if (arcticHome != null) {
@@ -198,7 +198,7 @@ public class ArcticMetaStore {
     residentThreads.forEach(Thread::interrupt);
     ThreadPool.shutdown();
   }
-  
+
   public static boolean isStarted() {
     return server != null && server.isServing();
   }
@@ -520,13 +520,16 @@ public class ArcticMetaStore {
         }
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE,
-            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_CORE_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(
+                catalogStorageConfig.getString(ConfigFileProperties.CATALOG_CORE_SITE)));
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE,
-            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HDFS_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(
+                catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HDFS_SITE)));
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
-            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HIVE_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(
+                catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HIVE_SITE)));
         catalogMeta.storageConfigs = storageConfig;
       }
 
@@ -550,12 +553,14 @@ public class ArcticMetaStore {
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_KEYTAB)) {
             authConfig.put(
                 CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
-                ConfigurationFileUtils.encodeConfigurationFileWithBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KEYTAB)));
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(
+                    catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KEYTAB)));
           }
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_KRB5)) {
             authConfig.put(
                 CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
-                ConfigurationFileUtils.encodeConfigurationFileWithBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KRB5)));
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(
+                    catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KRB5)));
           }
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_PRINCIPAL)) {
             authConfig.put(
