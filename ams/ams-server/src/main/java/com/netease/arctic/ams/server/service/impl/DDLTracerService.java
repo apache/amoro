@@ -22,12 +22,14 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.UpdateColumn;
+import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.PropertiesUtil;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -303,6 +305,8 @@ public class DDLTracerService extends IJDBCService {
 
     public void syncProperties(TableMetadata tableMetadata, ArcticTable arcticTable) {
       Table table = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+      PropertiesUtil.removeHiddenProperties(tableMetadata.getProperties(), ServerTableProperties.HIDDEN_INTERNAL);
+      PropertiesUtil.removeHiddenProperties(table.properties(), ServerTableProperties.HIDDEN_INTERNAL);
       ServiceContainer.getDdlTracerService()
           .commitProperties(arcticTable.id().buildTableIdentifier(), tableMetadata.getProperties(),
               table.properties());
