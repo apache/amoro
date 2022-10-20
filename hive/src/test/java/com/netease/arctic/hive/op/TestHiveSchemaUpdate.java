@@ -46,6 +46,7 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
+    Assert.assertTrue(compareSchema(testKeyedHiveTable.changeTable().schema(), testKeyedHiveTable.spec(), fieldSchemas));
     Assert.assertTrue(compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
   }
 
@@ -64,6 +65,7 @@ public class TestHiveSchemaUpdate extends HiveTableTestBase {
       }
     }
     Assert.assertTrue(isExpect);
+    Assert.assertTrue(compareSchema(testKeyedHiveTable.changeTable().schema(), testKeyedHiveTable.spec(), fieldSchemas));
     Assert.assertTrue(compareSchema(testKeyedHiveTable.schema(), testKeyedHiveTable.spec(), fieldSchemas));
   }
 

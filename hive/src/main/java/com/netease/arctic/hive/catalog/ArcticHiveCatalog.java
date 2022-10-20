@@ -164,7 +164,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         fileIO, tableLocation, client, hiveClientPool, false);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
-    ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
+    ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
         useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client);
     return new KeyedHiveTable(tableMeta, tableLocation,
@@ -303,7 +303,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           throw new IllegalStateException("create change table failed", e);
         }
       });
-      ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
+      ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
           useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
           fileIO, client);
 
