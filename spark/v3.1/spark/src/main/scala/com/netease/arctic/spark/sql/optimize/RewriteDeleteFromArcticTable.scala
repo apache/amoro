@@ -44,7 +44,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      ReplaceArcticData(r, query, options)
+      ReplaceArcticData(r, query, null, options)
   }
 
   def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns, condition: Option[Expression]): LogicalPlan = {

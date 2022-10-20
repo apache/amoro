@@ -27,6 +27,7 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 case class ReplaceArcticData(
     table: NamedRelation,
     query: LogicalPlan,
+    validateQuery: LogicalPlan,
     options: Map[String, String]) extends V2WriteCommand {
 
   def isByName: Boolean = false

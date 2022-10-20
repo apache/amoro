@@ -23,18 +23,35 @@ import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, EqualTo, Expression}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, Cast, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
-import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+import org.apache.spark.sql.types.LongType
 
 import java.util
 
 case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
+
+  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan= {
+    r.table match {
+      case arctic: ArcticSparkTable =>
+        if (arctic.table().isKeyedTable) {
+          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+          val alias = Alias(than, "count")()
+          val attributes = query.output.filter(p => primaries.contains(p.name))
+          Aggregate(attributes, Seq(alias), query)
+        } else {
+          throw new UnsupportedOperationException(s"UnKeyed table can not validate")
+        }
+    }
+  }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case AppendData(r: DataSourceV2Relation, query, writeOptions, isByName) if isArcticRelation(r) =>
@@ -47,13 +64,14 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       } else {
         (query, writeOptions)
       }
+      val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
       arcticRelation.table match {
         case a: ArcticSparkTable =>
           if (a.table().isKeyedTable) {
             val insertQuery = distributionQuery(newQuery, a)
-            ReplaceArcticData(arcticRelation, insertQuery, options)
+            ReplaceArcticData(arcticRelation, insertQuery, validateQuery, options)
           } else {
-            ReplaceArcticData(arcticRelation, query, writeOptions)
+            ReplaceArcticData(arcticRelation, query, validateQuery, writeOptions)
           }
       }
   }
