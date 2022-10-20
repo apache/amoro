@@ -74,40 +74,65 @@ Arctic 版本：0.3
 TPC-H 面向模拟的业务系统设计了22个 Query ，受限于篇幅，这里列举前3条 Query 语句作为参考：
 ```
 -- SQL编号：query1 
- select l_returnflag, l_linestatus, sum(l_quantity) as sum_qty, 
-        sum(l_extendedprice) as sum_base_price, 
-        sum(l_extendedprice * (1 - l_discount)) as sum_disc_price,
-        sum(l_extendedprice * (1 - l_discount) * (1 + l_tax)) as sum_charge,
-        avg(l_quantity) as avg_qty, 
-        avg(l_extendedprice) as avg_price, 
-        avg(l_discount) as avg_disc,
-        count(*) as count_order
-        from lineitem
-        where l_shipdate <= date '1998-12-01' - interval ? day
-        group by l_returnflag, l_linestatus
-        order by l_returnflag, l_linestatus;
+SELECT ol_number,
+    sum(ol_quantity) AS sum_qty,
+    sum(ol_amount) AS sum_amount,
+    avg(ol_quantity) AS avg_qty,
+    avg(ol_amount) AS avg_amount,
+    count(*) AS count_order
+FROM order_line
+WHERE ol_delivery_d > '2007-01-02 00:00:00.000000'
+GROUP BY ol_number
+ORDER BY ol_number;
         
  -- SQL编号：query2 
- select s_acctbal, s_name, n_name, p_partkey, p_mfgr,
-        s_address, s_phone, s_comment from part, supplier, partsupp, nation, region
-        where p_partkey = ps_partkey and s_suppkey = ps_suppkey
-        and p_size = ? and p_type like ? and s_nationkey = n_nationkey and n_regionkey = r_regionkey 
-        and r_name = ? and ps_supplycost = (select min(ps_supplycost)
-        from partsupp, supplier, nation, region
-        where p_partkey = ps_partkey and s_suppkey = ps_suppkey
-        and s_nationkey = n_nationkey and n_regionkey = r_regionkey and r_name = ? )
-        order by s_acctbal desc, n_name, s_name, p_partkey;
+SELECT su_suppkey,
+    su_name,
+    n_name,
+    i_id,
+    i_name,
+    su_address,
+    su_phone,
+    su_comment
+FROM item, supplier, stock, nation, region, 
+    (SELECT s_i_id AS m_i_id,
+        MIN(s_quantity) AS m_s_quantity
+    FROM stock, supplier, nation, region
+    WHERE MOD((s_w_id*s_i_id), 10000) = su_suppkey
+        AND su_nationkey = n_nationkey
+        AND n_regionkey = r_regionkey
+        AND r_name LIKE 'Europ%'
+    GROUP BY s_i_id) m
+WHERE i_id = s_i_id
+    AND MOD((s_w_id * s_i_id), 10000) = su_suppkey
+    AND su_nationkey = n_nationkey
+    AND n_regionkey = r_regionkey
+    AND i_data LIKE '%b'
+    AND r_name LIKE 'Europ%'
+    AND i_id=m_i_id
+    AND s_quantity = m_s_quantity
+ORDER BY n_name, su_name, i_id;
         
  -- SQL编号：query3 
- select l_orderkey,
-        sum(l_extendedprice * (1 - l_discount)) as revenue,
-        o_orderdate, o_shippriority
-        from customer, orders, lineitem
-        where c_mktsegment = ? 
-        and c_custkey = o_custkey and l_orderkey = o_orderkey 
-        and o_orderdate < date ? and l_shipdate > date ?
-        group by l_orderkey, o_orderdate, o_shippriority
-        order by revenue desc, o_orderdate;
+SELECT ol_o_id,
+    ol_w_id,
+    ol_d_id,
+    sum(ol_amount) AS revenue,
+    o_entry_d
+FROM customer, new_order, oorder, order_line
+WHERE c_state LIKE 'A%'
+    AND c_id = o_c_id
+    AND c_w_id = o_w_id
+    AND c_d_id = o_d_id
+    AND no_w_id = o_w_id
+    AND no_d_id = o_d_id
+    AND no_o_id = o_id
+    AND ol_w_id = o_w_id
+    AND ol_d_id = o_d_id
+    AND ol_o_id = o_id
+    AND o_entry_d > '2007-01-02 00:00:00.000000'
+GROUP BY ol_o_id, ol_w_id, ol_d_id, o_entry_d
+ORDER BY revenue DESC, o_entry_d;
 ```
 ### 测试整体流程
 
