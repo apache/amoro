@@ -62,15 +62,14 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -109,7 +108,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       }
     }
 
-    TableMetaStore.Builder builder = getMetaStoreBuilder();
+    TableMetaStore.Builder builder = getMetaStoreBuilder(mergeMetaProperties(meta, properties));
     tableMetaStore = builder.build();
     tables = new HadoopTables(tableMetaStore.getConfiguration());
   }
@@ -303,7 +302,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
   }
 
-  protected TableMetaStore.Builder getMetaStoreBuilder() {
+  protected TableMetaStore.Builder getMetaStoreBuilder(Map<String, String> properties) {
+    // load storage configs
     TableMetaStore.Builder builder = TableMetaStore.builder();
     if (this.catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = this.catalogMeta.getStorageConfigs();
@@ -318,20 +318,55 @@ public class BaseArcticCatalog implements ArcticCatalog {
             .withBase64HdfsSite(hdfsSite);
       }
     }
-    if (this.catalogMeta.getAuthConfigs() != null) {
-      Map<String, String> authConfigs = this.catalogMeta.getAuthConfigs();
-      String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+
+    boolean loadAuthFromAMS = PropertyUtil.propertyAsBoolean(properties,
+        CatalogMetaProperties.LOAD_AUTH_FROM_AMS, CatalogMetaProperties.LOAD_AUTH_FROM_AMS_DEFAULT);
+    // load auth configs from ams
+    if (loadAuthFromAMS) {
+      if (this.catalogMeta.getAuthConfigs() != null) {
+        Map<String, String> authConfigs = this.catalogMeta.getAuthConfigs();
+        String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+        LOG.info("TableMetaStore use auth config in catalog meta, authType is {}", authType);
+        if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
+          String hadoopUsername = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+          builder.withSimpleAuth(hadoopUsername);
+        } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
+          String krb5 = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+          String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+          String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+          builder.withBase64KrbAuth(keytab, krb5, principal);
+        }
+      }
+    }
+
+    // cover auth configs from ams with auth configs in properties
+    String authType = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+    if (StringUtils.isNotEmpty(authType)) {
+      LOG.info("TableMetaStore use auth config in properties, authType is {}", authType);
       if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
-        String hadoopUsername = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+        String hadoopUsername = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
         builder.withSimpleAuth(hadoopUsername);
       } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
-        String krb5 = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
-        String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
-        String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+        String krb5 = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+        String keytab = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+        String principal = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
         builder.withBase64KrbAuth(keytab, krb5, principal);
       }
     }
+
     return builder;
+  }
+
+  private Map<String, String> mergeMetaProperties(CatalogMeta meta, Map<String, String> properties) {
+    Map<String, String> mergedProperties = new HashMap<>();
+    if (meta.getCatalogProperties() != null) {
+      mergedProperties.putAll(meta.getCatalogProperties());
+    }
+    if (properties != null) {
+      mergedProperties.putAll(properties);
+    }
+
+    return mergedProperties;
   }
 
   private void dropInternalTable(TableMetaStore tableMetaStore, String internalTableLocation, boolean purge) {
