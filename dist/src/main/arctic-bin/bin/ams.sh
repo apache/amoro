@@ -66,7 +66,7 @@ function status(){
 }
 
 function start() {
-  nohup ${CMDS} </dev/null 2>>${STDERR_LOG} &
+  nohup ${CMDS} >/dev/null 2>>${STDERR_LOG} &
     if [ $? -ne 0 ]; then
         echo "start failed."
     fi
