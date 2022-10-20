@@ -36,9 +36,11 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.trace.TableTracer;
+import java.util.HashMap;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -306,11 +308,12 @@ public class DDLTracerService extends IJDBCService {
     public void syncProperties(TableMetadata tableMetadata, ArcticTable arcticTable) {
       Table table = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
       PropertiesUtil.removeHiddenProperties(tableMetadata.getProperties(), ServerTableProperties.HIDDEN_INTERNAL);
-      PropertiesUtil.removeHiddenProperties(table.properties(), ServerTableProperties.HIDDEN_INTERNAL);
+      Map<String, String> icebergProperties = Maps.newHashMap(table.properties());
+      PropertiesUtil.removeHiddenProperties(icebergProperties, ServerTableProperties.HIDDEN_INTERNAL);
       ServiceContainer.getDdlTracerService()
           .commitProperties(arcticTable.id().buildTableIdentifier(), tableMetadata.getProperties(),
-              table.properties());
-      ServiceContainer.getMetaService().updateTableProperties(arcticTable.id(), Maps.newHashMap(table.properties()));
+              icebergProperties);
+      ServiceContainer.getMetaService().updateTableProperties(arcticTable.id(), icebergProperties);
     }
 
     public String compareSchema(String tableName, Schema before, Schema after) {
