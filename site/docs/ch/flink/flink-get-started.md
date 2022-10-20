@@ -17,17 +17,17 @@ Flink Connector 包括：
 
 | Connector Version | Flink Version | Dependent Iceberg Version | 下载                                                                                                                         |
 | ----------------- |---------------|  ----------------- |----------------------------------------------------------------------------------------------------------------------------|
-| 0.3.1             | 1.12.x        | 0.12.0            | [flink-1.12-0.3.1-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.12-0.3.1.jar) |
-| 0.3.1             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.1-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.14-0.3.1.jar) |
-| 0.3.1             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.1-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.15-0.3.1.jar) |
+| 0.3.2             | 1.12.x        | 0.12.0            | [flink-1.12-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.12-0.3.2.jar) |
+| 0.3.2             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.14-0.3.2.jar) |
+| 0.3.2             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.15-0.3.2.jar) |
 
 Kafka 作为 Logstore 版本说明：
 
 | Connector Version | Flink Version | Kafka Versions |
 | ----------------- |---------------|  ----------------- |
-| 0.3.1             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
-| 0.3.1             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
-| 0.3.1             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.2             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.2             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.2             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
 
 
 对 Arctic 工程自行编译也可以获取该 runtime jar
@@ -53,7 +53,7 @@ tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
 # 下载 hadoop 依赖
 wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
 # 下载 arctic flink connector
-wget https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.12-0.3.1.jar
+wget https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.12-0.3.2.jar
 ```
 
 修改 Flink 相关配置文件：
@@ -82,7 +82,7 @@ cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
 ```
 
 ## Hive兼容
-Arctic 0.3.1 版本开始支持 Hive 兼容的功能，可以通过 Flink 读取/写入 Arctic Hive 兼容表数据。当通过 Flink 操作 Hive 兼容表时，需要注意以下几点：
+Arctic 0.3.2 版本开始支持 Hive 兼容的功能，可以通过 Flink 读取/写入 Arctic Hive 兼容表数据。当通过 Flink 操作 Hive 兼容表时，需要注意以下几点：
 
 1. Flink Runtime Jar 不包括 Hive 依赖的 Jar 包内容，需要手动将[ Hive 依赖的 Jar 包](https://repo1.maven.org/maven2/org/apache/hive/hive-exec/2.1.1/hive-exec-2.1.1.jar)放到 flink/lib 目录下；
 2. 创建分区表时，分区字段需要放在最后一列；当分区字段为多个字段时，需要全部放在最后；
