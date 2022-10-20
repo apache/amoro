@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.catalog.factories;
 
 
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.catalog.ArcticCatalog;
 import com.netease.arctic.flink.catalog.descriptors.ArcticCatalogValidator;
@@ -84,6 +85,16 @@ public class ArcticCatalogFactory implements CatalogFactory {
     // default database
     properties.add(CATALOG_DEFAULT_DATABASE);
     properties.add(METASTORE_URL);
+
+    // storage config and authorization config
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.LOAD_AUTH_FROM_AMS);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_PATH);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB_ENCODE);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_PATH);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB_ENCODE);
+    properties.add(PROPERTIES_PREFIX + "." + CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
     return properties;
   }
 }

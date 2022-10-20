@@ -111,7 +111,7 @@ public class CatalogLoader {
       return catalog;
     } catch (NoSuchObjectException e1) {
       throw new IllegalArgumentException("catalog not found, please check catalog name", e1);
-    } catch (TException e) {
+    } catch (Exception e) {
       throw new IllegalStateException("failed when load catalog " + catalogName, e);
     }
   }
