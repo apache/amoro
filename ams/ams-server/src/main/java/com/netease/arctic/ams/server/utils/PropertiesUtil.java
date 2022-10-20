@@ -19,11 +19,18 @@
 package com.netease.arctic.ams.server.utils;
 
 import java.util.Map;
+import java.util.Set;
 
 public class PropertiesUtil {
   public static void putNotNullProperties(Map<String, String> properties, String key, String value) {
     if (value != null) {
       properties.put(key, value);
+    }
+  }
+
+  public static void removeHiddenProperties(Map<String, String> properties, Set<String> skipKeys) {
+    for (String skipKey : skipKeys) {
+      properties.remove(skipKey);
     }
   }
 }
