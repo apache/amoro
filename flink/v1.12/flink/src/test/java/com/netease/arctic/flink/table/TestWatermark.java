@@ -85,7 +85,7 @@ public class TestWatermark extends FlinkTestBase {
     sql("DROP TABLE IF EXISTS arcticCatalog." + DB + "." + TABLE);
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testWatermark() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();

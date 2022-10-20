@@ -120,7 +120,65 @@ public class ArcticSourceReader<T> extends
   public InputStatus pollNext(ReaderOutput<T> output) throws Exception {
     this.output = output;
     emitWatermarkIfNeeded();
-    return super.pollNext(output);
+    return super.pollNext(wrapOutput(output));
+  }
+
+  public ReaderOutput<T> wrapOutput(ReaderOutput<T> output) {
+    if (!(output instanceof SourceOutputWithWatermarks)) {
+      return output;
+    }
+    return new ArcticReaderOutput<>(output);
+  }
+
+  /**
+   * There is a case that the watermark in {@link WatermarkOutputMultiplexer.OutputState} has
+   * been updated, but watermark has not been emitted for that when {@link WatermarkOutputMultiplexer#onPeriodicEmit}
+   * called, the outputState has been removed by {@link WatermarkOutputMultiplexer#unregisterOutput(String)} after
+   * split finished.
+   * Wrap {@link ReaderOutput} to call
+   * {@link ProgressiveTimestampsAndWatermarks.SplitLocalOutputs#emitPeriodicWatermark()} when split finishes.
+   */
+  static class ArcticReaderOutput<T> implements ReaderOutput<T> {
+
+    private final ReaderOutput<T> internal;
+
+    public ArcticReaderOutput(ReaderOutput<T> readerOutput) {
+      Preconditions.checkArgument(readerOutput instanceof SourceOutputWithWatermarks,
+          "readerOutput should be SourceOutputWithWatermarks, but was %s", readerOutput.getClass());
+      this.internal = readerOutput;
+    }
+
+    @Override
+    public void collect(T record) {
+      internal.collect(record);
+    }
+
+    @Override
+    public void collect(T record, long timestamp) {
+      internal.collect(record, timestamp);
+    }
+
+    @Override
+    public void emitWatermark(Watermark watermark) {
+      internal.emitWatermark(watermark);
+    }
+
+    @Override
+    public void markIdle() {
+      internal.markIdle();
+    }
+
+    @Override
+    public SourceOutput<T> createOutputForSplit(String splitId) {
+      return internal.createOutputForSplit(splitId);
+    }
+
+    @Override
+    public void releaseOutputForSplit(String splitId) {
+      Object splitLocalOutput = FlinkClassUtil.getSplitLocalOutput(internal);
+      FlinkClassUtil.emitPeriodWatermark(splitLocalOutput);
+      internal.releaseOutputForSplit(splitId);
+    }
   }
 
 }
