@@ -3,7 +3,7 @@
 同时还可以在 [Spark](../spark/spark-ddl.md) 和 [Flink](../flink/flink-ddl.md) 等引擎中使用 SQL 完成表的管理。
 
 ## 升级 Hive 表
-Arctic 从 v0.3.1 版本开始支持了 Hive 表，可以对已有的 Hive 表进行升级以获得 Arctic 提供的流批一体能力。有关升级后 Hive 表拥有的功能可以参考 [Hive Format](../table-fomat/hive-format.md)。
+Arctic 从 v0.3.1 版本开始支持了 Hive 表，可以对已有的 Hive 表进行升级以获得 Arctic 提供的流批一体能力。有关升级后 Hive 表拥有的功能可以参考 [Hive Format](../table-format/hive-format.md)。
 
 登录 [AMS Dashboard](http://localhost:1630) 后，从菜单中的 `Tables` 中选择 Hive 集群中的一张表，即可进行升级操作。
 
