@@ -19,12 +19,13 @@
 package com.netease.arctic.hive.op;
 
 import com.netease.arctic.table.ArcticTable;
-import java.util.Collection;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
+
+import java.util.Collection;
 
 public class BaseSchemaUpdate implements UpdateSchema {
 
