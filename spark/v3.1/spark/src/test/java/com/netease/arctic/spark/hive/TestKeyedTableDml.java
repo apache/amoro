@@ -225,4 +225,15 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(3, rows.size());
     sql("drop table if exists " + database + "." + "uppercase_table");
   }
+
+  @Test
+  public void testDeleteAfterAlter() {
+    sql("alter table {0}.{1} add column point bigint ", database, notUpsertTable);
+    sql("delete from {0}.{1} where id = 3", database, notUpsertTable);
+    rows = sql("select id, name from {0}.{1} order by id", database, notUpsertTable);
+
+    Assert.assertEquals(2, rows.size());
+    Assert.assertEquals(1, rows.get(0)[0]);
+    Assert.assertEquals(2, rows.get(1)[0]);
+  }
 }
