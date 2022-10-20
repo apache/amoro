@@ -109,6 +109,8 @@
                                         <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
                                         <exclude>org/apache/spark/sql/catalyst/analysis/ResolveProcedures**</exclude>
+                                        <exclude>org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**</exclude>
+                                        <exclude>org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**</exclude>
                                     </excludes>
                                 </filter>
 
@@ -117,12 +119,13 @@
                                 <!-- relocation arctic spark packages -->
                                 <relocation>
                                     <pattern>org.apache.spark.sql.catalyst</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.spark.sql.catalyst</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst</shadedPattern>
                                     <includes>
                                         <include>org.apache.spark.sql.catalyst.expressions.Arctic*</include>
                                         <include>org.apache.spark.sql.catalyst.parser.Arctic*</include>
                                     </includes>
                                 </relocation>
+
 
                                 <!-- relocation required dependencies -->
                                 <relocation>
@@ -192,12 +195,12 @@
                                     <pattern>org.apache.spark.sql.connector.iceberg</pattern>
                                     <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.connector.iceberg
                                     </shadedPattern>
-                                </relocation>
-                                <relocation>
-                                    <pattern>org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException</pattern>
-                                    <shadedPattern>
-                                        com.netease.arctic.shade.org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException
-                                    </shadedPattern>
+                                    <excludes>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.Procedure</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl</exclude>
+                                    </excludes>
                                 </relocation>
 
                                 <!-- relocation iceberg-spark3-extensions -->
@@ -256,8 +259,6 @@
                                         <include>org.apache.spark.sql.catalyst.analysis.ResolveProcedures*</include>
                                         <include>
                                             org.apache.spark.sql.catalyst.analysis.RowLevelOperationsPredicateCheck*
-                                        </include>
-                                        <include>org.apache.spark.sql.catalyst.analysis.NoSuchProcedureException
                                         </include>
                                     </includes>
                                 </relocation>
