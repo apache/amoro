@@ -102,6 +102,8 @@ public class TableMetricsStatisticService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetricsStatisticMapper metricsStatisticMapper = getMapper(sqlSession, TableMetricsStatisticMapper.class);
       metricsStatisticMapper.summaryMetrics(SnapshotSummary.TOTAL_FILE_SIZE_PROP, statisticTime);
+    } catch (Exception e) {
+      LOG.error("summaryMetrics error", e);
     }
   }
 

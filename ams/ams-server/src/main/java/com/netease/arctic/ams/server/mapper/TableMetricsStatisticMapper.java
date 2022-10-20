@@ -61,7 +61,7 @@ public interface TableMetricsStatisticMapper {
 
   @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select metric_name, sum(CAST" +
       "(metric_value AS SIGNED)), #{commitTime, typeHandler=com.netease.arctic.ams" +
-      ".server.mybatis.Long2TsConvertor}) from " + TABLE_NAME + " where metric_name = #{metricName}")
+      ".server.mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}")
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);
