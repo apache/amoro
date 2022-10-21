@@ -84,8 +84,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
 import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
-import { Modal } from 'ant-design-vue'
-import { message } from 'ant-design-vue'
+import { Modal, message } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import Properties from './Properties.vue'
 
@@ -238,7 +237,7 @@ async function deleteCatalogModal() {
   })
 }
 function uploadFile() {}
-function downLoad(id: string) {}
+function downLoad() {}
 onMounted(() => {
   getCatalogTypeOps()
 })

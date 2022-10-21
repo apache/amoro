@@ -151,5 +151,7 @@ export default {
   deleteCatalogModalTitle: 'Remove this catalog？',
   cannotDeleteModalTitle: "Can't remove this catalog.",
   cannotDeleteModalContent: 'This catalog has been used.',
-  success: 'Success'
+  success: 'Success',
+  optimzeGroup: 'Optimize Group',
+  propertiesMemory: 'properties.{type}.memory'
 }

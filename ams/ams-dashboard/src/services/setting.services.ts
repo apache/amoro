@@ -41,3 +41,6 @@ export function saveCatalogsSetting(params: {
   const { name } = params
   return request.put(`mock/ams/v1/catalogs/${name}`, { ...params })
 }
+export function getSystemSetting() {
+  return request.get('ams/v1/settings/system')
+}
