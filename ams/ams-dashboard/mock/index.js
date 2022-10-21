@@ -698,5 +698,62 @@ module.exports = {
         ]
       }
     })
-  }
+  },
+  'GET /mock/ams/v1/catalogs/types': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        'hadoop',
+        'hive'
+      ]
+    })
+  },
+  'GET /mock/ams/v1/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        name: 'bdms_test_catalog_hive',
+        type: 'hive',
+        storageConfig: {
+          "storage_config.storage.type": "hdfs",
+          "storage_config.core-site": "JDd8KVk4pq",
+          "storage_config.hdfs-site": "ZfTsDlSZnn",
+          "storage_config.hive-site": "Y2Torw4dFW"
+        },
+        authConfig: {
+          "auth_config.type": "simpel",
+          "auth_config.hadoop_username": "omPRZh6bc8",
+          "auth_config.principal": "L2TeTS0OzC",
+          "auth_config.keytab": "c9uXqYnAFl",
+          "auth_config.krb5": "p5pOR8f615"
+        },
+        properties: {
+          'key1': 'value1'
+        }
+      }
+    })
+  },
+  'DELETE /mock/ams/v1/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
+  'PUT /mock/ams/v1/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
+  'GET /mock/ams/v1/check/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
 }

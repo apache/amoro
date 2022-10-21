@@ -138,5 +138,18 @@ export default {
   numIndex: 'No.',
   cpu: 'CPU',
   memory: 'Memory',
-  lastTime: 'Last {time}'
+  lastTime: 'Last {time}',
+  list: 'List',
+  name: 'name',
+  catalogSettingType: 'type',
+  storageConfig: 'Storage Config',
+  authenticationConfig: 'Authentication Config',
+  upload: 'Upload',
+  save: 'Save',
+  remove: 'Remove',
+  edit: 'Edit',
+  deleteCatalogModalTitle: 'Remove this catalog？',
+  cannotDeleteModalTitle: "Can't remove this catalog.",
+  cannotDeleteModalContent: 'This catalog has been used.',
+  success: 'Success'
 }
