@@ -149,7 +149,7 @@ public class TerminalService {
         }
         try {
           sqlRunningInfo.getLogs().add(df.format(new Date()) + " use " + catalog);
-          spark.sql("use " + catalog);
+          spark.sql("use " + "`" + catalog + "`");
         } catch (Throwable t) {
           LOG.error("use catalog " + catalog + " failed ", t);
           sqlRunningInfo.getLogs().add(df.format(new Date()) + " use catalog " + catalog + " failed " + t);
