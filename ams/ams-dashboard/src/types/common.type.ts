@@ -245,6 +245,14 @@ export interface ITopTableItem {
   index: number
 }
 
+export interface IContainerSetting {
+  name: string
+  type: string
+  properties: IMap<string>,
+  optimizeGroup: IMap<string>[],
+  propertiesArray?: []
+}
+
 export interface IResourceUsage {
   timeLine: string[]
   usedCpu: string[]

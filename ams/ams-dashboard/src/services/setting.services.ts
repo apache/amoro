@@ -29,7 +29,7 @@ export function delCatalog(catalogName: string) {
   return request.delete(`mock/ams/v1/catalogs/${catalogName}`)
 }
 export function checkCatalogStatus(catalogName: string) {
-  return request.get(`mock/ams/v1/check/catalogs/${catalogName}`, { returnCode: true })
+  return request.get(`mock/ams/v1/catalogs/${catalogName}/delete/check`)
 }
 export function saveCatalogsSetting(params: {
   name: string
@@ -42,5 +42,8 @@ export function saveCatalogsSetting(params: {
   return request.put(`mock/ams/v1/catalogs/${name}`, { ...params })
 }
 export function getSystemSetting() {
-  return request.get('ams/v1/settings/system')
+  return request.get('/mock/ams/v1/settings/system')
+}
+export function getContainersSetting() {
+  return request.get('/mock/ams/v1/settings/containers')
 }

@@ -3,10 +3,6 @@
     <div class="system-setting">
       <h1 class="g-mb-12">System Setting</h1>
       <ul class="content">
-        <!-- <li class="item">
-          <span class="left">arctic.ams.server-host.prefix</span>
-          <span class="right">127.0.0.1</span>
-        </li> -->
         <li v-for="item in systemSettingArray" :key="item.key" class="item">
           <span class="left">{{item.key}}</span>
           <span class="right">{{item.value}}</span>
@@ -48,59 +44,46 @@
 
 <script lang="ts" setup>
 import { onMounted, reactive } from 'vue'
-import { IColumns } from '@/types/common.type'
+import { IColumns, IKeyAndValue, IContainerSetting } from '@/types/common.type'
 import { useI18n } from 'vue-i18n'
+import { getSystemSetting, getContainersSetting } from '@/services/setting.services'
 
 const { t } = useI18n()
-
-const systemSetting = reactive({
-  'arctic.ams.server-host.prefix': '127.0.0.1',
-  'arctic.ams.thrift.port': '18112'
-})
-const systemSettingArray = reactive([])
-const containerSetting = reactive([
+const systemSettingArray = reactive<IKeyAndValue>([])
+const containerSetting = reactive<IContainerSetting[]>([
   {
-    name: 'flinkcontainer',
-    type: 'flink',
-    properties: {
-      'properties.FLINK_HOME': '/home/arctic/flink-1.12.7/'
-    },
+    name: '',
+    type: '',
+    properties: {},
     propertiesArray: [],
-    optimizeGroup: [{
-      name: 'flinkOp',
-      'properties.taskmanager.memory': '1024'
-    }]
-  },
-  {
-
-    name: 'flinkcontainer2',
-    type: 'flink',
-    properties: {
-      'properties.FLINK_HOME': '/home/arctic/flink-1.12.7/'
-    },
-    propertiesArray: [],
-    optimizeGroup: [{
-      name: 'flinkOp',
-      'properties.taskmanager.memory': '1024'
-    }]
+    optimizeGroup: []
   }
 ])
 const optimzeGroupColumns: IColumns[] = reactive([
   { title: t('name'), dataIndex: 'name', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'properties.taskmanager.memory', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'properties.jobmanager.memory', ellipsis: true }
+  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', ellipsis: true },
+  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', ellipsis: true }
 ])
-function handleData() {
+
+async function getSystemSettingInfo() {
+  const res = await getSystemSetting()
+  if (!res) { return }
   systemSettingArray.length = 0
-  Object.keys(systemSetting).forEach(key => {
+  Object.keys(res).forEach(key => {
     systemSettingArray.push({
       key: key,
-      value: systemSetting[key]
+      value: res[key]
     })
   })
-  containerSetting.forEach(ele => {
+}
+async function getContainersSettingInfo() {
+  const res = await getContainersSetting()
+  containerSetting.length = 0;
+  (res || []).forEach((ele, index) => {
+    ele.propertiesArray = []
+    containerSetting.push(ele)
     Object.keys(ele.properties).forEach(key => {
-      ele.propertiesArray.push({
+      containerSetting[index].propertiesArray.push({
         key: key,
         value: ele.properties[key]
       })
@@ -108,7 +91,8 @@ function handleData() {
   })
 }
 onMounted(() => {
-  handleData()
+  getSystemSettingInfo()
+  getContainersSettingInfo()
 })
 
 </script>

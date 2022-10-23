@@ -185,17 +185,15 @@ function handleEdit() {
 }
 async function handleRemove() {
   const res = await checkCatalogStatus(props.catalog.catalogName)
-  if (res?.code === 200) {
+  if (res) {
     deleteCatalogModal()
     return
   }
-  if (res?.code === 400) {
-    Modal.confirm({
-      title: t('cannotDeleteModalTitle'),
-      content: t('cannotDeleteModalContent'),
-      wrapClassName: 'not-delete-modal'
-    })
-  }
+  Modal.confirm({
+    title: t('cannotDeleteModalTitle'),
+    content: t('cannotDeleteModalContent'),
+    wrapClassName: 'not-delete-modal'
+  })
 }
 function handleSave() {
   formRef.value
@@ -212,7 +210,7 @@ function handleSave() {
         authConfig,
         properties
       }).then(() => {
-        message.success(`${t('save')}${t('success')}`)
+        message.success(`${t('save')} ${t('success')}`)
         formRef.value.resetFields()
         handleCancle()
       }).catch(() => {

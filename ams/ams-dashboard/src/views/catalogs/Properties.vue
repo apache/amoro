@@ -1,63 +1,61 @@
 
 <template>
   <div class="config-properties">
-    <div class="config-header g-flex">
-      <div class="td g-flex-ac">{{$t('key')}}</div>
-      <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
-    </div>
-    <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
-      <div class="config-row g-flex-ac" v-for="(item, index) in propertiesForm.data" :key="item.uuid" :style="isEdit ? 'padding-right: 32px' : ''">
-        <!-- validator: validateUnique -->
-        <a-form-item
-          :name="['data', index, 'key']"
-          :rules="[{
-            required: true,
-            message: `${$t(placeholder.selectPh)}`
-          }]"
-          class="g-mr-8"
-        >
-          <a-auto-complete
-            v-model:value="item.key"
-            :options="options"
-            @select="(val, option) => onSelect(val, option, item)"
-            :filter-option="filterOption"
-            :disabled="!isEdit"
-            style="width: 100%"
-            class="g-mr-12"
-          >
-            <template #option="{key: key}">
-              <span>{{ key }}</span>
-            </template>
-          </a-auto-complete>
-        </a-form-item>
-        <a-form-item
-          :name="['data', index, 'value']"
-          :rules="[{
-            required: true,
-            message: `${$t(placeholder.inputPh)}`
-          }]"
-        >
-          <a-input
-            v-model:value="item.value"
-            :disabled="!isEdit"
-            style="width: 100%"
-          />
-        </a-form-item>
-        <close-outlined v-if="isEdit" class="icon-close" @click="removeRule(item)"  />
+    <div v-if="isEdit">
+      <div class="config-header g-flex">
+        <div class="td g-flex-ac">{{$t('key')}}</div>
+        <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
       </div>
-    </a-form>
-    <a-button v-if="isEdit" class="config-btn" @click="addRule">+</a-button>
+      <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
+        <div class="config-row g-flex-ac" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
+          <!-- validator: validateUnique -->
+          <a-form-item
+            :name="['data', index, 'key']"
+            :rules="[{
+              required: true,
+              message: `${$t(placeholder.inputPh)}`
+            }]"
+            class="g-mr-8"
+          >
+            <a-input
+              v-model:value="item.key"
+              style="width: 100%"
+            />
+          </a-form-item>
+          <a-form-item
+            :name="['data', index, 'value']"
+            :rules="[{
+              required: true,
+              message: `${$t(placeholder.inputPh)}`
+            }]"
+          >
+            <a-input
+              v-model:value="item.value"
+              style="width: 100%"
+            />
+          </a-form-item>
+          <close-outlined class="icon-close" @click="removeRule(item)"  />
+        </div>
+      </a-form>
+      <a-button class="config-btn" @click="addRule">+</a-button>
+    </div>
+    <a-table
+      v-if="!isEdit"
+      rowKey="uuid"
+      :columns="propertiesColumns"
+      :data-source="propertiesForm.data"
+      :pagination="false"
+    ></a-table>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { IMap, IKeyAndValue } from '@/types/common.type'
+import { computed, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
+import { IMap } from '@/types/common.type'
 import { CloseOutlined } from '@ant-design/icons-vue'
-import { getUpgradeProperties } from '@/services/table.service'
 import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
-// import { useI18n } from 'vue-i18n'
+import { useI18n } from 'vue-i18n'
 
 interface IItem {
   key: string
@@ -65,11 +63,12 @@ interface IItem {
   uuid: string
 }
 
-// const { t } = useI18n()
+const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()
-const propertiesArray = reactive<IItem[]>([])
-const options = ref<IMap<string>[]>()
-const propertiesIncludeValueList = reactive<IKeyAndValue[]>([]) // includes key value
+const propertiesColumns = shallowReactive([
+  { dataIndex: 'key', title: t('key'), ellipsis: true },
+  { dataIndex: 'value', title: t('value'), ellipsis: true }
+])
 const propertiesFormRef = ref()
 const propertiesForm = reactive<IMap<string>>({
   data: []
@@ -86,7 +85,6 @@ watch(() => props.propertiesObj, () => {
 })
 
 function initPropertiesArray() {
-  propertiesArray.length = 0
   propertiesForm.data.length = 0
   Object.keys(props.propertiesObj).forEach(key => {
     propertiesForm.data.push({
@@ -97,35 +95,6 @@ function initPropertiesArray() {
   })
 }
 
-async function getPropertiesList() {
-  propertiesIncludeValueList.length = 0
-  options.value = []
-  const result = await getUpgradeProperties()
-  Object.keys(result).forEach(key => {
-    const item = {
-      key: key,
-      label: key,
-      value: key,
-      text: result[key] || ''
-    }
-    propertiesIncludeValueList.push(item)
-    options.value.push(item)
-  })
-}
-
-function filterOption(input: string, option: IMap<string>) {
-  return option.key.toUpperCase().indexOf(input.toUpperCase()) >= 0
-}
-
-function onSelect(val, option, item) {
-  const key = option.key
-  const selected = propertiesIncludeValueList.find((ele: IKeyAndValue) => ele.key === key)
-  const selectVal = propertiesForm.data.find((ele: IItem) => ele.uuid === item.uuid)
-  if (selectVal) {
-    selectVal.value = selected.text || ''
-    selectVal.key = selected.key || ''
-  }
-}
 function removeRule(item) {
   const index = propertiesForm.data.indexOf(item)
   if (index !== -1) {
@@ -143,7 +112,7 @@ function addRule() {
 
 // async function validateUnique(rule, value) {
 //   if (!value) {
-//     return Promise.reject(new Error(t(placeholder.selectPh)))
+//     return Promise.reject(new Error(t(placeholder.inputPh)))
 //   } else if (value && (propertiesForm.data || []).filter(item => item.key === value).length > 1) {
 //     return Promise.reject(new Error(t('duplicateKey')))
 //   } else {
@@ -169,7 +138,6 @@ defineExpose({
 })
 
 onMounted(() => {
-  getPropertiesList()
 })
 
 </script>
@@ -210,7 +178,7 @@ onMounted(() => {
     .config-row {
       // height: 40px;
       position: relative;
-      // padding-right: 32px;
+      padding-right: 32px;
       width: 100%;
       .ant-form-item {
         width: 50%;
