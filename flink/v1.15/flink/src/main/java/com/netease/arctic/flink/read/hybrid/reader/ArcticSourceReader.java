@@ -23,13 +23,17 @@ import com.netease.arctic.flink.read.hybrid.enumerator.InitializationFinishedEve
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import com.netease.arctic.flink.util.FlinkClassUtil;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
+import org.apache.flink.api.connector.source.SourceOutput;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
 import org.apache.flink.core.io.InputStatus;
+import org.apache.flink.streaming.api.operators.source.SourceOutputWithWatermarks;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -166,6 +170,11 @@ public class ArcticSourceReader<T> extends
     @Override
     public void markIdle() {
       internal.markIdle();
+    }
+
+    @Override
+    public void markActive() {
+      internal.markActive();
     }
 
     @Override
