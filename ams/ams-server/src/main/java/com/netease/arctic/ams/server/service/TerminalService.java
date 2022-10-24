@@ -61,6 +61,7 @@ public class TerminalService {
   private static int sessionId = 1;
   private static final Map<Integer, SqlRunningInfo> sqlSessionInfoCache = new HashMap<>();
   private static final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+  private static final String QUOTE  = "`";
 
   public static LogInfo getLogs(int sessionId) {
     return new LogInfo(sqlSessionInfoCache.get(sessionId).getLogStatus(), sqlSessionInfoCache.get(sessionId).getLogs());
@@ -149,7 +150,7 @@ public class TerminalService {
         }
         try {
           sqlRunningInfo.getLogs().add(df.format(new Date()) + " use " + catalog);
-          spark.sql("use " + "`" + catalog + "`");
+          spark.sql("use " + QUOTE + catalog + QUOTE);
         } catch (Throwable t) {
           LOG.error("use catalog " + catalog + " failed ", t);
           sqlRunningInfo.getLogs().add(df.format(new Date()) + " use catalog " + catalog + " failed " + t);
