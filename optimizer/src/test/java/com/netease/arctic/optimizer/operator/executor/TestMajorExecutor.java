@@ -27,6 +27,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
@@ -145,14 +146,17 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
 
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
+
+    String fileFormat = arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     for (DataFileInfo fileInfo : baseDataFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, baseTable.spec(), arcticTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, baseTable.spec(), fileFormat),
           DataFileType.BASE_FILE);
     }
     for (DataFileInfo fileInfo : posDeleteFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, baseTable.spec(), arcticTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, baseTable.spec(), fileFormat),
           DataFileType.POS_DELETE_FILE);
     }
 
