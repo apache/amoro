@@ -21,8 +21,9 @@ package com.netease.arctic.optimizer.flink;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
+import com.netease.arctic.optimizer.metric.TaskRecorder;
+import com.netease.arctic.optimizer.metric.TaskStat;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
-import com.netease.arctic.optimizer.util.CircularArray;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Meter;
@@ -31,11 +32,15 @@ import org.apache.flink.streaming.api.functions.ProcessFunction;
 import org.apache.flink.util.Collector;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.stream.Collectors;
 
 public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeTaskStat>
     implements BaseTaskExecutor.ExecuteListener {
@@ -44,27 +49,27 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
 
   private final BaseTaskExecutor executor;
   private final OptimizerConfig config;
-
-  private final CircularArray<TaskStat> latestTaskStats = new CircularArray<>(10);
-  private final ArrayBlockingQueue<TaskStat> completedTasks = new ArrayBlockingQueue<>(256);
-  private volatile TaskStat currentTaskStat;
+  // to record latest(default=256) task stats
+  private final TaskRecorder taskRecorder;
 
   private Meter inputFlowRateMeter;
   private Meter outputFlowRateMeter;
   private Meter inputFileCntMeter;
   private Meter outputFileCntMeter;
 
-  private volatile long lastUsageCheckTime = 0;
+  private volatile long lastUsageCheckTime;
 
   FlinkExecuteFunction(OptimizerConfig config) {
     this.config = config;
     this.executor = new BaseTaskExecutor(config, this);
+    this.taskRecorder = new TaskRecorder();
   }
 
   public FlinkExecuteFunction(BaseTaskExecutor executor,
                               OptimizerConfig config) {
     this.executor = executor;
     this.config = config;
+    this.taskRecorder = new TaskRecorder();
   }
 
   @Override
@@ -77,8 +82,8 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
 
   @Override
   public void onTaskStart(Iterable<ContentFile<?>> inputFiles) {
-    this.currentTaskStat = new TaskStat();
-    this.currentTaskStat.recordInputFiles(inputFiles);
+    this.taskRecorder.recordNewTaskStat(getFileStats(inputFiles));
+
     int size = Iterables.size(inputFiles);
     long sum = 0;
     for (ContentFile<?> inputFile : inputFiles) {
@@ -92,18 +97,7 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
 
   @Override
   public void onTaskFinish(Iterable<ContentFile<?>> outputFiles) {
-    this.currentTaskStat.recordOutFiles(outputFiles);
-    this.currentTaskStat.finish();
-    this.latestTaskStats.add(currentTaskStat);
-    TaskStat taskStat = this.currentTaskStat;
-    this.currentTaskStat = null;
-    try {
-      this.completedTasks.add(taskStat);
-    } catch (IllegalStateException e) {
-      LOG.warn("completed queue may be full, poll the first one and retry add", e);
-      this.completedTasks.poll();
-      this.completedTasks.add(taskStat);
-    }
+    this.taskRecorder.finishCurrentTask(getFileStats(outputFiles));
 
     int size = 0;
     long sum = 0;
@@ -117,6 +111,19 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
     this.outputFileCntMeter.markEvent(size * 60L);
     this.outputFlowRateMeter.markEvent(sum);
     LOG.info("record metrics outputFlowRate={}, outputFileCnt={}", sum, size);
+  }
+
+  @NotNull
+  private List<TaskStat.FileStat> getFileStats(Iterable<ContentFile<?>> files) {
+    List<TaskStat.FileStat> fileStats;
+    if (files == null) {
+      fileStats = Collections.emptyList();
+    } else {
+      fileStats = Streams.stream(files)
+          .map(f -> new TaskStat.FileStat(f.fileSizeInBytes()))
+          .collect(Collectors.toList());
+    }
+    return fileStats;
   }
 
   @Override
@@ -200,23 +207,15 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
     if (n <= 0) {
       return 0;
     }
-    int cnt = 0;
     int fileCnt = 0;
     long totalFileSize = 0;
-    for (TaskStat taskStat : latestTaskStats) {
-      if (taskStat == null) {
-        break;
-      }
+    for (TaskStat taskStat : taskRecorder.getLastNTaskStat(n)) {
       if (input) {
         fileCnt += taskStat.getInputFileCnt();
         totalFileSize += taskStat.getInputTotalSize();
       } else {
         fileCnt += taskStat.getOutputFileCnt();
         totalFileSize += taskStat.getOutputTotalSize();
-      }
-      cnt++;
-      if (cnt == n) {
-        break;
       }
     }
     return fileCnt == 0 ? 0 : totalFileSize / fileCnt;
@@ -226,79 +225,29 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
     if (n <= 0) {
       return 0;
     }
-    int cnt = 0;
     int taskCnt = 0;
     long totalTime = 0;
-    for (TaskStat taskStat : latestTaskStats) {
-      if (taskStat == null) {
-        break;
-      }
+    for (TaskStat taskStat : taskRecorder.getLastNTaskStat(n)) {
       totalTime += taskStat.getDuration();
       taskCnt++;
-      cnt++;
-      if (cnt == n) {
-        break;
-      }
     }
     return taskCnt == 0 ? 0 : totalTime / taskCnt;
   }
 
   private double getUsagePercentage() {
-    if (lastUsageCheckTime == 0) {
-      this.lastUsageCheckTime = System.currentTimeMillis();
-      LOG.info("get usage = 0.0, init lastUsageCheckTime");
-      return 0.0;
-    }
-    long duration = 0;
-    // get completed tasks execute duration
-    while (true) {
-      TaskStat task = completedTasks.poll();
-      long taskDuration;
-      if (task == null) {
-        // no task in queue
-        break;
-      }
-      if (task.finished()) {
-        if (task.getEndTime() < lastUsageCheckTime) {
-          // case1: end before lastUsageCheckTime, ignore
-          taskDuration = 0;
-        } else {
-          if (task.getStartTime() < lastUsageCheckTime) {
-            // case2: start before lastUsageCheckTime, calculate duration from lastUsageCheckTime
-            taskDuration = task.getEndTime() - lastUsageCheckTime;
-          } else {
-            // case3: start after lastUsageCheckTime, get total duration by end - start
-            taskDuration = task.getDuration();
-          }
-        }
-      } else {
-        LOG.warn("should not get not finished task, ignore {}", task);
-        taskDuration = 0;
-      }
-      duration += taskDuration;
-    }
-    // get current task execute duration
-    TaskStat current = this.currentTaskStat;
     long now = System.currentTimeMillis();
-    if (current != null) {
-      if (current.getStartTime() < lastUsageCheckTime) {
-        duration += (now - lastUsageCheckTime);
-      } else {
-        duration += (now - current.getStartTime());
-      }
-    }
-    long totalDuration = now - lastUsageCheckTime;
-    this.lastUsageCheckTime = now;
-    double usage;
-    if (duration > totalDuration) {
-      LOG.warn("duration {} is bigger than total duration {}", duration, totalDuration);
-      usage = 1.0;
-    } else if (duration == totalDuration) {
-      usage = 1.0;
+    double usage = 0.0;
+    if (lastUsageCheckTime == 0) {
+      LOG.info("init lastUsageCheckTime, get usage=0.0");
     } else {
-      usage = (double) duration / totalDuration;
+      usage = getUsage(this.lastUsageCheckTime, now);
     }
-    LOG.info("get usage = {}%, execute duration = {}, totalDuration = {}", usage * 100, duration, totalDuration);
+    this.lastUsageCheckTime = now;
     return usage * 100;
   }
+
+  public double getUsage(long begin, long end) {
+    return taskRecorder.getUsage(begin, end);
+  }
+
 }

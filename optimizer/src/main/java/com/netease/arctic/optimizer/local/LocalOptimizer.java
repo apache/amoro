@@ -25,19 +25,25 @@ import com.netease.arctic.ams.api.properties.OptimizerProperties;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.StatefulOptimizer;
 import com.netease.arctic.optimizer.TaskWrapper;
+import com.netease.arctic.optimizer.metric.TaskRecorder;
+import com.netease.arctic.optimizer.metric.TaskStat;
 import com.netease.arctic.optimizer.operator.BaseTaskConsumer;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,6 +51,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * An optimizer running locally.
@@ -240,15 +247,19 @@ public class LocalOptimizer implements StatefulOptimizer {
     }
   }
 
-  private class Executor implements Runnable {
+  private class Executor implements Runnable, BaseTaskExecutor.ExecuteListener {
 
     private final BaseTaskExecutor baseTaskExecutor;
 
     private final BaseTaskReporter baseTaskReporter;
 
+    // to record latest(default=256) task stats
+    private final TaskRecorder taskRecorder;
+
     public Executor() {
-      this.baseTaskExecutor = new BaseTaskExecutor(config);
+      this.baseTaskExecutor = new BaseTaskExecutor(config, this);
       this.baseTaskReporter = new BaseTaskReporter(config);
+      this.taskRecorder = new TaskRecorder();
     }
 
     @Override
@@ -278,6 +289,34 @@ public class LocalOptimizer implements StatefulOptimizer {
         }
       }
       LOG.info("execute thread exit");
+      this.taskRecorder.clear();
+    }
+
+    @Override
+    public void onTaskStart(Iterable<ContentFile<?>> inputFiles) {
+      this.taskRecorder.recordNewTaskStat(getFileStats(inputFiles));
+    }
+
+    @Override
+    public void onTaskFinish(Iterable<ContentFile<?>> outputFiles) {
+      this.taskRecorder.finishCurrentTask(getFileStats(outputFiles));
+    }
+
+    @NotNull
+    private List<TaskStat.FileStat> getFileStats(Iterable<ContentFile<?>> files) {
+      List<TaskStat.FileStat> fileStats;
+      if (files == null) {
+        fileStats = Collections.emptyList();
+      } else {
+        fileStats = Streams.stream(files)
+            .map(f -> new TaskStat.FileStat(f.fileSizeInBytes()))
+            .collect(Collectors.toList());
+      }
+      return fileStats;
+    }
+
+    public double getUsage(long begin, long end) {
+      return taskRecorder.getUsage(begin, end);
     }
   }
 

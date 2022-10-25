@@ -16,28 +16,26 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.optimizer.flink;
-
-import org.apache.iceberg.ContentFile;
+package com.netease.arctic.optimizer.metric;
 
 public class TaskStat {
   private final long startTime;
-  private long endTime = 0;
+  private long endTime = Long.MAX_VALUE;
   private int inputFileCnt;
   private long inputTotalSize;
   private int outputFileCnt;
   private long outputTotalSize;
 
-  public TaskStat() {
-    this.startTime = System.currentTimeMillis();
+  public TaskStat(long startTime) {
+    this.startTime = startTime;
   }
 
   public boolean finished() {
-    return endTime != 0;
+    return endTime != Long.MAX_VALUE;
   }
 
-  public void finish() {
-    this.endTime = System.currentTimeMillis();
+  public void finish(long endTime) {
+    this.endTime = endTime;
   }
 
   public int getInputFileCnt() {
@@ -72,23 +70,40 @@ public class TaskStat {
     return endTime;
   }
 
-  public void recordInputFiles(Iterable<ContentFile<?>> files) {
+  public void recordInputFiles(Iterable<FileStat> files) {
     if (files == null) {
       return;
     }
-    for (ContentFile<?> file : files) {
+    for (FileStat file : files) {
       this.inputFileCnt++;
-      this.inputTotalSize += file.fileSizeInBytes();
+      this.inputTotalSize += file.getFileSize();
     }
   }
 
-  public void recordOutFiles(Iterable<? extends ContentFile<?>> files) {
+  public void recordOutFiles(Iterable<FileStat> files) {
     if (files == null) {
       return;
     }
-    for (ContentFile<?> file : files) {
+    for (FileStat file : files) {
       this.outputFileCnt++;
-      this.outputTotalSize += file.fileSizeInBytes();
+      this.outputTotalSize += file.getFileSize();
+    }
+  }
+  
+  public static class FileStat {
+    private final long fileSize;
+
+    public FileStat(long fileSize) {
+      this.fileSize = fileSize;
+    }
+
+    public long getFileSize() {
+      return fileSize;
+    }
+
+    @Override
+    public String toString() {
+      return "FileStat(size=" + fileSize + ")";
     }
   }
 

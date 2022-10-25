@@ -34,6 +34,7 @@ import java.util.function.Consumer;
 public class CircularArray<E> implements Iterable<E>, Serializable {
   private final Object[] elementData;
   private int currentIndex;
+  private boolean full = false;
 
   public CircularArray(int capacity) {
     Preconditions.checkArgument(capacity > 0);
@@ -51,12 +52,24 @@ public class CircularArray<E> implements Iterable<E>, Serializable {
     currentIndex++;
     if (currentIndex == elementData.length) {
       currentIndex = 0;
+      if (!full) {
+        full = true;
+      }
     }
   }
 
   public void clear() {
     Arrays.fill(elementData, null);
     currentIndex = 0;
+    full = false;
+  }
+  
+  public int size() {
+    if (full) {
+      return elementData.length;
+    } else {
+      return currentIndex;
+    }
   }
 
   @NotNull
@@ -76,21 +89,30 @@ public class CircularArray<E> implements Iterable<E>, Serializable {
   }
 
   private class ListIterator<E> implements Iterator<E> {
-    private final int startIndex;
     private int nowIndex;
-    private boolean first = true;
+    private int cnt = 0;
 
     public ListIterator(int startIndex) {
-      this.startIndex = startIndex;
       this.nowIndex = startIndex;
     }
 
     @Override
     public boolean hasNext() {
-      if (first) {
-        return true;
+      if (full) {
+        return cnt < elementData.length;
+      } else {
+        return nowIndex != 0;
       }
-      return nowIndex != startIndex;
+    }
+
+    @Override
+    public E next() {
+      if (!hasNext()) {
+        throw new IndexOutOfBoundsException("no more element");
+      }
+      nowIndex = getNextIndex();
+      cnt++;
+      return (E) elementData[nowIndex];
     }
 
     private int getNextIndex() {
@@ -99,13 +121,6 @@ public class CircularArray<E> implements Iterable<E>, Serializable {
         next = elementData.length - 1;
       }
       return next;
-    }
-
-    @Override
-    public E next() {
-      first = false;
-      nowIndex = getNextIndex();
-      return (E) elementData[nowIndex];
     }
   }
 }
