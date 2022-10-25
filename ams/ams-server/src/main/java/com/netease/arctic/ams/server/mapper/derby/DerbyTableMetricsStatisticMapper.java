@@ -16,22 +16,18 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.mapper;
+package com.netease.arctic.ams.server.mapper.derby;
 
-import com.netease.arctic.ams.server.model.TableMetricsStatistic;
-import com.netease.arctic.ams.server.model.TableRuntimeMetricsStatistic;
-import java.util.List;
+import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
-public interface TableRuntimeMetricsStatisticMapper {
-  String TABLE_NAME = "table_runtime_metric_statistics";
-
-  @Insert("insert into " + TABLE_NAME + " (table_identifier, data_size, commit_time) values(" +
-      "#{metricsStatistic.tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-      ".TableIdentifier2StringConverter}, #{metricsStatistic.dataSize},  #{metricsStatistic" +
-      ".commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor})")
-  void insertMetricsStatistic(@Param("metricsStatistic") TableRuntimeMetricsStatistic metricsStatistic);
+public interface DerbyTableMetricsStatisticMapper extends TableMetricsStatisticMapper {
+  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select #{metricName}, " +
+      "cast(cast(sum(cast (metric_value as BIGINT)) as char(200)) as varchar(200)), #{commitTime, typeHandler=com" +
+      ".netease" +
+      ".arctic.ams.server.mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}")
+  void summaryMetrics(
+      @Param("metricName") String metricName,
+      @Param("commitTime") long commitTime);
 }

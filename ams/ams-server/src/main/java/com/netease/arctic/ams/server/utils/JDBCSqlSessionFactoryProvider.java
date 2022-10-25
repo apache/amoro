@@ -27,6 +27,7 @@ import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.FileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
+import com.netease.arctic.ams.server.mapper.MetricsSummaryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeQueueMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
@@ -37,7 +38,6 @@ import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
-import com.netease.arctic.ams.server.mapper.TableRuntimeMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.TableTransactionMetaMapper;
 import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
@@ -45,6 +45,7 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetricsStatisticMapper;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
 import org.apache.ibatis.mapping.Environment;
@@ -114,13 +115,14 @@ public class JDBCSqlSessionFactoryProvider {
           configuration.addMapper(ApiTokensMapper.class);
           configuration.addMapper(DDLRecordMapper.class);
           configuration.addMapper(TableMetricsStatisticMapper.class);
-          configuration.addMapper(TableRuntimeMetricsStatisticMapper.class);
+          configuration.addMapper(MetricsSummaryMapper.class);
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             configuration.addMapper(DerbyContainerMetadataMapper.class);
             configuration.addMapper(DerbyFileInfoCacheMapper.class);
             configuration.addMapper(DerbyCatalogMetadataMapper.class);
             configuration.addMapper(DerbyTableMetadataMapper.class);
             configuration.addMapper(DerbyOptimizeTasksMapper.class);
+            configuration.addMapper(DerbyTableMetricsStatisticMapper.class);
           }
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }

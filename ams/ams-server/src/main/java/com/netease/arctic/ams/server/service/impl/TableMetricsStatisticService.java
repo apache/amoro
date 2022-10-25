@@ -19,11 +19,11 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.TableMetric;
+import com.netease.arctic.ams.server.mapper.MetricsSummaryMapper;
 import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
-import com.netease.arctic.ams.server.mapper.TableRuntimeMetricsStatisticMapper;
+import com.netease.arctic.ams.server.model.MetricsSummary;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
-import com.netease.arctic.ams.server.model.TableRuntimeMetricsStatistic;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -57,6 +57,24 @@ public class TableMetricsStatisticService extends IJDBCService {
         mapper.insertMetricsStatistic(statistic);
       });
       sqlSession.commit();
+    }
+  }
+
+  public List<TableMetricsStatistic> getMetrics(TableIdentifier tableIdentifier, String innerTable, String metricName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
+      TableMetricsStatistic statistic = new TableMetricsStatistic();
+      statistic.setTableIdentifier(tableIdentifier.buildTableIdentifier());
+      statistic.setInnerTable(innerTable);
+      statistic.setMetricName(metricName);
+      return mapper.getMetricsStatistic(statistic);
+    }
+  }
+
+  public List<MetricsSummary> getMetricsSummary(String metricName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      MetricsSummaryMapper mapper = sqlSession.getMapper(MetricsSummaryMapper.class);
+      return mapper.getMetricsSummary(metricName);
     }
   }
 
@@ -104,29 +122,6 @@ public class TableMetricsStatisticService extends IJDBCService {
       metricsStatisticMapper.summaryMetrics(SnapshotSummary.TOTAL_FILE_SIZE_PROP, statisticTime);
     } catch (Exception e) {
       LOG.error("summaryMetrics error", e);
-    }
-  }
-
-  public void statisticRuntimeTableFileMetrics(ArcticTable arcticTable, Long statisticTime) {
-    if (arcticTable == null) {
-      return;
-    }
-    TableMetricsStatistic fileSizeStatistic;
-    if (arcticTable.isKeyedTable()) {
-      fileSizeStatistic = mergeLongStatistic(
-          statisticFileSize(arcticTable.asKeyedTable().changeTable()),
-          statisticFileSize(arcticTable.asKeyedTable().baseTable()));
-    } else {
-      fileSizeStatistic = statisticFileSize(arcticTable.asUnkeyedTable());
-    }
-    TableRuntimeMetricsStatistic runtimeMetricsStatistic = new TableRuntimeMetricsStatistic();
-    runtimeMetricsStatistic.setTableIdentifier(arcticTable.id().buildTableIdentifier());
-    runtimeMetricsStatistic.setDataSize(Long.parseLong(fileSizeStatistic.getMetricValue()));
-    runtimeMetricsStatistic.setCommitTime(statisticTime);
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TableRuntimeMetricsStatisticMapper
-          metricsStatisticMapper = getMapper(sqlSession, TableRuntimeMetricsStatisticMapper.class);
-      metricsStatisticMapper.insertMetricsStatistic(runtimeMetricsStatistic);
     }
   }
 

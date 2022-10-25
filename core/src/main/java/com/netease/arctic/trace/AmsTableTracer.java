@@ -31,19 +31,18 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
-import java.util.Collections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -289,10 +288,12 @@ public class AmsTableTracer implements TableTracer {
       return Collections.emptyList();
     }
     String datafileCount = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0");
-    String deleteFileCount = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0");
+    String deleteFileCount =
+        table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0");
     String dataSize = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_FILE_SIZE_PROP, "0");
     List<TableMetric> tableMetrics = Lists.newArrayList();
-    tableMetrics.add(new TableMetric(innerTable,
+    tableMetrics.add(new TableMetric(
+        innerTable,
         SnapshotSummary.TOTAL_DATA_FILES_PROP,
         Long.parseLong(datafileCount) + Long.parseLong(deleteFileCount) + ""));
     tableMetrics.add(new TableMetric(innerTable, SnapshotSummary.TOTAL_FILE_SIZE_PROP, dataSize));

@@ -262,7 +262,7 @@ CREATE TABLE table_metric_statistics
     inner_table varchar(64) NOT NULL,
     metric_name      varchar(256),
     metric_value     varchar(256),
-    commit_time      timestamp    NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE metric_statistics_summary
