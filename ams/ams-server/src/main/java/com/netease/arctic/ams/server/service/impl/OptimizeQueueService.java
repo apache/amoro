@@ -554,7 +554,15 @@ public class OptimizeQueueService extends IJDBCService {
 
           if (tableItem.getTableOptimizeRuntime().isRunning()) {
             LOG.debug("{} is running continue", tableIdentifier);
-            continue;
+
+            // add failed tasks and retry
+            List<OptimizeTaskItem> toExecuteTasks = addTask(tableItem, Collections.emptyList());
+            if (!toExecuteTasks.isEmpty()) {
+              LOG.info("{} add {} failed tasks into queue and retry", tableItem.getTableIdentifier(), toExecuteTasks.size());
+              return toExecuteTasks;
+            } else {
+              continue;
+            }
           }
 
           List<BaseOptimizeTask> optimizeTasks;
