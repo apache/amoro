@@ -153,5 +153,9 @@ export default {
   cannotDeleteModalContent: 'This catalog has been used.',
   success: 'Success',
   optimzeGroup: 'Optimize Group',
-  propertiesMemory: 'properties.{type}.memory'
+  propertiesMemory: 'properties.{type}.memory',
+  leavePageModalTitle: 'Leave this page？',
+  leavePageModalContent: 'Changes you made may not be saved.',
+  leave: 'Leave',
+  invalidInput: 'Invalid input'
 }

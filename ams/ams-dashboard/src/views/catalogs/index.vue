@@ -7,7 +7,7 @@
           {{ item.catalogName }}
         </li>
       </ul>
-      <a-button type="primary" class="add-btn">+</a-button>
+      <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
     </div>
     <div class="catalog-detail">
       <Detail :catalog="curCatalog" :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
@@ -16,14 +16,21 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ICatalogItem } from '@/types/common.type'
 import { getCatalogList } from '@/services/table.service'
 import Detail from './Detail.vue'
+import { Modal } from 'ant-design-vue'
+import { useI18n } from 'vue-i18n'
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
+const { t } = useI18n()
+const router = useRouter()
+const route = useRoute()
 const catalogs = reactive<ICatalogItem[]>([])
 const curCatalog = reactive<ICatalogItem>({})
 const isEdit = ref<boolean>(false)
+const NEW_CATALOG = 'new catalog'
 
 async function getCatalogs() {
   const res = await getCatalogList()
@@ -34,24 +41,91 @@ async function getCatalogs() {
       catalogType: ele.catalogType
     })
   })
-  curCatalog.catalogName = catalogs[0]?.catalogName
-  curCatalog.catalogType = catalogs[0]?.catalogType
+  const { catalog = '', type } = route.query
+  const item: ICatalogItem = {}
+  if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
+    addCatalog()
+    return
+  }
+  if (catalog) {
+    item.catalogName = catalog
+    item.catalogType = type
+  } else {
+    item.catalogName = catalogs[0]?.catalogName
+    item.catalogType = catalogs[0]?.catalogType
+  }
+  selectCatalog(item)
 }
 function handleClick(item: ICatalogItem) {
+  if (isEdit.value) {
+    leaveConfirm(() => {
+      selectCatalog(item)
+      isEdit.value = false
+    })
+  } else {
+    selectCatalog(item)
+  }
+}
+function selectCatalog(item: ICatalogItem) {
   const { catalogName, catalogType } = item
   curCatalog.catalogName = catalogName
   curCatalog.catalogType = catalogType
+  router.replace({
+    path: '/catalogs',
+    query: {
+      catalog: encodeURIComponent(curCatalog.catalogName),
+      type: curCatalog.catalogType
+    }
+  })
 }
 
-function updateEdit(val) {
+function updateEdit(val, catalog?) {
   isEdit.value = val
-  console.log('isEdit.value', isEdit.value)
+  const index = catalogs.findIndex((ele: ICatalogItem) => ele.catalogName === NEW_CATALOG)
+  if (index > -1) {
+    catalogs.splice(index)
+    const item: ICatalogItem = {
+      catalogName: catalogs[0]?.catalogName,
+      catalogType: catalogs[0]?.catalogType
+    }
+    selectCatalog(item)
+    return
+  }
+  catalog && selectCatalog(catalog)
 }
 function updateCatalogs() {
   getCatalogs()
 }
+function addCatalog() {
+  const item: ICatalogItem = {
+    catalogName: NEW_CATALOG,
+    catalogType: ''
+  }
+  catalogs.push(item)
+  selectCatalog(item)
+  isEdit.value = true
+}
 onMounted(() => {
   getCatalogs()
+})
+function leaveConfirm(cb?) {
+  Modal.confirm({
+    title: t('leavePageModalTitle'),
+    content: t('leavePageModalContent'),
+    okText: t('leave'),
+    onOk: async() => {
+      cb && await cb()
+    }
+  })
+}
+onBeforeRouteLeave((to, form, next) => {
+  if (isEdit.value) {
+    leaveConfirm(() => {
+      next()
+    })
+  } else {
+    next()
+  }
 })
 
 </script>
@@ -90,13 +164,15 @@ onMounted(() => {
         color: #fff;
         background-color: @primary-color;
       }
+      &:last-child {
+        border-bottom: 0;
+      }
     }
   }
   .add-btn {
     height: 40px;
     line-height: 40px;
     width: 100%;
-    border: 0;
   }
   .catalog-detail {
     display: flex;

@@ -2,7 +2,7 @@
   <div class="detail-wrap">
     <div class="content-wrap">
       <a-form ref="formRef" :model="formState" class="catalog-form">
-        <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit }]">
+        <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit, validator: validatorName }]">
           <a-input v-if="isEdit" v-model:value="formState.catalog.name" />
           <span v-else>{{formState.catalog.name}}</span>
         </a-form-item>
@@ -11,27 +11,34 @@
             v-if="isEdit"
             v-model:value="formState.catalog.type"
             :options="catalogTypeOps"
+            :placeholder="placeholder.selectPh"
           />
           <span v-else>{{formState.catalog.type}}</span>
         </a-form-item>
         <a-form-item>
           <p class="header">{{$t('storageConfig')}}</p>
         </a-form-item>
-        <a-form-item label="storage_config.storage.type" :name="['storageConfig', 'storage_config.storage.type']" :rules="[{ required: isEdit }]">
-          <a-input v-if="isEdit" v-model:value="formState.storageConfig['storage_config.storage.type']" />
-          <span v-else class="config-value">hdfs</span>
+        <a-form-item label="storage_config.storage.type">
+          <span class="config-value">{{formState.storageConfig['storage_config.storage.type']}}</span>
         </a-form-item>
-        <a-form-item label="storage_config.core-site" class="g-flex-ac">
-          <a-button v-if="!formState.storageConfig['storage_config.core-site']" type="ghost" @click="uploadFile" class="g-mr-12">{{$t('upload')}}</a-button>
-          <span class="config-value" :class="{'view-active': formState.storageConfig['storage_config.core-site']}" @click="downLoad(formState.storageConfig['storage_config.core-site'])">core-site.xml</span>
-        </a-form-item>
-        <a-form-item label="storage_config.hdfs-site" class="g-flex-ac">
-          <a-button v-if="!formState.storageConfig['storage_config.hdfs-site']" type="ghost" class="g-mr-12">{{$t('upload')}}</a-button>
-          <span class="config-value" :class="{'view-active': formState.storageConfig['storage_config.hdfs-site']}">hdfs-site.xml</span>
-        </a-form-item>
-        <a-form-item label="storage_config.hive-site" class="g-flex-ac">
-          <a-button v-if="!formState.storageConfig['storage_config.hive-site']" type="ghost" class="g-mr-12">{{$t('upload')}}</a-button>
-          <span class="config-value" :class="{'view-active': formState.storageConfig['storage_config.hive-site']}">hive-site.xml</span>
+        <a-form-item
+          v-for="config in formState.storageConfigArray"
+          :key="config.label"
+          :label="config.label"
+          class="g-flex-ac">
+          <a-upload
+            v-if="!config.value"
+            v-model:file-list="config.fileList"
+            name="file"
+            accept=".xml"
+            :showUploadList="false"
+            :action="uploadUrl"
+            :disabled="config.uploadLoading"
+            @change="(args) => uploadFile(args, config)"
+          >
+            <a-button type="primary" ghost class="g-mr-12">{{$t('upload')}}</a-button>
+          </a-upload>
+          <span class="config-value" :class="{'view-active': config.value}" @click="downLoadFile(config.value)">{{config.fileName}}</span>
         </a-form-item>
         <a-form-item>
           <p class="header">{{$t('authConfig')}}</p>
@@ -40,6 +47,7 @@
           <a-select
             v-if="isEdit"
             v-model:value="formState.authConfig['auth_config.type']"
+            :placeholder="placeholder.selectPh"
             :options="authConfigTypeOps"
           />
           <span v-else class="config-value">{{formState.authConfig['auth_config.type']}}</span>
@@ -70,7 +78,7 @@
     </div>
     <div v-if="isEdit" class="footer-btn">
       <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
-      <a-button @click="handleCancle">{{$t('cancle')}}</a-button>
+      <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
     </div>
     <div v-if="!isEdit" class="footer-btn">
       <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
@@ -84,30 +92,55 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
 import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
-import { Modal, message } from 'ant-design-vue'
+import { Modal, message, UploadChangeParam } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import Properties from './Properties.vue'
+import { download } from '@/utils/request'
+import { usePlaceholder } from '@/hooks/usePlaceholder'
+import { useRoute, useRouter } from 'vue-router'
+
+interface IStorageConfigItem {
+  label: string
+  value: string
+  fileName: string
+  fileList: string[],
+  uploadLoading: boolean
+}
 
 interface FormState {
   catalog: IMap<string>
   storageConfig: IMap<string>
   authConfig: IMap<string>
   properties: IMap<string>
+  storageConfigArray: IStorageConfigItem[]
 }
 
 const props = defineProps<{ catalog: ICatalogItem, isEdit: boolean }>()
 const emit = defineEmits<{
- (e: 'updateEdit', val: boolean): void,
+ (e: 'updateEdit', val: boolean, catalog?: ICatalogItem): void,
  (e: 'updateCatalogs'): void
 }>()
 
 const { t } = useI18n()
+const route = useRoute()
+const placeholder = reactive(usePlaceholder())
 const isEdit = computed(() => {
   return props.isEdit
+})
+const uploadUrl = computed(() => {
+  return '/ams/v1/files'
+})
+const isNewCatalog = computed(() => {
+  return props.catalog.catalogName === 'new catalog'
 })
 const loading = ref<boolean>(false)
 const formRef = ref()
 const propertiesRef = ref()
+const storageConfigFileNameMap = {
+  'storage_config.core-site': 'core-site.xml',
+  'storage_config.hdfs-site': 'hdfs-site.xml',
+  'storage_config.hive-site': 'hive-site.xml'
+}
 const formState:FormState = reactive({
   catalog: {
     name: '',
@@ -126,7 +159,8 @@ const formState:FormState = reactive({
     'auth_config.keytab': '',
     'auth_config.krb5': ''
   },
-  properties: {}
+  properties: {},
+  storageConfigArray: []
 })
 const authConfigTypeOps = reactive<ILableAndValue[]>([{
   label: 'simple',
@@ -139,17 +173,14 @@ const authConfigTypeOps = reactive<ILableAndValue[]>([{
 watch(() => props.catalog,
   (value) => {
     value && initData()
-  }, {
-    immediate: true,
-    deep: true
   }
 )
 const catalogTypeOps = reactive<ILableAndValue[]>([])
 
 function initData() {
-  const { catalogName, catalogType } = props.catalog
-  formState.catalog.name = catalogName || ''
-  formState.catalog.type = catalogType || ''
+  const { catalog, type } = route.query
+  formState.catalog.name = catalog || ''
+  formState.catalog.type = type || undefined
   getConfigInfo()
 }
 async function getCatalogTypeOps() {
@@ -165,7 +196,7 @@ async function getConfigInfo() {
   try {
     loading.value = true
     const catalogName = props.catalog.catalogName
-    if (!catalogName) { return }
+    if (!catalogName || isNewCatalog.value) { return }
     const res = await getCatalogsSetting(catalogName)
     if (!res) { return }
     const { name, type, storageConfig, authConfig, properties } = res
@@ -174,6 +205,19 @@ async function getConfigInfo() {
     formState.authConfig = authConfig
     formState.storageConfig = storageConfig
     formState.properties = properties
+    formState.storageConfigArray.length = 0
+    Object.keys(storageConfig).forEach(key => {
+      if (key !== 'storage_config.storage.type') {
+        const item: IStorageConfigItem = {
+          label: key,
+          value: storageConfig[key],
+          fileName: storageConfigFileNameMap[key],
+          fileList: [],
+          uploadLoading: false
+        }
+        formState.storageConfigArray.push(item)
+      }
+    })
   } catch (error) {
   } finally {
     loading.value = false
@@ -195,6 +239,16 @@ async function handleRemove() {
     wrapClassName: 'not-delete-modal'
   })
 }
+async function validatorName(rule, value) {
+  if (!value) {
+    return Promise.reject(new Error(t('inputPlaceholder')))
+  }
+  if ((/^[a-zA-Z][\w-]*$/.test(value))) {
+    return Promise.resolve()
+  } else {
+    return Promise.reject(new Error(t('invalidInput')))
+  }
+}
 function handleSave() {
   formRef.value
     .validateFields()
@@ -212,7 +266,12 @@ function handleSave() {
       }).then(() => {
         message.success(`${t('save')} ${t('success')}`)
         formRef.value.resetFields()
-        handleCancle()
+        emit('updateCatalogs')
+        emit('updateEdit', false, {
+          catalogName: catalog.name,
+          catalogType: catalog.type
+        })
+        getConfigInfo()
       }).catch(() => {
       })
     })
@@ -229,14 +288,31 @@ async function deleteCatalogModal() {
     title: t('deleteCatalogModalTitle'),
     onOk: async() => {
       await delCatalog(props.catalog.catalogName)
-      message.success(`${t('remove')}${t('success')}`)
+      message.success(`${t('remove')} ${t('success')}`)
       emit('updateCatalogs')
     }
   })
 }
-function uploadFile() {}
-function downLoad() {}
+function uploadFile(info: UploadChangeParam, config) {
+  if (info.file.status === 'uploading') {
+    config.uploadLoading = true
+  } else {
+    console.log(info.file, info.fileList)
+    config.uploadLoading = false
+  }
+  if (info.file.status === 'done') {
+    message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)
+  } else if (info.file.status === 'error') {
+    message.error(`${info.file.name} ${t('uploaded')} ${t('failed')}`)
+  }
+}
+function downLoadFile(id: string) {
+  if (!id) return
+  const url = `/ams/v1/files/${id}`
+  download(url)
+}
 onMounted(() => {
+  initData()
   getCatalogTypeOps()
 })
 

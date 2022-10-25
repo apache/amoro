@@ -132,6 +132,9 @@ export default defineComponent({
       router.replace({
         path: `/${item.key}`
       })
+      nextTick(() => {
+        setCurMenu()
+      })
     }
 
     const mouseenter = (item:MenuItem) => {

@@ -36,7 +36,8 @@ import {
   Breadcrumb,
   Checkbox,
   AutoComplete,
-  Empty
+  Empty,
+  Upload
 } from 'ant-design-vue'
 
 const compontens = [
@@ -58,7 +59,8 @@ const compontens = [
   Breadcrumb,
   Checkbox,
   AutoComplete,
-  Empty
+  Empty,
+  Upload
 ]
 export default function (app: App): void {
   compontens.forEach(app.use)

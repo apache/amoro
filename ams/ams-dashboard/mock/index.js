@@ -718,8 +718,8 @@ module.exports = {
         type: 'hive',
         storageConfig: {
           "storage_config.storage.type": "hdfs",
-          "storage_config.core-site": "JDd8KVk4pq",
-          "storage_config.hdfs-site": "ZfTsDlSZnn",
+          "storage_config.core-site": "",
+          "storage_config.hdfs-site": "",
           "storage_config.hive-site": "Y2Torw4dFW"
         },
         authConfig: {
