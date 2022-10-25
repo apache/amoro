@@ -253,7 +253,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     Preconditions.checkArgument(DataFileType.POS_DELETE_FILE != DataFileType.valueOf(dataFileInfo.getType()), 
         "not support pos-delete files in change table " + dataFileInfo.getPath());
 
-    DataFile dataFile = (DataFile) ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+    DataFile dataFile = (DataFile) ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
     return new ChangeFileInfo(dataFileInfo, dataFile);
   }
 
@@ -275,7 +275,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
