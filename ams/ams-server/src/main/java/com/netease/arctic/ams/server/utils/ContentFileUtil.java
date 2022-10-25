@@ -27,13 +27,16 @@ import org.apache.iceberg.PartitionSpec;
 
 public class ContentFileUtil {
 
-  public static ContentFile<?> buildContentFile(DataFileInfo dataFileInfo, PartitionSpec partitionSpec) {
+  public static ContentFile<?> buildContentFile(DataFileInfo dataFileInfo,
+                                                PartitionSpec partitionSpec,
+                                                String fileFormat) {
     ContentFile<?> contentFile;
     if (DataFileType.POS_DELETE_FILE == DataFileType.valueOf(dataFileInfo.getType())) {
       if (partitionSpec.isUnpartitioned()) {
         contentFile = FileMetadata.deleteFileBuilder(partitionSpec)
             .ofPositionDeletes()
             .withPath(dataFileInfo.getPath())
+            .withFormat(fileFormat)
             .withFileSizeInBytes(dataFileInfo.getSize())
             .withRecordCount(dataFileInfo.getRecordCount())
             .build();
@@ -41,6 +44,7 @@ public class ContentFileUtil {
         contentFile = FileMetadata.deleteFileBuilder(partitionSpec)
             .ofPositionDeletes()
             .withPath(dataFileInfo.getPath())
+            .withFormat(fileFormat)
             .withFileSizeInBytes(dataFileInfo.getSize())
             .withRecordCount(dataFileInfo.getRecordCount())
             .withPartitionPath(dataFileInfo.getPartition())
@@ -50,12 +54,14 @@ public class ContentFileUtil {
       if (partitionSpec.isUnpartitioned()) {
         contentFile = DataFiles.builder(partitionSpec)
             .withPath(dataFileInfo.getPath())
+            .withFormat(fileFormat)
             .withFileSizeInBytes(dataFileInfo.getSize())
             .withRecordCount(dataFileInfo.getRecordCount())
             .build();
       } else {
         contentFile = DataFiles.builder(partitionSpec)
             .withPath(dataFileInfo.getPath())
+            .withFormat(fileFormat)
             .withFileSizeInBytes(dataFileInfo.getSize())
             .withRecordCount(dataFileInfo.getRecordCount())
             .withPartitionPath(dataFileInfo.getPartition())
