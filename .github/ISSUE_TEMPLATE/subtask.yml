@@ -14,56 +14,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: Arctic Feature Request
-description: Suggest an idea for this project
-title: "[Feature]: "
-labels: ["feature"]
+name: Arctic Subtask
+title: "[Subtask]: "
+description: Subtask of another issue
+labels: [ "subtask" ]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for finding the time to propose new feature!
+        Thank you for contributing to Arctic!
 
-        We really appreciate the community efforts to improve Arctic.
+  - type: checkboxes
+    attributes:
+      label: Search before asking
+      options:
+        - label: >
+            I have searched in the [issues](https://github.com/NetEase/arctic/issues?q=is%3Aissue) and found no similar
+            issues.
+          required: true
 
   - type: textarea
     attributes:
       label: Description
-      description: A short description of your feature
+      description: A short description of your subtask
 
   - type: textarea
     attributes:
-      label: Use case/motivation
-      description: What would you like to happen?
+      label: Parent issue
       placeholder: >
-        Rather than telling us how you might implement this feature, try to take a
-        step back and describe what you are trying to achieve.
-
-  - type: textarea
-    attributes:
-      label: Describe the solution
-      description: How could it be implemented?
-      placeholder: >
-        Please describe the solution to implement the new feature if you have any.
+        Please put the parent issue link here.
     validations:
-      required: false
+      required: true
 
-  - type: textarea
-    attributes:
-      label: Subtasks
-      description: >
-        Split subtasks if necessary
-      placeholder: >
-        Please create sub-tasks with the pre-create issues here and @ the assignees if you know any of them. A simple example is as follows:
-          - [ ] #1
-          - [ ] #2 @user2
-          - [ ] #3
-    validations:
-      required: false
 
   - type: checkboxes
     attributes:
-      label: Are you willing to submit a PR?
+      label: Are you willing to submit PR?
       description: >
         This is absolutely not required, but we are happy to guide you in the contribution process
         especially if you already have a good understanding of how to implement the feature.
