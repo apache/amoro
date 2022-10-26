@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-name: Arctic Improvement
-title: "[Improvement]: "
-description: Suggest an improvement on performance, code quality, user experience, etc
-labels: [ "improvement" ]
+name: Arctic Subtask
+title: "[Subtask]: "
+description: Subtask of another issue
+labels: [ "subtask" ]
 body:
   - type: markdown
     attributes:
@@ -35,19 +35,17 @@ body:
 
   - type: textarea
     attributes:
-      label: What would you like to be improved?
-      placeholder: >
-        Please describe the problem you see and how it is needed to be improved.
-    validations:
-      required: true
+      label: Description
+      description: A short description of your subtask
 
   - type: textarea
     attributes:
-      label: How should we improve?
+      label: Parent issue
       placeholder: >
-        Please provide the solution if you have some thoughts.
+        Please put the parent issue link here.
     validations:
-      required: false
+      required: true
+
 
   - type: checkboxes
     attributes:
@@ -58,19 +56,6 @@ body:
         Arctic is a community-managed project and we love to bring new contributors in.
       options:
         - label: Yes I am willing to submit a PR!
-
-  - type: textarea
-    attributes:
-      label: Subtasks
-      description: >
-        Split subtasks if necessary
-      placeholder: >
-        Please create sub-tasks with the pre-create issues here and @ the assignees if you know any of them. A simple example is as follows:
-          - [ ] #1
-          - [ ] #2 @user2
-          - [ ] #3
-    validations:
-      required: false
 
   - type: checkboxes
     attributes:
