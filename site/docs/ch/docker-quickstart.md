@@ -126,7 +126,7 @@ CREATE TABLE cdc_source(
 INSERT INTO arctic.test_db.test_table
 SELECT id,
        name,
-       CAST(TO_TIMESTAMP(op_time) AS TIMESTAMP(6) WITH LOCAL TIME ZONE) op_time
+       TO_TIMESTAMP(op_time) op_time
 FROM cdc_source;
 
 -- 打开表的动态配置 HINT
