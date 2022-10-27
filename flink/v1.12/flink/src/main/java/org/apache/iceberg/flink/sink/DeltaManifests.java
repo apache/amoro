@@ -44,8 +44,8 @@ public class DeltaManifests {
     this(dataManifest, deleteManifest, referencedDataFiles, EMPTY_TRANSACTION);
   }
 
-  DeltaManifests(ManifestFile dataManifest, ManifestFile deleteManifest, CharSequence[] referencedDataFiles
-      , List<Long> transactionIds) {
+  DeltaManifests(ManifestFile dataManifest, ManifestFile deleteManifest, CharSequence[] referencedDataFiles,
+                 List<Long> transactionIds) {
     Preconditions.checkNotNull(referencedDataFiles, "Referenced data files shouldn't be null.");
 
     this.dataManifest = dataManifest;

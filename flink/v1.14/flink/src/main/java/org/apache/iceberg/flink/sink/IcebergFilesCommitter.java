@@ -362,13 +362,6 @@ public class IcebergFilesCommitter extends AbstractStreamOperator<Void>
     return SimpleVersionedSerialization.writeVersionAndSerialize(DeltaManifestsSerializer.INSTANCE, deltaManifests);
   }
 
-  @Override
-  public void dispose() throws Exception {
-    if (tableLoader != null) {
-      tableLoader.close();
-    }
-  }
-
   private static ListStateDescriptor<SortedMap<Long, byte[]>> buildStateDescriptor() {
     Comparator<Long> longComparator = Comparators.forType(Types.LongType.get());
     // Construct a SortedMapTypeInfo.
