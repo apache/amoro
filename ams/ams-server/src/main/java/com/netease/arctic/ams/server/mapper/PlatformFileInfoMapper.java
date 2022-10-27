@@ -16,12 +16,13 @@ public interface PlatformFileInfoMapper {
 
   /**
    * add a file with content encoded by base64
+   *
    * @param name
    * @param content
    * @param id
    */
   @Insert("insert into " + TABLE_NAME + " (id,file_name,file_content_b64) values(#{id},#{name},#{content})")
-  @Options(useGeneratedKeys=true, keyProperty="id")
+  @Options(useGeneratedKeys = true, keyProperty = "id")
   void addFile(@Param("name") String name, @Param("content") String content, @Param("id") Integer id);
 
   // get file content encoded by base64 by fileId

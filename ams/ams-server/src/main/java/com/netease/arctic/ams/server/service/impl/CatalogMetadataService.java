@@ -39,7 +39,7 @@ public class CatalogMetadataService extends IJDBCService {
   public List<CatalogMeta> getCatalogs() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       CatalogMetadataMapper catalogMetadataMapper =
-          getMapper(sqlSession, CatalogMetadataMapper.class);
+              getMapper(sqlSession, CatalogMetadataMapper.class);
       return catalogMetadataMapper.getCatalogs();
     }
   }
@@ -47,7 +47,7 @@ public class CatalogMetadataService extends IJDBCService {
   public CatalogMeta getCatalog(String catalogName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       CatalogMetadataMapper catalogMetadataMapper =
-          getMapper(sqlSession, CatalogMetadataMapper.class);
+              getMapper(sqlSession, CatalogMetadataMapper.class);
       List<CatalogMeta> tmpMetadataList = catalogMetadataMapper.getCatalog(catalogName);
       if (CollectionUtils.isNotEmpty(tmpMetadataList)) {
         return tmpMetadataList.get(0);
@@ -59,6 +59,7 @@ public class CatalogMetadataService extends IJDBCService {
 
   /**
    * check catalog exists
+   *
    * @param catalogName
    * @return
    */
@@ -91,6 +92,7 @@ public class CatalogMetadataService extends IJDBCService {
 
   /**
    * 单独添加catalog
+   *
    * @param catalogMeta
    */
   public void addCatalog(CatalogMeta catalogMeta) {
@@ -99,16 +101,6 @@ public class CatalogMetadataService extends IJDBCService {
       CatalogMetadataMapper catalogMetadataMapper =
               getMapper(sqlSession, CatalogMetadataMapper.class);
       catalogMetadataMapper.insertCatalog(catalogMeta);
-    }
-  }
-
-  public void deleteCatalog(String catalogName) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      CatalogMetadataMapper catalogMetadataMapper =
-              getMapper(sqlSession, CatalogMetadataMapper.class);
-      if (StringUtils.isNotEmpty(catalogName)) {
-        catalogMetadataMapper.deleteCatalog(catalogName);
-      }
     }
   }
 
@@ -183,5 +175,15 @@ public class CatalogMetadataService extends IJDBCService {
       catalogMeta.catalogProperties = catalog.getObject(ConfigFileProperties.CATALOG_PROPERTIES, Map.class);
     }
     return catalogMeta;
+  }
+
+  public void deleteCatalog(String catalogName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      CatalogMetadataMapper catalogMetadataMapper =
+              getMapper(sqlSession, CatalogMetadataMapper.class);
+      if (StringUtils.isNotEmpty(catalogName)) {
+        catalogMetadataMapper.deleteCatalog(catalogName);
+      }
+    }
   }
 }

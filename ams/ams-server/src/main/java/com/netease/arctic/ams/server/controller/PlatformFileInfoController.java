@@ -19,15 +19,16 @@ import java.util.Base64;
  * @Time: 2022/10/26 10:36
  * @Description:
  */
-public class PlatformFileInfoController extends RestBaseController{
+public class PlatformFileInfoController extends RestBaseController {
 
   private static PlatformFileInfoService platformFileInfoService = ServiceContainer.getPlatformFileInfoService();
 
   /**
    * uplaod file
+   *
    * @param ctx
    */
-  public static void uploadFile(Context ctx){
+  public static void uploadFile(Context ctx) {
     try {
       InputStream bodyAsInputStream = ctx.uploadedFile("files").getContent();
       //todo get file name
@@ -43,6 +44,7 @@ public class PlatformFileInfoController extends RestBaseController{
 
   /**
    * download file
+   *
    * @param ctx
    */
   public static void downloadFile(Context ctx) {

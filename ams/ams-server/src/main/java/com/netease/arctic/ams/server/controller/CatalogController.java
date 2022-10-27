@@ -27,7 +27,7 @@ import java.util.Map;
  * @Time: 2022/10/25 14:58
  * @Description:
  */
-public class CatalogController extends RestBaseController{
+public class CatalogController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
   private static final IMetaService iMetaService = ServiceContainer.getMetaService();
   private static CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
@@ -44,6 +44,7 @@ public class CatalogController extends RestBaseController{
 
   /**
    * get catalog Type list
+   *
    * @param ctx
    */
   public static void getCatalogTypeList(Context ctx) {
@@ -54,11 +55,12 @@ public class CatalogController extends RestBaseController{
 
   /**
    * convert server authconfig to metaAuthConfig
+   *
    * @param serverAuthConfig
    * @return
    */
-  private static Map<String,String> authConvertFromServerToMeta(Map<String, String> serverAuthConfig) {
-    Map<String, String> metaAuthConfig = new HashMap<String,String>();
+  private static Map<String, String> authConvertFromServerToMeta(Map<String, String> serverAuthConfig) {
+    Map<String, String> metaAuthConfig = new HashMap<String, String>();
     String authType = serverAuthConfig.get(AUTH_CONFIG_KEY_TYPE).toLowerCase();
     metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE, authType);
     if (authType.equals(AUTH_CONFIG_TYPE_VALUE_SIMPLE)) {
@@ -77,11 +79,12 @@ public class CatalogController extends RestBaseController{
 
   /**
    * convert meta authconfig to server authconfigDTO
+   *
    * @param metaAuthConfig
    * @return
    */
-  private static Map<String,String> authConvertFromMetaToServer(Map<String, String> metaAuthConfig) {
-    Map<String, String> serverAuthConfig = new HashMap<String,String>();
+  private static Map<String, String> authConvertFromMetaToServer(Map<String, String> metaAuthConfig) {
+    Map<String, String> serverAuthConfig = new HashMap<String, String>();
     serverAuthConfig.put(AUTH_CONFIG_KEY_TYPE,
             metaAuthConfig.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE));
     serverAuthConfig.put(AUTH_CONFIG_HADOOP_USERNAME,
@@ -98,6 +101,7 @@ public class CatalogController extends RestBaseController{
 
   /**
    * constrct catalogmeta through catalog registerinfo
+   *
    * @param info
    * @return
    */
@@ -110,7 +114,7 @@ public class CatalogController extends RestBaseController{
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig()));
 
     // change fileId to base64Code
-    Map<String, String> metaStorageConfig = new HashMap<String,String>();
+    Map<String, String> metaStorageConfig = new HashMap<String, String>();
     String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
 
     metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
@@ -144,18 +148,19 @@ public class CatalogController extends RestBaseController{
 
   /**
    * register catalog to ams
+   *
    * @param ctx
    */
   public static void createCatalog(Context ctx) {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
-    if (info.getAuthConfig() == null
-            || info.getStorageConfig() == null
-            || info.getProperties() == null) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,"Some configuration is null", null));
+    if (info.getAuthConfig() == null ||
+            info.getStorageConfig() == null ||
+            info.getProperties() == null) {
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some configuration is null", null));
     }
     if (catalogMetadataService.catalogExist(info.getCatalogName())) {
-        ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "duplicate catalog name!", null));
-        return;
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "duplicate catalog name!", null));
+      return;
     }
 
     CatalogMeta catalogMeta = constructCatalogMeta(info);
@@ -165,6 +170,7 @@ public class CatalogController extends RestBaseController{
 
   /**
    * get detail of some catalog
+   *
    * @param ctx
    */
   public static void getCatalogDetail(Context ctx) {
@@ -198,13 +204,14 @@ public class CatalogController extends RestBaseController{
   /**
    * get detail of some catalog
    * 1、first check whether there are some tables in catalog.
+   *
    * @param ctx
    */
   public static void updateCatalog(Context ctx) {
     CatalogRegisterInfo info = ctx.bodyAsClass(CatalogRegisterInfo.class);
-    if (info.getAuthConfig() == null
-            || info.getStorageConfig() == null) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,"Some configuration is null", null));
+    if (info.getAuthConfig() == null ||
+            info.getStorageConfig() == null) {
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some configuration is null", null));
     }
     if (!catalogMetadataService.catalogExist(info.getCatalogName())) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "catalog doesn't exist!", null));
@@ -213,12 +220,12 @@ public class CatalogController extends RestBaseController{
     CatalogMeta catalogMeta = constructCatalogMeta(info);
 
 
-
     ctx.json(OkResponse.of(null));
   }
 
   /**
    * check whether we could delete the catalog
+   *
    * @param ctx
    */
   public static void catalogDeleteCheck(Context ctx) {
@@ -230,11 +237,12 @@ public class CatalogController extends RestBaseController{
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "catalog is empty!", null));
       return;
     }
-    ctx.json(OkResponse.of(tblCount > 0? false : true));
+    ctx.json(OkResponse.of(tblCount > 0 ? false : true));
   }
 
   /**
    * delete some catalog and infos associate with the catalog
+   *
    * @param ctx
    */
   public static void deleteCatalog(Context ctx) {
