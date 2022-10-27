@@ -2,11 +2,12 @@
   <div class="catalogs-wrap g-flex">
     <div class="catalog-list-left">
       <div class="catalog-header">{{`${$t('catalog')} ${$t('list')}`}}</div>
-      <ul class="catalog-list">
+      <ul v-if="catalogs.length && !loading" class="catalog-list">
         <li v-for="item in catalogs" :key="item.catalogName" class="catalog-item g-text-nowrap" :class="{'active': item.catalogName === curCatalog.catalogName}" @click="handleClick(item)">
           {{ item.catalogName }}
         </li>
       </ul>
+      <a-empty v-if="!catalogs.length && !loading" :image="simpleImage"></a-empty>
       <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
     </div>
     <div class="catalog-detail">
@@ -20,7 +21,7 @@ import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { ICatalogItem } from '@/types/common.type'
 import { getCatalogList } from '@/services/table.service'
 import Detail from './Detail.vue'
-import { Modal } from 'ant-design-vue'
+import { Modal, Empty } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router'
 
@@ -31,30 +32,37 @@ const catalogs = reactive<ICatalogItem[]>([])
 const curCatalog = reactive<ICatalogItem>({})
 const isEdit = ref<boolean>(false)
 const NEW_CATALOG = 'new catalog'
+const loading = ref<boolean>(false)
+const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE
 
 async function getCatalogs() {
-  const res = await getCatalogList()
-  catalogs.length = 0;
-  (res || []).forEach((ele: ICatalogItem) => {
-    catalogs.push({
-      catalogName: ele.catalogName,
-      catalogType: ele.catalogType
+  try {
+    loading.value = true
+    const res = await getCatalogList()
+    catalogs.length = 0;
+    (res || []).forEach((ele: ICatalogItem) => {
+      catalogs.push({
+        catalogName: ele.catalogName,
+        catalogType: ele.catalogType
+      })
     })
-  })
-  const { catalog = '', type } = route.query
-  const item: ICatalogItem = {}
-  if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
-    addCatalog()
-    return
+    const { catalog = '', type } = route.query
+    const item: ICatalogItem = {}
+    if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
+      addCatalog()
+      return
+    }
+    if (catalog) {
+      item.catalogName = catalog
+      item.catalogType = type
+    } else {
+      item.catalogName = catalogs[0]?.catalogName
+      item.catalogType = catalogs[0]?.catalogType
+    }
+    selectCatalog(item)
+  } finally {
+    loading.value = false
   }
-  if (catalog) {
-    item.catalogName = catalog
-    item.catalogType = type
-  } else {
-    item.catalogName = catalogs[0]?.catalogName
-    item.catalogType = catalogs[0]?.catalogType
-  }
-  selectCatalog(item)
 }
 function handleClick(item: ICatalogItem) {
   if (isEdit.value) {

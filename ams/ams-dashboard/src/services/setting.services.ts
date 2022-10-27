@@ -20,16 +20,16 @@ import { IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogsTypes() {
-  return request.get('mock/ams/v1/catalogs/types')
+  return request.get('ams/v1/catalogs/types')
 }
 export function getCatalogsSetting(catalogName: string) {
-  return request.get(`mock/ams/v1/catalogs/${catalogName}`)
+  return request.get(`ams/v1/catalogs/${catalogName}`)
 }
 export function delCatalog(catalogName: string) {
-  return request.delete(`mock/ams/v1/catalogs/${catalogName}`)
+  return request.delete(`ams/v1/catalogs/${catalogName}`)
 }
 export function checkCatalogStatus(catalogName: string) {
-  return request.get(`mock/ams/v1/catalogs/${catalogName}/delete/check`)
+  return request.get(`ams/v1/catalogs/${catalogName}/delete/check`)
 }
 export function saveCatalogsSetting(params: {
   name: string
@@ -39,11 +39,11 @@ export function saveCatalogsSetting(params: {
   properties: IMap<string>
 }) {
   const { name } = params
-  return request.put(`mock/ams/v1/catalogs/${name}`, { ...params })
+  return request.put(`ams/v1/catalogs/${name}`, { ...params })
 }
 export function getSystemSetting() {
-  return request.get('/mock/ams/v1/settings/system')
+  return request.get('ams/v1/settings/system')
 }
 export function getContainersSetting() {
-  return request.get('/mock/ams/v1/settings/containers')
+  return request.get('ams/v1/settings/containers')
 }

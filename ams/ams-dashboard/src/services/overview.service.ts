@@ -20,7 +20,7 @@ import { IOverviewSummary, ITopTableItem, IResourceUsage } from '@/types/common.
 import request from '@/utils/request'
 
 export function getOverviewSummary(): Promise<IOverviewSummary[]> {
-  return request.get('mock/ams/v1/overview/summary')
+  return request.get('ams/v1/overview/summary')
 }
 
 export function getTopTables(params: {
@@ -29,7 +29,7 @@ export function getTopTables(params: {
   count?: number
 }): Promise<ITopTableItem[]> {
   const { order, orderBy, count } = params
-  return request.get('mock/ams/v1/overview/top/tables', {
+  return request.get('ams/v1/overview/top/tables', {
     params: {
       order: order || 'desc',
       orderBy: orderBy || 'size',
@@ -43,7 +43,7 @@ export function getOptimizeResource(params: {
   endTime: number
 }): Promise<IResourceUsage> {
   const { startTime, endTime } = params
-  return request.get('mock/ams/v1/overview/metric/optimize/resource', {
+  return request.get('ams/v1/overview/metric/optimize/resource', {
     params: {
       startTime,
       endTime
