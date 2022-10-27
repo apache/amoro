@@ -253,6 +253,11 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
+    public long beginTransaction(String signature) {
+      return table.beginTransaction(signature);
+    }
+
+    @Override
     public ReplaceSortOrder replaceSortOrder() {
       return table.replaceSortOrder();
     }
