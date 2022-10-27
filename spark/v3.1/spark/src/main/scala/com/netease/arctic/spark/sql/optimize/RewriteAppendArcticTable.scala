@@ -39,21 +39,6 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
-  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan= {
-    r.table match {
-      case arctic: ArcticSparkTable =>
-        if (arctic.table().isKeyedTable) {
-          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
-          val alias = Alias(than, "count")()
-          val attributes = query.output.filter(p => primaries.contains(p.name))
-          Aggregate(attributes, Seq(alias), query)
-        } else {
-          throw new UnsupportedOperationException(s"UnKeyed table can not validate")
-        }
-    }
-  }
-
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case AppendData(r: DataSourceV2Relation, query, writeOptions, isByName) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
