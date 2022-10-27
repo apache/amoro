@@ -19,9 +19,12 @@
 package com.netease.arctic.ams.server;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.server.controller.CatalogController;
 import com.netease.arctic.ams.server.controller.HealthCheckController;
 import com.netease.arctic.ams.server.controller.LoginController;
 import com.netease.arctic.ams.server.controller.OptimizerController;
+import com.netease.arctic.ams.server.controller.PlatformFileInfoController;
+import com.netease.arctic.ams.server.controller.SettingController;
 import com.netease.arctic.ams.server.controller.TableController;
 import com.netease.arctic.ams.server.controller.TerminalController;
 import com.netease.arctic.ams.server.controller.VersionController;
@@ -137,10 +140,17 @@ public class AmsRestServer {
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
                 TableController::getPartitionFileListInfo);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
-
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
+
+        /** catalog controller **/
+        post("/catalogs", CatalogController::createCatalog);
+        get("/catalogs/{catalogName}", CatalogController::getCatalogDetail);
+        delete("/catalogs/{catalogName}", CatalogController::deleteCatalog);
+        put("/catalogs/{catalogName}", CatalogController::updateCatalog);
+        get("/catalogs/{catalogName}/delete/check", CatalogController::catalogDeleteCheck);
+        get("/catalogs/types", CatalogController::getCatalogTypeList);
 
         /** optimize controller **/
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", OptimizerController::getOptimizerTables);
@@ -158,6 +168,16 @@ public class AmsRestServer {
         get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
+
+        /** file controller **/
+        post("/files", PlatformFileInfoController::uploadFile);
+        get("/files/{fileId}", PlatformFileInfoController::downloadFile);
+
+        /** overview controller **/
+
+        /** setting controller **/
+        get("/settings/containers", SettingController::getContainerSetting);
+        get("/settings/system", SettingController::getSystemSetting);
 
         /** health check **/
         get("/health/status", HealthCheckController::healthCheck);
@@ -246,22 +266,22 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-      "/ams/v1/versionInfo",
-      "/ams/v1/login",
-      "/",
-      "/overview",
-      "/introduce",
-      "/tables",
-      "/optimizers",
-      "/login",
-      "/terminal",
-      "/hive-tables/upgrade",
-      "/hive-tables",
-      "/index.html",
-      "/favicon.ico",
-      "/js/*",
-      "/img/*",
-      "/css/*"
+          "/ams/v1/versionInfo",
+          "/ams/v1/login",
+          "/",
+          "/overview",
+          "/introduce",
+          "/tables",
+          "/optimizers",
+          "/login",
+          "/terminal",
+          "/hive-tables/upgrade",
+          "/hive-tables",
+          "/index.html",
+          "/favicon.ico",
+          "/js/*",
+          "/img/*",
+          "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {
