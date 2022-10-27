@@ -224,6 +224,16 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   }
 
   @Override
+  public Integer getTableCountInCatalog(String catalogName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
+      return tableMetadataMapper.getTableCountInCatalog(catalogName);
+    }
+  }
+
+
+
+  @Override
   public boolean isExist(TableIdentifier tableIdentifier) {
     return loadTableMetadata(tableIdentifier) != null;
   }
