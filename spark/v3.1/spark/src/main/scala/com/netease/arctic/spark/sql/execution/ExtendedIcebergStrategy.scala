@@ -59,16 +59,11 @@ case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
     case ReplaceData(relation, batchWrite, query) =>
       ReplaceDataExec(batchWrite, refreshCache(relation), planLater(query)) :: Nil
 
-    case ReplaceArcticData(table: DataSourceV2Relation, query, validateQuery, options) =>
+    case ReplaceArcticData(table: DataSourceV2Relation, query, validate, options) =>
       table.table match {
         case t: ArcticSparkTable =>
-          if (validateQuery != null) {
             AppendInsertDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
-              planLater(validateQuery), refreshCache(table)) :: Nil
-          } else {
-            AppendDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),refreshCache(table)) :: Nil
-          }
-
+              validate, refreshCache(table)) :: Nil
       }
 
     case MergeInto(mergeIntoParams, output, child) =>

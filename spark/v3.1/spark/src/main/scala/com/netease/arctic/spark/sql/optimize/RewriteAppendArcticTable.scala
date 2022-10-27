@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.LongType
 
@@ -64,14 +65,13 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       } else {
         (query, writeOptions)
       }
-      val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
       arcticRelation.table match {
         case a: ArcticSparkTable =>
           if (a.table().isKeyedTable) {
             val insertQuery = distributionQuery(newQuery, a)
-            ReplaceArcticData(arcticRelation, insertQuery, validateQuery, options)
+            ReplaceArcticData(arcticRelation, insertQuery, validate = true, options)
           } else {
-            ReplaceArcticData(arcticRelation, query, validateQuery, writeOptions)
+            ReplaceArcticData(arcticRelation, query, validate = false, writeOptions)
           }
       }
   }

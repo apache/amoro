@@ -64,7 +64,7 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
           }
       }
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
-      ReplaceArcticData(arcticRelation, query, null, options)
+      ReplaceArcticData(arcticRelation, query, validate = false, options)
 
     case _ => plan
   }
