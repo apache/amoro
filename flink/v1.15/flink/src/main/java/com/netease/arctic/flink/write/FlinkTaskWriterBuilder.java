@@ -111,7 +111,6 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
   }
 
   private FlinkBaseTaskWriter buildBaseWriter(LocationKind locationKind) {
-    Preconditions.checkNotNull(transactionId);
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
