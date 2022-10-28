@@ -179,9 +179,14 @@ public class TestKeyedTableDml extends SparkTestBase {
                     "(3, 1.3, 'cbcd') "));
 
     sql(createTableInsert, database, insertTable);
-    sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
-    rows = sql("select * from " + database + "." + insertTable);
-    Assert.assertEquals(3, rows.size());
+    sql("insert into " + database + "." + notUpsertTable +
+            " values (1, 'aaa', 'abcd' ) , " +
+            "(2, 'bbb', 'bbcd'), " +
+            "(3, 'ccc', 'cbcd') ");
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ",
+                    database, notUpsertTable));
+
     sql("drop table " + database + "." + "testPks");
   }
 
