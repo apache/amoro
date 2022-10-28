@@ -23,13 +23,19 @@ import com.netease.arctic.flink.read.hybrid.enumerator.InitializationFinishedEve
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
+import com.netease.arctic.flink.util.FlinkClassReflectionUtil;
 import org.apache.flink.api.common.eventtime.Watermark;
+import org.apache.flink.api.common.eventtime.WatermarkOutputMultiplexer;
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
+import org.apache.flink.api.connector.source.SourceOutput;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.SingleThreadMultiplexSourceReaderBase;
 import org.apache.flink.core.io.InputStatus;
+import org.apache.flink.streaming.api.operators.source.ProgressiveTimestampsAndWatermarks;
+import org.apache.flink.streaming.api.operators.source.SourceOutputWithWatermarks;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +125,65 @@ public class ArcticSourceReader<T> extends
   public InputStatus pollNext(ReaderOutput<T> output) throws Exception {
     this.output = output;
     emitWatermarkIfNeeded();
-    return super.pollNext(output);
+    return super.pollNext(wrapOutput(output));
+  }
+
+  public ReaderOutput<T> wrapOutput(ReaderOutput<T> output) {
+    if (!(output instanceof SourceOutputWithWatermarks)) {
+      return output;
+    }
+    return new ArcticReaderOutput<>(output);
+  }
+
+  /**
+   * There is a case that the watermark in {@link WatermarkOutputMultiplexer.OutputState} has
+   * been updated, but watermark has not been emitted for that when {@link WatermarkOutputMultiplexer#onPeriodicEmit}
+   * called, the outputState has been removed by {@link WatermarkOutputMultiplexer#unregisterOutput(String)} after
+   * split finished.
+   * Wrap {@link ReaderOutput} to call
+   * {@link ProgressiveTimestampsAndWatermarks.SplitLocalOutputs#emitPeriodicWatermark()} when split finishes.
+   */
+  static class ArcticReaderOutput<T> implements ReaderOutput<T> {
+
+    private final ReaderOutput<T> internal;
+
+    public ArcticReaderOutput(ReaderOutput<T> readerOutput) {
+      Preconditions.checkArgument(readerOutput instanceof SourceOutputWithWatermarks,
+          "readerOutput should be SourceOutputWithWatermarks, but was %s", readerOutput.getClass());
+      this.internal = readerOutput;
+    }
+
+    @Override
+    public void collect(T record) {
+      internal.collect(record);
+    }
+
+    @Override
+    public void collect(T record, long timestamp) {
+      internal.collect(record, timestamp);
+    }
+
+    @Override
+    public void emitWatermark(Watermark watermark) {
+      internal.emitWatermark(watermark);
+    }
+
+    @Override
+    public void markIdle() {
+      internal.markIdle();
+    }
+
+    @Override
+    public SourceOutput<T> createOutputForSplit(String splitId) {
+      return internal.createOutputForSplit(splitId);
+    }
+
+    @Override
+    public void releaseOutputForSplit(String splitId) {
+      Object splitLocalOutput = FlinkClassReflectionUtil.getSplitLocalOutput(internal);
+      FlinkClassReflectionUtil.emitPeriodWatermark(splitLocalOutput);
+      internal.releaseOutputForSplit(splitId);
+    }
   }
 
 }
