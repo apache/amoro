@@ -6,7 +6,7 @@
           <a-input v-if="isEdit" v-model:value="formState.catalog.name" />
           <span v-else>{{formState.catalog.name}}</span>
         </a-form-item>
-        <a-form-item :label="$t('catalogSettingType')" :name="['catalog', 'type']" :rules="[{ required: isEdit }]">
+        <a-form-item :label="$t('tableFormat')" :name="['catalog', 'type']" :rules="[{ required: isEdit }]">
           <a-select
             v-if="isEdit"
             v-model:value="formState.catalog.type"
@@ -38,7 +38,7 @@
           >
             <a-button type="primary" ghost class="g-mr-12">{{$t('upload')}}</a-button>
           </a-upload>
-          <span class="config-value" :class="{'view-active': config.value}" @click="downLoadFile(config.value)">{{config.fileName}}</span>
+          <span v-if="config.isSuccess" class="config-value" :class="{'view-active': config.value}" @click="downLoadFile(config.value)">{{config.fileName}}</span>
         </a-form-item>
         <a-form-item>
           <p class="header">{{$t('authConfig')}}</p>
@@ -52,19 +52,19 @@
           />
           <span v-else class="config-value">{{formState.authConfig['auth_config.type']}}</span>
         </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'simole'" label="auth_config.hadoop_username" :name="['authConfig', 'auth_config.hadoop_username']" :rules="[{ required: isEdit }]">
+        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'SIMPLE'" label="auth_config.hadoop_username" :name="['authConfig', 'auth_config.hadoop_username']" :rules="[{ required: isEdit }]">
           <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.hadoop_username']" />
           <span v-else class="config-value">{{formState.authConfig['auth_config.hadoop_username']}}</span>
         </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'kerberos'" label="auth_config.principal" :name="['authConfig', 'auth_config.principal']" :rules="[{ required: isEdit }]">
+        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.principal" :name="['authConfig', 'auth_config.principal']" :rules="[{ required: isEdit }]">
           <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.principal']" />
           <span v-else class="config-value">{{formState.authConfig['auth_config.principal']}}</span>
         </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'kerberos'" label="auth_config.keytab" :name="['authConfig', 'auth_config.keytab']" :rules="[{ required: isEdit }]">
+        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.keytab" :name="['authConfig', 'auth_config.keytab']" :rules="[{ required: isEdit }]">
           <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.keytab']" />
           <span v-else class="config-value">{{formState.authConfig['auth_config.keytab']}}</span>
         </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'kerberos'" label="auth_config.krb5" :name="['authConfig', 'auth_config.krb5']" :rules="[{ required: isEdit }]">
+        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.krb5" :name="['authConfig', 'auth_config.krb5']" :rules="[{ required: isEdit }]">
           <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.krb5']" />
           <span v-else class="config-value">{{formState.authConfig['auth_config.krb5']}}</span>
         </a-form-item>
@@ -97,7 +97,7 @@ import { useI18n } from 'vue-i18n'
 import Properties from './Properties.vue'
 import { download } from '@/utils/request'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 interface IStorageConfigItem {
   label: string
@@ -105,6 +105,7 @@ interface IStorageConfigItem {
   fileName: string
   fileList: string[],
   uploadLoading: boolean
+  isSuccess: boolean
 }
 
 interface FormState {
@@ -163,16 +164,19 @@ const formState:FormState = reactive({
   storageConfigArray: []
 })
 const authConfigTypeOps = reactive<ILableAndValue[]>([{
-  label: 'simple',
-  value: 'simple'
+  label: 'SIMPLE',
+  value: 'SIMPLE'
 }, {
-  label: 'kerberos',
-  value: 'kerberos'
+  label: 'KERBEROS',
+  value: 'KERBEROS'
 }])
 
 watch(() => props.catalog,
   (value) => {
     value && initData()
+  }, {
+    immediate: true,
+    deep: true
   }
 )
 const catalogTypeOps = reactive<ILableAndValue[]>([])
@@ -195,8 +199,16 @@ async function getCatalogTypeOps() {
 async function getConfigInfo() {
   try {
     loading.value = true
-    const catalogName = props.catalog.catalogName
-    if (!catalogName || isNewCatalog.value) { return }
+    const { catalogName, catalogType } = props.catalog
+    if (!catalogName) { return }
+    if (isNewCatalog.value) {
+      formState.catalog.name = catalogName
+      formState.catalog.type = catalogType
+      formState.authConfig = {}
+      formState.storageConfig = {}
+      formState.properties = {}
+      formState.storageConfigArray.length = 0
+    }
     const res = await getCatalogsSetting(catalogName)
     if (!res) { return }
     const { name, type, storageConfig, authConfig, properties } = res
@@ -204,7 +216,7 @@ async function getConfigInfo() {
     formState.catalog.type = type
     formState.authConfig = authConfig
     formState.storageConfig = storageConfig
-    formState.properties = properties
+    formState.properties = properties || {}
     formState.storageConfigArray.length = 0
     Object.keys(storageConfig).forEach(key => {
       if (key !== 'storage_config.storage.type') {
@@ -213,7 +225,8 @@ async function getConfigInfo() {
           value: storageConfig[key],
           fileName: storageConfigFileNameMap[key],
           fileList: [],
-          uploadLoading: false
+          uploadLoading: false,
+          isSuccess: false
         }
         formState.storageConfigArray.push(item)
       }
@@ -301,8 +314,10 @@ function uploadFile(info: UploadChangeParam, config) {
     config.uploadLoading = false
   }
   if (info.file.status === 'done') {
+    config.isSuccess = true
     message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)
   } else if (info.file.status === 'error') {
+    config.isSuccess = false
     message.error(`${info.file.name} ${t('uploaded')} ${t('failed')}`)
   }
 }
@@ -312,7 +327,6 @@ function downLoadFile(id: string) {
   download(url)
 }
 onMounted(() => {
-  initData()
   getCatalogTypeOps()
 })
 
@@ -331,7 +345,12 @@ onMounted(() => {
     overflow: auto;
     flex-direction: column;
     :deep(.ant-form-item-label) {
+      > label {
+        word-break: break-all;
+        white-space: pre-wrap;
+      }
       width: 280px;
+      margin-right: 16px;
     }
     .header {
       font-size: 20px;

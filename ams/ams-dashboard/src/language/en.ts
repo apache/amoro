@@ -141,7 +141,7 @@ export default {
   lastTime: 'Last {time}',
   list: 'List',
   name: 'name',
-  catalogSettingType: 'type',
+  tableFormat: 'table format',
   storageConfig: 'Storage Config',
   authenticationConfig: 'Authentication Config',
   upload: 'Upload',
