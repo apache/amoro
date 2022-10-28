@@ -29,9 +29,12 @@ import java.lang.reflect.Method;
 
 import static com.netease.arctic.flink.util.ReflectionUtil.getField;
 
-public class FlinkClassUtil {
+/**
+ * A util class to handle the reflection operation of Flink class.
+ */
+public class FlinkClassReflectionUtil {
 
-  public static final Logger LOG = LoggerFactory.getLogger(FlinkClassUtil.class);
+  public static final Logger LOG = LoggerFactory.getLogger(FlinkClassReflectionUtil.class);
 
   public static Object getSplitLocalOutput(ReaderOutput readerOutput) {
     if (readerOutput == null) {

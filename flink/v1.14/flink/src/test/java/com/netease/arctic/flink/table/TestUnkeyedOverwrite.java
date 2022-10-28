@@ -106,7 +106,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     }
   }
 
-  @Test(timeout = 3000)
+  @Test(timeout = 30000)
   public void testInsertOverwrite() throws IOException {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a"});

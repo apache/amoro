@@ -23,7 +23,7 @@ import com.netease.arctic.flink.read.hybrid.enumerator.InitializationFinishedEve
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.flink.read.hybrid.split.SplitRequestEvent;
-import com.netease.arctic.flink.util.FlinkClassUtil;
+import com.netease.arctic.flink.util.FlinkClassReflectionUtil;
 import org.apache.flink.api.common.eventtime.Watermark;
 import org.apache.flink.api.connector.source.ReaderOutput;
 import org.apache.flink.api.connector.source.SourceEvent;
@@ -184,8 +184,8 @@ public class ArcticSourceReader<T> extends
 
     @Override
     public void releaseOutputForSplit(String splitId) {
-      Object splitLocalOutput = FlinkClassUtil.getSplitLocalOutput(internal);
-      FlinkClassUtil.emitPeriodWatermark(splitLocalOutput);
+      Object splitLocalOutput = FlinkClassReflectionUtil.getSplitLocalOutput(internal);
+      FlinkClassReflectionUtil.emitPeriodWatermark(splitLocalOutput);
       internal.releaseOutputForSplit(splitId);
     }
   }
