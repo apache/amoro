@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.mapper;
 import com.netease.arctic.ams.server.model.OptimizerMetricsStatistic;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
@@ -65,4 +66,7 @@ public interface OptimizerMetricsStatisticMapper {
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);
+
+  @Delete("delete from " + TABLE_NAME + " where optimizer_id = #{optimizerId}")
+  void deleteOptimizerMetrics(@Param("optimizerId") long optimizerId);
 }

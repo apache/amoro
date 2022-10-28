@@ -95,6 +95,7 @@ public class OptimizeExecuteService {
     OptimizerFactory finalFactory = findOptimizerFactory(type);
     finalFactory.deserialize(optimizerByte).stop();
     ServiceContainer.getOptimizerService().deleteOptimizer(jobId);
+    ServiceContainer.getMetricsStatisticService().deleteOptimizerMetrics(jobId);
   }
 
   public OptimizerFactory findOptimizerFactory(String type) throws NoSuchObjectException {

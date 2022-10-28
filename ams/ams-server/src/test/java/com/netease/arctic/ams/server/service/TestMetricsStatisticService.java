@@ -44,7 +44,7 @@ public class TestMetricsStatisticService extends TableTestBase {
   public void testCommitTableMetrics() {
     com.netease.arctic.table.TableIdentifier tableId =
         com.netease.arctic.table.TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME,
-            "file_sync_test_keyed_table");
+            "metric_commit_test_keyed_table");
     KeyedTable fileSyncKeyedTable = catalog
         .newTableBuilder(
             tableId,
@@ -79,9 +79,13 @@ public class TestMetricsStatisticService extends TableTestBase {
     Assert.assertEquals(2, Long.parseLong(changeCountMetrics.get(0).getMetricValue()));
     service.summaryMetrics();
     List<MetricsSummary> summaries = service.getMetricsSummary("total-files-size");
-    Assert.assertEquals(
-        2 * (FILE_A.fileSizeInBytes() + FILE_B.fileSizeInBytes()),
+    Assert.assertNotEquals(
+        0,
         Long.parseLong(summaries.get(summaries.size() - 1).getMetricValue().trim()));
+    service.deleteTableMetrics(tableId.buildTableIdentifier());
+    service.metricSummaryExpire(System.currentTimeMillis());
+    List<MetricsSummary> summaries1 = service.getMetricsSummary("total-files-size");
+    Assert.assertEquals(0, summaries1.size());
   }
 
   @Test

@@ -76,10 +76,24 @@ public class MetricsStatisticService extends IJDBCService {
     }
   }
 
+  public void deleteTableMetrics(com.netease.arctic.ams.api.TableIdentifier tableIdentifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
+      mapper.deleteTableMetrics(tableIdentifier);
+    }
+  }
+
   public List<MetricsSummary> getMetricsSummary(String metricName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       MetricsSummaryMapper mapper = sqlSession.getMapper(MetricsSummaryMapper.class);
       return mapper.getMetricsSummary(metricName);
+    }
+  }
+
+  public void metricSummaryExpire(long expireTime) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      MetricsSummaryMapper mapper = sqlSession.getMapper(MetricsSummaryMapper.class);
+      mapper.expire(expireTime);
     }
   }
 
@@ -111,6 +125,13 @@ public class MetricsStatisticService extends IJDBCService {
       statistic.setSubtaskId(subtaskId);
       statistic.setMetricName(metricName);
       return mapper.getMetricsStatistic(statistic);
+    }
+  }
+
+  public void deleteOptimizerMetrics(long optimizerId) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizerMetricsStatisticMapper mapper = sqlSession.getMapper(OptimizerMetricsStatisticMapper.class);
+      mapper.deleteOptimizerMetrics(optimizerId);
     }
   }
 

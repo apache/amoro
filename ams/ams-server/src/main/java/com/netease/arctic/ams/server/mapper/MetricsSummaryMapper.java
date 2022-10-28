@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.server.model.MetricsSummary;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
@@ -39,4 +40,8 @@ public interface MetricsSummaryMapper {
           typeHandler = Long2TsConvertor.class)
   })
   List<MetricsSummary> getMetricsSummary(@Param("metricName") String metricName);
+
+  @Delete("delete from " + TABLE_NAME +
+      " where commit_time < #{expiredTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  void expire(@Param("expiredTime") long expiredTime);
 }

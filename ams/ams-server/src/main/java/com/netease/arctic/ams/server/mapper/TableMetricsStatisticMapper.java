@@ -21,6 +21,8 @@ package com.netease.arctic.ams.server.mapper;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter;
+import com.netease.arctic.table.TableIdentifier;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
@@ -66,4 +68,9 @@ public interface TableMetricsStatisticMapper {
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);
+
+  @Delete("delete from " + TABLE_NAME +
+      " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server" +
+      ".mybatis.TableIdentifier2StringConverter}")
+  void deleteTableMetrics(@Param("tableIdentifier") com.netease.arctic.ams.api.TableIdentifier tableIdentifier);
 }

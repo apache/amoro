@@ -38,12 +38,16 @@ public class RuntimeDataExpireService {
   private final IOptimizeService optimizeService;
   private final ITableTaskHistoryService tableTaskHistoryService;
 
+  private final MetricsStatisticService metricsStatisticService;
+
   // 1 days
   Long txDataExpireInterval = 24 * 60 * 60 * 1000L;
   // 7 days
   Long taskHistoryDataExpireInterval = 7 * 24 * 60 * 60 * 1000L;
   // 30 days
   Long optimizeHistoryDataExpireInterval = 30 * 24 * 60 * 60 * 1000L;
+  // 7 days
+  Long metricSummaryDataExpireInterval = 7 * 24 * 60 * 60 * 1000L;
 
 
   public RuntimeDataExpireService() {
@@ -51,6 +55,7 @@ public class RuntimeDataExpireService {
     this.metaService = ServiceContainer.getMetaService();
     this.tableTaskHistoryService = ServiceContainer.getTableTaskHistoryService();
     this.optimizeService = ServiceContainer.getOptimizeService();
+    this.metricsStatisticService = ServiceContainer.getMetricsStatisticService();
   }
 
   public void doExpire() {
@@ -87,5 +92,11 @@ public class RuntimeDataExpireService {
         LOG.error("failed to expire and clear optimize_history table", e);
       }
     });
+
+    try {
+      metricsStatisticService.metricSummaryExpire(System.currentTimeMillis() - this.metricSummaryDataExpireInterval);
+    } catch (Exception e) {
+      LOG.error("failed to expire and clear metric_statistics_summary table", e);
+    }
   }
 }
