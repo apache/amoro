@@ -22,10 +22,19 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
+import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseTable;
+import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.table.*;
-import org.apache.iceberg.*;
+import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableOperations;
+import org.apache.iceberg.UpdateProperties;
+import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.connector.catalog.TableCapability;
@@ -151,9 +160,9 @@ public class ArcticSparkChangeTable implements KeyedTable, HasTableOperations {
     columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
     return new Schema(columns);
   }
+
   @Override
   public TableOperations operations() {
     return null;
   }
-
 }
