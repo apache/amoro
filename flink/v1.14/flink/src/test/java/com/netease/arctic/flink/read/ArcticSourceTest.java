@@ -137,7 +137,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     testCatalog.dropTable(FAIL_TABLE_ID, true);
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testArcticSourceStatic() throws Exception {
     ArcticSource<RowData> arcticSource = initArcticSource(false);
 
