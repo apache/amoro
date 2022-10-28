@@ -31,6 +31,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
+import com.netease.arctic.ams.server.mapper.OptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
@@ -41,6 +42,7 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetricsStatisticMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -137,6 +139,8 @@ public class DerbyTestUtil extends IJDBCService {
           configuration.addMapper(TableMetricsStatisticMapper.class);
           configuration.addMapper(DerbyTableMetricsStatisticMapper.class);
           configuration.addMapper(MetricsSummaryMapper.class);
+          configuration.addMapper(OptimizerMetricsStatisticMapper.class);
+          configuration.addMapper(DerbyOptimizerMetricsStatisticMapper.class);
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }
       }

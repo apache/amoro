@@ -18,7 +18,11 @@
 
 package com.netease.arctic.optimizer.flink;
 
+import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
+import com.netease.arctic.ams.api.OptimizerMetric;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
+import com.netease.arctic.ams.api.properties.OptimizerProperties;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
 import com.netease.arctic.optimizer.metric.TaskRecorder;
@@ -37,8 +41,11 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -58,6 +65,12 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
   private Meter outputFileCntMeter;
 
   private volatile long lastUsageCheckTime;
+
+  private final Map<String, String> metrics = new HashMap<>();
+
+  private boolean stopped = false;
+
+  private Thread thread;
 
   FlinkExecuteFunction(OptimizerConfig config) {
     this.config = config;
@@ -132,6 +145,8 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
     ExecutionConfig.GlobalJobParameters globalJobParameters =
         getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
 
+    reportMetrics(String.valueOf(getRuntimeContext().getIndexOfThisSubtask()));
+
     String taskId = Objects.nonNull(globalJobParameters.toMap().get(INFLUXDB_TAG_NAME)) ?
         globalJobParameters.toMap().get(INFLUXDB_TAG_NAME) : config.getOptimizerId();
     getRuntimeContext()
@@ -203,6 +218,14 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
     LOG.info("add Meter metrics output-file-cnt-rate with timeSpanInSeconds = {}s", fileCntRateTimeSpanInSeconds);
   }
 
+  public void close() throws Exception {
+    super.close();
+    this.stopped = true;
+    if (thread != null) {
+      thread.interrupt();
+    }
+  }
+
   private long getLastNFileSize(int n, boolean input) {
     if (n <= 0) {
       return 0;
@@ -243,11 +266,40 @@ public class FlinkExecuteFunction extends ProcessFunction<TaskWrapper, OptimizeT
       usage = getUsage(this.lastUsageCheckTime, now);
     }
     this.lastUsageCheckTime = now;
+    metrics.put(OptimizerProperties.QUOTA_USAGE, String.valueOf(usage * 100));
     return usage * 100;
   }
 
   public double getUsage(long begin, long end) {
     return taskRecorder.getUsage(begin, end);
+  }
+
+  private void reportMetrics(String subtaskId) {
+    this.thread = new Thread(() -> {
+      while (!stopped) {
+        try {
+          Thread.sleep(60 * 1000);
+        } catch (InterruptedException e) {
+          break;
+        }
+        List<OptimizerMetric> metricList = new ArrayList<>();
+        metrics.forEach((key, value) -> {
+          OptimizerMetric metric = new OptimizerMetric();
+          metric.setOptimizerId(Long.parseLong(config.getOptimizerId()));
+          metric.setSubtaskId(subtaskId);
+          metric.setMetricName(key);
+          metric.setMetricValue(value);
+          metricList.add(metric);
+        });
+        try {
+          OptimizeManager.Iface compactManager = OptimizeManagerClientPools.getClient(config.getAmsUrl());
+          compactManager.reportOptimizerMetric(metricList);
+        } catch (Throwable t) {
+          LOG.error("failed to sending result, optimizer: {} subtaskId: {}", config.getOptimizerId(), subtaskId, t);
+        }
+      }
+    });
+    thread.start();
   }
 
 }

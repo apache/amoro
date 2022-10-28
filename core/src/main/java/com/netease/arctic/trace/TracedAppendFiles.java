@@ -78,7 +78,12 @@ public class TracedAppendFiles implements AppendFiles {
 
   @Override
   public void commit() {
-    appendFiles.commit();
+    try {
+      appendFiles.commit();
+    } catch (IllegalArgumentException e) {
+      throw e;
+    }
+
     tracer.commit();
   }
 

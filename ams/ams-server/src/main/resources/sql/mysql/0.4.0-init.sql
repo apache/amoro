@@ -291,3 +291,12 @@ CREATE TABLE `metric_statistics_summary`
     `metric_value`     varchar(256) NOT NULL COMMENT 'metric value',
     `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'metric commit time'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'metric statistics summary';
+
+CREATE TABLE `optimizer_metric_statistics`
+(
+    `optimizer_id`     bigint NOT NULL COMMENT 'optimizer id',
+    `subtask_id`       varchar(256)  NOT NULL COMMENT 'optimizer subtask id',
+    `metric_name`      varchar(256) NOT NULL COMMENT 'metric name',
+    `metric_value`     varchar(256) NOT NULL COMMENT 'metric value',
+    `commit_time`      timestamp    NOT NULL ON UPDATE CURRENT_TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'metric commit time'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'metric statistics of optimizer';

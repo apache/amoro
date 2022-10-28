@@ -18,10 +18,14 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.api.OptimizerMetric;
 import com.netease.arctic.ams.api.TableMetric;
+import com.netease.arctic.ams.api.properties.OptimizerProperties;
 import com.netease.arctic.ams.server.mapper.MetricsSummaryMapper;
+import com.netease.arctic.ams.server.mapper.OptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
 import com.netease.arctic.ams.server.model.MetricsSummary;
+import com.netease.arctic.ams.server.model.OptimizerMetricsStatistic;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -41,11 +45,11 @@ import java.util.List;
 
 import static com.netease.arctic.ams.api.Constants.INNER_TABLE_BASE;
 
-public class TableMetricsStatisticService extends IJDBCService {
+public class MetricsStatisticService extends IJDBCService {
 
-  private static final Logger LOG = LoggerFactory.getLogger(TableMetricsStatisticService.class);
+  private static final Logger LOG = LoggerFactory.getLogger(MetricsStatisticService.class);
 
-  public void commitMetrics(TableIdentifier tableIdentifier, List<TableMetric> metrics) {
+  public void commitTableMetrics(TableIdentifier tableIdentifier, List<TableMetric> metrics) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       metrics.forEach(metric -> {
         TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
@@ -60,7 +64,8 @@ public class TableMetricsStatisticService extends IJDBCService {
     }
   }
 
-  public List<TableMetricsStatistic> getMetrics(TableIdentifier tableIdentifier, String innerTable, String metricName) {
+  public List<TableMetricsStatistic> getTableMetrics(TableIdentifier tableIdentifier, String innerTable,
+      String metricName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
       TableMetricsStatistic statistic = new TableMetricsStatistic();
@@ -75,6 +80,37 @@ public class TableMetricsStatisticService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       MetricsSummaryMapper mapper = sqlSession.getMapper(MetricsSummaryMapper.class);
       return mapper.getMetricsSummary(metricName);
+    }
+  }
+
+  public void commitOptimizerMetrics(List<OptimizerMetric> metrics) {
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      metrics.forEach(metric -> {
+        OptimizerMetricsStatisticMapper mapper = sqlSession.getMapper(OptimizerMetricsStatisticMapper.class);
+        OptimizerMetricsStatistic statistic = new OptimizerMetricsStatistic();
+        statistic.setOptimizerId(metric.getOptimizerId());
+        statistic.setSubtaskId(metric.getSubtaskId());
+        statistic.setMetricName(metric.getMetricName());
+        statistic.setMetricValue(metric.getMetricValue());
+        if (mapper.getMetricsStatistic(statistic).isEmpty()) {
+          mapper.insertMetricsStatistic(statistic);
+        } else {
+          mapper.updateMetricsStatistic(statistic);
+        }
+      });
+      sqlSession.commit();
+    }
+  }
+
+  public List<OptimizerMetricsStatistic> getOptimizerMetrics(long optimizerId, String subtaskId,
+      String metricName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizerMetricsStatisticMapper mapper = sqlSession.getMapper(OptimizerMetricsStatisticMapper.class);
+      OptimizerMetricsStatistic statistic = new OptimizerMetricsStatistic();
+      statistic.setOptimizerId(optimizerId);
+      statistic.setSubtaskId(subtaskId);
+      statistic.setMetricName(metricName);
+      return mapper.getMetricsStatistic(statistic);
     }
   }
 
@@ -120,6 +156,9 @@ public class TableMetricsStatisticService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetricsStatisticMapper metricsStatisticMapper = getMapper(sqlSession, TableMetricsStatisticMapper.class);
       metricsStatisticMapper.summaryMetrics(SnapshotSummary.TOTAL_FILE_SIZE_PROP, statisticTime);
+      OptimizerMetricsStatisticMapper optimizerMetricsStatisticMapper = getMapper(sqlSession,
+          OptimizerMetricsStatisticMapper.class);
+      optimizerMetricsStatisticMapper.summaryMetrics(OptimizerProperties.QUOTA_USAGE, statisticTime);
     } catch (Exception e) {
       LOG.error("summaryMetrics error", e);
     }
@@ -161,11 +200,11 @@ public class TableMetricsStatisticService extends IJDBCService {
 
   public static class TableMetricsStatisticTask implements Runnable {
 
-    private final TableMetricsStatisticService metricsStatisticService;
+    private final MetricsStatisticService metricsStatisticService;
     private final IMetaService metaService;
 
     public TableMetricsStatisticTask() {
-      this.metricsStatisticService = ServiceContainer.getTableMetricsStatisticService();
+      this.metricsStatisticService = ServiceContainer.getMetricsStatisticService();
       this.metaService = ServiceContainer.getMetaService();
     }
 

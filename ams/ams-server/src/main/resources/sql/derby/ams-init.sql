@@ -271,3 +271,12 @@ CREATE TABLE metric_statistics_summary
     metric_value     varchar(256),
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE optimizer_metric_statistics
+(
+    optimizer_id    bigint NOT NULL,
+    subtask_id      varchar(256)  NOT NULL,
+    metric_name     varchar(256) NOT NULL,
+    metric_value    varchar(256) NOT NULL,
+    commit_time     timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

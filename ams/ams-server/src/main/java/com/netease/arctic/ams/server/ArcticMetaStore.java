@@ -43,9 +43,9 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.DerbyService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.MetricsStatisticService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
-import com.netease.arctic.ams.server.service.impl.TableMetricsStatisticService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
@@ -244,7 +244,7 @@ public class ArcticMetaStore {
         AmsRestServer.startRestServer(httpPort);
         startSyncDDl();
         syncAndExpiredFileInfoCache();
-        residentThreads.add(new TableMetricsStatisticService.TableMetricsStatisticTask().doTask());
+        residentThreads.add(new MetricsStatisticService.TableMetricsStatisticTask().doTask());
         if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
           checkLeader();
         }
@@ -347,7 +347,7 @@ public class ArcticMetaStore {
 
   private static void startSummaryMetric() {
     ThreadPool.getPool(ThreadPool.Type.METRIC_SUMMARY).scheduleWithFixedDelay(
-        ServiceContainer.getTableMetricsStatisticService()::summaryMetrics,
+        ServiceContainer.getMetricsStatisticService()::summaryMetrics,
         60 * 1000L,
         60 * 1000L,
         TimeUnit.MILLISECONDS);

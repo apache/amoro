@@ -94,6 +94,13 @@ struct DataFileInfo {
     9: i64 recordCount;
 }
 
+struct OptimizerMetric {
+    1: i64 optimizerId;
+    2: string subtaskId;
+    3: string metricName;
+    4: string metricValue;
+}
+
 /**
 * replace TableContainer
 **/
@@ -107,4 +114,6 @@ service OptimizeManager {
     void reportOptimizeResult(1:OptimizeTaskStat optimizeTaskStat)
 
     void reportOptimizerState(1: OptimizerStateReport reportData)
+
+    void reportOptimizerMetric(1: list<OptimizerMetric> metrics)
 }

@@ -20,7 +20,10 @@ package com.netease.arctic.optimizer.local;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
+import com.netease.arctic.ams.api.OptimizerMetric;
+import com.netease.arctic.ams.api.client.OptimizeManagerClientPools;
 import com.netease.arctic.ams.api.properties.OptimizerProperties;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.StatefulOptimizer;
@@ -41,10 +44,12 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -256,6 +261,12 @@ public class LocalOptimizer implements StatefulOptimizer {
     // to record latest(default=256) task stats
     private final TaskRecorder taskRecorder;
 
+    private volatile long lastUsageCheckTime;
+
+    private final Map<String, String> metrics = new HashMap<>();
+
+    private Thread reportMetricsThread;
+
     public Executor() {
       this.baseTaskExecutor = new BaseTaskExecutor(config, this);
       this.baseTaskReporter = new BaseTaskReporter(config);
@@ -290,11 +301,15 @@ public class LocalOptimizer implements StatefulOptimizer {
       }
       LOG.info("execute thread exit");
       this.taskRecorder.clear();
+      if (reportMetricsThread != null) {
+        reportMetricsThread.interrupt();
+      }
     }
 
     @Override
     public void onTaskStart(Iterable<ContentFile<?>> inputFiles) {
       this.taskRecorder.recordNewTaskStat(getFileStats(inputFiles));
+      reportMetrics(UUID.randomUUID().toString());
     }
 
     @Override
@@ -315,8 +330,50 @@ public class LocalOptimizer implements StatefulOptimizer {
       return fileStats;
     }
 
+    private double getUsagePercentage() {
+      long now = System.currentTimeMillis();
+      double usage = 0.0;
+      if (lastUsageCheckTime == 0) {
+        LOG.info("init lastUsageCheckTime, get usage=0.0");
+      } else {
+        usage = getUsage(this.lastUsageCheckTime, now);
+      }
+      this.lastUsageCheckTime = now;
+      metrics.put(OptimizerProperties.QUOTA_USAGE, String.valueOf(usage * 100));
+      return usage * 100;
+    }
+
     public double getUsage(long begin, long end) {
       return taskRecorder.getUsage(begin, end);
+    }
+
+    private void reportMetrics(String subtaskId) {
+      this.reportMetricsThread = new Thread(() -> {
+        while (!stopped) {
+          try {
+            Thread.sleep(60 * 1000);
+          } catch (InterruptedException e) {
+            break;
+          }
+          getUsagePercentage();
+          List<OptimizerMetric> metricList = new ArrayList<>();
+          metrics.forEach((key, value) -> {
+            OptimizerMetric metric = new OptimizerMetric();
+            metric.setOptimizerId(Long.parseLong(config.getOptimizerId()));
+            metric.setSubtaskId(subtaskId);
+            metric.setMetricName(OptimizerProperties.QUOTA_USAGE);
+            metric.setMetricValue(value);
+            metricList.add(metric);
+          });
+          try {
+            OptimizeManager.Iface compactManager = OptimizeManagerClientPools.getClient(config.getAmsUrl());
+            compactManager.reportOptimizerMetric(metricList);
+          } catch (Throwable t) {
+            LOG.error("failed to sending result, optimizer: {} subtaskId: {}", config.getOptimizerId(), subtaskId, t);
+          }
+        }
+      });
+      reportMetricsThread.start();
     }
   }
 

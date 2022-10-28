@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -34,7 +33,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
-import com.netease.arctic.ams.server.service.impl.TableMetricsStatisticService;
+import com.netease.arctic.ams.server.service.impl.MetricsStatisticService;
 import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.thrift.TException;
@@ -51,14 +50,14 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   private final CatalogMetadataService catalogMetadataService;
   private final FileInfoCacheService fileInfoCacheService;
   private final DDLTracerService ddlTracerService;
-  private final TableMetricsStatisticService metricsStatisticService;
+  private final MetricsStatisticService metricsStatisticService;
 
   public ArcticTableMetastoreHandler(IMetaService metaService) {
     this.metaService = metaService;
     this.catalogMetadataService = ServiceContainer.getCatalogMetadataService();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.ddlTracerService = ServiceContainer.getDdlTracerService();
-    this.metricsStatisticService = ServiceContainer.getTableMetricsStatisticService();
+    this.metricsStatisticService = ServiceContainer.getMetricsStatisticService();
   }
 
   @Override
@@ -188,7 +187,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
       ddlTracerService.commit(commit.getTableIdentifier(), commit.getSchemaUpdateMeta());
     }
     if (commit.getMetrics() != null && !commit.getMetrics().isEmpty()) {
-      metricsStatisticService.commitMetrics(identifier, commit.getMetrics());
+      metricsStatisticService.commitTableMetrics(identifier, commit.getMetrics());
     }
     try {
       fileInfoCacheService.commitCacheFileInfo(commit);

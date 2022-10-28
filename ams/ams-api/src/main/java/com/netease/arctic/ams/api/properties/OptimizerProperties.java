@@ -47,4 +47,6 @@ public class OptimizerProperties {
   public static final String OPTIMIZER_JOB_ID = "jobId";
   public static final String OPTIMIZER_JOB_PARALLELISM = "parallelism";
 
+  //metric key
+  public static final String QUOTA_USAGE = "quota_usage";
 }

@@ -42,7 +42,7 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
-import com.netease.arctic.ams.server.service.TestTableMetricsStatisticService;
+import com.netease.arctic.ams.server.service.TestMetricsStatisticService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
@@ -50,7 +50,7 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
-import com.netease.arctic.ams.server.service.impl.TableMetricsStatisticService;
+import com.netease.arctic.ams.server.service.impl.MetricsStatisticService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
@@ -103,7 +103,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class,
-    TestTableMetricsStatisticService.class
+    TestMetricsStatisticService.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
@@ -163,8 +163,8 @@ public class AmsTestBase {
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
     JDBCMetaService metaService = new JDBCMetaService();
     when(ServiceContainer.getMetaService()).thenReturn(metaService);
-    TableMetricsStatisticService tableMetricsStatisticService = new TableMetricsStatisticService();
-    when(ServiceContainer.getTableMetricsStatisticService()).thenReturn(tableMetricsStatisticService);
+    MetricsStatisticService metricsStatisticService = new MetricsStatisticService();
+    when(ServiceContainer.getMetricsStatisticService()).thenReturn(metricsStatisticService);
 
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());

@@ -30,6 +30,7 @@ import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
+import com.netease.arctic.ams.server.service.impl.MetricsStatisticService;
 import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
 import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
@@ -39,7 +40,6 @@ import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
-import com.netease.arctic.ams.server.service.impl.TableMetricsStatisticService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
 
 public class ServiceContainer {
@@ -82,7 +82,7 @@ public class ServiceContainer {
 
   private static volatile ISupportHiveSyncService supportHiveSyncService;
 
-  private static volatile TableMetricsStatisticService metricsStatisticService;
+  private static volatile MetricsStatisticService metricsStatisticService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
@@ -337,11 +337,11 @@ public class ServiceContainer {
     return containerMetaService;
   }
 
-  public static TableMetricsStatisticService getTableMetricsStatisticService() {
+  public static MetricsStatisticService getMetricsStatisticService() {
     if (metricsStatisticService == null) {
       synchronized (ServiceContainer.class) {
         if (metricsStatisticService == null) {
-          metricsStatisticService = new TableMetricsStatisticService();
+          metricsStatisticService = new MetricsStatisticService();
         }
       }
     }
