@@ -20,21 +20,13 @@
 package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2WriteCommand}
-import org.apache.spark.sql.connector.write.BatchWrite
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
-case class ReplaceArcticData(
+case class AppendArcticData(
     table: NamedRelation,
     query: LogicalPlan,
-    options: Map[String, String]) extends V2WriteCommand {
-
-  def isByName: Boolean = false
-
-  def withNewQuery(newQuery: LogicalPlan): ReplaceArcticData = copy(query = newQuery)
-
-  def withNewTable(newTable: NamedRelation): ReplaceArcticData = copy(table = newTable)
-
-  override def outputResolved = true
+    validateQuery: LogicalPlan,
+    options: Map[String, String]) extends Command {
+  override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
 
 }

@@ -1,7 +1,6 @@
 package com.netease.arctic.spark.hive;
 
 import com.netease.arctic.spark.SparkTestBase;
-import org.apache.spark.SparkException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -71,16 +70,12 @@ public class TestKeyedTableDml extends SparkTestBase {
   @Test
   public void testInsertNotUpsert() {
     sql(createTableInsert, database, insertTable);
-    sql("insert into " + database + "." + notUpsertTable +
-        " values (1, 'aaa', 'abcd' ) , " +
-        "(2, 'bbb', 'bbcd'), " +
-        "(3, 'ccc', 'cbcd') ");
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
-    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(3, rows.size());
     sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
-    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(3, rows.size());
   }
 
 
@@ -109,6 +104,7 @@ public class TestKeyedTableDml extends SparkTestBase {
         " values (1, 'aaa', 'aaaa' ) , " +
         "(4, 'bbb', 'bbcd'), " +
         "(5, 'ccc', 'cbcd') ");
+    sql("select * from {0}.{1} ", database, notUpsertTable);
 
     sql("insert into " + database + "." + upsertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
@@ -176,7 +172,7 @@ public class TestKeyedTableDml extends SparkTestBase {
             " data string, primary key(id, name))\n" +
             " using arctic partitioned by (data) " , database, "testPks");
 
-    Assert.assertThrows(SparkException.class,
+    Assert.assertThrows(UnsupportedOperationException.class,
             () -> sql("insert into " + database + "." + "testPks" +
                     " values (1, 1.1, 'abcd' ) , " +
                     "(1, 1.1, 'bbcd'), " +

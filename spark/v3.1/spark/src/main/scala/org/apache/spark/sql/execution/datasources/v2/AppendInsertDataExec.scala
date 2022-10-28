@@ -9,9 +9,10 @@ import org.apache.spark.sql.util.CaseInsensitiveStringMap
 case class AppendInsertDataExec(table: ArcticSparkTable,
                                 writeOptions: CaseInsensitiveStringMap,
                                 queryInsert: SparkPlan,
-                                validate: Boolean,
+                                validateQuery: SparkPlan,
                                 refreshCache: () => Unit) extends ArcticTableWriteExec with BatchWriteHelper {
   override protected def run(): Seq[InternalRow] = {
+    validateData()
     val writtenRowsA = writeInsert(newWriteBuilder().buildForBatch())
     refreshCache()
     writtenRowsA
@@ -20,5 +21,7 @@ case class AppendInsertDataExec(table: ArcticSparkTable,
 
   override def query: SparkPlan = queryInsert
 
-  override def child: SparkPlan = queryInsert
+  override def left: SparkPlan = queryInsert
+
+  override def right: SparkPlan = validateQuery
 }

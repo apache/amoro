@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.optimize
 
-import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, ReplaceArcticData}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
@@ -39,6 +39,22 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
+  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
+    r.table match {
+      case arctic: ArcticSparkTable =>
+        if (arctic.table().isKeyedTable) {
+          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+          val alias = Alias(than, "count")()
+          val attributes = query.output.filter(p => primaries.contains(p.name))
+          Aggregate(attributes, Seq(alias), query)
+        } else {
+          throw new UnsupportedOperationException(s"UnKeyed table can not validate")
+        }
+    }
+  }
+
+
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case AppendData(r: DataSourceV2Relation, query, writeOptions, isByName) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
@@ -54,9 +70,10 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case a: ArcticSparkTable =>
           if (a.table().isKeyedTable) {
             val insertQuery = distributionQuery(newQuery, a)
-            ReplaceArcticData(arcticRelation, insertQuery, validate = true, options)
+            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
+            AppendArcticData(arcticRelation, insertQuery, validateQuery, options)
           } else {
-            ReplaceArcticData(arcticRelation, query, validate = false, writeOptions)
+            ReplaceArcticData(arcticRelation, query, writeOptions)
           }
       }
   }
