@@ -13,11 +13,9 @@ import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang.StringUtils;
-import org.apache.iceberg.catalog.Catalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +39,6 @@ public class CatalogController extends RestBaseController {
   private static final String AUTH_CONFIG_HADOOP_USERNAME = "auth_config.hadoop_username";
   private static final String AUTH_CONFIG_KEY_KRB5 = "auth_config.krb5";
 
-
   /**
    * get catalog Type list
    *
@@ -51,7 +48,6 @@ public class CatalogController extends RestBaseController {
     ctx.json(OkResponse.of(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HIVE,
             CatalogMetaProperties.CATALOG_TYPE_HADOOP)));
   }
-
 
   /**
    * convert server authconfig to metaAuthConfig
@@ -108,7 +104,7 @@ public class CatalogController extends RestBaseController {
   private static CatalogMeta constructCatalogMeta(CatalogRegisterInfo info) {
 
     CatalogMeta catalogMeta = new CatalogMeta();
-    catalogMeta.setCatalogName(info.getCatalogName());
+    catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(info.getProperties());
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig()));
@@ -158,7 +154,7 @@ public class CatalogController extends RestBaseController {
             info.getProperties() == null) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some configuration is null", null));
     }
-    if (catalogMetadataService.catalogExist(info.getCatalogName())) {
+    if (catalogMetadataService.catalogExist(info.getName())) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "duplicate catalog name!", null));
       return;
     }
@@ -179,8 +175,8 @@ public class CatalogController extends RestBaseController {
     CatalogRegisterInfo info = new CatalogRegisterInfo();
     String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
 
-    if (catalogMetadataService.catalogExist(info.getCatalogName())) {
-      info.setCatalogName(catalogMeta.getCatalogName());
+    if (catalogMetadataService.catalogExist(catalogName)) {
+      info.setName(catalogMeta.getCatalogName());
       info.setType(catalogMeta.getCatalogType());
       info.setAuthConfig(authConvertFromMetaToServer(catalogMeta.getAuthConfigs()));
       Map<String, String> storageConfig = new HashMap<>();
@@ -213,7 +209,7 @@ public class CatalogController extends RestBaseController {
             info.getStorageConfig() == null) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some configuration is null", null));
     }
-    if (!catalogMetadataService.catalogExist(info.getCatalogName())) {
+    if (!catalogMetadataService.catalogExist(info.getName())) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "catalog doesn't exist!", null));
       return;
     }

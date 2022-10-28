@@ -1,5 +1,6 @@
 package com.netease.arctic.ams.server.mapper;
 
+import com.netease.arctic.ams.server.model.PlatformFileInfo;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -16,14 +17,12 @@ public interface PlatformFileInfoMapper {
 
   /**
    * add a file with content encoded by base64
-   *
-   * @param name
-   * @param content
-   * @param id
    */
-  @Insert("insert into " + TABLE_NAME + " (id,file_name,file_content_b64) values(#{id},#{name},#{content})")
-  @Options(useGeneratedKeys = true, keyProperty = "id")
-  void addFile(@Param("name") String name, @Param("content") String content, @Param("id") Integer id);
+  @Insert("insert into " + TABLE_NAME + " (id,file_name,file_content_b64) " +
+          "values(#{fileInfo.fileId},#{fileInfo.fileName},#{fileInfo.fileContent})")
+  @Options(useGeneratedKeys = true, keyProperty = "fileInfo.fileId", keyColumn = "id")
+  void addFile(@Param("fileInfo")PlatformFileInfo platformFileInfo);
+
 
   // get file content encoded by base64 by fileId
   @Select("select file_content_b64 from " + TABLE_NAME + " where id=#{fileId}")

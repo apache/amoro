@@ -30,16 +30,16 @@ public class PlatformFileInfoController extends RestBaseController {
    */
   public static void uploadFile(Context ctx) {
     try {
-      InputStream bodyAsInputStream = ctx.uploadedFile("files").getContent();
+      InputStream bodyAsInputStream = ctx.uploadedFile("file").getContent();
       //todo get file name
-      String name = ctx.headerMap().get("file-name");
+      String name = ctx.uploadedFile("file").getFilename();
       byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
       String content = Base64.getEncoder().encodeToString(bytes);
-      platformFileInfoService.addFile(name, content);
+      Integer fid = platformFileInfoService.addFile(name, content);
+      ctx.json(OkResponse.of(fid));
     } catch (IOException e) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upload file", null));
     }
-    ctx.json(OkResponse.of(null));
   }
 
   /**

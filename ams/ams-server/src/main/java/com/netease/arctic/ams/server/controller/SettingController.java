@@ -1,5 +1,6 @@
 package com.netease.arctic.ams.server.controller;
 
+import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import io.javalin.http.Context;
 
@@ -18,9 +19,7 @@ public class SettingController {
    * @param ctx
    */
   public static void getSystemSetting(Context ctx) {
-    Map<String,String> result = new HashMap<>();
-
-    ctx.json(OkResponse.of(null));
+    ctx.json(OkResponse.of(ArcticMetaStore.getSystemSettingFromYaml()));
   }
 
   /**
@@ -29,6 +28,7 @@ public class SettingController {
    * @param ctx
    */
   public static void getContainerSetting(Context ctx) {
+
     ctx.json(OkResponse.of(null));
   }
 }

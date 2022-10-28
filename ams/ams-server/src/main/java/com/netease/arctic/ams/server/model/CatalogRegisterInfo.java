@@ -8,7 +8,7 @@ import java.util.Map;
  * @Description:
  */
 public class CatalogRegisterInfo {
-  String catalogName;
+  String name;
   String type;
   Map<String, String> storageConfig;
   Map<String, String> authConfig;
@@ -18,12 +18,12 @@ public class CatalogRegisterInfo {
 
   }
 
-  public String getCatalogName() {
-    return catalogName;
+  public String getName() {
+    return name;
   }
 
-  public void setCatalogName(String catalogName) {
-    this.catalogName = catalogName;
+  public void setName(String name) {
+    this.name = name;
   }
 
   public String getType() {

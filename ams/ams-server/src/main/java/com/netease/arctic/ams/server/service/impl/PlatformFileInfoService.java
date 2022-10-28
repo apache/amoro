@@ -3,6 +3,7 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.PlatformFileInfoMapper;
+import com.netease.arctic.ams.server.model.PlatformFileInfo;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.ibatis.session.SqlSession;
 
@@ -25,9 +26,9 @@ public class PlatformFileInfoService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       PlatformFileInfoMapper platformFileInfoMapper =
               getMapper(sqlSession, PlatformFileInfoMapper.class);
-      Integer fildId = 0;
-      platformFileInfoMapper.addFile(name, content, fildId);
-      return fildId;
+      PlatformFileInfo platformFileInfo = new PlatformFileInfo(name, content);
+      platformFileInfoMapper.addFile(platformFileInfo);
+      return platformFileInfo.getFileId();
     }
   }
 

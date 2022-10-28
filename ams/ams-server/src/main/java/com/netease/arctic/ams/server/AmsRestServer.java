@@ -86,6 +86,8 @@ public class AmsRestServer {
       config.addSinglePageRoot("/hive-tables", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/catalogs", "/static/index.html", Location.CLASSPATH);
+
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
@@ -143,15 +145,14 @@ public class AmsRestServer {
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
-
         /** catalog controller **/
         post("/catalogs", CatalogController::createCatalog);
+        //todo make sure types is before 
+        get("/catalogs/types", CatalogController::getCatalogTypeList);
         get("/catalogs/{catalogName}", CatalogController::getCatalogDetail);
         delete("/catalogs/{catalogName}", CatalogController::deleteCatalog);
         put("/catalogs/{catalogName}", CatalogController::updateCatalog);
         get("/catalogs/{catalogName}/delete/check", CatalogController::catalogDeleteCheck);
-        get("/catalogs/types", CatalogController::getCatalogTypeList);
-
         /** optimize controller **/
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", OptimizerController::getOptimizerTables);
         get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", OptimizerController::getOptimizers);
@@ -266,22 +267,22 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-          "/ams/v1/versionInfo",
-          "/ams/v1/login",
-          "/",
-          "/overview",
-          "/introduce",
-          "/tables",
-          "/optimizers",
-          "/login",
-          "/terminal",
-          "/hive-tables/upgrade",
-          "/hive-tables",
-          "/index.html",
-          "/favicon.ico",
-          "/js/*",
-          "/img/*",
-          "/css/*"
+    "/ams/v1/versionInfo",
+    "/ams/v1/login",
+    "/",
+    "/overview",
+    "/introduce",
+    "/tables",
+    "/optimizers",
+    "/login",
+    "/terminal",
+    "/hive-tables/upgrade",
+    "/hive-tables",
+    "/index.html",
+    "/favicon.ico",
+    "/js/*",
+    "/img/*",
+    "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {
