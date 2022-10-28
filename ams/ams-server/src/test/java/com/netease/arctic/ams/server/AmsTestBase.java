@@ -161,10 +161,10 @@ public class AmsTestBase {
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
-    JDBCMetaService metaService = new JDBCMetaService();
-    when(ServiceContainer.getMetaService()).thenReturn(metaService);
     MetricsStatisticService metricsStatisticService = new MetricsStatisticService();
     when(ServiceContainer.getMetricsStatisticService()).thenReturn(metricsStatisticService);
+    JDBCMetaService metaService = new JDBCMetaService();
+    when(ServiceContainer.getMetaService()).thenReturn(metaService);
 
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());
