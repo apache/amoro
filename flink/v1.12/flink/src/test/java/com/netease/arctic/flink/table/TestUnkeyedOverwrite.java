@@ -24,10 +24,13 @@ import com.netease.arctic.hive.HiveTableTestBase;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
+import org.apache.flink.test.util.MiniClusterWithClientResource;
+import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -51,6 +54,10 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
+
+  @ClassRule
+  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
+      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TABLE_ID.getDatabase();
