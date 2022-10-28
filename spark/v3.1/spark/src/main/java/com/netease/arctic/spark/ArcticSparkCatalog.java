@@ -20,26 +20,27 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.table.KeyedHiveTable;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.table.TableBuilder;
-import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.table.*;
+import com.netease.arctic.table.MetadataColumns;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Transaction;
+import org.apache.iceberg.*;
+import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
+import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.source.SparkTable;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.analysis.NoSuchNamespaceException;
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
@@ -129,8 +130,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       if (isInnerTableIdentifier(ident)) {
         ArcticTableStoreType type = ArcticTableStoreType.from(ident.name());
         identifier = buildInnerTableIdentifier(ident);
-        table = catalog.loadTable(identifier);
-        return loadInnerTable(table, type);
+        table = loadInnerTable(catalog.loadTable(identifier), type);
       } else {
         identifier = buildIdentifier(ident);
         table = catalog.loadTable(identifier);
@@ -141,12 +141,11 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     return ArcticSparkTable.ofArcticTable(table);
   }
 
-  private Table loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
+  private ArcticTable loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          UnkeyedTable changeTable = table.asKeyedTable().changeTable();
-          return new ArcticSparkChangeTable(changeTable);
+          return new ArcticSparkChangeTable((BaseKeyedTable) table);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
       }

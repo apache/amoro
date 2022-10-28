@@ -194,11 +194,11 @@ public class TestKeyedTableDml extends SparkTestBase {
             "(2, 'bbb', 'bbcd'), " +
             "(3, 'ccc', 'cbcd') ");
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
-    Assert.assertEquals(6, rows.size());
-    sql("update {0}.{1} as t set name = ''dddd'' where id = 1", database, notUpsertTable);
+      Assert.assertEquals(6, rows.size());
+      sql("update {0}.{1} as t set name = ''dddd'' where id = 1", database, notUpsertTable);
 
-    rows = sql("select * from {0}.{1} where id = 1", database, notUpsertTable);
-    Assert.assertEquals("dddd", rows.get(0)[1]);
+      rows = sql("select * from {0}.{1} where id = 1", database, notUpsertTable);
+      Assert.assertEquals("dddd", rows.get(0)[1]);
 
     rows = sql("select * from {0}.{1}.{2}.change where id = 1 and name = ''dddd''", catalogNameHive, database, notUpsertTable);
     Assert.assertEquals(2, rows.size());

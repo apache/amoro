@@ -15,6 +15,13 @@ SELECT * FROM arctic_catalog.db.sample
 
 ```sql
 SELECT * FROM arctic_catalog.db.sample.change
+
++---+----+----+---------------+------------+--------------+
+| id|name|data|_transaction_id|_file_offset|_change_action|
++---+----+----+---------------+------------+--------------+
+|  1|dddd|abcd|              3|           1|        INSERT|
+|  1|dddd|abcd|              3|           2|        DELETE|
++---+----+----+---------------+------------+--------------+
 ```
 
 ## Write

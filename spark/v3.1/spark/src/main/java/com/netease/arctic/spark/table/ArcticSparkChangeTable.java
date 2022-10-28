@@ -18,28 +18,142 @@
 
 package com.netease.arctic.spark.table;
 
-import org.apache.iceberg.Table;
+import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.RewritePartitions;
+import com.netease.arctic.scan.KeyedTableScan;
+import com.netease.arctic.table.BaseTable;
+import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.table.*;
+import org.apache.iceberg.*;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
-import org.apache.iceberg.spark.source.SparkTable;
+import org.apache.iceberg.types.Types;
 import org.apache.spark.sql.connector.catalog.TableCapability;
-import org.apache.spark.sql.types.StructType;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
-public class ArcticSparkChangeTable extends SparkTable {
+public class ArcticSparkChangeTable implements KeyedTable, HasTableOperations {
+
+  private BaseKeyedTable table;
+
+  public ArcticSparkChangeTable(BaseKeyedTable table) {
+    this.table = table;
+  }
+
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ
       );
 
-  public ArcticSparkChangeTable(Table icebergTable) {
-    super(icebergTable, true);
-  }
-
-  public ArcticSparkChangeTable(Table icebergTable, StructType requestedSchema, boolean refreshEagerly) {
-    super(icebergTable, requestedSchema, refreshEagerly);
-  }
-
   public Set<TableCapability> capabilities() {
     return CAPABILITIES;
   }
+
+  @Override
+  public void refresh() {
+    table.changeTable().refresh();
+  }
+
+  @Override
+  public UpdateSchema updateSchema() {
+    return table.updateSchema();
+  }
+
+  @Override
+  public UpdateProperties updateProperties() {
+    return table.updateProperties();
+  }
+
+  @Override
+  public KeyedTableScan newScan() {
+    return table.newScan();
+  }
+
+  @Override
+  public PrimaryKeySpec primaryKeySpec() {
+    return table.primaryKeySpec();
+  }
+
+  @Override
+  public String baseLocation() {
+    return table.baseLocation();
+  }
+
+  @Override
+  public String changeLocation() {
+    return table.changeLocation();
+  }
+
+  @Override
+  public BaseTable baseTable() {
+    return table.baseTable();
+  }
+
+  @Override
+  public ChangeTable changeTable() {
+    return table.changeTable();
+  }
+
+  @Override
+  public String name() {
+    return table.name();
+  }
+
+  @Override
+  public PartitionSpec spec() {
+    return table.spec();
+
+  }
+
+  @Override
+  public Map<String, String> properties() {
+    return table.properties();
+  }
+
+  @Override
+  public String location() {
+    return table.location();
+  }
+
+  @Override
+  public ArcticFileIO io() {
+    return table.io();
+  }
+
+  @Override
+  public long beginTransaction(String signature) {
+    return table.beginTransaction(signature);
+  }
+
+  @Override
+  public RewritePartitions newRewritePartitions() {
+    return table.newRewritePartitions();
+  }
+
+  @Override
+  public OverwriteBaseFiles newOverwriteBaseFiles() {
+    return table.newOverwriteBaseFiles();
+  }
+
+  @Override
+  public TableIdentifier id() {
+    return table.changeTable().id();
+  }
+
+  @Override
+  public Schema schema() {
+    Schema schema = table.changeTable().schema();
+    List<Types.NestedField> columns = schema.columns().stream().collect(Collectors.toList());
+    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
+    columns.add(MetadataColumns.FILE_OFFSET_FILED);
+    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
+    return new Schema(columns);
+  }
+  @Override
+  public TableOperations operations() {
+    return null;
+  }
+
 }
