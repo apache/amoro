@@ -70,7 +70,7 @@ public class CatalogUtil {
         case CATALOG_TYPE_HIVE:
           return Sets.newHashSet(TableFormat.HIVE);
         default:
-          throw new IllegalArgumentException("Unsupported catalog type:" + type);
+          throw new IllegalArgumentException("Unsupported catalog type:" +  meta.getCatalogType());
       }
     }
   }

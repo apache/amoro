@@ -31,12 +31,9 @@ import com.netease.arctic.utils.CatalogUtil;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -106,7 +103,7 @@ public class CatalogLoader {
       String type = catalogMeta.getCatalogType();
       CatalogUtil.mergeCatalogProperties(catalogMeta, props);
       String catalogImpl;
-      Set<TableFormat> tableFormats = CatalogUtil.tableFormats(meta);
+      Set<TableFormat> tableFormats = CatalogUtil.tableFormats(catalogMeta);
       Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
       TableFormat tableFormat = tableFormats.iterator().next();
       switch (type) {
