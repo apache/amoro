@@ -57,4 +57,6 @@ public interface UnkeyedTable extends ArcticTable, Table {
   default UnkeyedTable asUnkeyedTable() {
     return this;
   }
+
+
 }
