@@ -131,7 +131,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
         MetricsModes.Full.get().toString());
     return new SortedPosDeleteWriter<>(appenderFactory,
         new CommonOutputFileFactory(baseTable.location(), baseTable.spec(), fileFormat, baseTable.io(),
-            baseTable.encryption(), partitionId, taskId, transactionId),
+            baseTable.encryption(), partitionId, taskId, transactionId), table.io(),
         fileFormat, mask, index, partitionKey);
   }
 
