@@ -180,7 +180,10 @@ public class FlinkTaskWriterBuilder implements TaskWriterBuilder<RowData> {
     OutputFileFactory outputFileFactory = new CommonOutputFileFactory(keyedTable.changeLocation(),
         keyedTable.spec(), fileFormat, keyedTable.io(), keyedTable.baseTable().encryption(), partitionId,
         taskId, transactionId);
-    FlinkAppenderFactory appenderFactory = new FlinkAppenderFactory(
+    FileAppenderFactory<RowData> appenderFactory = TableTypeUtil.isHive(table) ?
+        new AdaptHiveFlinkAppenderFactory(changeSchemaWithMeta, flinkSchemaWithMeta,
+            keyedTable.properties(), keyedTable.spec()) :
+        new FlinkAppenderFactory(
         changeSchemaWithMeta, flinkSchemaWithMeta, keyedTable.properties(), keyedTable.spec());
     return new FlinkChangeTaskWriter(
         fileFormat,
