@@ -376,7 +376,7 @@ public abstract class ArcticDeleteFilter<T> {
             .reuseContainers()
             .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
 
-        return getArcticFileIo().doAs(builder::build);
+        return builder.build();
 
       case ORC:
       default:
