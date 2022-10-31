@@ -31,7 +31,7 @@
 > 规划ZooKeeper、Hdfs、Yarn服务数据目录、日志目录存储路径。
 ### 3.2 进入ambari server页面，按以下步骤安装集群
 > 1）设置一个集群名字，点下一步。  
-2）选择NDP-5.4.0，Use Public Repository， Skip Repository Base URL validation (Advanced)，点击下一步。  
+2）选择安装版本，Use Public Repository， Skip Repository Base URL validation (Advanced)，点击下一步。  
 3）填入agent服务器列表，此处使用hostname全名(FQDN)，选择Perform manual registration on hosts and do not use SSH，点击下一步。  
 注意：节点上需要手动安装ambari agent服务。  
 4）等待Confirm Hosts完成，如果失败，检查节点的Agent是否安装成功，如果是安装成功的，点击retry再试一次。点击下一步。  
@@ -57,8 +57,9 @@ NodeManager的数据目录是否放到指定目录。
 ResourceManager进程内存设置是否合理。  
 NodeManager进程内存设置是否合理。  
 NodeManager节点可用于任务运行的CPU、内存数量是否合理。  
-资源队列设置（队列正常来说不用设置，交由Meta设置）。  
-5）Hive配置主要修改内容  
+ResourceManager资源队列设置。  
+5）Hive配置主要修改内容
+> HiveMetasotre依赖mysql地址。  
 HiveMetasotre的数据目录是否放到指定目录。    
 HiveServer的数据目录是否放到指定目录。    
 HiveMetasotre进程内存设置是否合理。    
