@@ -810,7 +810,7 @@ public class AdaptHiveParquet {
           return new VectorizedParquetReader<>(file, schema, options, batchedReaderFunc, nameMapping, filter,
               reuseContainers, caseSensitive, maxRecordsPerBatch);
         } else {
-          return new org.apache.iceberg.parquet.ParquetReader<>(
+          return new AdaptHiveParquetReader<>(
               file, schema, options, readerFunc, nameMapping, filter, reuseContainers, caseSensitive);
         }
       }

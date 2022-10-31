@@ -28,14 +28,18 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.WriteOperationKind;
+import java.time.LocalDateTime;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.junit.Assert;
 import org.junit.Test;
@@ -149,7 +153,26 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
     testWrite(testUnPartitionHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
   }
 
+  @Test
+  public void testInt96WithoutTZPredicatePushDown() throws IOException {
+    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive",
+        Expressions.equal("op_time", "2022-01-04T12:00:00"),
+        ImmutableList.of(HiveTestRecords.baseRecords().get(1)));
+  }
+
+  @Test
+  public void testInt96WithTZPredicatePushDown() throws IOException {
+    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive",
+        Expressions.equal("op_time_with_zone", "2022-01-04T13:00:00+01:00"),
+        ImmutableList.of(HiveTestRecords.baseRecords().get(1)));
+  }
+
   public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
+    testWrite(table, locationKind, records, pathFeature, null, null);
+  }
+
+  public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature,
+      Expression expression, List<Record> readRecords) throws IOException {
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
         .withTransactionId(table.isKeyedTable() ? 1L : null);
@@ -163,16 +186,21 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
     CloseableIterable<Record> concat =
         CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
             table.schema(),
-            s.path().toString())).collect(Collectors.toList()));
+            s.path().toString(), expression)).collect(Collectors.toList()));
     Set<Record> result = new HashSet<>();
     Iterators.addAll(result, concat.iterator());
-    Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
+    if (readRecords == null) {
+      Assert.assertEquals(result, new HashSet<>(records));
+    } else {
+      Assert.assertEquals(result, new HashSet<>(readRecords));
+    }
   }
 
-  private CloseableIterable<Record> readParquet(Schema schema, String path){
+  private CloseableIterable<Record> readParquet(Schema schema, String path, Expression expression){
     AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
         Files.localInput(path))
         .project(schema)
+        .filter(expression == null ? Expressions.alwaysTrue() : expression)
         .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
         .caseSensitive(false);
 
