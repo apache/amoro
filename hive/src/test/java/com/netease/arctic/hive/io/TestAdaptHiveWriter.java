@@ -52,6 +52,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.hive.io.TestIOUtils.testWrite;
+
 public class TestAdaptHiveWriter extends HiveTableTestBase {
 
   @Test
@@ -151,60 +153,5 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
   @Test
   public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
     testWrite(testUnPartitionHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
-  }
-
-  @Test
-  public void testInt96WithoutTZPredicatePushDown() throws IOException {
-    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive",
-        Expressions.equal("op_time", "2022-01-04T12:00:00"),
-        ImmutableList.of(HiveTestRecords.baseRecords().get(1)));
-  }
-
-  @Test
-  public void testInt96WithTZPredicatePushDown() throws IOException {
-    testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive",
-        Expressions.equal("op_time_with_zone", "2022-01-04T13:00:00+01:00"),
-        ImmutableList.of(HiveTestRecords.baseRecords().get(1)));
-  }
-
-  public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
-    testWrite(table, locationKind, records, pathFeature, null, null);
-  }
-
-  public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature,
-      Expression expression, List<Record> readRecords) throws IOException {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
-        .builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? 1L : null);
-
-    TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
-    for (Record record: records) {
-      changeWrite.write(record);
-    }
-    WriteResult complete = changeWrite.complete();
-    Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
-    CloseableIterable<Record> concat =
-        CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
-            table.schema(),
-            s.path().toString(), expression)).collect(Collectors.toList()));
-    Set<Record> result = new HashSet<>();
-    Iterators.addAll(result, concat.iterator());
-    if (readRecords == null) {
-      Assert.assertEquals(result, new HashSet<>(records));
-    } else {
-      Assert.assertEquals(result, new HashSet<>(readRecords));
-    }
-  }
-
-  private CloseableIterable<Record> readParquet(Schema schema, String path, Expression expression){
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-        Files.localInput(path))
-        .project(schema)
-        .filter(expression == null ? Expressions.alwaysTrue() : expression)
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
-        .caseSensitive(false);
-
-    CloseableIterable<Record> iterable = builder.build();
-    return iterable;
   }
 }
