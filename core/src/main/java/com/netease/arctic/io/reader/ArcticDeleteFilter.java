@@ -295,7 +295,7 @@ public abstract class ArcticDeleteFilter<T> {
             .createReaderFunc(fileSchema ->
                 GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
 
-        return getArcticFileIo().doAs(builder::build);
+        return builder.build();
 
       case ORC:
       default:
