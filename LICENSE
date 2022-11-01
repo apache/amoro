@@ -223,6 +223,12 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.parquet.ParquetWriter copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetWriter
 * org.apache.iceberg.parquet.PrimitiveWriter copied and modified to org.apache.iceberg.parquet.AdaptHivePrimitiveWriter
 * org.apache.iceberg.parquet.TypeToMessageType copied and modified to org.apache.iceberg.parquet.AdaptHiveTypeToMessageType
+* org.apache.iceberg.parquet.ParquetConversions copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetConversions
+* org.apache.iceberg.parquet.ParquetDictionaryRowGroupFilter copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetDictionaryRowGroupFilter
+* org.apache.iceberg.parquet.ParquetMetricsRowGroupFilter copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetMetricsRowGroupFilter
+* org.apache.iceberg.parquet.ParquetReader copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetReader
+* org.apache.iceberg.parquet.ReadConf copied and modified to org.apache.iceberg.parquet.AdaptHiveReadConf
+
 
 Copyright: 2011-2019 The Apache Software Foundation
 Home page: http://iceberg.apache.org/

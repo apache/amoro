@@ -265,9 +265,11 @@ public class AdaptHiveParquet {
             .withDictionaryPageSize(dictionaryPageSize)
             .build();
 
+        //Change For Arctic
         return new org.apache.iceberg.parquet.AdaptHiveParquetWriter<>(
             conf, file, schema, rowGroupSize, metadata, createWriterFunc, codec,
             parquetProperties, metricsConfig, writeMode);
+        //Change For Arctic
       } else {
         return new ParquetWriteAdapter<>(new ParquetWriteBuilder<D>(ParquetIO.file(file))
             .withWriterVersion(writerVersion)
@@ -810,8 +812,10 @@ public class AdaptHiveParquet {
           return new VectorizedParquetReader<>(file, schema, options, batchedReaderFunc, nameMapping, filter,
               reuseContainers, caseSensitive, maxRecordsPerBatch);
         } else {
-          return new org.apache.iceberg.parquet.ParquetReader<>(
+          //Change For Arctic
+          return new AdaptHiveParquetReader<>(
               file, schema, options, readerFunc, nameMapping, filter, reuseContainers, caseSensitive);
+          //Change For Arctic
         }
       }
 
