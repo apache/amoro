@@ -41,6 +41,10 @@ public class CatalogMetaProperties {
 
     public static final String CATALOG_TYPE_HADOOP = "hadoop";
     public static final String CATALOG_TYPE_HIVE = "hive";
+    public static final String CATALOG_TYPE_AMS = "ams";
+    public static final String CATALOG_TYPE_CUSTOM = "custom";
+
+    public static final String TABLE_FORMATS = "table-formats";
 
     public static final String CLIENT_POOL_SIZE = "clients";
     public static final int CLIENT_POOL_SIZE_DEFAULT = 2;
