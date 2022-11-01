@@ -100,7 +100,9 @@ public class AdaptHiveParquetMetricsRowGroupFilter {
           Type icebergType = schema.findType(id);
           stats.put(id, col.getStatistics());
           valueCounts.put(id, col.getValueCount());
+          //Change For Arctic
           conversions.put(id, AdaptHiveParquetConversions.converterFromParquet(colType, icebergType));
+          //Change For Arctic
         }
       }
 

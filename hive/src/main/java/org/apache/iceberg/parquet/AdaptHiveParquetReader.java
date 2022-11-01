@@ -67,9 +67,11 @@ public class AdaptHiveParquetReader<T> extends CloseableGroup implements Closeab
 
   private AdaptHiveReadConf<T> init() {
     if (conf == null) {
+      //Change For Arctic
       AdaptHiveReadConf<T> adaptHiveReadConf = new AdaptHiveReadConf<>(
           input, options, expectedSchema, filter, readerFunc, null, nameMapping, reuseContainers,
           caseSensitive, null);
+      //Change For Arctic
       this.conf = adaptHiveReadConf.copy();
       return adaptHiveReadConf;
     }

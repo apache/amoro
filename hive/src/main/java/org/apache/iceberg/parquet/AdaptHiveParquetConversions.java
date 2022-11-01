@@ -82,7 +82,7 @@ class AdaptHiveParquetConversions {
   static Function<Object, Object> converterFromParquet(PrimitiveType parquetType, Type icebergType) {
     Function<Object, Object> fromParquet = converterFromParquet(parquetType);
 
-    //Adapt int 96
+    //Change For Arctic:Adapt int 96
     if (parquetType.getPrimitiveTypeName() == PrimitiveType.PrimitiveTypeName.INT96) {
       return binary -> {
         final ByteBuffer byteBuffer = ByteBuffer.wrap(((Binary) binary).getBytes()).order(ByteOrder.LITTLE_ENDIAN);
@@ -100,6 +100,7 @@ class AdaptHiveParquetConversions {
         return ChronoUnit.MICROS.between(EPOCH, instant);
       };
     }
+    //Change For Arctic
 
     if (icebergType != null) {
       if (icebergType.typeId() == Type.TypeID.LONG &&

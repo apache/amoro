@@ -105,7 +105,9 @@ public class AdaptHiveParquetDictionaryRowGroupFilter {
           int id = colType.getId().intValue();
           Type icebergType = schema.findType(id);
           cols.put(id, desc);
+          //Change For Arctic
           conversions.put(id, AdaptHiveParquetConversions.converterFromParquet(colType, icebergType));
+          //Change For Arctic:
         }
       }
 
