@@ -6,6 +6,8 @@ import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.model.CatalogRegisterInfo;
+import com.netease.arctic.ams.server.model.CatalogSettingInfo;
+import com.netease.arctic.ams.server.model.CatalogSettingInfo.ConfigFileItem;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
@@ -17,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,6 +42,9 @@ public class CatalogController extends RestBaseController {
   private static final String AUTH_CONFIG_HADOOP_USERNAME = "auth_config.hadoop_username";
   private static final String AUTH_CONFIG_KEY_KRB5 = "auth_config.krb5";
 
+  private static final String CONFIG_TYPE_STORAGE = "storage-config";
+  private static final String CONFIG_TYPE_AUTH = "auth-config";
+
   /**
    * get catalog Type list
    *
@@ -56,19 +62,23 @@ public class CatalogController extends RestBaseController {
    * @return
    */
   private static Map<String, String> authConvertFromServerToMeta(Map<String, String> serverAuthConfig) {
-    Map<String, String> metaAuthConfig = new HashMap<String, String>();
+    Map<String, String> metaAuthConfig = new HashMap();
     String authType = serverAuthConfig.get(AUTH_CONFIG_KEY_TYPE).toLowerCase();
     metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE, authType);
     if (authType.equals(AUTH_CONFIG_TYPE_VALUE_SIMPLE)) {
       metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
               serverAuthConfig.get(AUTH_CONFIG_HADOOP_USERNAME));
     } else if (authType.equals(AUTH_CONFIG_TYPE_VALUE_KERBEROS)) {
-      metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
-              serverAuthConfig.get(AUTH_CONFIG_KEY_KEYTAB));
+      String keytabFileId = serverAuthConfig.get(AUTH_CONFIG_KEY_KEYTAB);
+      String keytabB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(keytabFileId));
+      metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB, keytabB64);
+
+      String krbFileId = serverAuthConfig.get(AUTH_CONFIG_KEY_KEYTAB);
+      String krbB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(krbFileId));
+      metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5, krbB64);
+
       metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL,
               serverAuthConfig.get(AUTH_CONFIG_KEY_PRINCIPAL));
-      metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
-              serverAuthConfig.get(AUTH_CONFIG_KEY_KRB5));
     }
     return metaAuthConfig;
   }
@@ -79,20 +89,52 @@ public class CatalogController extends RestBaseController {
    * @param metaAuthConfig
    * @return
    */
-  private static Map<String, String> authConvertFromMetaToServer(Map<String, String> metaAuthConfig) {
-    Map<String, String> serverAuthConfig = new HashMap<String, String>();
+  private static Map<String, Object> authConvertFromMetaToServer(String catalogName,
+                                                                 Map<String, String> metaAuthConfig) {
+    Map<String, Object> serverAuthConfig = new HashMap<String, Object>();
     serverAuthConfig.put(AUTH_CONFIG_KEY_TYPE,
             metaAuthConfig.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE));
     serverAuthConfig.put(AUTH_CONFIG_HADOOP_USERNAME,
             metaAuthConfig.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME));
-    serverAuthConfig.put(AUTH_CONFIG_KEY_KEYTAB,
-            metaAuthConfig.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB));
+
     serverAuthConfig.put(AUTH_CONFIG_KEY_PRINCIPAL,
             metaAuthConfig.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL));
-    serverAuthConfig.put(AUTH_CONFIG_KEY_KRB5,
-            metaAuthConfig.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5));
 
+    serverAuthConfig.put(AUTH_CONFIG_KEY_KEYTAB, new ConfigFileItem("keytab",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
+                    CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB.replace("\\.", "-"))));
+
+    serverAuthConfig.put(AUTH_CONFIG_KEY_KRB5, new ConfigFileItem("krb5.conf",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_AUTH,
+                    CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5.replace("\\.", "-"))));
     return serverAuthConfig;
+  }
+
+  private static Map<String, Object> storageConvertFromMetaToServer(String catalogName, Map<String, String> config) {
+
+    String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
+    Map<String, Object> storageConfig = new HashMap<>();
+    // todo: need to consider some catalog in config.yaml without xxx-site.id configuration.
+    Map<String, String> coreSiteItem = new HashMap<>();
+    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_CORE_SITE, new ConfigFileItem(
+            ConfigFileProperties.CATALOG_CORE_SITE + ".xml",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
+                    CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE.replace("\\.", "-"))));
+
+    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_HDFS_SITE, new ConfigFileItem(
+            ConfigFileProperties.CATALOG_HDFS_SITE + ".xml",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
+                    CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE.replace("\\.", "-"))));
+
+    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_HIVE_SITE, new ConfigFileItem(
+            ConfigFileProperties.CATALOG_HIVE_SITE + ".xml",
+            constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
+                    CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
+
+    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_STORAGE_TYPE,
+            config.get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE));
+    return storageConfig;
+
   }
 
   /**
@@ -121,14 +163,14 @@ public class CatalogController extends RestBaseController {
     String hdfsSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(hdfsSiteFileId));
 
     metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, hdfsSite);
-    metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE_ID, hdfsSiteFileId);
+    //metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE_ID, hdfsSiteFileId);
 
     String coreSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(info.getAuthConfig()
             .get(catalogConfPrefix + ConfigFileProperties.CATALOG_CORE_SITE)));
     String coreSiteFileId = info.getAuthConfig()
             .get(catalogConfPrefix + ConfigFileProperties.CATALOG_CORE_SITE);
     metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, coreSite);
-    metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE_ID, coreSiteFileId);
+    //metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE_ID, coreSiteFileId);
 
 
     String hiveSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(info.getAuthConfig()
@@ -136,7 +178,7 @@ public class CatalogController extends RestBaseController {
     String hiveSiteFileId = info.getAuthConfig()
             .get(catalogConfPrefix + ConfigFileProperties.CATALOG_HIVE_SITE);
     metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, hiveSite);
-    metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE_ID, hiveSiteFileId);
+    // metaStorageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE_ID, hiveSiteFileId);
 
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
@@ -172,15 +214,14 @@ public class CatalogController extends RestBaseController {
   public static void getCatalogDetail(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
     CatalogMeta catalogMeta = catalogMetadataService.getCatalog(catalogName);
-    CatalogRegisterInfo info = new CatalogRegisterInfo();
+    CatalogSettingInfo info = new CatalogSettingInfo();
     String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
 
     if (catalogMetadataService.catalogExist(catalogName)) {
       info.setName(catalogMeta.getCatalogName());
       info.setType(catalogMeta.getCatalogType());
-      info.setAuthConfig(authConvertFromMetaToServer(catalogMeta.getAuthConfigs()));
-      Map<String, String> storageConfig = new HashMap<>();
-      // todo: need to consider some catalog in config.yaml without xxx-site.id configuration.
+      info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta.getAuthConfigs()));
+      Map<String, Object> storageConfig = new HashMap<>();
       storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_CORE_SITE,
               catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE_ID));
       storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_HDFS_SITE,
@@ -190,6 +231,7 @@ public class CatalogController extends RestBaseController {
       storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_STORAGE_TYPE,
               catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE));
       info.setStorageConfig(storageConfig);
+      info.setProperties(catalogMeta.getCatalogProperties());
       ctx.json(OkResponse.of(info));
       return;
     }
@@ -213,9 +255,9 @@ public class CatalogController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "catalog doesn't exist!", null));
       return;
     }
+    // check only some item can be modified!
     CatalogMeta catalogMeta = constructCatalogMeta(info);
-
-
+    catalogMetadataService.updateCatalog(catalogMeta);
     ctx.json(OkResponse.of(null));
   }
 
@@ -256,6 +298,50 @@ public class CatalogController extends RestBaseController {
 
     } else {
       ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Some tables in catalog!", null));
+    }
+  }
+
+  /**
+   * construct a url
+   *
+   * @return
+   */
+  public static String constructCatalogConfigFileUrl(String catalogName, String type, String key) {
+    return String.format("/ams/v1/catalogs/%s/config/%s/%s", catalogName,
+            type, key.replaceAll("\\.", "-"));
+  }
+
+  /**
+   * get file content of authconfig/storageconfig config file
+   * get("/catalogs/{catalogName}/config/{type}/{key}
+   *
+   * @param ctx
+   */
+  public static void getCatalogConfFileContent(Context ctx) {
+    String catalogName = ctx.pathParam("catalogName");
+    String confType = ctx.pathParam("type");
+    String configKey = ctx.pathParam("key");
+
+    if (StringUtils.isEmpty(catalogName) || StringUtils.isEmpty(confType) || StringUtils.isEmpty(configKey)) {
+      ctx.json(new ErrorResponse("catalogName or auth type or configkey is null!"));
+      return;
+    }
+
+    // get file content from catlaog.
+    CatalogMeta catalogMeta = catalogMetadataService.getCatalog(catalogName);
+    if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
+      Map<String, String> storageConfig = catalogMeta.getStorageConfigs();
+      String key = configKey.replaceAll("-", "\\.");
+      ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
+      return;
+    } else if (CONFIG_TYPE_AUTH.equalsIgnoreCase(confType)) {
+      Map<String, String> storageConfig = catalogMeta.getAuthConfigs();
+      String key = configKey.replaceAll("-", "\\.");
+      ctx.result(new String(Base64.getDecoder().decode(storageConfig.get(key))));
+      return;
+    } else {
+      ctx.json(new ErrorResponse("Invalid request for " + confType));
+      return;
     }
   }
 }

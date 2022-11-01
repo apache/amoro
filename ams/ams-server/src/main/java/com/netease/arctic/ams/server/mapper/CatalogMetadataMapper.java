@@ -26,6 +26,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -65,4 +66,14 @@ public interface CatalogMetadataMapper {
 
   @Delete("delete from " + TABLE_NAME + " where catalog_name=#{catalogName}")
   void deleteCatalog(@Param("catalogName") String catalogName);
+
+  @Update("update" + TABLE_NAME  + "set catalog_type=#{catalogMeta.catalogType},"  +
+          "storage_configs=#{catalogMeta.storageConfigs, typeHandler=" +
+       "com.netease.arctic.ams.server.mybatis.Map2StringConverter}," +
+       "auth_configs=#{catalogMeta.authConfigs, typeHandler=" +
+          "com.netease.arctic.ams.server.mybatis.Map2StringConverter}," +
+          "catalog_properties=#{catalogMeta.catalogProperties, typeHandler=" +
+          "com.netease.arctic.ams.server.mybatis.Map2StringConverter}" +
+          "  where catalogName=#{catalogMeta.catalogName}")
+  void updateCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 }

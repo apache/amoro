@@ -91,13 +91,12 @@ public class CatalogMetadataService extends IJDBCService {
   }
 
   /**
-   * 单独添加catalog
+   * add one catalog
    *
    * @param catalogMeta
    */
   public void addCatalog(CatalogMeta catalogMeta) {
     try (SqlSession sqlSession = getSqlSession(true)) {
-
       CatalogMetadataMapper catalogMetadataMapper =
               getMapper(sqlSession, CatalogMetadataMapper.class);
       catalogMetadataMapper.insertCatalog(catalogMeta);
@@ -184,6 +183,14 @@ public class CatalogMetadataService extends IJDBCService {
       if (StringUtils.isNotEmpty(catalogName)) {
         catalogMetadataMapper.deleteCatalog(catalogName);
       }
+    }
+  }
+
+  public void updateCatalog(CatalogMeta catalogMeta) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      CatalogMetadataMapper catalogMetadataMapper =
+              getMapper(sqlSession, CatalogMetadataMapper.class);
+      catalogMetadataMapper.updateCatalog(catalogMeta);
     }
   }
 }

@@ -28,6 +28,12 @@ public class ErrorResponse extends Response {
     this.requestId = requestId;
   }
 
+  public ErrorResponse(String message) {
+    super(HttpCode.BAD_REQUEST.getStatus(), message);
+    this.requestId = null;
+  }
+
+
   public String getRequestId() {
     return requestId;
   }

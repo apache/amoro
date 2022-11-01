@@ -255,7 +255,8 @@ public class ArcticMetaStore {
       Condition startCondition = metaStoreThreadsLock.newCondition();
       AtomicBoolean startedServing = new AtomicBoolean();
       ThreadPool.initialize(conf);
-      initCatalogConfig();
+      // move configuration initialize to page!
+      //      initCatalogConfig();
       initContainerConfig();
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);

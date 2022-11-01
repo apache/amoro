@@ -22,6 +22,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.server.controller.CatalogController;
 import com.netease.arctic.ams.server.controller.HealthCheckController;
 import com.netease.arctic.ams.server.controller.LoginController;
+import com.netease.arctic.ams.server.controller.OptimizeContainerController;
 import com.netease.arctic.ams.server.controller.OptimizerController;
 import com.netease.arctic.ams.server.controller.PlatformFileInfoController;
 import com.netease.arctic.ams.server.controller.SettingController;
@@ -147,12 +148,13 @@ public class AmsRestServer {
         get("/catalogs", TableController::getCatalogs);
         /** catalog controller **/
         post("/catalogs", CatalogController::createCatalog);
-        //todo make sure types is before 
+        // make sure types is before
         get("/catalogs/types", CatalogController::getCatalogTypeList);
         get("/catalogs/{catalogName}", CatalogController::getCatalogDetail);
         delete("/catalogs/{catalogName}", CatalogController::deleteCatalog);
         put("/catalogs/{catalogName}", CatalogController::updateCatalog);
         get("/catalogs/{catalogName}/delete/check", CatalogController::catalogDeleteCheck);
+        get("/catalogs/{catalogName}/config/{type}/{key}", CatalogController::catalogDeleteCheck);
         /** optimize controller **/
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", OptimizerController::getOptimizerTables);
         get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", OptimizerController::getOptimizers);
@@ -177,7 +179,7 @@ public class AmsRestServer {
         /** overview controller **/
 
         /** setting controller **/
-        get("/settings/containers", SettingController::getContainerSetting);
+        get("/settings/containers", OptimizeContainerController::getContainerSetting);
         get("/settings/system", SettingController::getSystemSetting);
 
         /** health check **/
