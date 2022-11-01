@@ -23,6 +23,11 @@ SELECT * FROM arctic_catalog.db.sample.change
 |  1|dddd|abcd|              3|           2|        DELETE|
 +---+----+----+---------------+------------+--------------+
 ```
+查出来结果会多三列数据分别是：
+
+- _transaction_id: 表是写入时的 _transaction_id, 表示写入的先后顺序。
+- _file_offset：大小可以表示同一批 _transaction_id 中数据写入的先后顺序。
+- _change_action：表示数据的类型有 INSERT，DELETE 两种
 
 ## Write
 
