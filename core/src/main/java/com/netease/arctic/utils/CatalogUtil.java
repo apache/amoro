@@ -88,7 +88,7 @@ public class CatalogUtil {
   }
 
   /**
-   * Build {@link TableMetaStore} form catalog meta.
+   * Build {@link TableMetaStore} from catalog meta.
    */
   public static TableMetaStore buildMetaStore(CatalogMeta catalogMeta) {
     // load storage configs

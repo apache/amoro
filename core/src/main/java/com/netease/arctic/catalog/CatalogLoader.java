@@ -109,7 +109,7 @@ public class CatalogLoader {
       switch (type) {
         case CATALOG_TYPE_HADOOP:
           Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
-              "Hadoop catalog support hive table only.");
+              "Hadoop catalog support iceberg table only.");
           if (catalogMeta.getCatalogProperties().containsKey(CatalogMetaProperties.TABLE_FORMATS)) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
           } else {

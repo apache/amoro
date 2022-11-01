@@ -20,6 +20,8 @@ package com.netease.arctic.ams.api.properties;
 
 /**
  * Table formats Arctic supported
+ *
+ * @since 0.4.0
  */
 public enum TableFormat {
   ICEBERG, HIVE;

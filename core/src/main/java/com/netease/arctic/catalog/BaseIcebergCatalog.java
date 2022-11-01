@@ -39,7 +39,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}
+ * A wrapper class around {@link Catalog} and implement {@link ArcticCatalog}.
  */
 public class BaseIcebergCatalog implements ArcticCatalog {
 
