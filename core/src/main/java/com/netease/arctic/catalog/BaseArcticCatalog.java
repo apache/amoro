@@ -42,9 +42,9 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.CreateTableTransaction;
+import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -56,13 +56,11 @@ import org.apache.iceberg.Tables;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.Transactions;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
-import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,8 +106,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       }
     }
 
-    TableMetaStore.Builder builder = getMetaStoreBuilder(mergeMetaProperties(meta, properties));
-    tableMetaStore = builder.build();
+    tableMetaStore = CatalogUtil.buildMetaStore(meta);
     tables = new HadoopTables(tableMetaStore.getConfiguration());
   }
 
@@ -189,12 +186,13 @@ public class BaseArcticCatalog implements ArcticCatalog {
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
-        useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-        useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+            tableMetaStore.getConfiguration()),
         fileIO, client);
     return new BaseKeyedTable(tableMeta, tableLocation,
         buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
@@ -217,7 +215,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
-    return new BaseUnkeyedTable(tableIdentifier, useArcticTableOperations(table, baseLocation,
+    return new BaseUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
   }
 
@@ -227,18 +225,6 @@ public class BaseArcticCatalog implements ArcticCatalog {
     return location;
   }
 
-  protected Table useArcticTableOperations(
-      Table table, String tableLocation,
-      ArcticFileIO arcticFileIO, Configuration configuration) {
-    if (table instanceof org.apache.iceberg.BaseTable) {
-      org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;
-      if (baseTable.operations() instanceof HadoopTableOperations) {
-        return new org.apache.iceberg.BaseTable(new ArcticHadoopTableOperations(new Path(tableLocation),
-            arcticFileIO, configuration), table.name());
-      }
-    }
-    return table;
-  }
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
@@ -581,7 +567,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
       });
 
       BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
-          useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+          CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
+              tableMetaStore.getConfiguration()),
           fileIO, client);
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
@@ -592,7 +579,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
         }
       });
       ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-          useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+          CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+              tableMetaStore.getConfiguration()),
           fileIO, client);
       return new BaseKeyedTable(meta, tableLocation,
           primaryKeySpec, client, baseTable, changeTable);
@@ -612,7 +600,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
         }
       });
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-      return new BaseUnkeyedTable(tableIdentifier, useArcticTableOperations(table, baseLocation, fileIO,
+      return new BaseUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, client);
     }
 
