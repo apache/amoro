@@ -172,6 +172,7 @@ public class TestKeyedTableDml extends SparkTestBase {
             " data string, primary key(id, name))\n" +
             " using arctic partitioned by (data) " , database, "testPks");
 
+    // insert into values
     Assert.assertThrows(UnsupportedOperationException.class,
             () -> sql("insert into " + database + "." + "testPks" +
                     " values (1, 1.1, 'abcd' ) , " +
@@ -183,8 +184,24 @@ public class TestKeyedTableDml extends SparkTestBase {
             " values (1, 'aaa', 'abcd' ) , " +
             "(2, 'bbb', 'bbcd'), " +
             "(3, 'ccc', 'cbcd') ");
+
+    // insert into select
     Assert.assertThrows(UnsupportedOperationException.class,
-            () -> sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ",
+            () -> sql("insert into " + database + "." + insertTable + " select * from {0}.{1}",
+                    database, notUpsertTable));
+
+    // insert into select + group by has no duplicated data
+    sql("insert into " + database + "." + insertTable + " select * from {0}.{1} group by id, name, data",
+            database, notUpsertTable);
+    rows = sql("select * from " + database + "." + insertTable);
+    Assert.assertEquals(3, rows.size());
+
+    // insert into select + group by has duplicated data
+    sql("insert into " + database + "." + notUpsertTable +
+            " values (1, 'aaaa', 'abcd' )");
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("insert into " + database + "." + insertTable +
+                            " select * from {0}.{1} group by id, name, data",
                     database, notUpsertTable));
 
     sql("drop table " + database + "." + "testPks");
