@@ -1,10 +1,5 @@
 package com.netease.arctic.ams.server.model;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/10/28 16:47
- * @Description:
- */
 public class PlatformFileInfo {
   Integer fileId;
   String fileName;

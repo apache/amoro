@@ -41,11 +41,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/10/25 14:58
- * @Description:
- */
 public class CatalogController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
   private static final IMetaService iMetaService = ServiceContainer.getMetaService();

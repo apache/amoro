@@ -27,16 +27,10 @@ import io.javalin.http.HttpCode;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 
-import javax.xml.ws.Service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/10/26 10:36
- * @Description:
- */
 public class PlatformFileInfoController extends RestBaseController {
 
   private static PlatformFileInfoService platformFileInfoService = ServiceContainer.getPlatformFileInfoService();

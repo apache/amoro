@@ -36,11 +36,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/10/30 20:30
- * @Description:
- */
 public class OptimizeContainerController extends RestBaseController {
   private static Logger LOG = LoggerFactory.getLogger(OptimizeContainerController.class);
   private static OptimizerService optimizeService = ServiceContainer.getOptimizerService();

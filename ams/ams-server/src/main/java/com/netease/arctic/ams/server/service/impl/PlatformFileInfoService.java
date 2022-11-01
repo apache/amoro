@@ -1,20 +1,12 @@
 package com.netease.arctic.ams.server.service.impl;
 
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.PlatformFileInfoMapper;
 import com.netease.arctic.ams.server.model.PlatformFileInfo;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import org.apache.ibatis.session.SqlSession;
 
 import java.util.Base64;
-import java.util.List;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/10/26 10:30
- * @Description:
- */
 public class PlatformFileInfoService extends IJDBCService {
   /**
    * add some file

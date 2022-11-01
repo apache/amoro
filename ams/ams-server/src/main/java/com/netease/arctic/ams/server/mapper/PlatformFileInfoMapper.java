@@ -1,17 +1,29 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.server.model.PlatformFileInfo;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/10/25 23:28
- * @Description:
- */
 public interface PlatformFileInfoMapper {
   String TABLE_NAME = "platform_file_info";
 
@@ -21,7 +33,7 @@ public interface PlatformFileInfoMapper {
   @Insert("insert into " + TABLE_NAME + " (id,file_name,file_content_b64) " +
           "values(#{fileInfo.fileId},#{fileInfo.fileName},#{fileInfo.fileContent})")
   @Options(useGeneratedKeys = true, keyProperty = "fileInfo.fileId", keyColumn = "id")
-  void addFile(@Param("fileInfo")PlatformFileInfo platformFileInfo);
+  void addFile(@Param("fileInfo") PlatformFileInfo platformFileInfo);
 
 
   // get file content encoded by base64 by fileId
