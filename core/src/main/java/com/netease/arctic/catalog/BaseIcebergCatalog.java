@@ -102,7 +102,7 @@ public class BaseIcebergCatalog implements ArcticCatalog {
 
   @Override
   public List<TableIdentifier> listTables(String database) {
-    return tableMetaStore.doAs(()-> icebergCatalog.listTables(Namespace.of(database)).stream()
+    return tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)).stream()
       .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1)
       .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
       .collect(Collectors.toList()));
@@ -110,7 +110,7 @@ public class BaseIcebergCatalog implements ArcticCatalog {
 
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
-    Table icebergTable = tableMetaStore.doAs(()-> icebergCatalog
+    Table icebergTable = tableMetaStore.doAs(() -> icebergCatalog
         .loadTable(toIcebergTableIdentifier(tableIdentifier)));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
     return new BaseIcebergTable(tableIdentifier, CatalogUtil.useArcticTableOperations(icebergTable,
