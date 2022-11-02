@@ -114,6 +114,7 @@ public class ArcticMetaStore {
         startMetaStore(conf);
       }
     } catch (Throwable t) {
+      failover();
       LOG.error("MetaStore Thrift Server threw an exception...", t);
     }
   }
