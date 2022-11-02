@@ -47,6 +47,7 @@ public abstract class AdaptHiveColumnWriter<T> implements TripleWriter<T> {
             writeLong(rl, value);
           }
         };
+      //Change For Arctic
       case INT96:
         return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Binary>(desc) {
           @Override
@@ -54,6 +55,7 @@ public abstract class AdaptHiveColumnWriter<T> implements TripleWriter<T> {
             writeBinary(rl, value);
           }
         };
+      //Change For Arctic
       case FLOAT:
         return (AdaptHiveColumnWriter<T>) new AdaptHiveColumnWriter<Float>(desc) {
           @Override

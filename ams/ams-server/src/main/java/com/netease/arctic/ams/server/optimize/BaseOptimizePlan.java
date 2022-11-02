@@ -34,6 +34,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -69,6 +70,8 @@ public abstract class BaseOptimizePlan {
   protected final String planGroup;
   // Whether to customize the directory
   protected boolean isCustomizeDir;
+  // table file format
+  protected String fileFormat;
 
   // partition -> fileTree
   protected final Map<String, FileTree> partitionFileTree = new LinkedHashMap<>();
@@ -105,6 +108,8 @@ public abstract class BaseOptimizePlan {
     this.partitionTaskRunning = partitionTaskRunning;
     this.planGroup = UUID.randomUUID().toString();
     this.isCustomizeDir = false;
+    this.fileFormat = arcticTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
   }
 
   /**

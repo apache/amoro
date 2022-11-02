@@ -30,6 +30,7 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -98,24 +99,26 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
     nodeTask.setPartition(FILE_A.partition());
 
+    String fileFormat = testKeyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     for (DataFileInfo fileInfo : baseDataFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.BASE_FILE);
     }
     for (DataFileInfo fileInfo : posDeleteFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.POS_DELETE_FILE);
     }
     for (DataFileInfo fileInfo : changeInsertFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.INSERT_FILE);
     }
     for (DataFileInfo fileInfo : changeDeleteFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.EQ_DELETE_FILE);
     }
 
