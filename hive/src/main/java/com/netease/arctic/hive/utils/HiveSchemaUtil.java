@@ -86,7 +86,7 @@ public class HiveSchemaUtil {
     List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
     hiveSchema.addAll(hiveTable.getPartitionKeys());
     Set<String> pkSet = new HashSet<>(primaryKeys);
-    Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
+    Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema, true);
     if (primaryKeys.isEmpty()) {
       return schema;
     }
