@@ -42,6 +42,7 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
+import com.netease.arctic.ams.server.service.TestOptimizerService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
@@ -49,6 +50,8 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
+import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
+import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
@@ -100,7 +103,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveMajorOptimizeCommit.class,
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class})
+    TestOrphanFileCleanSupportHive.class,
+    TestOptimizerService.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -169,6 +173,11 @@ public class AmsTestBase {
         new com.netease.arctic.ams.server.config.Configuration();
     configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
     ArcticMetaStore.conf = configuration;
+
+    OptimizeQueueService optimizeQueueService = new OptimizeQueueService();
+    when(ServiceContainer.getOptimizeQueueService()).thenReturn(optimizeQueueService);
+    OptimizerService optimizerService = new OptimizerService();
+    when(ServiceContainer.getOptimizerService()).thenReturn(optimizerService);
 
     //create
     createCatalog();

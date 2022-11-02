@@ -39,6 +39,13 @@ public class OptimizerConfig implements Serializable {
   @Option(name = "-hb", aliases = "--heart-beat", usage = "heart beat interval (ms)")
   private long heartBeat = 10000; // 10 s
 
+  // support register optimizer
+  @Option(name = "-qn", aliases = "--queue-name", usage = "queue name")
+  private String queueName;
+
+  @Option(name = "-m", aliases = "--memory-size", usage = "memory size")
+  private int executorMemory;
+
   public OptimizerConfig() {
   }
 
@@ -85,6 +92,22 @@ public class OptimizerConfig implements Serializable {
 
   public void setOptimizerId(String optimizerId) {
     this.optimizerId = optimizerId;
+  }
+
+  public String getQueueName() {
+    return queueName;
+  }
+
+  public void setQueueName(String queueName) {
+    this.queueName = queueName;
+  }
+
+  public int getExecutorMemory() {
+    return executorMemory;
+  }
+
+  public void setExecutorMemory(int executorMemory) {
+    this.executorMemory = executorMemory;
   }
 
   @Override
