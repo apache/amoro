@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
@@ -67,29 +68,21 @@ public class CatalogController extends RestBaseController {
   public static void getCatalogTypeList(Context ctx) {
 
     List<Map<String, String>> catalogTypeList = new ArrayList<>();
-
-    catalogTypeList.add(new HashMap<String, String>() {{
-        put("name", CatalogMetaProperties.CATALOG_TYPE_HIVE);
-        put("display", "Hive Metastore");
+    String valueKey = "value";
+    String displayKey = "display";
+    List<List<String>> valuePair = new ArrayList<List<String>>() {{
+        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HIVE, "Hive Metastore"));
+        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_AMS, "Arctic Metastore"));
+        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HADOOP, "Hadoop"));
+        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_CUSTOM, "Custom"));
       }
-    });
-
-    catalogTypeList.add(new HashMap<String, String>() {{
-        put("name", CatalogMetaProperties.CATALOG_TYPE_HADOOP);
-        put("display", "hadoop");
-      }
-    });
-
-    catalogTypeList.add(new HashMap<String, String>() {{
-        put("name", "custom");
-        put("display", "custom");
-      }
-    });
-
-    catalogTypeList.add(new HashMap<String, String>() {{
-        put("name", "custom");
-        put("display", "custom");
-      }
+    };
+    valuePair.stream().forEach(item -> {
+      catalogTypeList.add(new HashMap<String, String>() {{
+          put(valueKey, item.get(0));
+          put(displayKey,  item.get(1));
+        }
+      });
     });
     ctx.json(OkResponse.of(catalogTypeList));
   }
@@ -188,7 +181,7 @@ public class CatalogController extends RestBaseController {
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(info.getProperties());
-    catalogMeta.getCatalogProperties().put("table-formats", info.getTableFormat());
+    catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, info.getTableFormat());
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig()));
 
     // change fileId to base64Code
@@ -273,7 +266,7 @@ public class CatalogController extends RestBaseController {
       info.setStorageConfig(storageConfig);
       info.setProperties(catalogMeta.getCatalogProperties());
       // we put the tableformat single
-      info.setTableFormat(catalogMeta.getCatalogProperties().get("table-formats"));
+      info.setTableFormat(catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS));
       ctx.json(OkResponse.of(info));
       return;
     }
