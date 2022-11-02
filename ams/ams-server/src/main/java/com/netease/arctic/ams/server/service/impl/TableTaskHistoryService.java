@@ -34,12 +34,12 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
   }
 
   @Override
-  public List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String historyId) {
+  public List<TableTaskHistory> selectTaskHistory(TableIdentifier identifier, String taskPlanGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TaskHistoryMapper taskHistoryMapper =
           getMapper(sqlSession, TaskHistoryMapper.class);
 
-      return taskHistoryMapper.selectTaskHistory(identifier, historyId);
+      return taskHistoryMapper.selectTaskHistory(identifier, taskPlanGroup);
     }
   }
 
@@ -53,35 +53,6 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
       if (!(e.getMessage() != null && e.getMessage().toLowerCase().contains("duplicate"))) {
         throw e;
       }
-    }
-  }
-
-  @Override
-  public void updateTaskHistory(TableTaskHistory taskHistory) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-      taskHistoryMapper.updateTaskHistory(taskHistory);
-    }
-  }
-
-  @Override
-  public List<TableTaskHistory> selectTaskHistoryByQueueIdAndTime(int queueId, long startTime, long endTime) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      return taskHistoryMapper.selectTaskHistoryByQueueIdAndTime(queueId, startTime, endTime);
-    }
-  }
-
-  @Override
-  public List<TableTaskHistory> selectTaskHistoryByTime(long startTime, long endTime) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      return taskHistoryMapper.selectTaskHistoryByTime(startTime, endTime);
     }
   }
 
@@ -108,12 +79,22 @@ public class TableTaskHistoryService extends IJDBCService implements ITableTaskH
   }
 
   @Override
-  public void deleteTaskHistoryWithHistoryId(TableIdentifier identifier, String taskHistoryId) {
+  public void deleteTaskHistoryWithPlanGroup(TableIdentifier identifier, String taskPlanGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TaskHistoryMapper taskHistoryMapper =
           getMapper(sqlSession, TaskHistoryMapper.class);
 
-      taskHistoryMapper.deleteTaskHistoryWithHistoryId(identifier, taskHistoryId);
+      taskHistoryMapper.deleteTaskHistoryWithPlanGroup(identifier, taskPlanGroup);
+    }
+  }
+
+  @Override
+  public void expireTaskHistory(TableIdentifier identifier, String latestTaskHistoryId, long expireTime) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TaskHistoryMapper taskHistoryMapper =
+          getMapper(sqlSession, TaskHistoryMapper.class);
+
+      taskHistoryMapper.expireTaskHistory(identifier, latestTaskHistoryId, expireTime);
     }
   }
 }

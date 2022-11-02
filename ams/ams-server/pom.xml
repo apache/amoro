@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.netease.arctic</groupId>
         <artifactId>arctic-ams</artifactId>
-        <version>0.3.1</version>
+        <version>0.3.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>arctic-ams-server</artifactId>
@@ -292,6 +292,10 @@
             <artifactId>flink-yarn_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -560,8 +564,6 @@
                             <outputDirectory>
                                 ${project.build.directory}/arctic-ams-server-dependency/lib
                             </outputDirectory>
-                            <includeScope>compile</includeScope>
-                            <includeScope>runtime</includeScope>
                         </configuration>
                     </execution>
                 </executions>

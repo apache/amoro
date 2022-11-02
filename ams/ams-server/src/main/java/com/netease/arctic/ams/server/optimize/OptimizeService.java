@@ -75,7 +75,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private ScheduledTasks<TableIdentifier, OptimizeCheckTask> checkTasks;
 
-  private final BlockingQueue<TableIdentifier> toCommitTables = new ArrayBlockingQueue<>(1000);
+  private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private static final long DEFAULT_CACHE_REFRESH_TIME = 60_000; // 1min
   private final Map<TableIdentifier, TableOptimizeItem> cachedTables = new HashMap<>();
@@ -381,9 +381,6 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Map<TableIdentifier, TableOptimizeRuntime> collector = new HashMap<>();
     List<TableOptimizeRuntime> tableOptimizeRuntimes = selectTableOptimizeRuntimes();
     for (TableOptimizeRuntime runtime : tableOptimizeRuntimes) {
-      // TODO TEMP: force plan when arctic server restart
-      runtime.setCurrentSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
-      runtime.setCurrentChangeSnapshotId(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
       collector.put(runtime.getTableIdentifier(), runtime);
     }
     return collector;
@@ -422,13 +419,22 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   }
 
   @Override
-  public boolean triggerOptimizeCommit(TableIdentifier tableIdentifier) {
-    return toCommitTables.offer(tableIdentifier);
+  public boolean triggerOptimizeCommit(TableOptimizeItem tableOptimizeItem) {
+    return toCommitTables.offer(tableOptimizeItem);
   }
 
   @Override
-  public TableIdentifier takeTableToCommit() throws InterruptedException {
+  public TableOptimizeItem takeTableToCommit() throws InterruptedException {
     return toCommitTables.take();
+  }
+
+  @Override
+  public void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizeHistoryMapper optimizeHistoryMapper =
+          getMapper(sqlSession, OptimizeHistoryMapper.class);
+      optimizeHistoryMapper.expireOptimizeHistory(tableIdentifier, expireTime);
+    }
   }
 
   private List<BaseOptimizeTaskRuntime> selectAllOptimizeTaskRuntimes() {

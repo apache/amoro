@@ -28,8 +28,6 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -38,11 +36,11 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
@@ -152,47 +150,111 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private void addChangeFilesIntoFileTree() {
     LOG.debug("{} start {} plan change files", tableId(), getOptimizeType());
-    KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
 
-    AtomicInteger addCnt = new AtomicInteger();
-    List<DataFile> changeOptimizeFiles = changeTableFileList.stream().map(dataFileInfo -> {
-      PartitionSpec partitionSpec = keyedArcticTable.changeTable()
-          .specs().get((int) dataFileInfo.getSpecId());
+    List<ChangeFileInfo> unOptimizedChangeFiles = changeTableFileList.stream().map(dataFileInfo -> {
+      ChangeFileInfo changeFileInfo = buildChangeFileInfo(dataFileInfo);
+      if (changeFileInfo == null) {
+        return null;
+      }
       String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
-
-      if (partitionSpec == null) {
-        LOG.error("{} {} can not find partitionSpec id: {}", dataFileInfo.getPath(), getOptimizeType(),
-            dataFileInfo.specId);
-        return null;
-      }
-
-      ContentFile<?> dataFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
-      if (isOptimized(dataFile)) {
+      if (isOptimized(changeFileInfo)) {
         return null;
-      } else {
-        if (!anyTaskRunning(partition)) {
-          FileTree treeRoot =
-              partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
-          treeRoot.putNodeIfAbsent(DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
-              .addFile(dataFile, DataFileType.valueOf(dataFileInfo.getType()));
-
-          // fill eq delete file map
-          if (Objects.equals(dataFileInfo.getType(), DataFileType.EQ_DELETE_FILE.name())) {
-            List<DataFile> files = partitionDeleteFiles.computeIfAbsent(partition, e -> new ArrayList<>());
-            files.add((DataFile) dataFile);
-            partitionDeleteFiles.put(partition, files);
-          }
-
-          addCnt.getAndIncrement();
-        }
-        return (DataFile) dataFile;
       }
+      return changeFileInfo;
     }).filter(Objects::nonNull).collect(Collectors.toList());
 
+    final int maxChangeFiles =
+        PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.OPTIMIZE_MAX_FILE_COUNT,
+            TableProperties.OPTIMIZE_MAX_FILE_COUNT_DEFAULT);
+    long maxTransactionIdLimit;
+    if (unOptimizedChangeFiles.size() <= maxChangeFiles) {
+      maxTransactionIdLimit = Long.MAX_VALUE;
+      // For normal cases, files count is less than optimize.max-file-count(default=100000), return all files
+      LOG.debug("{} start plan change files with all files, max-cnt limit {}, current file cnt {}", tableId(),
+          maxChangeFiles, unOptimizedChangeFiles.size());
+    } else {
+      List<Long> sortedTransactionIds = unOptimizedChangeFiles.stream().map(ChangeFileInfo::getTransactionId)
+          .sorted(Long::compareTo)
+          .collect(Collectors.toList());
+      maxTransactionIdLimit = sortedTransactionIds.get(maxChangeFiles - 1);
+      // If files count is more than optimize.max-file-count, only keep files with small file transaction id
+      LOG.debug("{} start plan change files with max-cnt limit {}, current file cnt {}, less than transaction id {}",
+          tableId(), maxChangeFiles, unOptimizedChangeFiles.size(), maxTransactionIdLimit);
+    }
+
+    AtomicInteger addCnt = new AtomicInteger();
+    unOptimizedChangeFiles.forEach(f -> {
+      DataFileInfo dataFileInfo = f.getDataFileInfo();
+      DataFile dataFile = f.getDataFile();
+      long transactionId = f.getTransactionId();
+
+      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      if (transactionId >= maxTransactionIdLimit) {
+        return;
+      }
+      if (!anyTaskRunning(partition)) {
+        FileTree treeRoot =
+            partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
+        treeRoot.putNodeIfAbsent(DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
+            .addFile(dataFile, DataFileType.valueOf(dataFileInfo.getType()));
+        markMaxTransactionId(dataFile);
+
+        // fill eq delete file map
+        if (Objects.equals(dataFileInfo.getType(), DataFileType.EQ_DELETE_FILE.name())) {
+          List<DataFile> files = partitionDeleteFiles.computeIfAbsent(partition, e -> new ArrayList<>());
+          files.add(dataFile);
+          partitionDeleteFiles.put(partition, files);
+        }
+
+        addCnt.getAndIncrement();
+      }
+    });
+
     LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
-        tableId(), getOptimizeType(), addCnt, changeOptimizeFiles.size(), partitionFileTree.size());
+        tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
+  }
+  
+  private static class ChangeFileInfo {
+    private final DataFileInfo dataFileInfo;
+    private final DataFile dataFile;
+    private final long transactionId;
+
+    public ChangeFileInfo(DataFileInfo dataFileInfo, DataFile dataFile) {
+      this.dataFileInfo = dataFileInfo;
+      this.dataFile = dataFile;
+      this.transactionId = FileUtil.parseFileTidFromFileName(dataFileInfo.getPath());
+    }
+
+    public DataFileInfo getDataFileInfo() {
+      return dataFileInfo;
+    }
+
+    public DataFile getDataFile() {
+      return dataFile;
+    }
+
+    public long getTransactionId() {
+      return transactionId;
+    }
+  }
+  
+  private ChangeFileInfo buildChangeFileInfo(DataFileInfo dataFileInfo) {
+    KeyedTable keyedArcticTable = arcticTable.asKeyedTable();
+    PartitionSpec partitionSpec = keyedArcticTable.changeTable()
+        .specs().get((int) dataFileInfo.getSpecId());
+
+    if (partitionSpec == null) {
+      LOG.error("{} {} can not find partitionSpec id: {}", dataFileInfo.getPath(), getOptimizeType(),
+          dataFileInfo.specId);
+      return null;
+    }
+
+    Preconditions.checkArgument(DataFileType.POS_DELETE_FILE != DataFileType.valueOf(dataFileInfo.getType()), 
+        "not support pos-delete files in change table " + dataFileInfo.getPath());
+
+    DataFile dataFile = (DataFile) ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
+    return new ChangeFileInfo(dataFileInfo, dataFile);
   }
 
   private void addBaseFileIntoFileTree() {
@@ -213,9 +275,8 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
@@ -241,11 +302,11 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
-        group, historyId, OptimizeType.Minor, createTime, "");
+        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks
@@ -280,16 +341,15 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     return collector;
   }
 
-  private boolean isOptimized(ContentFile<?> dataFile) {
-    // if Pos-Delete files, ignore
-    if (dataFile.content() == FileContent.POSITION_DELETES) {
-      return false;
-    }
+  private boolean isOptimized(ChangeFileInfo changeFileInfo) {
+    return changeFileInfo.getTransactionId() <= getBaseMaxTransactionId(changeFileInfo.getDataFile().partition());
+  }
 
+  private void markMaxTransactionId(ContentFile<?> dataFile) {
+    long transactionId = FileUtil.parseFileTidFromFileName(dataFile.path().toString());
     StructLike partition = dataFile.partition();
     String partitionToPath = arcticTable.spec().partitionToPath(partition);
     Long currentValue = changeTableMaxTransactionId.get(partitionToPath);
-    long transactionId = FileUtil.parseFileTidFromFileName(dataFile.path().toString());
     if (currentValue == null) {
       changeTableMaxTransactionId.put(partitionToPath, transactionId);
     } else {
@@ -297,7 +357,6 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         changeTableMaxTransactionId.put(partitionToPath, transactionId);
       }
     }
-    return transactionId <= getBaseMaxTransactionId(partition);
   }
 
   private long getBaseMaxTransactionId(StructLike partition) {

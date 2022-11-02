@@ -19,12 +19,13 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.HiveOperationTransaction;
 import com.netease.arctic.hive.op.HiveSchemaUpdate;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.hive.op.ReplaceHivePartitions;
+import com.netease.arctic.hive.op.RewriteHiveFiles;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
@@ -45,7 +46,7 @@ import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROO
  */
 public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, SupportHive {
 
-  private final HMSClient hiveClient;
+  private final HMSClientPool hiveClient;
   private final String tableLocation;
 
   private boolean syncHiveChange = true;
@@ -56,7 +57,7 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
       ArcticFileIO arcticFileIO,
       String tableLocation,
       AmsClient client,
-      HMSClient hiveClient) {
+      HMSClientPool hiveClient) {
     this(tableIdentifier, icebergTable, arcticFileIO, tableLocation, client, hiveClient, true);
   }
 
@@ -66,7 +67,7 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
       ArcticFileIO arcticFileIO,
       String tableLocation,
       AmsClient client,
-      HMSClient hiveClient,
+      HMSClientPool hiveClient,
       boolean syncHiveChange) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
     this.hiveClient = hiveClient;
@@ -107,13 +108,18 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   }
 
   @Override
-  public HMSClient getHMSClient() {
+  public HMSClientPool getHMSClient() {
     return hiveClient;
   }
 
   @Override
   public OverwriteHiveFiles newOverwrite() {
     return new OverwriteHiveFiles(super.newTransaction(), false, this, hiveClient, hiveClient);
+  }
+
+  @Override
+  public RewriteHiveFiles newRewrite() {
+    return new RewriteHiveFiles(super.newTransaction(), false, this, hiveClient, hiveClient);
   }
 
   @Override

@@ -63,10 +63,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] {
   }
 
 }
-case class LogicWriteInfoImpl(
-                               queryId: String,
-                               schema: StructType,
-                               options: CaseInsensitiveStringMap) extends LogicalWriteInfo
+
 
 
 

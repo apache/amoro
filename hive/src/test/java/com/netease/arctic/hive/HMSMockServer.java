@@ -18,6 +18,15 @@
 
 package com.netease.arctic.hive;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.LineNumberReader;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -51,9 +60,7 @@ public class HMSMockServer {
   public static final Logger LOG = LoggerFactory.getLogger(HMSMockServer.class);
 
   private static final String DEFAULT_DATABASE_NAME = "default";
-  private static final int DEFAULT_POOL_SIZE = 5;
-
-
+  private static final int DEFAULT_POOL_SIZE = 20;
 
   // create the metastore handlers based on whether we're working with Hive2 or Hive3 dependencies
   // we need to do this because there is a breaking API change between Hive2 and Hive3
@@ -84,14 +91,14 @@ public class HMSMockServer {
   private TServer server;
   private HiveMetaStore.HMSHandler baseHandler;
   private HiveClientPool clientPool;
-  private int port ;
-  private HiveMetaStoreClient client ;
+  private int port;
+  private HiveMetaStoreClient client;
 
-  public HMSMockServer(){
+  public HMSMockServer() {
     this(new File("hive_warehouse"));
   }
 
-  public HMSMockServer(File file){
+  public HMSMockServer(File file) {
     this.hiveLocalDir = file;
     // if (file.exists()){
     //
@@ -100,7 +107,6 @@ public class HMSMockServer {
     this.port = port + 24000;
     this.hiveConf = newHiveConf(this.port);
   }
-
 
   /**
    * Starts a TestHiveMetastore with the default connection pool size (5).
@@ -115,6 +121,7 @@ public class HMSMockServer {
 
   /**
    * Starts a TestHiveMetastore with a provided connection pool size.
+   *
    * @param poolSize The number of threads in the executor pool
    */
   public void start(int poolSize) {
@@ -124,7 +131,6 @@ public class HMSMockServer {
 
       File derbyLogFile = new File(hiveLocalDir, "derby.log");
       System.setProperty("derby.stream.error.file", derbyLogFile.getAbsolutePath());
-
 
       TServerSocket socket = new TServerSocket(port);
       this.server = newThriftServer(socket, poolSize, hiveConf);
@@ -140,7 +146,7 @@ public class HMSMockServer {
     }
   }
 
-  public int getMetastorePort(){
+  public int getMetastorePort() {
     return this.port;
   }
 
@@ -166,7 +172,7 @@ public class HMSMockServer {
     }
     METASTORE_THREADS_SHUTDOWN.invoke();
 
-    if (client != null){
+    if (client != null) {
       client.close();
     }
 
@@ -184,11 +190,11 @@ public class HMSMockServer {
   }
 
   public String getDatabasePath(String dbName) {
-    File dbDir = new File(hiveLocalDir, dbName );
+    File dbDir = new File(hiveLocalDir, dbName);
     return dbDir.getAbsolutePath().replace("\\", "/");
   }
 
-  public String getTablePath(String db, String table){
+  public String getTablePath(String db, String table) {
     File dbDir = new File(hiveLocalDir, db);
     File tableDir = new File(dbDir, table);
     return tableDir.getAbsolutePath().replace("\\", "/");
@@ -222,11 +228,11 @@ public class HMSMockServer {
     }
   }
 
-  public HiveMetaStoreClient getClient(){
-    if (client == null){
+  public HiveMetaStoreClient getClient() {
+    if (client == null) {
       try {
         this.client = new HiveMetaStoreClient(hiveConf);
-      }catch (Exception e){
+      } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }
@@ -237,7 +243,13 @@ public class HMSMockServer {
     HiveConf serverConf = new HiveConf(conf);
     String derbyPath = getDerbyPath();
     LOG.info("DerbyPath: " + derbyPath);
-    serverConf.set(HiveConf.ConfVars.METASTORECONNECTURLKEY.varname, "jdbc:derby:" + derbyPath + ";create=true");
+    String derbyUrl = "jdbc:derby:;databaseName=" + derbyPath + ";create=true";
+    // when test iceberg with hive catalog, Exception `java.sql.SQLSyntaxErrorException: Table/View 'HIVE_LOCKS' does
+    // not exist.` will throw, this is a bug of hive scheamtools, see https://issues.apache.org/jira/browse/HIVE-21302.
+    // so we set up metastore first to avoid this bug.
+    setupMetastoreDB(derbyUrl);
+
+    serverConf.set(HiveConf.ConfVars.METASTORECONNECTURLKEY.varname, derbyUrl);
     baseHandler = HMS_HANDLER_CTOR.newInstance("new db based metaserver", serverConf);
     IHMSHandler handler = GET_BASE_HMS_HANDLER.invoke(serverConf, baseHandler, false);
 
@@ -255,12 +267,12 @@ public class HMSMockServer {
     Configuration conf = new Configuration(false);
     HiveConf newHiveConf = new HiveConf(conf, HMSMockServer.class);
     newHiveConf.set(HiveConf.ConfVars.METASTOREURIS.varname, "thrift://localhost:" + port);
-    newHiveConf.set(HiveConf.ConfVars.METASTOREWAREHOUSE.varname,
+    newHiveConf.set(
+        HiveConf.ConfVars.METASTOREWAREHOUSE.varname,
         "file:///" + hiveLocalDir.getAbsolutePath().replace("\\", "/"));
     newHiveConf.set(HiveConf.ConfVars.METASTORE_TRY_DIRECT_SQL.varname, "false");
     newHiveConf.set(HiveConf.ConfVars.METASTORE_DISALLOW_INCOMPATIBLE_COL_TYPE_CHANGES.varname, "false");
     newHiveConf.set(HiveConf.ConfVars.METASTORE_SCHEMA_VERIFICATION.varname, "false");
-    newHiveConf.setBoolVar(HiveConf.ConfVars.HIVE_IN_TEST, true);
     newHiveConf.set("datanucleus.schema.autoCreateTables", "true");
     newHiveConf.set("hive.metastore.client.capability.check", "false");
     newHiveConf.set("iceberg.hive.client-pool-size", "2");
@@ -269,7 +281,44 @@ public class HMSMockServer {
 
   private String getDerbyPath() {
     File metastoreDB = new File(hiveLocalDir, "metastore_db");
-    return  metastoreDB.getAbsolutePath().replace("\\", "/");
+    return metastoreDB.getAbsolutePath().replace("\\", "/");
   }
 
+  private void setupMetastoreDB(String jdbcUrl) throws SQLException, IOException {
+    Connection connection = DriverManager.getConnection(jdbcUrl);
+    ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+    InputStream inputStream = classLoader.getResourceAsStream("hive-schema-3.1.0.derby.sql");
+    connection.setAutoCommit(true);
+    try (Reader reader = new InputStreamReader(inputStream)) {
+      runScript(connection, reader);
+    }
+  }
+
+  private void runScript(Connection connection, Reader reader) throws SQLException, IOException {
+    StringBuilder command = null;
+    String line = null;
+    LineNumberReader lineReader = new LineNumberReader(reader);
+    while ((line = lineReader.readLine()) != null) {
+      if (command == null) {
+        command = new StringBuilder();
+      }
+      String trimmedLine = line.trim();
+      if (trimmedLine.length() < 1
+          || trimmedLine.startsWith("--")) {
+        // Do nothing, ignore blank lines and comments
+      } else if (trimmedLine.endsWith(";")) {
+        command.append(line.substring(0, line.lastIndexOf(";")));
+        command.append(" ");
+        Statement statement = connection.createStatement();
+        LOG.debug("Running: " + command);
+        statement.execute(command.toString());
+        statement.close();
+        connection.commit();
+        command = null;
+      } else {
+        command.append(line);
+        command.append(" ");
+      }
+    }
+  }
 }

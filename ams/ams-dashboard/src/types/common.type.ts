@@ -175,7 +175,8 @@ export interface IGroupItem {
 
 export interface IGroupItemInfo {
   occupationCore: number
-  occupationMemory: number
+  occupationMemory: number | string
+  unit: string
 }
 
 export interface ITableIdentifier {

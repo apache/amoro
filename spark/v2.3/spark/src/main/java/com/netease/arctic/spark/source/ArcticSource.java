@@ -21,33 +21,51 @@ package com.netease.arctic.spark.source;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import com.netease.arctic.spark.reader.ArcticKeyedTableScan;
+import com.netease.arctic.spark.reader.ArcticUnkeyedTableScan;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
+import com.netease.arctic.spark.writer.ArcticKeyedSparkOverwriteWriter;
+import com.netease.arctic.spark.writer.ArcticUnkeyedSparkOverwriteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.RuntimeConfig;
+import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.catalyst.TableIdentifier;
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException;
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException;
 import org.apache.spark.sql.catalyst.catalog.CatalogTable;
+import org.apache.spark.sql.catalyst.catalog.SessionCatalog;
 import org.apache.spark.sql.internal.StaticSQLConf$;
 import org.apache.spark.sql.sources.DataSourceRegister;
+import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.DataSourceV2;
+import org.apache.spark.sql.sources.v2.ReadSupport;
+import org.apache.spark.sql.sources.v2.WriteSupport;
+import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
+import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
+import scala.Option;
+
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupport {
+public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupport,
+    WriteSupport, ReadSupport {
   @Override
   public String shortName() {
     return "arctic";
   }
 
-
   @Override
-  public DataSourceTable createTable(
+  public ArcticSparkTable createTable(
       TableIdentifier identifier, StructType schema, List<String> partitions, Map<String, String> properties) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
@@ -69,7 +87,7 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
           .withProperties(properties)
           .create();
     }
-    return ArcticSparkTable.ofArcticTable(arcticTable);
+    return ArcticSparkTable.ofArcticTable(identifier, arcticTable);
   }
 
   private static PartitionSpec toPartitionSpec(List<String> partitionKeys, Schema icebergSchema) {
@@ -79,13 +97,13 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
   }
 
   @Override
-  public DataSourceTable loadTable(TableIdentifier identifier) {
+  public ArcticSparkTable loadTable(TableIdentifier identifier) {
     SparkSession spark = SparkSession.getActiveSession().get();
     ArcticCatalog catalog = catalog(spark.conf());
     com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
         catalog.name(), identifier.database().get(), identifier.table());
     ArcticTable arcticTable = catalog.loadTable(tableId);
-    return ArcticSparkTable.ofArcticTable(arcticTable);
+    return ArcticSparkTable.ofArcticTable(identifier, arcticTable);
   }
 
   @Override
@@ -138,8 +156,78 @@ public class ArcticSource implements DataSourceRegister, DataSourceV2, TableSupp
     return catalog.tableExists(tableId);
   }
 
+  public boolean isDelegateDropTable(TableIdentifier identifier, boolean isView) {
+    if (isView) {
+      return false;
+    }
+    SparkSession spark = SparkSession.getActiveSession().get();
+    SessionCatalog catalog = spark.sessionState().catalog();
+    if (catalog.isTemporaryTable(identifier) ||
+        identifier.database().isEmpty() ||
+        !catalog.tableExists(identifier)) {
+      return false;
+    }
+    try {
+      CatalogTable tableDesc = catalog.getTableMetadata(identifier);
+      return isDelegateTable(tableDesc);
+    } catch (NoSuchTableException | NoSuchDatabaseException e) {
+      return false;
+    }
+  }
+
   private ArcticCatalog catalog(RuntimeConfig conf) {
     String url = ArcticSparkUtil.catalogUrl(conf);
     return CatalogLoader.load(url);
+  }
+
+  @Override
+  public DataSourceReader createReader(DataSourceOptions options) {
+    ArcticTable arcticTable = getTableWithPath(options);
+    SparkSession spark = SparkSession.getActiveSession().get();
+    return ArcticSparkTable.createReaderWithTable(arcticTable, options, spark);
+  }
+
+  @Override
+  public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
+                                                 SaveMode mode, DataSourceOptions options) {
+    ArcticTable arcticTable = getOrCreateTableWithPath(options, schema);
+    return ArcticSparkTable.createWriterWithTable(arcticTable, jobId, schema, mode, options);
+  }
+
+  public ArcticTable getOrCreateTableWithPath(DataSourceOptions options, StructType schema) {
+    Preconditions.checkArgument(
+        options.asMap().containsKey("path"),
+        "Cannot open table: path is not set");
+    String path = options.get("path").get();
+    Preconditions.checkArgument(!path.contains("/"),
+        "invalid table identifier %s, contain '/'", path);
+    List<String> nameParts = Lists.newArrayList(path.split("\\."));
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), nameParts.get(0), nameParts.get(1));
+    if (!catalog.tableExists(tableId)) {
+      return createTable(new TableIdentifier(tableId.getTableName(), Option.apply(tableId.getDatabase())),
+          schema,
+          Lists.newArrayList(options.get("partition.keys").get()),
+          options.asMap()).table();
+    } else {
+      return catalog.loadTable(tableId);
+    }
+  }
+
+  public ArcticTable getTableWithPath(DataSourceOptions options) {
+    Preconditions.checkArgument(
+        options.asMap().containsKey("path"),
+        "Cannot open table: path is not set");
+    String path = options.get("path").get();
+    Preconditions.checkArgument(!path.contains("/"),
+        "invalid table identifier %s, contain '/'", path);
+    List<String> nameParts = Lists.newArrayList(path.split("\\."));
+    SparkSession spark = SparkSession.getActiveSession().get();
+    ArcticCatalog catalog = catalog(spark.conf());
+    com.netease.arctic.table.TableIdentifier tableId = com.netease.arctic.table.TableIdentifier.of(
+        catalog.name(), nameParts.get(0), nameParts.get(1));
+    return catalog.loadTable(tableId);
   }
 }

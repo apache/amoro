@@ -204,7 +204,9 @@ public class TestDDLTracerService {
     TableMetadata tableMetadata = new TableMetadata();
     Map<String, String> properties = new HashMap<>();
     properties.put("key1", "val1");
+    properties.put("meta_store_site", "val3");
     testSyncTable.asKeyedTable().updateProperties().set("key1", "val1").commit();
+    testSyncTable.asKeyedTable().updateProperties().set("meta_store_site", "val3").commit();
     service.dropTableData(testSyncIdentifier);
     properties.putAll(testSyncTable.properties());
     tableMetadata.setProperties(properties);

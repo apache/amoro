@@ -19,8 +19,12 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OptimizerDescriptor;
+import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
 import com.netease.arctic.ams.server.model.Container;
@@ -37,6 +41,8 @@ import org.apache.ibatis.session.SqlSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -48,35 +54,46 @@ public class OptimizerService extends IJDBCService {
   public List<Optimizer> getOptimizers(String optimizerGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectOptimizersByGroupName(optimizerGroup);
+      List<Optimizer> optimizers = optimizerMapper.selectOptimizersByGroupName(optimizerGroup);
+      optimizers.forEach(this::fillContainerType);
+      return optimizers;
     }
   }
 
   public List<Optimizer> getOptimizers() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectOptimizers();
+      List<Optimizer> optimizers = optimizerMapper.selectOptimizers();
+      optimizers.forEach(this::fillContainerType);
+      return optimizers;
     }
   }
 
-  public Optimizer getOptimizer(Long jobId) {
+  public Optimizer getOptimizer(Long optimizerId) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectOptimizer(jobId);
+      return optimizerMapper.selectOptimizer(optimizerId);
     }
   }
 
-  public void deleteOptimizer(Long jobId) {
+  public Optimizer getOptimizer(String jobName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      optimizerMapper.deleteOptimizer(jobId);
+      return optimizerMapper.selectOptimizerByName(jobName);
     }
   }
 
-  public void addOptimizerInstance(Long jobId, byte[] instance) {
+  public void deleteOptimizer(Long optimizerId) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      optimizerMapper.addOptimizerInstance(jobId, instance);
+      optimizerMapper.deleteOptimizer(optimizerId);
+    }
+  }
+
+  public void addOptimizerInstance(Long optimizerId, byte[] instance) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
+      optimizerMapper.addOptimizerInstance(optimizerId, instance);
     }
   }
 
@@ -89,6 +106,10 @@ public class OptimizerService extends IJDBCService {
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
+      if (container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
+        updateOptimizerStatus(reportData.getOptimizerId(), TableTaskStatus.RUNNING);
+        return;
+      }
       OptimizerFactory factory =
           ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
       com.netease.arctic.optimizer.Optimizer instance = factory.deserialize(optimizer.getInstance());
@@ -153,19 +174,19 @@ public class OptimizerService extends IJDBCService {
   }
 
   public void insertOptimizer(
-      String jobName, int queueId, String queueName, TableTaskStatus status, String startTime,
+      String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
       int coreNumber, long memory, int parallelism, String container) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      optimizerMapper.insertOptimizer(jobName, queueId, queueName, status, startTime, coreNumber, memory,
+      optimizerMapper.insertOptimizer(optimizerName, queueId, queueName, status, startTime, coreNumber, memory,
           parallelism, container);
     }
   }
 
-  public String selectJobIdByOptimizerName(String optimizerName) {
+  public String selectOptimizerIdByOptimizerName(String optimizerName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
-      return optimizerMapper.selectJobIdByOptimizerName(optimizerName);
+      return optimizerMapper.selectOptimizerIdByOptimizerName(optimizerName);
     }
   }
 
@@ -174,6 +195,29 @@ public class OptimizerService extends IJDBCService {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
       optimizerMapper.deleteOptimizerByName(optimizerName);
     }
+  }
+
+  public OptimizerDescriptor registerOptimizer(OptimizerRegisterInfo registerInfo) throws InvalidObjectException {
+    OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(registerInfo.getOptimizerGroupName());
+    if (optimizerGroupInfo == null) {
+      throw new InvalidObjectException("optimizer group not found");
+    }
+    String currentTime = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date());
+    String optimizerName = "arctic_optimizer_" + currentTime;
+    insertOptimizer(optimizerName, optimizerGroupInfo.getId(), optimizerGroupInfo.getName(),
+        TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
+        registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
+    return getOptimizer(optimizerName).convertToDescriptor();
+  }
+
+  private Optimizer fillContainerType(Optimizer optimizer) {
+    if (optimizer == null) {
+      return null;
+    }
+    OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
+    Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
+    optimizer.setContainerType(container.getType());
+    return optimizer;
   }
 }
 

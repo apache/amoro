@@ -42,6 +42,12 @@ public class TestKeyedTableDml extends SparkTestBase {
       " data string, primary key(id)) \n" +
       " using arctic ";
 
+  protected String createUppercaseTableTemplate = "create table {0}.{1}( \n" +
+      " ID int, \n" +
+      " NAME string, \n" +
+      " DATA string, primary key(ID))\n" +
+      " using arctic partitioned by (DATA) " ;
+
   @Before
   public void prepare() {
     sql("use " + catalogNameHive);
@@ -182,7 +188,47 @@ public class TestKeyedTableDml extends SparkTestBase {
   }
 
   @Test
+  public void testUpdateUnUpsertTable() {
+    sql("insert into " + database + "." + notUpsertTable +
+            " values (1, 'aaa', 'abcd' ) , " +
+            "(2, 'bbb', 'bbcd'), " +
+            "(3, 'ccc', 'cbcd') ");
+    rows = sql("select * from {0}.{1} ", database, notUpsertTable);
+    Assert.assertEquals(6, rows.size());
+    sql("update {0}.{1} as t set name = ''dddd'' where id = 1", database, notUpsertTable);
+
+    rows = sql("select * from {0}.{1} where id = 1", database, notUpsertTable);
+    Assert.assertEquals("dddd", rows.get(0)[1]);
+
+    rows = sql("select * from {0}.{1}.{2}.change where id = 1 and name = ''dddd''", catalogNameHive, database, notUpsertTable);
+    Assert.assertEquals(2, rows.size());
+  }
+
+  @Test
   public void testDelete() {
+    sql("delete from {0}.{1} where id = 3", database, notUpsertTable);
+    rows = sql("select id, name from {0}.{1} order by id", database, notUpsertTable);
+
+    Assert.assertEquals(2, rows.size());
+    Assert.assertEquals(1, rows.get(0)[0]);
+    Assert.assertEquals(2, rows.get(1)[0]);
+  }
+
+  @Test
+  public void testCreateTableUppercase() {
+    sql(createUppercaseTableTemplate, database, "uppercase_table");
+    sql("insert into " + database + "." + "uppercase_table" +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
+    rows = sql("select id, name, data from {0}.{1} ", database, "uppercase_table");
+    Assert.assertEquals(3, rows.size());
+    sql("drop table if exists " + database + "." + "uppercase_table");
+  }
+
+  @Test
+  public void testDeleteAfterAlter() {
+    sql("alter table {0}.{1} add column point bigint ", database, notUpsertTable);
     sql("delete from {0}.{1} where id = 3", database, notUpsertTable);
     rows = sql("select id, name from {0}.{1} order by id", database, notUpsertTable);
 

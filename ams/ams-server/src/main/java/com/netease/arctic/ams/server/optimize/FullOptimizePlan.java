@@ -163,10 +163,10 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
-      String group = UUID.randomUUID().toString();
+      String commitGroup = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
-          null, group, historyId, partitionOptimizeType.get(partition), createTime,
+          null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
           constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
               getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
@@ -190,14 +190,14 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
     treeRoot.completeTree(false);
     List<DataFile> allBaseFiles = new ArrayList<>();
     treeRoot.collectBaseFiles(allBaseFiles);
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime,
+        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
         constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
             getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
     List<FileTree> subTrees = new ArrayList<>();
@@ -250,9 +250,8 @@ public class FullOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());

@@ -4,8 +4,7 @@ import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.ams.server.utils.HiveLocationUtils;
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -48,7 +47,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
   public boolean commit(long baseSnapshotId) throws Exception {
     LOG.info("{} get tasks to support hive commit for partitions {}", arcticTable.id(),
         optimizeTasksToCommit.keySet());
-    HMSClient hiveClient = ((SupportHive) arcticTable).getHMSClient();
+    HMSClientPool hiveClient = ((SupportHive) arcticTable).getHMSClient();
     Map<String, String> partitionPathMap = new HashMap<>();
     Types.StructType partitionSchema = arcticTable.isUnkeyedTable() ?
         arcticTable.asUnkeyedTable().spec().partitionType() :

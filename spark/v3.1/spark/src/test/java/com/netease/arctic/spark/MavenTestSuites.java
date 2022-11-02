@@ -19,6 +19,7 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.spark.delegate.TestArcticSessionCatalog;
+import com.netease.arctic.spark.delegate.TestMultiDelegateSessionCatalog;
 import java.util.Map;
 
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -36,6 +37,7 @@ import java.io.IOException;
 @Suite.SuiteClasses({
     ArcticSparkCatalogTestGroup.class,
     TestArcticSessionCatalog.class,
+    TestMultiDelegateSessionCatalog.class,
 })
 public class MavenTestSuites {
 

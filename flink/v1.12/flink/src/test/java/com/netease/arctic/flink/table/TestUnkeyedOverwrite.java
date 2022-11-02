@@ -24,10 +24,13 @@ import com.netease.arctic.hive.HiveTableTestBase;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
+import org.apache.flink.test.util.MiniClusterWithClientResource;
+import org.apache.iceberg.flink.MiniClusterResource;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -51,6 +54,10 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
+
+  @ClassRule
+  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
+      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   private static final String TABLE = "test_unkeyed";
   private static final String DB = TABLE_ID.getDatabase();
@@ -99,7 +106,7 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     }
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testInsertOverwrite() throws IOException {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{1000004, "a"});
@@ -126,7 +133,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
     sql("insert overwrite arcticCatalog." + db + "." + TABLE + " select * from input");
 
     Assert.assertEquals(
-        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE));
+        DataUtil.toRowSet(data), sqlSet("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */"));
   }
 
   @Test
@@ -167,7 +176,9 @@ public class TestUnkeyedOverwrite extends FlinkTestBase {
         " PARTITION (dt='2022-05-18') select id, name from input where dt = '2022-05-19'");
 
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE +
+        sqlSet("select id, name, '2022-05-19' from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */" +
             " where dt='2022-05-18'"));
   }
 

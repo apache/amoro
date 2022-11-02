@@ -7,7 +7,7 @@ AMS 依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经
 ```shell
 java -version
 ```
-可以通过这个[链接](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-0.3.1-bin.zip)下载到最新版的AMS压缩包。
+可以通过这个[链接](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-0.3.2-bin.zip)下载到最新版的AMS压缩包。
 
 ## 参数配置
 AMS所有配置项都在 `conf/config.yaml` 文件中:

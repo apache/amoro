@@ -18,7 +18,6 @@
 
 package org.apache.iceberg.flink.source;
 
-import com.netease.arctic.flink.read.source.ScanContext;
 import org.apache.iceberg.CombinedScanTask;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableProperties;

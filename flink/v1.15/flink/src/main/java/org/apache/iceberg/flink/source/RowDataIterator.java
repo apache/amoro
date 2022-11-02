@@ -19,6 +19,7 @@
 package org.apache.iceberg.flink.source;
 
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
+import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.CombinedScanTask;
@@ -48,22 +49,27 @@ import org.apache.iceberg.util.PartitionUtil;
 import java.util.Map;
 
 /**
- * Copied from iceberg 0.12.x to support flink 1.15
+ * Copy from iceberg.
+ * Adopt AdaptHiveFlinkParquetReaders to adapt hive flink parquet readers.
+ * Remove additional column.
  */
-class RowDataIterator extends DataIterator<RowData> {
+public class RowDataIterator extends DataIterator<RowData> {
 
   private final Schema tableSchema;
   private final Schema projectedSchema;
   private final String nameMapping;
   private final boolean caseSensitive;
+  private final int columnSize;
 
-  RowDataIterator(CombinedScanTask task, FileIO io, EncryptionManager encryption, Schema tableSchema,
-                  Schema projectedSchema, String nameMapping, boolean caseSensitive) {
+  public RowDataIterator(CombinedScanTask task, FileIO io, EncryptionManager encryption, Schema tableSchema,
+                         Schema projectedSchema, String nameMapping, boolean caseSensitive) {
     super(task, io, encryption);
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
+    // Add file offset column after readSchema. Refer to this#wrapArcticFileOffsetColumnMeta
+    this.columnSize = projectedSchema.columns().size();
   }
 
   @Override
@@ -77,6 +83,11 @@ class RowDataIterator extends DataIterator<RowData> {
     CloseableIterable<RowData> iterable = deletes.filter(newIterable(task, deletes.requiredSchema(), idToConstant));
 
     return iterable.iterator();
+  }
+
+  @Override
+  public RowData next() {
+    return ArcticUtils.removeArcticMetaColumn(super.next(), columnSize);
   }
 
   private CloseableIterable<RowData> newIterable(FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {

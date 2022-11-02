@@ -33,7 +33,6 @@ import com.netease.arctic.ams.server.mapper.OptimizeHistoryMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
-import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
@@ -42,7 +41,6 @@ import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -184,7 +182,7 @@ public class TableOptimizeItem extends IJDBCService {
       if (!allTasksPrepared()) {
         return;
       }
-      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(tableIdentifier);
+      boolean success = ServiceContainer.getOptimizeService().triggerOptimizeCommit(this);
       if (success) {
         waitCommit.set(true);
       }
@@ -289,9 +287,9 @@ public class TableOptimizeItem extends IJDBCService {
 
     OptimizeTaskItem optimizeTaskItem = optimizeTasks.get(optimizeTaskStat.getTaskId());
     Preconditions.checkNotNull(optimizeTaskItem, "can't find optimize task " + optimizeTaskStat.getTaskId());
-    LOG.info("{} task {} ==== updateMajorOptimizeTaskStat, group = {}, status = {}, attemptId={}",
+    LOG.info("{} task {} ==== updateMajorOptimizeTaskStat, commitGroup = {}, status = {}, attemptId={}",
         optimizeTaskItem.getTableIdentifier(), optimizeTaskItem.getOptimizeTask().getTaskId(),
-        optimizeTaskItem.getOptimizeTask().getTaskGroup(), optimizeTaskStat.getStatus(),
+        optimizeTaskItem.getOptimizeTask().getTaskCommitGroup(), optimizeTaskStat.getStatus(),
         optimizeTaskStat.getAttemptId());
     Preconditions.checkArgument(
         Objects.equals(optimizeTaskStat.getAttemptId(), optimizeTaskItem.getOptimizeRuntime().getAttemptId()),
@@ -505,7 +503,6 @@ public class TableOptimizeItem extends IJDBCService {
   private void optimizeTasksClear(BaseOptimizeCommit optimizeCommit) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
-      Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
 
       OptimizeTasksMapper optimizeTasksMapper =
           getMapper(sqlSession, OptimizeTasksMapper.class);
@@ -513,16 +510,6 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, InternalTableFilesMapper.class);
       TableOptimizeRuntimeMapper tableOptimizeRuntimeMapper =
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
-
-      try {
-        commitTableTaskHistory.forEach((key, value) ->
-            taskHistoryMapper.deleteTaskHistoryWithHistoryId(value.getTableIdentifier(), value.getTaskHistoryId()));
-      } catch (Exception e) {
-        LOG.warn("failed to delete task history after commit failed, ignore. " + getTableIdentifier(), e);
-        sqlSession.rollback(true);
-      }
 
       try {
         // persist partition optimize time
@@ -568,7 +555,6 @@ public class TableOptimizeItem extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(false)) {
       Map<String, List<OptimizeTaskItem>> tasks = optimizeCommit.getCommittedTasks();
       Map<String, OptimizeType> optimizeTypMap = optimizeCommit.getPartitionOptimizeType();
-      Map<String, TableTaskHistory> commitTableTaskHistory = optimizeCommit.getCommitTableTaskHistory();
 
       // commit
       OptimizeTasksMapper optimizeTasksMapper =
@@ -581,8 +567,6 @@ public class TableOptimizeItem extends IJDBCService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       OptimizeHistoryMapper optimizeHistoryMapper =
           getMapper(sqlSession, OptimizeHistoryMapper.class);
-      TaskHistoryMapper taskHistoryMapper =
-          getMapper(sqlSession, TaskHistoryMapper.class);
 
       try {
         tasks.values().stream().flatMap(Collection::stream)
@@ -621,13 +605,6 @@ public class TableOptimizeItem extends IJDBCService {
         optimizeHistoryMapper.insertOptimizeHistory(record);
       } catch (Throwable t) {
         LOG.warn("failed to persist optimize history after commit, ignore. " + getTableIdentifier(), t);
-        sqlSession.rollback(true);
-      }
-
-      try {
-        commitTableTaskHistory.forEach((key, value) -> taskHistoryMapper.updateTaskHistory(value));
-      } catch (Exception e) {
-        LOG.warn("failed to persist task history after commit, ignore. " + getTableIdentifier(), e);
         sqlSession.rollback(true);
       }
 
@@ -739,10 +716,10 @@ public class TableOptimizeItem extends IJDBCService {
       Set<String> removedTaskHistory = new HashSet<>();
       for (OptimizeTaskItem task : toRemoved) {
         task.clearOptimizeTask();
-        removedTaskHistory.add(task.getOptimizeTask().getTaskHistoryId());
+        removedTaskHistory.add(task.getOptimizeTask().getTaskPlanGroup());
       }
-      for (String taskHistoryId : removedTaskHistory) {
-        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithHistoryId(tableIdentifier, taskHistoryId);
+      for (String taskPlanGroup : removedTaskHistory) {
+        ServiceContainer.getTableTaskHistoryService().deleteTaskHistoryWithPlanGroup(tableIdentifier, taskPlanGroup);
       }
       LOG.info("{} clear all optimize tasks", getTableIdentifier());
       updateTableOptimizeStatus();
@@ -791,7 +768,6 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public Map<String, List<OptimizeTaskItem>> getOptimizeTasksToCommit() {
     tasksLock.lock();
-    waitCommit.set(false);
     try {
       Map<String, List<OptimizeTaskItem>> collector = new HashMap<>();
       for (OptimizeTaskItem optimizeTaskItem : optimizeTasks.values()) {
@@ -807,6 +783,10 @@ public class TableOptimizeItem extends IJDBCService {
     } finally {
       tasksLock.unlock();
     }
+  }
+  
+  public void setTableCanCommit() {
+    waitCommit.set(false);
   }
 
   /**

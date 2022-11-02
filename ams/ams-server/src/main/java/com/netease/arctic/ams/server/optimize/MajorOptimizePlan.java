@@ -28,18 +28,13 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -191,9 +186,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
@@ -224,10 +218,10 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectUnKeyedTableTasks(String partition, List<DataFile> fileList) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
+        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
@@ -251,10 +245,10 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
+        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks

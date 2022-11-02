@@ -91,6 +91,7 @@ INSERT INTO arctic_catalog.db.keyedTable VALUES (1, 'a'), (2, 'b')
 
 INSERT INTO prod.db.keyedTable SELECT ...
 ```
+???+note "目前写入时如果数据没有去重，会导致 primary key 唯一性被破坏"
 
 
 

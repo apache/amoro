@@ -20,6 +20,7 @@ package com.netease.arctic.spark.sql.optimize
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
+import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
@@ -28,7 +29,6 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.utils.ArcticRewriteHelper
 
 case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
 

@@ -74,16 +74,22 @@ public interface IOptimizeService {
 
   /**
    * Trigger table to commit, async.
-   * @param tableIdentifier -
+   * @param tableOptimizeItem -
    * @return return true if trigger success
    */
-  boolean triggerOptimizeCommit(TableIdentifier tableIdentifier);
+  boolean triggerOptimizeCommit(TableOptimizeItem tableOptimizeItem);
 
 
   /**
    * Take Table to commit, wait if no table is ready.
-   * @return tableIdentifier -
+   * @return TableOptimizeItem -
    */
-  TableIdentifier takeTableToCommit() throws InterruptedException;
+  TableOptimizeItem takeTableToCommit() throws InterruptedException;
 
+  /**
+   * expire and clean optimize history record
+   * @param tableIdentifier -
+   * @param expireTime min timestamp which record need to retain
+   */
+  void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
 }
