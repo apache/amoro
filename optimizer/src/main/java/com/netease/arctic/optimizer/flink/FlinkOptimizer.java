@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.properties.OptimizerProperties;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.StatefulOptimizer;
 import com.netease.arctic.optimizer.operator.BaseToucher;
+import com.netease.arctic.optimizer.util.OptimizerUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.configuration.Configuration;
@@ -224,6 +225,11 @@ public class FlinkOptimizer implements StatefulOptimizer {
   public static void main(String[] args) throws CmdLineException {
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment(new Configuration());
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
+
+    if (optimizerConfig.getOptimizerId() == null || optimizerConfig.getOptimizerId().isEmpty() ||
+        "unknown".equals(optimizerConfig.getOptimizerId())) {
+      OptimizerUtil.register(optimizerConfig);
+    }
 
     env.addSource(new FlinkConsumer(optimizerConfig))
         .setParallelism(optimizerConfig.getExecutorParallel())
