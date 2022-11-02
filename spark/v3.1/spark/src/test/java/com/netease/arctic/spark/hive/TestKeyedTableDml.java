@@ -210,45 +210,6 @@ public class TestKeyedTableDml extends SparkTestBase {
   }
 
   @Test
-  public void testInsertOverwriteDuplicateData() {
-    sql("create table {0}.{1}( \n" +
-            " id int, \n" +
-            " name string, \n" +
-            " data string, primary key(id, name))\n" +
-            " using arctic partitioned by (data) " , database, "testPks");
-
-    // insert overwrite values
-    Assert.assertThrows(UnsupportedOperationException.class,
-            () -> sql("insert overwrite " + database + "." + "testPks" +
-                    " values (1, 1.1, 'abcd' ) , " +
-                    "(1, 1.1, 'bbcd'), " +
-                    "(3, 1.3, 'cbcd') "));
-
-    sql(createTableInsert, database, insertTable);
-    sql("insert into " + database + "." + notUpsertTable +
-            " values (1, 'aaa', 'abcd' ) , " +
-            "(2, 'bbb', 'bbcd'), " +
-            "(3, 'ccc', 'cbcd') ");
-
-    // insert overwrite select + group by has no duplicated data
-    sql("insert overwrite " + database + "." + insertTable + " select * from {0}.{1} group by id, name, data",
-            database, notUpsertTable);
-    rows = sql("select * from " + database + "." + insertTable);
-    Assert.assertEquals(3, rows.size());
-
-    // insert overwrite select + group by has duplicated data
-    sql("insert into " + database + "." + notUpsertTable +
-            " values (1, 'aaaa', 'abcd' )");
-
-    Assert.assertThrows(UnsupportedOperationException.class,
-            () -> sql("insert overwrite " + database + "." + insertTable +
-                            " select * from {0}.{1} group by id, name, data",
-                    database, notUpsertTable));
-
-    sql("drop table " + database + "." + "testPks");
-  }
-
-  @Test
   public void testUpdateUnPartitions() {
     sql( "create table {0}.{1}( \n" +
         " id int, \n" +

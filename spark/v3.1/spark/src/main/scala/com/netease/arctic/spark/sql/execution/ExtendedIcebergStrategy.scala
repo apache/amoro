@@ -25,6 +25,7 @@ import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.{And, Expression, NamedExpression}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
+import org.apache.spark.sql.catalyst.plans.CreateArcticTableAsSelect
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.connector.catalog.{CatalogV2Util, Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
@@ -79,6 +80,11 @@ case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy {
           OverwriteArcticDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
             planLater(validateQuery), refreshCache(table)) :: Nil
       }
+
+    case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists) =>
+      val writeOptions = new CaseInsensitiveStringMap(options.asJava)
+      CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
+        props, writeOptions, ifNotExists) :: Nil
 
     case MergeInto(mergeIntoParams, output, child) =>
       MergeIntoExec(mergeIntoParams, output, planLater(child)) :: Nil

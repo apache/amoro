@@ -26,7 +26,7 @@ import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, Cast, EqualTo, Expression, GreaterThan, Literal}
-import org.apache.spark.sql.catalyst.plans.RightOuter
+import org.apache.spark.sql.catalyst.plans.{CreateArcticTableAsSelect, RightOuter}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
@@ -86,6 +86,26 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           } else {
             a
           }
+        case _ =>
+          a
+      }
+
+    case c@CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
+      catalog match {
+        case t: ArcticSparkCatalog =>
+          if (props.contains("primary.keys")) {
+            val primaries = props("primary.keys").split(",")
+            val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+            val alias = Alias(than, "count")()
+            val attributes = query.output.filter(p => primaries.contains(p.name))
+            val validateQuery = Aggregate(attributes, Seq(alias), query)
+            CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery,
+              props, options, ifNotExists)
+          } else {
+            c
+          }
+        case _ =>
+          c
       }
   }
 

@@ -6,11 +6,15 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, PhysicalWriteInfoImpl, WriterCommitMessage}
+import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.IdentifierHelper
+import org.apache.spark.sql.connector.catalog.{Identifier, StagedTable, SupportsWrite, Table, TableCatalog}
+import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, LogicalWriteInfoImpl, PhysicalWriteInfoImpl, V1WriteBuilder, WriterCommitMessage}
 import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.util.{LongAccumulator, Utils}
 import org.apache.spark.{SparkEnv, SparkException, TaskContext}
 
+import java.util.UUID
 import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.util.control.NonFatal
 
@@ -38,7 +42,6 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode{
       }
     }
     count = rdd.count()
-
     Nil
   }
 
@@ -60,7 +63,8 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode{
     val totalNumRowsAccumulator = new LongAccumulator()
 
     if (rdd.count() != count) {
-      throw new UnsupportedOperationException(s"primary key can not be duplicate")
+      throw new UnsupportedOperationException(s"${table.table().asKeyedTable().primaryKeySpec().toString} " +
+        s"can not be duplicate")
     }
 
     logInfo(s"Start processing data source write support: $batchWrite. " +
@@ -107,37 +111,48 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode{
     Nil
   }
 
-}
+  protected def writeToTable(
+                              catalog: TableCatalog,
+                              table: Table,
+                              writeOptions: CaseInsensitiveStringMap,
+                              ident: Identifier): Seq[InternalRow] = {
+    Utils.tryWithSafeFinallyAndFailureCallbacks({
+      table match {
+        case table: SupportsWrite =>
+          val info = LogicalWriteInfoImpl(
+            queryId = UUID.randomUUID().toString,
+            queryInsert.schema,
+            writeOptions)
+          val writeBuilder = table.newWriteBuilder(info)
 
+          val writtenRows = writeBuilder match {
+            case v2 => writeInsert(v2.buildForBatch())
+          }
 
-object DataWritingArcticSparkTask extends Logging {
-  def run(
-           context: TaskContext,
-           iter: Iterator[InternalRow],
-         ): ArcticDataWritingSparkTaskResult = {
-    var count = 0L
-    var insertRows: List[InternalRow] = List.empty
-    var row: InternalRow = null
+          table match {
+            case st: StagedTable => st.commitStagedChanges()
+            case _ =>
+          }
+          writtenRows
 
-    // write the data and commit this writer.
-    Utils.tryWithSafeFinallyAndFailureCallbacks(block = {
-
-      while (iter.hasNext) {
-        // Count is here.
-        count += 1
-        row = iter.next().copy()
-        insertRows = insertRows :+ row
+        case _ =>
+          // Table does not support writes - staged changes are also rolled back below if table
+          // is staging.
+          throw new SparkException(
+            s"Table implementation does not support writes: ${ident.quoted}")
       }
-      ArcticDataWritingSparkTaskResult(count, insertRows)
-
     })(catchBlock = {
-      // If there is an error, abort this writer
-      logError(s"validate data error")
-    }, finallyBlock = {
+      table match {
+        // Failure rolls back the staged writes and metadata changes.
+        case st: StagedTable => st.abortStagedChanges()
+        case _ => catalog.dropTable(ident)
+      }
     })
-
   }
+
 }
+
+
 
 private[v2] case class ArcticDataWritingSparkTaskResult(
                                                    numRows: Long,
