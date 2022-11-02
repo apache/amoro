@@ -18,7 +18,8 @@
 
 package com.netease.arctic.spark.sql.optimize
 
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, ReplaceArcticData}
+import com.netease.arctic.spark.ArcticSparkCatalog
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticData, ReplaceArcticData}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
@@ -30,7 +31,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
+import org.apache.spark.sql.execution.datasources.v2.{CreateTableAsSelectExec, DataSourceV2Relation, OverwritePartitionsDynamicExec}
 import org.apache.spark.sql.types.LongType
 
 import java.util
@@ -69,11 +70,21 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       arcticRelation.table match {
         case a: ArcticSparkTable =>
           if (a.table().isKeyedTable) {
-            val insertQuery = distributionQuery(newQuery, a)
             val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            AppendArcticData(arcticRelation, insertQuery, validateQuery, options)
+            AppendArcticData(arcticRelation, newQuery, validateQuery, options)
           } else {
             ReplaceArcticData(arcticRelation, query, writeOptions)
+          }
+      }
+    case a@OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _) =>
+      val arcticRelation = asTableRelation(r)
+      arcticRelation.table match {
+        case table: ArcticSparkTable =>
+          if (table.table().isKeyedTable) {
+            val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
+            OverwriteArcticData(arcticRelation, query, validateQuery, writeOptions)
+          } else {
+            a
           }
       }
   }

@@ -1,8 +1,10 @@
 package org.apache.spark.sql.execution.datasources.v2
 
 import com.netease.arctic.spark.table.ArcticSparkTable
+import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.catalog.SupportsWrite
+import org.apache.spark.sql.connector.write.SupportsDynamicOverwrite
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
@@ -13,9 +15,9 @@ case class AppendInsertDataExec(table: ArcticSparkTable,
                                 refreshCache: () => Unit) extends ArcticTableWriteExec with BatchWriteHelper {
   override protected def run(): Seq[InternalRow] = {
     validateData()
-    val writtenRowsA = writeInsert(newWriteBuilder().buildForBatch())
+    val writtenRows = writeInsert(newWriteBuilder().buildForBatch())
     refreshCache()
-    writtenRowsA
+    writtenRows
   }
 
 
