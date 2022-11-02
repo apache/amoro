@@ -29,6 +29,7 @@ import com.netease.arctic.optimizer.operator.BaseTaskConsumer;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
 import com.netease.arctic.optimizer.operator.BaseTaskReporter;
 import com.netease.arctic.optimizer.operator.BaseToucher;
+import com.netease.arctic.optimizer.util.OptimizerUtil;
 import org.kohsuke.args4j.CmdLineException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,6 +151,10 @@ public class LocalOptimizer implements StatefulOptimizer {
 
   public static void main(String[] args) throws CmdLineException {
     OptimizerConfig optimizerConfig = new OptimizerConfig(args);
+    if (optimizerConfig.getOptimizerId() == null || optimizerConfig.getOptimizerId().isEmpty() ||
+        "unknown".equals(optimizerConfig.getOptimizerId())) {
+      OptimizerUtil.register(optimizerConfig);
+    }
     new LocalOptimizer().init(optimizerConfig);
     LOG.info("init LocalOptimizer with {}", optimizerConfig);
   }
