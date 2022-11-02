@@ -130,7 +130,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       if (isInnerTableIdentifier(ident)) {
         ArcticTableStoreType type = ArcticTableStoreType.from(ident.name());
         identifier = buildInnerTableIdentifier(ident);
-        table = loadInnerTable(catalog.loadTable(identifier), type);
+        table = catalog.loadTable(identifier);
+        return loadInnerTable(table, type);
       } else {
         identifier = buildIdentifier(ident);
         table = catalog.loadTable(identifier);
@@ -141,11 +142,11 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     return ArcticSparkTable.ofArcticTable(table);
   }
 
-  private ArcticTable loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
+  private Table loadInnerTable(ArcticTable table, ArcticTableStoreType type) {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BaseKeyedTable) table);
+          return new ArcticSparkChangeTable(table.asUnkeyedTable(), false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
       }
