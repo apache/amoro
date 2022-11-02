@@ -6,6 +6,10 @@ This directory contains the source for the Arctic site.
 * Pages are maintained in markdown in the `docs/` folder
 * Links use bare page names: `[link text](target-page)`
 
+### Style
+* Proper nouns should start with a capital letter
+* A space is required at both ends of mixed English and Chinese
+
 ### Installation
 
 The site is built using mkdocs. To install mkdocs and the theme, run:

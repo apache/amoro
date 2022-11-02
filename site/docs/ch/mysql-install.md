@@ -1,8 +1,8 @@
-### 物理机部署mysql
+### 物理机部署 Mysql
 
 
 
->  mysql链接
+>  Mysql 链接
 
 ```
  http://nos-yq.126.net/innosql-release/mysql-5.7.20-v3e-linux-x86_64.tar.gz
@@ -14,7 +14,7 @@
 #### 步骤
 
 ```shell
-# mysql mgr版本支持集群安装，如果安装单机版只需要配置server-id即可
+# Mysql mgr 版本支持集群安装，如果安装单机版只需要配置 server-id 即可
 # 先设置配置文件,my.cnf 参考下面的demo
 # 配置文件中 需要修改的地方
 
@@ -40,11 +40,11 @@ mkdir -p /ebs/tmp_dir
 chown -R mysql.mysql /ebs/mysql_data
 chown -R mysql.mysql /ebs/tmp_dir
 
-# 初始化mysql
+# 初始化 Mysql
 /usr/local/mysql/bin/mysqld  --defaults-file=/ebs/config/my.cnf --initialize-insecure
 /usr/local/mysql/bin/mysqld  --defaults-file=/ebs/config/my.cnf --user=mysql & 
 
-# 登录mysql，设置组复制信息
+# 登录 Mysql，设置组复制信息
 mycli -S /tmp/mysql.sock
 
 INSTALL PLUGIN group_replication SONAME 'group_replication.so';
@@ -54,7 +54,7 @@ SET SQL_LOG_BIN=0; CREATE USER rpl_user@'%'; GRANT REPLICATION SLAVE ON *.* TO r
 
 
 
-# 选一个节点做主节点，开启group
+# 选一个节点做主节点，开启 group
 SET GLOBAL group_replication_bootstrap_group=ON;
 START GROUP_REPLICATION;
 SET GLOBAL group_replication_bootstrap_group=OFF;
