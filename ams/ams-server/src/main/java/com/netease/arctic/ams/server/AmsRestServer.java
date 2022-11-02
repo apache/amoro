@@ -36,10 +36,8 @@ import com.netease.arctic.ams.server.service.impl.ApiTokenService;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
-import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
-import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
@@ -150,6 +148,8 @@ public class AmsRestServer {
         post("/catalogs", CatalogController::createCatalog);
         // make sure types is before
         get("/catalogs/types", CatalogController::getCatalogTypeList);
+        get("/catalog/metastore/types", CatalogController::getCatalogTypeList);
+
         get("/catalogs/{catalogName}", CatalogController::getCatalogDetail);
         delete("/catalogs/{catalogName}", CatalogController::deleteCatalog);
         put("/catalogs/{catalogName}", CatalogController::updateCatalog);

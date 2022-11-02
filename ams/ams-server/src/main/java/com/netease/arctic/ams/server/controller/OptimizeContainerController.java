@@ -20,14 +20,11 @@ package com.netease.arctic.ams.server.controller;
 
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.model.Container;
-import com.netease.arctic.ams.server.model.OptimizerGroup;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import io.javalin.http.Context;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,6 +77,7 @@ public class OptimizeContainerController extends RestBaseController {
           }
         }
         groupList.add(optimizeGroupItem);
+        optimizeGrouped.put(item.getContainer(), groupList);
       });
     }
 
@@ -90,6 +88,7 @@ public class OptimizeContainerController extends RestBaseController {
       obj.put("type", item.getType());
       obj.put("properties", item.getProperties());
       obj.put("optimizeGroup", optimizeGrouped.get(item.getName()));
+      result.add(obj);
     });
 
     ctx.json(OkResponse.of(result));

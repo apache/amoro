@@ -23,9 +23,18 @@ import java.util.Map;
 public class CatalogSettingInfo {
   String name;
   String type;
+  String tableFormat;
   Map<String, Object> storageConfig;
   Map<String, Object> authConfig;
   Map<String, String> properties;
+
+  public String getTableFormat() {
+    return tableFormat;
+  }
+
+  public void setTableFormat(String tableFormat) {
+    this.tableFormat = tableFormat;
+  }
 
   public String getName() {
     return name;

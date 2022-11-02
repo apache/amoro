@@ -36,9 +36,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class CatalogController extends RestBaseController {
@@ -64,8 +65,33 @@ public class CatalogController extends RestBaseController {
    * @param ctx
    */
   public static void getCatalogTypeList(Context ctx) {
-    ctx.json(OkResponse.of(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HIVE,
-            CatalogMetaProperties.CATALOG_TYPE_HADOOP)));
+
+    List<Map<String, String>> catalogTypeList = new ArrayList<>();
+
+    catalogTypeList.add(new HashMap<String, String>() {{
+        put("name", CatalogMetaProperties.CATALOG_TYPE_HIVE);
+        put("display", "Hive Metastore");
+      }
+    });
+
+    catalogTypeList.add(new HashMap<String, String>() {{
+        put("name", CatalogMetaProperties.CATALOG_TYPE_HADOOP);
+        put("display", "hadoop");
+      }
+    });
+
+    catalogTypeList.add(new HashMap<String, String>() {{
+        put("name", "custom");
+        put("display", "custom");
+      }
+    });
+
+    catalogTypeList.add(new HashMap<String, String>() {{
+        put("name", "custom");
+        put("display", "custom");
+      }
+    });
+    ctx.json(OkResponse.of(catalogTypeList));
   }
 
   /**
@@ -162,6 +188,7 @@ public class CatalogController extends RestBaseController {
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
     catalogMeta.setCatalogProperties(info.getProperties());
+    catalogMeta.getCatalogProperties().put("table-formats", info.getTableFormat());
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig()));
 
     // change fileId to base64Code
@@ -245,6 +272,8 @@ public class CatalogController extends RestBaseController {
               catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE));
       info.setStorageConfig(storageConfig);
       info.setProperties(catalogMeta.getCatalogProperties());
+      // we put the tableformat single
+      info.setTableFormat(catalogMeta.getCatalogProperties().get("table-formats"));
       ctx.json(OkResponse.of(info));
       return;
     }

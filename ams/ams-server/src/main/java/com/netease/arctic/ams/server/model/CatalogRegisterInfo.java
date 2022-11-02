@@ -23,6 +23,7 @@ import java.util.Map;
 public class CatalogRegisterInfo {
   String name;
   String type;
+  String tableFormat;
   Map<String, String> storageConfig;
   Map<String, String> authConfig;
   Map<String, String> properties;
@@ -69,5 +70,13 @@ public class CatalogRegisterInfo {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
+  }
+
+  public String getTableFormat() {
+    return tableFormat;
+  }
+
+  public void setTableFormat(String tableFormat) {
+    this.tableFormat = tableFormat;
   }
 }
