@@ -16,7 +16,7 @@
   * limitations under the License.
   */
 
-const webpack = require('webpack')
+// const webpack = require('webpack')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path')
 // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -24,7 +24,7 @@ const MonacoWebpackPlugin = require('monaco-editor-webpack-plugin')
 const isProduction = ['production'].includes(process.env.NODE_ENV)
 const ENV = 'DEV'
 const ENV_HOST = {
-  DEV: 'http://10.196.98.23:29099/', // http://10.196.98.23:19111/
+  DEV: 'http://sloth-commerce-test1.jd.163.org:29499/', // http://10.196.98.23:29099/
   TEST: '',
   ONLINE: ''
 }
@@ -126,7 +126,6 @@ module.exports = {
     if (isProduction) {
       config.optimization.minimizer[0].options.terserOptions.compress.drop_console = true
     }
-    config.plugins.push(new webpack.ContextReplacementPlugin(/moment[/\\]locale$/, /zh-cn/))
     return { plugins }
   },
   pluginOptions

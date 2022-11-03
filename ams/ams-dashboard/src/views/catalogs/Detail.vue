@@ -2,24 +2,28 @@
   <div class="detail-wrap">
     <div class="content-wrap">
       <a-form ref="formRef" :model="formState" class="catalog-form">
-        <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit, validator: validatorName }]">
-          <a-input v-if="isEdit" v-model:value="formState.catalog.name" />
+        <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
+          <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
           <span v-else>{{formState.catalog.name}}</span>
         </a-form-item>
-        <a-form-item :label="$t('tableFormat')" :name="['catalog', 'type']" :rules="[{ required: isEdit }]">
+        <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
           <a-select
-            v-if="isEdit"
+            v-if="isEdit && isNewCatalog"
             v-model:value="formState.catalog.type"
             :options="catalogTypeOps"
             :placeholder="placeholder.selectPh"
+            @change="changeMetastore"
           />
-          <span v-else>{{formState.catalog.type}}</span>
+          <span v-else>{{metastoreType}}</span>
+        </a-form-item>
+        <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
+          <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
+            <a-radio value="Iceberg">Iceberg</a-radio>
+            <a-radio v-if="isHiveMetastore" value="Hive">Hive</a-radio>
+          </a-radio-group>
         </a-form-item>
         <a-form-item>
           <p class="header">{{$t('storageConfig')}}</p>
-        </a-form-item>
-        <a-form-item label="storage_config.storage.type">
-          <span class="config-value">{{formState.storageConfig['storage_config.storage.type']}}</span>
         </a-form-item>
         <a-form-item
           v-for="config in formState.storageConfigArray"
@@ -27,18 +31,18 @@
           :label="config.label"
           class="g-flex-ac">
           <a-upload
-            v-if="!config.value"
+            v-if="isEdit"
             v-model:file-list="config.fileList"
             name="file"
             accept=".xml"
             :showUploadList="false"
             :action="uploadUrl"
             :disabled="config.uploadLoading"
-            @change="(args) => uploadFile(args, config)"
+            @change="(args) => uploadFile(args, config, 'STORAGE')"
           >
             <a-button type="primary" ghost class="g-mr-12">{{$t('upload')}}</a-button>
           </a-upload>
-          <span v-if="config.isSuccess" class="config-value" :class="{'view-active': config.value}" @click="downLoadFile(config.value)">{{config.fileName}}</span>
+          <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
         </a-form-item>
         <a-form-item>
           <p class="header">{{$t('authConfig')}}</p>
@@ -60,14 +64,27 @@
           <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.principal']" />
           <span v-else class="config-value">{{formState.authConfig['auth_config.principal']}}</span>
         </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.keytab" :name="['authConfig', 'auth_config.keytab']" :rules="[{ required: isEdit }]">
-          <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.keytab']" />
-          <span v-else class="config-value">{{formState.authConfig['auth_config.keytab']}}</span>
-        </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.krb5" :name="['authConfig', 'auth_config.krb5']" :rules="[{ required: isEdit }]">
-          <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.krb5']" />
-          <span v-else class="config-value">{{formState.authConfig['auth_config.krb5']}}</span>
-        </a-form-item>
+        <div v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'">
+          <a-form-item
+            v-for="config in formState.authConfigArray"
+            :key="config.label"
+            :label="config.label"
+            class="g-flex-ac">
+            <a-upload
+              v-if="isEdit"
+              v-model:file-list="config.fileList"
+              name="file"
+              :accept="config.label === 'auth_config.keytab' ? '.keytab' : '.conf'"
+              :showUploadList="false"
+              :action="uploadUrl"
+              :disabled="config.uploadLoading"
+              @change="(args) => uploadFile(args, config)"
+            >
+              <a-button type="primary" ghost class="g-mr-12">{{$t('upload')}}</a-button>
+            </a-upload>
+            <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
+          </a-form-item>
+        </div>
         <a-form-item>
           <p class="header">{{$t('properties')}}</p>
         </a-form-item>
@@ -95,7 +112,6 @@ import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
 import { Modal, message, UploadChangeParam } from 'ant-design-vue'
 import { useI18n } from 'vue-i18n'
 import Properties from './Properties.vue'
-import { download } from '@/utils/request'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useRoute } from 'vue-router'
 
@@ -103,17 +119,20 @@ interface IStorageConfigItem {
   label: string
   value: string
   fileName: string
-  fileList: string[],
+  fileUrl: string
+  fileList: string[]
   uploadLoading: boolean
   isSuccess: boolean
 }
 
 interface FormState {
   catalog: IMap<string>
+  tableFormat: string
   storageConfig: IMap<string>
   authConfig: IMap<string>
   properties: IMap<string>
   storageConfigArray: IStorageConfigItem[]
+  authConfigArray: IStorageConfigItem[]
 }
 
 const props = defineProps<{ catalog: ICatalogItem, isEdit: boolean }>()
@@ -125,6 +144,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const route = useRoute()
 const placeholder = reactive(usePlaceholder())
+const metastoreType = ref<string>('')
 const isEdit = computed(() => {
   return props.isEdit
 })
@@ -134,6 +154,9 @@ const uploadUrl = computed(() => {
 const isNewCatalog = computed(() => {
   return props.catalog.catalogName === 'new catalog'
 })
+const isHiveMetastore = computed(() => {
+  return formState.catalog.type === 'hive'
+})
 const loading = ref<boolean>(false)
 const formRef = ref()
 const propertiesRef = ref()
@@ -142,26 +165,27 @@ const storageConfigFileNameMap = {
   'storage_config.hdfs-site': 'hdfs-site.xml',
   'storage_config.hive-site': 'hive-site.xml'
 }
+const newCatalogConfig = {
+  storageConfig: {
+    'storage_config.core-site': '',
+    'storage_config.hdfs-site': ''
+  },
+  authConfig: {
+    'auth_config.keytab': '',
+    'auth_config.krb5': ''
+  }
+}
 const formState:FormState = reactive({
   catalog: {
     name: '',
-    type: ''
+    type: 'ams'
   },
-  storageConfig: {
-    'storage_config.storage.type': '',
-    'storage_config.core-site': '',
-    'storage_config.hdfs-site': '',
-    'storage_config.hive-site': ''
-  },
-  authConfig: {
-    'auth_config.type': '',
-    'auth_config.hadoop_username': '',
-    'auth_config.principal': '',
-    'auth_config.keytab': '',
-    'auth_config.krb5': ''
-  },
+  tableFormat: '',
+  storageConfig: {},
+  authConfig: {},
   properties: {},
-  storageConfigArray: []
+  storageConfigArray: [],
+  authConfigArray: []
 })
 const authConfigTypeOps = reactive<ILableAndValue[]>([{
   label: 'SIMPLE',
@@ -184,17 +208,21 @@ const catalogTypeOps = reactive<ILableAndValue[]>([])
 function initData() {
   const { catalog, type } = route.query
   formState.catalog.name = catalog || ''
-  formState.catalog.type = type || undefined
+  formState.catalog.type = type || 'ams'
   getConfigInfo()
 }
 async function getCatalogTypeOps() {
   const res = await getCatalogsTypes();
-  (res || []).forEach((ele: string) => {
+  (res || []).forEach(ele => {
     catalogTypeOps.push({
-      label: ele,
-      value: ele
+      label: ele.display,
+      value: ele.value
     })
   })
+  getMetastoreTyoe()
+}
+function getMetastoreTyoe() {
+  metastoreType.value = (catalogTypeOps.find(ele => ele.value === formState.catalog.type) || {}).label
 }
 async function getConfigInfo() {
   try {
@@ -203,32 +231,58 @@ async function getConfigInfo() {
     if (!catalogName) { return }
     if (isNewCatalog.value) {
       formState.catalog.name = catalogName
-      formState.catalog.type = catalogType
-      formState.authConfig = {}
-      formState.storageConfig = {}
+      formState.catalog.type = catalogType || 'ams'
+      formState.tableFormat = 'Iceberg'
+      formState.authConfig = { ...newCatalogConfig.authConfig }
+      formState.storageConfig = { ...newCatalogConfig.storageConfig }
       formState.properties = {}
       formState.storageConfigArray.length = 0
+      formState.authConfigArray.length = 0
+    } else {
+      const res = await getCatalogsSetting(catalogName)
+      if (!res) { return }
+      const { name, type, tableFormat, storageConfig, authConfig, properties } = res
+      formState.catalog.name = name
+      formState.catalog.type = type
+      formState.tableFormat = tableFormat
+      formState.authConfig = authConfig
+      formState.storageConfig = storageConfig
+      formState.properties = properties || {}
+      formState.storageConfigArray.length = 0
+      formState.authConfigArray.length = 0
     }
-    const res = await getCatalogsSetting(catalogName)
-    if (!res) { return }
-    const { name, type, storageConfig, authConfig, properties } = res
-    formState.catalog.name = name
-    formState.catalog.type = type
-    formState.authConfig = authConfig
-    formState.storageConfig = storageConfig
-    formState.properties = properties || {}
-    formState.storageConfigArray.length = 0
+    getMetastoreTyoe()
+    const { storageConfig, authConfig } = formState
     Object.keys(storageConfig).forEach(key => {
-      if (key !== 'storage_config.storage.type') {
+      const configArr = ['storage_config.core-site', 'storage_config.hdfs-site']
+      if (isHiveMetastore.value) {
+        configArr.push('storage_config.hive-site')
+      }
+      if (configArr.includes(key)) {
         const item: IStorageConfigItem = {
           label: key,
-          value: storageConfig[key],
-          fileName: storageConfigFileNameMap[key],
+          value: storageConfig[key]?.fileName,
+          fileName: storageConfig[key]?.fileName,
+          fileUrl: storageConfig[key]?.fileUrl,
           fileList: [],
           uploadLoading: false,
           isSuccess: false
         }
         formState.storageConfigArray.push(item)
+      }
+    })
+    Object.keys(authConfig).forEach(key => {
+      if (['auth_config.keytab', 'auth_config.krb5'].includes(key)) {
+        const item: IStorageConfigItem = {
+          label: key,
+          value: authConfig[key]?.fileName,
+          fileName: authConfig[key]?.fileName,
+          fileUrl: authConfig[key]?.fileUrl,
+          fileList: [],
+          uploadLoading: false,
+          isSuccess: false
+        }
+        formState.authConfigArray.push(item)
       }
     })
   } catch (error) {
@@ -237,6 +291,10 @@ async function getConfigInfo() {
   }
 }
 
+function changeMetastore() {
+  formState.tableFormat = isHiveMetastore.value ? 'Hive' : 'Iceberg'
+  console.log('changeMetastore formState.tableFormat', formState.tableFormat)
+}
 function handleEdit() {
   emit('updateEdit', true)
 }
@@ -266,13 +324,15 @@ function handleSave() {
   formRef.value
     .validateFields()
     .then(async() => {
-      const { catalog, storageConfig, authConfig } = formState
+      const { catalog, tableFormat, storageConfig, authConfig } = formState
       const properties = await propertiesRef.value.getProperties()
       if (!properties) {
         return
       }
       await saveCatalogsSetting({
+        isCreate: isNewCatalog.value,
         ...catalog,
+        tableFormat,
         storageConfig,
         authConfig,
         properties
@@ -306,25 +366,28 @@ async function deleteCatalogModal() {
     }
   })
 }
-function uploadFile(info: UploadChangeParam, config) {
-  if (info.file.status === 'uploading') {
-    config.uploadLoading = true
-  } else {
-    console.log(info.file, info.fileList)
-    config.uploadLoading = false
-  }
-  if (info.file.status === 'done') {
-    config.isSuccess = true
-    message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)
-  } else if (info.file.status === 'error') {
-    config.isSuccess = false
-    message.error(`${info.file.name} ${t('uploaded')} ${t('failed')}`)
+function uploadFile(info: UploadChangeParam, config, type?) {
+  try {
+    if (info.file.status === 'uploading') {
+      config.uploadLoading = true
+    } else {
+      config.uploadLoading = false
+    }
+    if (info.file.status === 'done') {
+      config.isSuccess = true
+      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.label] : info.file.name
+      config.fileUrl = info.file.response?.result?.url
+      message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)
+    } else if (info.file.status === 'error') {
+      config.isSuccess = false
+      message.error(`${info.file.name} ${t('uploaded')} ${t('failed')}`)
+    }
+  } catch (error) {
+    message.error(`${t('uploaded')} ${t('failed')}`)
   }
 }
-function downLoadFile(id: string) {
-  if (!id) return
-  const url = `/ams/v1/files/${id}`
-  download(url)
+function viewFileDetail(url: string) {
+  url && window.open(url)
 }
 onMounted(() => {
   getCatalogTypeOps()

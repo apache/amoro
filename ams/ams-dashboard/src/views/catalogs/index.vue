@@ -17,7 +17,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { ICatalogItem } from '@/types/common.type'
 import { getCatalogList } from '@/services/table.service'
 import Detail from './Detail.vue'
@@ -69,6 +69,7 @@ function handleClick(item: ICatalogItem) {
     leaveConfirm(() => {
       selectCatalog(item)
       isEdit.value = false
+      updateEdit(false)
     })
   } else {
     selectCatalog(item)
@@ -105,6 +106,15 @@ function updateCatalogs() {
   getCatalogs()
 }
 function addCatalog() {
+  if (isEdit.value) {
+    leaveConfirm(() => {
+      addNewCatalog()
+    })
+  } else {
+    addNewCatalog()
+  }
+}
+function addNewCatalog() {
   const item: ICatalogItem = {
     catalogName: NEW_CATALOG,
     catalogType: ''

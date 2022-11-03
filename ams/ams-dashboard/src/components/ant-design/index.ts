@@ -37,7 +37,8 @@ import {
   Checkbox,
   AutoComplete,
   Empty,
-  Upload
+  Upload,
+  Radio
 } from 'ant-design-vue'
 
 const compontens = [
@@ -60,7 +61,8 @@ const compontens = [
   Checkbox,
   AutoComplete,
   Empty,
-  Upload
+  Upload,
+  Radio
 ]
 export default function (app: App): void {
   compontens.forEach(app.use)

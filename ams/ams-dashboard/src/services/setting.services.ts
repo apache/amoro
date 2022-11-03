@@ -20,7 +20,7 @@ import { IMap } from '@/types/common.type'
 import request from '@/utils/request'
 
 export function getCatalogsTypes() {
-  return request.get('ams/v1/catalogs/types')
+  return request.get('ams/v1/catalog/metastore/types')
 }
 export function getCatalogsSetting(catalogName: string) {
   return request.get(`ams/v1/catalogs/${catalogName}`)
@@ -37,8 +37,13 @@ export function saveCatalogsSetting(params: {
   storageConfig: IMap<string>
   authConfig: IMap<string>
   properties: IMap<string>
+  isCreate?: boolean
 }) {
-  const { name } = params
+  const { isCreate, name } = params
+  delete params.isCreate
+  if (isCreate) {
+    return request.post('ams/v1/catalogs', { ...params })
+  }
   return request.put(`ams/v1/catalogs/${name}`, { ...params })
 }
 export function getSystemSetting() {

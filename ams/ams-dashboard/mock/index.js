@@ -718,16 +718,31 @@ module.exports = {
         type: 'hive',
         storageConfig: {
           "storage_config.storage.type": "hdfs",
-          "storage_config.core-site": "",
-          "storage_config.hdfs-site": "",
-          "storage_config.hive-site": "Y2Torw4dFW"
+          "storage_config.core-site": {
+            "fileName": "fileName1",
+		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          },
+          "storage_config.hdfs-site": {
+            "fileName": "fileName2",
+		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          },
+          "storage_config.hive-site": {
+            "fileName": "fileName3",
+		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          }
         },
         authConfig: {
           "auth_config.type": "simpel",
           "auth_config.hadoop_username": "omPRZh6bc8",
           "auth_config.principal": "L2TeTS0OzC",
-          "auth_config.keytab": "c9uXqYnAFl",
-          "auth_config.krb5": "p5pOR8f615"
+          "auth_config.keytab":  {
+            "fileName": "fileNamekeytab",
+            "fileUrl": "http://bfu.qynoircxcut.civkj"
+          },
+          "auth_config.krb5": {
+            "fileName": "fileNamekrb5",
+            "fileUrl": "http://bfu.qynoircxcut.civkj"
+          }
         },
         properties: {
           'key1': 'value1'

@@ -11,7 +11,7 @@
 <script lang="ts" setup>
 import { onMounted, ref, shallowReactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import moment from 'moment'
+import dayjs, { Dayjs } from 'dayjs'
 
 const emit = defineEmits<{
  (e: 'timeChange', value: { start: string, end: string }): void
@@ -34,9 +34,9 @@ function changeTime () {
 }
 
 function emitValue() {
-  const end = moment().format('YYYY-MM-DD HH:mm:ss')
-  const start = moment()
-    .subtract(time.value, 'hours')
+  const end = dayjs().format('YYYY-MM-DD HH:mm:ss')
+  const start = dayjs()
+    .subtract(+time.value, 'hours')
     .format('YYYY-MM-DD HH:mm:ss')
   emit('timeChange', { start, end })
 }

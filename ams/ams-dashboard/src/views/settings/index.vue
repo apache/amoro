@@ -1,7 +1,7 @@
 <template>
   <div class="setting-wrap">
     <div class="system-setting">
-      <h1 class="g-mb-12">System Setting</h1>
+      <h1 class="g-mb-12">{{$t('systemSetting')}}</h1>
       <ul class="content">
         <li v-for="item in systemSettingArray" :key="item.key" class="item">
           <span class="left">{{item.key}}</span>
@@ -10,7 +10,7 @@
       </ul>
     </div>
     <div class="container-setting">
-      <h1 class="g-mb-12">Container Setting</h1>
+      <h1 class="g-mb-12">{{$t('containerSetting')}}</h1>
       <div v-for="container in containerSetting" :key="container.name" class="container-setting-item">
         <h2 class="g-mb-12 g-mt-12">{{container.name}}</h2>
         <ul class="content">
@@ -40,15 +40,17 @@
       </div>
     </div>
   </div>
+  <u-loading v-if="loading" />
 </template>
 
 <script lang="ts" setup>
-import { onMounted, reactive } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { IColumns, IKeyAndValue, IContainerSetting } from '@/types/common.type'
 import { useI18n } from 'vue-i18n'
 import { getSystemSetting, getContainersSetting } from '@/services/setting.services'
 
 const { t } = useI18n()
+const loading = ref<boolean>(false)
 const systemSettingArray = reactive<IKeyAndValue>([])
 const containerSetting = reactive<IContainerSetting[]>([
   {
@@ -66,15 +68,20 @@ const optimzeGroupColumns: IColumns[] = reactive([
 ])
 
 async function getSystemSettingInfo() {
-  const res = await getSystemSetting()
-  if (!res) { return }
-  systemSettingArray.length = 0
-  Object.keys(res).forEach(key => {
-    systemSettingArray.push({
-      key: key,
-      value: res[key]
+  try {
+    loading.value = true
+    const res = await getSystemSetting()
+    if (!res) { return }
+    systemSettingArray.length = 0
+    Object.keys(res).forEach(key => {
+      systemSettingArray.push({
+        key: key,
+        value: res[key]
+      })
     })
-  })
+  } finally {
+    loading.value = false
+  }
 }
 async function getContainersSettingInfo() {
   const res = await getContainersSetting()
@@ -82,7 +89,7 @@ async function getContainersSettingInfo() {
   (res || []).forEach((ele, index) => {
     ele.propertiesArray = []
     containerSetting.push(ele)
-    Object.keys(ele.properties).forEach(key => {
+    Object.keys(ele.properties || {}).forEach(key => {
       containerSetting[index].propertiesArray.push({
         key: key,
         value: ele.properties[key]
@@ -111,9 +118,12 @@ onMounted(() => {
     .item {
       padding: 6px 0;
       display: flex;
+      word-break: break-all;
     }
     .left {
       width: 280px;
+      flex-shrink: 0;
+      margin-right: 16px;
     }
   }
 }
