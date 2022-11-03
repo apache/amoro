@@ -134,6 +134,7 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
                     database, table));
 
     sql("drop table " + database + "." + "testPks");
+    sql("drop table " + database + "." + insertTable);
   }
 
   @Test
