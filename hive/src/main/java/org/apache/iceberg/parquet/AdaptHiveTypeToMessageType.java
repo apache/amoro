@@ -127,8 +127,10 @@ public class AdaptHiveTypeToMessageType {
         return Types.primitive(INT32, repetition).as(DATE).id(id).named(name);
       case TIME:
         return Types.primitive(INT64, repetition).as(TIME_MICROS).id(id).named(name);
+      //Change For Arctic
       case TIMESTAMP:
         return Types.primitive(INT96, repetition).id(id).named(name);
+      //Change For Arctic
       case STRING:
         return Types.primitive(BINARY, repetition).as(STRING).id(id).named(name);
       case BINARY:

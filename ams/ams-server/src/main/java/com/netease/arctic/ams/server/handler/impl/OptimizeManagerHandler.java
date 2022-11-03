@@ -23,6 +23,8 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeManager;
 import com.netease.arctic.ams.api.OptimizeTask;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
+import com.netease.arctic.ams.api.OptimizerDescriptor;
+import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import org.apache.thrift.TException;
@@ -48,5 +50,10 @@ public class OptimizeManagerHandler implements OptimizeManager.Iface {
   @Override
   public void reportOptimizerState(OptimizerStateReport reportData) throws TException {
     ServiceContainer.getOptimizerService().updateOptimizerState(reportData);
+  }
+
+  @Override
+  public OptimizerDescriptor registerOptimizer(OptimizerRegisterInfo registerInfo) throws TException {
+    return ServiceContainer.getOptimizerService().registerOptimizer(registerInfo);
   }
 }

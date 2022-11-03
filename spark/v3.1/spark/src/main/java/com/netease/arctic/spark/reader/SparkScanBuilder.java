@@ -65,6 +65,13 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
     this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
   }
 
+  public SparkScanBuilder(SparkSession spark, ArcticTable table, CaseInsensitiveStringMap options, Schema schema) {
+    this.table = table;
+    this.options = options;
+    this.schema = schema;
+    this.caseSensitive = Boolean.parseBoolean(spark.conf().get("spark.sql.caseSensitive"));
+  }
+
   private Schema lazySchemaWithRowIdent() {
     if (schema == null) {
       if (requestedProjection != null) {

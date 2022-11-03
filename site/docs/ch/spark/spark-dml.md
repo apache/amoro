@@ -15,7 +15,19 @@ SELECT * FROM arctic_catalog.db.sample
 
 ```sql
 SELECT * FROM arctic_catalog.db.sample.change
+
++---+----+----+---------------+------------+--------------+
+| id|name|data|_transaction_id|_file_offset|_change_action|
++---+----+----+---------------+------------+--------------+
+|  1|dddd|abcd|              3|           1|        INSERT|
+|  1|dddd|abcd|              3|           2|        DELETE|
++---+----+----+---------------+------------+--------------+
 ```
+查出来结果会多三列数据分别是：
+
+- _transaction_id: 数据写入时AMS分配的 transaction id。批模式下为每条SQL执行时分配，流模式下为每次checkpoint 分配。
+- _file_offset：大小可以表示同一批 _transaction_id 中数据写入的先后顺序。
+- _change_action：表示数据的类型有 INSERT，DELETE 两种
 
 ## Write
 

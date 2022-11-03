@@ -38,6 +38,7 @@ public class AdaptHiveParquetSchemaUtil {
   }
 
   public static MessageType convert(Schema schema, String name) {
+    //Change For Arctic
     return new AdaptHiveTypeToMessageType().convert(schema, name);
   }
 
