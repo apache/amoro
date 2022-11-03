@@ -32,9 +32,9 @@ Hudi 的 rt 表的查询也就是实时查询目前不支持 Trino，只支持 P
 ### Ams
 Arctic 的元数据服务，当前使用0.4版本，如果需要测试 Arctic 需要安装此服务
 
-[Ams-Install](meta-service/dashboard.md)
+[Ams-Install](../meta-service/dashboard.md)
 
-根据文档描述，配置一个 optimize-group 例如名称 "benchmark-group"，然后在页面![Ams-Install](images/chbenchmark-step/start-optimize.png)
+根据文档描述，配置一个 optimize-group 例如名称 "benchmark-group"，然后在页面![Ams-Install](../images/chbenchmark-step/start-optimize.png)
 
 点击 Scale-Out 按钮启动 optimize 服务。
 
@@ -79,7 +79,7 @@ Benchmark 的核心工具，负责生成 TPCC 数据进 Mysql 和通过 Trino �
 2. Hudi 使用 Hive 的元数据的时候需要额外添加一些依赖，官网描述见 [Hudi](https://hudi.apache.org/docs/syncing_metastore)
    主要是:
 
-   ![hudi-sync](images/chbenchmark-step/hudi-sync.png)
+   ![hudi-sync](../images/chbenchmark-step/hudi-sync.png)
 3. Hudi 的表名是带有后缀的，ro 表示读优化表，rt 表示全量表，可以在执行 data-lake-benchmark 程序之前设置环境变量如：
    ```
    export tpcc_name_suffix=_rt

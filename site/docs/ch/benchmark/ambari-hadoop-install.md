@@ -1,4 +1,7 @@
 # 使用 Ambari 部署 Hadoop 手册
+Apache Ambari 是一种基于Web的工具，支持 Apache Hadoop 集群的供应、管理和监控。[Ambari 官网](https://ambari.apache.org/)
+Ambari 已支持大多数 Hadoop 组件，包括 HDFS、MapReduce、Hive、Pig、 Hbase、Zookeeper、Sqoop 和 Hcatalog 等。
+我们可以使用 Ambari 安装需要的大数据组件.
 ## 1.依赖软件安装
 ### 1.1 权限申请
 > 1）所有节点申请 sudo /usr/sbin/ambari-agent,/usr/bin/rpm,/usr/bin/yum权限。  

@@ -5,34 +5,18 @@
 >  Mysql 链接
 
 ```
- http://nos-yq.126.net/innosql-release/mysql-5.7.20-v3e-linux-x86_64.tar.gz
+https://downloads.mysql.com/archives/get/p/23/file/mysql-5.7.20-linux-glibc2.12-x86_64.tar.gz
 
 ```
 
 
 
 #### 步骤
-
-```shell
-# Mysql mgr 版本支持集群安装，如果安装单机版只需要配置 server-id 即可
-# 先设置配置文件,my.cnf 参考下面的demo
-# 配置文件中 需要修改的地方
-
-server-id                                            = 1  # 每个机器需要不一样
-loose-group_replication_group_seeds                  = 192.168.0.4:34901,192.168.0.5:34901,192.168.0.6:34901 #按实际修改
-loose-group_replication_ip_whitelist                 = 192.168.0.0/24  # 按实际修改
-loose-group_replication_local_address                = 192.168.0.4:34901   # 本地ip
-report_host                                          = 192.168.0.4   # 本地ip
-
-
-
-
-
 cd /tmp/
-wget  http://nos-yq.126.net/innosql-release/mysql-5.7.20-v3e-linux-x86_64.tar.gz
-tar -xzvf mysql-5.7.20-v3e-linux-x86_64.tar.gz
+wget  http://nos-yq.126.net/innosql-release/mysql-5.7.20-linux-glibc2.12-x86_64.tar.gz
+tar -xzvf mysql-5.7.20-linux-glibc2.12-x86_64.tar.gz
 groupadd -r mysql && useradd -r -g mysql mysql 
-cp -r /tmp/mysql-5.7.20-v3e-linux-x86_64 /home/mysql 
+cp -r /tmp/mysql-5.7.20-linux-glibc2.12-x86_64/home/mysql 
 ln -s /home/mysql /usr/local/mysql
 mkdir /ebs
 mkdir -p /ebs/mysql_data
@@ -48,43 +32,14 @@ chown -R mysql.mysql /ebs/tmp_dir
 mycli -S /tmp/mysql.sock
 
 INSTALL PLUGIN group_replication SONAME 'group_replication.so';
-SET SQL_LOG_BIN=0; CREATE USER rpl_user@'%'; GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%' IDENTIFIED BY 'rpl_pass'; SET SQL_LOG_BIN=1; CHANGE MASTER TO MASTER_USER='rpl_user', MASTER_PASSWORD='rpl_pass' FOR CHANNEL 'group_replication_recovery';
-
-# 以上操作 3台节点都相同
-
-
-
-# 选一个节点做主节点，开启 group
-SET GLOBAL group_replication_bootstrap_group=ON;
-START GROUP_REPLICATION;
-SET GLOBAL group_replication_bootstrap_group=OFF;
-
-# 其他节点
-START GROUP_REPLICATION;
-
-
-```
-
-
-
-#### 部署成功后检查
-
-```shell
-# 查询复制情况
-use performance_schema;
-select * from replication_group_members;
-```
-
-看到对应的节点都在同一个组中，部署成功。
-
-![image-20201230145036967](https://notepic.nos-eastchina1.126.net/image-20201230145036967.png)
-
+SET SQL_LOG_BIN=0; CREATE USER rpl_user@'%'; GRANT REPLICATION SLAVE ON *.* TO rpl_user@'%' IDENTIFIED BY 'rpl_pass'; SET SQL_LOG_BIN=1; CHANGE MASTER TO MASTER_USER='rpl_user', MASTER_PASSWORD='rpl_pass' FOR CHANNEL 'group_replication_recovery'
 
 
 #### 参考 config
 
 ```shell
 [mysqld]
+server-id                                            = 1
 auto_increment_increment                             = 1
 auto_increment_offset                                = 1
 autocommit                                           = ON
