@@ -76,7 +76,7 @@ public class BaseIcebergPosDeleteReader {
             .reuseContainers()
             .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(POS_DELETE_SCHEMA, fileSchema));
 
-        return builder.build();
+        return fileIO.doAs(builder::build);
       default:
         throw new UnsupportedOperationException(String.format(
             "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
