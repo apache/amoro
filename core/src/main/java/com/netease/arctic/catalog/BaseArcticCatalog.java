@@ -284,8 +284,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
       if (fileIO.exists(tableLocation) && purge) {
-        LOG.info("try to delete table directory location is " +
-            meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE));
+        LOG.info("try to delete table directory location is " + tableLocation);
         fileIO.deleteFileWithResult(tableLocation, true);
       }
     } catch (Exception e) {
