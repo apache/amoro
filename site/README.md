@@ -7,7 +7,7 @@ This directory contains the source for the Arctic site.
 * Links use bare page names: `[link text](target-page)`
 
 ### Style
-* Proper nouns should start with a capital letter
+* Proper nouns should start with a capital letter, like Hadoop、Hive、Iceberg、Arctic
 * A space is required at both ends of mixed English and Chinese
 
 ### Installation
