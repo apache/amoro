@@ -104,7 +104,7 @@ public class GenericTaskWriters {
           MetricsModes.Full.get().toString());
       return new SortedPosDeleteWriter<>(appenderFactory,
           new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-              table.baseTable().encryption(), partitionId, taskId, transactionId),
+              table.baseTable().encryption(), partitionId, taskId, transactionId), table.io(),
           fileFormat, mask, index, partitionKey);
     }
 
