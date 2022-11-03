@@ -47,7 +47,7 @@ SELECT * FROM "{TABLE_NAME}#CHANGE"
 
 查出来结果会多三列数据分别是：
 
-- _transaction_id: 表是写入时的 _transaction_id, 表示写入的先后顺序。
+- _transaction_id: 数据写入时AMS分配的 transaction id。批模式下为每条SQL执行时分配，流模式下为每次checkpoint 分配。
 - _file_offset：大小可以表示同一批 _transaction_id 中数据写入的先后顺序。
 - _change_action：表示数据的类型有 INSERT，DELETE 两种
 
