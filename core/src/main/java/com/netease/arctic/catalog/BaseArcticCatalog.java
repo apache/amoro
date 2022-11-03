@@ -279,6 +279,18 @@ public class BaseArcticCatalog implements ArcticCatalog {
     } catch (Exception e) {
       LOG.warn("drop base/change iceberg table fail ", e);
     }
+
+    try {
+      ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
+      String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
+      if (fileIO.exists(tableLocation)) {
+        LOG.info("try to delete table directory location is " +
+            meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE));
+        fileIO.deleteFileWithResult(tableLocation, true);
+      }
+    } catch (Exception e) {
+      LOG.warn("drop table directory fail ", e);
+    }
   }
 
   @Override

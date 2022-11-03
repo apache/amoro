@@ -125,7 +125,6 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
   @Override
   protected void doDropTable(TableMeta meta, boolean purge) {
-    super.doDropTable(meta, purge);
     try {
       hiveClientPool.run(client -> {
         client.dropTable(meta.getTableIdentifier().getDatabase(),
@@ -137,6 +136,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
     }
+    super.doDropTable(meta, purge);
   }
 
   public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
