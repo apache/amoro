@@ -32,7 +32,6 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.Snapshot;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +87,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner splitAssigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nullable ArcticSourceEnumState enumState,
+      ArcticSourceEnumState enumState,
       boolean dimTable) {
     super(enumContext, splitAssigner);
     this.loader = loader;

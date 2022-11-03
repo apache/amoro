@@ -476,7 +476,7 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-hadoop</artifactId>
-            <version>${parquet.version}</version>
+            <version>${parquet-hadoop.version}</version>
         </dependency>
 
         <dependency>

@@ -79,6 +79,15 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
     }
   }
 
+  @Override
+  public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+    try {
+      return tableMetaStore.doAs(() -> clientPool().run(action, retry));
+    } catch (RuntimeException e) {
+      throw throwTException(e);
+    }
+  }
+
   public RuntimeException throwTException(RuntimeException e) throws TException {
     if (e.getCause() instanceof NoSuchObjectException) {
       throw (NoSuchObjectException) e.getCause();

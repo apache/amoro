@@ -25,7 +25,6 @@ import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +35,7 @@ import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 
 /**
  * This is a static arctic source enumerator, used for bounded source scan.
- * Working enabled only just {@link ScanContext#STREAMING} is equal to false.
+ * Working enabled only just {@link ArcticScanContext#STREAMING} is equal to false.
  */
 public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
   private static final Logger LOG = LoggerFactory.getLogger(StaticArcticSourceEnumerator.class);
@@ -51,7 +50,7 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner assigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nullable ArcticSourceEnumState enumState) {
+      ArcticSourceEnumState enumState) {
     super(enumeratorContext, assigner);
     this.loader = loader;
     this.assigner = assigner;

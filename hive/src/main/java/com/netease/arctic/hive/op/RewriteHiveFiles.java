@@ -34,14 +34,14 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
   @Override
   public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
     delegate.rewriteFiles(filesToDelete, filesToAdd);
+    markHiveFiles(filesToDelete, filesToAdd);
+    return this;
+  }
 
-    String hiveLocationRoot = table.hiveLocation();
-    // handle filesToAdd, only handle file in hive location
-    this.addFiles.addAll(getDataFilesInHiveLocation(filesToAdd, hiveLocationRoot));
-
-    // handle filesToDelete, only handle file in hive location
-    this.deleteFiles.addAll(getDataFilesInHiveLocation(filesToDelete, hiveLocationRoot));
-
+  @Override
+  public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
+    delegate.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
+    markHiveFiles(filesToDelete, filesToAdd);
     return this;
   }
 
@@ -51,16 +51,18 @@ public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements R
                                    Set<DataFile> dataFilesToAdd,
                                    Set<DeleteFile> deleteFilesToAdd) {
     delegate.rewriteFiles(dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);
-
-    String hiveLocationRoot = table.hiveLocation();
-    // because DeleteFiles not in hive location, so only handle DataFile
-    // handle filesToAdd, only handle file in hive location
-    this.addFiles.addAll(getDataFilesInHiveLocation(dataFilesToAdd, hiveLocationRoot));
-
-    // handle filesToDelete, only handle file in hive location
-    this.deleteFiles.addAll(getDataFilesInHiveLocation(dataFilesToReplace, hiveLocationRoot));
+    markHiveFiles(dataFilesToReplace, dataFilesToAdd);
 
     return this;
+  }
+
+  private void markHiveFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd) {
+    String hiveLocationRoot = table.hiveLocation();
+    // handle filesToAdd, only handle file in hive location
+    this.addFiles.addAll(getDataFilesInHiveLocation(filesToAdd, hiveLocationRoot));
+
+    // handle filesToDelete, only handle file in hive location
+    this.deleteFiles.addAll(getDataFilesInHiveLocation(filesToDelete, hiveLocationRoot));
   }
 
   @Override

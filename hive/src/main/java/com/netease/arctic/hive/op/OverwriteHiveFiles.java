@@ -106,8 +106,20 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
   }
 
   @Override
-  public OverwriteFiles validateNoConflictingAppends(Long readSnapshotId, Expression conflictDetectionFilter) {
-    delegate.validateNoConflictingAppends(readSnapshotId, conflictDetectionFilter);
+  public OverwriteFiles conflictDetectionFilter(Expression conflictDetectionFilter) {
+    delegate.conflictDetectionFilter(conflictDetectionFilter);
+    return this;
+  }
+
+  @Override
+  public OverwriteFiles validateNoConflictingData() {
+    delegate.validateNoConflictingData();
+    return this;
+  }
+
+  @Override
+  public OverwriteFiles validateNoConflictingDeletes() {
+    delegate.validateNoConflictingDeletes();
     return this;
   }
 

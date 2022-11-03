@@ -50,7 +50,6 @@ import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -253,7 +252,6 @@ public class FlinkSink {
       }
     }
 
-    @Nullable
     public static ShuffleRulePolicy<RowData, ShuffleKey> buildShuffleRulePolicy(
         ShuffleHelper helper,
         int writeOperatorParallelism,
