@@ -176,6 +176,15 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.orc</groupId>
+            <artifactId>orc-core</artifactId>
+            <version>1.7.5</version>
+            <classifier>nohive</classifier>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- test dependency -->
+        <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
             <version>${project.version}</version>
@@ -183,7 +192,6 @@
             <classifier>tests</classifier>
         </dependency>
 
-        <!-- test dependency -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
