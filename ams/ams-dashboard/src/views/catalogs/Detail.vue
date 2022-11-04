@@ -18,8 +18,8 @@
         </a-form-item>
         <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
           <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
-            <a-radio value="Iceberg">Iceberg</a-radio>
-            <a-radio v-if="isHiveMetastore" value="Hive">Hive</a-radio>
+            <a-radio :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
+            <a-radio v-if="isHiveMetastore" :value="tableFormatMap.HIVE">Hive</a-radio>
           </a-radio-group>
         </a-form-item>
         <a-form-item>
@@ -120,6 +120,7 @@ interface IStorageConfigItem {
   value: string
   fileName: string
   fileUrl: string
+  fileId: string
   fileList: string[]
   uploadLoading: boolean
   isSuccess: boolean
@@ -135,7 +136,7 @@ interface FormState {
   authConfigArray: IStorageConfigItem[]
 }
 
-const props = defineProps<{ catalog: ICatalogItem, isEdit: boolean }>()
+const props = defineProps<{ isEdit: boolean }>()
 const emit = defineEmits<{
  (e: 'updateEdit', val: boolean, catalog?: ICatalogItem): void,
  (e: 'updateCatalogs'): void
@@ -152,7 +153,7 @@ const uploadUrl = computed(() => {
   return '/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
-  return props.catalog.catalogName === 'new catalog'
+  return formState.catalog.name === 'new catalog'
 })
 const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
@@ -160,6 +161,10 @@ const isHiveMetastore = computed(() => {
 const loading = ref<boolean>(false)
 const formRef = ref()
 const propertiesRef = ref()
+const tableFormatMap = {
+  HIVE: 'HIVE',
+  ICEBERG: 'ICEBERG'
+}
 const storageConfigFileNameMap = {
   'storage_config.core-site': 'core-site.xml',
   'storage_config.hdfs-site': 'hdfs-site.xml',
@@ -195,7 +200,7 @@ const authConfigTypeOps = reactive<ILableAndValue[]>([{
   value: 'KERBEROS'
 }])
 
-watch(() => props.catalog,
+watch(() => route.query,
   (value) => {
     value && initData()
   }, {
@@ -206,9 +211,6 @@ watch(() => props.catalog,
 const catalogTypeOps = reactive<ILableAndValue[]>([])
 
 function initData() {
-  const { catalog, type } = route.query
-  formState.catalog.name = catalog || ''
-  formState.catalog.type = type || 'ams'
   getConfigInfo()
 }
 async function getCatalogTypeOps() {
@@ -219,27 +221,27 @@ async function getCatalogTypeOps() {
       value: ele.value
     })
   })
-  getMetastoreTyoe()
+  getMetastoreType()
 }
-function getMetastoreTyoe() {
+function getMetastoreType() {
   metastoreType.value = (catalogTypeOps.find(ele => ele.value === formState.catalog.type) || {}).label
 }
 async function getConfigInfo() {
   try {
     loading.value = true
-    const { catalogName, catalogType } = props.catalog
-    if (!catalogName) { return }
+    const { catalog, type } = route.query
+    if (!catalog) { return }
     if (isNewCatalog.value) {
-      formState.catalog.name = catalogName
-      formState.catalog.type = catalogType || 'ams'
-      formState.tableFormat = 'Iceberg'
+      formState.catalog.name = catalog
+      formState.catalog.type = type || 'ams'
+      formState.tableFormat = tableFormatMap.ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
       formState.properties = {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
-      const res = await getCatalogsSetting(catalogName)
+      const res = await getCatalogsSetting(catalog)
       if (!res) { return }
       const { name, type, tableFormat, storageConfig, authConfig, properties } = res
       formState.catalog.name = name
@@ -251,7 +253,7 @@ async function getConfigInfo() {
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     }
-    getMetastoreTyoe()
+    getMetastoreType()
     const { storageConfig, authConfig } = formState
     Object.keys(storageConfig).forEach(key => {
       const configArr = ['storage_config.core-site', 'storage_config.hdfs-site']
@@ -264,6 +266,7 @@ async function getConfigInfo() {
           value: storageConfig[key]?.fileName,
           fileName: storageConfig[key]?.fileName,
           fileUrl: storageConfig[key]?.fileUrl,
+          fileId: '',
           fileList: [],
           uploadLoading: false,
           isSuccess: false
@@ -278,6 +281,7 @@ async function getConfigInfo() {
           value: authConfig[key]?.fileName,
           fileName: authConfig[key]?.fileName,
           fileUrl: authConfig[key]?.fileUrl,
+          fileId: '',
           fileList: [],
           uploadLoading: false,
           isSuccess: false
@@ -292,14 +296,36 @@ async function getConfigInfo() {
 }
 
 function changeMetastore() {
-  formState.tableFormat = isHiveMetastore.value ? 'Hive' : 'Iceberg'
-  console.log('changeMetastore formState.tableFormat', formState.tableFormat)
+  formState.tableFormat = isHiveMetastore.value ? tableFormatMap.HIVE : tableFormatMap.ICEBERG
+  if (!isNewCatalog.value) { return }
+  const index = formState.storageConfigArray.findIndex(item => item.label === 'storage_config.hive-site')
+  if (isHiveMetastore.value) {
+    if (index > -1) {
+      return
+    }
+    formState.storageConfigArray.push({
+      label: 'storage_config.hive-site',
+      value: '',
+      fileName: '',
+      fileUrl: '',
+      fileId: '',
+      fileList: [],
+      uploadLoading: false,
+      isSuccess: false
+    })
+    formState.storageConfig['storage_config.hive-site'] = ''
+  } else {
+    if (index > -1) {
+      formState.storageConfigArray.splice(index, 1)
+      delete formState.storageConfig['storage_config.hive-site']
+    }
+  }
 }
 function handleEdit() {
   emit('updateEdit', true)
 }
 async function handleRemove() {
-  const res = await checkCatalogStatus(props.catalog.catalogName)
+  const res = await checkCatalogStatus(formState.catalog.name)
   if (res) {
     deleteCatalogModal()
     return
@@ -320,6 +346,19 @@ async function validatorName(rule, value) {
     return Promise.reject(new Error(t('invalidInput')))
   }
 }
+function getFileIdParams() {
+  const { storageConfig, authConfig, storageConfigArray, authConfigArray } = formState
+  Object.keys(authConfig).forEach(key => {
+    if (['auth_config.keytab', 'auth_config.krb5'].includes(key)) {
+      const id = (authConfigArray.find(item => item.label === key) || {}).fileId
+      authConfig[key] = id
+    }
+  })
+  Object.keys(storageConfig).forEach(key => {
+    const id = (storageConfigArray.find(item => item.label === key) || {}).fileId
+    storageConfig[key] = id
+  })
+}
 function handleSave() {
   formRef.value
     .validateFields()
@@ -329,6 +368,7 @@ function handleSave() {
       if (!properties) {
         return
       }
+      getFileIdParams()
       await saveCatalogsSetting({
         isCreate: isNewCatalog.value,
         ...catalog,
@@ -336,13 +376,14 @@ function handleSave() {
         storageConfig,
         authConfig,
         properties
-      }).then(() => {
+      }).then(async() => {
         message.success(`${t('save')} ${t('success')}`)
         formRef.value.resetFields()
         emit('updateCatalogs')
+        const { catalog: catalogName, type } = route.query
         emit('updateEdit', false, {
-          catalogName: catalog.name,
-          catalogType: catalog.type
+          catalogName: catalogName,
+          catalogType: type
         })
         getConfigInfo()
       }).catch(() => {
@@ -360,7 +401,7 @@ async function deleteCatalogModal() {
   Modal.confirm({
     title: t('deleteCatalogModalTitle'),
     onOk: async() => {
-      await delCatalog(props.catalog.catalogName)
+      await delCatalog(formState.catalog.name)
       message.success(`${t('remove')} ${t('success')}`)
       emit('updateCatalogs')
     }
@@ -376,7 +417,9 @@ function uploadFile(info: UploadChangeParam, config, type?) {
     if (info.file.status === 'done') {
       config.isSuccess = true
       config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.label] : info.file.name
-      config.fileUrl = info.file.response?.result?.url
+      const { url, id } = info.file.response.result || {}
+      config.fileUrl = url
+      config.fileId = id
       message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)
     } else if (info.file.status === 'error') {
       config.isSuccess = false

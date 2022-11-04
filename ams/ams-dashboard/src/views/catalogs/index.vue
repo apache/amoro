@@ -11,7 +11,7 @@
       <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
     </div>
     <div class="catalog-detail">
-      <Detail :catalog="curCatalog" :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
+      <Detail :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
     </div>
   </div>
 </template>
@@ -46,23 +46,25 @@ async function getCatalogs() {
         catalogType: ele.catalogType
       })
     })
-    const { catalog = '', type } = route.query
-    const item: ICatalogItem = {}
-    if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
-      addCatalog()
-      return
-    }
-    if (catalog) {
-      item.catalogName = catalog
-      item.catalogType = type
-    } else {
-      item.catalogName = catalogs[0]?.catalogName
-      item.catalogType = catalogs[0]?.catalogType
-    }
-    selectCatalog(item)
   } finally {
     loading.value = false
   }
+}
+function initSelectCatalog() {
+  const { catalog = '', type } = route.query
+  const item: ICatalogItem = {}
+  if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
+    addCatalog()
+    return
+  }
+  if (catalog) {
+    item.catalogName = catalog
+    item.catalogType = type
+  } else {
+    item.catalogName = catalogs[0]?.catalogName
+    item.catalogType = catalogs[0]?.catalogType
+  }
+  selectCatalog(item)
 }
 function handleClick(item: ICatalogItem) {
   if (isEdit.value) {
@@ -123,8 +125,9 @@ function addNewCatalog() {
   selectCatalog(item)
   isEdit.value = true
 }
-onMounted(() => {
-  getCatalogs()
+onMounted(async() => {
+  await getCatalogs()
+  initSelectCatalog()
 })
 function leaveConfirm(cb?) {
   Modal.confirm({

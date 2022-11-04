@@ -71,10 +71,13 @@ export default defineComponent({
     const onFinish = async(values: FormState) => {
       try {
         const store = useStore()
-        await loginService.login({
+        const res = await loginService.login({
           user: values.username,
           password: values.password
         })
+        if (res.code !== 200) {
+          return
+        }
         const { path, query } = store.historyPathInfo
         router.replace({
           path: path || '/',
