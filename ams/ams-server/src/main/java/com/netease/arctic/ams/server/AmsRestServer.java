@@ -154,7 +154,7 @@ public class AmsRestServer {
         delete("/catalogs/{catalogName}", CatalogController::deleteCatalog);
         put("/catalogs/{catalogName}", CatalogController::updateCatalog);
         get("/catalogs/{catalogName}/delete/check", CatalogController::catalogDeleteCheck);
-        get("/catalogs/{catalogName}/config/{type}/{key}", CatalogController::catalogDeleteCheck);
+        get("/catalogs/{catalogName}/config/{type}/{key}", CatalogController::getCatalogConfFileContent);
         /** optimize controller **/
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", OptimizerController::getOptimizerTables);
         get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", OptimizerController::getOptimizers);

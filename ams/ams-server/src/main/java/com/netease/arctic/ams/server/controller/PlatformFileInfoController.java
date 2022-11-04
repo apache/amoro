@@ -30,6 +30,8 @@ import org.apache.commons.lang.StringUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PlatformFileInfoController extends RestBaseController {
 
@@ -48,7 +50,10 @@ public class PlatformFileInfoController extends RestBaseController {
       byte[] bytes = IOUtils.toByteArray(bodyAsInputStream);
       String content = Base64.getEncoder().encodeToString(bytes);
       Integer fid = platformFileInfoService.addFile(name, content);
-      ctx.json(OkResponse.of(fid));
+      Map<String, String> result  = new HashMap<>();
+      result.put("id", String.valueOf(fid));
+      result.put("url", "/ams/v1/files/" + fid);
+      ctx.json(OkResponse.of(result));
     } catch (IOException e) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to upload file", null));
     }

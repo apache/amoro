@@ -159,8 +159,9 @@ public class ArcticMetaStore {
     }
 
     //extension properties
-    String extensionPro = yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG) == null ? "" :
-            yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG);
+    Map<String,String> extensionPro =
+            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class) == null ? new HashMap<>() :
+            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class);
     config.put(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES.key(), extensionPro);
 
     config.put(ArcticMetaStoreConf.ARCTIC_HOME.key(), getArcticHome());

@@ -207,6 +207,6 @@ public interface TableMetadataMapper {
       @Param("tableIdentifier") TableIdentifier tableIdentifier);
 
   // get the table count in catalog
-  @Select("select count(catalog_name) from " + TABLE_NAME + " where catalog_name={catalogName}")
+  @Select("select count(catalog_name) from " + TABLE_NAME + " where catalog_name=#{catalogName}")
   Integer getTableCountInCatalog(@Param("catalogName") String catalogName);
 }
