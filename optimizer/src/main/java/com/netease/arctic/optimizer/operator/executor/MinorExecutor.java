@@ -92,8 +92,6 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
       List<DataFile> dataFiles = nodeFileEntry.getValue();
       dataFiles.addAll(task.deleteFiles());
       List<DeleteFile> posDeleteList = deleteFileMap.get(treeNode);
-      CloseableIterator<Record> iterator =
-          openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
       SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
           .withTransactionId(getMaxTransactionId(dataFiles))
@@ -101,6 +99,9 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
           .buildBasePosDeleteWriter(treeNode.mask(), treeNode.index(), task.getPartition());
 
       table.io().doAs(() -> {
+        CloseableIterator<Record> iterator =
+            openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
+
         while (iterator.hasNext()) {
           Record record = iterator.next();
           String filePath = (String) record.get(recordStruct.fields()
@@ -117,12 +118,11 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
         return null;
       });
 
-
       // rewrite pos-delete content
       if (CollectionUtils.isNotEmpty(posDeleteList)) {
         BaseIcebergPosDeleteReader posDeleteReader = new BaseIcebergPosDeleteReader(table.io(), posDeleteList);
-        CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
         table.io().doAs(() -> {
+          CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
           CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator();
           while (posDeleteIterator.hasNext()) {
             Record record = posDeleteIterator.next();
