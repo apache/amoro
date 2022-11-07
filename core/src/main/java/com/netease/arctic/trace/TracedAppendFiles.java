@@ -18,6 +18,9 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.WatermarkGenerator;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
@@ -32,16 +35,19 @@ public class TracedAppendFiles implements AppendFiles {
 
   private final AppendFiles appendFiles;
   private final TableTracer tracer;
+  private final WatermarkGenerator watermarkGenerator;
 
   public TracedAppendFiles(AppendFiles appendFiles, TableTracer tracer) {
     this.appendFiles = appendFiles;
     this.tracer = tracer;
+    this.watermarkGenerator = WatermarkGenerator.forTable(tracer.table());
   }
 
   @Override
   public AppendFiles appendFile(DataFile file) {
     appendFiles.appendFile(file);
     tracer.addDataFile(file);
+    watermarkGenerator.addFile(file);
     return this;
   }
 
@@ -78,6 +84,9 @@ public class TracedAppendFiles implements AppendFiles {
 
   @Override
   public void commit() {
+    long currentWatermark = TablePropertyUtil.getTableWatermark(tracer.table());
+    long watermark = Math.max(currentWatermark, watermarkGenerator.watermark());
+    appendFiles.set(TableProperties.WATERMARK_TABLE, String.valueOf(watermark));
     appendFiles.commit();
     tracer.commit();
   }

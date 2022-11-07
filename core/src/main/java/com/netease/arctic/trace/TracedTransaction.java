@@ -78,7 +78,9 @@ public class TracedTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    return transaction.updateSchema();
+    UpdateSchema updateSchema = transaction.updateSchema();
+    tracer.setAction(TraceOperations.UPDATE_SCHEMA);
+    return new TracedSchemaUpdate(updateSchema, new TransactionTracker());
   }
 
   @Override
@@ -89,7 +91,7 @@ public class TracedTransaction implements Transaction {
   @Override
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = transaction.updateProperties();
-    tracer.setAction(TrackerOperations.UPDATE_PROPERTIES);
+    tracer.setAction(TraceOperations.UPDATE_PROPERTIES);
     return new TracedUpdateProperties(updateProperties, new TransactionTracker());
   }
 

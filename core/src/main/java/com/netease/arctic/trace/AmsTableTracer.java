@@ -30,6 +30,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
+import org.apache.commons.compress.utils.Sets;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
@@ -46,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -54,30 +56,31 @@ import java.util.stream.Collectors;
 public class AmsTableTracer implements TableTracer {
 
   private static final Logger LOG = LoggerFactory.getLogger(AmsTableTracer.class);
+  private static final Set<String> UPDATE_WATERMARK_ACTIONS = Sets.newHashSet(
+      TraceOperations.APPEND,
+      TraceOperations.OVERWRITE,
+      TraceOperations.DELETE
+  );
 
   private final ArcticTable table;
   private final String innerTable;
   private final AmsClient client;
 
-  private String action;
-  private Map<String, String> properties;
   private final Map<String, String> snapshotSummary = new HashMap<>();
-  private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
   private final List<UpdateColumn> updateColumns = new ArrayList<>();
+
+  private String action;
+  private Map<String, String> properties;
+  private InternalTableChange defaultTableChange;
+  private boolean updateWatermark = false;
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
         Constants.INNER_TABLE_CHANGE : Constants.INNER_TABLE_BASE;
     this.table = table;
-    this.action = action;
     this.client = client;
-  }
-
-  public AmsTableTracer(KeyedTable table, String action, AmsClient client) {
-    this.table = table;
-    this.innerTable = null;
-    this.client = client;
+    setAction(action);
   }
 
   public AmsTableTracer(UnkeyedTable table, AmsClient client) {
@@ -202,6 +205,15 @@ public class AmsTableTracer implements TableTracer {
 
   public void setAction(String action) {
     this.action = action;
+    if (UPDATE_WATERMARK_ACTIONS.contains(action)) {
+      updateWatermark = true;
+    }
+  }
+
+  private void updateWatermarkIfNeed() {
+    if (updateWatermark) {
+
+    }
   }
 
   public static class InternalTableChange {

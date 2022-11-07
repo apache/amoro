@@ -33,7 +33,7 @@ import com.netease.arctic.trace.TracedRowDelta;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
-import com.netease.arctic.trace.TrackerOperations;
+import com.netease.arctic.trace.TraceOperations;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -66,7 +66,6 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
@@ -172,7 +171,8 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public UpdateSchema updateSchema() {
-    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client));
+    return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this,
+        TraceOperations.UPDATE_SCHEMA, client));
   }
 
   @Override
@@ -184,7 +184,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = icebergTable.updateProperties();
     if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TrackerOperations.UPDATE_PROPERTIES, client);
+      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client);
       return new TracedUpdateProperties(updateProperties, tracer);
     } else {
       return updateProperties;
@@ -205,7 +205,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public AppendFiles newAppend() {
     AppendFiles appendFiles = icebergTable.newAppend();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.APPEND, client);
       return new TracedAppendFiles(appendFiles, tracer);
     } else {
       return appendFiles;
@@ -216,7 +216,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public AppendFiles newFastAppend() {
     AppendFiles appendFiles = icebergTable.newFastAppend();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.APPEND, client);
       return new TracedAppendFiles(appendFiles, tracer);
     } else {
       return appendFiles;
@@ -227,7 +227,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public RewriteFiles newRewrite() {
     RewriteFiles rewriteFiles = icebergTable.newRewrite();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.REPLACE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.REPLACE, client);
       return new TracedRewriteFiles(rewriteFiles, tracer);
     } else {
       return rewriteFiles;
@@ -243,7 +243,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public OverwriteFiles newOverwrite() {
     OverwriteFiles overwriteFiles = icebergTable.newOverwrite();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.OVERWRITE, client);
       return new TracedOverwriteFiles(overwriteFiles, tracer);
     } else {
       return overwriteFiles;
@@ -254,7 +254,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public RowDelta newRowDelta() {
     RowDelta rowDelta = icebergTable.newRowDelta();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.OVERWRITE, client);
       return new TracedRowDelta(rowDelta, tracer);
     } else {
       return rowDelta;
@@ -265,7 +265,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public ReplacePartitions newReplacePartitions() {
     ReplacePartitions replacePartitions = icebergTable.newReplacePartitions();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.OVERWRITE, client);
       return new TracedReplacePartitions(replacePartitions, tracer);
     } else {
       return replacePartitions;
@@ -276,7 +276,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public DeleteFiles newDelete() {
     DeleteFiles deleteFiles = icebergTable.newDelete();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.DELETE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.DELETE, client);
       return new TracedDeleteFiles(deleteFiles, tracer);
     } else {
       return deleteFiles;

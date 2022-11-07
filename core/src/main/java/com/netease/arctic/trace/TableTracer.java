@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.types.Type;
@@ -28,6 +29,11 @@ import java.util.Map;
  * Tracing table changes.
  */
 public interface TableTracer {
+
+  /**
+   * Returns the {@link ArcticTable} traced
+   */
+  ArcticTable table();
 
   /**
    * Add a {@link DataFile} into table

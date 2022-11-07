@@ -21,10 +21,12 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.DataFiles;
+import com.netease.arctic.table.UnkeyedTable;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -34,6 +36,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.UncheckedIOException;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -141,5 +144,29 @@ public class TablePropertyUtil {
     changeTable.refresh();
     Snapshot snapshot = changeTable.currentSnapshot();
     return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
+  }
+
+  public static long getTableWatermark(ArcticTable table) {
+    if (table.isUnkeyedTable()) {
+      return getTableWatermarkFromTableSnapshots(table.asUnkeyedTable());
+    } else {
+      return getTableWatermarkFromTableSnapshots(table.asKeyedTable().changeTable());
+    }
+  }
+
+  private static long getTableWatermarkFromTableSnapshots(UnkeyedTable unkeyedTable) {
+    if (unkeyedTable.currentSnapshot().summary().containsKey(TableProperties.WATERMARK_TABLE)) {
+      return Long.parseLong(unkeyedTable.currentSnapshot().summary()
+          .get(TableProperties.WATERMARK_TABLE));
+    } else {
+      List<Snapshot> snapshotList = Lists.newArrayList(unkeyedTable.snapshots().iterator());
+      for (int i = snapshotList.size() - 1; i  >= 0; i--) {
+        Snapshot snapshot = snapshotList.get(i);
+        if (snapshot.summary().containsKey(TableProperties.WATERMARK_TABLE)) {
+          return Long.parseLong(snapshot.summary().get(TableProperties.WATERMARK_TABLE));
+        }
+      }
+    }
+    return 0L;
   }
 }
