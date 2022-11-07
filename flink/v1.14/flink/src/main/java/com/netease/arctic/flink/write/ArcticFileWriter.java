@@ -26,6 +26,9 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.api.common.typeutils.base.LongSerializer;
+import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
 import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
@@ -94,7 +97,6 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
   @Override
   public void open() {
-    this.subTaskId = getRuntimeContext().getIndexOfThisSubtask();
     this.attemptId = getRuntimeContext().getAttemptNumber();
     this.jobId = getContainingTask().getEnvironment().getJobID().toString();
     table = ArcticUtils.loadArcticTable(tableLoader);
@@ -103,6 +105,17 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     initTaskWriterFactory(mask);
 
     this.writer = table.io().doAs(taskWriterFactory::create);
+  }
+
+  @Override
+  public void initializeState(StateInitializationContext context) throws Exception {
+    super.initializeState(context);
+
+    this.subTaskId = getRuntimeContext().getIndexOfThisSubtask();
+
+    if (context.isRestored()) {
+      checkpointId = context.getRestoredCheckpointId().getAsLong();
+    }
   }
 
   private void initTaskWriterFactory(Long mask) {
@@ -125,6 +138,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       transaction = null;
     }
     return transaction;
+  }
+
+  @VisibleForTesting
+  public long getCheckpointId() {
+    return checkpointId;
   }
 
   private long getMask(int subTaskId) {
