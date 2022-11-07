@@ -24,24 +24,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFiles;
-import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.expressions.Literal;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.types.Type;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.UncheckedIOException;
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * Utils to handle table properties.
@@ -49,7 +40,6 @@ import java.util.UUID;
 public class TablePropertyUtil {
 
   public static final StructLike EMPTY_STRUCT = GenericRecord.create(new Schema());
-  private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
 
   /**
    * Decode string to max transaction id map of each partition.
@@ -67,7 +57,7 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(null, map.get(key));
         } else {
-          StructLike partitionData = DataFiles.data(spec, key);
+          StructLike partitionData = ArcticDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
@@ -87,75 +77,13 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(EMPTY_STRUCT, map.get(key));
         } else {
-          StructLike partitionData = readPartitionData(spec, key);
+          StructLike partitionData = ArcticDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
       return results;
     } catch (JsonProcessingException e) {
       throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
-    }
-  }
-
-  public static GenericRecord readPartitionData(PartitionSpec spec, String partitionPath) {
-    GenericRecord data = GenericRecord.create(spec.schema());
-    String[] partitions = partitionPath.split("/", -1);
-    Preconditions.checkArgument(partitions.length <= spec.fields().size(),
-            "Invalid partition data, too many fields (expecting %s): %s",
-            spec.fields().size(), partitionPath);
-    Preconditions.checkArgument(partitions.length >= spec.fields().size(),
-            "Invalid partition data, not enough fields (expecting %s): %s",
-            spec.fields().size(), partitionPath);
-
-    for (int i = 0; i < partitions.length; i += 1) {
-      PartitionField field = spec.fields().get(i);
-      String[] parts = partitions[i].split("=", 2);
-      Preconditions.checkArgument(
-              parts.length == 2 &&
-                      parts[0] != null &&
-                      field.name().equals(parts[0]),
-              "Invalid partition: %s",
-              partitions[i]);
-
-      data.set(i, fromPartitionString(spec.partitionType().fieldType(parts[0]), parts[1]));
-    }
-
-    return data;
-  }
-
-  public static Object fromPartitionString(Type type, String asString) {
-    if (asString == null || HIVE_NULL.equals(asString)) {
-      return null;
-    }
-
-    switch (type.typeId()) {
-      case BOOLEAN:
-        return Boolean.valueOf(asString);
-      case INTEGER:
-        return Integer.valueOf(asString.replace("-", ""));
-      case STRING:
-        return asString;
-      case LONG:
-        return Long.valueOf(asString);
-      case FLOAT:
-        return Float.valueOf(asString);
-      case DOUBLE:
-        return Double.valueOf(asString);
-      case UUID:
-        return UUID.fromString(asString);
-      case FIXED:
-        Types.FixedType fixed = (Types.FixedType) type;
-        return Arrays.copyOf(
-                asString.getBytes(StandardCharsets.UTF_8), fixed.length());
-      case BINARY:
-        return asString.getBytes(StandardCharsets.UTF_8);
-      case DECIMAL:
-        return new BigDecimal(asString);
-      case DATE:
-        return Literal.of(asString).to(Types.DateType.get()).value();
-      default:
-        throw new UnsupportedOperationException(
-                "Unsupported type for fromPartitionString: " + type);
     }
   }
 
