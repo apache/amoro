@@ -22,6 +22,7 @@ import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.model.SqlExample;
 import com.netease.arctic.ams.server.service.TerminalService;
 import io.javalin.http.Context;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
