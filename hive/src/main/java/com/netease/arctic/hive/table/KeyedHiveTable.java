@@ -25,6 +25,8 @@ import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.BaseSchemaUpdate;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizer;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.scan.BaseChangeTableScan;
+import com.netease.arctic.scan.ChangeTableScan;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
@@ -102,6 +104,11 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
     @Override
     public UpdateSchema updateSchema() {
       return new BaseSchemaUpdate(this, super.updateSchema());
+    }
+
+    @Override
+    public ChangeTableScan newChangeScan() {
+      return new BaseChangeTableScan(this);
     }
   }
 }

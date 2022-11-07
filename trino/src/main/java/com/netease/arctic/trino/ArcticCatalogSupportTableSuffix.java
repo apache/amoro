@@ -24,6 +24,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
+import com.netease.arctic.scan.ChangeTableScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
@@ -150,7 +151,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
   private static class ChangeTableWithExternalSchemas implements ChangeTable, HasTableOperations {
 
-    private BaseUnkeyedTable table;
+    private final BaseUnkeyedTable table;
 
     public ChangeTableWithExternalSchemas(BaseUnkeyedTable table) {
       this.table = table;
@@ -344,6 +345,15 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
       return table.updatePartitionProperties(transaction);
+    }
+
+    @Override
+    public ChangeTableScan newChangeScan() {
+      if (table instanceof ChangeTable) {
+        return ((ChangeTable) table).newChangeScan();
+      } else {
+        throw new UnsupportedOperationException();
+      }
     }
   }
 }

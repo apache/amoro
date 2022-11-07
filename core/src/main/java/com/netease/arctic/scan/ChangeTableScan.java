@@ -16,18 +16,27 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.table;
+package com.netease.arctic.scan;
 
-import com.netease.arctic.scan.ChangeTableScan;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.util.StructLikeMap;
 
-/**
- * Change table store of an {@link KeyedTable}, storing change records in it.
- */
-public interface ChangeTable extends UnkeyedTable {
+public interface ChangeTableScan {
   /**
-   * Create a new {@link ChangeTableScan scan} for this table.
+   * Config this scan with filter by the {@link Expression}.
    *
-   * @return a table scan for this table
+   * @param expr a filter expression
+   * @return scan based on this with results filtered by the expression
    */
-  ChangeTableScan newChangeScan();
+  ChangeTableScan filter(Expression expr);
+
+  /**
+   * Plan the {@link ArcticFileScanTask tasks} for this scan.
+   *
+   * @return an Iterable of tasks for this scan
+   */
+  CloseableIterable<ArcticFileScanTask> planTasks();
+
+  ChangeTableScan partitionMaxTransactionId(StructLikeMap<Long> partitionMaxTransactionId);
 }
