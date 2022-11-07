@@ -255,3 +255,12 @@ CREATE TABLE ddl_record
     ddl_type       varchar(256) NOT NULL,
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE `platform_file_info` (
+  `id` bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),,
+  `file_name` varchar(100) NOT NULL,
+  `file_content_b64` text NOT NULL,
+  `file_path` varchar(100) DEFAULT ,
+  `add_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ;
