@@ -35,21 +35,21 @@ import java.util.Set;
 
 public class RewritePartitionsTest extends TableTestBase {
 
-  private long initTxId = 0;
+  private long initMaxTxId;
 
   @Override
   public void before() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    initMaxTxId = TablePropertyUtil.allocateMaxTransactionId(testKeyedTable);
     List<DataFile> files = writeBaseNoCommit(testKeyedTable, txId, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 1, "aaa", quickDate(1)),
         newGenericRecord(TABLE_SCHEMA, 2, "bbb", quickDate(2)),
         newGenericRecord(TABLE_SCHEMA, 3, "ccc", quickDate(3))
     ));
-    this.initTxId = txId;
 
     RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
     files.forEach(overwrite::addDataFile);
-    overwrite.withTransactionId(txId);
+    overwrite.withMaxTransactionId(initMaxTxId);
     overwrite.commit();
 
     writeChange(PK_TABLE_ID, ChangeAction.INSERT, Lists.newArrayList(
@@ -60,13 +60,13 @@ public class RewritePartitionsTest extends TableTestBase {
 
     // init. 3 partition with init txId
     StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(2))
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(3))
     ).longValue());
 
@@ -84,6 +84,7 @@ public class RewritePartitionsTest extends TableTestBase {
   @Test
   public void testDynamicOverwritePartition() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long maxTxId = TablePropertyUtil.allocateMaxTransactionId(testKeyedTable);
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", quickDate(1)),
         newGenericRecord(TABLE_SCHEMA, 8, "888", quickDate(1)),
@@ -92,19 +93,19 @@ public class RewritePartitionsTest extends TableTestBase {
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
     RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
     newFiles.forEach(overwrite::addDataFile);
-    overwrite.withTransactionId(txId);
+    overwrite.withMaxTransactionId(maxTxId);
     overwrite.commit();
     // overwrite 1 partition by data file
 
     StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     // expect result: 1 partition with new txId, 2,3 partition use old txId
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(2))
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, quickDate(3))
     ).longValue());
 

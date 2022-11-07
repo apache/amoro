@@ -38,6 +38,7 @@ public class TableProperties {
 
   static {
     PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION);
     PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
@@ -46,6 +47,8 @@ public class TableProperties {
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
+
+  public static final String BASE_TABLE_MAX_TRANSACTION = "base.table.max-transaction";
 
   public static final String LOCATION = "location";
 

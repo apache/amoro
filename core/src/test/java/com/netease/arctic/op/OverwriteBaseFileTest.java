@@ -50,7 +50,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
   protected static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
       .identity("op_time").build();
 
-  private long initTxId = 0;
+  private long initMaxTxId;
 
   @Override
   public void setupTables() throws Exception {
@@ -68,17 +68,17 @@ public class OverwriteBaseFileTest extends TableTestBase {
   @Override
   public void before() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    initMaxTxId = TablePropertyUtil.allocateMaxTransactionId(testKeyedTable);
     List<DataFile> files = writeBaseNoCommit(testKeyedTable, txId, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 1, "aaa", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 2, "bbb", "2020-1-2"),
         newGenericRecord(TABLE_SCHEMA, 3, "ccc", "2020-1-3")
     ));
-    this.initTxId = txId;
 
-    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
-    files.forEach(overwrite::addDataFile);
-    overwrite.withTransactionId(txId);
-    overwrite.commit();
+    RewritePartitions rewritePartitions = testKeyedTable.newRewritePartitions();
+    files.forEach(rewritePartitions::addDataFile);
+    rewritePartitions.withMaxTransactionId(initMaxTxId);
+    rewritePartitions.commit();
 
     writeChange(PK_TABLE_ID, ChangeAction.INSERT, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 4, "444", "2020-1-1"),
@@ -89,13 +89,13 @@ public class OverwriteBaseFileTest extends TableTestBase {
 
     // init. 3 partition with init txId
     StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-2")
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-3")
     ).longValue());
 
@@ -113,6 +113,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
   @Test
   public void testOverwriteAllPartition() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long maxTxId = TablePropertyUtil.allocateMaxTransactionId(testKeyedTable);
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 8, "888", "2020-1-1"),
@@ -123,21 +124,22 @@ public class OverwriteBaseFileTest extends TableTestBase {
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
         .withTransactionId(txId)
+        .withMaxTransactionId(maxTxId)
         .commit();
     // overwrite all partition and add new data file
 
     StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     // expect result: all partition with new txId
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
     ).longValue());
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-2")
     ).longValue());
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-3")
     ).longValue());
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-4")
     ).longValue());
 
@@ -156,6 +158,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
   @Test
   public void testOverwritePartitionByExpression() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long maxTxId = TablePropertyUtil.allocateMaxTransactionId(testKeyedTable);
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 8, "888", "2020-1-1"),
@@ -165,6 +168,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.withTransactionId(txId);
+    overwrite.withMaxTransactionId(maxTxId);
     overwrite.overwriteByRowFilter(
         Expressions.or(
             Expressions.or(
@@ -180,13 +184,13 @@ public class OverwriteBaseFileTest extends TableTestBase {
 
     StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     // expect result: 1,2 partition with new txId, 3 partition use old txId
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-1")
     ).longValue());
-    Assert.assertEquals(txId, partitionMaxTxId.get(
+    Assert.assertEquals(maxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC,"2020-1-2")
     ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
+    Assert.assertEquals(initMaxTxId, partitionMaxTxId.get(
         partitionData(TABLE_SCHEMA, SPEC, "2020-1-3")
     ).longValue());
 

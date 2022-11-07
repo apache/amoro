@@ -24,6 +24,7 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.table.SupportsUpsert;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
@@ -58,12 +59,14 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final StructType dsSchema;
 
   private final long transactionId;
+  private final long currentSnapshotSequence;
   private final String hiveSubdirectory;
 
   KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.transactionId = table.beginTransaction(null);
+    this.currentSnapshotSequence = TablePropertyUtil.allocateMaxTransactionId(table.asKeyedTable());
     this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
   }
 
@@ -146,7 +149,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     @Override
     public void commit(WriterCommitMessage[] messages) {
       RewritePartitions rewritePartitions = table.newRewritePartitions();
-      rewritePartitions.withTransactionId(transactionId);
+      rewritePartitions.withMaxTransactionId(currentSnapshotSequence);
 
       for (DataFile file : files(messages)) {
         rewritePartitions.addDataFile(file);
@@ -173,6 +176,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
       overwriteBaseFiles.withTransactionId(transactionId);
+      overwriteBaseFiles.withMaxTransactionId(currentSnapshotSequence);
 
       for (DataFile file : files(messages)) {
         overwriteBaseFiles.addFile(file);

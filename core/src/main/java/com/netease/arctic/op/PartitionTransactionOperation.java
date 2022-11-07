@@ -68,10 +68,11 @@ public abstract class PartitionTransactionOperation implements PendingUpdate<Str
   public void commit() {
     this.tx = keyedTable.baseTable().newTransaction();
 
-    StructLikeMap<Long> partitionMaxTxId = apply();
+    StructLikeMap<Long> partitionMaxSnapshotSequence = apply();
     UpdatePartitionProperties updatePartitionProperties = keyedTable.baseTable().updatePartitionProperties(tx);
-    partitionMaxTxId.forEach((partition, txId) ->
-        updatePartitionProperties.set(partition, TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, String.valueOf(txId)));
+    partitionMaxSnapshotSequence.forEach((partition, snapshotSequence) ->
+        updatePartitionProperties.set(partition, TableProperties.BASE_TABLE_MAX_TRANSACTION,
+            String.valueOf(snapshotSequence)));
     updatePartitionProperties.commit();
 
     tx.commitTransaction();

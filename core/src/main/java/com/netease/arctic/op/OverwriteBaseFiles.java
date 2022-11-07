@@ -57,7 +57,12 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private Expression deleteExpression = Expressions.alwaysFalse();
   private final StructLikeMap<Long> maxTransactionId;
 
+  // TransactionId is the monotonically increasing transaction's id, allocate from AMS
   private Long transactionId;
+  // DefaultMaxTransactionId works with maxTransactionId map above, they describe the data boundary of change store and 
+  // base store. 
+  // TransactionId and defaultMaxTransactionId will be unified in the future.
+  private Long defaultMaxTransactionId;
   private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
@@ -98,6 +103,11 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
   public OverwriteBaseFiles withMaxTransactionId(StructLike partitionData, long maxTransactionId) {
     this.maxTransactionId.put(partitionData, maxTransactionId);
+    return this;
+  }
+
+  public OverwriteBaseFiles withMaxTransactionId(long maxTransactionId) {
+    this.defaultMaxTransactionId = maxTransactionId;
     return this;
   }
 
@@ -231,8 +241,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
 
   private long getPartitionMaxTxId(StructLike partitionData) {
     long txId = maxTransactionId.containsKey(partitionData) ? maxTransactionId.get(partitionData) : -1;
-    if (this.transactionId != null) {
-      txId = Math.max(txId, this.transactionId);
+    if (this.defaultMaxTransactionId != null) {
+      txId = Math.max(txId, this.defaultMaxTransactionId);
     }
     return txId;
   }

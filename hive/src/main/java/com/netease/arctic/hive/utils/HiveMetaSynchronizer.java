@@ -35,6 +35,7 @@ import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.UpdateSchema;
@@ -230,11 +231,13 @@ public class HiveMetaSynchronizer {
           filesToAdd.stream().map(DataFile::path).collect(Collectors.toList()));
       if (table.isKeyedTable()) {
         long txId = table.asKeyedTable().beginTransaction(null);
+        long currentSnapshotSequence = TablePropertyUtil.allocateMaxTransactionId(table.asKeyedTable());
         OverwriteBaseFiles overwriteBaseFiles = table.asKeyedTable().newOverwriteBaseFiles();
         overwriteBaseFiles.set(OverwriteHiveFiles.PROPERTIES_VALIDATE_LOCATION, "false");
         filesToDelete.forEach(overwriteBaseFiles::deleteFile);
         filesToAdd.forEach(overwriteBaseFiles::addFile);
         overwriteBaseFiles.withTransactionId(txId);
+        overwriteBaseFiles.withMaxTransactionId(currentSnapshotSequence);
         overwriteBaseFiles.commit();
       } else {
         OverwriteFiles overwriteFiles = table.asUnkeyedTable().newOverwrite();

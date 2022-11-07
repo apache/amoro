@@ -49,7 +49,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  public KeyedPartitionRewrite withTransactionId(long transactionId) {
+  public KeyedPartitionRewrite withMaxTransactionId(long transactionId) {
     this.transactionId = transactionId;
     return this;
   }
@@ -61,7 +61,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     }
 
     Preconditions.checkNotNull(transactionId, "transaction-Id must be set.");
-    Preconditions.checkArgument(transactionId > 0, "transaction-Id must be positive.");
+    Preconditions.checkArgument(transactionId >= 0, "transaction-Id must be positive.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     addFiles.forEach(replacePartitions::addFile);
