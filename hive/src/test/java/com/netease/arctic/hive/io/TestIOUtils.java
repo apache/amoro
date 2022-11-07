@@ -19,7 +19,9 @@
 package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.io.reader.AdaptHiveBaseIcebergDataReader;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
+import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -103,26 +105,36 @@ public class TestIOUtils {
 
   private static CloseableIterator<Record> readParquet(Schema schema, DataFile[] dataFiles, Expression expression,
       ArcticFileIO fileIO, PrimaryKeySpec primaryKeySpec, PartitionSpec partitionSpec){
-
-    AdaptHiveGenericArcticDataReader genericArcticDataReader = new AdaptHiveGenericArcticDataReader(
-        fileIO,
-        schema,
-        schema,
-        primaryKeySpec,
-        null,
-        true,
-        IdentityPartitionConverters::convertConstant
-    );
     List<ArcticFileScanTask> arcticFileScanTasks = Arrays.stream(dataFiles).map(s -> new BaseArcticFileScanTask(
         new DefaultKeyedFile(s),
         null,
         partitionSpec,
         expression
     )).collect(Collectors.toList());
-
-    KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(arcticFileScanTasks);
-
-    CloseableIterator<Record> iterator = genericArcticDataReader.readData(keyedTableScanTask);
-    return iterator;
+    if (primaryKeySpec != null) {
+      KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(arcticFileScanTasks);
+      AdaptHiveGenericArcticDataReader genericArcticDataReader = new AdaptHiveGenericArcticDataReader(
+          fileIO,
+          schema,
+          schema,
+          primaryKeySpec,
+          null,
+          true,
+          IdentityPartitionConverters::convertConstant
+      );
+      return genericArcticDataReader.readData(keyedTableScanTask);
+    } else {
+      GenericAdaptHiveIcebergDataReader genericArcticDataReader = new GenericAdaptHiveIcebergDataReader(
+          fileIO,
+          schema,
+          schema,
+          null,
+          true,
+          IdentityPartitionConverters::convertConstant,
+          false
+      );
+      return CloseableIterable.concat(arcticFileScanTasks.stream()
+          .map(s -> genericArcticDataReader.readData(s)).collect(Collectors.toList())).iterator();
+    }
   }
 }
