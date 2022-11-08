@@ -35,7 +35,7 @@ import org.apache.iceberg.Snapshot;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -88,7 +88,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner splitAssigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nonnull ArcticSourceEnumState enumState,
+      @Nullable ArcticSourceEnumState enumState,
       boolean dimTable) {
     super(enumContext, splitAssigner);
     this.loader = loader;

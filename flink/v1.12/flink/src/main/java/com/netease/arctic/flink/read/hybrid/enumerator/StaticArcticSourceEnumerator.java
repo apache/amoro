@@ -28,7 +28,7 @@ import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -51,7 +51,7 @@ public class StaticArcticSourceEnumerator extends AbstractArcticEnumerator {
       SplitAssigner assigner,
       ArcticTableLoader loader,
       ArcticScanContext scanContext,
-      @Nonnull ArcticSourceEnumState enumState) {
+      @Nullable ArcticSourceEnumState enumState) {
     super(enumeratorContext, assigner);
     this.loader = loader;
     this.assigner = assigner;

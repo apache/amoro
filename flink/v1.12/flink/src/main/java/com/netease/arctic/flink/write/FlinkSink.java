@@ -53,7 +53,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.Properties;
 
@@ -253,7 +253,7 @@ public class FlinkSink {
       }
     }
 
-    @Nonnull
+    @Nullable
     public static ShuffleRulePolicy<RowData, ShuffleKey> buildShuffleRulePolicy(
         ShuffleHelper helper,
         int writeOperatorParallelism,
