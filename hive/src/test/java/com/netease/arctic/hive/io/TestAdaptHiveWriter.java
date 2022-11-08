@@ -155,9 +155,4 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
   public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
     testWrite(testUnPartitionHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
   }
-
-  @Test
-  public void testUnHiveTable() throws IOException {
-    testWrite(testKeyedTable, BaseLocationKind.INSTANT, TestRecords.baseRecords(), "base");
-  }
 }
