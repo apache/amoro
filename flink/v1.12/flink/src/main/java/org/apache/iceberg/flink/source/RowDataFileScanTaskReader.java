@@ -20,24 +20,24 @@
 package org.apache.iceberg.flink.source;
 
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
-import com.netease.arctic.flink.util.ArcticUtils;
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.table.data.RowData;
-import org.apache.iceberg.CombinedScanTask;
+import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.DeleteFilter;
-import org.apache.iceberg.encryption.EncryptionManager;
+import org.apache.iceberg.encryption.InputFilesDecryptor;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
 import org.apache.iceberg.flink.data.FlinkAvroReader;
 import org.apache.iceberg.flink.data.FlinkOrcReader;
+import org.apache.iceberg.flink.data.RowDataProjection;
 import org.apache.iceberg.flink.data.RowDataUtil;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
-import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.orc.ORC;
@@ -52,61 +52,62 @@ import java.util.Map;
 /**
  * Copy from iceberg.
  * Adopt AdaptHiveFlinkParquetReaders to adapt hive flink parquet readers.
- * Remove additional column.
  */
-public class RowDataIterator extends DataIterator<RowData> {
+@Internal
+public class RowDataFileScanTaskReader implements FileScanTaskReader<RowData> {
 
   private final Schema tableSchema;
   private final Schema projectedSchema;
   private final String nameMapping;
   private final boolean caseSensitive;
-  private final int columnSize;
 
-  public RowDataIterator(CombinedScanTask task, FileIO io, EncryptionManager encryption, Schema tableSchema,
-                         Schema projectedSchema, String nameMapping, boolean caseSensitive) {
-    super(task, io, encryption);
+  public RowDataFileScanTaskReader(Schema tableSchema, Schema projectedSchema,
+                                   String nameMapping, boolean caseSensitive) {
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
     this.nameMapping = nameMapping;
     this.caseSensitive = caseSensitive;
-    // Add file offset column after readSchema. Refer to this#wrapArcticFileOffsetColumnMeta
-    this.columnSize = projectedSchema.columns().size();
   }
 
   @Override
-  protected CloseableIterator<RowData> openTaskIterator(FileScanTask task) {
+  public CloseableIterator<RowData> open(FileScanTask task, InputFilesDecryptor inputFilesDecryptor) {
     Schema partitionSchema = TypeUtil.select(projectedSchema, task.spec().identitySourceIds());
 
     Map<Integer, ?> idToConstant = partitionSchema.columns().isEmpty() ? ImmutableMap.of() :
         PartitionUtil.constantsMap(task, RowDataUtil::convertConstant);
 
-    FlinkDeleteFilter deletes = new FlinkDeleteFilter(task, tableSchema, projectedSchema);
-    CloseableIterable<RowData> iterable = deletes.filter(newIterable(task, deletes.requiredSchema(), idToConstant));
+    FlinkDeleteFilter deletes = new FlinkDeleteFilter(task, tableSchema, projectedSchema, inputFilesDecryptor);
+    CloseableIterable<RowData> iterable = deletes.filter(
+        newIterable(task, deletes.requiredSchema(), idToConstant, inputFilesDecryptor)
+    );
+
+    // Project the RowData to remove the extra meta columns.
+    if (!projectedSchema.sameSchema(deletes.requiredSchema())) {
+      RowDataProjection rowDataProjection = RowDataProjection.create(
+          deletes.requiredRowType(), deletes.requiredSchema().asStruct(), projectedSchema.asStruct());
+      iterable = CloseableIterable.transform(iterable, rowDataProjection::wrap);
+    }
 
     return iterable.iterator();
   }
 
-  @Override
-  public RowData next() {
-    return ArcticUtils.removeArcticMetaColumn(super.next(), columnSize);
-  }
-
-  private CloseableIterable<RowData> newIterable(FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
+  private CloseableIterable<RowData> newIterable(
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant, InputFilesDecryptor inputFilesDecryptor) {
     CloseableIterable<RowData> iter;
     if (task.isDataTask()) {
       throw new UnsupportedOperationException("Cannot read data task.");
     } else {
       switch (task.file().format()) {
         case PARQUET:
-          iter = newParquetIterable(task, schema, idToConstant);
+          iter = newParquetIterable(task, schema, idToConstant, inputFilesDecryptor);
           break;
 
         case AVRO:
-          iter = newAvroIterable(task, schema, idToConstant);
+          iter = newAvroIterable(task, schema, idToConstant, inputFilesDecryptor);
           break;
 
         case ORC:
-          iter = newOrcIterable(task, schema, idToConstant);
+          iter = newOrcIterable(task, schema, idToConstant, inputFilesDecryptor);
           break;
 
         default:
@@ -118,8 +119,9 @@ public class RowDataIterator extends DataIterator<RowData> {
     return iter;
   }
 
-  private CloseableIterable<RowData> newAvroIterable(FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
-    Avro.ReadBuilder builder = Avro.read(getInputFile(task))
+  private CloseableIterable<RowData> newAvroIterable(
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant, InputFilesDecryptor inputFilesDecryptor) {
+    Avro.ReadBuilder builder = Avro.read(inputFilesDecryptor.getInputFile(task))
         .reuseContainers()
         .project(schema)
         .split(task.start(), task.length())
@@ -132,12 +134,13 @@ public class RowDataIterator extends DataIterator<RowData> {
     return builder.build();
   }
 
-  private CloseableIterable<RowData> newParquetIterable(FileScanTask task, Schema schema,
-                                                        Map<Integer, ?> idToConstant) {
-    Parquet.ReadBuilder builder = Parquet.read(getInputFile(task))
+  private CloseableIterable<RowData> newParquetIterable(
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant, InputFilesDecryptor inputFilesDecryptor) {
+    Parquet.ReadBuilder builder = Parquet.read(inputFilesDecryptor.getInputFile(task))
         .reuseContainers()
         .split(task.start(), task.length())
         .project(schema)
+        // Change for Arctic
         .createReaderFunc(fileSchema -> AdaptHiveFlinkParquetReaders.buildReader(schema, fileSchema, idToConstant))
         .filter(task.residual())
         .caseSensitive(caseSensitive)
@@ -148,13 +151,15 @@ public class RowDataIterator extends DataIterator<RowData> {
     }
 
     return builder.build();
+
   }
 
-  private CloseableIterable<RowData> newOrcIterable(FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
+  private CloseableIterable<RowData> newOrcIterable(
+      FileScanTask task, Schema schema, Map<Integer, ?> idToConstant, InputFilesDecryptor inputFilesDecryptor) {
     Schema readSchemaWithoutConstantAndMetadataFields = TypeUtil.selectNot(schema,
         Sets.union(idToConstant.keySet(), MetadataColumns.metadataFieldIds()));
 
-    ORC.ReadBuilder builder = ORC.read(getInputFile(task))
+    ORC.ReadBuilder builder = ORC.read(inputFilesDecryptor.getInputFile(task))
         .project(readSchemaWithoutConstantAndMetadataFields)
         .split(task.start(), task.length())
         .createReaderFunc(readOrcSchema -> new FlinkOrcReader(schema, readOrcSchema, idToConstant))
@@ -168,12 +173,21 @@ public class RowDataIterator extends DataIterator<RowData> {
     return builder.build();
   }
 
-  private class FlinkDeleteFilter extends DeleteFilter<RowData> {
+  private static class FlinkDeleteFilter extends DeleteFilter<RowData> {
+    private final RowType requiredRowType;
     private final RowDataWrapper asStructLike;
+    private final InputFilesDecryptor inputFilesDecryptor;
 
-    FlinkDeleteFilter(FileScanTask task, Schema tableSchema, Schema requestedSchema) {
+    FlinkDeleteFilter(FileScanTask task, Schema tableSchema, Schema requestedSchema,
+                      InputFilesDecryptor inputFilesDecryptor) {
       super(task, tableSchema, requestedSchema);
-      this.asStructLike = new RowDataWrapper(FlinkSchemaUtil.convert(requiredSchema()), requiredSchema().asStruct());
+      this.requiredRowType = FlinkSchemaUtil.convert(requiredSchema());
+      this.asStructLike = new RowDataWrapper(requiredRowType, requiredSchema().asStruct());
+      this.inputFilesDecryptor = inputFilesDecryptor;
+    }
+
+    public RowType requiredRowType() {
+      return requiredRowType;
     }
 
     @Override
@@ -183,7 +197,7 @@ public class RowDataIterator extends DataIterator<RowData> {
 
     @Override
     protected InputFile getInputFile(String location) {
-      return RowDataIterator.this.getInputFile(location);
+      return inputFilesDecryptor.getInputFile(location);
     }
   }
 }
