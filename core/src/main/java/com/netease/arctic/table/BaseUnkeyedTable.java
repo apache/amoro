@@ -24,6 +24,7 @@ import com.netease.arctic.op.PartitionPropertiesUpdate;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.TableTracer;
+import com.netease.arctic.trace.TraceOperations;
 import com.netease.arctic.trace.TracedAppendFiles;
 import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedOverwriteFiles;
@@ -33,7 +34,6 @@ import com.netease.arctic.trace.TracedRowDelta;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
-import com.netease.arctic.trace.TraceOperations;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -203,24 +203,22 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public AppendFiles newAppend() {
-    AppendFiles appendFiles = icebergTable.newAppend();
+    TracedAppendFiles.Builder builder = TracedAppendFiles.buildFor(this, false);
     if (client != null) {
       TableTracer tracer = new AmsTableTracer(this, TraceOperations.APPEND, client);
-      return new TracedAppendFiles(appendFiles, tracer);
-    } else {
-      return appendFiles;
+      builder.traceTable(tracer);
     }
+    return builder.onTableStore(icebergTable).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    AppendFiles appendFiles = icebergTable.newFastAppend();
+    TracedAppendFiles.Builder builder = TracedAppendFiles.buildFor(this, true);
     if (client != null) {
       TableTracer tracer = new AmsTableTracer(this, TraceOperations.APPEND, client);
-      return new TracedAppendFiles(appendFiles, tracer);
-    } else {
-      return appendFiles;
+      builder.traceTable(tracer);
     }
+    return builder.onTableStore(icebergTable).build();
   }
 
   @Override
@@ -302,7 +300,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(transaction, new AmsTableTracer(this, client));
+      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client));
     } else {
       return transaction;
     }

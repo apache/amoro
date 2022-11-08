@@ -31,11 +31,6 @@ import java.util.Map;
 public interface TableTracer {
 
   /**
-   * Returns the {@link ArcticTable} traced
-   */
-  ArcticTable table();
-
-  /**
    * Add a {@link DataFile} into table
    * @param dataFile file to add
    */

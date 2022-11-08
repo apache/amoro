@@ -38,7 +38,7 @@ public class WatermarkGenerator {
   private static final Types.NestedField INGEST_TIME_FIELD = Types.NestedField.required(Integer.MAX_VALUE - 2000,
       INGEST_TIME, Types.LongType.get(), "virtual ingest time field ");
 
-  private long watermark;                            // timestamp in milliseconds
+  private long watermark = -1;                            // timestamp in milliseconds
   private final Types.NestedField eventTimeField;
   private final long lateness;                       // in milliseconds
   private final SimpleDateFormat eventTimeStringFormat;

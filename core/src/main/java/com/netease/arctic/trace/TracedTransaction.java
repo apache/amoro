@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
@@ -59,12 +60,14 @@ import java.util.Map;
  */
 public class TracedTransaction implements Transaction {
 
+  private final ArcticTable arcticTable;
   private final Transaction transaction;
   private final AmsTableTracer tracer;
 
   private final Table transactionTable;
 
-  public TracedTransaction(Transaction transaction, AmsTableTracer tracer) {
+  public TracedTransaction(ArcticTable arcticTable, Transaction transaction, AmsTableTracer tracer) {
+    this.arcticTable = arcticTable;
     this.transaction = transaction;
     this.tracer = tracer;
 
@@ -108,13 +111,15 @@ public class TracedTransaction implements Transaction {
   @Override
   public AppendFiles newAppend() {
     tracer.setAction(DataOperations.APPEND);
-    return new TracedAppendFiles(transaction.newAppend(), new TransactionTracker());
+    return TracedAppendFiles.buildFor(arcticTable, false).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
     tracer.setAction(DataOperations.APPEND);
-    return new TracedAppendFiles(transaction.newFastAppend(), new TransactionTracker());
+    return TracedAppendFiles.buildFor(arcticTable, true).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
