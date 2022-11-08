@@ -69,16 +69,6 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   protected StructLikeMap<Long> baseTableMaxTransactionId = null;
   protected StructLikeMap<Long> baseTableLegacyMaxTransactionId = null;
   private long changeTableMaxTransactionId;
-  
-  /* 
-  record all partitions of this plan, include:
-    1.partitions with unoptimized files
-    2.partitions in max-txId properties
-    3.partitions in legacy max-txId properties
-  not include:
-    1.partition which has running tasks
-   */
-  private final Set<String> allPartitionsOfThisPlan = Sets.newHashSet();
 
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<DataFileInfo> baseTableFileList,
@@ -221,19 +211,8 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         addCnt.getAndIncrement();
       }
     });
-    
-    recordAllPartitionsOfThisPlan();
-
     LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
-  }
-
-  private void recordAllPartitionsOfThisPlan() {
-    Set<StructLike> oldPartitions = getBaseTableMaxTransactionId().keySet();
-    oldPartitions.addAll(getBaseTableLegacyMaxTransactionId().keySet());
-    oldPartitions.stream().map(partition -> arcticTable.spec().partitionToPath(partition))
-        .forEach(allPartitionsOfThisPlan::add);
-    partitionTaskRunning.keySet().forEach(allPartitionsOfThisPlan::remove);
   }
 
   private static class ChangeFileInfo {
@@ -385,8 +364,6 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     if (this.changeTableMaxTransactionId < changeFileInfo.getTransactionId()) {
       this.changeTableMaxTransactionId = changeFileInfo.getTransactionId();
     }
-    String partitionToPath = arcticTable.spec().partitionToPath(changeFileInfo.getDataFile().partition());
-    allPartitionsOfThisPlan.add(partitionToPath);
   }
 
   private long getBaseMaxTransactionId(StructLike partition) {
