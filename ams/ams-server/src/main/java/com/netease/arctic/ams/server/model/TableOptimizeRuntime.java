@@ -54,6 +54,38 @@ public class TableOptimizeRuntime {
     this.tableIdentifier = TableIdentifier.of(catalog, database, tableName);
   }
 
+  public TableOptimizeRuntime cloneTableOptimizeRuntime() {
+    TableOptimizeRuntime newTableOptimizeRuntime = new TableOptimizeRuntime(this.tableIdentifier.getCatalog(),
+        this.tableIdentifier.getDatabase(), this.tableIdentifier.getTableName());
+    newTableOptimizeRuntime.currentSnapshotId = this.currentSnapshotId;
+    newTableOptimizeRuntime.currentChangeSnapshotId = this.currentChangeSnapshotId;
+    newTableOptimizeRuntime.optimizeStatus = this.optimizeStatus;
+    newTableOptimizeRuntime.optimizeStatusStartTime = this.optimizeStatusStartTime;
+    newTableOptimizeRuntime.latestMajorOptimizeTime.putAll(this.latestMajorOptimizeTime);
+    newTableOptimizeRuntime.latestFullOptimizeTime.putAll(this.latestFullOptimizeTime);
+    newTableOptimizeRuntime.latestMinorOptimizeTime.putAll(this.latestMinorOptimizeTime);
+    newTableOptimizeRuntime.latestTaskPlanGroup = this.latestTaskPlanGroup;
+    newTableOptimizeRuntime.isRunning = this.isRunning;
+    return newTableOptimizeRuntime;
+  }
+
+  public void restoreTableOptimizeRuntime(TableOptimizeRuntime old) {
+    this.tableIdentifier = TableIdentifier.of(old.tableIdentifier.getCatalog(),
+      old.tableIdentifier.getDatabase(), old.tableIdentifier.getTableName());
+    this.currentSnapshotId = old.currentSnapshotId;
+    this.currentChangeSnapshotId = old.currentChangeSnapshotId;
+    this.optimizeStatus = old.optimizeStatus;
+    this.optimizeStatusStartTime = old.optimizeStatusStartTime;
+    this.latestMajorOptimizeTime.clear();
+    this.latestMajorOptimizeTime.putAll(old.latestMajorOptimizeTime);
+    this.latestFullOptimizeTime.clear();
+    this.latestFullOptimizeTime.putAll(old.latestFullOptimizeTime);
+    this.latestMinorOptimizeTime.clear();
+    this.latestMinorOptimizeTime.putAll(old.latestMinorOptimizeTime);
+    this.latestTaskPlanGroup = old.latestTaskPlanGroup;
+    this.isRunning = old.isRunning;
+  }
+
   public TableIdentifier getTableIdentifier() {
     return tableIdentifier;
   }
