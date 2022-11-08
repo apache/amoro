@@ -21,6 +21,8 @@ package com.netease.arctic.utils;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.BaseIcebergCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
@@ -163,5 +165,14 @@ public class CatalogUtil {
       }
     }
     return table;
+  }
+
+  /**
+   * check arctic catalog is native iceberg catalog
+   * @param arcticCatalog target arctic catalog
+   * @return Whether native iceberg catalog. true is native iceberg catalog, false isn't native iceberg catalog.
+   */
+  public static boolean isIcebergCatalog(ArcticCatalog arcticCatalog) {
+    return arcticCatalog instanceof BaseIcebergCatalog;
   }
 }

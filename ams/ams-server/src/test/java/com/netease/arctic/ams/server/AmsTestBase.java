@@ -34,6 +34,8 @@ import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestNativeMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestNativeMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
@@ -43,8 +45,8 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
-import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
@@ -97,6 +99,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMajorOptimizePlan.class,
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
+    TestNativeMajorOptimizeCommit.class,
+    TestNativeMinorOptimizeCommit.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
     TestSupportHiveMajorOptimizePlan.class,

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.optimizer.operator;
 
+import com.alibaba.fastjson.JSON;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.netease.arctic.ams.api.ErrorMessage;
@@ -43,6 +44,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
@@ -253,7 +255,8 @@ public class BaseTaskExecutor implements Serializable {
     Map<String, String> properties = task.getProperties();
     if (properties != null) {
       String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
-      int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() + nodeTask.deleteFiles().size();
+      int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() + nodeTask.deleteFiles().size() +
+          nodeTask.eqDeleteFiles().size() + nodeTask.posDeleteFiles().size();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);
@@ -262,6 +265,15 @@ public class BaseTaskExecutor implements Serializable {
 
       String customHiveSubdirectory = properties.get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
       nodeTask.setCustomHiveSubdirectory(customHiveSubdirectory);
+
+      String eqDeleteIndex = properties.get(OptimizeTaskProperties.EQ_DELETE_FILES_INDEX);
+      if (StringUtils.isNotEmpty(eqDeleteIndex)) {
+        nodeTask.setEqDeleteFilesIndex(JSON.parseObject(eqDeleteIndex, Map.class));
+      }
+      String posDeleteIndex = properties.get(OptimizeTaskProperties.POS_DELETE_FILES_INDEX);
+      if (StringUtils.isNotEmpty(posDeleteIndex)) {
+        nodeTask.setPosDeleteFilesIndex(JSON.parseObject(posDeleteIndex, Map.class));
+      }
     }
 
     return nodeTask;

@@ -48,6 +48,7 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.util.PropertyUtil;
@@ -211,8 +212,24 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
     List<TableIdentifier> tableIdentifiers = metaService.listTables().stream()
         .map(TableMetadata::getTableIdentifier).collect(Collectors.toList());
+    Map<String, ArcticCatalog> nativeCatalogMap = new HashMap<>();
     for (TableIdentifier tableIdentifier : tableIdentifiers) {
-      TableMetadata tableMetadata = metaService.loadTableMetadata(tableIdentifier);
+      TableMetadata tableMetadata = new TableMetadata();
+      if (nativeCatalogMap.get(tableIdentifier.getCatalog()) != null) {
+        ArcticTable arcticTable = nativeCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
+        tableMetadata.setTableIdentifier(tableIdentifier);
+        tableMetadata.setProperties(arcticTable.properties());
+      } else {
+        ArcticCatalog arcticCatalog = CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
+        if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
+          ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
+          tableMetadata.setTableIdentifier(tableIdentifier);
+          tableMetadata.setProperties(arcticTable.properties());
+          nativeCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
+        } else {
+          tableMetadata = metaService.loadTableMetadata(tableIdentifier);
+        }
+      }
       TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
       TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
       arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)

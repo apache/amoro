@@ -89,7 +89,7 @@ public class BaseOptimizeCommit {
       StructLikeMap<Long> maxTransactionIds = StructLikeMap.create(spec.partitionType());
       for (Map.Entry<String, List<OptimizeTaskItem>> entry : optimizeTasksToCommit.entrySet()) {
         for (OptimizeTaskItem task : entry.getValue()) {
-          if (!checkFileCount(task)) {
+          if (checkFileCount(task)) {
             LOG.error("table {} file count not match", arcticTable.id());
             throw new IllegalArgumentException("file count not match, can't commit");
           }
@@ -150,29 +150,33 @@ public class BaseOptimizeCommit {
     return partitionOptimizeType;
   }
 
-  private boolean checkFileCount(OptimizeTaskItem task) {
-    int baseFileCount = task.getOptimizeTask().getBaseFiles().size();
-    int insertFileCount = task.getOptimizeTask().getInsertFiles().size();
-    int deleteFileCount = task.getOptimizeTask().getDeleteFiles().size();
-    int posDeleteFileCount = task.getOptimizeTask().getPosDeleteFiles().size();
-    int targetFileCount = task.getOptimizeRuntime().getTargetFiles().size();
+  protected boolean checkFileCount(OptimizeTaskItem task) {
+    int baseFileCount = new HashSet<>(task.getOptimizeTask().getBaseFiles()).size();
+    int insertFileCount = new HashSet<>(task.getOptimizeTask().getInsertFiles()).size();
+    int deleteFileCount = new HashSet<>(task.getOptimizeTask().getDeleteFiles()).size();
+    int eqDeleteFileCount = new HashSet<>(task.getOptimizeTask().getEqDeleteFiles()).size();
+    int posDeleteFileCount = new HashSet<>(task.getOptimizeTask().getPosDeleteFiles()).size();
+    int targetFileCount = new HashSet<>(task.getOptimizeRuntime().getTargetFiles()).size();
 
     boolean result = baseFileCount == task.getOptimizeTask().getBaseFileCnt() &&
         insertFileCount == task.getOptimizeTask().getInsertFileCnt() &&
         deleteFileCount == task.getOptimizeTask().getDeleteFileCnt() &&
+        eqDeleteFileCount == task.getOptimizeTask().getEqDeleteFileCnt() &&
         posDeleteFileCount == task.getOptimizeTask().getPosDeleteFileCnt() &&
         targetFileCount == task.getOptimizeRuntime().getNewFileCnt();
     if (!result) {
       LOG.error("file count check failed. baseFileCount/baseFileCnt is {}/{}, " +
               "insertFileCount/insertFileCnt is {}/{}, deleteFileCount/deleteFileCnt is {}/{}, " +
+              "eqDeleteFileCount/eqDeleteFileCnt is {}/{}, " +
               "posDeleteFileCount/posDeleteFileCnt is {}/{}, targetFileCount/newFileCnt is {}/{}",
           baseFileCount, task.getOptimizeTask().getBaseFileCnt(),
           insertFileCount, task.getOptimizeTask().getInsertFileCnt(),
           deleteFileCount, task.getOptimizeTask().getDeleteFileCnt(),
+          eqDeleteFileCount, task.getOptimizeTask().getEqDeleteFileCnt(),
           posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
           targetFileCount, task.getOptimizeRuntime().getNewFileCnt());
     }
-    return result;
+    return !result;
   }
 
   private void minorCommit(ArcticTable arcticTable,

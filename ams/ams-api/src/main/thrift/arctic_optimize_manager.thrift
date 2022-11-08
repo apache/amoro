@@ -19,9 +19,10 @@ struct OptimizeTask {
     3:optional list<binary> insertFiles;
     4:optional list<binary> deleteFiles;
     5:optional list<binary> baseFiles;
-    6:optional list<binary> posDeleteFiles;
-    7:optional list<TreeNode> sourceNodes;
-    8:optional map<string, string> properties;
+    6:optional list<binary> eqDeleteFiles;
+    7:optional list<binary> posDeleteFiles;
+    8:optional list<TreeNode> sourceNodes;
+    9:optional map<string, string> properties;
 }
 
 

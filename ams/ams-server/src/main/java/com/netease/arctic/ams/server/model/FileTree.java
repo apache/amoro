@@ -23,6 +23,7 @@ import com.netease.arctic.data.DataTreeNode;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class FileTree {
   private List<DataFile> insertFiles = new ArrayList<>();
   private List<DataFile> baseFiles = new ArrayList<>();
   private List<DeleteFile> posDeleteFiles = new ArrayList<>();
+  private List<DeleteFile> eqDeleteFiles = new ArrayList<>();
 
   // subTree contains any base file
   private Boolean findAnyBaseFilesInTree = null;
@@ -179,6 +181,16 @@ public class FileTree {
     }
   }
 
+  public void collectEqDeleteFiles(List<DeleteFile> collector) {
+    collector.addAll(eqDeleteFiles);
+    if (left != null) {
+      left.collectEqDeleteFiles(collector);
+    }
+    if (right != null) {
+      right.collectEqDeleteFiles(collector);
+    }
+  }
+
   public long accumulate(Function<FileTree, Long> function) {
     Long apply = function.apply(this);
     if (left != null) {
@@ -206,13 +218,21 @@ public class FileTree {
     return posDeleteFiles;
   }
 
+  public List<DeleteFile> getEqDeleteFiles() {
+    return eqDeleteFiles;
+  }
+
   public void addFile(ContentFile<?> file, DataFileType fileType) {
     switch (fileType) {
       case BASE_FILE:
         baseFiles.add((DataFile) file);
         break;
       case EQ_DELETE_FILE:
-        deleteFiles.add((DataFile) file);
+        if (file.content() == FileContent.DATA) {
+          deleteFiles.add((DataFile) file);
+        } else {
+          eqDeleteFiles.add((DeleteFile) file);
+        }
         break;
       case INSERT_FILE:
         insertFiles.add((DataFile) file);

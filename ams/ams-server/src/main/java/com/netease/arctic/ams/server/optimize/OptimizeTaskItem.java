@@ -238,10 +238,13 @@ public class OptimizeTaskItem extends IJDBCService {
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
     List<ByteBuffer> posDeleteFiles = selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE, 0)
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
+    List<ByteBuffer> eqDeleteFiles = selectOptimizeTaskFiles(DataFileType.NATIVE_EQ_DELETE_FILE, 0)
+        .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
     optimizeTask.setInsertFiles(insertFiles);
     optimizeTask.setDeleteFiles(deleteFiles);
     optimizeTask.setBaseFiles(baseFiles);
     optimizeTask.setPosDeleteFiles(posDeleteFiles);
+    optimizeTask.setEqDeleteFiles(eqDeleteFiles);
     // for ams restart, files is not loaded from sysdb, reload here
     List<byte[]> targetFiles =
         selectOptimizeTaskFiles(DataFileType.BASE_FILE, 1);
@@ -389,6 +392,12 @@ public class OptimizeTaskItem extends IJDBCService {
             .forEach(f -> internalTableFilesMapper
                 .insertOptimizeTaskFile(optimizeTaskId,
                     DataFileType.POS_DELETE_FILE,
+                    0,
+                    SerializationUtil.byteBufferToByteArray(f)));
+        optimizeTask.getEqDeleteFiles()
+            .forEach(f -> internalTableFilesMapper
+                .insertOptimizeTaskFile(optimizeTaskId,
+                    DataFileType.NATIVE_EQ_DELETE_FILE,
                     0,
                     SerializationUtil.byteBufferToByteArray(f)));
 
