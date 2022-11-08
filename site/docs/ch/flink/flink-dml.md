@@ -60,6 +60,7 @@ SELECT * FROM unkeyed /*+ OPTIONS('snapshot-id'='4411985347497777546')*/;
 |as-of-timestamp|(none)|Long|否|读小于该时间戳的最近一次 snapshot 的全量数据，只有在 streaming 为 false 或不配置时生效|
 |start-snapshot-id|(none)|Long|否|在 streaming 为 false 时，需配合 end-snapshot-id，读两个区间的增量数据(snapshot1, snapshot2]。<br>在 streaming 为 true 时，读该 snapshot 之后的增量数据，不指定则读当前快照之后（不包含当前）的增量数据|
 |end-snapshot-id|(none)|Long|否|在 streaming 为 false 时 需配合 start-snapshot-id，读两个区间的增量数据(snapshot1, snapshot2]|
+|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../meta-service/table-properties.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)|
 
 ####主键表 bounded 数据
 ```sql
@@ -111,6 +112,7 @@ Hint Options
 |arctic.read.mode|file|String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval<img width=120/>|10s|Duration|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
 |start-snapshot-id|(none)|Long|否|从指定的 snapshot 开始读取增量数据（不包括 start-snapshot-id 的快照数据），不指定则读当前快照之后（不包含当前）的增量数据|
+|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../meta-service/table-properties.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)|
 
 ####主键表 Filestore 数据
 
@@ -133,6 +135,7 @@ Hint Options
 |arctic.read.mode| file |String|否|指定读 Arctic 表 File 或 Log 的数据。当值为 log 时，必须 开启 Log 配置|
 |monitor-interval| 10s |String|否|arctic.read.mode = file 时才生效。监控新提交数据文件的时间间隔|
 |scan.startup.mode| latest |String|否|有效值为earliest、latest、timestamp（读file暂未支持）。当arctic.read.mode = file 时仅支持earliest、latest。'earliest'表示读取全量表数据，在streaming=true时会继续incremental pull；'latest'：表示读取当前snapshot之后的数据，不包括当前snapshot数据。当arctic.read.mode = log 时，表示 Kafka 消费者初次启动时获取 offset 的模式，'earliest'表示从Kafka中最早的位置读取，'latest'表示从最新的位置读取，'timestamp'表示从Kafka中指定时间位置读取，需配置参数 'scan.startup.timestamp-millis'|
+|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../meta-service/table-properties.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)|
 
 ## Writing With SQL
 Arctic 表支持通过 Flink Sql 往 Log 或 File 写入数据
@@ -170,4 +173,4 @@ Hint Options
 |write.distribution-mode|hash|String|否|写入 Arctic 表的 distribution 模式。包括：none、hash|
 |write.distribution.hash-mode|auto|String|否|写入 Arctic 表的 hash 策略。只有当 write.distribution-mode=hash 时才生效。<br>primary-key、partition-key、primary-partition-key、auto。<br>primary-key: 按主键 shuffle<br>partition-key: 按分区 shuffle<br>primary-partition-key: 按主键+分区 shuffle<br>auto: 如果是有主键且有分区表，则为 primary-partition-key；如果是有主键且无分区表，则为 primary-key；如果是无主键且有分区表，则为 partition-key。否则为 none|
 |properties.*|(none)|String|否|Kafka Producer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，如：`'properties.batch.size'='16384'`，完整的参数信息可以参考 [kafka producer 配置](https://kafka.apache.org/documentation/#producerconfigs)|
-|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../meta-service/table-properties.md)|
+|其他表参数|(none)|String|否|Arctic 表的所有参数都可以通过 SQL Hint 动态修改，当然只针对此任务生效，具体的参数列表可以参考 [表配置](../meta-service/table-properties.md)。对于Catalog上的权限相关配置，也可以配置在Hint中，参数见 [catalog ddl 中的 properties.auth.XXX](./flink-ddl.md#Flink SQL)|
