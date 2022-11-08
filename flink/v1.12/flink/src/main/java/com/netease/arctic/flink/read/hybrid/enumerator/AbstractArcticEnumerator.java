@@ -28,7 +28,7 @@ import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +68,7 @@ public abstract class AbstractArcticEnumerator implements SplitEnumerator<Arctic
   }
 
   @Override
-  public void handleSplitRequest(int subtaskId, @Nonnull String requesterHostname) {
+  public void handleSplitRequest(int subtaskId, @Nullable String requesterHostname) {
     throw new UnsupportedOperationException(String.format("Received invalid default split request event " +
         "from subtask %d as Arctic source uses custom split request event", subtaskId));
   }
