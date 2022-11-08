@@ -90,8 +90,15 @@ function selectCatalog(item: ICatalogItem) {
   })
 }
 
-function updateEdit(val, catalog?) {
+async function updateEdit(val, catalog?) {
   isEdit.value = val
+  if (catalog) {
+    await updateCatalogs()
+    if (!catalog?.catalogName) {
+      catalog.catalogName = catalogs[0]?.catalogName
+      catalog.catalogType = catalogs[0]?.catalogType
+    }
+  }
   const index = catalogs.findIndex((ele: ICatalogItem) => ele.catalogName === NEW_CATALOG)
   if (index > -1) {
     catalogs.splice(index)
@@ -104,8 +111,8 @@ function updateEdit(val, catalog?) {
   }
   catalog && selectCatalog(catalog)
 }
-function updateCatalogs() {
-  getCatalogs()
+async function updateCatalogs() {
+  await getCatalogs()
 }
 function addCatalog() {
   if (isEdit.value) {

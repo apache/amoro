@@ -1,72 +1,33 @@
 <template>
   <div class="detail-wrap">
-    <div class="content-wrap">
-      <a-form ref="formRef" :model="formState" class="catalog-form">
-        <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
-          <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
-          <span v-else>{{formState.catalog.name}}</span>
-        </a-form-item>
-        <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
-          <a-select
-            v-if="isEdit && isNewCatalog"
-            v-model:value="formState.catalog.type"
-            :options="catalogTypeOps"
-            :placeholder="placeholder.selectPh"
-            @change="changeMetastore"
-          />
-          <span v-else>{{metastoreType}}</span>
-        </a-form-item>
-        <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
-          <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
-            <a-radio :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
-            <a-radio v-if="isHiveMetastore" :value="tableFormatMap.HIVE">Hive</a-radio>
-          </a-radio-group>
-        </a-form-item>
-        <a-form-item>
-          <p class="header">{{$t('storageConfig')}}</p>
-        </a-form-item>
-        <a-form-item
-          v-for="config in formState.storageConfigArray"
-          :key="config.label"
-          :label="config.label"
-          class="g-flex-ac">
-          <a-upload
-            v-if="isEdit"
-            v-model:file-list="config.fileList"
-            name="file"
-            accept=".xml"
-            :showUploadList="false"
-            :action="uploadUrl"
-            :disabled="config.uploadLoading"
-            @change="(args) => uploadFile(args, config, 'STORAGE')"
-          >
-            <a-button type="primary" ghost class="g-mr-12">{{$t('upload')}}</a-button>
-          </a-upload>
-          <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
-        </a-form-item>
-        <a-form-item>
-          <p class="header">{{$t('authConfig')}}</p>
-        </a-form-item>
-        <a-form-item label="auth_config.type" :name="['authConfig', 'auth_config.type']" :rules="[{ required: isEdit }]">
-          <a-select
-            v-if="isEdit"
-            v-model:value="formState.authConfig['auth_config.type']"
-            :placeholder="placeholder.selectPh"
-            :options="authConfigTypeOps"
-          />
-          <span v-else class="config-value">{{formState.authConfig['auth_config.type']}}</span>
-        </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'SIMPLE'" label="auth_config.hadoop_username" :name="['authConfig', 'auth_config.hadoop_username']" :rules="[{ required: isEdit }]">
-          <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.hadoop_username']" />
-          <span v-else class="config-value">{{formState.authConfig['auth_config.hadoop_username']}}</span>
-        </a-form-item>
-        <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.principal" :name="['authConfig', 'auth_config.principal']" :rules="[{ required: isEdit }]">
-          <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.principal']" />
-          <span v-else class="config-value">{{formState.authConfig['auth_config.principal']}}</span>
-        </a-form-item>
-        <div v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'">
+    <div class="detail-content-wrap">
+      <div class="content-wrap">
+        <a-form ref="formRef" :model="formState" class="catalog-form">
+          <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
+            <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
+            <span v-else>{{formState.catalog.name}}</span>
+          </a-form-item>
+          <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+            <a-select
+              v-if="isEdit && isNewCatalog"
+              v-model:value="formState.catalog.type"
+              :options="catalogTypeOps"
+              :placeholder="placeholder.selectPh"
+              @change="changeMetastore"
+            />
+            <span v-else>{{metastoreType}}</span>
+          </a-form-item>
+          <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
+            <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
+              <a-radio v-if="isHiveMetastore" :value="tableFormatMap.HIVE">Hive</a-radio>
+              <a-radio :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
+            </a-radio-group>
+          </a-form-item>
+          <a-form-item>
+            <p class="header">{{$t('storageConfig')}}</p>
+          </a-form-item>
           <a-form-item
-            v-for="config in formState.authConfigArray"
+            v-for="config in formState.storageConfigArray"
             :key="config.label"
             :label="config.label"
             class="g-flex-ac">
@@ -74,34 +35,75 @@
               v-if="isEdit"
               v-model:file-list="config.fileList"
               name="file"
-              :accept="config.label === 'auth_config.keytab' ? '.keytab' : '.conf'"
+              accept=".xml"
               :showUploadList="false"
               :action="uploadUrl"
               :disabled="config.uploadLoading"
-              @change="(args) => uploadFile(args, config)"
+              @change="(args) => uploadFile(args, config, 'STORAGE')"
             >
-              <a-button type="primary" ghost class="g-mr-12">{{$t('upload')}}</a-button>
+              <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
             </a-upload>
             <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
           </a-form-item>
-        </div>
-        <a-form-item>
-          <p class="header">{{$t('properties')}}</p>
-        </a-form-item>
-        <a-form-item>
-          <Properties :propertiesObj="formState.properties" :isEdit="isEdit" ref="propertiesRef" />
-        </a-form-item>
-      </a-form>
+          <a-form-item>
+            <p class="header">{{$t('authConfig')}}</p>
+          </a-form-item>
+          <a-form-item label="auth_config.type" :name="['authConfig', 'auth_config.type']" :rules="[{ required: isEdit }]">
+            <a-select
+              v-if="isEdit"
+              v-model:value="formState.authConfig['auth_config.type']"
+              :placeholder="placeholder.selectPh"
+              :options="authConfigTypeOps"
+            />
+            <span v-else class="config-value">{{formState.authConfig['auth_config.type']}}</span>
+          </a-form-item>
+          <a-form-item v-if="formState.authConfig['auth_config.type'] === 'SIMPLE'" label="auth_config.hadoop_username" :name="['authConfig', 'auth_config.hadoop_username']" :rules="[{ required: isEdit }]">
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.hadoop_username']" />
+            <span v-else class="config-value">{{formState.authConfig['auth_config.hadoop_username']}}</span>
+          </a-form-item>
+          <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.principal" :name="['authConfig', 'auth_config.principal']" :rules="[{ required: isEdit }]">
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.principal']" />
+            <span v-else class="config-value">{{formState.authConfig['auth_config.principal']}}</span>
+          </a-form-item>
+          <div v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'">
+            <a-form-item
+              v-for="config in formState.authConfigArray"
+              :key="config.label"
+              :label="config.label"
+              class="g-flex-ac">
+              <a-upload
+                v-if="isEdit"
+                v-model:file-list="config.fileList"
+                name="file"
+                :accept="config.label === 'auth_config.keytab' ? '.keytab' : '.conf'"
+                :showUploadList="false"
+                :action="uploadUrl"
+                :disabled="config.uploadLoading"
+                @change="(args) => uploadFile(args, config)"
+              >
+                <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
+              </a-upload>
+              <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
+            </a-form-item>
+          </div>
+          <a-form-item>
+            <p class="header">{{$t('properties')}}</p>
+          </a-form-item>
+          <a-form-item>
+            <Properties :propertiesObj="formState.properties" :isEdit="isEdit" ref="propertiesRef" />
+          </a-form-item>
+        </a-form>
+      </div>
+      <div v-if="isEdit" class="footer-btn">
+        <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
+        <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
+      </div>
+      <div v-if="!isEdit" class="footer-btn">
+        <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
+        <a-button @click="handleRemove">{{$t('remove')}}</a-button>
+      </div>
+      <u-loading v-if="loading" />
     </div>
-    <div v-if="isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
-      <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
-    </div>
-    <div v-if="!isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
-      <a-button @click="handleRemove">{{$t('remove')}}</a-button>
-    </div>
-    <u-loading v-if="loading" />
   </div>
 </template>
 
@@ -153,7 +155,8 @@ const uploadUrl = computed(() => {
   return '/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
-  return formState.catalog.name === 'new catalog'
+  const catalog = (route.query?.catalog || '').toString()
+  return decodeURIComponent(catalog) === 'new catalog'
 })
 const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
@@ -232,7 +235,7 @@ async function getConfigInfo() {
     const { catalog, type } = route.query
     if (!catalog) { return }
     if (isNewCatalog.value) {
-      formState.catalog.name = catalog
+      formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
       formState.tableFormat = tableFormatMap.ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
@@ -376,17 +379,16 @@ function handleSave() {
         storageConfig,
         authConfig,
         properties
-      }).then(async() => {
+      }).then(() => {
         message.success(`${t('save')} ${t('success')}`)
-        formRef.value.resetFields()
-        emit('updateCatalogs')
-        const { catalog: catalogName, type } = route.query
         emit('updateEdit', false, {
-          catalogName: catalogName,
-          catalogType: type
+          catalogName: catalog.name,
+          catalogType: catalog.type
         })
         getConfigInfo()
+        formRef.value.resetFields()
       }).catch(() => {
+        message.error(`${t('save')} ${t('failed')}`)
       })
     })
     .catch(() => {
@@ -403,7 +405,7 @@ async function deleteCatalogModal() {
     onOk: async() => {
       await delCatalog(formState.catalog.name)
       message.success(`${t('remove')} ${t('success')}`)
-      emit('updateCatalogs')
+      emit('updateEdit', false, {})
     }
   })
 }
@@ -441,10 +443,13 @@ onMounted(() => {
 <style lang="less" scoped>
 .detail-wrap {
   height: 100%;
-  padding: 16px 200px 16px 24px;
+  padding: 16px 16px 16px 24px;
   display: flex;
   flex: 1;
   flex-direction: column;
+  .detail-content-wrap {
+    padding: 0 200px 24px 0;
+  }
   .content-wrap {
     display: flex;
     flex: 1;
