@@ -20,6 +20,7 @@ package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.spark.table.SupportsExtendIdentColumns;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.exceptions.ValidationException;
@@ -84,10 +85,16 @@ public class SparkScanBuilder implements ScanBuilder, SupportsExtendIdentColumns
       }
     }
 
+    UnkeyedTable icebergTable;
+    if (table.isUnkeyedTable()) {
+      icebergTable = table.asUnkeyedTable();
+    } else {
+      icebergTable = table.asKeyedTable().baseTable();
+    }
     // metadata columns
     List<Types.NestedField> fields = metaColumns.stream()
         .distinct()
-        .map(MetadataColumns::get)
+        .map(column -> MetadataColumns.metadataColumn(icebergTable, column))
         .collect(Collectors.toList());
     if (fields.size() == 1) {
       return schema;

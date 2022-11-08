@@ -52,7 +52,7 @@
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
 
-        <iceberg.version>0.12.0</iceberg.version>
+        <iceberg.version>0.13.2</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
         <scala.binary.version>2.12</scala.binary.version>
         <args4j.version>2.33</args4j.version>
@@ -63,10 +63,11 @@
         <commons-pool2.version>2.10.0</commons-pool2.version>
         <cglib.version>2.2.2</cglib.version>
         <mockito.version>2.23.4</mockito.version>
-        <parquet.version>1.12.0</parquet.version>
+        <parquet-hadoop.version>1.12.0</parquet-hadoop.version>
         <curator.version>5.2.1</curator.version>
         <zookeeper.version>3.7.1</zookeeper.version>
         <fastjson.version>1.2.75</fastjson.version>
+        <parquet-avro.version>1.12.2</parquet-avro.version>
     </properties>
 
     <dependencyManagement>
@@ -147,6 +148,18 @@
                 <groupId>org.apache.iceberg</groupId>
                 <artifactId>iceberg-hive-metastore</artifactId>
                 <version>${iceberg.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.iceberg</groupId>
+                <artifactId>iceberg-bundled-guava</artifactId>
+                <version>${iceberg.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-avro</artifactId>
+                <version>${parquet-avro.version}</version>
             </dependency>
 
             <dependency>
