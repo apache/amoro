@@ -143,7 +143,7 @@ CREATE TABLE file_info_cache (
     add_snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     delete_snapshot_id bigint DEFAULT NULL,
-    add_snapshot_sequence bigint NOT NULL -1,
+    add_snapshot_sequence bigint NOT NULL DEFAULT -1,
     inner_table varchar(64) DEFAULT NULL,
     file_path varchar(400) NOT NULL,
     file_type varchar(64) DEFAULT NULL,

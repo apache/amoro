@@ -41,7 +41,6 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
@@ -386,7 +385,8 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
   private StructLikeMap<Long> getBaseTableLegacyMaxTransactionId() {
     if (baseTableLegacyMaxTransactionId == null) {
-      baseTableLegacyMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      baseTableLegacyMaxTransactionId =
+          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
       LOG.debug("{} ==== get base table legacy max transaction id: {}", tableId(), baseTableLegacyMaxTransactionId);
     }
     return baseTableLegacyMaxTransactionId;
