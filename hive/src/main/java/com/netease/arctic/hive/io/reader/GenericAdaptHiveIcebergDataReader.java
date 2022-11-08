@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,7 +21,6 @@ package com.netease.arctic.hive.io.reader;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseArcticDataReader;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -36,23 +35,19 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-/**
- * Implementation of {@link BaseArcticDataReader} with record type {@link Record}.
- */
-public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataReader<Record> {
+public class GenericAdaptHiveIcebergDataReader extends AdaptHiveBaseIcebergDataReader<Record> {
 
-  public AdaptHiveGenericArcticDataReader(
+  public GenericAdaptHiveIcebergDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
-      PrimaryKeySpec primaryKeySpec,
       String nameMapping,
       boolean caseSensitive,
-      BiFunction<Type, Object, Object> convertConstant) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant, false);
+      BiFunction<Type, Object, Object> convertConstant, boolean reuseContainer) {
+    super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
   }
 
-  public AdaptHiveGenericArcticDataReader(
+  public GenericAdaptHiveIcebergDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,
       Schema projectedSchema,
@@ -60,16 +55,24 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
       String nameMapping,
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer) {
-    super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
-        nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer);
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer) {
+    super(
+        fileIO,
+        tableSchema,
+        projectedSchema,
+        primaryKeySpec,
+        nameMapping,
+        caseSensitive,
+        convertConstant,
+        sourceNodes,
+        reuseContainer);
   }
 
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
-      Schema projectSchema,
-      Map<Integer, ?> idToConstant) {
-    return fileSchema -> AdaptHiveGenericParquetReaders.buildReader(projectSchema, fileSchema, idToConstant);
+      Schema projectedSchema, Map idToConstant) {
+    return fileSchema -> AdaptHiveGenericParquetReaders.buildReader(projectedSchema, fileSchema, idToConstant);
   }
 
   @Override

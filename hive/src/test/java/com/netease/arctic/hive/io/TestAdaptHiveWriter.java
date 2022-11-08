@@ -21,6 +21,7 @@ package com.netease.arctic.hive.io;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
+import com.netease.arctic.io.TestRecords;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.table.ArcticTable;
