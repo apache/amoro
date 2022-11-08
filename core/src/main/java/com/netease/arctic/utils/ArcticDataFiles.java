@@ -39,7 +39,7 @@ public class ArcticDataFiles {
         return Boolean.valueOf(asString);
       case INTEGER:
         if (MONTH_TYPE.equals(field.transform().toString())) {
-          return readMonthData(asString);
+          return Integer.valueOf(readMonthData(asString));
         }
         return Integer.valueOf(asString);
       case STRING:

@@ -71,7 +71,7 @@ public class HivePartitionUtil {
         pathBuilder.append("/");
       }
     }
-    return DataFiles.data(spec, pathBuilder.toString());
+    return ArcticDataFiles.data(spec, pathBuilder.toString());
   }
 
   public static Partition newPartition(
