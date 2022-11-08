@@ -22,11 +22,11 @@ public class ArcticDataFiles {
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
 
-  public static String readMonthData(String dateStr) {
+  public static Integer readMonthData(String dateStr) {
     String[] dateParts = dateStr.split("-", -1);
     int year = Integer.parseInt(dateParts[0]);
     int month = Integer.parseInt(dateParts[1]);
-    return String.valueOf(Math.multiplyExact((year - EPOCH_YEAR), 12) + month - 1);
+    return Math.multiplyExact((year - EPOCH_YEAR), 12) + month - 1;
   }
 
   public static Object fromPartitionString(PartitionField field, Type type, String asString) {
@@ -39,7 +39,7 @@ public class ArcticDataFiles {
         return Boolean.valueOf(asString);
       case INTEGER:
         if (MONTH_TYPE.equals(field.transform().toString())) {
-          return Integer.valueOf(readMonthData(asString));
+          return readMonthData(asString);
         }
         return Integer.valueOf(asString);
       case STRING:
