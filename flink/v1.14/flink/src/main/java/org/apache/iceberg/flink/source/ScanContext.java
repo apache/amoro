@@ -87,9 +87,9 @@ public class ScanContext implements Serializable {
   protected final long limit;
 
   public ScanContext(boolean caseSensitive, Long snapshotId, Long startSnapshotId, Long endSnapshotId,
-                     Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
-                     boolean isStreaming, Duration monitorInterval, String nameMapping,
-                     Schema schema, List<Expression> filters, long limit) {
+                      Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
+                      boolean isStreaming, Duration monitorInterval, String nameMapping,
+                      Schema schema, List<Expression> filters, long limit) {
     this.caseSensitive = caseSensitive;
     this.snapshotId = snapshotId;
     this.startSnapshotId = startSnapshotId;
@@ -163,7 +163,7 @@ public class ScanContext implements Serializable {
     return limit;
   }
 
-  public ScanContext copyWithAppendsBetween(long newStartSnapshotId, long newEndSnapshotId) {
+  ScanContext copyWithAppendsBetween(long newStartSnapshotId, long newEndSnapshotId) {
     return ScanContext.builder()
         .caseSensitive(caseSensitive)
         .useSnapshotId(null)
@@ -182,7 +182,7 @@ public class ScanContext implements Serializable {
         .build();
   }
 
-  public ScanContext copyWithSnapshotId(long newSnapshotId) {
+  ScanContext copyWithSnapshotId(long newSnapshotId) {
     return ScanContext.builder()
         .caseSensitive(caseSensitive)
         .useSnapshotId(newSnapshotId)
