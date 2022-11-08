@@ -129,7 +129,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       hiveClientPool.run(client -> {
         client.dropTable(meta.getTableIdentifier().getDatabase(),
             meta.getTableIdentifier().getTableName(),
-            purge /* deleteData */,
+            false /* deleteData */,
             false /* ignoreUnknownTab */);
         return null;
       });
