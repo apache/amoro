@@ -73,24 +73,24 @@ public class ScanContext implements Serializable {
   public static final ConfigOption<Boolean> INCLUDE_COLUMN_STATS =
       ConfigOptions.key("include-column-stats").booleanType().defaultValue(false);
 
-  private final boolean caseSensitive;
-  private final Long snapshotId;
-  private final Long startSnapshotId;
-  private final Long endSnapshotId;
-  private final Long asOfTimestamp;
-  private final Long splitSize;
-  private final Integer splitLookback;
-  private final Long splitOpenFileCost;
-  private final boolean isStreaming;
-  private final Duration monitorInterval;
+  protected final boolean caseSensitive;
+  protected final Long snapshotId;
+  protected final Long startSnapshotId;
+  protected final Long endSnapshotId;
+  protected final Long asOfTimestamp;
+  protected final Long splitSize;
+  protected final Integer splitLookback;
+  protected final Long splitOpenFileCost;
+  protected final boolean isStreaming;
+  protected final Duration monitorInterval;
 
-  private final String nameMapping;
-  private final Schema schema;
-  private final List<Expression> filters;
-  private final long limit;
-  private final boolean includeColumnStats;
+  protected final String nameMapping;
+  protected final Schema schema;
+  protected final List<Expression> filters;
+  protected final long limit;
+  protected final boolean includeColumnStats;
 
-  private ScanContext(boolean caseSensitive, Long snapshotId, Long startSnapshotId, Long endSnapshotId,
+  protected ScanContext(boolean caseSensitive, Long snapshotId, Long startSnapshotId, Long endSnapshotId,
       Long asOfTimestamp, Long splitSize, Integer splitLookback, Long splitOpenFileCost,
       boolean isStreaming, Duration monitorInterval, String nameMapping,
       Schema schema, List<Expression> filters, long limit, boolean includeColumnStats) {
