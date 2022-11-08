@@ -125,6 +125,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
   @Override
   protected void doDropTable(TableMeta meta, boolean purge) {
+    // drop hive table only drop hive table metadata
+    // delete data files will use BaseArcticCatalog
     try {
       hiveClientPool.run(client -> {
         client.dropTable(meta.getTableIdentifier().getDatabase(),
