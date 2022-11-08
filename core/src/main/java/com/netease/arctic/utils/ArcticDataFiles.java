@@ -22,6 +22,9 @@ public class ArcticDataFiles {
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
 
+  /**
+   * return the number of months away from the epoch, reverse {@link TransformUtil#humanMonth}
+   */
   public static Integer readMonthData(String dateStr) {
     String[] dateParts = dateStr.split("-", -1);
     int year = Integer.parseInt(dateParts[0]);
