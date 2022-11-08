@@ -20,6 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -209,7 +210,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     if (keyedTable.spec().isUnpartitioned()) {
       long maxTransactionId = partitionMaxTxId.get(partitionData);
       partitionMaxTxId.put(partitionData, Math.max(maxTransactionId,
-          this.maxTransactionId.getOrDefault(partitionData, 0L)));
+          this.maxTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT)));
     } else {
       this.maxTransactionId.forEach((pd, txId) -> {
         if (partitionMaxTxId.containsKey(pd)) {
@@ -240,7 +241,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   private long getPartitionMaxTxId(StructLike partitionData) {
-    long txId = maxTransactionId.containsKey(partitionData) ? maxTransactionId.get(partitionData) : -1;
+    long txId = maxTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
     if (this.defaultMaxTransactionId != null) {
       txId = Math.max(txId, this.defaultMaxTransactionId);
     }

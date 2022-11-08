@@ -35,6 +35,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Multimaps;
 import org.apache.iceberg.util.BinPacking;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.util.StructLikeMap;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,8 +119,18 @@ public class BaseKeyedTableScan implements KeyedTableScan {
   }
 
   private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
+    StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(table);
+    StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
+    if (!legacyPartitionMaxTransactionId.isEmpty()) {
+      // for table with old transactionId, ignore change files of partitions which not set the new transactionId
+      long currentSnapshotSequence = table.changeTable().currentSnapshot().sequenceNumber();
+      for (Map.Entry<StructLike, Long> entry : legacyPartitionMaxTransactionId.entrySet()) {
+        StructLike key = entry.getKey();
+        partitionMaxTransactionId.putIfAbsent(key, currentSnapshotSequence);
+      }
+    }
     ChangeTableScan changeTableScan = table.changeTable().newChangeScan()
-        .partitionMaxTransactionId(TablePropertyUtil.getPartitionMaxTransactionId(table));
+        .partitionMaxTransactionId(partitionMaxTransactionId);
     if (expression != null) {
       changeTableScan = changeTableScan.filter(expression);
     }

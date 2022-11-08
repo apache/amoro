@@ -19,8 +19,8 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.table.ChangeTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
@@ -37,6 +37,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,50 +71,70 @@ public class BaseChangeTableScan implements ChangeTableScan {
 
   @Override
   public CloseableIterable<ArcticFileScanTask> planTasks() {
+    Snapshot currentSnapshot = table.currentSnapshot();
+    if (currentSnapshot == null) {
+      return CloseableIterable.empty();
+    }
     ListMultimap<Long, StructLike> partitionsGroupedBySequenceTxId =
         Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
+    Set<StructLike> optimizedPartitions = Sets.newHashSet();
     if (partitionMaxTransactionId != null) {
       for (Map.Entry<StructLike, Long> entry : partitionMaxTransactionId.entrySet()) {
         StructLike partition = entry.getKey();
         Long txId = entry.getValue();
+        if (txId == TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT) {
+          continue;
+        }
         partitionsGroupedBySequenceTxId.put(txId, partition);
+        optimizedPartitions.add(partition);
       }
     }
     Set<Long> txIds = partitionsGroupedBySequenceTxId.keySet();
-
-    Iterable<Snapshot> snapshots = table.snapshots();
-    List<Long> sortedTxIds = txIds.stream().sorted().collect(Collectors.toList());
-    Set<StructLike> validPartitions = Sets.newHashSet();
-    List<CloseableIterable<FileScanTask>> result = new ArrayList<>();
-    Long fromSnapshotId = null;
-    for (Long txId : sortedTxIds) {
-      Long snapshotId = getSnapshotIdBySnapshotSequence(snapshots, txId);
-      if (snapshotId == null) {
-        throw new IllegalStateException("can't find snapshot of sequence " + txId);
-      }
-      if (fromSnapshotId != null) {
-        result.add(incrementalPlanFilesOfPartitions(table, fromSnapshotId, snapshotId,
-            Sets.newHashSet(validPartitions)));
-      }
-      List<StructLike> partitions = partitionsGroupedBySequenceTxId.get(txId);
-      validPartitions.addAll(partitions);
-      fromSnapshotId = snapshotId;
+    if (txIds.isEmpty()) {
+      return CloseableIterable.transform(planFiles(table, currentSnapshot.snapshotId()),
+          BaseArcticFileScanTask::new);
     }
+    List<CloseableIterable<FileScanTask>> result = new ArrayList<>();
+
+    List<Long> sortedTxIds = txIds.stream().sorted().collect(Collectors.toList());
+    Iterable<Snapshot> snapshots = table.snapshots();
+    if (!table.spec().isUnpartitioned()) {
+      // Step1: plan with first snapshot
+      Long firstTxId = sortedTxIds.get(0);
+      long firstSnapshotId = getSnapshotIdBySnapshotSequence(snapshots, firstTxId);
+
+      result.add(planFilesIgnorePartitions(table, firstSnapshotId, optimizedPartitions));
+
+      // Step2: incremental plan from first snapshot to last snapshot
+      for (int i = 0; i < sortedTxIds.size() - 1; i++) {
+        Long thisTxId = sortedTxIds.get(i);
+        Long nextTxId = sortedTxIds.get(i + 1);
+        long fromSnapshotId = getSnapshotIdBySnapshotSequence(snapshots, thisTxId);
+        long toSnapshotId = getSnapshotIdBySnapshotSequence(snapshots, nextTxId);
+        List<StructLike> thisPartitions = partitionsGroupedBySequenceTxId.get(thisTxId);
+        thisPartitions.forEach(optimizedPartitions::remove);
+        Set<StructLike> ignorePartitions = Sets.newHashSet(optimizedPartitions);
+        result.add(incrementalPlanFilesIgnorePartitions(table, fromSnapshotId, toSnapshotId, ignorePartitions));
+      }
+    }
+
+    // Step3: incremental plan from last snapshot to current snapshot
+    Long lastTxId = sortedTxIds.get(sortedTxIds.size() - 1);
+    long lastSnapshotId = getSnapshotIdBySnapshotSequence(snapshots, lastTxId);
     long currentSnapshotId = table.currentSnapshot().snapshotId();
-    if (fromSnapshotId != null) {
-      result.add(incrementalPlanFiles(table, fromSnapshotId, currentSnapshotId));
-    } else {
-      result.add(incrementalPlanFiles(table, -1, currentSnapshotId));
+    if (lastSnapshotId != currentSnapshotId) {
+      result.add(incrementalPlanFilesIgnorePartitions(table, lastSnapshotId, currentSnapshotId,
+          Collections.emptySet()));
     }
     return CloseableIterable.transform(CloseableIterable.concat(result), BaseArcticFileScanTask::new);
   }
 
-  private Long getSnapshotIdBySnapshotSequence(Iterable<Snapshot> snapshots, long sequenceNumber) {
+  private long getSnapshotIdBySnapshotSequence(Iterable<Snapshot> snapshots, long sequenceNumber) {
     return Streams.stream(snapshots)
         .filter(s -> s.sequenceNumber() == sequenceNumber)
         .map(Snapshot::snapshotId)
         .findAny()
-        .orElse(-1L);
+        .orElseThrow(() -> new IllegalStateException("can't find snapshot of snapshot sequence " + sequenceNumber));
   }
 
   private CloseableIterable<FileScanTask> incrementalPlanFiles(UnkeyedTable internalTable, long fromSnapshotId,
@@ -133,19 +154,33 @@ public class BaseChangeTableScan implements ChangeTableScan {
     return scan.planFiles();
   }
 
-  private CloseableIterable<FileScanTask> incrementalPlanFilesOfPartitions(UnkeyedTable internalTable,
-                                                                  long fromSnapshotId,
-                                                                  long toSnapshotId,
-                                                                  Set<StructLike> partitions) {
-    final boolean unPartitioned =
-        partitions.size() == 1 && partitions.iterator().next().equals(TablePropertyUtil.EMPTY_STRUCT);
-    CloseableIterable<FileScanTask> fileScanTasks = incrementalPlanFiles(internalTable, fromSnapshotId, toSnapshotId);
+  private CloseableIterable<FileScanTask> planFiles(UnkeyedTable internalTable, long snapshotId) {
+    TableScan scan = internalTable.newScan();
+    scan.useSnapshot(snapshotId);
+    if (this.expression != null) {
+      scan = scan.filter(this.expression);
+    }
+    return scan.planFiles();
+  }
+
+  private CloseableIterable<FileScanTask> planFilesIgnorePartitions(UnkeyedTable internalTable, long snapshotId,
+                                                                    Set<StructLike> ignorePartitions) {
+    CloseableIterable<FileScanTask> fileScanTasks = planFiles(internalTable, snapshotId);
     return CloseableIterable.filter(fileScanTasks, f -> {
-      if (unPartitioned) {
-        return true;
-      }
       StructLike partition = f.file().partition();
-      return partitions.contains(partition);
+      return !ignorePartitions.contains(partition);
     });
   }
+
+  private CloseableIterable<FileScanTask> incrementalPlanFilesIgnorePartitions(UnkeyedTable internalTable,
+                                                                               long fromSnapshotId,
+                                                                               long toSnapshotId,
+                                                                               Set<StructLike> ignorePartitions) {
+    CloseableIterable<FileScanTask> fileScanTasks = incrementalPlanFiles(internalTable, fromSnapshotId, toSnapshotId);
+    return CloseableIterable.filter(fileScanTasks, f -> {
+      StructLike partition = f.file().partition();
+      return !ignorePartitions.contains(partition);
+    });
+  }
+
 }

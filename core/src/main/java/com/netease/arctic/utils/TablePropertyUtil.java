@@ -112,7 +112,8 @@ public class TablePropertyUtil {
     partitionProperty.forEach((partitionKey, propertyValue) -> {
       Long maxTxId = (propertyValue == null ||
           propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID) == null) ?
-          0 : Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
+          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT :
+          Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
       baseTableMaxTransactionId.put(partitionKey, maxTxId);
     });
 
@@ -126,17 +127,19 @@ public class TablePropertyUtil {
     partitionProperty.forEach((partitionKey, propertyValue) -> {
       Long maxTxId = (propertyValue == null ||
           propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null) ?
-          0 : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
-      baseTableMaxTransactionId.put(partitionKey, maxTxId);
+          null : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
+      if (maxTxId != null) {
+        baseTableMaxTransactionId.put(partitionKey, maxTxId);
+      }
     });
 
     return baseTableMaxTransactionId;
   }
-  
+
   public static long allocateMaxTransactionId(KeyedTable keyedTable) {
     ChangeTable changeTable = keyedTable.changeTable();
     changeTable.refresh();
     Snapshot snapshot = changeTable.currentSnapshot();
-    return snapshot == null ? 0L : snapshot.sequenceNumber();
+    return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
   }
 }
