@@ -40,6 +40,7 @@ public class CacheFileInfo {
   private Long addSnapshotId;
   private Long parentSnapshotId;
   private Long deleteSnapshotId;
+  private Long addSnapshotSequence;
   private String innerTable;
   private String filePath;
   private String primaryKeyMd5;
@@ -61,7 +62,7 @@ public class CacheFileInfo {
 
   public CacheFileInfo(
       String primaryKeyMd5, TableIdentifier tableIdentifier, Long addSnapshotId,
-      Long parentSnapshotId, Long deleteSnapshotId, String innerTable,
+      Long parentSnapshotId, Long deleteSnapshotId, Long addSnapshotSequence, String innerTable,
       String filePath, String fileType, Long fileSize, Long fileMask, Long fileIndex, Long specId,
       String partitionName, Long commitTime, Long recordCount, String action, Long watermark, String producer) {
     this.primaryKeyMd5 = primaryKeyMd5;
@@ -69,6 +70,7 @@ public class CacheFileInfo {
     this.addSnapshotId = addSnapshotId;
     this.parentSnapshotId = parentSnapshotId;
     this.deleteSnapshotId = deleteSnapshotId;
+    this.addSnapshotSequence = addSnapshotSequence;
     this.innerTable = innerTable;
     this.filePath = filePath;
     this.fileType = fileType;
@@ -108,7 +110,7 @@ public class CacheFileInfo {
     String producer =
         snapshot.summary().getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
     return new CacheFileInfo(primaryKeyMd5, identifier, snapshot.snapshotId(),
-        parentId, null,
+        parentId, null, snapshot.sequenceNumber(),
         tableType, amsFile.getPath(), amsFile.getFileType(), amsFile.getFileSize(), amsFile.getMask(),
         amsFile.getIndex(), amsFile.getSpecId(), partitionName, snapshot.timestampMillis(),
         amsFile.getRecordCount(), snapshot.operation(), watermark, producer);
@@ -270,15 +272,27 @@ public class CacheFileInfo {
     this.watermark = watermark;
   }
 
+  public Long getAddSnapshotSequence() {
+    return addSnapshotSequence;
+  }
+
+  public void setAddSnapshotSequence(Long addSnapshotSequence) {
+    this.addSnapshotSequence = addSnapshotSequence;
+  }
+
   @Override
   public String toString() {
     return "CacheFileInfo{" +
         "tableIdentifier=" + tableIdentifier +
         ", addSnapshotId=" + addSnapshotId +
+        ", parentSnapshotId=" + parentSnapshotId +
         ", deleteSnapshotId=" + deleteSnapshotId +
+        ", addSnapshotSequence=" + addSnapshotSequence +
         ", innerTable='" + innerTable + '\'' +
         ", filePath='" + filePath + '\'' +
+        ", primaryKeyMd5='" + primaryKeyMd5 + '\'' +
         ", fileType='" + fileType + '\'' +
+        ", producer='" + producer + '\'' +
         ", fileSize=" + fileSize +
         ", fileMask=" + fileMask +
         ", fileIndex=" + fileIndex +
