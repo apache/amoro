@@ -10,38 +10,26 @@ import org.apache.iceberg.types.Types;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.UUID;
 
 public class ArcticDataFiles {
   public static final OffsetDateTime EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC);
-  public static final DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-  public static final SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM");
-  public static final SimpleDateFormat sdf2 = new SimpleDateFormat("yyyy-MM-dd");
+  private static final int EPOCH_YEAR = EPOCH.getYear();
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
 
   public static String readMonthData(String dateStr) {
-    try {
-      Date parse = sdf1.parse(dateStr);
-      String format1 = sdf2.format(parse);
-      LocalDate collectTimeDate = LocalDate.parse(format1, dtf);
-      return String.valueOf(Math.abs(ChronoUnit.MONTHS.between(collectTimeDate, EPOCH)));
-    } catch (ParseException e) {
-      throw new UnsupportedOperationException("Failed to parse month data ", e);
-    }
+    String[] dateParts = dateStr.split("-", -1);
+    int year = Integer.parseInt(dateParts[0]);
+    int month = Integer.parseInt(dateParts[1]);
+    return String.valueOf(Math.multiplyExact((year - EPOCH_YEAR), 12) + month - 1);
   }
 
-  public static Object fromPartitionString(Type type, String asString) {
+  public static Object fromPartitionString(PartitionField field, Type type, String asString) {
     if (asString == null || HIVE_NULL.equals(asString)) {
       return null;
     }
@@ -50,6 +38,9 @@ public class ArcticDataFiles {
       case BOOLEAN:
         return Boolean.valueOf(asString);
       case INTEGER:
+        if (MONTH_TYPE.equals(field.transform().toString())) {
+          return readMonthData(asString);
+        }
         return Integer.valueOf(asString);
       case STRING:
         return asString;
@@ -94,11 +85,8 @@ public class ArcticDataFiles {
               parts[0] != null &&
               field.name().equals(parts[0]),
           "Invalid partition: %s", partitions[i]);
-      String partitionValue = parts[1];
-      if (MONTH_TYPE.equals(field.transform().toString())) {
-        partitionValue = ArcticDataFiles.readMonthData(parts[1]);
-      }
-      data.set(i, ArcticDataFiles.fromPartitionString(spec.partitionType().fieldType(parts[0]), partitionValue));
+
+      data.set(i, ArcticDataFiles.fromPartitionString(field, spec.partitionType().fieldType(parts[0]), parts[1]));
     }
 
     return data;
