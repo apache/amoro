@@ -16,9 +16,12 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.terminal;
+package com.netease.arctic.ams.server.terminal.kyuubi;
 
-public class ExecutionContext {
-  private String terminalIdentifier;
-  private String authIdentifier;
+import com.netease.arctic.ams.server.terminal.TerminalSession;
+import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
+import java.util.Map;
+
+public abstract class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
+
 }

@@ -24,13 +24,14 @@ import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.model.LatestSessionInfo;
 import com.netease.arctic.ams.server.model.LogInfo;
-import com.netease.arctic.ams.server.model.SesssionInfo;
+import com.netease.arctic.ams.server.model.SessionInfo;
 import com.netease.arctic.ams.server.model.SqlResult;
 import com.netease.arctic.ams.server.model.SqlRunningInfo;
 import com.netease.arctic.ams.server.model.SqlStatus;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.spark.SparkConf;
@@ -71,7 +72,7 @@ public class TerminalService {
     return sqlSessionInfoCache.get(sessionId).getSqlResults();
   }
 
-  public static SesssionInfo executeSql(String catalog, String sqls) {
+  public static SessionInfo executeSql(String catalog, String sqls) {
     sqlSessionInfoCache.put(sessionId, new SqlRunningInfo());
     if (sessionId > 10) {
       sqlSessionInfoCache.remove(sessionId - 10);
@@ -81,7 +82,7 @@ public class TerminalService {
     List<String> tempSqls = Arrays.asList(sqls.split(";"));
     List<String> executeSqls = new ArrayList<>(tempSqls);
     executeSqls.removeIf(StringUtils::isBlank);
-    SesssionInfo sesssionInfo = new SesssionInfo(sessionId, executeSqls.size());
+    SessionInfo sessionInfo = new SessionInfo(sessionId + "");
     int threadSession = sessionId;
     Thread sqlExecute = new Thread(() -> {
       SqlRunningInfo sqlRunningInfo = sqlSessionInfoCache.get(threadSession);
@@ -89,7 +90,8 @@ public class TerminalService {
       TableMetaStore tableMetaStore;
       UserGroupInformation ugi;
       try {
-        CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(catalog);
+        Optional<CatalogMeta> optCatalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(catalog);
+        CatalogMeta catalogMeta = optCatalogMeta.get();
         TableMetaStore.Builder builder = TableMetaStore.builder()
             .withBase64MetaStoreSite(
                 catalogMeta.getStorageConfigs().get(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE))
@@ -226,7 +228,7 @@ public class TerminalService {
     sqlExecute.start();
     sqlSessionInfoCache.get(sessionId).setExecuteThread(sqlExecute);
     sessionId++;
-    return sesssionInfo;
+    return sessionInfo;
   }
 
   public static void stopExecute(int sessionId) {

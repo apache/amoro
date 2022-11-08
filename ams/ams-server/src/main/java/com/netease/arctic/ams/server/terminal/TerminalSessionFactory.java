@@ -18,9 +18,18 @@
 
 package com.netease.arctic.ams.server.terminal;
 
+import com.netease.arctic.table.TableMetaStore;
 import java.util.Map;
 
+/**
+ * factory to create a TerminalSession
+ */
 public interface TerminalSessionFactory {
+
+  /**
+   * this will be called after factory is created.
+   * @param properties - terminal properties and factory properties.
+   */
   void initialize(Map<String, String> properties);
-  TerminalSession create(Map<String, String> properties);
+  TerminalSession create(TableMetaStore metaStore);
 }

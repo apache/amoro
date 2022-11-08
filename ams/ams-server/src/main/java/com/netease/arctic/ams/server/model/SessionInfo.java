@@ -18,23 +18,22 @@
 
 package com.netease.arctic.ams.server.model;
 
-public class SesssionInfo {
-  private int sessionId;
+public class SessionInfo {
+  private String sessionId;
   private int sqlNumber;
 
-  public SesssionInfo(int sessionId, int sqlNumber) {
+  public SessionInfo(String sessionId) {
     this.sessionId = sessionId;
-    this.sqlNumber = sqlNumber;
   }
 
-  public SesssionInfo() {
+  public SessionInfo() {
   }
 
-  public int getSessionId() {
-    return sessionId;
+  public String getSessionId() {
+    return sessionId ;
   }
 
-  public void setSessionId(int sessionId) {
+  public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
   }
 

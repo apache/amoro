@@ -16,9 +16,19 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.terminal;
+package com.netease.arctic.ams.server.service;
 
-public class ExecutionContext {
-  private String terminalIdentifier;
-  private String authIdentifier;
+import com.netease.arctic.ams.server.model.SessionInfo;
+import com.netease.arctic.ams.server.terminal.TerminalManager;
+
+public class TerminalServiceV2 {
+
+
+
+  public static SessionInfo executeScript(String terminalId, String catalog, String script) {
+    TerminalManager manager = ServiceContainer.getTerminalManager();
+
+    //terminalId = manager.executeScript(script);
+    return null;
+  }
 }

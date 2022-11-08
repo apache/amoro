@@ -74,6 +74,18 @@ public class StatementResult {
     return datas;
   }
 
+  public List<List<String>> getDataAsStringList(){
+    List<List<String>> results = Lists.newArrayList();
+    for (Object[] row: datas){
+      List<String> rowStringList = Lists.newArrayList();
+      for (Object o: row){
+        rowStringList.add(o.toString());
+      }
+      results.add(rowStringList);
+    }
+    return results;
+  }
+
   public boolean isEmpty() {
     return empty;
   }

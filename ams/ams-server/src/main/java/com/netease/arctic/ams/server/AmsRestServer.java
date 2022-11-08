@@ -32,10 +32,8 @@ import com.netease.arctic.ams.server.service.impl.ApiTokenService;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
-import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
-import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
@@ -153,9 +151,9 @@ public class AmsRestServer {
         /** console controller **/
         get("/terminal/examples", TerminalController::getExamples);
         get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeScript);
         get("/terminal/{sessionId}/logs", TerminalController::getLogs);
-        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlResult);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
 
@@ -198,9 +196,9 @@ public class AmsRestServer {
         /** console controller **/
         get("/terminal/examples", TerminalController::getExamples);
         get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeScript);
         get("/terminal/{sessionId}/logs", TerminalController::getLogs);
-        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlResult);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
 

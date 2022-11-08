@@ -19,5 +19,5 @@
 package com.netease.arctic.ams.server.terminal;
 
 public enum ExecutionStatus {
-  CREATE, RUNNING, FINISHED, FAILED, CANCELED, EXPIRED;
+  Created, Running, Finished, Failed, Canceled, Expired;
 }

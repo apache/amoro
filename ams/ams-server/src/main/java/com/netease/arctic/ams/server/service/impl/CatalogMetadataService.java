@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
+import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
 
@@ -36,15 +37,15 @@ public class CatalogMetadataService extends IJDBCService {
     }
   }
 
-  public CatalogMeta getCatalog(String catalogName) {
+  public Optional<CatalogMeta> getCatalog(String catalogName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       CatalogMetadataMapper catalogMetadataMapper =
           getMapper(sqlSession, CatalogMetadataMapper.class);
       List<CatalogMeta> tmpMetadataList = catalogMetadataMapper.getCatalog(catalogName);
       if (CollectionUtils.isNotEmpty(tmpMetadataList)) {
-        return tmpMetadataList.get(0);
+        return Optional.of(tmpMetadataList.get(0));
       } else {
-        return new CatalogMeta();
+        return Optional.empty();
       }
     }
   }
@@ -53,9 +54,9 @@ public class CatalogMetadataService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
 
       CatalogMetadataMapper catalogMetadataMapper =
-              getMapper(sqlSession, CatalogMetadataMapper.class);
+          getMapper(sqlSession, CatalogMetadataMapper.class);
       for (CatalogMeta c : catalogMeta) {
-        if (getCatalog(c.catalogName) != null) {
+        if (!getCatalog(c.catalogName).isPresent()) {
           catalogMetadataMapper.insertCatalog(c);
         }
       }

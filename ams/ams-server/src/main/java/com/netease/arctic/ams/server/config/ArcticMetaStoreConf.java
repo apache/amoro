@@ -178,4 +178,32 @@ public class ArcticMetaStoreConf {
           .stringType()
           .defaultValue("")
           .withDescription("arctic install path.");
+
+  /**
+   * config key prefix of terminal
+   */
+  public static final String TERMINAL_PREFIX = "arctic.ams.terminal.";
+  public static final ConfigOption<String> TERMINAL_BACKEND =
+      ConfigOptions.key("arctic.ams.terminal.backend")
+          .stringType()
+          .defaultValue("local")
+          .withDescription("terminal backend implement. local, kyuubi are supported");
+
+  public static final ConfigOption<String> TERMINAL_SESSION_FACTORY =
+      ConfigOptions.key("arctic.ams.terminal.factory")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("session factory implement of terminal.");
+
+  public static final ConfigOption<Integer> TERMINAL_RESULT_LIMIT =
+      ConfigOptions.key("arctic.ams.terminal.result.limit")
+          .intType()
+          .defaultValue(1000)
+          .withDescription("limit of result-set");
+
+  public static final ConfigOption<Boolean> TERMINAL_STOP_ON_ERROR =
+      ConfigOptions.key("arctic.ams.terminal.stop-on-error")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("stop script execution if any statement execute failed.");
 }

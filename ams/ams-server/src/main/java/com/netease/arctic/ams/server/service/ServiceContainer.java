@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.service;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
@@ -40,18 +41,19 @@ import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.service.impl.TableExpireService;
 import com.netease.arctic.ams.server.service.impl.TableTaskHistoryService;
+import com.netease.arctic.ams.server.terminal.TerminalManager;
 
 public class ServiceContainer {
   private static volatile IOptimizeService optimizeService;
-  
+
   private static volatile ITableExpireService tableExpireService;
-  
+
   private static volatile IOrphanFilesCleanService orphanFilesCleanService;
 
   private static volatile OptimizeQueueService optimizeQueueService;
 
   private static volatile IMetaService metaService;
-  
+
   private static volatile IQuotaService quotaService;
   private static volatile OptimizeExecuteService optimizeExecuteService;
 
@@ -81,6 +83,8 @@ public class ServiceContainer {
 
   private static volatile ISupportHiveSyncService supportHiveSyncService;
 
+  private static volatile TerminalManager terminalManager;
+
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
       synchronized (ServiceContainer.class) {
@@ -104,7 +108,7 @@ public class ServiceContainer {
 
     return tableExpireService;
   }
-  
+
   public static IOrphanFilesCleanService getOrphanFilesCleanService() {
     if (orphanFilesCleanService == null) {
       synchronized (ServiceContainer.class) {
@@ -138,7 +142,6 @@ public class ServiceContainer {
     }
     return optimizeManagerHandler;
   }
-
 
   public static OptimizeQueueService getOptimizeQueueService() {
     if (optimizeQueueService == null) {
@@ -290,6 +293,17 @@ public class ServiceContainer {
     }
 
     return ddlTracerService;
+  }
+
+  public static TerminalManager getTerminalManager() {
+    if (terminalManager == null) {
+      synchronized (ServiceContainer.class) {
+        if (terminalManager == null){
+          terminalManager = new TerminalManager(ArcticMetaStore.conf);
+        }
+      }
+    }
+    return terminalManager;
   }
 
   @VisibleForTesting

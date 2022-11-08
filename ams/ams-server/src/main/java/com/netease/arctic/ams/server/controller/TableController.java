@@ -68,6 +68,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import java.util.Optional;
 import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -451,7 +452,8 @@ public class TableController extends RestBaseController {
     List<TableIdentifier> tableIdentifiers = ac.listTables(db);
     LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
     List<TableMeta> tables = new ArrayList<>();
-    if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
+    Optional<com.netease.arctic.ams.api.CatalogMeta> optCatalogMeta = catalogMetadataService.getCatalog(catalog);
+    if (optCatalogMeta.isPresent() && optCatalogMeta.get().getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
       ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {

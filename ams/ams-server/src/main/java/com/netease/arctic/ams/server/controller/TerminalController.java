@@ -19,10 +19,13 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.netease.arctic.ams.server.controller.response.OkResponse;
+import com.netease.arctic.ams.server.model.SessionInfo;
 import com.netease.arctic.ams.server.model.SqlExample;
+import com.netease.arctic.ams.server.model.SqlResult;
+import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TerminalService;
+import com.netease.arctic.ams.server.terminal.TerminalManager;
 import io.javalin.http.Context;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +41,7 @@ public class TerminalController {
   private static final Logger LOG =
           LoggerFactory.getLogger(TerminalController.class);
 
+  /** get sql example list */
   public static void getExamples(Context ctx) {
     List<String> examples = Arrays.stream(SqlExample.values()).map(SqlExample::getName).collect(Collectors.toList());
     ctx.json(OkResponse.of(examples));
@@ -57,28 +61,45 @@ public class TerminalController {
   }
 
   /** execute some sql*/
+  public static void executeScript(Context ctx) {
+    String catalog = ctx.pathParam("catalog");
+    Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
+    String sql = bodyParams.get("sql");
+    String terminalId = ctx.cookie("JSESSIONID");
+    TerminalManager manager = ServiceContainer.getTerminalManager();
+    String sessionId = manager.executeScript(terminalId, catalog, sql);
+
+    ctx.json(OkResponse.of(new SessionInfo(sessionId)));
+  }
+
+  /** execute some sql*/
   public static void executeSql(Context ctx) {
     String catalog = ctx.pathParam("catalog");
-    Map<String, String> sql = ctx.bodyAsClass(Map.class);
-    ctx.json(OkResponse.of(TerminalService.executeSql(catalog, sql.get("sql"))));
+    Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
+    String sql = bodyParams.get("sql");
+    ctx.json(OkResponse.of(TerminalService.executeSql(catalog, sql)));
   }
 
   /** get execute logs of some session */
   public static void getLogs(Context ctx) {
-    Integer sessionId = ctx.pathParamAsClass("sessionId", Integer.class).get();
-    ctx.json(OkResponse.of(TerminalService.getLogs(sessionId)));
+    String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
+    TerminalManager manager = ServiceContainer.getTerminalManager();
+    ctx.json(OkResponse.of(manager.getExecutionLog(sessionId)));
   }
 
   /** get execute result of some session*/
-  public static void getSqlStatus(Context ctx) {
-    Integer sessionId = ctx.pathParamAsClass("sessionId", Integer.class).get();
-    ctx.json(OkResponse.of(TerminalService.getSqlStatus(sessionId)));
+  public static void getSqlResult(Context ctx) {
+    String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
+    TerminalManager manager = ServiceContainer.getTerminalManager();
+    List<SqlResult> results = manager.getExecutionResults(sessionId);
+    ctx.json(OkResponse.of(results));
   }
 
   /** stop some sql*/
   public static void stopSql(Context ctx) {
-    Integer sessionId = ctx.pathParamAsClass("sessionId", Integer.class).get();
-    TerminalService.stopExecute(sessionId);
+    String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
+    TerminalManager manager = ServiceContainer.getTerminalManager();
+    manager.cancelExecution(sessionId);
     ctx.json(OkResponse.ok());
   }
 

@@ -35,6 +35,7 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
+import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -70,11 +71,11 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public CatalogMeta getCatalog(String name) throws TException {
-    CatalogMeta c = catalogMetadataService.getCatalog(name);
-    if (c == null) {
+    Optional<CatalogMeta> c = catalogMetadataService.getCatalog(name);
+    if (!c.isPresent()) {
       throw new NoSuchObjectException("can't find catalog with name: " + name);
     }
-    return c;
+    return c.get();
   }
 
   @Override
@@ -86,8 +87,8 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   @Override
   public void createDatabase(String catalogName, String database) throws TException {
     LOG.info("handle create database: {}.{}", catalogName, database);
-    CatalogMeta c = catalogMetadataService.getCatalog(catalogName);
-    if (c == null) {
+    Optional<CatalogMeta> c = catalogMetadataService.getCatalog(catalogName);
+    if (!c.isPresent()) {
       throw new NoSuchObjectException("can't find catalog with name: " + catalogName);
     }
     if (metaService.listDatabases(catalogName).contains(database)) {
@@ -99,8 +100,8 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   @Override
   public void dropDatabase(String catalogName, String database) throws TException {
     LOG.info("handle drop database: {}.{}", catalogName, database);
-    CatalogMeta c = catalogMetadataService.getCatalog(catalogName);
-    if (c == null) {
+    Optional<CatalogMeta> c = catalogMetadataService.getCatalog(catalogName);
+    if (!c.isPresent()) {
       throw new NoSuchObjectException("can't find catalog with name: " + catalogName);
     }
     if (CollectionUtils.isNotEmpty(listTables(catalogName, database))) {

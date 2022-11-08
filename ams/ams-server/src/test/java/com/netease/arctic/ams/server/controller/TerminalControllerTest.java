@@ -23,7 +23,6 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
-import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -109,7 +108,7 @@ public class TerminalControllerTest {
     JavalinTest.test((app, client) -> {
       JSONObject requestJson = new JSONObject();
       requestJson.put("sql", "create database arctic_test;");
-      app.post("/{catalog}/", ctx -> TerminalController.executeSql(ctx));
+      app.post("/{catalog}/", ctx -> TerminalController.executeScript(ctx));
       final okhttp3.Response resp1 = client.post("/" + catalogName + "/", requestJson, x -> {
       });
       OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
@@ -137,7 +136,7 @@ public class TerminalControllerTest {
 
     // test get sql status and result
     JavalinTest.test((app, client) -> {
-      app.get("/{sessionId}/", ctx -> TerminalController.getSqlStatus(ctx));
+      app.get("/{sessionId}/", ctx -> TerminalController.getSqlResult(ctx));
       final okhttp3.Response resp4 = client.get("/1/", x -> {});
       OkResponse result = JSONObject.parseObject(resp4.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));

@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
+import com.netease.arctic.table.TableMetaStore;
 import java.util.Date;
 import java.util.Map;
 import org.apache.spark.SparkConf;
@@ -41,7 +42,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   }
 
   @Override
-  public TerminalSession create(Map<String, String> properties) {
+  public TerminalSession create(TableMetaStore metaStore) {
     SparkSession context = lazyInitContext();
     SparkSession session = context.cloneSession();
     return new LocalTerminalSession(session);
