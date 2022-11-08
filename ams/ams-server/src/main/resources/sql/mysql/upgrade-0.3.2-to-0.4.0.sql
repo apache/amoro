@@ -1,0 +1,1 @@
+ALTER TABLE `table_metadata` modify COLUMN `properties` mediumtext COMMENT 'Table properties';
