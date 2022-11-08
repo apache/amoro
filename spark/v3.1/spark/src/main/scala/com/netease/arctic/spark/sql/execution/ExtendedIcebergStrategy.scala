@@ -22,23 +22,19 @@ import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteA
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import org.apache.iceberg.spark.{Spark3Util, SparkCatalog, SparkSessionCatalog}
-import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
+import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.expressions.{And, Expression, NamedExpression, PredicateHelper}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.CreateArcticTableAsSelect
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
-import org.apache.spark.sql.connector.catalog.{CatalogV2Util, Identifier, TableCatalog}
+import org.apache.spark.sql.connector.catalog.{Identifier, TableCatalog}
 import org.apache.spark.sql.connector.iceberg.read.SupportsFileFilter
-import org.apache.spark.sql.execution.command.CreateTableLikeCommand
-import org.apache.spark.sql.execution.datasources.DataSourceStrategy
 import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.execution.{FilterExec, LeafExecNode, ProjectExec, SparkPlan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-import org.apache.spark.sql.{AnalysisException, SparkSession, Strategy}
-import org.apache.spark.util.Utils
+import org.apache.spark.sql.{SparkSession, Strategy}
 
-import scala.collection.JavaConverters
 import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaList}
 
 case class ExtendedIcebergStrategy(spark: SparkSession) extends Strategy with PredicateHelper{
