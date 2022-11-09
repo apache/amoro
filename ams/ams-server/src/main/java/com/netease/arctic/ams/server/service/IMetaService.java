@@ -63,14 +63,6 @@ public interface IMetaService {
   void updateTableProperties(TableIdentifier tableIdentifier, Map<String, String> properties);
 
   /**
-   * update table current transaction id
-   *
-   * @param tableIdentifier table id
-   * @param txId      arctic table current transaction id
-   */
-  void updateTableTxId(TableIdentifier tableIdentifier, long txId);
-
-  /**
    * load arctic databases name
    *
    * @return databases name list
