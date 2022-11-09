@@ -23,10 +23,28 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.CatalogControllerTest;
+import com.netease.arctic.ams.server.controller.LoginControllerTest;
+import com.netease.arctic.ams.server.controller.OptimizerControllerTest;
+import com.netease.arctic.ams.server.controller.SettingControllerTest;
+import com.netease.arctic.ams.server.controller.TableControllerTest;
+import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
+import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.TestDDLTracerService;
+import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
+import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
@@ -70,26 +88,25 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
-        CatalogControllerTest.class
-
-//    OptimizerControllerTest.class,
-//    TableControllerTest.class,
-//    TerminalControllerTest.class,
-//    SettingControllerTest.class,
-//    TestDDLTracerService.class,
-//    LoginControllerTest.class,
-//    TestExpiredFileClean.class,
-//    TestMajorOptimizeCommit.class,
-//    TestMajorOptimizePlan.class,
-//    TestMinorOptimizeCommit.class,
-//    TestMinorOptimizePlan.class,
-//    TestOrphanFileClean.class,
-//    TestFileInfoCacheService.class,
-//    TestSupportHiveMajorOptimizePlan.class,
-//    TestSupportHiveMajorOptimizeCommit.class,
-//    TestSupportHiveSyncService.class,
-//    TestExpiredFileCleanSupportHive.class,
-//    TestOrphanFileCleanSupportHive.class
+    CatalogControllerTest.class,
+    OptimizerControllerTest.class,
+    TableControllerTest.class,
+    TerminalControllerTest.class,
+    SettingControllerTest.class,
+    TestDDLTracerService.class,
+    LoginControllerTest.class,
+    TestExpiredFileClean.class,
+    TestMajorOptimizeCommit.class,
+    TestMajorOptimizePlan.class,
+    TestMinorOptimizeCommit.class,
+    TestMinorOptimizePlan.class,
+    TestOrphanFileClean.class,
+    TestFileInfoCacheService.class,
+    TestSupportHiveMajorOptimizePlan.class,
+    TestSupportHiveMajorOptimizeCommit.class,
+    TestSupportHiveSyncService.class,
+    TestExpiredFileCleanSupportHive.class,
+    TestOrphanFileCleanSupportHive.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
