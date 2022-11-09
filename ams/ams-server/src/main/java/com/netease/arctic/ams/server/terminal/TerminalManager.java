@@ -18,10 +18,9 @@
 
 package com.netease.arctic.ams.server.terminal;
 
-import com.clearspring.analytics.util.Lists;
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
@@ -39,14 +38,19 @@ import java.io.StringReader;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.apache.commons.io.Charsets;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,8 +61,7 @@ public class TerminalManager {
   int resultLimits = 1000;
   boolean stopOnError = false;
 
-  ConcurrentHashMap<String, TerminalSession> sessionMap = new ConcurrentHashMap<>();
-  ConcurrentHashMap<String, ExecutionTask> sessionExecutionTask = new ConcurrentHashMap<>();
+  ConcurrentHashMap<String, TerminalSessionContext> sessionMap = new ConcurrentHashMap<>();
 
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
@@ -85,13 +88,28 @@ public class TerminalManager {
     CatalogMeta catalogMeta = optCatalogMeta.get();
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(loginId, metaStore);
-    ExecutionTask task = new ExecutionTask(metaStore, script, sessionId);
-    sessionExecutionTask.put(sessionId, task);
-    executionPool.submit(task);
-    String poolInfo = "new sql script submit, current thread pool state. [Active: "
-        + executionPool.getActiveCount() + ", PoolSize: " + executionPool.getPoolSize() + "]";
-    LOG.info(poolInfo);
-    task.executionResult.appendLog(poolInfo);
+    sessionMap.computeIfAbsent(sessionId, id -> {
+      Configuration configuration = new Configuration();
+      configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
+      configuration.set(TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
+      configuration.set(TerminalSessionFactory.SessionConfigOptions.catalogType(catalog), catalogMeta.getCatalogType());
+      configuration.set(TerminalSessionFactory.SessionConfigOptions.catalogUrl(catalog),
+          String.format(
+              "thrift://%s:%d/%s",
+              ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
+              ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT),
+              catalog));
+      return new TerminalSessionContext(id, metaStore, executionPool, sessionFactory, configuration);
+    });
+
+    TerminalSessionContext context = sessionMap.get(sessionId);
+    if (!context.isReadyToExecute()) {
+      throw new IllegalStateException("current session is not ready to execute script. status:" + context.getStatus());
+    }
+
+
+    context.submit(catalog, script, resultLimits, stopOnError);
+
     return sessionId;
   }
 
@@ -102,27 +120,27 @@ public class TerminalManager {
     if (sessionId == null) {
       return new LogInfo(ExecutionStatus.Expired.name(), Lists.newArrayList());
     }
-    ExecutionTask task = sessionExecutionTask.get(sessionId);
-    if (task == null) {
+    TerminalSessionContext sessionContext = sessionMap.get(sessionId);
+    if (sessionContext == null) {
       return new LogInfo(ExecutionStatus.Expired.name(), Lists.newArrayList());
     }
-    return new LogInfo(task.status.get().name(), task.executionResult.getLogs());
+    return new LogInfo(sessionContext.getStatus().name(), sessionContext.getLogs());
   }
 
   public List<SqlResult> getExecutionResults(String sessionId) {
     if (sessionId == null) {
       return Lists.newArrayList();
     }
-    ExecutionTask task = sessionExecutionTask.get(sessionId);
-    if (task == null) {
+    TerminalSessionContext context = sessionMap.get(sessionId);
+    if (context == null) {
       return Lists.newArrayList();
     }
-    return task.executionResult.getResults().stream().map(statement -> {
+    return context.getStatementResults().stream().map(statement -> {
       SqlResult sql = new SqlResult();
       sql.setId("line:" + statement.getLineNumber() + " - " + statement.getStatement());
       sql.setColumns(statement.getColumns());
       sql.setRowData(statement.getDataAsStringList());
-      sql.setStatus(statement.isSuccess() ? ExecutionStatus.Finished.name(): ExecutionStatus.Failed.name());
+      sql.setStatus(statement.isSuccess() ? ExecutionStatus.Finished.name() : ExecutionStatus.Failed.name());
       return sql;
     }).collect(Collectors.toList());
   }
@@ -134,9 +152,9 @@ public class TerminalManager {
     if (sessionId == null) {
       return;
     }
-    ExecutionTask task = sessionExecutionTask.get(sessionId);
-    if (task != null) {
-      task.cancel();
+    TerminalSessionContext context = sessionMap.get(sessionId);
+    if (context != null) {
+      context.cancel();
     }
   }
 
@@ -174,14 +192,6 @@ public class TerminalManager {
     return builder.build();
   }
 
-  private TerminalSession getOrCreateSession(String sessionId, TableMetaStore metaStore) {
-    TerminalSession session = sessionMap.get(sessionId);
-    if (session == null) {
-      session = sessionFactory.create(metaStore);
-      sessionMap.put(sessionId, session);
-    }
-    return session;
-  }
 
   TerminalSessionFactory loadTerminalSessionFactory(Configuration conf) {
     String backend = conf.get(ArcticMetaStoreConf.TERMINAL_BACKEND);
@@ -231,159 +241,5 @@ public class TerminalManager {
     return factory;
   }
 
-  class ExecutionTask implements Runnable {
 
-    final String script;
-
-    final TableMetaStore tableMetaStore;
-
-    final ExecutionResult executionResult = new ExecutionResult();
-
-    final AtomicReference<ExecutionStatus> status = new AtomicReference<>(ExecutionStatus.Running);
-
-    final String sessionId;
-
-    public ExecutionTask(TableMetaStore metaStore, String script, String sessionId) {
-      this.script = script;
-      this.tableMetaStore = metaStore;
-      this.sessionId = sessionId;
-    }
-
-    @Override
-    public void run() {
-      try {
-        tableMetaStore.doAs(() -> {
-          TerminalSession session = getOrCreateSession(sessionId, tableMetaStore);
-          executionResult.appendLog("fetch terminal session: " + sessionId);
-          execute(session);
-          return null;
-        });
-
-        status.compareAndSet(ExecutionStatus.Running, ExecutionStatus.Finished);
-      } catch (Throwable t) {
-        LOG.error("something error when execute script. ", t);
-        executionResult.appendLog("something error when execute script.");
-        executionResult.appendLog(getStackTraceAsString(t));
-        status.compareAndSet(ExecutionStatus.Running, ExecutionStatus.Failed);
-      }
-    }
-
-    public void cancel() {
-      status.compareAndSet(ExecutionStatus.Running, ExecutionStatus.Canceled);
-    }
-
-    void execute(TerminalSession session) throws IOException {
-      LineNumberReader reader = new LineNumberReader(new StringReader(script));
-      StringBuilder statementBuilder = null;
-      String line;
-      int no = -1;
-
-      while ((line = reader.readLine()) != null) {
-        if (ExecutionStatus.Canceled == status.get()) {
-          executionResult.appendLog("execution is canceled. ");
-          break;
-        }
-        if (statementBuilder == null) {
-          statementBuilder = new StringBuilder();
-        }
-        line = line.trim();
-        if (line.length() < 1 || line.startsWith("--")) {
-          // ignore blank lines and comments.
-          continue;
-        } else if (line.endsWith(";")) {
-          statementBuilder.append(line);
-          no = lineNumber(reader, no);
-
-          boolean success = executeStatement(session, statementBuilder.toString(), no);
-          if (!success) {
-            if (stopOnError) {
-              status.compareAndSet(ExecutionStatus.Running, ExecutionStatus.Failed);
-              executionResult.appendLog("execution stopped for error happened and stop-when-error config.");
-              break;
-            }
-          }
-
-          statementBuilder = null;
-          no = -1;
-        } else {
-          statementBuilder.append(line);
-          statementBuilder.append(" ");
-          no = lineNumber(reader, no);
-        }
-      }
-    }
-
-    int lineNumber(LineNumberReader reader, int no) {
-      if (no < 0) {
-        return reader.getLineNumber();
-      }
-      return no;
-    }
-
-    /**
-     * @return - false if any exception happened.
-     */
-    boolean executeStatement(TerminalSession session, String statement, int lineNo) {
-      executionResult.appendLog(" ");
-      executionResult.appendLog("prepare execute statement, line:" + lineNo);
-      executionResult.appendLog(statement);
-
-      TerminalSession.ResultSet rs = null;
-      long begin = System.currentTimeMillis();
-      try {
-        rs = session.executeStatement(statement);
-      } catch (Throwable t) {
-        executionResult.appendLog("meet exception during execution.");
-        executionResult.appendLog(getStackTraceAsString(t));
-        return false;
-      }
-
-      if (rs.empty()) {
-        long cost = System.currentTimeMillis() - begin;
-        executionResult.appendLog("statement execute down, result is empty, execution cost: " + cost + "ms");
-        return true;
-      } else {
-        StatementResult sr = fetchResults(rs, statement, lineNo);
-        long cost = System.currentTimeMillis() - begin;
-        executionResult.appendResult(sr);
-        executionResult.appendLog(
-            "statement execute down, fetch rows:" + sr.getDatas().size() + ", execution cost: " + cost + "ms");
-        return sr.isSuccess();
-      }
-    }
-
-    StatementResult fetchResults(TerminalSession.ResultSet rs, String statement, int lineNo) {
-      long count = 0;
-      StatementResult sr = new StatementResult(statement, lineNo, rs.columns());
-      try {
-        while (rs.next()) {
-          sr.appendRow(rs.rowData());
-          count++;
-          if (count >= resultLimits) {
-            executionResult.appendLog("meet result set limit " + count + ", ignore rows left.");
-            break;
-          }
-        }
-      } catch (Throwable t) {
-        executionResult.appendLog("meet exception when fetch result data.");
-        String log = getStackTraceAsString(t);
-        sr.withExceptionLog(log);
-        executionResult.appendLog(log);
-      } finally {
-        try {
-          rs.close();
-        } catch (Throwable t) {
-          // ignore
-        }
-      }
-      return sr;
-    }
-
-    String getStackTraceAsString(Throwable t) {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      PrintStream ps = new PrintStream(out);
-      t.printStackTrace(ps);
-      return new String(out.toByteArray(), Charsets.UTF_8);
-    }
-  }
 }

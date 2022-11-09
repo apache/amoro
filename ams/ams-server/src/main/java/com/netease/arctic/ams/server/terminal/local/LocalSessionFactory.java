@@ -18,8 +18,10 @@
 
 package com.netease.arctic.ams.server.terminal.local;
 
+import com.google.common.collect.Lists;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.ams.server.model.SqlRunningInfo;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
@@ -27,6 +29,7 @@ import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
@@ -42,12 +45,30 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   }
 
   @Override
-  public TerminalSession create(TableMetaStore metaStore) {
+  public TerminalSession create(TableMetaStore metaStore, Configuration configuration) {
     SparkSession context = lazyInitContext();
     SparkSession session = context.cloneSession();
-    return new LocalTerminalSession(session);
+    List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
+    List<String> initializeLogs = Lists.newArrayList();
+    initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
+
+    for (String catalog: catalogs){
+      String type = configuration.getString(SessionConfigOptions.catalogType(catalog));
+      String url = configuration.getString(SessionConfigOptions.catalogUrl(catalog));
+      initializeLogs.add("add catalog config to spark session:");
+
+      updateSessionConf(session, initializeLogs, "spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
+      updateSessionConf(session, initializeLogs, "spark.sql.catalog." + catalog + ".url", url);
+    }
+
+    return new LocalTerminalSession(catalogs, session, initializeLogs);
   }
 
+
+  private void updateSessionConf(SparkSession session, List<String> logs, String key, String value){
+    session.conf().set(key, value);
+    logs.add(key + "  " + value);
+  }
 
 
   protected synchronized SparkSession lazyInitContext(){

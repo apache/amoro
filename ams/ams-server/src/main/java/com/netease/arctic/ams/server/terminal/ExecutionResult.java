@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.terminal;
 
 import com.google.common.collect.Lists;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -31,6 +32,10 @@ public class ExecutionResult {
 
   public synchronized void appendLog(String log) {
     this.logs.add(log);
+  }
+
+  public synchronized void appendLogs(Collection<String> logs){
+    this.logs.addAll(logs);
   }
 
   public synchronized void appendResult(StatementResult result){

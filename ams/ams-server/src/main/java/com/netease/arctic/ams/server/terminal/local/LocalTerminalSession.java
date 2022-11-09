@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.terminal.local;
 
-import com.google.common.collect.Lists;
+import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.ams.server.terminal.BaseResultSet;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import java.util.Arrays;
@@ -28,19 +28,29 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import scala.collection.JavaConverters;
-import scala.collection.Seq;
-import scala.collection.Seq$;
 
 public class LocalTerminalSession implements TerminalSession {
 
-  SparkSession session;
+  List<String> logs = Lists.newArrayList();
 
-  LocalTerminalSession(SparkSession session) {
+  List<String> catalogs;
+  SparkSession session;
+  String currentCatalog;
+
+  LocalTerminalSession(List<String> supportedCatalogs, SparkSession session, List<String> initLogs) {
     this.session = session;
+    this.catalogs = supportedCatalogs;
+    this.logs.addAll(initLogs);
   }
 
   @Override
-  public ResultSet executeStatement(String statement) {
+  public ResultSet executeStatement(String catalog, String statement) {
+    if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)){
+      session.sql("use " + catalog);
+      currentCatalog = catalog;
+      logs.add("switch to new catalog via: use " + catalog);
+    }
+
     Dataset<Row> ds = session.sql(statement);
     List<Object[]> rows = ds.collectAsList()
         .stream()
@@ -51,6 +61,13 @@ public class LocalTerminalSession implements TerminalSession {
   }
 
   @Override
+  public List<String> logs() {
+    List<String> logs = Lists.newArrayList(this.logs);
+    this.logs.clear();
+    return logs;
+  }
+
+  @Override
   public boolean active() {
     try {
       return this.session.sql("select 1").collect() != null;
@@ -58,4 +75,6 @@ public class LocalTerminalSession implements TerminalSession {
       return false;
     }
   }
+
+
 }

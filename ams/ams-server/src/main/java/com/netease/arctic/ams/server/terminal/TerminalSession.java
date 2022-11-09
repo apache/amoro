@@ -61,7 +61,12 @@ public interface TerminalSession {
    * @param statement single statement.
    * @return result set
    */
-  ResultSet executeStatement(String statement);
+  ResultSet executeStatement(String catalog, String statement);
+
+  /**
+   * @return - return logs during execution and clean logs
+   */
+  List<String> logs();
 
   /**
    * to check current session is alive.

@@ -18,7 +18,11 @@
 
 package com.netease.arctic.ams.server.terminal;
 
+import com.netease.arctic.ams.server.config.ConfigOption;
+import com.netease.arctic.ams.server.config.ConfigOptions;
+import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.table.TableMetaStore;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,5 +35,37 @@ public interface TerminalSessionFactory {
    * @param properties - terminal properties and factory properties.
    */
   void initialize(Map<String, String> properties);
-  TerminalSession create(TableMetaStore metaStore);
+
+  /**
+   * create a new session
+   * @param metaStore - auth info
+   * @param configuration - configuration of session, all properties are defined in {@link SessionConfigOptions}
+   * @return - new terminal context
+   */
+  TerminalSession create(TableMetaStore metaStore, Configuration configuration);
+
+  class SessionConfigOptions {
+    public static ConfigOption<Integer> FETCH_SIZE = ConfigOptions
+        .key("session.fetch-size")
+        .intType()
+        .defaultValue(1000);
+
+    public static ConfigOption<List<String>> CATALOGS = ConfigOptions
+        .key("session.catalogs")
+        .stringType()
+        .asList()
+        .noDefaultValue();
+
+    public static ConfigOption<String> catalogType(String catalog){
+      return ConfigOptions.key("catalog." + catalog + ".type")
+          .stringType()
+          .noDefaultValue();
+    }
+
+    public static ConfigOption<String> catalogUrl(String catalog){
+      return ConfigOptions.key("catalog." + catalog + ".url")
+          .stringType()
+          .noDefaultValue();
+    }
+  }
 }
