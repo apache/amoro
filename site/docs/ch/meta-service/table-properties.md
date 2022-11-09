@@ -34,6 +34,7 @@
 | optimize.group                               | default         | 结构优化所属的组                          |
 | optimize.quota                               | 0.1             | 表所能占用的结构优化资源量                     |
 | optimize.num-retries                         | 5               | 结构优化失败时的重试次数                      |
+| optimize.execute.timeout                     | 1800000（30分钟）  | 结构优化执行超时时间                      |
 | optimize.max-file-count                      | 100000          | 一次结构优化最多处理的文件个数                      |
 | optimize.small-file-size-bytes-threshold     | 16777216（16MB）  | 结构优化时判断是否为小文件的阈值                  |
 | optimize.minor.trigger.max-interval          | 3600000（1小时）    | 触发 minor optimize 的最长时间间隔         |

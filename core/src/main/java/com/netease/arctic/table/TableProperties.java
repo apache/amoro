@@ -72,6 +72,9 @@ public class TableProperties {
 
   public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
   public static final int OPTIMIZE_RETRY_NUMBER_DEFAULT = 5;
+
+  public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
+  public static final int OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
   
   public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
   public static final int OPTIMIZE_MAX_FILE_COUNT_DEFAULT = 100000;

@@ -129,10 +129,10 @@ public class IcebergClassUtil {
   }
 
   public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(OneInputStreamOperatorFactory operatorFactory,
-                                                                          ArcticFileIO arcticFileIO) {
+                                                                          ArcticFileIO arcticFileIO,
+                                                                          Schema tableSchema) {
     FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
     TableLoader tableLoader = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
-    Schema tableSchema = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableSchema");
     FileIO io = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "io");
     EncryptionManager encryption = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "encryption");
     Object context = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "context");

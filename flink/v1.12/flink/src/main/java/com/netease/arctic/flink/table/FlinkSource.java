@@ -210,11 +210,11 @@ public class FlinkSource {
       if (origin instanceof OneInputTransformation) {
         OneInputTransformation<RowData, RowData> tf = (OneInputTransformation<RowData, RowData>) ds.getTransformation();
         OneInputStreamOperatorFactory op = (OneInputStreamOperatorFactory) tf.getOperatorFactory();
-        ProxyFactory<org.apache.iceberg.flink.source.FlinkInputFormat> inputFormatProxyFacroty
-            = IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io());
+        ProxyFactory<org.apache.iceberg.flink.source.FlinkInputFormat> inputFormatProxyFactory
+            = IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io(), arcticTable.schema());
 
         if (tf.getInputs().isEmpty()) {
-          return env.addSource(new UnkeyedInputFormatSourceFunction(inputFormatProxyFacroty, tf.getOutputType()))
+          return env.addSource(new UnkeyedInputFormatSourceFunction(inputFormatProxyFactory, tf.getOutputType()))
               .setParallelism(tf.getParallelism());
         }
 
@@ -225,7 +225,7 @@ public class FlinkSource {
         SourceFunction functionProxy = (SourceFunction) ProxyUtil.getProxy(function, arcticTable.io());
         return env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType())
             .transform(tf.getName(), tf.getOutputType(),
-                new UnkeyedInputFormatOperatorFactory(inputFormatProxyFacroty));
+                new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
       }
 
       LegacySourceTransformation tfSource = (LegacySourceTransformation) origin;

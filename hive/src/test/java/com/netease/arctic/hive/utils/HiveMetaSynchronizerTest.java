@@ -204,5 +204,10 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     public <R> R run(Action<R, HMSClient, TException> action) throws TException, InterruptedException {
       return action.run(new HMSClientImpl(hms.getClient()));
     }
+
+    @Override
+    public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+      return action.run(new HMSClientImpl(hms.getClient()));
+    }
   }
 }

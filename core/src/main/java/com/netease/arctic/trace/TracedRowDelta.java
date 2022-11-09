@@ -84,6 +84,24 @@ public class TracedRowDelta implements RowDelta {
   }
 
   @Override
+  public RowDelta conflictDetectionFilter(Expression conflictDetectionFilter) {
+    rowDelta.conflictDetectionFilter(conflictDetectionFilter);
+    return this;
+  }
+
+  @Override
+  public RowDelta validateNoConflictingDataFiles() {
+    rowDelta.validateNoConflictingDataFiles();
+    return this;
+  }
+
+  @Override
+  public RowDelta validateNoConflictingDeleteFiles() {
+    rowDelta.validateNoConflictingDeleteFiles();
+    return this;
+  }
+
+  @Override
   public RowDelta set(String property, String value) {
     rowDelta.set(property, value);
     tracer.setSnapshotSummary(property, value);
