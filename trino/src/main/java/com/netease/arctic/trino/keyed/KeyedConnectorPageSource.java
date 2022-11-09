@@ -41,7 +41,6 @@ import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import org.apache.iceberg.io.CloseableIterable;
-import org.jetbrains.annotations.Nullable;
 import org.joda.time.DateTimeZone;
 
 import java.io.IOException;
@@ -220,8 +219,6 @@ public class KeyedConnectorPageSource implements ConnectorPageSource {
     }
   }
 
-
-  @Nullable
   private Page getPage() throws IOException {
     if (current == null) {
       if (dataTasksIt.hasNext()) {

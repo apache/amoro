@@ -131,7 +131,7 @@ CREATE TABLE table_metadata (
     krb_keytab clob(64m),
     krb_conf clob(64m),
     krb_principal clob(64m),
-    current_tx_id bigint DEFAULT NULL,
+    current_tx_id bigint DEFAULT 0,
     cur_schema_id   int DEFAULT 0,
     PRIMARY KEY (catalog_name, db_name, table_name)
 );

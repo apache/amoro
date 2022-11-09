@@ -10,17 +10,24 @@ import org.apache.iceberg.types.Types;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.UUID;
 
 public class ArcticDataFiles {
   public static final OffsetDateTime EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC);
+  public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-hh");
   private static final int EPOCH_YEAR = EPOCH.getYear();
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
+  private static final String HOUR_TYPE = "hour";
 
   /**
    * return the number of months away from the epoch, reverse {@link TransformUtil#humanMonth}
@@ -30,6 +37,20 @@ public class ArcticDataFiles {
     int year = Integer.parseInt(dateParts[0]);
     int month = Integer.parseInt(dateParts[1]);
     return Math.multiplyExact((year - EPOCH_YEAR), 12) + month - 1;
+  }
+
+  /**
+   * return the number of hours away from the epoch, reverse {@link TransformUtil#humanHour}
+   */
+  private static Integer readHoursData(String asString) {
+    try {
+      sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+      Date date = sdf.parse(asString);
+      OffsetDateTime parse = OffsetDateTime.parse(date.toInstant().toString());
+      return Math.toIntExact(ChronoUnit.HOURS.between(EPOCH, parse));
+    } catch (ParseException e) {
+      throw new UnsupportedOperationException("Failed to parse date string:" + asString);
+    }
   }
 
   public static Object fromPartitionString(PartitionField field, Type type, String asString) {
@@ -43,6 +64,8 @@ public class ArcticDataFiles {
       case INTEGER:
         if (MONTH_TYPE.equals(field.transform().toString())) {
           return readMonthData(asString);
+        } else if (HOUR_TYPE.equals(field.transform().toString())) {
+          return readHoursData(asString);
         }
         return Integer.valueOf(asString);
       case STRING:
