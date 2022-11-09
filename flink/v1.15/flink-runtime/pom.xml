@@ -179,7 +179,7 @@
                             </excludes>
                         </filter>
                         <filter>
-                            <artifact>org.apache.flink:flink-connector-kafka_${scala.binary.version}</artifact>
+                            <artifact>org.apache.flink:flink-connector-kafka</artifact>
                             <excludes>
                                 <exclude>META-INF/**</exclude>
                                 <exclude>org/apache/flink/table/descriptors/**</exclude>
@@ -214,7 +214,7 @@
                             <include>cglib:*</include>
                             <include>com.google.guava:*</include>
                             <include>asm:*</include>
-                            <include>org.apache.flink:flink-connector-kafka_${scala.binary.version}</include>
+                            <include>org.apache.flink:flink-connector-kafka</include>
                             <include>org.apache.kafka:*</include>
                         </includes>
                     </artifactSet>
