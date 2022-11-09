@@ -123,9 +123,13 @@ public class NativeOptimizeCommit extends BaseOptimizeCommit {
           deleteDataFiles.add((DataFile) contentFile);
         }
       });
-      rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles);
+
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
         rewriteFiles.validateFromSnapshot(baseSnapshotId);
+        long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
+        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
+      } else {
+        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles);
       }
       rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       rewriteFiles.commit();
