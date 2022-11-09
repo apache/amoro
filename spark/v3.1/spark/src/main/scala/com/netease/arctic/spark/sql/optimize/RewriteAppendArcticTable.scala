@@ -25,13 +25,12 @@ import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, Cast, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{CreateArcticTableAsSelect, RightOuter}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.execution.datasources.v2.{CreateTableAsSelectExec, DataSourceV2Relation, OverwritePartitionsDynamicExec}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.LongType
 
 import java.util
@@ -96,7 +95,14 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case table: ArcticSparkTable =>
           if (table.table().isKeyedTable) {
             val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            OverwriteArcticDataByExpression(arcticRelation, deleteExpr, query, validateQuery, writeOptions)
+            var finalExpr: Expression = deleteExpr
+            deleteExpr match {
+              case expr: EqualNullSafe =>
+                finalExpr = expr.copy(query.output.last, expr.right)
+              case _ =>
+            }
+            OverwriteArcticDataByExpression(arcticRelation, finalExpr, query, validateQuery, writeOptions)
+
           } else {
             a
           }

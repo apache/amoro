@@ -20,7 +20,7 @@
 package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
-import org.apache.spark.sql.catalyst.expressions.Expression
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
 case class OverwriteArcticDataByExpression(
@@ -31,4 +31,5 @@ case class OverwriteArcticDataByExpression(
                                             writeOptions: Map[String, String]) extends Command {
   override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
 
+  override def output: Seq[Attribute] = table.output
 }
