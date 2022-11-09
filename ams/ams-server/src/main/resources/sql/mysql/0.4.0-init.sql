@@ -107,25 +107,25 @@ CREATE TABLE `optimize_history`
     KEY                             `table_name_record` (`catalog_name`,`db_name`,`table_name`,`history_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
-CREATE TABLE `optimizer`
+CREATE TABLE `optimize_job`
 (
-    `optimizer_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `optimizer_name`             varchar(1024) DEFAULT NULL COMMENT 'optimizer name',
+    `job_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `job_name`             varchar(1024) DEFAULT NULL COMMENT 'job name',
     `queue_id`             int(11) DEFAULT NULL COMMENT 'queue id',
     `queue_name`           varchar(1024) DEFAULT NULL COMMENT 'queue name',
-    `optimizer_start_time`       varchar(1024) DEFAULT NULL COMMENT 'optimizer start time',
-    `optimizer_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'optimizer fail time',
-    `optimizer_status`           varchar(16)   DEFAULT NULL COMMENT 'optimizer status',
+    `job_start_time`       varchar(1024) DEFAULT NULL COMMENT 'job start time',
+    `job_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'job fail time',
+    `job_status`           varchar(16)   DEFAULT NULL COMMENT 'job status',
     `core_number`          int(11) DEFAULT NULL COMMENT 'total number of all CPU resources',
-    `memory`               bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
-    `parallelism`          int(11) DEFAULT NULL COMMENT 'optimizer parallelism',
+    `memory`               bigint(30) DEFAULT NULL COMMENT 'job use memory size',
+    `parallelism`          int(11) DEFAULT NULL COMMENT 'job parallelism',
     `jobmanager_url`       varchar(1024) DEFAULT NULL COMMENT 'jobmanager url',
     `optimizer_instance`   blob COMMENT 'optimizer instance bytes, use to deserialize optimizer instance',
     `optimizer_state_info` mediumtext COMMENT 'optimizer state info, contains like yarn application id and flink job id',
-    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this optimizer belongs to',
+    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this job belongs to',
     `update_time` timestamp not null default CURRENT_TIMESTAMP COMMENT 'update time',
-    PRIMARY KEY (`optimizer_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer info';
+    PRIMARY KEY (`job_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Job info of optimize';
 
 CREATE TABLE `optimize_group`
 (
@@ -214,7 +214,7 @@ CREATE TABLE `table_metadata`
     `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
-    `current_tx_id`   bigint(20) DEFAULT NULL COMMENT 'current transaction id',
+    `current_tx_id`   bigint(20) NOT NULL DEFAULT 0 COMMENT 'current transaction id',
     `cur_schema_id`   int(11) NOT NULL DEFAULT 0 COMMENT 'current schema id',
     PRIMARY KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
