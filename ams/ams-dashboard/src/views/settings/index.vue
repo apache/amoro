@@ -11,33 +11,34 @@
     </div>
     <div class="container-setting">
       <h1 class="g-mb-12">{{$t('containerSetting')}}</h1>
-      <div v-for="container in containerSetting" :key="container.name" class="container-setting-item">
-        <h2 class="g-mb-12 g-mt-12">{{container.name}}</h2>
-        <ul class="content">
-          <li class="item">
-            <span class="left">name</span>
-            <span class="right">{{container.name}}</span>
-          </li>
-          <li class="item">
-            <span class="left">type</span>
-            <span class="right">{{container.type}}</span>
-          </li>
-        </ul>
-        <h3 class="g-mb-12 g-mt-12">{{$t('properties')}}</h3>
-        <ul class="content">
-          <li v-for="item in container.propertiesArray" :key="item.key" class="item">
-            <span class="left">{{item.key}}</span>
-            <span class="right">{{item.value}}</span>
-          </li>
-        </ul>
-        <h3 class="g-mb-12 g-mt-12">{{$t('optimzeGroup')}}</h3>
-        <a-table
-          rowKey="name"
-          :columns="optimzeGroupColumns"
-          :data-source="container.optimizeGroup"
-          :pagination="false"
-        />
-      </div>
+      <a-collapse v-model:activeKey="activeKey">
+        <a-collapse-panel v-for="container in containerSetting" :key="container.name" :header="container.name">
+          <ul class="content">
+            <li class="item">
+              <h3 class="left">{{$t('containerName')}}</h3>
+              <span class="right">{{container.name}}</span>
+            </li>
+            <li class="item">
+              <h3 class="left">{{$t('type')}}</h3>
+              <span class="right">{{container.type}}</span>
+            </li>
+          </ul>
+          <h3 class="g-mb-12 g-mt-12">{{$t('properties')}}</h3>
+          <ul class="content">
+            <li v-for="item in container.propertiesArray" :key="item.key" class="item">
+              <span class="left">{{item.key}}</span>
+              <span class="right">{{item.value}}</span>
+            </li>
+          </ul>
+          <h3 class="g-mb-12 g-mt-12">{{$t('optimzeGroup')}}</h3>
+          <a-table
+            rowKey="name"
+            :columns="optimzeGroupColumns"
+            :data-source="container.optimizeGroup"
+            :pagination="false"
+          />
+        </a-collapse-panel>
+      </a-collapse>
     </div>
   </div>
   <u-loading v-if="loading" />
@@ -66,6 +67,7 @@ const optimzeGroupColumns: IColumns[] = reactive([
   { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', ellipsis: true },
   { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', ellipsis: true }
 ])
+const activeKey = ref<string[]>([])
 
 async function getSystemSettingInfo() {
   try {
@@ -85,9 +87,11 @@ async function getSystemSettingInfo() {
 }
 async function getContainersSettingInfo() {
   const res = await getContainersSetting()
-  containerSetting.length = 0;
+  containerSetting.length = 0
+  activeKey.value = [];
   (res || []).forEach((ele, index) => {
     ele.propertiesArray = []
+    activeKey.value.push(ele.name)
     containerSetting.push(ele)
     Object.keys(ele.properties || {}).forEach(key => {
       containerSetting[index].propertiesArray.push({
@@ -113,6 +117,13 @@ onMounted(() => {
   }
   .container-setting {
     padding-top: 12px;
+    :deep(.ant-collapse > .ant-collapse-item > .ant-collapse-header) {
+      font-size: 20px;
+      font-weight: 500;
+      .ant-collapse-arrow {
+        vertical-align: 1px;
+      }
+    }
   }
   .content {
     .item {

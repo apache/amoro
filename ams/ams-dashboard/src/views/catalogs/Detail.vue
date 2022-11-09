@@ -94,16 +94,16 @@
           </a-form-item>
         </a-form>
       </div>
-      <div v-if="isEdit" class="footer-btn">
-        <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
-        <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
-      </div>
-      <div v-if="!isEdit" class="footer-btn">
-        <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
-        <a-button @click="handleRemove">{{$t('remove')}}</a-button>
-      </div>
-      <u-loading v-if="loading" />
     </div>
+    <div v-if="isEdit" class="footer-btn">
+      <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
+      <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
+    </div>
+    <div v-if="!isEdit" class="footer-btn">
+      <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
+      <a-button @click="handleRemove">{{$t('remove')}}</a-button>
+    </div>
+    <u-loading v-if="loading" />
   </div>
 </template>
 
@@ -443,12 +443,15 @@ onMounted(() => {
 <style lang="less" scoped>
 .detail-wrap {
   height: 100%;
-  padding: 16px 16px 16px 24px;
+  padding: 16px 0 16px 24px;
   display: flex;
   flex: 1;
   flex-direction: column;
+  box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
   .detail-content-wrap {
-    padding: 0 200px 24px 0;
+    height: 100%;
+    padding-right: 200px;
+    overflow: auto;
   }
   .content-wrap {
     display: flex;
@@ -474,8 +477,10 @@ onMounted(() => {
     }
   }
   .footer-btn {
-    height: 32px;
+    height: 44px;
     flex-shrink: 0;
+    padding-top: 12px;
+    background-color: #fff;
   }
 }
 </style>

@@ -38,7 +38,8 @@ import {
   AutoComplete,
   Empty,
   Upload,
-  Radio
+  Radio,
+  Collapse
 } from 'ant-design-vue'
 
 const compontens = [
@@ -62,7 +63,8 @@ const compontens = [
   AutoComplete,
   Empty,
   Upload,
-  Radio
+  Radio,
+  Collapse
 ]
 export default function (app: App): void {
   compontens.forEach(app.use)

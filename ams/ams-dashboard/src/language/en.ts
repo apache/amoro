@@ -143,6 +143,7 @@ export default {
   lastTime: 'Last {time}',
   list: 'List',
   name: 'name',
+  containerName: 'Name',
   tableFormat: 'table format',
   metastore: 'metastore',
   storageConfig: 'Storage Config',
