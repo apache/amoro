@@ -23,7 +23,6 @@ import com.netease.arctic.data.DataTreeNode;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -228,17 +227,16 @@ public class FileTree {
         baseFiles.add((DataFile) file);
         break;
       case EQ_DELETE_FILE:
-        if (file.content() == FileContent.DATA) {
-          deleteFiles.add((DataFile) file);
-        } else {
-          eqDeleteFiles.add((DeleteFile) file);
-        }
+        deleteFiles.add((DataFile) file);
         break;
       case INSERT_FILE:
         insertFiles.add((DataFile) file);
         break;
       case POS_DELETE_FILE:
         posDeleteFiles.add((DeleteFile) file);
+        break;
+      case NATIVE_EQ_DELETE_FILE:
+        eqDeleteFiles.add((DeleteFile) file);
         break;
       default:
     }
@@ -253,6 +251,7 @@ public class FileTree {
     this.insertFiles = Collections.emptyList();
     this.deleteFiles = Collections.emptyList();
     this.posDeleteFiles = Collections.emptyList();
+    this.eqDeleteFiles = Collections.emptyList();
   }
 
   /**

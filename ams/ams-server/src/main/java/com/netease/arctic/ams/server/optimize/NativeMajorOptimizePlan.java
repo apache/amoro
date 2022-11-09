@@ -83,7 +83,7 @@ public class NativeMajorOptimizePlan extends BaseNativeOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        commitGroup, planGroup, OptimizeType.Minor, createTime, "");
+        commitGroup, planGroup, OptimizeType.Major, createTime, "");
     FileTree treeRoot = partitionFileTree.get(partition);
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();

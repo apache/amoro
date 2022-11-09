@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
@@ -39,7 +40,6 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
-import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
@@ -104,6 +104,8 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       loadTables();
       initOptimizeTasksIntoOptimizeQueue();
       LOG.info("OptimizeService init completed");
+    } catch (Exception e) {
+      LOG.error("OptimizeService init failed", e);
     } finally {
       tablesLock.writeLock().unlock();
     }
@@ -170,7 +172,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
                                  boolean persistRuntime) {
     cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
-      int queueId = optimizeQueueService.getQueueId(properties);
+      int queueId = OptimizeQueueService.getQueueId(properties);
       optimizeQueueService.bind(arcticTableItem.getTableIdentifier(), queueId);
     } catch (InvalidObjectException e) {
       LOG.error("failed to bind " + arcticTableItem.getTableIdentifier() + " and queue ", e);
@@ -210,22 +212,36 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Map<TableIdentifier, List<OptimizeTaskItem>> optimizeTasks = loadOptimizeTasks();
     Map<TableIdentifier, TableOptimizeRuntime> tableOptimizeRuntimes = loadTableOptimizeRuntimes();
 
-    List<TableIdentifier> tableIdentifiers = metaService.listTables().stream()
-        .map(TableMetadata::getTableIdentifier).collect(Collectors.toList());
+    // load tables from catalog
+    List<TableIdentifier> tableIdentifiers = loadTablesFromCatalog();
+
     Map<String, ArcticCatalog> nativeCatalogMap = new HashMap<>();
+    Map<String, CatalogMeta> catalogMetaMap = new HashMap<>();
     for (TableIdentifier tableIdentifier : tableIdentifiers) {
       TableMetadata tableMetadata = new TableMetadata();
       if (nativeCatalogMap.get(tableIdentifier.getCatalog()) != null) {
         ArcticTable arcticTable = nativeCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
         tableMetadata.setTableIdentifier(tableIdentifier);
-        tableMetadata.setProperties(arcticTable.properties());
+        Map<String, String> properties = new HashMap<>(arcticTable.properties());
+        String groupName =
+            catalogMetaMap.get(tableIdentifier.getCatalog()).getCatalogProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
+                TableProperties.OPTIMIZE_GROUP_DEFAULT);
+        properties.put(TableProperties.OPTIMIZE_GROUP, groupName);
+        tableMetadata.setProperties(properties);
       } else {
         ArcticCatalog arcticCatalog = CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
           ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
           tableMetadata.setTableIdentifier(tableIdentifier);
-          tableMetadata.setProperties(arcticTable.properties());
+          CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(tableIdentifier.getCatalog());
+          Map<String, String> properties = new HashMap<>(arcticTable.properties());
+          String groupName =
+              catalogMeta.getCatalogProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
+                  TableProperties.OPTIMIZE_GROUP_DEFAULT);
+          properties.put(TableProperties.OPTIMIZE_GROUP, groupName);
+          tableMetadata.setProperties(properties);
           nativeCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
+          catalogMetaMap.put(tableIdentifier.getCatalog(), catalogMeta);
         } else {
           tableMetadata = metaService.loadTableMetadata(tableIdentifier);
         }
@@ -237,7 +253,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       try {
         addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
       } catch (Throwable t) {
-        LOG.error("cannot add table to server " + tableIdentifier.toString(), t);
+        LOG.error("cannot add table to server " + tableIdentifier, t);
       }
     }
 
@@ -256,6 +272,25 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         deleteTableOptimizeRuntime(tableIdentifier);
       }
     }
+  }
+
+  private List<TableIdentifier> loadTablesFromCatalog() {
+    List<TableIdentifier> tables = new ArrayList<>();
+    List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
+    catalogMetas.forEach(catalogMeta -> {
+      ArcticCatalog arcticCatalog =
+          CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
+      try {
+        List<String> databases = arcticCatalog.listDatabases();
+        for (String database : databases) {
+          tables.addAll(arcticCatalog.listTables(database));
+        }
+      } catch (Exception e) {
+        LOG.error("get catalog queue failed", e);
+      }
+    });
+
+    return tables;
   }
 
   private void initOptimizeTasksIntoOptimizeQueue() {
@@ -283,8 +318,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     try {
       if (forceRefresh || cacheExpired()) {
         LOG.info("refresh tables");
-        Set<TableIdentifier> tableIdentifiers = metaService.listTables().stream()
-            .map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
+        Set<TableIdentifier> tableIdentifiers = new HashSet<>(loadTablesFromCatalog());
         final long now = System.currentTimeMillis();
         List<TableIdentifier> toAddTables = tableIdentifiers.stream()
             .filter(t -> !cachedTables.containsKey(t))
@@ -311,14 +345,44 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     if (CollectionUtils.isEmpty(toAddTables)) {
       return;
     }
+
+    Map<String, ArcticCatalog> nativeCatalogMap = new HashMap<>();
+    Map<String, CatalogMeta> catalogMetaMap = new HashMap<>();
     for (TableIdentifier toAddTable : toAddTables) {
-      try {
-        ArcticMetaValidator.nuSuchObjectValidator(metaService, toAddTable);
-      } catch (Exception e) {
-        LOG.error("no such table " + toAddTable, e);
-        continue;
+//      try {
+//        ArcticMetaValidator.nuSuchObjectValidator(metaService, toAddTable);
+//      } catch (Exception e) {
+//        LOG.error("no such table " + toAddTable, e);
+//        continue;
+//      }
+      TableMetadata tableMetadata = new TableMetadata();
+      if (nativeCatalogMap.get(toAddTable.getCatalog()) != null) {
+        ArcticTable arcticTable = nativeCatalogMap.get(toAddTable.getCatalog()).loadTable(toAddTable);
+        tableMetadata.setTableIdentifier(toAddTable);
+        Map<String, String> properties = new HashMap<>(arcticTable.properties());
+        String groupName =
+            catalogMetaMap.get(toAddTable.getCatalog()).getCatalogProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
+                TableProperties.OPTIMIZE_GROUP_DEFAULT);
+        properties.put(TableProperties.OPTIMIZE_GROUP, groupName);
+        tableMetadata.setProperties(properties);
+      } else {
+        ArcticCatalog arcticCatalog = CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), toAddTable.getCatalog());
+        if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
+          ArcticTable arcticTable = arcticCatalog.loadTable(toAddTable);
+          tableMetadata.setTableIdentifier(toAddTable);
+          CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(toAddTable.getCatalog());
+          Map<String, String> properties = new HashMap<>(arcticTable.properties());
+          String groupName =
+              catalogMeta.getCatalogProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
+                  TableProperties.OPTIMIZE_GROUP_DEFAULT);
+          properties.put(TableProperties.OPTIMIZE_GROUP, groupName);
+          tableMetadata.setProperties(properties);
+          nativeCatalogMap.put(toAddTable.getCatalog(), arcticCatalog);
+          catalogMetaMap.put(toAddTable.getCatalog(), catalogMeta);
+        } else {
+          tableMetadata = metaService.loadTableMetadata(toAddTable);
+        }
       }
-      TableMetadata tableMetadata = metaService.loadTableMetadata(toAddTable);
       ArcticCatalog catalog = CatalogLoader.load(metastoreClient, toAddTable.getCatalog());
       ArcticTable arcticTable = catalog.loadTable(toAddTable);
       TableOptimizeItem newTableItem = new TableOptimizeItem(arcticTable, tableMetadata);

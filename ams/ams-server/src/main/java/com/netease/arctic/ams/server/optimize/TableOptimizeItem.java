@@ -482,7 +482,8 @@ public class TableOptimizeItem extends IJDBCService {
         LOG.info("{} add new task {}", tableIdentifier, optimizeTask);
         // when minor optimize, there is no need to execute task not contains deleteFiles,
         // but the inertFiles need to commit to base table
-        if (optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) && optimizeTask.getDeleteFiles().isEmpty()) {
+        if (optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) && optimizeTask.getDeleteFiles().isEmpty()
+            && !com.netease.arctic.utils.TableTypeUtil.isNativeIceberg(arcticTable)) {
           optimizeTaskItem.onPrepared(System.currentTimeMillis(),
               optimizeTask.getInsertFiles(), optimizeTask.getInsertFileSize(), 0L);
         }
@@ -798,7 +799,7 @@ public class TableOptimizeItem extends IJDBCService {
       tasksLock.unlock();
     }
   }
-  
+
   public void setTableCanCommit() {
     waitCommit.set(false);
   }
@@ -812,7 +813,7 @@ public class TableOptimizeItem extends IJDBCService {
     tasksCommitLock.lock();
 
     // check current base table snapshot whether changed when minor optimize
-    if (isMinorOptimizing()) {
+    if (isMinorOptimizing() && !com.netease.arctic.utils.TableTypeUtil.isNativeIceberg(arcticTable)) {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);

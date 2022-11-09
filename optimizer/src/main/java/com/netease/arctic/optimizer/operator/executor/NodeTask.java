@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -27,7 +27,6 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
@@ -82,14 +81,13 @@ public class NodeTask {
         insertFiles.add((DataFile) file);
         break;
       case EQ_DELETE_FILE:
-        if (file.content() == FileContent.DATA) {
-          deleteFiles.add((DataFile) file);
-        } else {
-          eqDeleteFiles.add((DeleteFile) file);
-        }
+        deleteFiles.add((DataFile) file);
         break;
       case POS_DELETE_FILE:
         posDeleteFiles.add((DeleteFile) file);
+        break;
+      case NATIVE_EQ_DELETE_FILE:
+        eqDeleteFiles.add((DeleteFile) file);
         break;
       default:
         LOG.warn("file type is {}, not add in node", fileType);

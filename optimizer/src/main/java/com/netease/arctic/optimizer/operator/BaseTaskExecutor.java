@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -250,6 +250,9 @@ public class BaseTaskExecutor implements Serializable {
     }
     for (ByteBuffer file : task.getPosDeleteFiles()) {
       nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
+    }
+    for (ByteBuffer file : task.getEqDeleteFiles()) {
+      nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.NATIVE_EQ_DELETE_FILE);
     }
 
     Map<String, String> properties = task.getProperties();
