@@ -51,7 +51,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/** optimize controller.
+/**
+ * optimize controller.
+ *
  * @Description: optimizer is a task to compact small files in arctic table.
  * OptimizerController is the optimizer interface's controller, through this interface, you can get the optimized table,
  * optimizer task, optimizer group information, scale out or release optimizer, etc.
@@ -110,11 +112,11 @@ public class OptimizerController extends RestBaseController {
       arcticTableItemList.sort((o1, o2) -> {
         // first we compare the status , and then we compare the start time when status are equal;
         int statDiff = o1.getTableOptimizeRuntime().getOptimizeStatus()
-                .compareTo(o2.getTableOptimizeRuntime().getOptimizeStatus());
+            .compareTo(o2.getTableOptimizeRuntime().getOptimizeStatus());
         // status order is asc, startTime order is desc
         if (statDiff == 0) {
           long timeDiff = o1.getTableOptimizeRuntime().getOptimizeStatusStartTime() -
-                  o2.getTableOptimizeRuntime().getOptimizeStatusStartTime();
+              o2.getTableOptimizeRuntime().getOptimizeStatusStartTime();
           return timeDiff >= 0 ? (timeDiff == 0 ? 0 : -1) : 1;
         } else if (statDiff < 0) {
           return -1;
@@ -123,7 +125,7 @@ public class OptimizerController extends RestBaseController {
         }
       });
       PageResult<TableOptimizeItem, TableOptimizeInfo> amsPageResult = PageResult.of(arcticTableItemList,
-              offset, pageSize, TableOptimizeItem::buildTableOptimizeInfo);
+          offset, pageSize, TableOptimizeItem::buildTableOptimizeInfo);
       ctx.json(OkResponse.of(amsPageResult));
     } catch (Exception e) {
       LOG.error("Failed to get optimizerGroup tables", e);
@@ -151,12 +153,12 @@ public class OptimizerController extends RestBaseController {
       }
 
       PageResult<Optimizer, Optimizer> amsPageResult = PageResult.of(optimizers,
-              offset, pageSize);
+          offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
     } catch (Exception e) {
       LOG.error("Failed to get optimizer", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-              "Failed to get optimizer", ""));
+          "Failed to get optimizer", ""));
     }
   }
 
@@ -171,7 +173,7 @@ public class OptimizerController extends RestBaseController {
     } catch (Exception e) {
       LOG.error("Failed to get optimizerGroups", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-              "Failed to get optimizerGroups", ""));
+          "Failed to get optimizerGroups", ""));
     }
   }
 
@@ -207,6 +209,7 @@ public class OptimizerController extends RestBaseController {
 
   /**
    * release optimizer.
+   *
    * @pathParam jobId
    */
   public static void releaseOptimizer(Context ctx) {
@@ -240,20 +243,24 @@ public class OptimizerController extends RestBaseController {
       if (containerType.equals("local")) {
         String memory = optimizerGroupInfo.getProperties().get("memory");
         optimizerService.insertOptimizer(optimizerName, optimizerGroupInfo.getId(), optimizerGroupInfo.getName(),
-                TableTaskStatus.STARTING,
-                new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date()),
-                parallelism + 1, Long.parseLong(memory), parallelism, container);
+            TableTaskStatus.STARTING,
+            new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date()),
+            parallelism + 1, Long.parseLong(memory), parallelism, container);
       } else if (containerType.equals("flink")) {
         int tmMemory = Integer.parseInt(optimizerGroupInfo.getProperties().get("taskmanager.memory"));
         int jmMemory = Integer.parseInt(optimizerGroupInfo.getProperties().get("jobmanager.memory"));
         long memory = jmMemory + (long) tmMemory * parallelism;
 
         optimizerService.insertOptimizer(optimizerName,
-                optimizerGroupInfo.getId(),
-                optimizerGroupInfo.getName(),
-                TableTaskStatus.STARTING,
-                new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date()),
-                parallelism + 1, memory, parallelism, container);
+            optimizerGroupInfo.getId(),
+            optimizerGroupInfo.getName(),
+            TableTaskStatus.STARTING,
+            new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date()),
+            parallelism + 1, memory, parallelism, container);
+      } else {
+        ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, containerType + " type container not support scaleout by ams",
+            ""));
+        return;
       }
 
       String optimizerId = optimizerService.selectOptimizerIdByOptimizerName(optimizerName);
@@ -264,7 +271,7 @@ public class OptimizerController extends RestBaseController {
         LOG.error("Failed to scaleOut optimizer", e);
         optimizerService.deleteOptimizerByName(optimizerName);
         ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-                "Failed to scaleOut optimizer", ""));
+            "Failed to scaleOut optimizer", ""));
         return;
       }
       ctx.json(OkResponse.of("success to scaleOut optimizer"));

@@ -189,7 +189,6 @@ public class ArcticMetaStore {
         startMetaStore(conf);
       }
     } catch (Throwable t) {
-      stopMetaStore();
       LOG.error("MetaStore Thrift Server threw an exception...", t);
     }
   }
@@ -209,7 +208,6 @@ public class ArcticMetaStore {
       int maxWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MAX_THREADS);
       boolean useCompactProtocol = conf.get(ArcticMetaStoreConf.USE_THRIFT_COMPACT_PROTOCOL);
       int port = conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
-      LOG.info("port: {}, read configuration: {}", port, conf.toString());
 
       if (conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
         DerbyService derbyService = new DerbyService();
@@ -591,7 +589,9 @@ public class ArcticMetaStore {
       Container container = new Container();
       container.setName(optimize.getString(ConfigFileProperties.CONTAINER_NAME));
       container.setType(optimize.getString(ConfigFileProperties.CONTAINER_TYPE));
-      container.setProperties(optimize.getObject(ConfigFileProperties.CONTAINER_PROPERTIES, Map.class));
+      if (optimize.containsKey(ConfigFileProperties.CONTAINER_PROPERTIES)) {
+        container.setProperties(optimize.getObject(ConfigFileProperties.CONTAINER_PROPERTIES, Map.class));
+      }
 
       ServiceContainer.getOptimizeQueueService().insertContainer(container);
     }
@@ -617,7 +617,10 @@ public class ArcticMetaStore {
             "can not find such container config named" +
                 optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER));
       }
-      optimizeQueueMeta.properties = optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+      if (optimizeGroup.containsKey(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES)) {
+        optimizeQueueMeta.properties =
+            optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+      }
       boolean updated = false;
       for (OptimizeQueueMeta meta : optimizeQueueMetas) {
         if (meta.name.equals(optimizeQueueMeta.name)) {
