@@ -57,7 +57,7 @@ public class TableOptimizeRuntime implements Cloneable {
   @Override
   public TableOptimizeRuntime clone() {
     TableOptimizeRuntime newTableOptimizeRuntime = new TableOptimizeRuntime(this.tableIdentifier.getCatalog(),
-      this.tableIdentifier.getDatabase(), this.tableIdentifier.getTableName());
+        this.tableIdentifier.getDatabase(), this.tableIdentifier.getTableName());
     newTableOptimizeRuntime.currentSnapshotId = this.currentSnapshotId;
     newTableOptimizeRuntime.currentChangeSnapshotId = this.currentChangeSnapshotId;
     newTableOptimizeRuntime.optimizeStatus = this.optimizeStatus;
