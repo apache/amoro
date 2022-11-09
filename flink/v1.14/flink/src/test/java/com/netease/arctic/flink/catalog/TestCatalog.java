@@ -59,7 +59,7 @@ public class TestCatalog extends FlinkTestBase {
         ") PARTITIONED BY(t) " +
         " WITH (" +
         " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
     sql("SHOW tables");
 
@@ -99,7 +99,7 @@ public class TestCatalog extends FlinkTestBase {
         ") PARTITIONED BY(t) " +
         " WITH (" +
         " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     sql("INSERT INTO arcticCatalog." + DB + "." + TABLE +
