@@ -324,7 +324,7 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
-        ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic', 'location' = '" + tableDir.getAbsolutePath() + "')");
+        ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic', 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "')");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
