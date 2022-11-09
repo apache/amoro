@@ -136,7 +136,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, age SMALLINT, sex TINYINT, score BIGINT, height FLOAT, speed DOUBLE, ts TIMESTAMP)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     ArcticTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
@@ -162,7 +162,7 @@ public class TestUnkeyed extends FlinkTestBase {
         " id INT, name STRING, age SMALLINT, sex TINYINT, score BIGINT, height FLOAT, speed DOUBLE, ts TIMESTAMP)" +
         " PARTITIONED BY (ts)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     Schema required = new Schema(
@@ -207,7 +207,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -250,7 +250,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(id INT, name STRING) " +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE + " select * from input");
@@ -419,7 +419,7 @@ public class TestUnkeyed extends FlinkTestBase {
         " id INT, name STRING, dt STRING)" +
         " PARTITIONED BY (dt)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -474,7 +474,7 @@ public class TestUnkeyed extends FlinkTestBase {
         " id INT, name STRING, dt STRING)" +
         " PARTITIONED BY (dt)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +

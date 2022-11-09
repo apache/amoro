@@ -160,7 +160,7 @@ public class TestKeyed extends FlinkTestBase {
         ") PARTITIONED BY(op_time) " +
         " WITH (" +
         " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
