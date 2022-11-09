@@ -306,7 +306,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING) WITH %s", toWithClause(tableProperties));
 
@@ -361,7 +361,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING) WITH %s", toWithClause(tableProperties));
 
@@ -542,7 +542,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
 
@@ -599,7 +599,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
     sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +

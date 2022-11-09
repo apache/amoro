@@ -214,7 +214,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -270,7 +270,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -356,7 +356,7 @@ public class TestKeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -410,7 +410,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -468,7 +468,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));

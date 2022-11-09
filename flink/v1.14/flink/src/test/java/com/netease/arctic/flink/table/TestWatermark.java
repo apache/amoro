@@ -89,7 +89,7 @@ public class TestWatermark extends FlinkTestBase {
   public void testWatermark() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     sql("CREATE TABLE IF NOT EXISTS %s (" +
@@ -137,7 +137,7 @@ public class TestWatermark extends FlinkTestBase {
   public void testSelectWatermarkField() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     sql("CREATE TABLE IF NOT EXISTS %s (" +
