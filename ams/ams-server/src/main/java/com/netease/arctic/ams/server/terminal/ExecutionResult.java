@@ -29,19 +29,19 @@ public class ExecutionResult {
   List<String> logs = Lists.newArrayList();
   List<StatementResult> results = Lists.newArrayList();
 
-  public void appendLog(String log) {
+  public synchronized void appendLog(String log) {
     this.logs.add(log);
   }
 
-  public void appendResult(StatementResult result){
+  public synchronized void appendResult(StatementResult result){
     this.results.add(result);
   }
 
-  public List<String> getLogs() {
-    return logs;
+  public synchronized List<String> getLogs() {
+    return Lists.newArrayList(logs);
   }
 
-  public List<StatementResult> getResults() {
-    return results;
+  public synchronized List<StatementResult> getResults() {
+    return Lists.newArrayList(results);
   }
 }

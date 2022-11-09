@@ -88,9 +88,10 @@ public class TerminalManager {
     ExecutionTask task = new ExecutionTask(metaStore, script, sessionId);
     sessionExecutionTask.put(sessionId, task);
     executionPool.submit(task);
-    LOG.info("new sql script submit, current thread pool state. [Active: "
-        + executionPool.getActiveCount() + ", PoolSize: " + executionPool.getPoolSize() + "]"
-    );
+    String poolInfo = "new sql script submit, current thread pool state. [Active: "
+        + executionPool.getActiveCount() + ", PoolSize: " + executionPool.getPoolSize() + "]";
+    LOG.info(poolInfo);
+    task.executionResult.appendLog(poolInfo);
     return sessionId;
   }
 
@@ -119,7 +120,7 @@ public class TerminalManager {
     return task.executionResult.getResults().stream().map(statement -> {
       SqlResult sql = new SqlResult();
       sql.setId("line:" + statement.getLineNumber() + " - " + statement.getStatement());
-      sql.setColumns(sql.getColumns());
+      sql.setColumns(statement.getColumns());
       sql.setRowData(statement.getDataAsStringList());
       sql.setStatus(statement.isSuccess() ? ExecutionStatus.Finished.name(): ExecutionStatus.Failed.name());
       return sql;
@@ -238,7 +239,7 @@ public class TerminalManager {
 
     final ExecutionResult executionResult = new ExecutionResult();
 
-    final AtomicReference<ExecutionStatus> status = new AtomicReference<>(ExecutionStatus.Created);
+    final AtomicReference<ExecutionStatus> status = new AtomicReference<>(ExecutionStatus.Running);
 
     final String sessionId;
 
@@ -251,9 +252,9 @@ public class TerminalManager {
     @Override
     public void run() {
       try {
-
         tableMetaStore.doAs(() -> {
           TerminalSession session = getOrCreateSession(sessionId, tableMetaStore);
+          executionResult.appendLog("fetch terminal session: " + sessionId);
           execute(session);
           return null;
         });
@@ -293,8 +294,8 @@ public class TerminalManager {
           statementBuilder.append(line);
           no = lineNumber(reader, no);
 
-          boolean error = executeStatement(session, statementBuilder.toString(), no);
-          if (error) {
+          boolean success = executeStatement(session, statementBuilder.toString(), no);
+          if (!success) {
             if (stopOnError) {
               status.compareAndSet(ExecutionStatus.Running, ExecutionStatus.Failed);
               executionResult.appendLog("execution stopped for error happened and stop-when-error config.");
@@ -323,6 +324,7 @@ public class TerminalManager {
      * @return - false if any exception happened.
      */
     boolean executeStatement(TerminalSession session, String statement, int lineNo) {
+      executionResult.appendLog(" ");
       executionResult.appendLog("prepare execute statement, line:" + lineNo);
       executionResult.appendLog(statement);
 
@@ -338,7 +340,7 @@ public class TerminalManager {
 
       if (rs.empty()) {
         long cost = System.currentTimeMillis() - begin;
-        executionResult.appendLog("statement execute down, result is empty, execution cost:" + cost + "ms");
+        executionResult.appendLog("statement execute down, result is empty, execution cost: " + cost + "ms");
         return true;
       } else {
         StatementResult sr = fetchResults(rs, statement, lineNo);
@@ -383,10 +385,5 @@ public class TerminalManager {
       t.printStackTrace(ps);
       return new String(out.toByteArray(), Charsets.UTF_8);
     }
-  }
-
-  static class TerminalSessionContext {
-    private TerminalSession session;
-    private String authIdentifier;
   }
 }

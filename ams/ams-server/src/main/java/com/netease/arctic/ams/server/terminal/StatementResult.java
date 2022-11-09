@@ -33,7 +33,7 @@ public class StatementResult {
   private List<Object[]> datas = Lists.newArrayList();
   private boolean empty;
 
-  public StatementResult(String statement, int lineNumber, List<String> columns){
+  public StatementResult(String statement, int lineNumber, List<String> columns) {
     this.statement = statement;
     this.lineNumber = lineNumber;
     this.columns = columns;
@@ -41,11 +41,11 @@ public class StatementResult {
     this.empty = false;
   }
 
-  public void appendRow(Object[] row){
+  public void appendRow(Object[] row) {
     this.datas.add(row);
   }
 
-  public void withExceptionLog(String log){
+  public void withExceptionLog(String log) {
     this.logs = log;
     this.success = false;
   }
@@ -74,12 +74,16 @@ public class StatementResult {
     return datas;
   }
 
-  public List<List<String>> getDataAsStringList(){
+  public List<List<String>> getDataAsStringList() {
     List<List<String>> results = Lists.newArrayList();
-    for (Object[] row: datas){
+    for (Object[] row : datas) {
       List<String> rowStringList = Lists.newArrayList();
-      for (Object o: row){
-        rowStringList.add(o.toString());
+      for (Object o : row) {
+        if (o == null) {
+          rowStringList.add("null");
+        } else {
+          rowStringList.add(o.toString());
+        }
       }
       results.add(rowStringList);
     }
