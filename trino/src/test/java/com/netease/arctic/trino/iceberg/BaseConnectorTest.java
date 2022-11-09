@@ -1396,7 +1396,7 @@ public abstract class BaseConnectorTest
    */
   protected Callable<Void> queryRepeatedly(int minIterations, AtomicInteger incompleteReadTasks, @Language("SQL") String sql)
   {
-    return new Callable<Void>()
+    return new Callable<>()
     {
       @Override
       public Void call()
@@ -1427,7 +1427,7 @@ public abstract class BaseConnectorTest
 
   protected Callable<Void> createDropRepeatedly(Runnable initReady, Supplier<Boolean> done, String namePrefix, String createTemplate, String dropTemplate)
   {
-    return new Callable<Void>()
+    return new Callable<>()
     {
       @Override
       public Void call()
