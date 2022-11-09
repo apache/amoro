@@ -71,6 +71,6 @@ public class PlatformFileInfoController extends RestBaseController {
       return;
     }
     String content = platformFileInfoService.getFileContentById(Integer.valueOf(fileId));
-    ctx.json(OkResponse.of(content));
+    ctx.result(content);
   }
 }

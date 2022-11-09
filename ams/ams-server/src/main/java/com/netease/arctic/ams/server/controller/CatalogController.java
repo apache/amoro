@@ -99,14 +99,17 @@ public class CatalogController extends RestBaseController {
   private static Map<String, String> authConvertFromServerToMeta(Map<String, String> serverAuthConfig,
                                                                  CatalogMeta oldCatalogMeta) {
     Map<String, String> metaAuthConfig = new HashMap();
-    String authType = serverAuthConfig.get(AUTH_CONFIG_KEY_TYPE).toLowerCase();
+    String authType = serverAuthConfig.getOrDefault(AUTH_CONFIG_KEY_TYPE, "SIMPLE").toLowerCase();
     metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE, authType);
-    Map<String,String> oldAuthConfig = oldCatalogMeta.getAuthConfigs();
+    Map<String,String> oldAuthConfig = new HashMap<>();
+    if (oldCatalogMeta != null) {
+      oldAuthConfig = oldCatalogMeta.getAuthConfigs();
+    }
+
     if (authType.equals(AUTH_CONFIG_TYPE_VALUE_SIMPLE)) {
       metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
               serverAuthConfig.get(AUTH_CONFIG_HADOOP_USERNAME));
     } else if (authType.equals(AUTH_CONFIG_TYPE_VALUE_KERBEROS)) {
-
       String keytabFileId = serverAuthConfig.get(AUTH_CONFIG_KEY_KEYTAB);
       if (!StringUtils.isEmpty(keytabFileId)) {
         String keytabB64 = platformFileInfoService.getFileContentB64ById(Integer.valueOf(keytabFileId));
