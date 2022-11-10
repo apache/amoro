@@ -58,11 +58,6 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private Expression deleteExpression = Expressions.alwaysFalse();
   private final StructLikeMap<Long> partitionTransactionId;
 
-  // LegacyTransactionId is the monotonically increasing transaction's id, allocate from AMS
-  private Long legacyTransactionId;
-  // TransactionId works with partitionTransactionId above, they describe the data boundary of change store and 
-  // base store. 
-  // TransactionId and LegacyTransactionId will be unified in the future.
   private Long transactionId;
   private Expression conflictDetectionFilter = null;
 
@@ -112,18 +107,6 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  /**
-   * Set the LegacyTransactionId allocated from AMS
-   * @param transactionId allocated from AMS
-   * @return this for method chaining
-   * @deprecated It will be removed in 0.5
-   */
-  @Deprecated
-  public OverwriteBaseFiles withLegacyTransactionId(Long transactionId) {
-    this.legacyTransactionId = transactionId;
-    return this;
-  }
-
   public OverwriteBaseFiles validateNoConflictingAppends(Expression newConflictDetectionFilter) {
     Preconditions.checkArgument(newConflictDetectionFilter != null, "Conflict detection filter cannot be null");
     this.conflictDetectionFilter = newConflictDetectionFilter;
@@ -157,8 +140,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
-      if (legacyTransactionId != null && legacyTransactionId > 0) {
-        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, legacyTransactionId + "");
+      if (transactionId != null && transactionId > 0) {
+        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
       }
 
       if (MapUtils.isNotEmpty(properties)) {

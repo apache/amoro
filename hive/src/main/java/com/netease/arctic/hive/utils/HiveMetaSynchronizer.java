@@ -235,7 +235,6 @@ public class HiveMetaSynchronizer {
         overwriteBaseFiles.set(OverwriteHiveFiles.PROPERTIES_VALIDATE_LOCATION, "false");
         filesToDelete.forEach(overwriteBaseFiles::deleteFile);
         filesToAdd.forEach(overwriteBaseFiles::addFile);
-        overwriteBaseFiles.withLegacyTransactionId(legacyTxId);
         overwriteBaseFiles.withTransactionId(txId);
         overwriteBaseFiles.commit();
       } else {

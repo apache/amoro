@@ -86,40 +86,6 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
     return planTasks(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
   }
 
-  private Boolean shouldKeepFile(StructLike partition, long txId) {
-    if (fromPartitionTransactionId == null || fromPartitionTransactionId.isEmpty()) {
-      // if fromPartitionTransactionId is not set or is empty, return null to check legacy transactionId
-      return null;
-    }
-    if (table.spec().isUnpartitioned()) {
-      Long fromTransactionId = fromPartitionTransactionId.entrySet().iterator().next().getValue();
-      return txId > fromTransactionId;
-    } else {
-      if (!fromPartitionTransactionId.containsKey(partition)) {
-        // return null to check legacy transactionId
-        return null;
-      } else {
-        Long partitionTransactionId = fromPartitionTransactionId.get(partition);
-        return txId > partitionTransactionId;
-      }
-    }
-  }
-
-  private boolean shouldKeepFileWithLegacyTxId(StructLike partition, long legacyTxId) {
-    if (fromPartitionLegacyTransactionId == null || fromPartitionLegacyTransactionId.isEmpty()) {
-      // if fromPartitionLegacyTransactionId is not set or is empty, return all files
-      return true;
-    }
-    if (table.spec().isUnpartitioned()) {
-      Long fromTransactionId = fromPartitionLegacyTransactionId.entrySet().iterator().next().getValue();
-      return legacyTxId > fromTransactionId;
-    } else {
-      Long partitionTransactionId = fromPartitionLegacyTransactionId.getOrDefault(partition,
-          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-      return legacyTxId > partitionTransactionId;
-    }
-  }
-
   public CloseableIterable<ArcticFileScanTask> planTasks(PartitionDataFilter shouldKeepFile, 
                                                          PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
@@ -179,6 +145,40 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
           return null;
         }));
     return CloseableIterable.filter(allFileTasks, Objects::nonNull);
+  }
+
+  private Boolean shouldKeepFile(StructLike partition, long txId) {
+    if (fromPartitionTransactionId == null || fromPartitionTransactionId.isEmpty()) {
+      // if fromPartitionTransactionId is not set or is empty, return null to check legacy transactionId
+      return null;
+    }
+    if (table.spec().isUnpartitioned()) {
+      Long fromTransactionId = fromPartitionTransactionId.entrySet().iterator().next().getValue();
+      return txId > fromTransactionId;
+    } else {
+      if (!fromPartitionTransactionId.containsKey(partition)) {
+        // return null to check legacy transactionId
+        return null;
+      } else {
+        Long partitionTransactionId = fromPartitionTransactionId.get(partition);
+        return txId > partitionTransactionId;
+      }
+    }
+  }
+
+  private boolean shouldKeepFileWithLegacyTxId(StructLike partition, long legacyTxId) {
+    if (fromPartitionLegacyTransactionId == null || fromPartitionLegacyTransactionId.isEmpty()) {
+      // if fromPartitionLegacyTransactionId is not set or is empty, return all files
+      return true;
+    }
+    if (table.spec().isUnpartitioned()) {
+      Long fromTransactionId = fromPartitionLegacyTransactionId.entrySet().iterator().next().getValue();
+      return legacyTxId > fromTransactionId;
+    } else {
+      Long partitionTransactionId = fromPartitionLegacyTransactionId.getOrDefault(partition,
+          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
+      return legacyTxId > partitionTransactionId;
+    }
   }
   
   interface PartitionDataFilter {

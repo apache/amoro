@@ -81,7 +81,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
     this.dsSchema = dsSchema;
     this.legacyTxId = table.beginTransaction(null);
     this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
-    this.subDir = HiveTableUtil.newHiveSubdirectory(this.legacyTxId);
+    this.subDir = HiveTableUtil.newHiveSubdirectory(this.txId);
   }
 
   @Override
@@ -174,7 +174,6 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private void overwriteByFilter(WriterCommitMessage[] messages, Expression overwriteExpr) {
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-    overwriteBaseFiles.withLegacyTransactionId(legacyTxId);
     overwriteBaseFiles.withTransactionId(txId);
 
     for (DataFile file : files(messages)) {

@@ -123,7 +123,6 @@ public class OverwriteBaseFileTest extends TableTestBase {
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
-        .withLegacyTransactionId(legacyTxId)
         .withTransactionId(txId)
         .commit();
     // overwrite all partition and add new data file
@@ -167,7 +166,6 @@ public class OverwriteBaseFileTest extends TableTestBase {
     List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
-    overwrite.withLegacyTransactionId(legacyTxId);
     overwrite.withTransactionId(txId);
     overwrite.overwriteByRowFilter(
         Expressions.or(

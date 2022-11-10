@@ -175,7 +175,6 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     public void commit(WriterCommitMessage[] messages) {
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-      overwriteBaseFiles.withLegacyTransactionId(legacyTxId);
       overwriteBaseFiles.withTransactionId(txId);
 
       for (DataFile file : files(messages)) {
