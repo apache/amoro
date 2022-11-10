@@ -19,18 +19,13 @@
 package com.netease.arctic.ams.server.terminal.local;
 
 import com.google.common.collect.Lists;
-import com.netease.arctic.ams.server.ArcticMetaStore;
-import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.Configuration;
-import com.netease.arctic.ams.server.model.SqlRunningInfo;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
@@ -40,7 +35,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
   SparkSession context = null;
 
   @Override
-  public void initialize(Map<String, String> properties) {
+  public void initialize(Configuration properties) {
 
   }
 

@@ -23,7 +23,6 @@ import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.table.TableMetaStore;
 import java.util.List;
-import java.util.Map;
 
 /**
  * factory to create a TerminalSession
@@ -34,7 +33,7 @@ public interface TerminalSessionFactory {
    * this will be called after factory is created.
    * @param properties - terminal properties and factory properties.
    */
-  void initialize(Map<String, String> properties);
+  void initialize(Configuration properties);
 
   /**
    * create a new session
@@ -68,4 +67,8 @@ public interface TerminalSessionFactory {
           .noDefaultValue();
     }
   }
+
+  ConfigOption<Integer> FETCH_SIZE = ConfigOptions.key("fetch-size")
+      .intType()
+      .defaultValue(1000);
 }

@@ -26,38 +26,24 @@ import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.ams.server.model.LatestSessionInfo;
 import com.netease.arctic.ams.server.model.LogInfo;
-import com.netease.arctic.ams.server.model.SessionInfo;
 import com.netease.arctic.ams.server.model.SqlResult;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.table.TableMetaStore;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.LineNumberReader;
-import java.io.PrintStream;
-import java.io.StringReader;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import org.apache.commons.io.Charsets;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class TerminalManager {
-  private static final Logger LOG = LoggerFactory.getLogger(TerminalManager.class);
   private final AtomicLong threadPoolCount = new AtomicLong();
   TerminalSessionFactory sessionFactory;
   int resultLimits = 1000;
@@ -78,18 +64,19 @@ public class TerminalManager {
 
   /**
    * execute script, return terminal sessionId
-   *
-   * @param script
-   * @return
+   * @param terminalId - id to mark different terminal windows
+   * @param catalog - current catalog to execute script
+   * @param script - sql script to be executed
+   * @return - sessionId, session refer to a sql execution context
    */
-  public String executeScript(String loginId, String catalog, String script) {
+  public String executeScript(String terminalId, String catalog, String script) {
     Optional<CatalogMeta> optCatalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(catalog);
     if (!optCatalogMeta.isPresent()) {
       throw new IllegalArgumentException("catalog " + catalog + " is not validea");
     }
     CatalogMeta catalogMeta = optCatalogMeta.get();
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
-    String sessionId = getSessionId(loginId, metaStore);
+    String sessionId = getSessionId(terminalId, metaStore);
     sessionMap.computeIfAbsent(sessionId, id -> {
       Configuration configuration = new Configuration();
       configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
@@ -129,6 +116,9 @@ public class TerminalManager {
     return new LogInfo(sessionContext.getStatus().name(), sessionContext.getLogs());
   }
 
+  /**
+   * get execution result.
+   */
   public List<SqlResult> getExecutionResults(String sessionId) {
     if (sessionId == null) {
       return Lists.newArrayList();
@@ -160,6 +150,11 @@ public class TerminalManager {
     }
   }
 
+  /**
+   * get last execution info
+   * @param terminalId - id of terminal window
+   * @return last session info
+   */
   public LatestSessionInfo getLastSessionInfo(String terminalId) {
     String prefix = terminalId + "-";
     long lastExecutionTime = -1;
@@ -247,8 +242,8 @@ public class TerminalManager {
       throw new RuntimeException("failed to init session factory", e);
     }
 
-    Map<String, String> factoryConfig = Maps.newHashMap();
     String factoryPropertiesPrefix = ArcticMetaStoreConf.TERMINAL_PREFIX + backend + ".";
+    Configuration configuration = new Configuration();
 
     for (String key : conf.keySet()) {
       if (!key.startsWith(ArcticMetaStoreConf.TERMINAL_PREFIX)) {
@@ -256,10 +251,10 @@ public class TerminalManager {
       }
       String value = conf.getValue(ConfigOptions.key(key).stringType().noDefaultValue());
       key = key.substring(factoryPropertiesPrefix.length());
-      factoryConfig.put(key, value);
+      configuration.setString(key, value);
     }
-    factoryConfig.put("result.limit", this.resultLimits + "");
-    factory.initialize(factoryConfig);
+    configuration.set(TerminalSessionFactory.FETCH_SIZE, this.resultLimits);
+    factory.initialize(configuration);
     return factory;
   }
 }

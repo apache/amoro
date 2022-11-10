@@ -499,6 +499,14 @@ public class ArcticMetaStore {
     String extensionPro = yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG) == null ? "" :
         yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG);
     config.setString(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES, extensionPro);
+
+    // terminal properties
+    for (String key: systemConfig.keySet()){
+      if (key != null && key.startsWith(ArcticMetaStoreConf.TERMINAL_PREFIX)){
+        String value = systemConfig.getString(key);
+        config.setString(key, value);
+      }
+    }
     return config;
   }
 
