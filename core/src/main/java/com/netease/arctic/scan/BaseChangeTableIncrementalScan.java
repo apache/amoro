@@ -23,6 +23,7 @@ import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
@@ -44,12 +45,12 @@ import org.apache.iceberg.util.StructLikeMap;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.BiPredicate;
 
 public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalScan {
 
   private final ChangeTable table;
   private StructLikeMap<Long> fromPartitionTransactionId;
+  private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Expression dataFilter;
 
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
@@ -75,24 +76,52 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   }
 
   @Override
-  public CloseableIterable<ArcticFileScanTask> planTasks() {
-    return planTasks((partition, sequence) -> {
-      if (fromPartitionTransactionId == null || fromPartitionTransactionId.isEmpty()) {
-        // if fromPartitionTransactionId is not set or is empty, return all files
-        return true;
-      }
-      if (table.spec().isUnpartitioned()) {
-        Long fromTransactionId = fromPartitionTransactionId.entrySet().iterator().next().getValue();
-        return sequence > fromTransactionId;
-      } else {
-        Long partitionTransactionId =
-            fromPartitionTransactionId.getOrDefault(partition, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-        return sequence > partitionTransactionId;
-      }
-    });
+  public ChangeTableIncrementalScan fromLegacyTransactionId(StructLikeMap<Long> partitionTransactionId) {
+    this.fromPartitionLegacyTransactionId = partitionTransactionId;
+    return this;
   }
 
-  public CloseableIterable<ArcticFileScanTask> planTasks(BiPredicate<StructLike, Long> partitionTransactionFilter) {
+  @Override
+  public CloseableIterable<ArcticFileScanTask> planTasks() {
+    return planTasks(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
+  }
+
+  private Boolean shouldKeepFile(StructLike partition, long txId) {
+    if (fromPartitionTransactionId == null || fromPartitionTransactionId.isEmpty()) {
+      // if fromPartitionTransactionId is not set or is empty, return null to check legacy transactionId
+      return null;
+    }
+    if (table.spec().isUnpartitioned()) {
+      Long fromTransactionId = fromPartitionTransactionId.entrySet().iterator().next().getValue();
+      return txId > fromTransactionId;
+    } else {
+      if (!fromPartitionTransactionId.containsKey(partition)) {
+        // return null to check legacy transactionId
+        return null;
+      } else {
+        Long partitionTransactionId = fromPartitionTransactionId.get(partition);
+        return txId > partitionTransactionId;
+      }
+    }
+  }
+
+  private boolean shouldKeepFileWithLegacyTxId(StructLike partition, long legacyTxId) {
+    if (fromPartitionLegacyTransactionId == null || fromPartitionLegacyTransactionId.isEmpty()) {
+      // if fromPartitionLegacyTransactionId is not set or is empty, return all files
+      return true;
+    }
+    if (table.spec().isUnpartitioned()) {
+      Long fromTransactionId = fromPartitionLegacyTransactionId.entrySet().iterator().next().getValue();
+      return legacyTxId > fromTransactionId;
+    } else {
+      Long partitionTransactionId = fromPartitionLegacyTransactionId.getOrDefault(partition,
+          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
+      return legacyTxId > partitionTransactionId;
+    }
+  }
+
+  public CloseableIterable<ArcticFileScanTask> planTasks(PartitionDataFilter shouldKeepFile, 
+                                                         PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
       // return no files for table without snapshot
@@ -129,24 +158,31 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
             }
             String filePath = (String) dataFileRecord.getField(DataFile.FILE_PATH.name());
             StructLike partition = getPartition(dataFileRecord);
-            if (partitionTransactionFilter.test(partition, sequence)) {
-              DataFile dataFile = buildDataFile(dataFileRecord, filePath, partition);
-              if (metricsEvaluator().eval(dataFile)) {
-                return new BaseArcticFileScanTask(new DefaultKeyedFile(dataFile), null, table.spec(), null);
-              } else {
-                // ignore files not match dataFilter
-                return null;
+            Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequence);
+            if (shouldKeep == null) {
+              // if not sure should keep, use legacy transactionId to check
+              if (shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileUtil.parseFileTidFromFileName(filePath))) {
+                DataFile dataFile = buildDataFile(dataFileRecord, filePath, partition);
+                if (metricsEvaluator().eval(dataFile)) {
+                  return new BaseArcticFileScanTask(new DefaultKeyedFile(dataFile), null, table.spec(), null);
+                }
               }
             } else {
-              // ignore files not match partitionTransactionFilter
-              return null;
+              if (shouldKeep) {
+                DataFile dataFile = buildDataFile(dataFileRecord, filePath, partition);
+                if (metricsEvaluator().eval(dataFile)) {
+                  return new BaseArcticFileScanTask(new DefaultKeyedFile(dataFile), null, table.spec(), null);
+                }
+              }
             }
-          } else {
-            // ignore files not EXISTING/ADDED or not DataFile
-            return null;
           }
+          return null;
         }));
     return CloseableIterable.filter(allFileTasks, Objects::nonNull);
+  }
+  
+  interface PartitionDataFilter {
+    Boolean shouldKeep(StructLike partition, long transactionId);
   }
 
   private DataFile buildDataFile(GenericRecord dataFile, String filePath, StructLike partition) {

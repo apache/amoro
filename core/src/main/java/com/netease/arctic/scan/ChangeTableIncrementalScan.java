@@ -45,4 +45,15 @@ public interface ChangeTableIncrementalScan {
    * @return this for method chaining
    */
   ChangeTableIncrementalScan fromTransactionId(StructLikeMap<Long> partitionTransactionId);
+
+
+  /**
+   * Config this scan to read data from legacy {@code partitionTransactionId} exclusive to
+   * the current Transaction inclusive.
+   * For partitions set both TransactionId and LegacyTransactionId, LegacyTransactionId will
+   * be ignored.
+   * @param partitionTransactionId from TransactionId for each partition
+   * @return this for method chaining
+   */
+  ChangeTableIncrementalScan fromLegacyTransactionId(StructLikeMap<Long> partitionTransactionId);
 }
