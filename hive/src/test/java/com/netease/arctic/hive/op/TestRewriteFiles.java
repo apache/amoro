@@ -72,6 +72,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
   @Test
   public void testRewriteKeyedPartitionTable() throws TException {
     KeyedTable table = testKeyedHiveTable;
+    testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
     Map<String, String> partitionAndLocations = Maps.newHashMap();
 
     // ================== init partitions files

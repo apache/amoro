@@ -458,6 +458,7 @@ public class SparkTestContext extends ExternalResource {
     }
     DataFile[] dataFiles = changeWrite.complete().dataFiles();
     if (table.isKeyedTable()) {
+      table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
