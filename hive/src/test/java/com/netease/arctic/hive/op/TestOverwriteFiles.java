@@ -70,7 +70,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
   @Test
   public void testOverwriteKeyedPartitionTable() throws TException {
     KeyedTable table = testKeyedHiveTable;
-    testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
     Map<String, String> partitionAndLocations = Maps.newHashMap();
 
     List<Map.Entry<String, String>> files = Lists.newArrayList(
@@ -89,7 +89,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     applyOverwrite(partitionAndLocations, s -> false, files);
     assertHivePartitionLocations(partitionAndLocations, table);
 
-    testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    testKeyedHiveTable.beginTransaction(System.currentTimeMillis() + "");
     // ================== test overwrite all partition
     files = Lists.newArrayList(
         Maps.immutableEntry("name=aaa", "/test_path/partition3/data-a3.parquet"),
