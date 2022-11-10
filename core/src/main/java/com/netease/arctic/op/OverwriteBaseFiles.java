@@ -56,14 +56,14 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private final List<DeleteFile> deleteDeleteFiles;
   private final List<DeleteFile> addDeleteFiles;
   private Expression deleteExpression = Expressions.alwaysFalse();
-  private final StructLikeMap<Long> maxTransactionId;
+  private final StructLikeMap<Long> partitionTransactionId;
 
-  // TransactionId is the monotonically increasing transaction's id, allocate from AMS
-  private Long transactionId;
-  // DefaultMaxTransactionId works with maxTransactionId map above, they describe the data boundary of change store and 
+  // LegacyTransactionId is the monotonically increasing transaction's id, allocate from AMS
+  private Long legacyTransactionId;
+  // TransactionId works with partitionTransactionId above, they describe the data boundary of change store and 
   // base store. 
-  // TransactionId and defaultMaxTransactionId will be unified in the future.
-  private Long defaultMaxTransactionId;
+  // TransactionId and LegacyTransactionId will be unified in the future.
+  private Long transactionId;
   private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
@@ -72,7 +72,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     this.addFiles = Lists.newArrayList();
     this.deleteDeleteFiles = Lists.newArrayList();
     this.addDeleteFiles = Lists.newArrayList();
-    this.maxTransactionId = StructLikeMap.create(table.spec().partitionType());
+    this.partitionTransactionId = StructLikeMap.create(table.spec().partitionType());
   }
 
   public OverwriteBaseFiles overwriteByRowFilter(Expression expr) {
@@ -102,18 +102,25 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  public OverwriteBaseFiles withMaxTransactionId(StructLike partitionData, long maxTransactionId) {
-    this.maxTransactionId.put(partitionData, maxTransactionId);
+  public OverwriteBaseFiles withTransactionId(StructLike partitionData, long transactionId) {
+    this.partitionTransactionId.put(partitionData, transactionId);
     return this;
   }
 
-  public OverwriteBaseFiles withMaxTransactionId(long maxTransactionId) {
-    this.defaultMaxTransactionId = maxTransactionId;
-    return this;
-  }
-
-  public OverwriteBaseFiles withTransactionId(Long transactionId) {
+  public OverwriteBaseFiles withTransactionId(long transactionId) {
     this.transactionId = transactionId;
+    return this;
+  }
+
+  /**
+   * Set the LegacyTransactionId allocated from AMS
+   * @param transactionId allocated from AMS
+   * @return this for method chaining
+   * @deprecated It will be removed in 0.5
+   */
+  @Deprecated
+  public OverwriteBaseFiles withLegacyTransactionId(Long transactionId) {
+    this.legacyTransactionId = transactionId;
     return this;
   }
 
@@ -150,8 +157,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
-      if (transactionId != null && transactionId > 0) {
-        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
+      if (legacyTransactionId != null && legacyTransactionId > 0) {
+        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, legacyTransactionId + "");
       }
 
       if (MapUtils.isNotEmpty(properties)) {
@@ -210,9 +217,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     if (keyedTable.spec().isUnpartitioned()) {
       long maxTransactionId = partitionMaxTxId.get(partitionData);
       partitionMaxTxId.put(partitionData, Math.max(maxTransactionId,
-          this.maxTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT)));
+          this.partitionTransactionId.getOrDefault(partitionData,
+              TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT)));
     } else {
-      this.maxTransactionId.forEach((pd, txId) -> {
+      this.partitionTransactionId.forEach((pd, txId) -> {
         if (partitionMaxTxId.containsKey(pd)) {
           long maxTransactionId = partitionMaxTxId.get(pd);
           partitionMaxTxId.put(pd, Math.max(maxTransactionId, txId));
@@ -241,9 +249,10 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   }
 
   private long getPartitionMaxTxId(StructLike partitionData) {
-    long txId = maxTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-    if (this.defaultMaxTransactionId != null) {
-      txId = Math.max(txId, this.defaultMaxTransactionId);
+    long txId =
+        partitionTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
+    if (this.transactionId != null) {
+      txId = Math.max(txId, this.transactionId);
     }
     return txId;
   }

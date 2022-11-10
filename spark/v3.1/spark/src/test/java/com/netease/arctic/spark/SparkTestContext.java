@@ -486,8 +486,8 @@ public class SparkTestContext extends ExternalResource {
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.withTransactionId(keyedTable.beginTransaction(System.currentTimeMillis() + ""));
-      overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.allocateMaxTransactionId(keyedTable));
+      overwriteBaseFiles.withLegacyTransactionId(keyedTable.beginTransaction(System.currentTimeMillis() + ""));
+      overwriteBaseFiles.withTransactionId(TablePropertyUtil.allocateTransactionId(keyedTable));
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();

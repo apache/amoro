@@ -92,7 +92,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
     List<DataFile> initDataFiles = dataFileBuilder.buildList(overwriteFiles);
 
     RewritePartitions rewritePartitions = table.newRewritePartitions();
-    rewritePartitions.withMaxTransactionId(table.beginTransaction(""));
+    rewritePartitions.withTransactionId(table.beginTransaction(""));
     initDataFiles.forEach(rewritePartitions::addDataFile);
     rewritePartitions.commit();
 
@@ -108,7 +108,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
 
     List<DataFile> overwriteDataFiles = dataFileBuilder.buildList(overwriteFiles);
     rewritePartitions = table.newRewritePartitions();
-    rewritePartitions.withMaxTransactionId(table.beginTransaction(""));
+    rewritePartitions.withTransactionId(table.beginTransaction(""));
     overwriteDataFiles.forEach(rewritePartitions::addDataFile);
     rewritePartitions.commit();
 

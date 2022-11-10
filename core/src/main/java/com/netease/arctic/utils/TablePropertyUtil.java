@@ -136,7 +136,7 @@ public class TablePropertyUtil {
     return baseTableMaxTransactionId;
   }
 
-  public static long allocateMaxTransactionId(KeyedTable keyedTable) {
+  public static long allocateTransactionId(KeyedTable keyedTable) {
     ChangeTable changeTable = keyedTable.changeTable();
     changeTable.refresh();
     Snapshot snapshot = changeTable.currentSnapshot();

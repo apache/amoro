@@ -82,8 +82,8 @@ public class TestOverwriteFiles extends HiveTableTestBase {
 
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     dataFiles.forEach(overwriteBaseFiles::addFile);
-    overwriteBaseFiles.withTransactionId(table.beginTransaction(""));
-    overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.allocateMaxTransactionId(table));
+    overwriteBaseFiles.withLegacyTransactionId(table.beginTransaction(""));
+    overwriteBaseFiles.withTransactionId(TablePropertyUtil.allocateTransactionId(table));
     overwriteBaseFiles.commit();
 
     applyOverwrite(partitionAndLocations, s -> false, files);
@@ -99,8 +99,8 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     overwriteBaseFiles = table.newOverwriteBaseFiles();
     dataFiles.forEach(overwriteBaseFiles::addFile);
     overwriteBaseFiles.overwriteByRowFilter(Expressions.alwaysTrue());
-    overwriteBaseFiles.withTransactionId(table.beginTransaction(""));
-    overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.allocateMaxTransactionId(table));
+    overwriteBaseFiles.withLegacyTransactionId(table.beginTransaction(""));
+    overwriteBaseFiles.withTransactionId(TablePropertyUtil.allocateTransactionId(table));
     overwriteBaseFiles.commit();
 
     partitionAndLocations.clear();

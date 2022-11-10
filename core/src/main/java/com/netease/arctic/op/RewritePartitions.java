@@ -20,6 +20,6 @@ public interface RewritePartitions extends PendingUpdate<StructLikeMap<Long>> {
    * @param transactionId table transactionId
    * @return this for method chaining
    */
-  RewritePartitions withMaxTransactionId(long transactionId);
+  RewritePartitions withTransactionId(long transactionId);
 
 }

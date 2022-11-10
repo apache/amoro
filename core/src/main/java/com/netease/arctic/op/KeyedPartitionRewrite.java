@@ -50,7 +50,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  public KeyedPartitionRewrite withMaxTransactionId(long transactionId) {
+  public KeyedPartitionRewrite withTransactionId(long transactionId) {
     this.transactionId = transactionId;
     return this;
   }
