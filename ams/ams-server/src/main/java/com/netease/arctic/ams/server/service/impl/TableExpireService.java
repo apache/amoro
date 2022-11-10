@@ -149,17 +149,11 @@ public class TableExpireService implements ITableExpireService {
                 .getChangeTableTTLDataFiles(keyedArcticTable.id().buildTableIdentifier(),
                     System.currentTimeMillis() - changeDataTTL);
             deleteChangeFile(keyedArcticTable, changeDataFiles);
-            long changeTableSafeExpireTime = findChangeTableSafeExpireTime(keyedArcticTable);
-            if (changeTableSafeExpireTime != -1) {
-              List<DataFileInfo> baseFilesInfo = ServiceContainer.getFileInfoCacheService()
-                  .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
-              Set<String> changeExclude = baseFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
-              changeExclude.addAll(finalHiveLocation);
-              expireSnapshots(changeTable, Math.min(startTime - changeSnapshotsKeepTime, changeTableSafeExpireTime),
-                  changeExclude);
-            } else {
-              LOG.warn("{} changeTableSafeExpireTime is -1, need minor optimize before expire", keyedArcticTable.id());
-            }
+            List<DataFileInfo> baseFilesInfo = ServiceContainer.getFileInfoCacheService()
+                .getOptimizeDatafiles(tableIdentifier.buildTableIdentifier(), Constants.INNER_TABLE_BASE);
+            Set<String> changeExclude = baseFilesInfo.stream().map(DataFileInfo::getPath).collect(Collectors.toSet());
+            changeExclude.addAll(finalHiveLocation);
+            expireSnapshots(changeTable, startTime - changeSnapshotsKeepTime, changeExclude);
             return null;
           });
           LOG.info("[{}] {} expire cost total {} ms", traceId, arcticTable.id(),
@@ -174,30 +168,6 @@ public class TableExpireService implements ITableExpireService {
         LOG.error("[" + traceId + "] unexpected expire error of table " + tableIdentifier, t);
       }
     }
-  }
-
-  public static long findChangeTableSafeExpireTime(KeyedTable keyedTable) {
-    StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
-    if (MapUtils.isEmpty(baseMaxTransactionId)) {
-      LOG.info("table {} not contains max transaction id", keyedTable.id());
-      return -1;
-    }
-    long minTxId = baseMaxTransactionId.values().stream()
-        .min(Long::compareTo)
-        .orElseThrow(IllegalArgumentException::new);
-    Snapshot snapshot = getSnapshotBySnapshotSequence(keyedTable.changeTable().snapshots(), minTxId);
-    if (snapshot == null) {
-      LOG.warn("{} can't find snapshot of sequence {}", keyedTable.id(), minTxId);
-      return -1;
-    }
-    return snapshot.timestampMillis();
-  }
-
-  private static Snapshot getSnapshotBySnapshotSequence(Iterable<Snapshot> snapshots, long sequenceNumber) {
-    return Streams.stream(snapshots)
-        .filter(s -> s.sequenceNumber() == sequenceNumber)
-        .findAny()
-        .orElse(null);
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {

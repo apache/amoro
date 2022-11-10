@@ -113,7 +113,6 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         splitSize, lookBack, openFileCost);
   }
 
-  @NotNull
   private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
     return CloseableIterable.transform(planFiles(table.baseTable()), BaseArcticFileScanTask::new);
   }
