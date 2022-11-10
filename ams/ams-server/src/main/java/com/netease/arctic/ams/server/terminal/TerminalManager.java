@@ -24,7 +24,9 @@ import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
+import com.netease.arctic.ams.server.model.LatestSessionInfo;
 import com.netease.arctic.ams.server.model.LogInfo;
+import com.netease.arctic.ams.server.model.SessionInfo;
 import com.netease.arctic.ams.server.model.SqlResult;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
@@ -93,7 +95,8 @@ public class TerminalManager {
       configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
       configuration.set(TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
       configuration.set(TerminalSessionFactory.SessionConfigOptions.catalogType(catalog), catalogMeta.getCatalogType());
-      configuration.set(TerminalSessionFactory.SessionConfigOptions.catalogUrl(catalog),
+      configuration.set(
+          TerminalSessionFactory.SessionConfigOptions.catalogUrl(catalog),
           String.format(
               "thrift://%s:%d/%s",
               ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
@@ -106,7 +109,6 @@ public class TerminalManager {
     if (!context.isReadyToExecute()) {
       throw new IllegalStateException("current session is not ready to execute script. status:" + context.getStatus());
     }
-
 
     context.submit(catalog, script, resultLimits, stopOnError);
 
@@ -158,6 +160,27 @@ public class TerminalManager {
     }
   }
 
+  public LatestSessionInfo getLastSessionInfo(String terminalId) {
+    String prefix = terminalId + "-";
+    long lastExecutionTime = -1;
+    String sessionId = "";
+    String script = "";
+    for (String sid: sessionMap.keySet()){
+      if (sid.startsWith(prefix)){
+        TerminalSessionContext context = sessionMap.get(sid);
+        if (context == null){
+          continue;
+        }
+        if (lastExecutionTime < context.lastExecutionTime()){
+          lastExecutionTime = context.lastExecutionTime();
+          sessionId = sid;
+          script = context.lastScript();
+        }
+      }
+    }
+    return new LatestSessionInfo(sessionId, script);
+  }
+
   // ========================== private method =========================
 
   private String getSessionId(String loginId, TableMetaStore auth) {
@@ -191,7 +214,6 @@ public class TerminalManager {
     }
     return builder.build();
   }
-
 
   TerminalSessionFactory loadTerminalSessionFactory(Configuration conf) {
     String backend = conf.get(ArcticMetaStoreConf.TERMINAL_BACKEND);
@@ -240,6 +262,4 @@ public class TerminalManager {
     factory.initialize(factoryConfig);
     return factory;
   }
-
-
 }

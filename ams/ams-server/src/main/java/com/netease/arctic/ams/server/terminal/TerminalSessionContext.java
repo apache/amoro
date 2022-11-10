@@ -47,6 +47,8 @@ public class TerminalSessionContext {
   private final Configuration sessionConfiguration;
   private volatile TerminalSession session;
 
+  private volatile long lastExecutionTime = System.currentTimeMillis();
+
   final ThreadPoolExecutor threadPool;
 
   public TerminalSessionContext(
@@ -78,14 +80,14 @@ public class TerminalSessionContext {
     status.set(ExecutionStatus.Running);
 
     CompletableFuture.supplyAsync(task, threadPool)
-        .whenComplete((s, e) -> status.compareAndSet(ExecutionStatus.Running, s));
+        .whenComplete((s, e) -> status.compareAndSet(ExecutionStatus.Running, s))
+        .thenApply(s -> lastExecutionTime = System.currentTimeMillis());
     this.task.set(task);
 
     String poolInfo = "new sql script submit, current thread pool state. [Active: "
         + threadPool.getActiveCount() + ", PoolSize: " + threadPool.getPoolSize() + "]";
     LOG.info(poolInfo);
     task.executionResult.appendLog(poolInfo);
-
   }
 
   public synchronized void cancel() {
@@ -102,6 +104,18 @@ public class TerminalSessionContext {
 
   public List<StatementResult> getStatementResults() {
     return task.get().executionResult.getResults();
+  }
+
+  public long lastExecutionTime() {
+    return lastExecutionTime;
+  }
+
+  public String lastScript() {
+    ExecutionTask t = this.task.get();
+    if (t == null) {
+      return "";
+    }
+    return t.script;
   }
 
   private synchronized TerminalSession lazyLoadSession() {

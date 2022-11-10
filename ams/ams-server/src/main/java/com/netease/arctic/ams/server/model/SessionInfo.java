@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.model;
 
 public class SessionInfo {
   private String sessionId;
-  private int sqlNumber;
 
   public SessionInfo(String sessionId) {
     this.sessionId = sessionId;
@@ -37,11 +36,4 @@ public class SessionInfo {
     this.sessionId = sessionId;
   }
 
-  public int getSqlNumber() {
-    return sqlNumber;
-  }
-
-  public void setSqlNumber(int sqlNumber) {
-    this.sqlNumber = sqlNumber;
-  }
 }

@@ -19,11 +19,11 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.netease.arctic.ams.server.controller.response.OkResponse;
+import com.netease.arctic.ams.server.model.LatestSessionInfo;
 import com.netease.arctic.ams.server.model.SessionInfo;
 import com.netease.arctic.ams.server.model.SqlExample;
 import com.netease.arctic.ams.server.model.SqlResult;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.service.TerminalService;
 import com.netease.arctic.ams.server.terminal.TerminalManager;
 import io.javalin.http.Context;
 import org.slf4j.Logger;
@@ -72,14 +72,6 @@ public class TerminalController {
     ctx.json(OkResponse.of(new SessionInfo(sessionId)));
   }
 
-  /** execute some sql*/
-  public static void executeSql(Context ctx) {
-    String catalog = ctx.pathParam("catalog");
-    Map<String, String> bodyParams = ctx.bodyAsClass(Map.class);
-    String sql = bodyParams.get("sql");
-    ctx.json(OkResponse.of(TerminalService.executeSql(catalog, sql)));
-  }
-
   /** get execute logs of some session */
   public static void getLogs(Context ctx) {
     String sessionId = ctx.pathParamAsClass("sessionId", String.class).get();
@@ -105,6 +97,9 @@ public class TerminalController {
 
   /** get latest sql info **/
   public static void getLatestInfo(Context ctx) {
-    ctx.json(OkResponse.of(TerminalService.getLatestSessionInfo()));
+    String terminalId = ctx.cookie("JSESSIONID");
+    TerminalManager manager = ServiceContainer.getTerminalManager();
+    LatestSessionInfo sessionInfo = manager.getLastSessionInfo(terminalId);
+    ctx.json(OkResponse.of(sessionInfo));
   }
 }
