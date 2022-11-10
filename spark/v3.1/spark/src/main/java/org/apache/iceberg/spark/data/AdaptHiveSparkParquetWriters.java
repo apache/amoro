@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.parquet;
+package org.apache.iceberg.spark.data;
 
 import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetValueReaders;
@@ -24,7 +24,6 @@ import org.apache.iceberg.parquet.ParquetValueWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.DecimalUtil;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -64,11 +63,11 @@ public class AdaptHiveSparkParquetWriters {
 
   @SuppressWarnings("unchecked")
   public static <T> ParquetValueWriter<T> buildWriter(StructType dfSchema, MessageType type) {
-    return (ParquetValueWriter<T>) ParquetWithSparkSchemaVisitor.visit(dfSchema, type,
-        new WriteBuilder(type));
+    return (ParquetValueWriter<T>) AdaptHiveParquetWithSparkSchemaVisitor.visit(dfSchema, type,
+        new AdaptHiveSparkParquetWriters.WriteBuilder(type));
   }
 
-  private static class WriteBuilder extends ParquetWithSparkSchemaVisitor<ParquetValueWriter<?>> {
+  private static class WriteBuilder extends AdaptHiveParquetWithSparkSchemaVisitor<ParquetValueWriter<?>> {
     private final MessageType type;
 
     WriteBuilder(MessageType type) {
@@ -93,7 +92,7 @@ public class AdaptHiveSparkParquetWriters {
         sparkTypes.add(sparkFields[i].dataType());
       }
 
-      return new InternalRowWriter(writers, sparkTypes);
+      return new AdaptHiveSparkParquetWriters.InternalRowWriter(writers, sparkTypes);
     }
 
     @Override
@@ -104,7 +103,7 @@ public class AdaptHiveSparkParquetWriters {
       int repeatedD = type.getMaxDefinitionLevel(repeatedPath);
       int repeatedR = type.getMaxRepetitionLevel(repeatedPath);
 
-      return new ArrayDataWriter<>(repeatedD, repeatedR,
+      return new AdaptHiveSparkParquetWriters.ArrayDataWriter<>(repeatedD, repeatedR,
           newOption(repeated.getType(0), elementWriter),
           arrayType.elementType());
     }
@@ -119,13 +118,13 @@ public class AdaptHiveSparkParquetWriters {
       int repeatedD = type.getMaxDefinitionLevel(repeatedPath);
       int repeatedR = type.getMaxRepetitionLevel(repeatedPath);
 
-      return new MapDataWriter<>(repeatedD, repeatedR,
+      return new AdaptHiveSparkParquetWriters.MapDataWriter<>(repeatedD, repeatedR,
           newOption(repeatedKeyValue.getType(0), keyWriter),
           newOption(repeatedKeyValue.getType(1), valueWriter),
           mapType.keyType(), mapType.valueType());
     }
 
-    private ParquetValueWriter<?> newOption(Type fieldType, ParquetValueWriter<?> writer) {
+    private ParquetValueWriter<?> newOption(org.apache.parquet.schema.Type fieldType, ParquetValueWriter<?> writer) {
       int maxD = type.getMaxDefinitionLevel(path(fieldType.getName()));
       return ParquetValueWriters.option(fieldType, maxD, writer);
     }
@@ -244,26 +243,26 @@ public class AdaptHiveSparkParquetWriters {
   }
 
   private static ParquetValueWriters.PrimitiveWriter<UTF8String> utf8Strings(ColumnDescriptor desc) {
-    return new UTF8StringWriter(desc);
+    return new AdaptHiveSparkParquetWriters.UTF8StringWriter(desc);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsInteger(ColumnDescriptor desc,
       int precision, int scale) {
-    return new IntegerDecimalWriter(desc, precision, scale);
+    return new AdaptHiveSparkParquetWriters.IntegerDecimalWriter(desc, precision, scale);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsLong(ColumnDescriptor desc,
       int precision, int scale) {
-    return new LongDecimalWriter(desc, precision, scale);
+    return new AdaptHiveSparkParquetWriters.LongDecimalWriter(desc, precision, scale);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsFixed(ColumnDescriptor desc,
       int precision, int scale) {
-    return new FixedDecimalWriter(desc, precision, scale);
+    return new AdaptHiveSparkParquetWriters.FixedDecimalWriter(desc, precision, scale);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<byte[]> byteArrays(ColumnDescriptor desc) {
-    return new ByteArrayWriter(desc);
+    return new AdaptHiveSparkParquetWriters.ByteArrayWriter(desc);
   }
 
   private static class UTF8StringWriter extends ParquetValueWriters.PrimitiveWriter<UTF8String> {

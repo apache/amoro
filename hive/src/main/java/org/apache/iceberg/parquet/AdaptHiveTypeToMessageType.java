@@ -55,7 +55,7 @@ public class AdaptHiveTypeToMessageType {
       builder.addField(field(field));
     }
 
-    return builder.named(AvroSchemaUtil.makeCompatibleName(name));
+    return builder.named(name);
   }
 
   public GroupType struct(org.apache.iceberg.types.Types.StructType struct,
@@ -66,7 +66,7 @@ public class AdaptHiveTypeToMessageType {
       builder.addField(field(field));
     }
 
-    return builder.id(id).named(AvroSchemaUtil.makeCompatibleName(name));
+    return builder.id(id).named(name);
   }
 
   public Type field(org.apache.iceberg.types.Types.NestedField field) {
@@ -96,7 +96,7 @@ public class AdaptHiveTypeToMessageType {
     return Types.list(repetition)
         .element(field(elementField))
         .id(id)
-        .named(AvroSchemaUtil.makeCompatibleName(name));
+        .named(name);
   }
 
   public GroupType map(org.apache.iceberg.types.Types.MapType map, Type.Repetition repetition, int id, String name) {
@@ -106,7 +106,7 @@ public class AdaptHiveTypeToMessageType {
         .key(field(keyField))
         .value(field(valueField))
         .id(id)
-        .named(AvroSchemaUtil.makeCompatibleName(name));
+        .named(name);
   }
 
   public Type primitive(org.apache.iceberg.types.Type.PrimitiveType primitive,
