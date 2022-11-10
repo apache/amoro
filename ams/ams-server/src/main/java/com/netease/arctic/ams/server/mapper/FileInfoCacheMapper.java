@@ -70,7 +70,8 @@ public interface FileInfoCacheMapper {
           @Result(column = "file_size", property = "fileSize"),
           @Result(column = "operation", property = "operation"),
           @Result(column = "commit_time", property = "commitTime",
-                  typeHandler = Long2TsConvertor.class)
+                  typeHandler = Long2TsConvertor.class),
+          @Result(column = "add_snapshot_sequence", property = "sequence")
   })
   List<AMSDataFileInfo> getDatafilesInfo(
           @Param("tableIdentifier") TableIdentifier tableIdentifier,
@@ -91,7 +92,7 @@ public interface FileInfoCacheMapper {
           @Result(column = "partition_name", property = "partition"),
           @Result(column = "commit_time", property = "commitTime",
                   typeHandler = Long2TsConvertor.class),
-      @Result(column = "add_snapshot_sequence", property = "sequence"),
+          @Result(column = "add_snapshot_sequence", property = "sequence")
   })
   List<DataFileInfo> getOptimizeDatafiles(
           @Param("tableIdentifier") TableIdentifier tableIdentifier,
