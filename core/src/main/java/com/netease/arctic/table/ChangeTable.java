@@ -18,16 +18,16 @@
 
 package com.netease.arctic.table;
 
-import com.netease.arctic.scan.ChangeTableScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 
 /**
  * Change table store of an {@link KeyedTable}, storing change records in it.
  */
 public interface ChangeTable extends UnkeyedTable {
   /**
-   * Create a new {@link ChangeTableScan scan} for this table.
+   * Create a new {@link ChangeTableIncrementalScan scan} for this table.
    *
    * @return a table scan for this table
    */
-  ChangeTableScan newChangeScan();
+  ChangeTableIncrementalScan newChangeScan();
 }

@@ -129,8 +129,8 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         partitionMaxTransactionId.putIfAbsent(key, currentSnapshotSequence);
       }
     }
-    ChangeTableScan changeTableScan = table.changeTable().newChangeScan()
-        .partitionMaxTransactionId(partitionMaxTransactionId);
+    ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
+        .fromTransactionId(partitionMaxTransactionId);
     if (expression != null) {
       changeTableScan = changeTableScan.filter(expression);
     }

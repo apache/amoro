@@ -24,7 +24,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BaseArcticCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.scan.ChangeTableScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.ChangeTable;
@@ -348,7 +348,7 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     }
 
     @Override
-    public ChangeTableScan newChangeScan() {
+    public ChangeTableIncrementalScan newChangeScan() {
       if (table instanceof ChangeTable) {
         return ((ChangeTable) table).newChangeScan();
       } else {

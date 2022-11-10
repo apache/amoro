@@ -22,14 +22,14 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 
-public interface ChangeTableScan {
+public interface ChangeTableIncrementalScan {
   /**
    * Config this scan with filter by the {@link Expression}.
    *
    * @param expr a filter expression
    * @return scan based on this with results filtered by the expression
    */
-  ChangeTableScan filter(Expression expr);
+  ChangeTableIncrementalScan filter(Expression expr);
 
   /**
    * Plan the {@link ArcticFileScanTask tasks} for this scan.
@@ -38,5 +38,11 @@ public interface ChangeTableScan {
    */
   CloseableIterable<ArcticFileScanTask> planTasks();
 
-  ChangeTableScan partitionMaxTransactionId(StructLikeMap<Long> partitionMaxTransactionId);
+  /**
+   * Config this scan to read data from {@code partitionTransactionId} exclusive to
+   * the current Transaction inclusive.
+   * @param partitionTransactionId from TransactionId for each partition
+   * @return this for method chaining
+   */
+  ChangeTableIncrementalScan fromTransactionId(StructLikeMap<Long> partitionTransactionId);
 }
