@@ -135,7 +135,7 @@ public abstract class BaseIcebergDataReader<T> {
       builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
     }
 
-    return builder.build();
+    return fileIO.doAs(builder::build);
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
