@@ -120,8 +120,8 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(table);
     StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
     ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
-        .fromTransactionId(partitionMaxTransactionId)
-        .fromLegacyTransactionId(legacyPartitionMaxTransactionId);
+        .fromTransaction(partitionMaxTransactionId)
+        .fromLegacyTransaction(legacyPartitionMaxTransactionId);
     if (expression != null) {
       changeTableScan = changeTableScan.filter(expression);
     }

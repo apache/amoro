@@ -44,7 +44,7 @@ public interface ChangeTableIncrementalScan {
    * @param partitionTransactionId from TransactionId for each partition
    * @return this for method chaining
    */
-  ChangeTableIncrementalScan fromTransactionId(StructLikeMap<Long> partitionTransactionId);
+  ChangeTableIncrementalScan fromTransaction(StructLikeMap<Long> partitionTransactionId);
 
 
   /**
@@ -55,5 +55,5 @@ public interface ChangeTableIncrementalScan {
    * @param partitionTransactionId from TransactionId for each partition
    * @return this for method chaining
    */
-  ChangeTableIncrementalScan fromLegacyTransactionId(StructLikeMap<Long> partitionTransactionId);
+  ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId);
 }

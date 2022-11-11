@@ -70,13 +70,13 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   }
 
   @Override
-  public ChangeTableIncrementalScan fromTransactionId(StructLikeMap<Long> partitionMaxTransactionId) {
+  public ChangeTableIncrementalScan fromTransaction(StructLikeMap<Long> partitionMaxTransactionId) {
     this.fromPartitionTransactionId = partitionMaxTransactionId;
     return this;
   }
 
   @Override
-  public ChangeTableIncrementalScan fromLegacyTransactionId(StructLikeMap<Long> partitionTransactionId) {
+  public ChangeTableIncrementalScan fromLegacyTransaction(StructLikeMap<Long> partitionTransactionId) {
     this.fromPartitionLegacyTransactionId = partitionTransactionId;
     return this;
   }

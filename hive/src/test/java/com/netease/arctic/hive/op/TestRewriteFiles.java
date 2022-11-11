@@ -86,7 +86,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
 
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     initDataFiles.forEach(overwriteBaseFiles::addFile);
-    overwriteBaseFiles.withTransactionId(TablePropertyUtil.allocateTransactionId(table));
+    overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(table));
     overwriteBaseFiles.commit();
 
     applyUpdateHiveFiles(partitionAndLocations, s -> false, initFiles);
