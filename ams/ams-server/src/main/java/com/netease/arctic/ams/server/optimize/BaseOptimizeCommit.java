@@ -108,7 +108,7 @@ public class BaseOptimizeCommit {
                 maxTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, maxTransactionId);
               } else {
                 maxTransactionIds.putIfAbsent(
-                        ArcticDataFiles.data(spec, entry.getKey()), maxTransactionId);
+                    ArcticDataFiles.data(spec, entry.getKey()), maxTransactionId);
               }
             }
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);

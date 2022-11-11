@@ -23,7 +23,7 @@ import java.util.UUID;
 
 public class ArcticDataFiles {
   public static final OffsetDateTime EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC);
-  public static final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-hh");
+  public static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd-hh");
   private static final int EPOCH_YEAR = EPOCH.getYear();
   private static final String HIVE_NULL = "__HIVE_DEFAULT_PARTITION__";
   private static final String MONTH_TYPE = "month";
@@ -44,8 +44,8 @@ public class ArcticDataFiles {
    */
   private static Integer readHoursData(String asString) {
     try {
-      sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-      Date date = sdf.parse(asString);
+      SDF.setTimeZone(TimeZone.getTimeZone("UTC"));
+      Date date = SDF.parse(asString);
       OffsetDateTime parse = OffsetDateTime.parse(date.toInstant().toString());
       return Math.toIntExact(ChronoUnit.HOURS.between(EPOCH, parse));
     } catch (ParseException e) {
