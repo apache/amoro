@@ -18,21 +18,48 @@
 
 package com.netease.arctic.ams.server.terminal.kyuubi;
 
-import com.netease.arctic.ams.server.terminal.BaseResultSet;
+import com.netease.arctic.ams.server.terminal.JDBCResultSet;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
-import java.util.List;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.List;
+
 
 public class KyuubiSession implements TerminalSession {
 
-  List<String> logs = Lists.newArrayList();
-  public KyuubiSession(List<String> logs){
+  final List<String> logs = Lists.newArrayList();
+  final Connection connection;
+
+  private volatile String currentCatalog;
+
+  public KyuubiSession(Connection connection, List<String> logs) {
     this.logs.addAll(logs);
+    this.connection = connection;
   }
 
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
-    return new BaseResultSet(Lists.newArrayList(), Lists.newArrayList());
+    if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
+      logs.add("current catalog is " + currentCatalog + ", switch to " + catalog + " before execution");
+      execute("use " + catalog);
+      this.currentCatalog = catalog;
+    }
+    java.sql.ResultSet rs = null;
+    Statement sts = null;
+    try {
+      sts = connection.createStatement();
+      boolean withRs = sts.execute(statement);
+      if (withRs) {
+        rs = sts.getResultSet();
+      }
+    } catch (SQLException e) {
+      throw new RuntimeException("error when execute sql:" + statement, e);
+    }
+
+    return new JDBCResultSet(rs, sts);
   }
 
   @Override
@@ -45,5 +72,13 @@ public class KyuubiSession implements TerminalSession {
   @Override
   public boolean active() {
     return true;
+  }
+
+  private void execute(String sql) {
+    try (Statement sts = connection.createStatement()) {
+      sts.execute(sql);
+    } catch (SQLException e) {
+      throw new RuntimeException("error when execute sql:" + sql, e);
+    }
   }
 }

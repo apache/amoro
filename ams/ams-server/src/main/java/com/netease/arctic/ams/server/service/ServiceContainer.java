@@ -298,7 +298,7 @@ public class ServiceContainer {
   public static TerminalManager getTerminalManager() {
     if (terminalManager == null) {
       synchronized (ServiceContainer.class) {
-        if (terminalManager == null){
+        if (terminalManager == null) {
           terminalManager = new TerminalManager(ArcticMetaStore.conf);
         }
       }

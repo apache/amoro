@@ -25,10 +25,11 @@ import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
-import java.util.List;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
+
+import java.util.List;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
 
@@ -47,7 +48,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     List<String> initializeLogs = Lists.newArrayList();
     initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
 
-    for (String catalog: catalogs){
+    for (String catalog : catalogs) {
       String type = configuration.getString(SessionConfigOptions.catalogType(catalog));
       String url = configuration.getString(SessionConfigOptions.catalogUrl(catalog));
       initializeLogs.add("add catalog config to spark session:");
@@ -59,15 +60,13 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     return new LocalTerminalSession(catalogs, session, initializeLogs);
   }
 
-
-  private void updateSessionConf(SparkSession session, List<String> logs, String key, String value){
+  private void updateSessionConf(SparkSession session, List<String> logs, String key, String value) {
     session.conf().set(key, value);
     logs.add(key + "  " + value);
   }
 
-
-  protected synchronized SparkSession lazyInitContext(){
-    if (context == null){
+  protected synchronized SparkSession lazyInitContext() {
+    if (context == null) {
       SparkConf sparkconf = new SparkConf()
           .setAppName("spark-local-context")
           .setMaster("local[*]");

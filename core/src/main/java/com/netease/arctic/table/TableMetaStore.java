@@ -175,6 +175,10 @@ public class TableMetaStore implements Serializable {
     return authMethod;
   }
 
+  public boolean isKerberosAuthMethod() {
+    return AUTH_METHOD_KERBEROS.equalsIgnoreCase(authMethod);
+  }
+
   public String getHadoopUsername() {
     return hadoopUsername;
   }
@@ -205,12 +209,7 @@ public class TableMetaStore implements Serializable {
           }
           LOG.info("{} complete init ugi with {}", threadName, authMethod);
         } else if (TableMetaStore.AUTH_METHOD_KERBEROS.equals(authMethod)) {
-          if (confCachePath == null) {
-            confCachePath = generateKrbConfPath();
-            if (!confCachePath.toFile().exists()) {
-              confCachePath.toFile().mkdirs();
-            }
-          }
+          generateKrbConfPath();
           constructUgi();
           LOG.info("{} complete init ugi with {}", threadName, authMethod);
         }
@@ -324,18 +323,13 @@ public class TableMetaStore implements Serializable {
 
   public synchronized Optional<URL> getHiveSiteLocation() {
     try {
-      if (confCachePath == null) {
-        confCachePath = generateKrbConfPath();
-        if (!confCachePath.toFile().exists()) {
-          confCachePath.toFile().mkdirs();
-        }
-      }
+      Path confPath = generateKrbConfPath();
       if (ArrayUtils.isEmpty(metaStoreSite)) {
         return Optional.empty();
       }
-      Path hiveSitePath = Paths.get(confCachePath.toAbsolutePath().toString(), "hive-site.xml");
+      Path hiveSitePath = Paths.get(confPath.toAbsolutePath().toString(), "hive-site.xml");
       if (!hiveSitePath.toFile().exists()) {
-        hiveSitePath = Paths.get(saveConfInPath(confCachePath, META_STORE_SITE_FILE_NAME, metaStoreSite));
+        hiveSitePath = Paths.get(saveConfInPath(confPath, META_STORE_SITE_FILE_NAME, metaStoreSite));
       }
       org.apache.hadoop.fs.Path hadoopPath = new org.apache.hadoop.fs.Path(hiveSitePath.toAbsolutePath().toString());
       org.apache.hadoop.fs.Path hadoopPathWithSchema = new org.apache.hadoop.fs.Path("file://" +
@@ -347,11 +341,18 @@ public class TableMetaStore implements Serializable {
   }
 
   private Path generateKrbConfPath() {
-    String path = Paths.get("").toAbsolutePath().toString();
-    String confPath = String.format("%s/%s/%s", path, "arctic_krb_conf", md5() + "_" +
-        ManagementFactory.getRuntimeMXBean().getName());
-    LOG.info("generate Krb conf path: {}", confPath);
-    return Paths.get(confPath);
+    if (confCachePath == null) {
+      String path = Paths.get("").toAbsolutePath().toString();
+      String confPath = String.format("%s/%s/%s", path, "arctic_krb_conf", md5() + "_" +
+          ManagementFactory.getRuntimeMXBean().getName());
+      LOG.info("generate Krb conf path: {}", confPath);
+      Path p = Paths.get(path);
+      if (!p.toFile().exists()) {
+        p.toFile().mkdirs();
+      }
+      this.confCachePath = p;
+    }
+    return this.confCachePath;
   }
 
   private String saveConfInPath(Path confPath, String confName, byte[] confValues) {
@@ -623,7 +624,7 @@ public class TableMetaStore implements Serializable {
         Preconditions.checkNotNull(krbConf);
         Preconditions.checkNotNull(krbKeyTab);
         Preconditions.checkNotNull(krbPrincipal);
-      } else if (authMethod != null)  {
+      } else if (authMethod != null) {
         throw new IllegalArgumentException("Unsupported auth method:" + authMethod);
       }
 

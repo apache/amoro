@@ -42,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-
 public class TerminalManager {
   private final AtomicLong threadPoolCount = new AtomicLong();
   TerminalSessionFactory sessionFactory;
@@ -64,9 +63,10 @@ public class TerminalManager {
 
   /**
    * execute script, return terminal sessionId
+   *
    * @param terminalId - id to mark different terminal windows
-   * @param catalog - current catalog to execute script
-   * @param script - sql script to be executed
+   * @param catalog    - current catalog to execute script
+   * @param script     - sql script to be executed
    * @return - sessionId, session refer to a sql execution context
    */
   public String executeScript(String terminalId, String catalog, String script) {
@@ -152,6 +152,7 @@ public class TerminalManager {
 
   /**
    * get last execution info
+   *
    * @param terminalId - id of terminal window
    * @return last session info
    */
@@ -160,13 +161,13 @@ public class TerminalManager {
     long lastExecutionTime = -1;
     String sessionId = "";
     String script = "";
-    for (String sid: sessionMap.keySet()){
-      if (sid.startsWith(prefix)){
+    for (String sid : sessionMap.keySet()) {
+      if (sid.startsWith(prefix)) {
         TerminalSessionContext context = sessionMap.get(sid);
-        if (context == null){
+        if (context == null) {
           continue;
         }
-        if (lastExecutionTime < context.lastExecutionTime()){
+        if (lastExecutionTime < context.lastExecutionTime()) {
           lastExecutionTime = context.lastExecutionTime();
           sessionId = sid;
           script = context.lastScript();
@@ -180,7 +181,7 @@ public class TerminalManager {
 
   private String getSessionId(String loginId, TableMetaStore auth) {
     String authName = auth.getHadoopUsername();
-    if (TableMetaStore.AUTH_METHOD_KERBEROS.equalsIgnoreCase(auth.getAuthMethod())) {
+    if (auth.isKerberosAuthMethod()) {
       authName = auth.getKrbPrincipal();
     }
     return loginId + "-" + auth.getAuthMethod() + "-" + authName;

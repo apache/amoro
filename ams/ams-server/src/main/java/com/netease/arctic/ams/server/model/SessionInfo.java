@@ -29,11 +29,10 @@ public class SessionInfo {
   }
 
   public String getSessionId() {
-    return sessionId ;
+    return sessionId;
   }
 
   public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
   }
-
 }

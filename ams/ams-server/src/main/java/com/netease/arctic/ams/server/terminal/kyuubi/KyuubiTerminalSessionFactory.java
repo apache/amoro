@@ -26,19 +26,20 @@ import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
+import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
+import org.apache.kyuubi.jdbc.hive.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
-import org.apache.iceberg.relocated.com.google.common.base.Joiner;
-import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
-import org.apache.kyuubi.jdbc.hive.Utils;
-import org.apache.kyuubi.jdbc.hive.ZooKeeperHiveClientException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
 
@@ -76,6 +77,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
   private String password;
 
   private JdbcConnectionParams params;
+  final KyuubiHiveDriver driver = new KyuubiHiveDriver();
 
   @Override
   public void initialize(Configuration properties) {
@@ -91,6 +93,7 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     } catch (SQLException e) {
       throw new RuntimeException(e);
     }
+
   }
 
   @Override
@@ -103,35 +106,37 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
       String catalogUrl = configuration.get(SessionConfigOptions.catalogUrl(catalog));
       String type = configuration.get(SessionConfigOptions.catalogType(catalog));
 
-      connectionParams.getSessionVars().put("spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
-      connectionParams.getSessionVars().put("spark.sql.catalog." + catalog + ".url", catalogUrl);
+      connectionParams.getHiveVars().put("spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
+      connectionParams.getHiveVars().put("spark.sql.catalog." + catalog + ".url", catalogUrl);
     }
-
     String kyuubiJdbcUrl = getConnectionUrl(connectionParams);
-
     logMessage(logs, "try to create a kyuubi connection via url: " + kyuubiJdbcUrl);
     logMessage(logs, "");
 
-    return new KyuubiSession(logs);
+    Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, new Properties()));
+
+    return new KyuubiSession(connection, logs);
   }
 
-  private String getConnectionUrl(JdbcConnectionParams params){
+
+
+  private String getConnectionUrl(JdbcConnectionParams params) {
     StringBuilder kyuubiConnectionUrl = new StringBuilder("jdbc:hive2://" + params.getSuppliedURLAuthority() + "/;");
 
-    if (!params.getSessionVars().isEmpty()){
+    if (!params.getSessionVars().isEmpty()) {
       kyuubiConnectionUrl.append(mapAsParams(params.getSessionVars()));
     }
 
-    if (!params.getHiveConfs().isEmpty()){
+    if (!params.getHiveConfs().isEmpty()) {
       kyuubiConnectionUrl.append("#").append(mapAsParams(params.getHiveConfs()));
     }
-    if (!params.getHiveVars().isEmpty()){
+    if (!params.getHiveVars().isEmpty()) {
       kyuubiConnectionUrl.append("?").append(mapAsParams(params.getHiveVars()));
     }
     return kyuubiConnectionUrl.toString();
   }
 
-  private String mapAsParams(Map<String, String> vars){
+  private String mapAsParams(Map<String, String> vars) {
     List<String> kvList =
         vars.entrySet().stream()
             .map(kv -> kv.getKey() + "=" + kv.getValue())

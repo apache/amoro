@@ -20,6 +20,10 @@ package com.netease.arctic.ams.server.terminal;
 
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.commons.io.Charsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -31,9 +35,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
-import org.apache.commons.io.Charsets;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 public class TerminalSessionContext {
   private static final Logger LOG = LoggerFactory.getLogger(TerminalSessionContext.class);
@@ -84,8 +86,8 @@ public class TerminalSessionContext {
         .thenApply(s -> lastExecutionTime = System.currentTimeMillis());
     this.task.set(task);
 
-    String poolInfo = "new sql script submit, current thread pool state. [Active: "
-        + threadPool.getActiveCount() + ", PoolSize: " + threadPool.getPoolSize() + "]";
+    String poolInfo = "new sql script submit, current thread pool state. [Active: " +
+        threadPool.getActiveCount() + ", PoolSize: " + threadPool.getPoolSize() + "]";
     LOG.info(poolInfo);
     task.executionResult.appendLog(poolInfo);
   }

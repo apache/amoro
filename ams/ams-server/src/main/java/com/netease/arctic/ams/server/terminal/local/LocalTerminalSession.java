@@ -19,15 +19,16 @@
 package com.netease.arctic.ams.server.terminal.local;
 
 import com.clearspring.analytics.util.Lists;
-import com.netease.arctic.ams.server.terminal.BaseResultSet;
+import com.netease.arctic.ams.server.terminal.SimpleResultSet;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 import scala.collection.JavaConverters;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class LocalTerminalSession implements TerminalSession {
 
@@ -45,7 +46,7 @@ public class LocalTerminalSession implements TerminalSession {
 
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
-    if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)){
+    if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
       session.sql("use " + catalog);
       currentCatalog = catalog;
       logs.add("switch to new catalog via: use " + catalog);
@@ -57,7 +58,7 @@ public class LocalTerminalSession implements TerminalSession {
         .map(r -> JavaConverters.seqAsJavaList(r.toSeq()).toArray(new Object[0]))
         .collect(Collectors.toList());
 
-    return new BaseResultSet(Arrays.asList(ds.columns()), rows);
+    return new SimpleResultSet(Arrays.asList(ds.columns()), rows);
   }
 
   @Override
@@ -75,6 +76,4 @@ public class LocalTerminalSession implements TerminalSession {
       return false;
     }
   }
-
-
 }

@@ -21,13 +21,13 @@ package com.netease.arctic.ams.server.terminal;
 import java.util.Iterator;
 import java.util.List;
 
-public class BaseResultSet implements TerminalSession.ResultSet {
+public class SimpleResultSet implements TerminalSession.ResultSet {
 
   List<String> columns;
   Iterator<Object[]> it;
   Object[] current;
 
-  public BaseResultSet(List<String> columns, List<Object[]> rows) {
+  public SimpleResultSet(List<String> columns, List<Object[]> rows) {
     this.columns = columns;
     it = rows.iterator();
   }

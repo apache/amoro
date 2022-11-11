@@ -34,11 +34,11 @@ public class ExecutionResult {
     this.logs.add(log);
   }
 
-  public synchronized void appendLogs(Collection<String> logs){
+  public synchronized void appendLogs(Collection<String> logs) {
     this.logs.addAll(logs);
   }
 
-  public synchronized void appendResult(StatementResult result){
+  public synchronized void appendResult(StatementResult result) {
     this.results.add(result);
   }
 

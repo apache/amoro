@@ -21,11 +21,11 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.mapper.CatalogMetadataMapper;
 import com.netease.arctic.ams.server.service.IJDBCService;
-import java.util.Optional;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
 
 import java.util.List;
+import java.util.Optional;
 
 public class CatalogMetadataService extends IJDBCService {
 

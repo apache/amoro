@@ -31,13 +31,15 @@ public interface TerminalSessionFactory {
 
   /**
    * this will be called after factory is created.
+   *
    * @param properties - terminal properties and factory properties.
    */
   void initialize(Configuration properties);
 
   /**
    * create a new session
-   * @param metaStore - auth info
+   *
+   * @param metaStore     - auth info
    * @param configuration - configuration of session, all properties are defined in {@link SessionConfigOptions}
    * @return - new terminal context
    */
@@ -55,13 +57,13 @@ public interface TerminalSessionFactory {
         .asList()
         .noDefaultValue();
 
-    public static ConfigOption<String> catalogType(String catalog){
+    public static ConfigOption<String> catalogType(String catalog) {
       return ConfigOptions.key("catalog." + catalog + ".type")
           .stringType()
           .noDefaultValue();
     }
 
-    public static ConfigOption<String> catalogUrl(String catalog){
+    public static ConfigOption<String> catalogUrl(String catalog) {
       return ConfigOptions.key("catalog." + catalog + ".url")
           .stringType()
           .noDefaultValue();
