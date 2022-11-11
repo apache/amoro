@@ -44,6 +44,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+
 public class CatalogController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
   private static final IMetaService iMetaService = ServiceContainer.getMetaService();
@@ -76,7 +78,7 @@ public class CatalogController extends RestBaseController {
         add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HIVE, "Hive Metastore"));
         add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_AMS, "Arctic Metastore"));
         add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HADOOP, "Hadoop"));
-        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_CUSTOM, "Custom"));
+        add(Arrays.asList(CATALOG_TYPE_CUSTOM, "Custom"));
       }
     };
     valuePair.stream().forEach(item -> {
@@ -194,8 +196,8 @@ public class CatalogController extends RestBaseController {
    * @param info
    * @return
    */
-  private static CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta) {
-
+  private static CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta)
+          throws Exception{
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
@@ -208,6 +210,12 @@ public class CatalogController extends RestBaseController {
       throw new RuntimeException("Invalid table format " + info.getTableFormat());
     }
 
+    if (CATALOG_TYPE_CUSTOM.equals(info.getType())) {
+      // check properties contains key 'catalog-impl'
+      if(info.getProperties().containsKey("catalog-impl")) {
+        throw new RuntimeException("You must config catalog-impl in properties when catalog type is custom!");
+      }
+    }
     catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormat.name());
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig(), oldCatalogMeta));
 
@@ -323,8 +331,13 @@ public class CatalogController extends RestBaseController {
       return;
     }
     // check only some item can be modified!
-    CatalogMeta catalogMeta = constructCatalogMeta(info, oldCatalogMeta);
-    catalogMetadataService.updateCatalog(catalogMeta);
+    try {
+      CatalogMeta catalogMeta = constructCatalogMeta(info, oldCatalogMeta);
+      catalogMetadataService.updateCatalog(catalogMeta);
+    } catch (Exception e) {
+      LOG.error("Failed to update catalog!", e);
+      ctx.json(new ErrorResponse(e.getMessage()));
+    }
     ctx.json(OkResponse.of(null));
   }
 
