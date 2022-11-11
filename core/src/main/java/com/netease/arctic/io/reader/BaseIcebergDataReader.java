@@ -119,7 +119,7 @@ public abstract class BaseIcebergDataReader<T> {
     return iter;
   }
 
-  private CloseableIterable<T> newParquetIterable(
+  protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
     Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
         .split(task.start(), task.length())
@@ -135,7 +135,7 @@ public abstract class BaseIcebergDataReader<T> {
       builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
     }
 
-    return builder.build();
+    return fileIO.doAs(builder::build);
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(

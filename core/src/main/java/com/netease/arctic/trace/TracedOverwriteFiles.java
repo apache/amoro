@@ -83,8 +83,20 @@ public class TracedOverwriteFiles implements OverwriteFiles {
   }
 
   @Override
-  public OverwriteFiles validateNoConflictingAppends(Long readSnapshotId, Expression conflictDetectionFilter) {
-    overwriteFiles.validateNoConflictingAppends(readSnapshotId, conflictDetectionFilter);
+  public OverwriteFiles conflictDetectionFilter(Expression conflictDetectionFilter) {
+    overwriteFiles.conflictDetectionFilter(conflictDetectionFilter);
+    return this;
+  }
+
+  @Override
+  public OverwriteFiles validateNoConflictingData() {
+    overwriteFiles.validateNoConflictingData();
+    return this;
+  }
+
+  @Override
+  public OverwriteFiles validateNoConflictingDeletes() {
+    overwriteFiles.validateNoConflictingDeletes();
     return this;
   }
 

@@ -201,7 +201,7 @@ public class HMSMockServer {
   }
 
   public void reset() throws Exception {
-    for (String dbName : clientPool.run(HiveMetaStoreClient::getAllDatabases)) {
+    for (String dbName : clientPool.run(client -> client.getAllDatabases())) {
       for (String tblName : clientPool.run(client -> client.getAllTables(dbName))) {
         clientPool.run(client -> {
           client.dropTable(dbName, tblName, true, true, true);

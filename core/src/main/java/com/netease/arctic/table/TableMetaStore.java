@@ -302,6 +302,7 @@ public class TableMetaStore implements Serializable {
       try {
         return callable.call();
       } catch (Throwable e) {
+        LOG.error("run with process ugi request failed.", e);
         if (e instanceof RuntimeException) {
           throw (RuntimeException) e;
         }
@@ -313,6 +314,7 @@ public class TableMetaStore implements Serializable {
       try {
         return callable.call();
       } catch (Throwable e) {
+        LOG.error("run with catalog ugi request failed. UGI is {}", getUGI(), e);
         if (e instanceof RuntimeException) {
           throw (RuntimeException) e;
         }

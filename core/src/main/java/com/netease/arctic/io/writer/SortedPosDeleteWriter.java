@@ -20,6 +20,7 @@ package com.netease.arctic.io.writer;
 
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.io.ArcticFileIO;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -53,6 +54,7 @@ public class SortedPosDeleteWriter<T> implements Closeable {
 
   private final FileAppenderFactory<T> appenderFactory;
   private final OutputFileFactory fileFactory;
+  private final ArcticFileIO io;
   private final FileFormat format;
   private final TaskWriterKey writerKey;
   private final long recordsNumThreshold;
@@ -61,12 +63,14 @@ public class SortedPosDeleteWriter<T> implements Closeable {
 
   public SortedPosDeleteWriter(FileAppenderFactory<T> appenderFactory,
                                OutputFileFactory fileFactory,
+                               ArcticFileIO io,
                                FileFormat format,
                                long mask, long index,
                                StructLike partitionKey,
                                long recordsNumThreshold) {
     this.appenderFactory = appenderFactory;
     this.fileFactory = fileFactory;
+    this.io = io;
     this.format = format;
     this.writerKey = new TaskWriterKey(partitionKey, DataTreeNode.of(mask, index), DataFileType.POS_DELETE_FILE);
     this.recordsNumThreshold = recordsNumThreshold;
@@ -74,17 +78,19 @@ public class SortedPosDeleteWriter<T> implements Closeable {
 
   public SortedPosDeleteWriter(FileAppenderFactory<T> appenderFactory,
                                OutputFileFactory fileFactory,
+                               ArcticFileIO io,
                                FileFormat format,
                                long mask, long index,
                                StructLike partitionKey) {
-    this(appenderFactory, fileFactory, format, mask, index, partitionKey, DEFAULT_RECORDS_NUM_THRESHOLD);
+    this(appenderFactory, fileFactory, io, format, mask, index, partitionKey, DEFAULT_RECORDS_NUM_THRESHOLD);
   }
 
   public SortedPosDeleteWriter(FileAppenderFactory<T> appenderFactory,
                                OutputFileFactory fileFactory,
+                               ArcticFileIO io,
                                FileFormat format,
                                StructLike partitionKey) {
-    this(appenderFactory, fileFactory, format, 0, 0, partitionKey, DEFAULT_RECORDS_NUM_THRESHOLD);
+    this(appenderFactory, fileFactory, io, format, 0, 0, partitionKey, DEFAULT_RECORDS_NUM_THRESHOLD);
   }
 
   public void delete(CharSequence path, long pos) {
@@ -131,12 +137,9 @@ public class SortedPosDeleteWriter<T> implements Closeable {
       return;
     }
 
-    // Create a new output file.
-    EncryptedOutputFile outputFile;
-    outputFile = fileFactory.newOutputFile(writerKey);
-
-    PositionDeleteWriter<T> writer = appenderFactory
-        .newPosDeleteWriter(outputFile, format, writerKey.getPartitionKey());
+    EncryptedOutputFile outputFile = fileFactory.newOutputFile(writerKey);
+    PositionDeleteWriter<T> writer = io.doAs(() -> appenderFactory
+         .newPosDeleteWriter(outputFile, format, writerKey.getPartitionKey()));
     try (PositionDeleteWriter<T> closeableWriter = writer) {
       // Sort all the paths.
       List<CharSequence> paths = Lists.newArrayListWithCapacity(posDeletes.keySet().size());

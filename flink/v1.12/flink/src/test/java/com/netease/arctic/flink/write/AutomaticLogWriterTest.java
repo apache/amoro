@@ -334,6 +334,7 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
     Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
     properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");
+    properties.put(ProducerConfig.BATCH_SIZE_CONFIG, "0");
     return properties;
   }
 }
