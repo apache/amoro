@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,23 +16,8 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write;
+package org.apache.iceberg.spark.data;
 
-import org.apache.flink.table.data.ArrayData;
-import org.apache.flink.table.data.DecimalData;
-import org.apache.flink.table.data.MapData;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.data.StringData;
-import org.apache.flink.table.data.TimestampData;
-import org.apache.flink.table.types.logical.ArrayType;
-import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.table.types.logical.LogicalTypeRoot;
-import org.apache.flink.table.types.logical.MapType;
-import org.apache.flink.table.types.logical.RowType;
-import org.apache.flink.table.types.logical.RowType.RowField;
-import org.apache.flink.table.types.logical.SmallIntType;
-import org.apache.flink.table.types.logical.TinyIntType;
-import org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor;
 import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetValueReaders;
 import org.apache.iceberg.parquet.ParquetValueWriter;
@@ -43,35 +28,49 @@ import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.DecimalUtil;
 import org.apache.parquet.column.ColumnDescriptor;
 import org.apache.parquet.io.api.Binary;
+import org.apache.parquet.schema.DecimalMetadata;
 import org.apache.parquet.schema.GroupType;
-import org.apache.parquet.schema.LogicalTypeAnnotation.DecimalLogicalTypeAnnotation;
 import org.apache.parquet.schema.MessageType;
 import org.apache.parquet.schema.PrimitiveType;
 import org.apache.parquet.schema.Type;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.util.ArrayData;
+import org.apache.spark.sql.catalyst.util.MapData;
+import org.apache.spark.sql.types.ArrayType;
+import org.apache.spark.sql.types.ByteType;
+import org.apache.spark.sql.types.DataType;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.MapType;
+import org.apache.spark.sql.types.ShortType;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
+import org.apache.spark.unsafe.types.UTF8String;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
+import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
-public class AdaptHiveFlinkParquetWriters {
-  private AdaptHiveFlinkParquetWriters() {
+/**
+ * Copy from iceberg {@link org.apache.iceberg.spark.data.SparkParquetWriters} to support int96 type.
+ */
+public class AdaptHiveSparkParquetWriters {
+
+  private AdaptHiveSparkParquetWriters() {
   }
 
   @SuppressWarnings("unchecked")
-  public static <T> ParquetValueWriter<T> buildWriter(LogicalType schema, MessageType type) {
-    return (ParquetValueWriter<T>) ParquetWithFlinkSchemaVisitor.visit(schema, type,
+  public static <T> ParquetValueWriter<T> buildWriter(StructType dfSchema, MessageType type) {
+    return (ParquetValueWriter<T>) AdaptHiveParquetWithSparkSchemaVisitor.visit(dfSchema, type,
         new WriteBuilder(type));
   }
 
-  private static class WriteBuilder extends ParquetWithFlinkSchemaVisitor<ParquetValueWriter<?>> {
+  private static class WriteBuilder extends AdaptHiveParquetWithSparkSchemaVisitor<ParquetValueWriter<?>> {
     private final MessageType type;
 
     WriteBuilder(MessageType type) {
@@ -79,24 +78,24 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> message(RowType rowType, MessageType message, List<ParquetValueWriter<?>> fields) {
-      return struct(rowType, message.asGroupType(), fields);
+    public ParquetValueWriter<?> message(StructType struct, MessageType message,
+        List<ParquetValueWriter<?>> fieldWriters) {
+      return struct(struct, message.asGroupType(), fieldWriters);
     }
 
     @Override
-    public ParquetValueWriter<?> struct(
-        RowType rowType, GroupType struct,
+    public ParquetValueWriter<?> struct(StructType structType, GroupType struct,
         List<ParquetValueWriter<?>> fieldWriters) {
       List<Type> fields = struct.getFields();
-      List<RowField> flinkFields = rowType.getFields();
+      StructField[] sparkFields = structType.fields();
       List<ParquetValueWriter<?>> writers = Lists.newArrayListWithExpectedSize(fieldWriters.size());
-      List<LogicalType> flinkTypes = Lists.newArrayList();
+      List<DataType> sparkTypes = Lists.newArrayList();
       for (int i = 0; i < fields.size(); i += 1) {
         writers.add(newOption(struct.getType(i), fieldWriters.get(i)));
-        flinkTypes.add(flinkFields.get(i).getType());
+        sparkTypes.add(sparkFields[i].dataType());
       }
 
-      return new RowDataWriter(writers, flinkTypes);
+      return new InternalRowWriter(writers, sparkTypes);
     }
 
     @Override
@@ -109,7 +108,7 @@ public class AdaptHiveFlinkParquetWriters {
 
       return new ArrayDataWriter<>(repeatedD, repeatedR,
           newOption(repeated.getType(0), elementWriter),
-          arrayType.getElementType());
+          arrayType.elementType());
     }
 
     @Override
@@ -125,7 +124,7 @@ public class AdaptHiveFlinkParquetWriters {
       return new MapDataWriter<>(repeatedD, repeatedR,
           newOption(repeatedKeyValue.getType(0), keyWriter),
           newOption(repeatedKeyValue.getType(1), valueWriter),
-          mapType.getKeyType(), mapType.getValueType());
+          mapType.keyType(), mapType.valueType());
     }
 
     private ParquetValueWriter<?> newOption(Type fieldType, ParquetValueWriter<?> writer) {
@@ -134,7 +133,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public ParquetValueWriter<?> primitive(LogicalType logicalType, PrimitiveType primitive) {
+    public ParquetValueWriter<?> primitive(DataType dataType, PrimitiveType primitive) {
       ColumnDescriptor desc = type.getColumnDescription(currentPath());
 
       if (primitive.getOriginalType() != null) {
@@ -142,20 +141,18 @@ public class AdaptHiveFlinkParquetWriters {
           case ENUM:
           case JSON:
           case UTF8:
-            return strings(desc);
+            return utf8Strings(desc);
           case DATE:
           case INT_8:
           case INT_16:
           case INT_32:
-            return ints(logicalType, desc);
+            return ints(dataType, desc);
           case INT_64:
-            return ParquetValueWriters.longs(desc);
           case TIME_MICROS:
-            return timeMicros(desc);
           case TIMESTAMP_MICROS:
-            return timestamps(desc);
+            return ParquetValueWriters.longs(desc);
           case DECIMAL:
-            DecimalLogicalTypeAnnotation decimal = (DecimalLogicalTypeAnnotation) primitive.getLogicalTypeAnnotation();
+            DecimalMetadata decimal = primitive.getDecimalMetadata();
             switch (primitive.getPrimitiveTypeName()) {
               case INT32:
                 return decimalAsInteger(desc, decimal.getPrecision(), decimal.getScale());
@@ -183,16 +180,11 @@ public class AdaptHiveFlinkParquetWriters {
         case BOOLEAN:
           return ParquetValueWriters.booleans(desc);
         case INT32:
-          return ints(logicalType, desc);
+          return ints(dataType, desc);
         case INT64:
           return ParquetValueWriters.longs(desc);
         case INT96:
-          LogicalTypeRoot typeRoot = logicalType.getTypeRoot();
-          if (typeRoot == TIMESTAMP_WITHOUT_TIME_ZONE) {
-            return new TimestampInt96Writer(desc);
-          } else {
-            return new TimestampTZInt96Writer(desc);
-          }
+          return new TimestampInt96Writer(desc);
         case FLOAT:
           return ParquetValueWriters.floats(desc);
         case DOUBLE:
@@ -203,43 +195,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
   }
 
-  private static class TimestampTZInt96Writer extends AdaptHivePrimitiveWriter<TimestampData> {
-
-    private static final long JULIAN_DAY_OF_EPOCH = 2440588L;
-    private static final long MICROS_PER_DAY = 86400000000L;
-    private static final long MILLIS_IN_DAY = TimeUnit.DAYS.toMillis(1);
-    private static final long NANOS_PER_MILLISECOND = TimeUnit.MILLISECONDS.toNanos(1);
-
-    public TimestampTZInt96Writer(ColumnDescriptor descriptor) {
-      super(descriptor);
-    }
-
-    /**
-     * Writes nano timestamps to parquet int96
-     */
-    void writeBinary(int repetitionLevel, int julianDay, long nanosOfDay) {
-      ByteBuffer buf = ByteBuffer.allocate(12);
-      buf.order(ByteOrder.LITTLE_ENDIAN);
-      buf.putLong(nanosOfDay);
-      buf.putInt(julianDay);
-      buf.flip();
-      column.writeBinary(repetitionLevel, Binary.fromConstantByteBuffer(buf));
-    }
-
-    void writeInstant(int repetitionLevel, Instant instant) {
-      long timestamp = instant.toEpochMilli();
-      int julianDay = (int) (timestamp / MILLIS_IN_DAY + 2440588L);
-      long nanosOfDay = timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND + instant.getNano() % NANOS_PER_MILLISECOND;
-      writeBinary(repetitionLevel, julianDay, nanosOfDay);
-    }
-
-    @Override
-    public void write(int repetitionLevel, TimestampData value) {
-      writeInstant(repetitionLevel, value.toInstant());
-    }
-  }
-
-  private static class TimestampInt96Writer extends AdaptHivePrimitiveWriter<TimestampData> {
+  private static class TimestampInt96Writer extends AdaptHivePrimitiveWriter<Long> {
 
     private static final long JULIAN_DAY_OF_EPOCH = 2440588L;
     private static final long MICROS_PER_DAY = 86400000000L;
@@ -262,90 +218,68 @@ public class AdaptHiveFlinkParquetWriters {
       column.writeBinary(repetitionLevel, Binary.fromConstantByteBuffer(buf));
     }
 
-    void writeInstant(int repetitionLevel, Instant instant) {
-      long timestamp = instant.toEpochMilli();
-      int julianDay = (int) (timestamp / MILLIS_IN_DAY + 2440588L);
-      long nanosOfDay = timestamp % MILLIS_IN_DAY * NANOS_PER_MILLISECOND + instant.getNano() % NANOS_PER_MILLISECOND;
-      writeBinary(repetitionLevel, julianDay, nanosOfDay);
+    /**
+     * Writes Julian day and nanoseconds in a day from the number of microseconds
+     *
+     * @param value epoch time in microseconds
+     */
+    void writeLong(int repetitionLevel, long value) {
+      long julianUs = value + JULIAN_DAY_OF_EPOCH * MICROS_PER_DAY;
+      int day = (int) (julianUs / MICROS_PER_DAY);
+      long nanos = MICROSECONDS.toNanos(julianUs % MICROS_PER_DAY);
+      writeBinary(repetitionLevel, day, nanos);
     }
 
     @Override
-    public void write(int repetitionLevel, TimestampData value) {
-      writeInstant(repetitionLevel, value.toLocalDateTime().atZone(ZoneId.systemDefault()).toInstant());
+    public void write(int repetitionLevel, Long value) {
+      writeLong(repetitionLevel, value);
     }
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<?> ints(LogicalType type, ColumnDescriptor desc) {
-    if (type instanceof TinyIntType) {
+  private static ParquetValueWriters.PrimitiveWriter<?> ints(DataType type, ColumnDescriptor desc) {
+    if (type instanceof ByteType) {
       return ParquetValueWriters.tinyints(desc);
-    } else if (type instanceof SmallIntType) {
+    } else if (type instanceof ShortType) {
       return ParquetValueWriters.shorts(desc);
     }
     return ParquetValueWriters.ints(desc);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<StringData> strings(ColumnDescriptor desc) {
-    return new StringDataWriter(desc);
+  private static ParquetValueWriters.PrimitiveWriter<UTF8String> utf8Strings(ColumnDescriptor desc) {
+    return new UTF8StringWriter(desc);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<Integer> timeMicros(ColumnDescriptor desc) {
-    return new TimeMicrosWriter(desc);
-  }
-
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsInteger(
-      ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsInteger(ColumnDescriptor desc,
       int precision, int scale) {
-    Preconditions.checkArgument(precision <= 9, "Cannot write decimal value as integer with precision larger than 9," +
-        " wrong precision %s", precision);
     return new IntegerDecimalWriter(desc, precision, scale);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsLong(
-      ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsLong(ColumnDescriptor desc,
       int precision, int scale) {
-    Preconditions.checkArgument(precision <= 18, "Cannot write decimal value as long with precision larger than 18, " +
-        " wrong precision %s", precision);
     return new LongDecimalWriter(desc, precision, scale);
   }
 
-  private static ParquetValueWriters.PrimitiveWriter<DecimalData> decimalAsFixed(
-      ColumnDescriptor desc,
+  private static ParquetValueWriters.PrimitiveWriter<Decimal> decimalAsFixed(ColumnDescriptor desc,
       int precision, int scale) {
     return new FixedDecimalWriter(desc, precision, scale);
-  }
-
-  private static ParquetValueWriters.PrimitiveWriter<TimestampData> timestamps(ColumnDescriptor desc) {
-    return new TimestampDataWriter(desc);
   }
 
   private static ParquetValueWriters.PrimitiveWriter<byte[]> byteArrays(ColumnDescriptor desc) {
     return new ByteArrayWriter(desc);
   }
 
-  private static class StringDataWriter extends ParquetValueWriters.PrimitiveWriter<StringData> {
-    private StringDataWriter(ColumnDescriptor desc) {
+  private static class UTF8StringWriter extends ParquetValueWriters.PrimitiveWriter<UTF8String> {
+    private UTF8StringWriter(ColumnDescriptor desc) {
       super(desc);
     }
 
     @Override
-    public void write(int repetitionLevel, StringData value) {
-      column.writeBinary(repetitionLevel, Binary.fromReusedByteArray(value.toBytes()));
+    public void write(int repetitionLevel, UTF8String value) {
+      column.writeBinary(repetitionLevel, Binary.fromReusedByteArray(value.getBytes()));
     }
   }
 
-  private static class TimeMicrosWriter extends ParquetValueWriters.PrimitiveWriter<Integer> {
-    private TimeMicrosWriter(ColumnDescriptor desc) {
-      super(desc);
-    }
-
-    @Override
-    public void write(int repetitionLevel, Integer value) {
-      long micros = value.longValue() * 1000;
-      column.writeLong(repetitionLevel, micros);
-    }
-  }
-
-  private static class IntegerDecimalWriter extends ParquetValueWriters.PrimitiveWriter<DecimalData> {
+  private static class IntegerDecimalWriter extends ParquetValueWriters.PrimitiveWriter<Decimal> {
     private final int precision;
     private final int scale;
 
@@ -356,7 +290,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public void write(int repetitionLevel, DecimalData decimal) {
+    public void write(int repetitionLevel, Decimal decimal) {
       Preconditions.checkArgument(decimal.scale() == scale,
           "Cannot write value as decimal(%s,%s), wrong scale: %s", precision, scale, decimal);
       Preconditions.checkArgument(decimal.precision() <= precision,
@@ -366,7 +300,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
   }
 
-  private static class LongDecimalWriter extends ParquetValueWriters.PrimitiveWriter<DecimalData> {
+  private static class LongDecimalWriter extends ParquetValueWriters.PrimitiveWriter<Decimal> {
     private final int precision;
     private final int scale;
 
@@ -377,7 +311,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public void write(int repetitionLevel, DecimalData decimal) {
+    public void write(int repetitionLevel, Decimal decimal) {
       Preconditions.checkArgument(decimal.scale() == scale,
           "Cannot write value as decimal(%s,%s), wrong scale: %s", precision, scale, decimal);
       Preconditions.checkArgument(decimal.precision() <= precision,
@@ -387,7 +321,7 @@ public class AdaptHiveFlinkParquetWriters {
     }
   }
 
-  private static class FixedDecimalWriter extends ParquetValueWriters.PrimitiveWriter<DecimalData> {
+  private static class FixedDecimalWriter extends ParquetValueWriters.PrimitiveWriter<Decimal> {
     private final int precision;
     private final int scale;
     private final ThreadLocal<byte[]> bytes;
@@ -400,20 +334,9 @@ public class AdaptHiveFlinkParquetWriters {
     }
 
     @Override
-    public void write(int repetitionLevel, DecimalData decimal) {
-      byte[] binary = DecimalUtil.toReusedFixLengthBytes(precision, scale, decimal.toBigDecimal(), bytes.get());
+    public void write(int repetitionLevel, Decimal decimal) {
+      byte[] binary = DecimalUtil.toReusedFixLengthBytes(precision, scale, decimal.toJavaBigDecimal(), bytes.get());
       column.writeBinary(repetitionLevel, Binary.fromReusedByteArray(binary));
-    }
-  }
-
-  private static class TimestampDataWriter extends ParquetValueWriters.PrimitiveWriter<TimestampData> {
-    private TimestampDataWriter(ColumnDescriptor desc) {
-      super(desc);
-    }
-
-    @Override
-    public void write(int repetitionLevel, TimestampData value) {
-      column.writeLong(repetitionLevel, value.getMillisecond() * 1000 + value.getNanoOfMillisecond() / 1000);
     }
   }
 
@@ -429,11 +352,10 @@ public class AdaptHiveFlinkParquetWriters {
   }
 
   private static class ArrayDataWriter<E> extends ParquetValueWriters.RepeatedWriter<ArrayData, E> {
-    private final LogicalType elementType;
+    private final DataType elementType;
 
-    private ArrayDataWriter(
-        int definitionLevel, int repetitionLevel,
-        ParquetValueWriter<E> writer, LogicalType elementType) {
+    private ArrayDataWriter(int definitionLevel, int repetitionLevel,
+        ParquetValueWriter<E> writer, DataType elementType) {
       super(definitionLevel, repetitionLevel, writer);
       this.elementType = elementType;
     }
@@ -446,13 +368,11 @@ public class AdaptHiveFlinkParquetWriters {
     private class ElementIterator<E> implements Iterator<E> {
       private final int size;
       private final ArrayData list;
-      private final ArrayData.ElementGetter getter;
       private int index;
 
       private ElementIterator(ArrayData list) {
         this.list = list;
-        size = list.size();
-        getter = ArrayData.createElementGetter(elementType);
+        size = list.numElements();
         index = 0;
       }
 
@@ -468,7 +388,13 @@ public class AdaptHiveFlinkParquetWriters {
           throw new NoSuchElementException();
         }
 
-        E element = (E) getter.getElementOrNull(list, index);
+        E element;
+        if (list.isNullAt(index)) {
+          element = null;
+        } else {
+          element = (E) list.get(index, elementType);
+        }
+
         index += 1;
 
         return element;
@@ -477,13 +403,12 @@ public class AdaptHiveFlinkParquetWriters {
   }
 
   private static class MapDataWriter<K, V> extends ParquetValueWriters.RepeatedKeyValueWriter<MapData, K, V> {
-    private final LogicalType keyType;
-    private final LogicalType valueType;
+    private final DataType keyType;
+    private final DataType valueType;
 
-    private MapDataWriter(
-        int definitionLevel, int repetitionLevel,
+    private MapDataWriter(int definitionLevel, int repetitionLevel,
         ParquetValueWriter<K> keyWriter, ParquetValueWriter<V> valueWriter,
-        LogicalType keyType, LogicalType valueType) {
+        DataType keyType, DataType valueType) {
       super(definitionLevel, repetitionLevel, keyWriter, valueWriter);
       this.keyType = keyType;
       this.valueType = valueType;
@@ -499,17 +424,13 @@ public class AdaptHiveFlinkParquetWriters {
       private final ArrayData keys;
       private final ArrayData values;
       private final ParquetValueReaders.ReusableEntry<K, V> entry;
-      private final ArrayData.ElementGetter keyGetter;
-      private final ArrayData.ElementGetter valueGetter;
       private int index;
 
       private EntryIterator(MapData map) {
-        size = map.size();
+        size = map.numElements();
         keys = map.keyArray();
         values = map.valueArray();
         entry = new ParquetValueReaders.ReusableEntry<>();
-        keyGetter = ArrayData.createElementGetter(keyType);
-        valueGetter = ArrayData.createElementGetter(valueType);
         index = 0;
       }
 
@@ -525,7 +446,12 @@ public class AdaptHiveFlinkParquetWriters {
           throw new NoSuchElementException();
         }
 
-        entry.set((K) keyGetter.getElementOrNull(keys, index), (V) valueGetter.getElementOrNull(values, index));
+        if (values.isNullAt(index)) {
+          entry.set((K) keys.get(index, keyType), null);
+        } else {
+          entry.set((K) keys.get(index, keyType), (V) values.get(index, valueType));
+        }
+
         index += 1;
 
         return entry;
@@ -533,20 +459,17 @@ public class AdaptHiveFlinkParquetWriters {
     }
   }
 
-  private static class RowDataWriter extends ParquetValueWriters.StructWriter<RowData> {
-    private final RowData.FieldGetter[] fieldGetter;
+  private static class InternalRowWriter extends ParquetValueWriters.StructWriter<InternalRow> {
+    private final DataType[] types;
 
-    RowDataWriter(List<ParquetValueWriter<?>> writers, List<LogicalType> types) {
+    private InternalRowWriter(List<ParquetValueWriter<?>> writers, List<DataType> types) {
       super(writers);
-      fieldGetter = new RowData.FieldGetter[types.size()];
-      for (int i = 0; i < types.size(); i += 1) {
-        fieldGetter[i] = RowData.createFieldGetter(types.get(i), i);
-      }
+      this.types = types.toArray(new DataType[types.size()]);
     }
 
     @Override
-    protected Object get(RowData struct, int index) {
-      return fieldGetter[index].getFieldOrNull(struct);
+    protected Object get(InternalRow struct, int index) {
+      return struct.get(index, types[index]);
     }
   }
 }
