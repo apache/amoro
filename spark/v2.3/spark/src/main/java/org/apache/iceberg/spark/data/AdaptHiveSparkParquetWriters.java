@@ -56,6 +56,9 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
+/**
+ * Copy from iceberg {@link org.apache.iceberg.spark.data.SparkParquetWriters} to support int96 type.
+ */
 public class AdaptHiveSparkParquetWriters {
 
   private AdaptHiveSparkParquetWriters() {

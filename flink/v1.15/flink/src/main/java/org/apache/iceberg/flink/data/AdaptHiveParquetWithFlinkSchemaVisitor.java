@@ -35,6 +35,10 @@ import org.apache.parquet.schema.Type;
 import java.util.Deque;
 import java.util.List;
 
+/**
+ * Copy from iceberg {@link org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor}.
+ * see annotation "Change For Arctic"
+ */
 public class AdaptHiveParquetWithFlinkSchemaVisitor<T> {
   private final Deque<String> fieldNames = Lists.newLinkedList();
 

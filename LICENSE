@@ -228,6 +228,8 @@ This product includes code from Apache Iceberg.
 * org.apache.iceberg.parquet.ParquetMetricsRowGroupFilter copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetMetricsRowGroupFilter
 * org.apache.iceberg.parquet.ParquetReader copied and modified to org.apache.iceberg.parquet.AdaptHiveParquetReader
 * org.apache.iceberg.parquet.ReadConf copied and modified to org.apache.iceberg.parquet.AdaptHiveReadConf
+* org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor copied and modified to org.apache.iceberg.spark.data.AdaptHiveParquetWithSparkSchemaVisitor
+* org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor copied and modified to org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor
 
 
 Copyright: 2011-2019 The Apache Software Foundation

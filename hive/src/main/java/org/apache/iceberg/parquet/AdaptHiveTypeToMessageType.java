@@ -36,6 +36,11 @@ import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT32;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT64;
 import static org.apache.parquet.schema.PrimitiveType.PrimitiveTypeName.INT96;
 
+/**
+ * Copy from iceberg {@link org.apache.iceberg.parquet.TypeToMessageType} for follow reason:
+ * 1. Make timestamp to int96.
+ * 2. remove {@link AvroSchemaUtil#makeCompatibleName(String)} of name.
+ */
 public class AdaptHiveTypeToMessageType {
   public static final int DECIMAL_INT32_MAX_DIGITS = 9;
   public static final int DECIMAL_INT64_MAX_DIGITS = 18;

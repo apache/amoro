@@ -39,9 +39,8 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * Visitor for traversing a Parquet type with a companion Spark type.
- *
- * @param <T> the Java class returned by the visitor
+ * Copy from iceberg {@link org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor} to change some code, see
+ * annotation "Change For Arctic"
  */
 public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
   private final Deque<String> fieldNames = Lists.newLinkedList();
@@ -170,13 +169,10 @@ public class AdaptHiveParquetWithSparkSchemaVisitor<T> {
       Type field = group.getFields().get(i);
       StructField sField = sFields[i];
 
-      Preconditions.checkArgument(field.getName().equals(AvroSchemaUtil.makeCompatibleName(sField.name())),
-          "Structs do not match: field %s != %s", field.getName(), sField.name());
-
       //Change For Arctic ⬇
       // Preconditions.checkArgument(field.getName().equals(AvroSchemaUtil.makeCompatibleName(sField.name())),
       //     "Structs do not match: field %s != %s", field.getName(), sField.name());
-      Preconditions.checkArgument(field.getName().equals(AvroSchemaUtil.makeCompatibleName(sField.name())),
+      Preconditions.checkArgument(field.getName().equals(sField.name()),
           "Structs do not match: field %s != %s", field.getName(), sField.name());
       //Change For Arctic ⬆
       results.add(visitField(sField, field, visitor));

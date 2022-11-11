@@ -60,6 +60,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
 
+/**
+ * Copy from iceberg {@link org.apache.iceberg.flink.data.FlinkParquetWriters} to support int96 type
+ * and use  {@link org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor}.
+ */
 public class AdaptHiveFlinkParquetWriters {
   private AdaptHiveFlinkParquetWriters() {
   }
