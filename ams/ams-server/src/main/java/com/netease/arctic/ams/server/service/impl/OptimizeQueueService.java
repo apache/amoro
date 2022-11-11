@@ -333,7 +333,7 @@ public class OptimizeQueueService extends IJDBCService {
     private final AtomicBoolean planThreadStarted = new AtomicBoolean(false);
     private final OptimizeQueueItem optimizeQueue;
     private final Queue<OptimizeTaskItem> tasks;
-    private final Set<TableIdentifier> tables = new HashSet<>();
+    private Set<TableIdentifier> tables = new HashSet<>();
     // plan retry times
     private final int retryTime = 5;
     // plan retry interval unit ms
