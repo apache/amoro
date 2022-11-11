@@ -149,6 +149,7 @@ public class AmsTestBase {
     System.setProperty("HADOOP_USER_NAME", System.getProperty("user.name"));
     FileUtils.deleteQuietly(testBaseDir);
     FileUtils.deleteQuietly(testTableBaseDir);
+    tempFolder.create();
     testBaseDir.mkdirs();
     testTableBaseDir.mkdir();
 
