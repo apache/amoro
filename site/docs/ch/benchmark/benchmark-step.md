@@ -52,38 +52,42 @@ Benchmark 的核心工具，负责生成 TPCC 数据进 Mysql 和通过 Trino �
 - 把 Mysql 信息配置进 data-lake-benchmark 的 config/mysql/sample_chbenchmark_config.xml 文件中。其中 "scalefactor" 表示的 warehouse 数量用于控制整体数据量的，一般选择10或者100。
 - 执行 data-lake-benchmark 命令往 Mysql 生成全量数据，命令如下：
   ```
-  java -jar oltpbench2.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --create=true --load=true
+  java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --create=true --load=true
   ```
   执行完了以后 Mysql 的指定数据库下面就能看到这12张表：warehouse,item,stock,district,customer,history,oorder,new_order,order_line,region,nation,supplier
 - 同步工具步骤暂略。
-- 当全量同步完了，这时候可以用 data-lake-benchmark 工具进行全量静态数据的测试。首先把 Trino 信息配置进 data-lake-benchmark 的 config/trino/sample_chbenchmark_config.xml中,主要是 url 要改成当前 Trino 的地址，
+- 当全量同步完了，这时候可以用 data-lake-benchmark 工具进行全量静态数据的测试。首先把 Trino 信息配置进 data-lake-benchmark 的 config/trino/trino_chbenchmark_config.xml中,主要是 url 要改成当前 Trino 的地址，
   还有 works.work.time 参数表示 Benchmark 运行时间，单位是秒，全量测试时间可以短一点10分钟左右就行。命令如下：
   ```
-  java -jar oltpbench2.jar -b chbenchmarkForTrino -c config/trino/sample_chbenchmark_config.xml --create=false --load=false --execute=true
+  java -jar lakehouse-benchmark.jar -b chbenchmarkForTrino -c config/trino/trino_chbenchmark_config.xml --create=false --load=false --execute=true
   ```
 - 再次启动 data-lake-benchmark 程序向 Mysql 里面生产增量数据，这些数据会通过已经运行的数据同步工具源源不断写入 Arctic，
   需要修改 config/mysql/sample_chbenchmark_config.xml配置文件中的works.work.time参数控制生成时间，一般半小时，命令如下：
   ```
-  java -jar oltpbench2.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --execute=true -s 5
+  java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --execute=true -s 5
   ```
 - 在mysql生产增量数据的同时，启动 data-lake-benchmark 的 TPCH 性能测试命令，其中执行时间要和生成增量的时间相同：
   ```
-  java -jar oltpbench2.jar -b chbenchmarkForTrino -c config/trino/sample_chbenchmark_config.xml --create=false --load=false --execute=true
+  java -jar lakehouse-benchmark.jar -b chbenchmarkForTrino -c config/trino/trino_chbenchmark_config.xml --create=false --load=false --execute=true
   ```
 - 重复上两个步骤就可以得到增量30分钟，60分钟，90分钟，120分钟的性能测试报告。
 
 ## Hudi
 上述测试流程在测试 Hudi 的时候需要做一些补充:
 1. 首先 Hudi 的 rt 表也就是走 MOR 读取的表只有 Presto 支持，所以需要用 Presto 作为最终的 ap 引擎，
-   config/trino/sample_chbenchmark_config.xml 里面的 driver 参数需要改成 "com.facebook.presto.jdbc.PrestoDriver"
+   需要使用config/trino/presto_chbenchmark_config.xml配置
 2. Hudi 使用 Hive 的元数据的时候需要额外添加一些依赖，官网描述见 [Hudi](https://hudi.apache.org/docs/syncing_metastore)
    主要是:
 
    ![hudi-sync](../images/chbenchmark-step/hudi-sync.png)
-3. Hudi 的表名是带有后缀的，ro 表示读优化表，rt 表示全量表，可以在执行 data-lake-benchmark 程序之前设置环境变量如：
+4. Hudi 的表名是带有后缀的，ro 表示读优化表，rt 表示全量表，可以在执行 data-lake-benchmark 程序之前设置环境变量如：
    ```
    export tpcc_name_suffix=_rt
    ```
 ## 测试结果
 data-lake-benchmark 跑完以后会生成一个 results 目录，测试结果都在里面，主要关注两个文件，第一：.summary.json 文件，
 这里面的 Average Latency 项显示的是本次性能测试的平均相应时间，第二：.statistic.csv 文件，里面记录了每个 Query 类型的最大，最小，平均耗时。
+
+## docker流程
+benchmark还提供了一套docker容器，可以帮助用户单机版本熟悉流程。工程地址 [benchmark-url](https://github.com/NetEase/lakehouse-benchmark)。
+在docker/benchmark目录下又相应的镜像构建和运行文件，具体说明见docker/benchmark/README.md
