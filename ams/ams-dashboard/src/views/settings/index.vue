@@ -115,13 +115,27 @@ onMounted(() => {
   h1,h2,h3 {
     font-weight: 500;
   }
+  h1 {
+    font-size: 22px;
+  }
+  h2 {
+    font-size: 18px;
+  }
+  h3 {
+    font-size: 14px;
+  }
   .container-setting {
-    padding-top: 12px;
-    :deep(.ant-collapse > .ant-collapse-item > .ant-collapse-header) {
-      font-size: 20px;
-      font-weight: 500;
-      .ant-collapse-arrow {
-        vertical-align: 1px;
+    padding-top: 16px;
+    :deep(.ant-collapse) {
+      > .ant-collapse-item > .ant-collapse-header {
+        font-size: 16px;
+        font-weight: 500;
+        .ant-collapse-arrow {
+          vertical-align: 1px;
+        }
+      }
+      .ant-collapse-content > .ant-collapse-content-box {
+        padding-top: 6px;
       }
     }
   }

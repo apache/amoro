@@ -228,7 +228,7 @@ export default defineComponent({
     }
     .toggle-btn {
       position: absolute;
-      right: 16px;
+      right: 0;
       bottom: 24px;
       font-size: 18px;
       padding: 0 24px;
