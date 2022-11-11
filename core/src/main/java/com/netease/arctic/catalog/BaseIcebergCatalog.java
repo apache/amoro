@@ -112,9 +112,11 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
     Table icebergTable = tableMetaStore.doAs(() -> icebergCatalog
         .loadTable(toIcebergTableIdentifier(tableIdentifier)));
+    Map<String, String> mergedProperties =
+        CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), meta.getCatalogProperties());
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
     return new BaseIcebergTable(tableIdentifier, CatalogUtil.useArcticTableOperations(icebergTable,
-        icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO);
+        icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, mergedProperties);
   }
 
   @Override
@@ -144,12 +146,31 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   }
 
   public class BaseIcebergTable extends BaseUnkeyedTable {
+    private final Map<String, String> properties;
 
     public BaseIcebergTable(
         TableIdentifier tableIdentifier,
         Table icebergTable,
         ArcticFileIO arcticFileIO) {
+      this(tableIdentifier, icebergTable, arcticFileIO, null);
+    }
+
+    public BaseIcebergTable(
+        TableIdentifier tableIdentifier,
+        Table icebergTable,
+        ArcticFileIO arcticFileIO,
+        Map<String, String> properties) {
       super(tableIdentifier, icebergTable, arcticFileIO);
+      this.properties = properties;
+    }
+
+    @Override
+    public Map<String, String> properties() {
+      if (properties == null) {
+        return super.properties();
+      } else {
+        return properties;
+      }
     }
   }
 }

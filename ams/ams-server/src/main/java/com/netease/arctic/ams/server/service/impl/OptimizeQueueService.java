@@ -44,9 +44,9 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -332,7 +332,7 @@ public class OptimizeQueueService extends IJDBCService {
     private final AtomicBoolean planThreadStarted = new AtomicBoolean(false);
     private final OptimizeQueueItem optimizeQueue;
     private final Queue<OptimizeTaskItem> tasks;
-    private final Set<TableIdentifier> tables = new HashSet<>();
+    private Set<TableIdentifier> tables = new HashSet<>();
     // plan retry times
     private final int retryTime = 5;
     // plan retry interval unit ms
@@ -540,34 +540,37 @@ public class OptimizeQueueService extends IJDBCService {
       return optimizeQueue;
     }
 
-    private List<TableIdentifier> loadNativeTables(int queueId) {
-      List<TableIdentifier> nativeTables = new ArrayList<>();
+    private Set<TableIdentifier> loadTablesByQueueId(int queueId) {
+      Set<TableIdentifier> tablesInQueue = new HashSet<>();
       List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
       catalogMetas.forEach(catalogMeta -> {
         ArcticCatalog arcticCatalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
-        if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
-          try {
-            int catalogQueueId = getQueueId(catalogMeta.getCatalogProperties());
-            // if catalog queueId == current queueId, add tables in catalog
-            if (catalogQueueId == queueId) {
-              List<String> databases = arcticCatalog.listDatabases();
-              for (String database : databases) {
-                nativeTables.addAll(arcticCatalog.listTables(database));
+        List<String> databases = arcticCatalog.listDatabases();
+        for (String database : databases) {
+          for (TableIdentifier tableIdentifier : arcticCatalog.listTables(database)) {
+            ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
+            String queueName =
+                arcticTable.properties()
+                    .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+            try {
+              OptimizeQueueItem optimizeQueue = getOptimizeQueue(queueName);
+              if (optimizeQueue.getOptimizeQueueMeta().getQueueId() == queueId) {
+                tablesInQueue.add(arcticTable.id());
               }
+            } catch (Exception e) {
+              // skip, and load next table
+              LOG.error("{} get optimize group failed, group name is {}", arcticTable.id(), queueName);
             }
-          } catch (Exception e) {
-            LOG.error("get catalog queue failed", e);
           }
         }
       });
 
-      return nativeTables;
+      return tablesInQueue;
     }
 
     private List<OptimizeTaskItem> plan(long currentTime) {
-      List<TableIdentifier> nativeTables = loadNativeTables(optimizeQueue.getOptimizeQueueMeta().getQueueId());
-      tables.addAll(nativeTables);
+      tables = loadTablesByQueueId(optimizeQueue.getOptimizeQueueMeta().getQueueId());
       List<TableIdentifier> tableSort = sortTableByQuota(new ArrayList<>(tables));
 
       for (TableIdentifier tableIdentifier : tableSort) {

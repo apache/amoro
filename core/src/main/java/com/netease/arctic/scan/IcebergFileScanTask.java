@@ -75,9 +75,11 @@ public class IcebergFileScanTask implements FileScanTask {
   public Iterable<FileScanTask> split(long targetSplitSize) {
     if (file.format().isSplittable()) {
       if (file.splitOffsets() != null) {
-        return () -> new IcebergFileScanTask.OffsetsAwareTargetSplitSizeScanTaskIterator(file.splitOffsets(), this, targetSplitSize);
+        return () -> new IcebergFileScanTask
+            .OffsetsAwareTargetSplitSizeScanTaskIterator(file.splitOffsets(), this, targetSplitSize);
       } else {
-        return () -> new IcebergFileScanTask.FixedSizeSplitScanTaskIterator(targetSplitSize, this);
+        return () -> new IcebergFileScanTask
+                .FixedSizeSplitScanTaskIterator(targetSplitSize, this);
       }
     }
     return ImmutableList.of(this);
@@ -133,7 +135,8 @@ public class IcebergFileScanTask implements FileScanTask {
         currentSize += splitSizes.get(sizeIdx);
         sizeIdx += 1;
       }
-      FileScanTask combinedTask = new IcebergFileScanTask.SplitScanTask(offsets.get(offsetIdx), currentSize, parentScanTask);
+      FileScanTask combinedTask =
+          new IcebergFileScanTask.SplitScanTask(offsets.get(offsetIdx), currentSize, parentScanTask);
       return combinedTask;
     }
 

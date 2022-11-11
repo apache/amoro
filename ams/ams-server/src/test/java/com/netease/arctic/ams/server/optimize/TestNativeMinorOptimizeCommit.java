@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestNativeMinorOptimizeCommit extends TestNativeOptimizeBase {
+public class TestNativeMinorOptimizeCommit extends TestNativeIcebergBase {
   @Test
   public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
     icebergTable.asUnkeyedTable().updateProperties()

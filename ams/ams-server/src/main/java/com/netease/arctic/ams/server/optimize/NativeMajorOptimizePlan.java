@@ -61,12 +61,14 @@ public class NativeMajorOptimizePlan extends BaseNativeOptimizePlan {
     // delete files total size reach target or delete files rate reach target
     if (deleteFilesTotalSize > duplicateSize || deleteFilesTotalSize / dataFilesTotalSize >= duplicateRatio) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
-      LOG.debug("{} ==== need native Major optimize plan, partition is {}, delete files totalSize is {}, data files totalSize is {}",
+      LOG.debug("{} ==== need native Major optimize plan, partition is {}, " +
+              "delete files totalSize is {}, data files totalSize is {}",
           tableId(), partitionToPath, deleteFilesTotalSize, dataFilesTotalSize);
       return true;
     }
 
-    LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, delete files totalSize is {}, data files totalSize is {}",
+    LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, " +
+            "delete files totalSize is {}, data files totalSize is {}",
         tableId(), getOptimizeType(), partitionToPath, deleteFilesTotalSize, dataFilesTotalSize);
     return false;
   }

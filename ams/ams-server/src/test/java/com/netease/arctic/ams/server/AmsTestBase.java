@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportNative;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
@@ -38,6 +39,7 @@ import com.netease.arctic.ams.server.optimize.TestNativeMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestNativeMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportNative;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
@@ -109,6 +111,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class,
+    TestExpireFileCleanSupportNative.class,
+    TestOrphanFileCleanSupportNative.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class})
 @PrepareForTest({

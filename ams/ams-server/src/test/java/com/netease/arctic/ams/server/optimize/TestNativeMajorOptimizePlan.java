@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class TestNativeMajorOptimizePlan extends TestNativeOptimizeBase {
+public class TestNativeMajorOptimizePlan extends TestNativeIcebergBase {
   @Test
   public void testMajorOptimize() throws Exception {
     icebergTable.asUnkeyedTable().updateProperties()

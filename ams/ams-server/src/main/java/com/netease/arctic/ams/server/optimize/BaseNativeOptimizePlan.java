@@ -146,7 +146,7 @@ public abstract class BaseNativeOptimizePlan implements OptimizePlan {
     return currentSnapshotId != lastSnapshotId;
   }
 
-  protected void addOptimizeFilesTree(){
+  protected void addOptimizeFilesTree() {
 
     LOG.debug("{} start plan native table files", tableId());
     AtomicInteger addCnt = new AtomicInteger();
