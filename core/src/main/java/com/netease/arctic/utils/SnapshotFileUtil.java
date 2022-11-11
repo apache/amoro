@@ -25,7 +25,11 @@ import com.netease.arctic.table.BaseTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileMetadata;
+import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
@@ -119,6 +123,57 @@ public class SnapshotFileUtil {
             deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(deleteFile, table));
           } else if (status == ManifestEntryFields.Status.ADDED.id()) {
             addFiles.add(ConvertStructUtil.convertToAmsDatafile(deleteFile, table));
+          }
+        }
+      });
+    } catch (IOException exception) {
+      LOG.error("close manifest file error", exception);
+    }
+  }
+
+  public static void getNativeIcebergDeleteFiles(
+      ArcticTable table, Snapshot snapshot,
+      List<DeleteFile> addFiles,
+      List<DeleteFile> deleteFiles) {
+    Table entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
+        table.name(), table.name() + "#ENTRIES",
+        MetadataTableType.ENTRIES);
+    try (CloseableIterable<Record> manifests = IcebergGenerics.read(entriesTable)
+        .useSnapshot(snapshot.snapshotId())
+        .where(Expressions.equal(ManifestEntryFields.SNAPSHOT_ID.name(), snapshot.snapshotId()))
+        .build()) {
+      manifests.forEach(record -> {
+        int status = (int) record.get(ManifestEntryFields.STATUS.fieldId());
+        GenericRecord dataFile = (GenericRecord) record.get(ManifestEntryFields.DATA_FILE_ID);
+        Integer contentId = (Integer) dataFile.getField(DataFile.CONTENT.name());
+        if (contentId != null && contentId != 0) {
+          String filePath = (String) dataFile.getField(DataFile.FILE_PATH.name());
+          String partitionPath = null;
+          GenericRecord parRecord = (GenericRecord) dataFile.getField(DataFile.PARTITION_NAME);
+          if (parRecord != null) {
+            InternalRecordWrapper wrapper = new InternalRecordWrapper(parRecord.struct());
+            partitionPath = table.spec().partitionToPath(wrapper.wrap(parRecord));
+          }
+          Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
+          Long recordCount = (Long) dataFile.getField(DataFile.RECORD_COUNT.name());
+          DeleteFile deleteFile;
+          FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(table.spec())
+              .withPath(filePath)
+              .withFileSizeInBytes(fileSize)
+              .withRecordCount(recordCount);
+          if (!table.spec().isUnpartitioned()) {
+            builder.withPartitionPath(partitionPath);
+          }
+          if (contentId == FileContent.POSITION_DELETES.id()) {
+            builder.ofPositionDeletes();
+          } else {
+            builder.ofEqualityDeletes();
+          }
+          deleteFile = builder.build();
+          if (status == ManifestEntryFields.Status.DELETED.id()) {
+            deleteFiles.add(deleteFile);
+          } else if (status == ManifestEntryFields.Status.ADDED.id()) {
+            addFiles.add(deleteFile);
           }
         }
       });
