@@ -59,7 +59,7 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(null, map.get(key));
         } else {
-          StructLike partitionData = DataFiles.data(spec, key);
+          StructLike partitionData = ArcticDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
@@ -79,7 +79,7 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(EMPTY_STRUCT, map.get(key));
         } else {
-          StructLike partitionData = DataFiles.data(spec, key);
+          StructLike partitionData = ArcticDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
