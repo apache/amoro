@@ -48,7 +48,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,13 +60,14 @@ import java.util.stream.Collectors;
 
 public class MinorOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MinorOptimizePlan.class);
+  private static final long INVALID_TX_ID = -1L;
 
   // partition -> delete file
   protected final Map<String, List<DataFile>> partitionDeleteFiles = new LinkedHashMap<>();
   // partition -> maxBaseTableTransactionId
   protected StructLikeMap<Long> baseTableMaxTransactionId = null;
-  // partition -> maxChangeTableTransactionId
-  protected final Map<String, Long> changeTableMaxTransactionId = new HashMap<>();
+  protected StructLikeMap<Long> baseTableLegacyMaxTransactionId = null;
+  private long changeTableMaxTransactionId;
 
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<DataFileInfo> baseTableFileList,
@@ -198,7 +198,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
         treeRoot.putNodeIfAbsent(DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
             .addFile(dataFile, DataFileType.valueOf(dataFileInfo.getType()));
-        markMaxTransactionId(dataFile);
+        markFileInfo(f);
 
         // fill eq delete file map
         if (Objects.equals(dataFileInfo.getType(), DataFileType.EQ_DELETE_FILE.name())) {
@@ -210,20 +210,20 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
         addCnt.getAndIncrement();
       }
     });
-
     LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
   }
-  
+
   private static class ChangeFileInfo {
     private final DataFileInfo dataFileInfo;
     private final DataFile dataFile;
     private final long transactionId;
+    private long legacyTransactionId = -1;
 
     public ChangeFileInfo(DataFileInfo dataFileInfo, DataFile dataFile) {
       this.dataFileInfo = dataFileInfo;
       this.dataFile = dataFile;
-      this.transactionId = FileUtil.parseFileTidFromFileName(dataFileInfo.getPath());
+      this.transactionId = dataFileInfo.getSequence();
     }
 
     public DataFileInfo getDataFileInfo() {
@@ -236,6 +236,13 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
 
     public long getTransactionId() {
       return transactionId;
+    }
+
+    public long getLegacyTransactionId() {
+      if (legacyTransactionId == -1) {
+        legacyTransactionId = FileUtil.parseFileTidFromFileName(dataFileInfo.getPath());
+      }
+      return legacyTransactionId;
     }
   }
   
@@ -305,7 +312,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId.get(partition),
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId,
         commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
@@ -342,30 +349,47 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   }
 
   private boolean isOptimized(ChangeFileInfo changeFileInfo) {
-    return changeFileInfo.getTransactionId() <= getBaseMaxTransactionId(changeFileInfo.getDataFile().partition());
+    long baseMaxTransactionId = getBaseMaxTransactionId(changeFileInfo.getDataFile().partition());
+    if (baseMaxTransactionId != INVALID_TX_ID) {
+      return changeFileInfo.getTransactionId() <= baseMaxTransactionId;
+    } else {
+      long legacyPartitionMaxTransactionId =
+          getLegacyPartitionMaxTransactionId(changeFileInfo.getDataFile().partition());
+      return changeFileInfo.getLegacyTransactionId() <= legacyPartitionMaxTransactionId;
+    }
   }
 
-  private void markMaxTransactionId(ContentFile<?> dataFile) {
-    long transactionId = FileUtil.parseFileTidFromFileName(dataFile.path().toString());
-    StructLike partition = dataFile.partition();
-    String partitionToPath = arcticTable.spec().partitionToPath(partition);
-    Long currentValue = changeTableMaxTransactionId.get(partitionToPath);
-    if (currentValue == null) {
-      changeTableMaxTransactionId.put(partitionToPath, transactionId);
-    } else {
-      if (currentValue < transactionId) {
-        changeTableMaxTransactionId.put(partitionToPath, transactionId);
-      }
+  private void markFileInfo(ChangeFileInfo changeFileInfo) {
+    if (this.changeTableMaxTransactionId < changeFileInfo.getTransactionId()) {
+      this.changeTableMaxTransactionId = changeFileInfo.getTransactionId();
     }
   }
 
   private long getBaseMaxTransactionId(StructLike partition) {
+    Long maxTransactionId = getBaseTableMaxTransactionId().get(partition);
+    return maxTransactionId == null ? INVALID_TX_ID : maxTransactionId;
+  }
+
+  private StructLikeMap<Long> getBaseTableMaxTransactionId() {
     if (baseTableMaxTransactionId == null) {
       baseTableMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
       LOG.debug("{} ==== get base table max transaction id: {}", tableId(), baseTableMaxTransactionId);
     }
-    Long maxTransactionId = baseTableMaxTransactionId.get(partition);
-    return maxTransactionId == null ? -1 : maxTransactionId;
+    return baseTableMaxTransactionId;
+  }
+
+  private long getLegacyPartitionMaxTransactionId(StructLike partition) {
+    Long maxTransactionId = getBaseTableLegacyMaxTransactionId().get(partition);
+    return maxTransactionId == null ? INVALID_TX_ID : maxTransactionId;
+  }
+
+  private StructLikeMap<Long> getBaseTableLegacyMaxTransactionId() {
+    if (baseTableLegacyMaxTransactionId == null) {
+      baseTableLegacyMaxTransactionId =
+          TablePropertyUtil.getLegacyPartitionMaxTransactionId(arcticTable.asKeyedTable());
+      LOG.debug("{} ==== get base table legacy max transaction id: {}", tableId(), baseTableLegacyMaxTransactionId);
+    }
+    return baseTableLegacyMaxTransactionId;
   }
 
   static class CanSplitFileTree implements Predicate<FileTree> {

@@ -223,11 +223,11 @@ public class BaseOptimizeCommit {
 
       if (arcticTable.spec().isUnpartitioned()) {
         if (maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-          overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.EMPTY_STRUCT,
+          overwriteBaseFiles.withTransactionId(TablePropertyUtil.EMPTY_STRUCT,
               maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT));
         }
       } else {
-        maxTransactionIds.forEach(overwriteBaseFiles::withMaxTransactionId);
+        maxTransactionIds.forEach(overwriteBaseFiles::withTransactionId);
       }
       overwriteBaseFiles.commit();
 
