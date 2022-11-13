@@ -402,6 +402,7 @@ public class FileInfoCacheService extends IJDBCService {
             CacheFileInfo cacheFileInfo = new CacheFileInfo();
             cacheFileInfo.setTableIdentifier(tableCommitMeta.getTableIdentifier());
             cacheFileInfo.setAddSnapshotId(tableChange.getSnapshotId());
+            cacheFileInfo.setAddSnapshotSequence(tableChange.getSnapshotSequence());
             cacheFileInfo.setParentSnapshotId(tableChange.getParentSnapshotId());
             cacheFileInfo.setInnerTable(tableChange.getInnerTable());
             cacheFileInfo.setFilePath(datafile.getPath());
@@ -465,6 +466,7 @@ public class FileInfoCacheService extends IJDBCService {
     CacheSnapshotInfo cache = new CacheSnapshotInfo();
     cache.setTableIdentifier(identifier);
     cache.setSnapshotId(snapshot.snapshotId());
+    cache.setSnapshotSequence(snapshot.sequenceNumber());
     cache.setParentSnapshotId(snapshot.parentId() == null ? -1 : snapshot.parentId());
     cache.setAction(snapshot.operation());
     cache.setInnerTable(tableType);
@@ -483,6 +485,7 @@ public class FileInfoCacheService extends IJDBCService {
         CacheSnapshotInfo cache = new CacheSnapshotInfo();
         cache.setTableIdentifier(tableCommitMeta.getTableIdentifier());
         cache.setSnapshotId(tableChange.getSnapshotId());
+        cache.setSnapshotSequence(tableChange.getSnapshotSequence());
         cache.setParentSnapshotId(tableChange.getParentSnapshotId());
         cache.setAction(tableCommitMeta.getAction());
         cache.setInnerTable(tableChange.getInnerTable());

@@ -26,7 +26,9 @@ import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
+import com.netease.arctic.scan.BaseChangeTableIncrementalScan;
 import com.netease.arctic.scan.BaseKeyedTableScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -189,6 +191,11 @@ public class BaseKeyedTable implements KeyedTable {
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, client);
+    }
+
+    @Override
+    public ChangeTableIncrementalScan newChangeScan() {
+      return new BaseChangeTableIncrementalScan(this);
     }
   }
 }
