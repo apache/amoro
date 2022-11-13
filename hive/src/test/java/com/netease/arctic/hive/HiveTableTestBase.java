@@ -30,6 +30,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.iceberg.DataFiles;
@@ -190,7 +191,7 @@ public class HiveTableTestBase extends TableTestBase {
   }
 
   public static StructLike getPartitionData(String partitionPath, PartitionSpec spec) {
-    return DataFiles.data(spec, partitionPath);
+    return ArcticDataFiles.data(spec, partitionPath);
   }
 
   /**

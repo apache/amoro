@@ -96,6 +96,33 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
   }
 
   @Test
+  public void testInsertOverwriteHasPartitionFunc() {
+    sql("create table {0}.{1} ( \n" +
+            " id int , \n" +
+            " data string , \n " +
+            " ts timestamp , \n" +
+            " primary key (id) \n" +
+            ") using arctic \n" +
+            " partitioned by ( months(ts) ) \n", database, "table_months");
+    sql("insert overwrite {0}.{1} values \n" +
+            "(1, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
+            "(2, ''bbb'',  timestamp('' 2022-2-2 09:00:00 '')), \n " +
+            "(3, ''ccc'',  timestamp('' 2022-3-2 09:00:00 '')) \n ", database, "table_months");
+
+    sql("insert overwrite {0}.{1} values \n" +
+            "(4, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
+            "(5, ''bbb'',  timestamp('' 2022-2-2 09:00:00 '')), \n " +
+            "(6, ''ccc'',  timestamp('' 2022-3-2 09:00:00 '')) \n ", database, "table_months");
+
+    rows = sql("select id, data, ts from {0}.{1} order by id", database, "table_months");
+    Assert.assertEquals(3, rows.size());
+
+    assertContainIdSet(rows, 0, 4, 5, 6);
+
+    sql("drop table {0}.{1}", database, "table_months");
+  }
+
+  @Test
   public void testInsertOverwriteNoBasePartition() {
     // insert overwrite by values
     // before 4 partition, [1-3] partition has base && change file, [4] partition has change file
