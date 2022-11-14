@@ -164,6 +164,12 @@ public class HiveOperationTransaction implements Transaction {
       return null;
     }
 
+    @Override
+    public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+      pendingActions.add(action);
+      return null;
+    }
+
     public void commit() {
       for (Action<?, HMSClient, TException> action : pendingActions) {
         try {

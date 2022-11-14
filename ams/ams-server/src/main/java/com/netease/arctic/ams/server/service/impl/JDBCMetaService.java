@@ -176,14 +176,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   }
 
   @Override
-  public void updateTableTxId(TableIdentifier tableIdentifier, long txId) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      tableMetadataMapper.updateTableTxId(tableIdentifier, txId);
-    }
-  }
-
-  @Override
   public List<String> listDatabases(String catalogName) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       DatabaseMetadataMapper dbMapper = getMapper(sqlSession, DatabaseMetadataMapper.class);

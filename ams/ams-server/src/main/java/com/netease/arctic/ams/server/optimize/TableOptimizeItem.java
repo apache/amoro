@@ -35,6 +35,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
+import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
@@ -753,12 +754,18 @@ public class TableOptimizeItem extends IJDBCService {
    * If task execute timeout, set it to be Failed.
    */
   public void checkTaskExecuteTimeout() {
-    optimizeTasks.values().stream().filter(OptimizeTaskItem::executeTimeout)
+    optimizeTasks.values().stream().filter(task -> task.executeTimeout(this::maxExecuteTime))
         .forEach(task -> {
           task.onFailed(new ErrorMessage(System.currentTimeMillis(), "execute expired"),
               System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
           LOG.error("{} execute timeout, change to Failed", task.getTaskId());
         });
+  }
+
+  private long maxExecuteTime() {
+    return PropertyUtil
+        .propertyAsLong(getArcticTable(false).properties(), TableProperties.OPTIMIZE_EXECUTE_TIMEOUT,
+            TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
   }
 
   /**

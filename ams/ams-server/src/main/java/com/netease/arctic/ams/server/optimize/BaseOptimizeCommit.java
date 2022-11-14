@@ -28,6 +28,7 @@ import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -107,7 +108,7 @@ public class BaseOptimizeCommit {
                 maxTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, maxTransactionId);
               } else {
                 maxTransactionIds.putIfAbsent(
-                    DataFiles.data(spec, entry.getKey()), maxTransactionId);
+                    ArcticDataFiles.data(spec, entry.getKey()), maxTransactionId);
               }
             }
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
@@ -223,11 +224,11 @@ public class BaseOptimizeCommit {
 
       if (arcticTable.spec().isUnpartitioned()) {
         if (maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-          overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.EMPTY_STRUCT,
+          overwriteBaseFiles.withTransactionId(TablePropertyUtil.EMPTY_STRUCT,
               maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT));
         }
       } else {
-        maxTransactionIds.forEach(overwriteBaseFiles::withMaxTransactionId);
+        maxTransactionIds.forEach(overwriteBaseFiles::withTransactionId);
       }
       overwriteBaseFiles.commit();
 

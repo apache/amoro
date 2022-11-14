@@ -32,6 +32,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
+import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
@@ -673,32 +674,38 @@ public class OptimizeQueueService extends IJDBCService {
                                           List<BaseOptimizeTask> optimizeTasks,
                                           Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {
-        // set latest optimize time
-        for (String currentPartition : optimizePlan.getCurrentPartitions()) {
-          if (partitionOptimizeType.get(currentPartition) != null) {
-            switch (partitionOptimizeType.get(currentPartition)) {
-              case Minor:
-                tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
-                break;
-              case Major:
-                tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
-                break;
-              case FullMajor:
-                tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
-                break;
+        TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
+        try {
+          // set latest optimize time
+          for (String currentPartition : optimizePlan.getCurrentPartitions()) {
+            if (partitionOptimizeType.get(currentPartition) != null) {
+              switch (partitionOptimizeType.get(currentPartition)) {
+                case Minor:
+                  tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
+                  break;
+                case Major:
+                  tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
+                  break;
+                case FullMajor:
+                  tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
+                  break;
+              }
             }
           }
-        }
 
-        // set current snapshot id
-        tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentBaseSnapshotId());
-        if (tableItem.isKeyedTable()) {
-          tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
-        }
+          // set current snapshot id
+          tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentBaseSnapshotId());
+          if (tableItem.isKeyedTable()) {
+            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
+          }
 
-        tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
-        tableItem.getTableOptimizeRuntime().setRunning(true);
-        tableItem.persistTableOptimizeRuntime();
+          tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
+          tableItem.getTableOptimizeRuntime().setRunning(true);
+          tableItem.persistTableOptimizeRuntime();
+        } catch (Throwable e) {
+          tableItem.getTableOptimizeRuntime().restoreTableOptimizeRuntime(oldTableOptimizeRuntime);
+          throw e;
+        }
       }
     }
 

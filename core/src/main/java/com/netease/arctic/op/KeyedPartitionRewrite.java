@@ -20,6 +20,7 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.StructLike;
@@ -61,7 +62,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     }
 
     Preconditions.checkNotNull(transactionId, "transaction-Id must be set.");
-    Preconditions.checkArgument(transactionId > 0, "transaction-Id must be positive.");
+    Preconditions.checkArgument(transactionId >= -1, "transaction-Id must >= -1.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     addFiles.forEach(replacePartitions::addFile);
@@ -69,7 +70,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
 
     addFiles.forEach(f -> {
       StructLike pd = f.partition();
-      long txId = partitionMaxTxId.containsKey(pd) ? partitionMaxTxId.get(pd) : -1;
+      long txId = partitionMaxTxId.getOrDefault(pd, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
       txId = Math.max(txId, transactionId);
       partitionMaxTxId.put(pd, txId);
     });

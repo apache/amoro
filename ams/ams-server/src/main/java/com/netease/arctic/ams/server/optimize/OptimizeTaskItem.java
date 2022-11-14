@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
 
 public class OptimizeTaskItem extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizeTaskItem.class);
-  private static final long MAX_EXECUTE_TIME = 7200_000;// 2 hour
   // interval between failed and retry = (1 + retry) * RETRY_INTERVAL
   private static final long RETRY_INTERVAL = 60000; // 60s
 
@@ -199,9 +198,9 @@ public class OptimizeTaskItem extends IJDBCService {
     return false;
   }
 
-  public boolean executeTimeout() {
+  public boolean executeTimeout(Supplier<Long> maxExecuteTime) {
     if (getOptimizeStatus() == OptimizeStatus.Executing) {
-      return System.currentTimeMillis() - optimizeRuntime.getExecuteTime() > MAX_EXECUTE_TIME;
+      return System.currentTimeMillis() - optimizeRuntime.getExecuteTime() > maxExecuteTime.get();
     }
     return false;
   }

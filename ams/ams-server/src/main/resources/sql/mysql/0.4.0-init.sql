@@ -105,25 +105,25 @@ CREATE TABLE `optimize_history`
     KEY                             `table_name_record` (`catalog_name`,`db_name`,`table_name`,`history_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
-CREATE TABLE `optimizer`
+CREATE TABLE `optimize_job`
 (
-    `optimizer_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `optimizer_name`             varchar(1024) DEFAULT NULL COMMENT 'optimizer name',
+    `job_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `job_name`             varchar(1024) DEFAULT NULL COMMENT 'job name',
     `queue_id`             int(11) DEFAULT NULL COMMENT 'queue id',
     `queue_name`           varchar(1024) DEFAULT NULL COMMENT 'queue name',
-    `optimizer_start_time`       varchar(1024) DEFAULT NULL COMMENT 'optimizer start time',
-    `optimizer_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'optimizer fail time',
-    `optimizer_status`           varchar(16)   DEFAULT NULL COMMENT 'optimizer status',
+    `job_start_time`       varchar(1024) DEFAULT NULL COMMENT 'job start time',
+    `job_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'job fail time',
+    `job_status`           varchar(16)   DEFAULT NULL COMMENT 'job status',
     `core_number`          int(11) DEFAULT NULL COMMENT 'total number of all CPU resources',
-    `memory`               bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
-    `parallelism`          int(11) DEFAULT NULL COMMENT 'optimizer parallelism',
+    `memory`               bigint(30) DEFAULT NULL COMMENT 'job use memory size',
+    `parallelism`          int(11) DEFAULT NULL COMMENT 'job parallelism',
     `jobmanager_url`       varchar(1024) DEFAULT NULL COMMENT 'jobmanager url',
     `optimizer_instance`   blob COMMENT 'optimizer instance bytes, use to deserialize optimizer instance',
     `optimizer_state_info` mediumtext COMMENT 'optimizer state info, contains like yarn application id and flink job id',
-    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this optimizer belongs to',
+    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this job belongs to',
     `update_time` timestamp not null default CURRENT_TIMESTAMP COMMENT 'update time',
-    PRIMARY KEY (`optimizer_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer info';
+    PRIMARY KEY (`job_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Job info of optimize';
 
 CREATE TABLE `optimize_group`
 (
@@ -138,12 +138,12 @@ CREATE TABLE `optimize_group`
 CREATE TABLE `optimize_task`
 (
     `trace_id`                  varchar(40) NOT NULL COMMENT 'Optimize task uuid',
-    `optimize_type`             varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
+    `optimize_type`                 varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     `catalog_name`              varchar(64) NOT NULL COMMENT 'Catalog name',
     `db_name`                   varchar(64) NOT NULL COMMENT 'Database name',
     `table_name`                varchar(64) NOT NULL COMMENT 'Table name',
     `partition`                 varchar(128)  DEFAULT NULL COMMENT 'Partition',
-    `task_commit_group`         varchar(40)   DEFAULT NULL COMMENT 'UUID. Commit group of task, task of one commit group should commit together',
+    `task_group`                varchar(40)   DEFAULT NULL COMMENT 'Group of task, task of one group should commit together',
     `max_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Max change transaction id',
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `properties`                text COMMENT 'Task properties',
@@ -157,7 +157,7 @@ CREATE TABLE `optimize_task`
     `base_file_size`            bigint(20) DEFAULT NULL COMMENT 'Base file size in bytes',
     `pos_delete_file_size`      bigint(20) DEFAULT NULL COMMENT 'Pos-Delete file size in bytes',
     `source_nodes`              varchar(2048) DEFAULT NULL COMMENT 'Source nodes of task',
-    `task_plan_group`           varchar(40)   DEFAULT NULL COMMENT 'UUID. Plan group of task, task of one plan group are planned together',
+    `task_history_id`           varchar(40)   DEFAULT NULL COMMENT 'Task history id',
     `status`        varchar(16)   DEFAULT NULL  COMMENT 'Optimize Status: Init, Pending, Executing, Failed, Prepared, Committed',
     `pending_time`  datetime(3) DEFAULT NULL COMMENT 'Time when task start waiting to execute',
     `execute_time`  datetime(3) DEFAULT NULL COMMENT 'Time when task start executing',
@@ -200,7 +200,7 @@ CREATE TABLE `table_metadata`
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
     `base_location`   varchar(256) DEFAULT NULL COMMENT 'Base table location',
     `delta_location`  varchar(256) DEFAULT NULL COMMENT 'change table location',
-    `properties`      text COMMENT 'Table properties',
+    `properties`      mediumtext COMMENT 'Table properties',
     `meta_store_site` mediumtext COMMENT 'base64 code of meta store site',
     `hdfs_site`       mediumtext COMMENT 'base64 code of hdfs site',
     `core_site`       mediumtext COMMENT 'base64 code of core site',
@@ -210,7 +210,7 @@ CREATE TABLE `table_metadata`
     `krb_keytab`      text COMMENT 'kerberos keytab when auth method is KERBEROS',
     `krb_conf`        text COMMENT 'kerberos conf when auth method is KERBEROS',
     `krb_principal`   text COMMENT 'kerberos principal when auth method is KERBEROS',
-    `current_tx_id`   bigint(20) DEFAULT NULL COMMENT 'current transaction id',
+    `current_tx_id`   bigint(20) NOT NULL DEFAULT 0 COMMENT 'current transaction id',
     `cur_schema_id`   int(11) NOT NULL DEFAULT 0 COMMENT 'current schema id',
     PRIMARY KEY `table_name_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Table metadata';
@@ -223,7 +223,7 @@ CREATE TABLE `optimize_table_runtime`
     `current_snapshot_id`        bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
     `latest_major_optimize_time` mediumtext COMMENT 'Latest Major Optimize time for all partitions',
     `latest_minor_optimize_time` mediumtext COMMENT 'Latest Minor Optimize time for all partitions',
-    `latest_task_plan_group`     varchar(40) DEFAULT NULL COMMENT 'Latest task plan group',
+    `latest_task_history_id`     varchar(40) DEFAULT NULL COMMENT 'Latest task history id',
     `optimize_status`            varchar(20) DEFAULT 'Idle' COMMENT 'Table optimize status: MajorOptimizing, MinorOptimizing, Pending, Idle',
     `optimize_status_start_time` datetime(3) DEFAULT NULL COMMENT 'Table optimize status start time',
     `current_change_snapshotId`  bigint(20) DEFAULT NULL COMMENT 'Change table current snapshot id',
@@ -233,20 +233,18 @@ CREATE TABLE `optimize_table_runtime`
 
 CREATE TABLE `optimize_task_history`
 (
-    `task_trace_id`     varchar(50) NOT NULL COMMENT 'Optimize task uuid',
-    `retry`             int(11) NOT NULL COMMENT 'Retry times for the same task_trace_id',
-    `task_plan_group`   varchar(40) NOT NULL COMMENT 'Plan group of task, task of one plan group are planned together',
-    `catalog_name`      varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`           varchar(64) NOT NULL COMMENT 'Database name',
-    `table_name`        varchar(64) NOT NULL COMMENT 'Table name',
-    `start_time`        datetime(3) DEFAULT NULL COMMENT 'Task start time',
-    `end_time`          datetime(3) DEFAULT NULL COMMENT 'Task end time',
-    `cost_time`         bigint(20) DEFAULT NULL COMMENT 'Task cost time',
-    `queue_id`          int(11) DEFAULT NULL COMMENT 'Queue id which execute task',
-    PRIMARY KEY (`task_trace_id`, `retry`),
-    KEY `table_end_time_plan_group_index` (`catalog_name`, `db_name`, `table_name`, `end_time`, `task_plan_group`),
-    KEY `table_plan_group_index` (`catalog_name`, `db_name`, `table_name`, `task_plan_group`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of each optimize task execute';
+    `task_history_id` varchar(40) NOT NULL COMMENT 'Task history id',
+    `task_group_id`   varchar(40) NOT NULL COMMENT 'Task group id',
+    `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
+    `db_name`         varchar(64) NOT NULL COMMENT 'Database name',
+    `table_name`      varchar(64) NOT NULL COMMENT 'Table name',
+    `start_time`      datetime(3) DEFAULT NULL COMMENT 'Task start time',
+    `end_time`        datetime(3) DEFAULT NULL COMMENT 'Task end time',
+    `cost_time`       bigint(20) DEFAULT NULL COMMENT 'Task cost time',
+    `queue_id`        int(11) DEFAULT NULL COMMENT 'Task queue id',
+    PRIMARY KEY (`task_history_id`,`task_group_id`),
+    KEY               `task_group_id_index` (`task_history_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of each optimize task';
 
 CREATE TABLE `table_transaction_meta`
 (
@@ -275,13 +273,3 @@ CREATE TABLE `ddl_record`
     `ddl_type`         varchar(256) NOT NULL COMMENT 'ddl type',
     `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'ddl commit time'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'ddl record of table';
-
-
-CREATE TABLE `platform_file_info` (
-  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'file id',
-  `file_name` varchar(100) NOT NULL COMMENT 'file name',
-  `file_content_b64` text NOT NULL COMMENT 'file content encoded with base64',
-  `file_path` varchar(100) DEFAULT NULL COMMENT 'may be hdfs path , not be used now',
-  `add_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'add timestamp',
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='store files info saved in the platform';

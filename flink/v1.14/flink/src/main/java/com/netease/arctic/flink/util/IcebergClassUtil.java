@@ -19,7 +19,6 @@
 package com.netease.arctic.flink.util;
 
 import com.netease.arctic.flink.interceptor.ProxyFactory;
-import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.io.ArcticFileIO;
 import org.apache.flink.api.common.operators.MailboxExecutor;
 import org.apache.flink.api.java.functions.KeySelector;
@@ -38,6 +37,7 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.flink.TableLoader;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
+import org.apache.iceberg.flink.source.ScanContext;
 import org.apache.iceberg.flink.source.StreamingReaderOperator;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.WriteResult;
@@ -130,16 +130,16 @@ public class IcebergClassUtil {
   }
 
   public static ProxyFactory<FlinkInputFormat> getInputFormatProxyFactory(OneInputStreamOperatorFactory operatorFactory,
-                                                                          ArcticFileIO arcticFileIO) {
+                                                                          ArcticFileIO arcticFileIO,
+                                                                          Schema tableSchema) {
     FlinkInputFormat inputFormat = getInputFormat(operatorFactory);
     TableLoader tableLoader = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableLoader");
-    Schema tableSchema = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "tableSchema");
     FileIO io = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "io");
     EncryptionManager encryption = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "encryption");
     Object context = ReflectionUtil.getField(FlinkInputFormat.class, inputFormat, "context");
 
     return ProxyUtil.getProxyFactory(FlinkInputFormat.class, arcticFileIO,
-        new Class[]{TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ArcticScanContext.class},
+        new Class[]{TableLoader.class, Schema.class, FileIO.class, EncryptionManager.class, ScanContext.class},
         new Object[]{tableLoader, tableSchema, io, encryption, context});
   }
 
