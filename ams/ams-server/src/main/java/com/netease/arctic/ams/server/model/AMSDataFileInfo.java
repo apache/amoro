@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.model;
 
-import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 
 public class AMSDataFileInfo {

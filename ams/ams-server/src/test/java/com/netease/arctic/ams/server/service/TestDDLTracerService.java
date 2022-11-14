@@ -40,6 +40,7 @@ import java.util.Set;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.HistoryEntry;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableMetadataParser;
@@ -126,7 +127,7 @@ public class TestDDLTracerService {
         com.netease.arctic.table.TableIdentifier.of(testSyncIdentifier),
         schema).withPrimaryKeySpec(PRIMARY_KEY_SPEC).create();
 
-    testIcebergTable = TableUtil.createIcebergTable(icebergTableName, schema, null);
+    testIcebergTable = TableUtil.createIcebergTable(icebergTableName, schema, null, PartitionSpec.unpartitioned());
     testIcebergIdentifier = new TableIdentifier();
     testIcebergIdentifier.catalog = AMS_TEST_ICEBERG_CATALOG_NAME;
     testIcebergIdentifier.database = AMS_TEST_ICEBERG_DB_NAME;

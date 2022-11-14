@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.util;
 
 import com.google.common.collect.Maps;
+import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.ArcticTable;
@@ -34,8 +35,9 @@ import static com.netease.arctic.ams.server.AmsTestBase.icebergCatalog;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
-public class TableUtil {
-  public static ArcticTable createIcebergTable(String tableName, Schema schema, Map<String, String> properties) {
+public class TableUtil extends TableTestBase {
+  public static ArcticTable createIcebergTable(String tableName, Schema schema, Map<String, String> properties,
+      PartitionSpec spec) {
     CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME);
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
@@ -43,7 +45,7 @@ public class TableUtil {
         catalogProperties, new Configuration());
     nativeIcebergTable.createTable(
         org.apache.iceberg.catalog.TableIdentifier.of(AMS_TEST_ICEBERG_DB_NAME, tableName),
-        schema, PartitionSpec.unpartitioned(), null, properties);
+        schema, spec, null, properties);
     return icebergCatalog.loadTable(
         com.netease.arctic.table.TableIdentifier.of(
             AMS_TEST_ICEBERG_CATALOG_NAME,

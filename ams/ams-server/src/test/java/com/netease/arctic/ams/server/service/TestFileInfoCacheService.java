@@ -266,17 +266,19 @@ public class TestFileInfoCacheService extends TableTestBase {
   public void testIcebergTable() {
     Map<String, String> pro = new HashMap<>();
     pro.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-    ArcticTable table = TableUtil.createIcebergTable("test_iceberg_file_cache", TABLE_SCHEMA, pro);
+    ArcticTable table = TableUtil.createIcebergTable("test_iceberg_file_cache", TABLE_SCHEMA, pro, TableTestBase.SPEC);
     DeleteFile posDelete = FileMetadata.deleteFileBuilder(table.spec())
         .ofPositionDeletes()
         .withPath("/path/to/data-unpartitioned-pos-deletes.parquet")
         .withFileSizeInBytes(10)
+        .withPartitionPath("op_time_day=2022-01-01")
         .withRecordCount(1)
         .build();
-    DeleteFile eqDelete =FileMetadata.deleteFileBuilder(table.spec())
+    DeleteFile eqDelete = FileMetadata.deleteFileBuilder(table.spec())
         .ofEqualityDeletes()
         .withPath("/path/to/data-unpartitioned-eq-deletes.parquet")
         .withFileSizeInBytes(10)
+        .withPartitionPath("op_time_day=2022-01-01")
         .withRecordCount(1)
         .build();
     table.asUnkeyedTable().newFastAppend()
@@ -292,28 +294,46 @@ public class TestFileInfoCacheService extends TableTestBase {
         ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(table.id().buildTableIdentifier());
     Assert.assertEquals(3, transactionsOfTables.size());
 
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(0).getTransactionId()).get(0).getPath(), FILE_A.path().toString());
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(0).getTransactionId()).get(0).getOperation(), "add");
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(0).getTransactionId()).get(1).getPath(), FILE_B.path().toString());
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(0).getTransactionId()).get(1).getOperation(), "add");
 
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(1).getTransactionId()).get(0).getPath(), FILE_C.path().toString());
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(1).getTransactionId()).get(0).getOperation(), "add");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(1).getPath(), FILE_A.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(1).getOperation(), "remove");
 
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(2).getTransactionId()).get(0).getPath(), "/path/to/data-unpartitioned-eq-deletes" +
         ".parquet");
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(2).getTransactionId()).get(0).getType(), FileContent.EQUALITY_DELETES.name());
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
-        transactionsOfTables.get(2).getTransactionId()).get(1).getPath(), "/path/to/data-unpartitioned-pos-deletes.parquet");
-    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(table.id().buildTableIdentifier(),
+    Assert.assertEquals(
+        ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+            table.id().buildTableIdentifier(),
+            transactionsOfTables.get(2).getTransactionId()).get(1).getPath(),
+        "/path/to/data-unpartitioned-pos-deletes.parquet");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
         transactionsOfTables.get(2).getTransactionId()).get(1).getType(), FileContent.POSITION_DELETES.name());
   }
 
