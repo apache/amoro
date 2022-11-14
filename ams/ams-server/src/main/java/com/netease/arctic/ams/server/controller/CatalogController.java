@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.controller;
 
+import com.google.common.collect.ImmutableMap;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
@@ -44,7 +45,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
 public class CatalogController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
@@ -70,26 +74,14 @@ public class CatalogController extends RestBaseController {
    */
   public static void getCatalogTypeList(Context ctx) {
 
-    List<Map<String, String>> catalogTypeList = new ArrayList<>();
+    List<ImmutableMap<String, String>> catalogTypes = new ArrayList<>();
     String valueKey = "value";
     String displayKey = "display";
-    List<List<String>> valuePair = new ArrayList<List<String>>() {
-      {
-        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HIVE, "Hive Metastore"));
-        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_AMS, "Arctic Metastore"));
-        add(Arrays.asList(CatalogMetaProperties.CATALOG_TYPE_HADOOP, "Hadoop"));
-        add(Arrays.asList(CATALOG_TYPE_CUSTOM, "Custom"));
-      }
-    };
-    valuePair.stream().forEach(item -> {
-      catalogTypeList.add(new HashMap<String, String>() {
-        {
-          put(valueKey, item.get(0));
-          put(displayKey, item.get(1));
-        }
-      });
-    });
-    ctx.json(OkResponse.of(catalogTypeList));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_AMS, displayKey, "Arctic Metastore"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HIVE, displayKey, "Hive Metastore"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_HADOOP, displayKey, "Hadoop"));
+    catalogTypes.add(ImmutableMap.of(valueKey, CATALOG_TYPE_CUSTOM, displayKey, "Custom"));
+    ctx.json(OkResponse.of(catalogTypes));
   }
 
   /**
@@ -264,7 +256,7 @@ public class CatalogController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some configuration is null", null));
     }
     if (catalogMetadataService.catalogExist(info.getName())) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "duplicate catalog name!", null));
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Duplicate catalog name!", null));
       return;
     }
     try {
@@ -298,7 +290,7 @@ public class CatalogController extends RestBaseController {
       // we put the tableformat single
       String tableFormat = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
       if (StringUtils.isEmpty(tableFormat)) {
-        if (catalogMeta.getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
+        if (catalogMeta.getCatalogType().equals(CATALOG_TYPE_HIVE)) {
           tableFormat = TableFormat.HIVE.name();
         } else {
           tableFormat = TableFormat.ICEBERG.name();
@@ -327,7 +319,7 @@ public class CatalogController extends RestBaseController {
 
     CatalogMeta oldCatalogMeta = catalogMetadataService.getCatalog(info.getName());
     if (oldCatalogMeta == null) {
-      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "catalog doesn't exist!", null));
+      ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Catalog doesn't exist!", null));
       return;
     }
     // check only some item can be modified!
@@ -352,7 +344,7 @@ public class CatalogController extends RestBaseController {
     if (StringUtils.isNotEmpty(ctx.pathParam("catalogName"))) {
       tblCount = iMetaService.getTableCountInCatalog(ctx.pathParam("catalogName"));
     } else {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "catalog is empty!", null));
+      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Catalog name is empty!", null));
       return;
     }
     ctx.json(OkResponse.of(tblCount > 0 ? false : true));
@@ -367,7 +359,7 @@ public class CatalogController extends RestBaseController {
     String catalogName = ctx.pathParam("catalogName");
     // need check
     if (StringUtils.isEmpty(catalogName)) {
-      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "catalog is empty!", null));
+      ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Catalog name is empty!", null));
       return;
     }
     Integer tblCount = iMetaService.getTableCountInCatalog(catalogName);
@@ -403,7 +395,7 @@ public class CatalogController extends RestBaseController {
     String configKey = ctx.pathParam("key");
 
     if (StringUtils.isEmpty(catalogName) || StringUtils.isEmpty(confType) || StringUtils.isEmpty(configKey)) {
-      ctx.json(new ErrorResponse("catalogName or auth type or configkey is null!"));
+      ctx.json(new ErrorResponse("Catalog name or auth type or config key is null!"));
       return;
     }
 

@@ -26,10 +26,6 @@ public class CatalogMetaProperties {
     public static final String STORAGE_CONFIGS_KEY_CORE_SITE = "hadoop.core.site";
     public static final String STORAGE_CONFIGS_KEY_HIVE_SITE = "hive.site";
 
-    public static final String STORAGE_CONFIGS_KEY_HDFS_SITE_ID = "hadoop.hdfs.site.id";
-    public static final String STORAGE_CONFIGS_KEY_CORE_SITE_ID = "hadoop.core.site.id";
-    public static final String STORAGE_CONFIGS_KEY_HIVE_SITE_ID = "hive.site.id";
-
     public static final String STORAGE_CONFIGS_VALUE_TYPE_HDFS = "hdfs";
 
     public static final String AUTH_CONFIGS_KEY_TYPE = "auth.type";
