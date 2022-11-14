@@ -112,13 +112,13 @@ public class ArcticAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
     }
 
     @Override
-    protected ArcticAppendFiles UpdateWithWatermark(
+    protected ArcticAppendFiles updateWithWatermark(
         TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticAppendFiles(table, newAppendFiles(transaction), tableTracer, transaction, autoCommitTransaction);
     }
 
     @Override
-    protected ArcticAppendFiles UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+    protected ArcticAppendFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
       return new ArcticAppendFiles(table, newAppendFiles(tableStore), tableTracer);
     }
 

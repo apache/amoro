@@ -139,7 +139,7 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
     tracer.commit();
   }
 
-  public static abstract class Builder<T> {
+  public abstract static class Builder<T> {
 
     protected final ArcticTable table;
     protected Table tableStore;
@@ -198,20 +198,20 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
       Table tableStore = getTableStore();
       if (generateWatermark) {
         if (insideTransaction != null) {
-          return UpdateWithWatermark(tableTracer, insideTransaction, false);
+          return updateWithWatermark(tableTracer, insideTransaction, false);
         } else {
           Transaction transaction = tableStore.newTransaction();
-          return UpdateWithWatermark(tableTracer, transaction, true);
+          return updateWithWatermark(tableTracer, transaction, true);
         }
       } else {
-        return UpdateWithoutWatermark(tableTracer, tableStore);
+        return updateWithoutWatermark(tableTracer, tableStore);
       }
     }
 
-    protected abstract T UpdateWithWatermark(TableTracer tableTracer, Transaction transaction,
+    protected abstract T updateWithWatermark(TableTracer tableTracer, Transaction transaction,
         boolean autoCommitTransaction);
 
-    protected abstract T UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore);
+    protected abstract T updateWithoutWatermark(TableTracer tableTracer, Table tableStore);
   }
 
 }

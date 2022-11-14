@@ -163,14 +163,14 @@ public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
     }
 
     @Override
-    protected ArcticRowDelta UpdateWithWatermark(
+    protected ArcticRowDelta updateWithWatermark(
         TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticRowDelta(table, transaction.newRowDelta(),
           tableTracer, transaction, autoCommitTransaction);
     }
 
     @Override
-    protected ArcticRowDelta UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+    protected ArcticRowDelta updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
       return new ArcticRowDelta(table, tableStore.newRowDelta(), tableTracer);
     }
   }

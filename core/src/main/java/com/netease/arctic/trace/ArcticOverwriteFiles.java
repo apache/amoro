@@ -61,12 +61,14 @@ public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements Over
 
   @Override
   public OverwriteFiles addFile(DataFile file) {
+    overwriteFiles.addFile(file);
     addIcebergDataFile(file);
     return this;
   }
 
   @Override
   public OverwriteFiles deleteFile(DataFile file) {
+    overwriteFiles.deleteFile(file);
     deleteIcebergDataFile(file);
     return this;
   }
@@ -165,14 +167,14 @@ public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements Over
     }
 
     @Override
-    protected ArcticOverwriteFiles UpdateWithWatermark(
+    protected ArcticOverwriteFiles updateWithWatermark(
         TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticOverwriteFiles(table, transaction.newOverwrite(),
           tableTracer, transaction, autoCommitTransaction);
     }
 
     @Override
-    protected ArcticOverwriteFiles UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+    protected ArcticOverwriteFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
       return new ArcticOverwriteFiles(table, tableStore.newOverwrite(), tableTracer);
     }
   }

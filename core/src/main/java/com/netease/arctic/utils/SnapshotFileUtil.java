@@ -21,7 +21,6 @@ package com.netease.arctic.utils;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

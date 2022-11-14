@@ -109,14 +109,14 @@ public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements R
     }
 
     @Override
-    protected ArcticReplacePartitions UpdateWithWatermark(
+    protected ArcticReplacePartitions updateWithWatermark(
         TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
       return new ArcticReplacePartitions(table, transaction.newReplacePartitions(),
           tableTracer, transaction, autoCommitTransaction);
     }
 
     @Override
-    protected ArcticReplacePartitions UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+    protected ArcticReplacePartitions updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
       return new ArcticReplacePartitions(table, tableStore.newReplacePartitions(), tableTracer);
     }
   }

@@ -21,8 +21,8 @@ package com.netease.arctic.table;
 import java.util.HashSet;
 import java.util.Set;
 
-import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static com.netease.arctic.table.WatermarkGenerator.EVENT_TIME_TIMESTAMP_MS;
+import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**

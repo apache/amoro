@@ -26,11 +26,9 @@ import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
-import org.apache.commons.compress.utils.Sets;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
@@ -47,7 +45,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -56,11 +53,6 @@ import java.util.stream.Collectors;
 public class AmsTableTracer implements TableTracer {
 
   private static final Logger LOG = LoggerFactory.getLogger(AmsTableTracer.class);
-  private static final Set<String> UPDATE_WATERMARK_ACTIONS = Sets.newHashSet(
-      TraceOperations.APPEND,
-      TraceOperations.OVERWRITE,
-      TraceOperations.DELETE
-  );
 
   private final ArcticTable table;
   private final String innerTable;
@@ -73,7 +65,6 @@ public class AmsTableTracer implements TableTracer {
   private String action;
   private Map<String, String> properties;
   private InternalTableChange defaultTableChange;
-  private boolean updateWatermark = false;
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
@@ -205,15 +196,6 @@ public class AmsTableTracer implements TableTracer {
 
   public void setAction(String action) {
     this.action = action;
-    if (UPDATE_WATERMARK_ACTIONS.contains(action)) {
-      updateWatermark = true;
-    }
-  }
-
-  private void updateWatermarkIfNeed() {
-    if (updateWatermark) {
-
-    }
   }
 
   public static class InternalTableChange {

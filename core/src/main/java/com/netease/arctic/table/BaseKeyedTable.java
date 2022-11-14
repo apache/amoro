@@ -107,8 +107,13 @@ public class BaseKeyedTable implements KeyedTable {
 
     if (changeWatermark > baseWatermark) {
       ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
-      return builder.putAll(baseTable.properties()).put(TableProperties.WATERMARK_TABLE,
-          String.valueOf(changeWatermark)).build();
+      baseTable.properties().forEach((k, v) -> {
+        if (!TableProperties.WATERMARK_TABLE.equals(k)) {
+          builder.put(k, v);
+        }
+      });
+      builder.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
+      return builder.build();
     }
     return baseTable.properties();
   }
