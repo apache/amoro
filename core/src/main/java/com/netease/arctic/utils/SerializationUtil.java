@@ -19,6 +19,7 @@
 package com.netease.arctic.utils;
 
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.util.ByteBuffers;
 
 import java.io.ByteArrayInputStream;
@@ -77,5 +78,9 @@ public class SerializationUtil {
 
   public static ContentFile<?> toInternalTableFile(byte[] bytes) {
     return (ContentFile<?>) toObject(bytes);
+  }
+
+  public static FileScanTask toIcebergFileScanTask(ByteBuffer buffer) {
+    return (FileScanTask) toObject(buffer);
   }
 }

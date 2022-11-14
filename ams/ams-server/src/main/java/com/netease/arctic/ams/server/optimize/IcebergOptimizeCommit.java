@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.CommitMetaProducer;
@@ -13,11 +31,13 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -26,11 +46,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class NativeOptimizeCommit extends BaseOptimizeCommit {
-  private static final Logger LOG = LoggerFactory.getLogger(NativeOptimizeCommit.class);
+public class IcebergOptimizeCommit extends BaseOptimizeCommit {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergOptimizeCommit.class);
 
-  public NativeOptimizeCommit(ArcticTable arcticTable,
-                              Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
+  public IcebergOptimizeCommit(ArcticTable arcticTable,
+                               Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit) {
     super(arcticTable, optimizeTasksToCommit);
   }
 
@@ -96,6 +116,39 @@ public class NativeOptimizeCommit extends BaseOptimizeCommit {
     }
   }
 
+  protected boolean checkFileCount(OptimizeTaskItem task) {
+    List<FileScanTask> fileScanTasks = task.getOptimizeTask().getIcebergFileScanTasks()
+        .stream().map(SerializationUtil::toIcebergFileScanTask).collect(Collectors.toList());
+    int dataFileCount = fileScanTasks.size();
+    int eqDeleteFileCount = 0;
+    int posDeleteFileCount = 0;
+    for (FileScanTask fileScanTask : fileScanTasks) {
+      for (DeleteFile delete : fileScanTask.deletes()) {
+        if (delete.content() == FileContent.POSITION_DELETES) {
+          posDeleteFileCount++;
+        } else {
+          eqDeleteFileCount++;
+        }
+      }
+    }
+    int targetFileCount = new HashSet<>(task.getOptimizeRuntime().getTargetFiles()).size();
+
+    boolean result = dataFileCount == task.getOptimizeTask().getBaseFileCnt() &&
+        eqDeleteFileCount == task.getOptimizeTask().getEqDeleteFileCnt() &&
+        posDeleteFileCount == task.getOptimizeTask().getPosDeleteFileCnt() &&
+        targetFileCount == task.getOptimizeRuntime().getNewFileCnt();
+    if (!result) {
+      LOG.error("file count check failed. dataFileCount/dataFileCnt is {}/{}, " +
+              "eqDeleteFileCount/eqDeleteFileCount is {}/{}, " +
+              "posDeleteFileCount/posDeleteFileCnt is {}/{}, targetFileCount/newFileCnt is {}/{}",
+          dataFileCount, task.getOptimizeTask().getBaseFileCnt(),
+          eqDeleteFileCount, task.getOptimizeTask().getEqDeleteFileCnt(),
+          posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
+          targetFileCount, task.getOptimizeRuntime().getNewFileCnt());
+    }
+    return !result;
+  }
+
   public Map<String, OptimizeType> getPartitionOptimizeType() {
     return partitionOptimizeType;
   }
@@ -134,10 +187,10 @@ public class NativeOptimizeCommit extends BaseOptimizeCommit {
       rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       rewriteFiles.commit();
 
-      LOG.info("{} native minor optimize committed, delete {} data files, " +
+      LOG.info("{} iceberg minor optimize committed, delete {} data files, " +
           "add {} new data files", arcticTable.id(), deleteDataFiles.size(), addDataFiles.size());
     } else {
-      LOG.info("{} skip native minor optimize commit", arcticTable.id());
+      LOG.info("{} skip iceberg minor optimize commit", arcticTable.id());
     }
   }
 
@@ -202,20 +255,23 @@ public class NativeOptimizeCommit extends BaseOptimizeCommit {
 
   private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
     // only delete old data files
-    return optimizeTask.getBaseFiles().stream().map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
+    Set<ContentFile<?>> deletedFiles = new HashSet<>();
+    for (ByteBuffer icebergFileScanTask : optimizeTask.getIcebergFileScanTasks()) {
+      FileScanTask fileScanTask = SerializationUtil.toIcebergFileScanTask(icebergFileScanTask);
+      deletedFiles.add(fileScanTask.file());
+    }
+
+    return deletedFiles;
   }
 
   private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
-    // add old data files
-    Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
-        .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
+    Set<ContentFile<?>> deletedFiles = new HashSet<>();
+    for (ByteBuffer icebergFileScanTask : optimizeTask.getIcebergFileScanTasks()) {
+      FileScanTask fileScanTask = SerializationUtil.toIcebergFileScanTask(icebergFileScanTask);
+      deletedFiles.add(fileScanTask.file());
+      deletedFiles.addAll(fileScanTask.deletes());
+    }
 
-    // add old delete files
-    result.addAll(optimizeTask.getEqDeleteFiles().stream()
-        .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
-    result.addAll(optimizeTask.getPosDeleteFiles().stream()
-        .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
-
-    return result;
+    return deletedFiles;
   }
 }

@@ -28,14 +28,14 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestOrphanFileCleanSupportNative extends TestNativeIcebergBase {
+public class TestOrphanFileCleanSupportIceberg extends TestIcebergBase {
   @Before
   public void mock() {
     mockStatic(JDBCSqlSessionFactoryProvider.class);
     mockStatic(ServiceContainer.class);
     when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
-    TestOrphanFileCleanSupportNative.FakeFileInfoCacheService fakeFileInfoCacheService =
-        new TestOrphanFileCleanSupportNative.FakeFileInfoCacheService();
+    TestOrphanFileCleanSupportIceberg.FakeFileInfoCacheService fakeFileInfoCacheService =
+        new TestOrphanFileCleanSupportIceberg.FakeFileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fakeFileInfoCacheService);
   }
 

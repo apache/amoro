@@ -38,7 +38,6 @@ public class FileTree {
   private List<DataFile> insertFiles = new ArrayList<>();
   private List<DataFile> baseFiles = new ArrayList<>();
   private List<DeleteFile> posDeleteFiles = new ArrayList<>();
-  private List<DeleteFile> eqDeleteFiles = new ArrayList<>();
 
   // subTree contains any base file
   private Boolean findAnyBaseFilesInTree = null;
@@ -180,16 +179,6 @@ public class FileTree {
     }
   }
 
-  public void collectEqDeleteFiles(List<DeleteFile> collector) {
-    collector.addAll(eqDeleteFiles);
-    if (left != null) {
-      left.collectEqDeleteFiles(collector);
-    }
-    if (right != null) {
-      right.collectEqDeleteFiles(collector);
-    }
-  }
-
   public long accumulate(Function<FileTree, Long> function) {
     Long apply = function.apply(this);
     if (left != null) {
@@ -217,10 +206,6 @@ public class FileTree {
     return posDeleteFiles;
   }
 
-  public List<DeleteFile> getEqDeleteFiles() {
-    return eqDeleteFiles;
-  }
-
   public void addFile(ContentFile<?> file, DataFileType fileType) {
     switch (fileType) {
       case BASE_FILE:
@@ -235,9 +220,6 @@ public class FileTree {
       case POS_DELETE_FILE:
         posDeleteFiles.add((DeleteFile) file);
         break;
-      case NATIVE_EQ_DELETE_FILE:
-        eqDeleteFiles.add((DeleteFile) file);
-        break;
       default:
     }
   }
@@ -251,7 +233,6 @@ public class FileTree {
     this.insertFiles = Collections.emptyList();
     this.deleteFiles = Collections.emptyList();
     this.posDeleteFiles = Collections.emptyList();
-    this.eqDeleteFiles = Collections.emptyList();
   }
 
   /**

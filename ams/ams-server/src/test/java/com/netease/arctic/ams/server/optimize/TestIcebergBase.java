@@ -52,7 +52,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
-public class TestNativeIcebergBase {
+public class TestIcebergBase {
   @ClassRule
   public static final TemporaryFolder tempFolder = new TemporaryFolder();
   protected static final String ICEBERG_HADOOP_CATALOG_NAME = "iceberg_hadoop";

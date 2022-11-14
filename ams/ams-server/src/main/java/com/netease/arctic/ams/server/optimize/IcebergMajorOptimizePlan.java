@@ -1,8 +1,25 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.FileTree;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.table.ArcticTable;
@@ -10,43 +27,42 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
-public class NativeMajorOptimizePlan extends BaseNativeOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(NativeMajorOptimizePlan.class);
+public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergMajorOptimizePlan.class);
 
-  public NativeMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                 Map<DataFile, List<DeleteFile>> dataDeleteFileMap,
-                                 Map<String, Boolean> partitionTaskRunning,
-                                 int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, dataDeleteFileMap, partitionTaskRunning, queueId, currentTime);
+  public IcebergMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                  List<FileScanTask> fileScanTasks,
+                                  Map<String, Boolean> partitionTaskRunning,
+                                  int queueId, long currentTime) {
+    super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
   }
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
-    FileTree partitionTree = partitionFileTree.get(partitionToPath);
-    List<DataFile> partitionDataFiles = new ArrayList<>();
-    partitionTree.collectBaseFiles(partitionDataFiles);
-    if (CollectionUtils.isEmpty(partitionDataFiles)) {
+    List<FileScanTask> partitionFileScanTasks = partitionFileList.get(partitionToPath);
+    if (CollectionUtils.isEmpty(partitionFileScanTasks)) {
       LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, there are no data files",
           tableId(), getOptimizeType(), partitionToPath);
       return false;
     }
 
     Set<DeleteFile> partitionDeleteFiles = new HashSet<>();
-    for (List<DeleteFile> deleteFiles : dataDeleteFileMap.values()) {
-      partitionDeleteFiles.addAll(deleteFiles);
+    Set<DataFile> partitionDataFiles = new HashSet<>();
+    for (FileScanTask partitionFileScanTask : partitionFileScanTasks) {
+      partitionDataFiles.add(partitionFileScanTask.file());
+      partitionDeleteFiles.addAll(partitionFileScanTask.deletes());
     }
 
     double deleteFilesTotalSize = partitionDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
@@ -86,44 +102,8 @@ public class NativeMajorOptimizePlan extends BaseNativeOptimizePlan {
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
         commitGroup, planGroup, OptimizeType.Major, createTime, "");
-    FileTree treeRoot = partitionFileTree.get(partition);
-    treeRoot.completeTree(false);
-    List<FileTree> subTrees = new ArrayList<>();
-    // split tasks
-    treeRoot.splitSubTree(subTrees, new MinorOptimizePlan.CanSplitFileTree());
-    for (FileTree subTree : subTrees) {
-      // key -> dataFile index in dataFileList in task
-      // value -> relate eq-deleteFile index in eq-deleteFileList in task
-      Map<Integer, List<Integer>> eqDeleteFileIndexMap = new HashMap<>();
-      // value -> relate pos-deleteFile index in pos-deleteFileList in task
-      Map<Integer, List<Integer>> posDeleteFileIndexMap = new HashMap<>();
-      List<DataFile> dataFiles = new ArrayList<>();
-      List<DeleteFile> eqDeleteFiles = new ArrayList<>();
-      List<DeleteFile> posDeleteFiles = new ArrayList<>();
-      subTree.collectBaseFiles(dataFiles);
-      for (int i = 0; i < dataFiles.size(); i++) {
-        DataFile dataFile = dataFiles.get(i);
-        List<Integer> eqDeleteIndex = new ArrayList<>();
-        List<Integer> posDeleteIndex = new ArrayList<>();
-        for (DeleteFile deleteFile : dataDeleteFileMap.get(dataFile)) {
-          if (deleteFile.content() == FileContent.EQUALITY_DELETES) {
-            eqDeleteFiles.add(deleteFile);
-            eqDeleteIndex.add(eqDeleteFiles.size() - 1);
-          } else {
-            posDeleteFiles.add(deleteFile);
-            posDeleteIndex.add(posDeleteFiles.size() - 1);
-          }
-        }
-        if (CollectionUtils.isNotEmpty(eqDeleteIndex)) {
-          eqDeleteFileIndexMap.put(i, eqDeleteIndex);
-        }
-        if (CollectionUtils.isNotEmpty(posDeleteIndex)) {
-          posDeleteFileIndexMap.put(i, posDeleteIndex);
-        }
-      }
-      collector.add(buildOptimizeTask(dataFiles,
-          eqDeleteFiles, eqDeleteFileIndexMap, posDeleteFiles, posDeleteFileIndexMap, taskPartitionConfig));
-    }
+    List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
+    collector.add(buildOptimizeTask(fileScanTasks, taskPartitionConfig));
 
     return collector;
   }

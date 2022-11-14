@@ -27,15 +27,14 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class NodeTask {
@@ -46,15 +45,13 @@ public class NodeTask {
   private final List<DataFile> insertFiles = new ArrayList<>();
   private final List<DataFile> deleteFiles = new ArrayList<>();
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
-  private final List<DeleteFile> eqDeleteFiles = new ArrayList<>();
+  private List<FileScanTask> fileScanTasks = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;
   private TableIdentifier tableIdentifier;
   private int attemptId;
   private String customHiveSubdirectory;
-  private Map<Integer, List<Integer>> eqDeleteFilesIndex = new HashMap<>();
-  private Map<Integer, List<Integer>> posDeleteFilesIndex = new HashMap<>();
 
   public NodeTask() {
   }
@@ -86,9 +83,6 @@ public class NodeTask {
       case POS_DELETE_FILE:
         posDeleteFiles.add((DeleteFile) file);
         break;
-      case NATIVE_EQ_DELETE_FILE:
-        eqDeleteFiles.add((DeleteFile) file);
-        break;
       default:
         LOG.warn("file type is {}, not add in node", fileType);
         // ignore the object
@@ -108,7 +102,6 @@ public class NodeTask {
     Iterables.addAll(allFiles, insertFiles);
     Iterables.addAll(allFiles, deleteFiles);
     Iterables.addAll(allFiles, posDeleteFiles);
-    Iterables.addAll(allFiles, eqDeleteFiles);
     return allFiles;
   }
 
@@ -128,8 +121,8 @@ public class NodeTask {
     return posDeleteFiles;
   }
 
-  public List<DeleteFile> eqDeleteFiles() {
-    return eqDeleteFiles;
+  public List<FileScanTask> fileScanTasks() {
+    return fileScanTasks;
   }
 
   public Set<DataTreeNode> getSourceNodes() {
@@ -176,20 +169,8 @@ public class NodeTask {
     return taskId.getType();
   }
 
-  public void setEqDeleteFilesIndex(Map<Integer, List<Integer>> eqDeleteFilesIndex) {
-    this.eqDeleteFilesIndex = eqDeleteFilesIndex;
-  }
-
-  public Map<Integer, List<Integer>> getEqDeleteFilesIndex() {
-    return eqDeleteFilesIndex;
-  }
-
-  public void setPosDeleteFilesIndex(Map<Integer, List<Integer>> posDeleteFilesIndex) {
-    this.posDeleteFilesIndex = posDeleteFilesIndex;
-  }
-
-  public Map<Integer, List<Integer>> getPosDeleteFilesIndex() {
-    return posDeleteFilesIndex;
+  public void setFileScanTasks(List<FileScanTask> fileScanTasks) {
+    this.fileScanTasks = fileScanTasks;
   }
 
   @Override
@@ -202,7 +183,7 @@ public class NodeTask {
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
         .add("posDeleteFiles", posDeleteFiles.size())
-        .add("eqDeleteFiles", eqDeleteFiles.size())
+        .add("fileScanTasks", fileScanTasks.size())
         .add("customHiveSubdirectory", customHiveSubdirectory)
         .toString();
   }

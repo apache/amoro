@@ -36,7 +36,7 @@ import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
-import com.netease.arctic.ams.server.optimize.OptimizePlan;
+import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
 import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -602,18 +602,18 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
-          OptimizePlan optimizePlan;
+          BaseOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
           int queueId = getQueueId(properties);
 
           if (TableTypeUtil.isNativeIceberg(tableItem.getArcticTable(false))) {
-            optimizePlan = tableItem.getNativeMajorPlan(queueId, currentTime);
+            optimizePlan = tableItem.getIcebergMajorPlan(queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
 
             // if no major tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getNativeMinorPlan(queueId, currentTime);
+              optimizePlan = tableItem.getIcebergMinorPlan(queueId, currentTime);
               optimizeTasks = optimizePlan.plan();
             }
           } else {
@@ -717,7 +717,7 @@ public class OptimizeQueueService extends IJDBCService {
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
-                                          OptimizePlan optimizePlan,
+                                          BaseOptimizePlan optimizePlan,
                                           List<BaseOptimizeTask> optimizeTasks,
                                           Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {

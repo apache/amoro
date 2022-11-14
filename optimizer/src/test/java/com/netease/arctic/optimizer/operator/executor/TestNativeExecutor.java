@@ -14,6 +14,7 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.CatalogProperties;
@@ -293,31 +294,7 @@ public class TestNativeExecutor {
     nodeTask.setTableIdentifier(arcticTable.id());
     nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Minor, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
-
-    Map<Integer, List<Integer>> eqDeleteIndexMap = new HashMap<>();
-    Map<Integer, List<Integer>> posDeleteIndexMap = new HashMap<>();
-    for (FileScanTask fileScanTask : arcticTable.asUnkeyedTable().newScan().planFiles()) {
-      DataFile dataFile = fileScanTask.file();
-      nodeTask.addFile(dataFile, DataFileType.BASE_FILE);
-      Integer dataIndex = nodeTask.baseFiles().size() - 1;
-      List<DeleteFile> deleteFiles = fileScanTask.deletes();
-      List<Integer> eqIndex = new ArrayList<>();
-      List<Integer> posIndex = new ArrayList<>();
-      for (DeleteFile delete : deleteFiles) {
-        if (delete.content() == FileContent.POSITION_DELETES) {
-          nodeTask.addFile(delete, DataFileType.POS_DELETE_FILE);
-          posIndex.add(nodeTask.posDeleteFiles().size() - 1);
-        } else {
-          nodeTask.addFile(delete, DataFileType.EQ_DELETE_FILE);
-          eqIndex.add(nodeTask.eqDeleteFiles().size() - 1);
-        }
-      }
-      eqDeleteIndexMap.put(dataIndex, eqIndex);
-      posDeleteIndexMap.put(dataIndex, posIndex);
-    }
-
-    nodeTask.setEqDeleteFilesIndex(eqDeleteIndexMap);
-    nodeTask.setPosDeleteFilesIndex(posDeleteIndexMap);
+    nodeTask.setFileScanTasks(IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator()));
 
     return nodeTask;
   }

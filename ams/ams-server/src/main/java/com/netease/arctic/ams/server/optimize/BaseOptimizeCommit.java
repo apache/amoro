@@ -35,7 +35,6 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -155,25 +154,21 @@ public class BaseOptimizeCommit {
     int baseFileCount = new HashSet<>(task.getOptimizeTask().getBaseFiles()).size();
     int insertFileCount = new HashSet<>(task.getOptimizeTask().getInsertFiles()).size();
     int deleteFileCount = new HashSet<>(task.getOptimizeTask().getDeleteFiles()).size();
-    int eqDeleteFileCount = new HashSet<>(task.getOptimizeTask().getEqDeleteFiles()).size();
     int posDeleteFileCount = new HashSet<>(task.getOptimizeTask().getPosDeleteFiles()).size();
     int targetFileCount = new HashSet<>(task.getOptimizeRuntime().getTargetFiles()).size();
 
     boolean result = baseFileCount == task.getOptimizeTask().getBaseFileCnt() &&
         insertFileCount == task.getOptimizeTask().getInsertFileCnt() &&
         deleteFileCount == task.getOptimizeTask().getDeleteFileCnt() &&
-        eqDeleteFileCount == task.getOptimizeTask().getEqDeleteFileCnt() &&
         posDeleteFileCount == task.getOptimizeTask().getPosDeleteFileCnt() &&
         targetFileCount == task.getOptimizeRuntime().getNewFileCnt();
     if (!result) {
       LOG.error("file count check failed. baseFileCount/baseFileCnt is {}/{}, " +
               "insertFileCount/insertFileCnt is {}/{}, deleteFileCount/deleteFileCnt is {}/{}, " +
-              "eqDeleteFileCount/eqDeleteFileCnt is {}/{}, " +
               "posDeleteFileCount/posDeleteFileCnt is {}/{}, targetFileCount/newFileCnt is {}/{}",
           baseFileCount, task.getOptimizeTask().getBaseFileCnt(),
           insertFileCount, task.getOptimizeTask().getInsertFileCnt(),
           deleteFileCount, task.getOptimizeTask().getDeleteFileCnt(),
-          eqDeleteFileCount, task.getOptimizeTask().getEqDeleteFileCnt(),
           posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
           targetFileCount, task.getOptimizeRuntime().getNewFileCnt());
     }

@@ -35,7 +35,6 @@ import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
@@ -60,10 +59,9 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
@@ -830,7 +828,7 @@ public class TableOptimizeItem extends IJDBCService {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
         BaseOptimizeCommit optimizeCommit;
         if (com.netease.arctic.utils.TableTypeUtil.isNativeIceberg(getArcticTable())) {
-          optimizeCommit = new NativeOptimizeCommit(getArcticTable(true), tasksToCommit);
+          optimizeCommit = new IcebergOptimizeCommit(getArcticTable(true), tasksToCommit);
         } else if (TableTypeUtil.isHive(getArcticTable())) {
           optimizeCommit = new SupportHiveCommit(getArcticTable(true),
               tasksToCommit, OptimizeTaskItem::persistTargetFiles);
@@ -936,13 +934,11 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public NativeMajorOptimizePlan getNativeMajorPlan(int queueId, long currentTime) {
-    Map<DataFile, List<DeleteFile>> dataDeleteFileMap = new HashMap<>();
-    for (FileScanTask fileScanTask : arcticTable.asUnkeyedTable().newScan().planFiles()) {
-      dataDeleteFileMap.put(fileScanTask.file(), fileScanTask.deletes());
-    }
+  public IcebergMajorOptimizePlan getIcebergMajorPlan(int queueId, long currentTime) {
+    List<FileScanTask> fileScanTasks =
+        IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator());
 
-    return new NativeMajorOptimizePlan(arcticTable, tableOptimizeRuntime, dataDeleteFileMap,
+    return new IcebergMajorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
         generatePartitionRunning(), queueId, currentTime);
   }
 
@@ -953,13 +949,11 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public NativeMinorOptimizePlan getNativeMinorPlan(int queueId, long currentTime) {
-    Map<DataFile, List<DeleteFile>> dataDeleteFileMap = new HashMap<>();
-    for (FileScanTask fileScanTask : arcticTable.asUnkeyedTable().newScan().planFiles()) {
-      dataDeleteFileMap.put(fileScanTask.file(), fileScanTask.deletes());
-    }
+  public IcebergMinorOptimizePlan getIcebergMinorPlan(int queueId, long currentTime) {
+    List<FileScanTask> fileScanTasks =
+        IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator());
 
-    return new NativeMinorOptimizePlan(arcticTable, tableOptimizeRuntime, dataDeleteFileMap,
+    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
         generatePartitionRunning(), queueId, currentTime);
   }
 

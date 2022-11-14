@@ -113,7 +113,7 @@ public class ConvertStructUtil {
       case INSERT_FILE:
       case EQ_DELETE_FILE:
         Preconditions.checkArgument(content == FileContent.DATA,
-            "%s, File content should be POSITION_DELETES, but is %s", path, content);
+            "%s, File content should be DATA, but is %s", path, content);
         break;
       case POS_DELETE_FILE:
         Preconditions.checkArgument(content == FileContent.POSITION_DELETES,

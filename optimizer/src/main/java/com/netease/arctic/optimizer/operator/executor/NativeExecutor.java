@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.ams.api.JobId;
@@ -6,24 +24,19 @@ import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import com.netease.arctic.optimizer.OptimizerConfig;
-import com.netease.arctic.scan.IcebergFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.PartitionSpecParser;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.SchemaParser;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
-import org.apache.iceberg.expressions.ResidualEvaluator;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.DataWriter;
@@ -34,13 +47,10 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
-import static org.apache.iceberg.expressions.Expressions.alwaysTrue;
 
 public class NativeExecutor extends BaseExecutor<DataFile> {
   private static final Logger LOG = LoggerFactory.getLogger(NativeExecutor.class);
@@ -49,8 +59,6 @@ public class NativeExecutor extends BaseExecutor<DataFile> {
   private final ArcticTable table;
   private final long startTime;
   private final OptimizerConfig config;
-  private final Map<Integer, List<Integer>> eqDeleteFilesIndex;
-  private final Map<Integer, List<Integer>> posDeleteFilesIndex;
 
   public NativeExecutor(NodeTask nodeTask,
                         ArcticTable table,
@@ -60,10 +68,6 @@ public class NativeExecutor extends BaseExecutor<DataFile> {
     this.table = table;
     this.startTime = startTime;
     this.config = config;
-    this.eqDeleteFilesIndex = MapUtils.isEmpty(nodeTask.getEqDeleteFilesIndex()) ?
-        new HashMap<>() : nodeTask.getEqDeleteFilesIndex();
-    this.posDeleteFilesIndex = MapUtils.isEmpty(nodeTask.getPosDeleteFilesIndex()) ?
-        new HashMap<>() : nodeTask.getPosDeleteFilesIndex();
   }
 
   @Override
@@ -71,13 +75,10 @@ public class NativeExecutor extends BaseExecutor<DataFile> {
     Iterable<DataFile> targetFiles;
     LOG.info("start process native optimize task: {}", task);
 
-    List<DataFile> dataFiles = task.baseFiles();
-    List<DeleteFile> posDeleteFiles = task.posDeleteFiles();
-    List<DeleteFile> eqDeleteFiles = task.eqDeleteFiles();
+    List<FileScanTask> fileScanTasks = task.fileScanTasks();
 
     targetFiles = table.io().doAs(() -> {
-      CloseableIterator<Record> recordIterator =
-          openTask(dataFiles, eqDeleteFiles, posDeleteFiles, table.schema(), eqDeleteFilesIndex, posDeleteFilesIndex);
+      CloseableIterator<Record> recordIterator = openTask(fileScanTasks, table.schema());
       return optimizeTable(recordIterator);
     });
 
@@ -140,7 +141,7 @@ public class NativeExecutor extends BaseExecutor<DataFile> {
       }
       Record baseRecord = recordIterator.next();
 
-      writer.add(baseRecord);
+      writer.write(baseRecord);
       insertCount++;
       if (insertCount == 1 || insertCount == 100000) {
         LOG.info("task {} insert records number {} and data sampling {}",
@@ -156,37 +157,9 @@ public class NativeExecutor extends BaseExecutor<DataFile> {
     return result;
   }
 
-  private CloseableIterator<Record> openTask(List<DataFile> dataFiles,
-                                             List<DeleteFile> eqDeleteList,
-                                             List<DeleteFile> posDeleteList,
-                                             Schema requiredSchema,
-                                             Map<Integer, List<Integer>> eqDeleteFilesIndex,
-                                             Map<Integer, List<Integer>> posDeleteFilesIndex) {
-    if (CollectionUtils.isEmpty(dataFiles)) {
+  private CloseableIterator<Record> openTask(List<FileScanTask> fileScanTasks, Schema requiredSchema) {
+    if (CollectionUtils.isEmpty(fileScanTasks)) {
       return CloseableIterator.empty();
-    }
-    
-    List<IcebergFileScanTask> fileScanTasks = new ArrayList<>();
-    for (int i = 0; i < dataFiles.size(); i++) {
-      DataFile dataFile = dataFiles.get(i);
-      List<DeleteFile> deleteFiles = new ArrayList<>();
-      if (CollectionUtils.isNotEmpty(eqDeleteFilesIndex.get(i))) {
-        List<Integer> eqIndexes = eqDeleteFilesIndex.get(i);
-        for (Integer eqIndex : eqIndexes) {
-          deleteFiles.add(eqDeleteList.get(eqIndex));
-        }
-      }
-      if (CollectionUtils.isNotEmpty(posDeleteFilesIndex.get(i))) {
-        List<Integer> posIndexes = posDeleteFilesIndex.get(i);
-        for (Integer posIndex : posIndexes) {
-          deleteFiles.add(posDeleteList.get(posIndex));
-        }
-      }
-      IcebergFileScanTask icebergFileScanTask = new IcebergFileScanTask(dataFile,
-          deleteFiles.toArray(new DeleteFile[0]),
-          SchemaParser.toJson(requiredSchema), PartitionSpecParser.toJson(table.spec()),
-          ResidualEvaluator.of(table.spec(), alwaysTrue(), false));
-      fileScanTasks.add(icebergFileScanTask);
     }
 
     GenericIcebergDataReader icebergDataReader =

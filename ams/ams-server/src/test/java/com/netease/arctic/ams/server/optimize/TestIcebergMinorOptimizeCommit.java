@@ -6,8 +6,8 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,20 +28,16 @@ import java.util.stream.Collectors;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestNativeMajorOptimizeCommit extends TestNativeIcebergBase {
+public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
   @Test
-  public void testNoPartitionTableMajorOptimizeCommit() throws Exception {
+  public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
     icebergTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "100")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
     insertEqDeleteFiles(icebergTable.asUnkeyedTable());
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    Map<DataFile, List<DeleteFile>> dataFileListMap = new HashMap<>();
-    for (FileScanTask fileScanTask : icebergTable.asUnkeyedTable().newScan().planFiles()) {
-      dataFileListMap.put(fileScanTask.file(), fileScanTask.deletes());
-    }
+    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
     icebergTable.asUnkeyedTable().newScan().planFiles()
@@ -52,8 +48,8 @@ public class TestNativeMajorOptimizeCommit extends TestNativeIcebergBase {
           }
         });
 
-    NativeMajorOptimizePlan optimizePlan = new NativeMajorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), dataFileListMap,
+    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergTable,
+        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 
@@ -78,7 +74,7 @@ public class TestNativeMajorOptimizeCommit extends TestNativeIcebergBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    NativeOptimizeCommit optimizeCommit = new NativeOptimizeCommit(icebergTable, partitionTasks);
+    IcebergOptimizeCommit optimizeCommit = new IcebergOptimizeCommit(icebergTable, partitionTasks);
     optimizeCommit.commit(icebergTable.asUnkeyedTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -90,6 +86,6 @@ public class TestNativeMajorOptimizeCommit extends TestNativeIcebergBase {
         });
 
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
-    Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
+    Assert.assertEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
 }

@@ -166,7 +166,7 @@ CREATE TABLE optimize_file (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     optimize_type varchar(10) NOT NULL,
     trace_id varchar(40) NOT NULL,
-    file_type varchar(32) NOT NULL,
+    content_type varchar(32) NOT NULL,
     is_target int DEFAULT 0,
     file_content blob(60000) DEFAULT NULL,
     PRIMARY KEY (id)

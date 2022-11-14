@@ -25,7 +25,7 @@ package com.netease.arctic.data;
  *   <li>INSERT_LINE: store data record in {@link com.netease.arctic.table.ChangeTable}</li>
  *   <li>EQ_DELETE_FILE: store equality delete record in {@link com.netease.arctic.table.ChangeTable}</li>
  *   <li>POS_DELETE_FILE: store positional delete record in {@link com.netease.arctic.table.BaseTable}</li>
- *   <li>NATIVE_EQ_DELETE_FILE: store equality delete record in native iceberg table</li>
+ *   <li>ICEBERG_EQ_DELETE_FILE: store equality delete record in native iceberg table</li>
  * </ul>
  */
 public enum DataFileType {
@@ -33,7 +33,7 @@ public enum DataFileType {
   INSERT_FILE(1, "I"),
   EQ_DELETE_FILE(2, "ED"),
   POS_DELETE_FILE(3, "PD"),
-  NATIVE_EQ_DELETE_FILE(4, "NED");
+  ICEBERG_EQ_DELETE_FILE(4, "IED");
 
   private final int id;
 

@@ -10,7 +10,7 @@ import org.junit.Test;
 import java.util.HashSet;
 import java.util.List;
 
-public class TestExpireFileCleanSupportNative extends TestNativeIcebergBase {
+public class TestExpireFileCleanSupportIceberg extends TestIcebergBase {
   @Test
   public void testExpireTableFiles() throws Exception {
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());

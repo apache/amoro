@@ -58,7 +58,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MinorOptimizePlan extends BaseOptimizePlan {
+public class MinorOptimizePlan extends BaseArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MinorOptimizePlan.class);
   private static final long INVALID_TX_ID = -1L;
 
@@ -112,7 +112,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
   }
 
   @Override
-  public void addOptimizeFilesTree() {
+  public void addOptimizeFiles() {
     addChangeFilesIntoFileTree();
     addBaseFileIntoFileTree();
   }
@@ -257,7 +257,7 @@ public class MinorOptimizePlan extends BaseOptimizePlan {
       return null;
     }
 
-    Preconditions.checkArgument(DataFileType.POS_DELETE_FILE != DataFileType.valueOf(dataFileInfo.getType()), 
+    Preconditions.checkArgument(DataFileType.POS_DELETE_FILE != DataFileType.valueOf(dataFileInfo.getType()),
         "not support pos-delete files in change table " + dataFileInfo.getPath());
 
     DataFile dataFile = (DataFile) ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);

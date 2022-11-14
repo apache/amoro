@@ -214,11 +214,11 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     // load tables from catalog
     Set<TableIdentifier> tableIdentifiers = com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog();
 
-    Map<String, ArcticCatalog> nativeCatalogMap = new HashMap<>();
+    Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
     for (TableIdentifier tableIdentifier : tableIdentifiers) {
       TableMetadata tableMetadata = new TableMetadata();
-      if (nativeCatalogMap.get(tableIdentifier.getCatalog()) != null) {
-        ArcticTable arcticTable = nativeCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
+      if (icebergCatalogMap.get(tableIdentifier.getCatalog()) != null) {
+        ArcticTable arcticTable = icebergCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
         tableMetadata.setTableIdentifier(tableIdentifier);
         tableMetadata.setProperties(arcticTable.properties());
       } else {
@@ -228,7 +228,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
           tableMetadata.setTableIdentifier(tableIdentifier);
           tableMetadata.setProperties(arcticTable.properties());
-          nativeCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
+          icebergCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
         } else {
           tableMetadata = metaService.loadTableMetadata(tableIdentifier);
         }
@@ -315,11 +315,11 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       return;
     }
 
-    Map<String, ArcticCatalog> nativeCatalogMap = new HashMap<>();
+    Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
     for (TableIdentifier toAddTable : toAddTables) {
       TableMetadata tableMetadata = new TableMetadata();
-      if (nativeCatalogMap.get(toAddTable.getCatalog()) != null) {
-        ArcticTable arcticTable = nativeCatalogMap.get(toAddTable.getCatalog()).loadTable(toAddTable);
+      if (icebergCatalogMap.get(toAddTable.getCatalog()) != null) {
+        ArcticTable arcticTable = icebergCatalogMap.get(toAddTable.getCatalog()).loadTable(toAddTable);
         tableMetadata.setTableIdentifier(toAddTable);
         tableMetadata.setProperties(arcticTable.properties());
       } else {
@@ -329,7 +329,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           ArcticTable arcticTable = arcticCatalog.loadTable(toAddTable);
           tableMetadata.setTableIdentifier(toAddTable);
           tableMetadata.setProperties(arcticTable.properties());
-          nativeCatalogMap.put(toAddTable.getCatalog(), arcticCatalog);
+          icebergCatalogMap.put(toAddTable.getCatalog(), arcticCatalog);
         } else {
           tableMetadata = metaService.loadTableMetadata(toAddTable);
         }
