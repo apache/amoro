@@ -32,14 +32,14 @@ public class TestAdaptHiveReader extends HiveTableTestBase {
   @Test
   public void testInt96WithoutTZPredicatePushDown() throws IOException {
     testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive",
-        Expressions.equal("op_time", "2022-01-04T12:00:00"),
+        Expressions.equal(COLUMN_NAME_OP_TIME, "2022-01-04T12:00:00"),
         ImmutableList.of(HiveTestRecords.baseRecords().get(1)));
   }
 
   @Test
   public void testInt96WithTZPredicatePushDown() throws IOException {
     testWrite(testKeyedHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive",
-        Expressions.equal("op_time_with_zone", "2022-01-04T13:00:00+01:00"),
+        Expressions.equal(COLUMN_NAME_OP_TIME_WITH_ZONE, "2022-01-04T13:00:00+01:00"),
         ImmutableList.of(HiveTestRecords.baseRecords().get(1)));
   }
 
