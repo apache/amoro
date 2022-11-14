@@ -30,6 +30,7 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
@@ -59,8 +60,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "0");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "0");
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
     testKeyedTable.changeTable().newScan().planFiles()
@@ -81,8 +82,8 @@ public class TestExpiredFileClean extends TableTestBase {
     Assert.assertEquals(2, partitions.size());
 
     UpdatePartitionProperties updateProperties = testKeyedTable.baseTable().updatePartitionProperties(null);
-    updateProperties.set(partitions.get(0), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "3");
-    updateProperties.set(partitions.get(1), TableProperties.BASE_TABLE_MAX_TRANSACTION_ID, "1");
+    updateProperties.set(partitions.get(0), TableProperties.PARTITION_MAX_TRANSACTION_ID, "3");
+    updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "1");
     updateProperties.commit();
     Assert.assertTrue(testKeyedTable.io().exists((String) s1Files.get(0).path()));
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
@@ -112,10 +113,11 @@ public class TestExpiredFileClean extends TableTestBase {
     AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
     changeInsertFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    testKeyedTable.changeTable().refresh();
+    Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeTableFilesInfo.addAll(changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable))
         .collect(Collectors.toList()));
 
     return changeInsertFiles;

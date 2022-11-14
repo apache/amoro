@@ -46,6 +46,7 @@ CREATE TABLE container_metadata (
 CREATE TABLE snapshot_info_cache (
     table_identifier varchar(384) NOT NULL,
     snapshot_id bigint NOT NULL,
+    snapshot_sequence bigint NOT NULL DEFAULT -1,
     parent_snapshot_id bigint NOT NULL,
     action varchar(64) DEFAULT NULL,
     inner_table varchar(64) NOT NULL,
@@ -144,6 +145,7 @@ CREATE TABLE file_info_cache (
     add_snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     delete_snapshot_id bigint DEFAULT NULL,
+    add_snapshot_sequence bigint NOT NULL DEFAULT -1,
     inner_table varchar(64) DEFAULT NULL,
     file_path varchar(400) NOT NULL,
     file_type varchar(64) DEFAULT NULL,

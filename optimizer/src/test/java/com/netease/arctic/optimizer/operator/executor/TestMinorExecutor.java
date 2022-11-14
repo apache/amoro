@@ -34,6 +34,7 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
@@ -143,10 +144,10 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
     changeDeleteFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, testKeyedTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable))
         .collect(Collectors.toList());
   }
 
@@ -168,10 +169,10 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
     changeInsertFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable))
         .collect(Collectors.toList());
   }
 }

@@ -46,6 +46,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,8 +191,7 @@ public class TableExpireService implements ITableExpireService {
       Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFileInfo ->
-                FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
+            .filter(dataFileInfo -> dataFileInfo.getSequence() <= maxTransactionId)
             .collect(Collectors.toList()));
       }
     } else {
@@ -200,8 +201,7 @@ public class TableExpireService implements ITableExpireService {
 
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           deleteFiles.addAll(partitionDataFiles.stream()
-              .filter(dataFileInfo ->
-                  FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= value)
+              .filter(dataFileInfo -> dataFileInfo.getSequence() <= value)
               .collect(Collectors.toList()));
         }
       });

@@ -39,6 +39,8 @@ import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,18 +55,21 @@ import java.util.stream.Collectors;
 public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveHasPosDeleteCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedHiveTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testKeyedHiveTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -135,9 +140,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
 
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveNoPosDeleteCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 2L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 2L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -205,18 +211,21 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedHiveTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testKeyedHiveTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -281,9 +290,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
 
   @Test
   public void testUnKeyedTableMajorOptimizeSupportHiveCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -352,9 +362,10 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -420,10 +431,11 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
 
   @Test
   public void testUnPartitionTableMajorOptimizeSupportHiveCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -490,19 +502,22 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     testUnPartitionKeyedHiveTable.updateProperties()
         .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2L, baseDataFiles,
-        targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
+                testUnPartitionKeyedHiveTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();

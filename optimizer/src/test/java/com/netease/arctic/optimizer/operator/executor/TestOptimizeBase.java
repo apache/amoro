@@ -35,6 +35,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
@@ -66,11 +67,10 @@ public interface TestOptimizeBase {
     AppendFiles baseAppend = baseTable.newAppend();
     baseDataFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-
-    long commitTime = System.currentTimeMillis();
+    Snapshot snapshot = baseTable.currentSnapshot();
 
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, arcticTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable))
         .collect(Collectors.toList()));
     return baseDataFiles;
   }
@@ -133,10 +133,10 @@ public interface TestOptimizeBase {
     RowDelta rowDelta = baseTable.newRowDelta();
     deleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.commit();
+    Snapshot snapshot = baseTable.currentSnapshot();
 
-    long commitTime = System.currentTimeMillis();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, arcticTable.asKeyedTable()))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     return deleteFiles;

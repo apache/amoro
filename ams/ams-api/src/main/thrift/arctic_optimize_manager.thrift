@@ -93,6 +93,7 @@ struct DataFileInfo {
     7: string partition;
     8: i64 commitTime;
     9: i64 recordCount;
+    10: i64 sequence;
 }
 
 struct OptimizerRegisterInfo {

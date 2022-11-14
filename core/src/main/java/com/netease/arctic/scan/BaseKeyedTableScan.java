@@ -87,24 +87,16 @@ public class BaseKeyedTableScan implements KeyedTableScan {
   @Override
   public CloseableIterable<CombinedScanTask> planTasks() {
     // base file
-    List<ArcticFileScanTask> changeFileList = new ArrayList<>();
-    List<ArcticFileScanTask> baseFileList = new ArrayList<>();
-    table.io().doAs(() -> {
-      planFiles(table.baseTable()).forEach(
-          fileScanTask -> baseFileList.add(new BaseArcticFileScanTask(fileScanTask))
-      );
-      return null;
-    });
+    CloseableIterable<ArcticFileScanTask> baseFileList;
+    baseFileList = table.io().doAs(this::planBaseFiles);
 
+    // change file
+    CloseableIterable<ArcticFileScanTask> changeFileList;
     if (table.primaryKeySpec().primaryKeyExisted()) {
-      table.io().doAs(() -> {
-        planFiles(table.changeTable()).forEach(
-            fileScanTask -> changeFileList.add(new BaseArcticFileScanTask(fileScanTask))
-        );
-        return null;
-      });
+      changeFileList = table.io().doAs(this::planChangeFiles);
+    } else {
+      changeFileList = CloseableIterable.empty();
     }
-    LOG.info("mor statistics plan change file size {},base file size {}", changeFileList.size(), baseFileList.size());
 
     // 1. group files by partition
     Map<StructLike, Collection<ArcticFileScanTask>> partitionedFiles =
@@ -118,6 +110,22 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     // 3.combine node task (FileScanTask List -> CombinedScanTask)
     return combineNode(CloseableIterable.withNoopClose(splitTasks),
         splitSize, lookBack, openFileCost);
+  }
+
+  private CloseableIterable<ArcticFileScanTask> planBaseFiles() {
+    return CloseableIterable.transform(planFiles(table.baseTable()), BaseArcticFileScanTask::new);
+  }
+
+  private CloseableIterable<ArcticFileScanTask> planChangeFiles() {
+    StructLikeMap<Long> partitionMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(table);
+    StructLikeMap<Long> legacyPartitionMaxTransactionId = TablePropertyUtil.getLegacyPartitionMaxTransactionId(table);
+    ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
+        .fromTransaction(partitionMaxTransactionId)
+        .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+    if (expression != null) {
+      changeTableScan = changeTableScan.filter(expression);
+    }
+    return changeTableScan.planTasks();
   }
 
   private CloseableIterable<FileScanTask> planFiles(UnkeyedTable internalTable) {
@@ -223,28 +231,13 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     fileScanTasks.put(partition, fileScanTaskList);
   }
 
-  public Map<StructLike, Collection<ArcticFileScanTask>> groupFilesByPartition(List<ArcticFileScanTask> changeTasks,
-      List<ArcticFileScanTask> baseTasks) {
+  public Map<StructLike, Collection<ArcticFileScanTask>> groupFilesByPartition(
+      CloseableIterable<ArcticFileScanTask> changeTasks,
+      CloseableIterable<ArcticFileScanTask> baseTasks) {
     ListMultimap<StructLike, ArcticFileScanTask> filesGroupedByPartition
         = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
-    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(table);
 
-    // filter change files according to max transaction id
-    changeTasks.forEach(task -> {
-      StructLike structLike = task.file().partition();
-      Long txId;
-      if (structLike.size() == 0) {
-        txId = partitionMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT);
-      } else {
-        txId = partitionMaxTxId.get(task.file().partition());
-      }
-      // Long transactionId = partitionTransactionMap.get(FileUtil.getPartition(task.file()));
-      txId = txId == null ? -1 : txId;
-      if (task.file().transactionId() > txId) {
-        filesGroupedByPartition.put(task.file().partition(), task);
-      }
-    });
-
+    changeTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
     baseTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
     return filesGroupedByPartition.asMap();
   }
