@@ -70,16 +70,12 @@ public class TestKeyedTableDml extends SparkTestBase {
   @Test
   public void testInsertNotUpsert() {
     sql(createTableInsert, database, insertTable);
-    sql("insert into " + database + "." + notUpsertTable +
-        " values (1, 'aaa', 'abcd' ) , " +
-        "(2, 'bbb', 'bbcd'), " +
-        "(3, 'ccc', 'cbcd') ");
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
-    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(3, rows.size());
     sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
-    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(3, rows.size());
   }
 
 
@@ -108,6 +104,7 @@ public class TestKeyedTableDml extends SparkTestBase {
         " values (1, 'aaa', 'aaaa' ) , " +
         "(4, 'bbb', 'bbcd'), " +
         "(5, 'ccc', 'cbcd') ");
+    sql("select * from {0}.{1} ", database, notUpsertTable);
 
     sql("insert into " + database + "." + upsertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
@@ -165,6 +162,51 @@ public class TestKeyedTableDml extends SparkTestBase {
   public void testUpdatePrimaryField() {
     Assert.assertThrows(UnsupportedOperationException.class,
             () -> sql("update {0}.{1} set id = 1 where data = ''abcd''", database, notUpsertTable));
+  }
+
+  @Test
+  public void testInsertIntoDuplicateData() {
+    sql("create table {0}.{1}( \n" +
+            " id int, \n" +
+            " name string, \n" +
+            " data string, primary key(id, name))\n" +
+            " using arctic partitioned by (data) " , database, "testPks");
+
+    // insert into values
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("insert into " + database + "." + "testPks" +
+                    " values (1, 1.1, 'abcd' ) , " +
+                    "(1, 1.1, 'bbcd'), " +
+                    "(3, 1.3, 'cbcd') "));
+
+    sql(createTableInsert, database, insertTable);
+    sql("insert into " + database + "." + notUpsertTable +
+            " values (1, 'aaa', 'abcd' ) , " +
+            "(2, 'bbb', 'bbcd'), " +
+            "(3, 'ccc', 'cbcd') ");
+
+    sql("select * from " + database + "." + notUpsertTable);
+
+    // insert into select
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("insert into " + database + "." + insertTable + " select * from {0}.{1}",
+                    database, notUpsertTable));
+
+    // insert into select + group by has no duplicated data
+    sql("insert into " + database + "." + insertTable + " select * from {0}.{1} group by id, name, data",
+            database, notUpsertTable);
+    rows = sql("select * from " + database + "." + insertTable);
+    Assert.assertEquals(3, rows.size());
+
+    // insert into select + group by has duplicated data
+    sql("insert into " + database + "." + notUpsertTable +
+            " values (1, 'aaaa', 'abcd' )");
+    Assert.assertThrows(UnsupportedOperationException.class,
+            () -> sql("insert into " + database + "." + insertTable +
+                            " select * from {0}.{1} group by id, name, data",
+                    database, notUpsertTable));
+
+    sql("drop table " + database + "." + "testPks");
   }
 
   @Test

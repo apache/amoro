@@ -56,13 +56,6 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       val upsertQuery = buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       var query = upsertQuery
       var options: Map[String, String] = Map.empty
-      arcticRelation.table match {
-        case a: ArcticSparkTable =>
-          if (a.table().isKeyedTable) {
-            val newQuery = distributionQuery(upsertQuery, a)
-            query = newQuery
-          }
-      }
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       ReplaceArcticData(arcticRelation, query, options)
 

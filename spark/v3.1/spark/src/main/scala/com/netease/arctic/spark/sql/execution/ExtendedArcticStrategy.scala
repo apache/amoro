@@ -18,19 +18,24 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.catalyst.plans.MigrateToArcticLogicalPlan
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import org.apache.spark.sql.catalyst.analysis.ResolvedTable
+import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
+import org.apache.spark.sql.catalyst.expressions.PredicateHelper
+import org.apache.spark.sql.catalyst.plans.CreateArcticTableAsSelect
 import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan}
+import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
-import org.apache.spark.sql.execution.datasources.v2.CreateTableAsSelectExec
+import org.apache.spark.sql.execution.datasources.v2.{AppendDataExec, AppendInsertDataExec, CreateArcticTableAsSelectExec, CreateTableAsSelectExec, DataSourceV2Relation, OverwriteArcticByExpressionExec, OverwriteArcticDataExec}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
 import scala.collection.JavaConverters
+import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy {
+case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper{
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists) =>
@@ -61,7 +66,49 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy {
       println("create migrate to arctic command logical")
       MigrateToArcticExec(command)::Nil
 
+    case ReplaceArcticData(table: DataSourceV2Relation, query, options) =>
+      table.table match {
+        case t: ArcticSparkTable =>
+          AppendDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query), refreshCache(table)) :: Nil
+      }
+
+    case AppendArcticData(table: DataSourceV2Relation, query, validateQuery, options) =>
+      table.table match {
+        case t: ArcticSparkTable =>
+          AppendInsertDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
+            planLater(validateQuery), refreshCache(table)) :: Nil
+      }
+
+    case OverwriteArcticData(table: DataSourceV2Relation, query, validateQuery, options) =>
+      table.table match {
+        case t: ArcticSparkTable =>
+          OverwriteArcticDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
+            planLater(validateQuery), refreshCache(table)) :: Nil
+      }
+
+    case OverwriteArcticDataByExpression(table: DataSourceV2Relation, deleteExpr, query, validateQuery, options) =>
+      table.table match {
+        case t: ArcticSparkTable =>
+          val filters = splitConjunctivePredicates(deleteExpr).map {
+            filter =>
+              TranslateUtils.translateFilter(deleteExpr).getOrElse(
+                throw new UnsupportedOperationException("Cannot translate expression to source filter"))
+          }.toArray
+          OverwriteArcticByExpressionExec(t, filters, new CaseInsensitiveStringMap(options.asJava), planLater(query),
+            planLater(validateQuery), refreshCache(table)) :: Nil
+      }
+
+    case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists) =>
+      val writeOptions = new CaseInsensitiveStringMap(options.asJava)
+      CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
+        props, writeOptions, ifNotExists) :: Nil
+
+
     case _ => Nil
+  }
+
+  private def refreshCache(r: NamedRelation)(): Unit = {
+    spark.sharedState.cacheManager.recacheByPlan(spark, r)
   }
 
 }
