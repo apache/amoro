@@ -555,7 +555,7 @@ public class FileInfoCacheService extends IJDBCService {
     List<DeleteFile> addFiles = new ArrayList<>();
     List<DeleteFile> deleteFiles = new ArrayList<>();
     Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
-    SnapshotFileUtil.getNativeIcebergDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
+    SnapshotFileUtil.getDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
     snapshot.addedFiles().forEach(f -> {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
