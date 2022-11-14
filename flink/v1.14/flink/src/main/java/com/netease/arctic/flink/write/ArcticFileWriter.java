@@ -115,6 +115,8 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
     if (context.isRestored()) {
       checkpointId = context.getRestoredCheckpointId().getAsLong();
+      // prepare for the writer init in open(). It is used for next ckpId.
+      checkpointId++;
     }
   }
 
@@ -133,7 +135,8 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
     if (table.isKeyedTable()) {
       String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
       transaction = table.asKeyedTable().beginTransaction(signature);
-      LOG.info("table:{}, signature:{}, transactionId:{}", table.name(), signature, transaction);
+      LOG.info("table:{}, signature:{}, transactionId:{}. From jobId:{}, ckpId:{}", table.name(), signature,
+          transaction, jobId, checkpointId);
     } else {
       transaction = null;
     }

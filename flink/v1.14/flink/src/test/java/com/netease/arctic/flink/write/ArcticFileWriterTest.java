@@ -178,7 +178,7 @@ public class ArcticFileWriterTest extends FlinkTestBase {
       testHarness.open();
 
       ArcticFileWriter fileWriter = (ArcticFileWriter) testHarness.getOneInputOperator();
-      Assert.assertEquals(checkpointId, fileWriter.getCheckpointId());
+      Assert.assertEquals(checkpointId + 1, fileWriter.getCheckpointId());
     }
   }
 
