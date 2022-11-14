@@ -46,7 +46,6 @@ CREATE TABLE `file_info_cache`
     `partition_name`     varchar(256)         DEFAULT NULL COMMENT 'the partition name which file belongs to',
     `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'file commit time',
-    `watermark`          timestamp  NULL DEFAULT NULL COMMENT 'file max event time',
     `producer`           varchar(64) NOT NULL DEFAULT 'INGESTION' COMMENT 'who produce this snapshot',
     PRIMARY KEY (`primary_key_md5`),
     KEY  `table_snap_index` (`table_identifier`,`add_snapshot_id`)

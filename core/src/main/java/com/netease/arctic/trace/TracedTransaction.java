@@ -111,14 +111,14 @@ public class TracedTransaction implements Transaction {
   @Override
   public AppendFiles newAppend() {
     tracer.setAction(DataOperations.APPEND);
-    return TracedAppendFiles.buildFor(arcticTable, false).inTransaction(transaction)
+    return ArcticAppendFiles.buildFor(arcticTable, false).inTransaction(transaction)
         .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
     tracer.setAction(DataOperations.APPEND);
-    return TracedAppendFiles.buildFor(arcticTable, true).inTransaction(transaction)
+    return ArcticAppendFiles.buildFor(arcticTable, true).inTransaction(transaction)
         .traceTable(new TransactionTracker()).build();
   }
 
@@ -136,19 +136,22 @@ public class TracedTransaction implements Transaction {
   @Override
   public OverwriteFiles newOverwrite() {
     tracer.setAction(DataOperations.OVERWRITE);
-    return new TracedOverwriteFiles(transaction.newOverwrite(), new TransactionTracker());
+    return ArcticOverwriteFiles.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
     tracer.setAction(DataOperations.OVERWRITE);
-    return new TracedRowDelta(transaction.newRowDelta(), new TransactionTracker());
+    return ArcticRowDelta.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
     tracer.setAction(DataOperations.OVERWRITE);
-    return new TracedReplacePartitions(transaction.newReplacePartitions(), new TransactionTracker());
+    return ArcticReplacePartitions.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override

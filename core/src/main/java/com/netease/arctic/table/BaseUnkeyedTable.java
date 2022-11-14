@@ -25,12 +25,12 @@ import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
 import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TraceOperations;
-import com.netease.arctic.trace.TracedAppendFiles;
+import com.netease.arctic.trace.ArcticAppendFiles;
 import com.netease.arctic.trace.TracedDeleteFiles;
-import com.netease.arctic.trace.TracedOverwriteFiles;
-import com.netease.arctic.trace.TracedReplacePartitions;
+import com.netease.arctic.trace.ArcticOverwriteFiles;
+import com.netease.arctic.trace.ArcticReplacePartitions;
 import com.netease.arctic.trace.TracedRewriteFiles;
-import com.netease.arctic.trace.TracedRowDelta;
+import com.netease.arctic.trace.ArcticRowDelta;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
@@ -203,22 +203,14 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public AppendFiles newAppend() {
-    TracedAppendFiles.Builder builder = TracedAppendFiles.buildFor(this, false);
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.APPEND, client);
-      builder.traceTable(tracer);
-    }
-    return builder.onTableStore(icebergTable).build();
+    return ArcticAppendFiles.buildFor(this, false)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    TracedAppendFiles.Builder builder = TracedAppendFiles.buildFor(this, true);
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.APPEND, client);
-      builder.traceTable(tracer);
-    }
-    return builder.onTableStore(icebergTable).build();
+    return ArcticAppendFiles.buildFor(this, true)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -239,35 +231,20 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    OverwriteFiles overwriteFiles = icebergTable.newOverwrite();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.OVERWRITE, client);
-      return new TracedOverwriteFiles(overwriteFiles, tracer);
-    } else {
-      return overwriteFiles;
-    }
+    return ArcticOverwriteFiles.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    RowDelta rowDelta = icebergTable.newRowDelta();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.OVERWRITE, client);
-      return new TracedRowDelta(rowDelta, tracer);
-    } else {
-      return rowDelta;
-    }
+    return ArcticRowDelta.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    ReplacePartitions replacePartitions = icebergTable.newReplacePartitions();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.OVERWRITE, client);
-      return new TracedReplacePartitions(replacePartitions, tracer);
-    } else {
-      return replacePartitions;
-    }
+    return ArcticReplacePartitions.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override

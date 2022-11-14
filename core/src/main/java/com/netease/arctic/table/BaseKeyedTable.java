@@ -30,11 +30,13 @@ import com.netease.arctic.scan.BaseChangeTableIncrementalScan;
 import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.thrift.TException;
 
 import java.util.Map;
@@ -100,6 +102,14 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Map<String, String> properties() {
+    long changeWatermark = TablePropertyUtil.getTableWatermark(changeTable.properties());
+    long baseWatermark = TablePropertyUtil.getTableWatermark(baseTable.properties());
+
+    if (changeWatermark > baseWatermark) {
+      ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+      return builder.putAll(baseTable.properties()).put(TableProperties.WATERMARK_TABLE,
+          String.valueOf(changeWatermark)).build();
+    }
     return baseTable.properties();
   }
 

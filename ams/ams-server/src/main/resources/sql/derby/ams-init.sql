@@ -156,7 +156,6 @@ CREATE TABLE file_info_cache (
     partition_name varchar(256) DEFAULT NULL,
     action varchar(64) DEFAULT NULL,
     commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    watermark timestamp DEFAULT NULL,
     PRIMARY KEY (primary_key_md5)
 );
 

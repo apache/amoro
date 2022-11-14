@@ -18,8 +18,10 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.AmsClient;
 import com.netease.arctic.op.ArcticUpdate;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
@@ -30,9 +32,9 @@ import org.apache.iceberg.Transaction;
 import java.util.function.Consumer;
 
 /**
- * Wrap {@link AppendFiles} with {@link TableTracer}.
+ * Implementation of {@link AppendFiles} for arctic table, adding tracing and watermark generating logics.
  */
-public class TracedAppendFiles extends ArcticUpdate<Snapshot> implements AppendFiles {
+public class ArcticAppendFiles extends ArcticUpdate<Snapshot> implements AppendFiles {
 
   private final AppendFiles appendFiles;
 
@@ -40,12 +42,12 @@ public class TracedAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
     return new Builder(table, fastAppend);
   }
 
-  private TracedAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer) {
+  private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer) {
     super(arcticTable, tracer);
     this.appendFiles = appendFiles;
   }
 
-  private TracedAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer,
+  private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer,
       Transaction transaction, boolean autoCommitTransaction) {
     super(arcticTable, tracer, transaction, autoCommitTransaction);
     this.appendFiles = appendFiles;
@@ -54,7 +56,7 @@ public class TracedAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
   @Override
   public AppendFiles appendFile(DataFile file) {
     appendFiles.appendFile(file);
-    addFile(file);
+    addIcebergDataFile(file);
     return this;
   }
 
@@ -99,9 +101,9 @@ public class TracedAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
     return appendFiles.updateEvent();
   }
 
-  public static class Builder extends ArcticUpdate.Builder<TracedAppendFiles> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticAppendFiles> {
 
-    private boolean fastAppend = false;
+    private boolean fastAppend;
 
     private Builder(ArcticTable table, boolean fastAppend) {
       super(table);
@@ -110,14 +112,23 @@ public class TracedAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
     }
 
     @Override
-    protected TracedAppendFiles UpdateWithWatermark(
+    protected ArcticAppendFiles UpdateWithWatermark(
         TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
-      return new TracedAppendFiles(table, newAppendFiles(transaction), tableTracer, transaction, autoCommitTransaction);
+      return new ArcticAppendFiles(table, newAppendFiles(transaction), tableTracer, transaction, autoCommitTransaction);
     }
 
     @Override
-    protected TracedAppendFiles UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new TracedAppendFiles(table, newAppendFiles(tableStore), tableTracer);
+    protected ArcticAppendFiles UpdateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+      return new ArcticAppendFiles(table, newAppendFiles(tableStore), tableTracer);
+    }
+
+    @Override
+    public ArcticUpdate.Builder<ArcticAppendFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
+      if (client != null) {
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.APPEND, client);
+        traceTable(tracer);
+      }
+      return this;
     }
 
     private AppendFiles newAppendFiles(Transaction transaction) {

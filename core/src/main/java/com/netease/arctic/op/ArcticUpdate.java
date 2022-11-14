@@ -18,15 +18,20 @@
 
 package com.netease.arctic.op;
 
+import com.netease.arctic.AmsClient;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WatermarkGenerator;
 import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PendingUpdate;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
@@ -37,6 +42,9 @@ import java.util.Optional;
  * @param <T> Java class of changes from this update; returned by {@link #apply} for validation.
  */
 public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ArcticUpdate.class);
+
   private final ArcticTable arcticTable;
   private final TableTracer tracer;
   protected final Transaction transaction;
@@ -57,7 +65,13 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
     this.tracer = tracer;
     this.transaction = transaction;
     this.autoCommitTransaction = autoCommitTransaction;
-    this.watermarkGenerator = WatermarkGenerator.forTable(arcticTable);
+    WatermarkGenerator watermarkGenerator = null;
+    try {
+      watermarkGenerator = WatermarkGenerator.forTable(arcticTable);
+    } catch (Exception e) {
+      LOG.warn("Failed to initialize watermark generator", e);
+    }
+    this.watermarkGenerator = watermarkGenerator;
   }
 
   protected Optional<TableTracer> tracer() {
@@ -68,9 +82,36 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
     }
   }
 
-  protected void addFile(DataFile file) {
+  protected void addIcebergDataFile(DataFile file) {
     if (tracer != null) {
       tracer.addDataFile(file);
+    }
+    if (watermarkGenerator != null) {
+      watermarkGenerator.addFile(file);
+    }
+  }
+
+  protected void deleteIcebergDataFile(DataFile file) {
+    if (tracer != null) {
+      tracer.deleteDataFile(file);
+    }
+    if (watermarkGenerator != null) {
+      watermarkGenerator.addFile(file);
+    }
+  }
+
+  protected void addIcebergDeleteFile(DeleteFile file) {
+    if (tracer != null) {
+      tracer.addDeleteFile(file);
+    }
+    if (watermarkGenerator != null) {
+      watermarkGenerator.addFile(file);
+    }
+  }
+
+  protected void deleteIcebergDeleteFile(DeleteFile file) {
+    if (tracer != null) {
+      tracer.deleteDeleteFile(file);
     }
     if (watermarkGenerator != null) {
       watermarkGenerator.addFile(file);
@@ -135,6 +176,8 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
       this.tableTracer = tableTracer;
       return this;
     }
+
+    public abstract Builder<T> traceTable(AmsClient client, UnkeyedTable traceTable);
 
     protected Table getTableStore() {
       if (tableStore == null) {

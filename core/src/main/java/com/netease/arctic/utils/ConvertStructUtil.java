@@ -62,18 +62,6 @@ public class ConvertStructUtil {
     amsDataFile.setPartition(partitionFields(table.spec(), dataFile.partition()));
     amsDataFile.setSpecId(table.spec().specId());
     amsDataFile.setRecordCount(dataFile.recordCount());
-    Map<Integer, ByteBuffer> upperBounds = dataFile.upperBounds();
-    if (upperBounds != null) {
-      Map<String, ByteBuffer> amsUpperBounds = new HashMap<>();
-      upperBounds.forEach((fieldId, value) -> {
-        Types.NestedField field = table.schema().findField(fieldId);
-        if (field != null) {
-          amsUpperBounds.put(field.name(), value);
-        }
-      });
-      amsDataFile.setUpperBounds(amsUpperBounds);
-    }
-
 
     /*
     Iceberg file has 3 types(FileContent) : DATA, POSITION_DELETES, EQUALITY_DELETES

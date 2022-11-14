@@ -22,6 +22,8 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.PropertyUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -30,6 +32,8 @@ import java.text.SimpleDateFormat;
 import java.util.Map;
 
 public class WatermarkGenerator {
+
+  private static final Logger LOG = LoggerFactory.getLogger(WatermarkGenerator.class);
 
   public static final String INGEST_TIME = "_ingest_time";
   public static final String EVENT_TIME_TIMESTAMP_MS = "TIMESTAMP_MS";
@@ -76,39 +80,43 @@ public class WatermarkGenerator {
   }
 
   public <F> void addFile(ContentFile<F> file) {
-    Map<Integer, ByteBuffer> upperBounds = file.upperBounds();
-    if (upperBounds != null && upperBounds.containsKey(eventTimeField.fieldId())) {
-      ByteBuffer byteBuffer = upperBounds.get(eventTimeField.fieldId());
-      long maxEventTime = 0L;
-      switch (eventTimeField.type().typeId()) {
-        case INTEGER:
-          Integer eventTimeIntegerValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
-          maxEventTime = eventTimeFromInteger(eventTimeIntegerValue);
-          break;
-        case LONG:
-          Long eventTimeLongValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
-          maxEventTime = eventTimeFromLong(eventTimeLongValue);
-          break;
-        case DECIMAL:
-          BigDecimal eventTimeDecimalValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
-          maxEventTime = eventTimeFromDecimal(eventTimeDecimalValue);
-          break;
-        case TIMESTAMP:
-          Long eventTimeTimestampValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
-          maxEventTime = eventTimeFromTimestamp(eventTimeTimestampValue);
-          break;
-        case STRING:
-          String eventTimeStringValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
-          maxEventTime = eventTimeFromString(eventTimeStringValue);
-          break;
-        default:
-          throw new UnsupportedOperationException("Unsupported event time type:" + eventTimeField.type());
+    try {
+      Map<Integer, ByteBuffer> upperBounds = file.upperBounds();
+      if (upperBounds != null && upperBounds.containsKey(eventTimeField.fieldId())) {
+        ByteBuffer byteBuffer = upperBounds.get(eventTimeField.fieldId());
+        long maxEventTime = -1L;
+        switch (eventTimeField.type().typeId()) {
+          case INTEGER:
+            Integer eventTimeIntegerValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            maxEventTime = eventTimeFromInteger(eventTimeIntegerValue);
+            break;
+          case LONG:
+            Long eventTimeLongValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            maxEventTime = eventTimeFromLong(eventTimeLongValue);
+            break;
+          case DECIMAL:
+            BigDecimal eventTimeDecimalValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            maxEventTime = eventTimeFromDecimal(eventTimeDecimalValue);
+            break;
+          case TIMESTAMP:
+            Long eventTimeTimestampValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer);
+            maxEventTime = eventTimeFromTimestamp(eventTimeTimestampValue);
+            break;
+          case STRING:
+            String eventTimeStringValue = Conversions.fromByteBuffer(eventTimeField.type(), byteBuffer).toString();
+            maxEventTime = eventTimeFromString(eventTimeStringValue);
+            break;
+          default:
+            throw new UnsupportedOperationException("Unsupported event time type:" + eventTimeField.type());
+        }
+        long watermark = maxEventTime - lateness;
+        this.watermark = Math.max(watermark, this.watermark);
+      } else if (eventTimeField.equals(INGEST_TIME_FIELD)) {
+        long watermark = System.currentTimeMillis() - lateness;
+        this.watermark = Math.max(watermark, this.watermark);
       }
-      long watermark = maxEventTime - lateness;
-      this.watermark = Math.max(watermark, this.watermark);
-    } else if (eventTimeField.equals(INGEST_TIME_FIELD)) {
-      long watermark = System.currentTimeMillis() - lateness;
-      this.watermark = Math.max(watermark, this.watermark);
+    } catch (Exception e) {
+      LOG.warn("Failed to calculate watermark from date file", e);
     }
   }
 

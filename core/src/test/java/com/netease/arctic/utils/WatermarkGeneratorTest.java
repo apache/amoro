@@ -164,6 +164,31 @@ public class WatermarkGeneratorTest extends TableTestBase {
         .withMetrics(metrics)
         .build();
     watermarkGenerator.addFile(file2);
-    Assert.assertEquals(df.parse("2022-11-11 00:01:59"), watermarkGenerator.watermark());
+    Assert.assertEquals(df.parse("2022-11-11 00:01:59").getTime(), watermarkGenerator.watermark());
   }
+
+  @Test
+  public void testWithWrongConfigs() {
+    testTable.asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
+        .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "1").commit();
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(testTable);
+
+    Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
+    Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
+    lowerBounds.put(2, Conversions.toByteBuffer(Types.StringType.get(), "2022-11-11"));
+    upperBounds.put(2, Conversions.toByteBuffer(Types.StringType.get(), "2022-11-11"));
+
+    Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
+        Maps.newHashMap(), null, lowerBounds, upperBounds);
+
+    DataFile file1 = DataFiles.builder(SPEC)
+        .withPath("/path/to/file1.parquet")
+        .withFileSizeInBytes(0)
+        .withPartitionPath("op_time_day=2022-01-01")
+        .withMetrics(metrics)
+        .build();
+    watermarkGenerator.addFile(file1);
+    Assert.assertEquals(-1, watermarkGenerator.watermark());
+  }
+
 }
