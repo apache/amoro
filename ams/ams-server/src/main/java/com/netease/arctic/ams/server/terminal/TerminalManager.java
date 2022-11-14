@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.terminal;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticMetaStore;
@@ -32,8 +31,9 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.table.TableMetaStore;
-import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
@@ -43,8 +43,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TerminalManager {
 
@@ -92,22 +90,28 @@ public class TerminalManager {
     CatalogMeta catalogMeta = optCatalogMeta.get();
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore);
-    sessionMap.computeIfAbsent(sessionId, id -> {
-      Configuration configuration = new Configuration();
-      configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
-      configuration.set(TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
-      configuration.set(TerminalSessionFactory.SessionConfigOptions.catalogType(catalog), catalogMeta.getCatalogType());
-      configuration.set(
-          TerminalSessionFactory.SessionConfigOptions.catalogUrl(catalog),
-          String.format(
-              "thrift://%s:%d/%s",
-              ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
-              ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT),
-              catalog));
-      return new TerminalSessionContext(id, metaStore, executionPool, sessionFactory, configuration);
-    });
 
-    TerminalSessionContext context = sessionMap.get(sessionId);
+    TerminalSessionContext context;
+    synchronized (sessionMapLock) {
+      sessionMap.computeIfAbsent(sessionId, id -> {
+        Configuration configuration = new Configuration();
+        configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
+        configuration.set(TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
+        configuration.set(
+            TerminalSessionFactory.SessionConfigOptions.catalogType(catalog),
+            catalogMeta.getCatalogType());
+        configuration.set(
+            TerminalSessionFactory.SessionConfigOptions.catalogUrl(catalog),
+            String.format(
+                "thrift://%s:%d/%s",
+                ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
+                ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT),
+                catalog));
+        return new TerminalSessionContext(id, metaStore, executionPool, sessionFactory, configuration);
+      });
+
+      context = sessionMap.get(sessionId);
+    }
     if (!context.isReadyToExecute()) {
       throw new IllegalStateException("current session is not ready to execute script. status:" + context.getStatus());
     }
@@ -124,7 +128,10 @@ public class TerminalManager {
     if (sessionId == null) {
       return new LogInfo(ExecutionStatus.Expired.name(), Lists.newArrayList());
     }
-    TerminalSessionContext sessionContext = sessionMap.get(sessionId);
+    TerminalSessionContext sessionContext;
+    synchronized (sessionMapLock) {
+      sessionContext = sessionMap.get(sessionId);
+    }
     if (sessionContext == null) {
       return new LogInfo(ExecutionStatus.Expired.name(), Lists.newArrayList());
     }
@@ -138,7 +145,10 @@ public class TerminalManager {
     if (sessionId == null) {
       return Lists.newArrayList();
     }
-    TerminalSessionContext context = sessionMap.get(sessionId);
+    TerminalSessionContext context;
+    synchronized (sessionMapLock) {
+      context = sessionMap.get(sessionId);
+    }
     if (context == null) {
       return Lists.newArrayList();
     }
@@ -159,7 +169,10 @@ public class TerminalManager {
     if (sessionId == null) {
       return;
     }
-    TerminalSessionContext context = sessionMap.get(sessionId);
+    TerminalSessionContext context;
+    synchronized (sessionMapLock) {
+      context = sessionMap.get(sessionId);
+    }
     if (context != null) {
       context.cancel();
     }
@@ -176,16 +189,18 @@ public class TerminalManager {
     long lastExecutionTime = -1;
     String sessionId = "";
     String script = "";
-    for (String sid : sessionMap.keySet()) {
-      if (sid.startsWith(prefix)) {
-        TerminalSessionContext context = sessionMap.get(sid);
-        if (context == null) {
-          continue;
-        }
-        if (lastExecutionTime < context.lastExecutionTime()) {
-          lastExecutionTime = context.lastExecutionTime();
-          sessionId = sid;
-          script = context.lastScript();
+    synchronized (sessionMapLock) {
+      for (String sid : sessionMap.keySet()) {
+        if (sid.startsWith(prefix)) {
+          TerminalSessionContext context = sessionMap.get(sid);
+          if (context == null) {
+            continue;
+          }
+          if (lastExecutionTime < context.lastExecutionTime()) {
+            lastExecutionTime = context.lastExecutionTime();
+            sessionId = sid;
+            script = context.lastScript();
+          }
         }
       }
     }
@@ -226,7 +241,7 @@ public class TerminalManager {
     return builder.build();
   }
 
-  TerminalSessionFactory loadTerminalSessionFactory(Configuration conf) {
+  private TerminalSessionFactory loadTerminalSessionFactory(Configuration conf) {
     String backend = conf.get(ArcticMetaStoreConf.TERMINAL_BACKEND);
     if (backend == null) {
       throw new IllegalArgumentException("lack terminal implement config.");
