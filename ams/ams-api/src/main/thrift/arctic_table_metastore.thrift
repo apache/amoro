@@ -27,7 +27,7 @@ struct DataFile {
     6: i64 specId;
     7: list<PartitionFieldData> partition;
     8: i64 recordCount;
-    // depricated, may remove from v0.5
+    // deprecated, may remove from v0.5
     9: map<string, binary> upperBounds;
 }
 
