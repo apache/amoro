@@ -206,4 +206,10 @@ public class ArcticMetaStoreConf {
           .booleanType()
           .defaultValue(false)
           .withDescription("stop script execution if any statement execute failed.");
+
+  public static final ConfigOption<Integer> TERMINAL_SESSION_TIMEOUT =
+      ConfigOptions.key("arctic.ams.terminal.session.timeout")
+          .intType()
+          .defaultValue(30)
+          .withDescription("session timeout in minute");
 }

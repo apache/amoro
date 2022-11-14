@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.terminal;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.ArcticMetaStore;
@@ -31,6 +32,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.table.TableMetaStore;
+import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
@@ -41,14 +43,25 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TerminalManager {
+
+  private static final Logger LOG = LoggerFactory.getLogger(TerminalManager.class);
+
   private final AtomicLong threadPoolCount = new AtomicLong();
   TerminalSessionFactory sessionFactory;
   int resultLimits = 1000;
   boolean stopOnError = false;
 
-  ConcurrentHashMap<String, TerminalSessionContext> sessionMap = new ConcurrentHashMap<>();
+  int sessionTimeout = 30;
+  int sessionTimeoutCheckInterval = 5;
+
+  private final Object sessionMapLock = new Object();
+  private final ConcurrentHashMap<String, TerminalSessionContext> sessionMap = new ConcurrentHashMap<>();
+
+  private final Thread cleanThread = new Thread(new SessionCleanTask());
 
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
@@ -58,7 +71,10 @@ public class TerminalManager {
   public TerminalManager(Configuration conf) {
     this.resultLimits = conf.getInteger(ArcticMetaStoreConf.TERMINAL_RESULT_LIMIT);
     this.stopOnError = conf.getBoolean(ArcticMetaStoreConf.TERMINAL_STOP_ON_ERROR);
+    this.sessionTimeout = conf.getInteger(ArcticMetaStoreConf.TERMINAL_SESSION_TIMEOUT);
     this.sessionFactory = loadTerminalSessionFactory(conf);
+    this.cleanThread.setName("terminal-session-gc");
+    this.cleanThread.start();
   }
 
   /**
@@ -257,5 +273,63 @@ public class TerminalManager {
     configuration.set(TerminalSessionFactory.FETCH_SIZE, this.resultLimits);
     factory.initialize(configuration);
     return factory;
+  }
+
+  private class SessionCleanTask implements Runnable {
+    private static final long MINUTE_IN_MILLIS = 60 * 1000;
+
+    @Override
+    public void run() {
+      LOG.info("Terminal Session Clean Task started");
+      LOG.info("Terminal Session Clean Task, check interval: " + sessionTimeoutCheckInterval + " minutes");
+      LOG.info("Terminal Session Timeout: " + sessionTimeout + " minutes");
+      while (true) {
+        try {
+          List<TerminalSessionContext> sessionToRelease = checkIdleSession();
+          sessionToRelease.forEach(this::releaseSession);
+        } catch (Throwable t) {
+          LOG.error("error when check and release session", t);
+        }
+
+
+        final long sleepInMillis = sessionTimeoutCheckInterval * MINUTE_IN_MILLIS;
+        try {
+          Thread.sleep(sleepInMillis);
+        } catch (InterruptedException e) {
+          LOG.error("Interrupted when sleep", e);
+        }
+      }
+    }
+
+    private void checkAndRelease() {
+      List<TerminalSessionContext> sessionToRelease = checkIdleSession();
+    }
+
+    private List<TerminalSessionContext> checkIdleSession() {
+      final long timeoutInMillis = sessionTimeout * MINUTE_IN_MILLIS;
+      synchronized (sessionMapLock) {
+        List<TerminalSessionContext> sessionToRelease = Lists.newArrayList();
+        for (String sessionId : sessionMap.keySet()) {
+          TerminalSessionContext sessionContext = sessionMap.get(sessionId);
+          if (sessionContext.isIdleStatus()) {
+            long idleTime = System.currentTimeMillis() - sessionContext.lastExecutionTime();
+            if (idleTime > timeoutInMillis) {
+              sessionToRelease.add(sessionContext);
+            }
+          }
+        }
+
+        sessionToRelease.forEach(s -> sessionMap.remove(s.getSessionId()));
+        return sessionToRelease;
+      }
+    }
+
+    private void releaseSession(TerminalSessionContext sessionContext) {
+      try {
+        sessionContext.release();
+      } catch (Throwable t) {
+        LOG.error("error when release session: " + sessionContext.getSessionId(), t);
+      }
+    }
   }
 }

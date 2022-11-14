@@ -36,7 +36,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
-
 public class TerminalSessionContext {
   private static final Logger LOG = LoggerFactory.getLogger(TerminalSessionContext.class);
 
@@ -66,7 +65,15 @@ public class TerminalSessionContext {
     this.sessionConfiguration = sessionConfiguration;
   }
 
+  public String getSessionId() {
+    return this.sessionId;
+  }
+
   public boolean isReadyToExecute() {
+    return isStatusReadyToExecute(status.get());
+  }
+
+  public boolean isIdleStatus() {
     return isStatusReadyToExecute(status.get());
   }
 
@@ -94,6 +101,10 @@ public class TerminalSessionContext {
 
   public synchronized void cancel() {
     task.get().cancel();
+  }
+
+  public void release() {
+
   }
 
   public ExecutionStatus getStatus() {
