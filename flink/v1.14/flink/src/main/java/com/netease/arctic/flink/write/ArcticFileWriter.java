@@ -26,6 +26,8 @@ import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.api.common.state.ListStateDescriptor;
+import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
 import org.apache.flink.streaming.api.operators.BoundedOneInput;
@@ -62,13 +64,11 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private final ArcticTableLoader tableLoader;
   private final boolean upsert;
   private final boolean submitEmptySnapshot;
-  /**
-   * A random string for each initialization to keep transactionId identical.
-   */
-  private final String randomPrefix;
+
   private transient org.apache.iceberg.io.TaskWriter<RowData> writer;
   private transient int subTaskId;
   private transient int attemptId;
+  private transient String jobId;
   private transient long checkpointId = 0;
   /**
    * Load table in runtime, because that table's refresh method will be invoked in serialization.
@@ -83,22 +83,22 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
       int minFileSplitCount,
       ArcticTableLoader tableLoader,
       boolean upsert,
-      boolean submitEmptySnapshot,
-      String randomPrefix) {
+      boolean submitEmptySnapshot) {
     this.shuffleRule = shuffleRule;
     this.taskWriterFactory = taskWriterFactory;
     this.minFileSplitCount = minFileSplitCount;
     this.tableLoader = tableLoader;
     this.upsert = upsert;
     this.submitEmptySnapshot = submitEmptySnapshot;
-    this.randomPrefix = randomPrefix;
     LOG.info("ArcticFileWriter is created with minFileSplitCount: {}, upsert: {}, submitEmptySnapshot: {}",
         minFileSplitCount, upsert, submitEmptySnapshot);
   }
-  
+
+
   @Override
   public void open() {
     this.attemptId = getRuntimeContext().getAttemptNumber();
+    this.jobId = getContainingTask().getEnvironment().getJobID().toString();
     table = ArcticUtils.loadArcticTable(tableLoader);
 
     long mask = getMask(subTaskId);
@@ -115,6 +115,8 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
     if (context.isRestored()) {
       checkpointId = context.getRestoredCheckpointId().getAsLong();
+      // prepare for the writer init in open(). It is used for next ckpId.
+      checkpointId++;
     }
   }
 
@@ -131,9 +133,10 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private Long getTransactionId() {
     Long transaction;
     if (table.isKeyedTable()) {
-      String signature = BaseEncoding.base16().encode((randomPrefix + checkpointId).getBytes());
+      String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
       transaction = table.asKeyedTable().beginTransaction(signature);
-      LOG.info("table:{}, signature:{}, transactionId:{}", table.name(), signature, transaction);
+      LOG.info("table:{}, signature:{}, transactionId:{}. From jobId:{}, ckpId:{}", table.name(), signature,
+          transaction, jobId, checkpointId);
     } else {
       transaction = null;
     }
@@ -236,7 +239,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
    *
    * @param writeResult the WriteResult to emit
    * @return true if the WriteResult should be emitted, or the WriteResult isn't empty,
-   * false only if the WriteResult is empty and the submitEmptySnapshot is false.
+   *         false only if the WriteResult is empty and the submitEmptySnapshot is false.
    */
   private boolean shouldEmit(WriteResult writeResult) {
     return submitEmptySnapshot || (writeResult != null &&

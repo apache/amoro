@@ -57,7 +57,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.Properties;
-import java.util.UUID;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_MODE;
@@ -348,8 +347,7 @@ public class FlinkSink {
         minFileSplitCount,
         tableLoader,
         upsert,
-        submitEmptySnapshot,
-        UUID.randomUUID().toString());
+        submitEmptySnapshot);
   }
 
   private static TaskWriterFactory<RowData> createTaskWriterFactory(
