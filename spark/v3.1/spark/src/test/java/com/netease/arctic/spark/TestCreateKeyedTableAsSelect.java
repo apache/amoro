@@ -90,9 +90,14 @@ public class TestCreateKeyedTableAsSelect extends SparkTestBase {
                     "( 1, ''aaaa'', ''0001'')",
             database, sourceTable);
     sql("select * from {0}.{1} group by id, data, pt", database, sourceTable);
-    Assert.assertThrows(UnsupportedOperationException.class,
-            () -> sql("create table {0}.{1} primary key(id) using arctic AS SELECT * from {2}.{3}.{4}",
-            database, table, catalogNameArctic, database, sourceTable));
+    boolean condition = false;
+    try {
+      sql("create table {0}.{1} primary key(id) using arctic AS SELECT * from {2}.{3}.{4}",
+          database, table, catalogNameArctic, database, sourceTable);
+    } catch(UnsupportedOperationException e) {
+      condition = true;
+    }
+    Assert.assertTrue(condition);
   }
 
   @Test
