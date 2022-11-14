@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write;
+package org.apache.iceberg.flink.data;
 
 import org.apache.flink.table.data.ArrayData;
 import org.apache.flink.table.data.DecimalData;
@@ -32,7 +32,6 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.logical.RowType.RowField;
 import org.apache.flink.table.types.logical.SmallIntType;
 import org.apache.flink.table.types.logical.TinyIntType;
-import org.apache.iceberg.flink.data.ParquetWithFlinkSchemaVisitor;
 import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetValueReaders;
 import org.apache.iceberg.parquet.ParquetValueWriter;
@@ -61,17 +60,21 @@ import java.util.concurrent.TimeUnit;
 
 import static org.apache.flink.table.types.logical.LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE;
 
+/**
+ * Copy from iceberg {@link org.apache.iceberg.flink.data.FlinkParquetWriters} to support int96 type
+ * and use  {@link org.apache.iceberg.flink.data.AdaptHiveParquetWithFlinkSchemaVisitor}.
+ */
 public class AdaptHiveFlinkParquetWriters {
   private AdaptHiveFlinkParquetWriters() {
   }
 
   @SuppressWarnings("unchecked")
   public static <T> ParquetValueWriter<T> buildWriter(LogicalType schema, MessageType type) {
-    return (ParquetValueWriter<T>) ParquetWithFlinkSchemaVisitor.visit(schema, type,
+    return (ParquetValueWriter<T>) AdaptHiveParquetWithFlinkSchemaVisitor.visit(schema, type,
         new AdaptHiveFlinkParquetWriters.WriteBuilder(type));
   }
 
-  private static class WriteBuilder extends ParquetWithFlinkSchemaVisitor<ParquetValueWriter<?>> {
+  private static class WriteBuilder extends AdaptHiveParquetWithFlinkSchemaVisitor<ParquetValueWriter<?>> {
     private final MessageType type;
 
     WriteBuilder(MessageType type) {

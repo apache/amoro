@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.hive;
+package org.apache.iceberg.spark.data;
 
 import org.apache.iceberg.parquet.AdaptHivePrimitiveWriter;
 import org.apache.iceberg.parquet.ParquetValueReaders;
@@ -24,7 +24,6 @@ import org.apache.iceberg.parquet.ParquetValueWriter;
 import org.apache.iceberg.parquet.ParquetValueWriters;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.spark.data.ParquetWithSparkSchemaVisitor;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.DecimalUtil;
 import org.apache.parquet.column.ColumnDescriptor;
@@ -57,6 +56,9 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
+/**
+ * Copy from iceberg {@link org.apache.iceberg.spark.data.SparkParquetWriters} to support int96 type.
+ */
 public class AdaptHiveSparkParquetWriters {
 
   private AdaptHiveSparkParquetWriters() {
@@ -64,11 +66,11 @@ public class AdaptHiveSparkParquetWriters {
 
   @SuppressWarnings("unchecked")
   public static <T> ParquetValueWriter<T> buildWriter(StructType dfSchema, MessageType type) {
-    return (ParquetValueWriter<T>) ParquetWithSparkSchemaVisitor.visit(dfSchema, type,
+    return (ParquetValueWriter<T>) AdaptHiveParquetWithSparkSchemaVisitor.visit(dfSchema, type,
         new AdaptHiveSparkParquetWriters.WriteBuilder(type));
   }
 
-  private static class WriteBuilder extends ParquetWithSparkSchemaVisitor<ParquetValueWriter<?>> {
+  private static class WriteBuilder extends AdaptHiveParquetWithSparkSchemaVisitor<ParquetValueWriter<?>> {
     private final MessageType type;
 
     WriteBuilder(MessageType type) {

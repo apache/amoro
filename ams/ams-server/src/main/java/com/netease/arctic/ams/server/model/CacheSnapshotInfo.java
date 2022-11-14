@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.TableIdentifier;
 public class CacheSnapshotInfo {
   private TableIdentifier tableIdentifier;
   private Long snapshotId;
+  private Long snapshotSequence;
   private Long parentSnapshotId;
   private String action;
   private String innerTable;
@@ -102,5 +103,13 @@ public class CacheSnapshotInfo {
 
   public void setFileCount(Integer fileCount) {
     this.fileCount = fileCount;
+  }
+
+  public Long getSnapshotSequence() {
+    return snapshotSequence;
+  }
+
+  public void setSnapshotSequence(Long snapshotSequence) {
+    this.snapshotSequence = snapshotSequence;
   }
 }

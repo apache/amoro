@@ -200,7 +200,7 @@ CREATE TABLE `table_metadata`
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
     `base_location`   varchar(256) DEFAULT NULL COMMENT 'Base table location',
     `delta_location`  varchar(256) DEFAULT NULL COMMENT 'change table location',
-    `properties`      text COMMENT 'Table properties',
+    `properties`      mediumtext COMMENT 'Table properties',
     `meta_store_site` mediumtext COMMENT 'base64 code of meta store site',
     `hdfs_site`       mediumtext COMMENT 'base64 code of hdfs site',
     `core_site`       mediumtext COMMENT 'base64 code of core site',

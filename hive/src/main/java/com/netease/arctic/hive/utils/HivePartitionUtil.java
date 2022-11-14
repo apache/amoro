@@ -22,6 +22,7 @@ import com.netease.arctic.hive.HMSClient;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.utils.ArcticDataFiles;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;

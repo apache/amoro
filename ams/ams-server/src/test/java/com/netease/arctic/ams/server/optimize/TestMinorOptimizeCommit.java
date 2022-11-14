@@ -33,7 +33,9 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Before;
@@ -70,17 +72,21 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testMinorOptimizeCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
+            testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));
     insertChangeDeleteFiles(testKeyedTable, 3);
     List<DataFile> dataFiles = insertChangeDataFiles(testKeyedTable,4);
@@ -141,7 +147,8 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
     StructLikeMap<Long> maxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
     for (StructLike partitionDatum : partitionData) {
-      Assert.assertEquals(4L, (long) maxTxId.get(partitionDatum));
+      Assert.assertEquals(testKeyedTable.changeTable().currentSnapshot().sequenceNumber(),
+          (long) maxTxId.get(partitionDatum));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
@@ -149,18 +156,21 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
 
   @Test
   public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testNoPartitionTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testNoPartitionTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testNoPartitionTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testNoPartitionTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testNoPartitionTable.asKeyedTable()))
         .collect(Collectors.toList()));
     insertChangeDeleteFiles(testNoPartitionTable, 3);
     List<DataFile> dataFiles = insertChangeDataFiles(testNoPartitionTable, 4);
@@ -215,8 +225,9 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
           fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
         });
 
+    Snapshot snapshot = testNoPartitionTable.changeTable().currentSnapshot();
     StructLikeMap<Long> maxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
-    Assert.assertEquals(4L, (long) maxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
+    Assert.assertEquals(snapshot.sequenceNumber(), (long) maxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }

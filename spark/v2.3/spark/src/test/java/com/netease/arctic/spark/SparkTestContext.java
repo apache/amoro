@@ -39,6 +39,7 @@ import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -457,10 +458,11 @@ public class SparkTestContext extends ExternalResource {
     }
     DataFile[] dataFiles = changeWrite.complete().dataFiles();
     if (table.isKeyedTable()) {
+      table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.withTransactionId(keyedTable.beginTransaction(System.currentTimeMillis() + ""));
+      overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(keyedTable));
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();
