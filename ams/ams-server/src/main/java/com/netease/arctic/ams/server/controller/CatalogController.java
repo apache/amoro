@@ -103,7 +103,7 @@ public class CatalogController extends RestBaseController {
     Map<String, String> metaAuthConfig = new HashMap();
     String authType = serverAuthConfig.getOrDefault(AUTH_CONFIG_KEY_TYPE, "SIMPLE").toLowerCase();
     metaAuthConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE, authType);
-    Map<String,String> oldAuthConfig = new HashMap<>();
+    Map<String, String> oldAuthConfig = new HashMap<>();
     if (oldCatalogMeta != null) {
       oldAuthConfig = oldCatalogMeta.getAuthConfigs();
     }
@@ -197,7 +197,7 @@ public class CatalogController extends RestBaseController {
    * @return
    */
   private static CatalogMeta constructCatalogMeta(CatalogRegisterInfo info, CatalogMeta oldCatalogMeta)
-          throws Exception{
+          throws Exception {
     CatalogMeta catalogMeta = new CatalogMeta();
     catalogMeta.setCatalogName(info.getName());
     catalogMeta.setCatalogType(info.getType());
@@ -212,7 +212,7 @@ public class CatalogController extends RestBaseController {
 
     if (CATALOG_TYPE_CUSTOM.equals(info.getType())) {
       // check properties contains key 'catalog-impl'
-      if(info.getProperties().containsKey("catalog-impl")) {
+      if (info.getProperties().containsKey("catalog-impl")) {
         throw new RuntimeException("You must config catalog-impl in properties when catalog type is custom!");
       }
     }
