@@ -184,3 +184,41 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 **3.重启 AMS**
 
 参考 [启动/重启/关闭](#_3)。
+
+
+## Terminal 相关参数配置
+
+在 AMS 的默认配置文件 `conf/config.yaml` 中，支持如下有关 Terminal 的配置及其默认值
+
+```yaml
+  arctic.ams.terminal.backend: local              # Terminal SQL 执行引擎的实现，默认值为 local, 支持 local,kyuubi 两种引擎
+  arctic.ams.terminal.result.limit: 1000          # Terminal SQL 执行查询时结果集最大抓取数量
+  arctic.ams.terminal.stop-on-error: false        # 在执行多行的SQL脚本时，遇到执行错误时是否停止
+  arctic.ams.terminal.session.timeout: 30         # Terminal Session 没有执行SQL时，多久后回收 Session 资源
+```
+
+
+### 使用 Kyuubi 作为 Terminal Backend
+
+如果您希望在生产环境中使用 Terminal 执行 DML类型的SQL，强烈建议您使用 kyuubi 作为 AMS Terminal 的 SQL执行引擎.
+
+Kyuubi 是一个多租户的大数据SQL Gateway, 有关 Kyuubi 的知识，
+您可以从 [Kyuubi 的官网](https://kyuubi.apache.org/docs/latest/index.html) 进一步了解
+
+在准备好 Kyuubi 环境后，修改 `conf/config.yml` 并重启 AMS.
+
+```yaml
+  # 新增或修改以下配置的值为 kyuubi 
+  arctic.ams.terminal.backend: kyuubi
+
+  # 新增以下配置
+  arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://<endpoint>/;<params>    # kyuubi 的JDBC 连接信息
+```
+
+**关于Kyuubi的认证**
+
+目前对于访问带 kerberos 的集群，terminal 使用 catalog 中配置的 keytab 信息创建 Connection. 
+
+* 如果 KyuubiServer 开启了Kerberos 认证，请确保此 Principal 可以访问 KyuubiServer. 
+* 如果 KyuubiServer 采用账户密码认证，需要在 jdbc.url 中配置好认证信息
+

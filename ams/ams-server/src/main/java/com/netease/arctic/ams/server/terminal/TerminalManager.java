@@ -61,8 +61,6 @@ public class TerminalManager {
   private final Object sessionMapLock = new Object();
   private final ConcurrentHashMap<String, TerminalSessionContext> sessionMap = new ConcurrentHashMap<>();
 
-  private final Thread cleanThread = new Thread(new SessionCleanTask());
-
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,
       new LinkedBlockingQueue<>(),
@@ -73,8 +71,9 @@ public class TerminalManager {
     this.stopOnError = conf.getBoolean(ArcticMetaStoreConf.TERMINAL_STOP_ON_ERROR);
     this.sessionTimeout = conf.getInteger(ArcticMetaStoreConf.TERMINAL_SESSION_TIMEOUT);
     this.sessionFactory = loadTerminalSessionFactory(conf);
-    this.cleanThread.setName("terminal-session-gc");
-    this.cleanThread.start();
+    Thread cleanThread = new Thread(new SessionCleanTask());
+    cleanThread.setName("terminal-session-gc");
+    cleanThread.start();
   }
 
   /**
@@ -291,7 +290,6 @@ public class TerminalManager {
           LOG.error("error when check and release session", t);
         }
 
-
         final long sleepInMillis = sessionTimeoutCheckInterval * MINUTE_IN_MILLIS;
         try {
           Thread.sleep(sleepInMillis);
@@ -299,10 +297,6 @@ public class TerminalManager {
           LOG.error("Interrupted when sleep", e);
         }
       }
-    }
-
-    private void checkAndRelease() {
-      List<TerminalSessionContext> sessionToRelease = checkIdleSession();
     }
 
     private List<TerminalSessionContext> checkIdleSession() {
