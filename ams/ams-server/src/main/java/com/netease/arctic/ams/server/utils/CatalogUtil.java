@@ -19,15 +19,18 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.server.ArcticMetaStore;
-import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BaseIcebergCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -74,5 +77,20 @@ public class CatalogUtil {
   public static boolean isIcebergCatalog(String name) {
     ArcticCatalog ac = getArcticCatalog(name);
     return ac instanceof BaseIcebergCatalog;
+  }
+
+  public static Set<TableIdentifier> loadTablesFromCatalog() {
+    Set<TableIdentifier> tables = new HashSet<>();
+    List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
+    catalogMetas.forEach(catalogMeta -> {
+      ArcticCatalog arcticCatalog =
+          CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
+      List<String> databases = arcticCatalog.listDatabases();
+      for (String database : databases) {
+        tables.addAll(arcticCatalog.listTables(database));
+      }
+    });
+
+    return tables;
   }
 }

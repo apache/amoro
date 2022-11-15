@@ -66,7 +66,6 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.

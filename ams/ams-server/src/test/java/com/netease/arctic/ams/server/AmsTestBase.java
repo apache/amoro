@@ -28,14 +28,18 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
 import com.netease.arctic.ams.server.service.MetaService;
@@ -44,8 +48,8 @@ import com.netease.arctic.ams.server.service.TestArcticTransactionService;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
-import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
@@ -101,6 +105,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMajorOptimizePlan.class,
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
+    TestIcebergMajorOptimizeCommit.class,
+    TestIcebergMinorOptimizeCommit.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
     TestSupportHiveMajorOptimizePlan.class,
@@ -108,6 +114,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class,
+    TestExpireFileCleanSupportIceberg.class,
+    TestOrphanFileCleanSupportIceberg.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class})
 @PrepareForTest({

@@ -20,9 +20,9 @@ package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.ITableExpireService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.ChangeFilesUtil;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
@@ -75,14 +75,13 @@ public class TableExpireService implements ITableExpireService {
     if (cleanTasks == null) {
       cleanTasks = new ScheduledTasks<>(ThreadPool.Type.EXPIRE);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids =
-        tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
+
+    Set<TableIdentifier> tableIds = CatalogUtil.loadTablesFromCatalog();
+    cleanTasks.checkRunningTask(tableIds,
         tableId -> EXPIRE_INTERVAL,
         TableExpireTask::new,
         false);
-    LOG.info("Schedule Expired Cleaner finished with {} valid ids", ids.size());
+    LOG.info("Schedule Expired Cleaner finished with {} valid ids", tableIds.size());
   }
 
   public static class TableExpireTask implements ScheduledTasks.Task {
