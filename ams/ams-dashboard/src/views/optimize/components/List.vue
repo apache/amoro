@@ -20,7 +20,7 @@
           </span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
-          <span class="primary-link" @click="releaseModal(record)">
+          <span class="primary-link" :class="{'disabled': record.containerType === 'external'}" @click="releaseModal(record)">
             {{ t('release') }}
           </span>
         </template>
@@ -147,6 +147,9 @@ async function getTableList () {
 }
 
 function releaseModal (record: IOptimizeResourceTableItem) {
+  if (record.containerType === 'external') {
+    return
+  }
   Modal.confirm({
     title: t('releaseOptModalTitle'),
     content: '',
@@ -193,6 +196,12 @@ onMounted(() => {
     color: @primary-color;
     &:hover {
       cursor: pointer;
+    }
+    &.disabled {
+      color: #999;
+      &:hover {
+        cursor: not-allowed;
+      }
     }
   }
 }
