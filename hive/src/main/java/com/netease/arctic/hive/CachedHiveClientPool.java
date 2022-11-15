@@ -22,6 +22,13 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
+import org.apache.hadoop.hive.metastore.api.InvalidObjectException;
+import org.apache.hadoop.hive.metastore.api.InvalidOperationException;
+import org.apache.hadoop.hive.metastore.api.MetaException;
+import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
+import org.apache.hadoop.hive.metastore.api.UnknownDBException;
+import org.apache.hadoop.hive.metastore.api.UnknownTableException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
@@ -65,6 +72,39 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
 
   @Override
   public <R> R run(Action<R, HMSClient, TException> action) throws TException, InterruptedException {
-    return clientPool().run(action);
+    try {
+      return tableMetaStore.doAs(() -> clientPool().run(action));
+    } catch (RuntimeException e) {
+      throw throwTException(e);
+    }
+  }
+
+  @Override
+  public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+    try {
+      return tableMetaStore.doAs(() -> clientPool().run(action, retry));
+    } catch (RuntimeException e) {
+      throw throwTException(e);
+    }
+  }
+
+  public RuntimeException throwTException(RuntimeException e) throws TException {
+    if (e.getCause() instanceof NoSuchObjectException) {
+      throw (NoSuchObjectException) e.getCause();
+    } else if (e.getCause() instanceof AlreadyExistsException) {
+      throw (AlreadyExistsException) e.getCause();
+    } else if (e.getCause() instanceof InvalidOperationException) {
+      throw (InvalidOperationException) e.getCause();
+    } else if (e.getCause() instanceof InvalidObjectException) {
+      throw (InvalidObjectException) e.getCause();
+    } else if (e.getCause() instanceof MetaException) {
+      throw (MetaException) e.getCause();
+    } else if (e.getCause() instanceof UnknownDBException) {
+      throw (UnknownDBException) e.getCause();
+    } else if (e.getCause() instanceof UnknownTableException) {
+      throw (UnknownTableException) e.getCause();
+    } else {
+      throw e;
+    }
   }
 }

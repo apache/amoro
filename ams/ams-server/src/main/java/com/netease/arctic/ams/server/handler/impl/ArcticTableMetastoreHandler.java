@@ -198,6 +198,6 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
       throw new NoSuchObjectException("table identifier should not be null");
     }
     return ServiceContainer.getArcticTransactionService().allocateTransactionId(tableIdentifier,
-        transactionSignature, 5);
+        transactionSignature);
   }
 }

@@ -49,6 +49,7 @@ import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
+import com.netease.arctic.utils.ConfigurationFileUtils;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TMultiplexedProcessor;
@@ -64,11 +65,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,10 +114,11 @@ public class ArcticMetaStore {
         startMetaStore(conf);
       }
     } catch (Throwable t) {
+      failover();
       LOG.error("MetaStore Thrift Server threw an exception...", t);
     }
   }
-  
+
   private static String getArcticHome() {
     String arcticHome = System.getenv(ArcticMetaStoreConf.ARCTIC_HOME.key());
     if (arcticHome != null) {
@@ -201,7 +199,7 @@ public class ArcticMetaStore {
     residentThreads.forEach(Thread::interrupt);
     ThreadPool.shutdown();
   }
-  
+
   public static boolean isStarted() {
     return server != null && server.isServing();
   }
@@ -523,13 +521,16 @@ public class ArcticMetaStore {
         }
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE,
-            encodeXmlBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_CORE_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(
+                catalogStorageConfig.getString(ConfigFileProperties.CATALOG_CORE_SITE)));
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE,
-            encodeXmlBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HDFS_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(
+                catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HDFS_SITE)));
         storageConfig.put(
             CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
-            encodeXmlBase64(catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HIVE_SITE)));
+            ConfigurationFileUtils.encodeXmlConfigurationFileWithBase64(
+                catalogStorageConfig.getString(ConfigFileProperties.CATALOG_HIVE_SITE)));
         catalogMeta.storageConfigs = storageConfig;
       }
 
@@ -553,12 +554,14 @@ public class ArcticMetaStore {
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_KEYTAB)) {
             authConfig.put(
                 CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB,
-                encodeBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KEYTAB)));
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(
+                    catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KEYTAB)));
           }
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_KRB5)) {
             authConfig.put(
                 CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5,
-                encodeBase64(catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KRB5)));
+                ConfigurationFileUtils.encodeConfigurationFileWithBase64(
+                    catalogAuthConfig.getString(ConfigFileProperties.CATALOG_KRB5)));
           }
           if (catalogAuthConfig.containsKey(ConfigFileProperties.CATALOG_PRINCIPAL)) {
             authConfig.put(
@@ -577,22 +580,6 @@ public class ArcticMetaStore {
     ServiceContainer.getCatalogMetadataService().addCatalog(catalogMetas);
   }
 
-  private static String encodeBase64(String filePath) throws IOException {
-    if (filePath == null || "".equals(filePath.trim())) {
-      return null;
-    } else {
-      return Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(filePath)));
-    }
-  }
-
-  private static String encodeXmlBase64(String filePath) throws IOException {
-    if (filePath == null || "".equals(filePath.trim())) {
-      return Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
-    } else {
-      return Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(filePath)));
-    }
-  }
-
   private static void initContainerConfig() {
     JSONArray containers = yamlConfig.getJSONArray(ConfigFileProperties.CONTAINER_LIST);
     for (int i = 0; i < containers.size(); i++) {
@@ -600,7 +587,9 @@ public class ArcticMetaStore {
       Container container = new Container();
       container.setName(optimize.getString(ConfigFileProperties.CONTAINER_NAME));
       container.setType(optimize.getString(ConfigFileProperties.CONTAINER_TYPE));
-      container.setProperties(optimize.getObject(ConfigFileProperties.CONTAINER_PROPERTIES, Map.class));
+      if (optimize.containsKey(ConfigFileProperties.CONTAINER_PROPERTIES)) {
+        container.setProperties(optimize.getObject(ConfigFileProperties.CONTAINER_PROPERTIES, Map.class));
+      }
 
       ServiceContainer.getOptimizeQueueService().insertContainer(container);
     }
@@ -626,7 +615,10 @@ public class ArcticMetaStore {
             "can not find such container config named" +
                 optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER));
       }
-      optimizeQueueMeta.properties = optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+      if (optimizeGroup.containsKey(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES)) {
+        optimizeQueueMeta.properties =
+            optimizeGroup.getObject(ConfigFileProperties.OPTIMIZE_GROUP_PROPERTIES, Map.class);
+      }
       boolean updated = false;
       for (OptimizeQueueMeta meta : optimizeQueueMetas) {
         if (meta.name.equals(optimizeQueueMeta.name)) {

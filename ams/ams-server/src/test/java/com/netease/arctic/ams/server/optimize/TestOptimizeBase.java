@@ -33,11 +33,13 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.util.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,7 +53,7 @@ import java.util.stream.Collectors;
 public interface TestOptimizeBase {
   List<Record> baseRecords(int start, int length, Schema tableSchema);
 
-  default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId) throws IOException {
+  default Pair<Snapshot, List<DataFile>> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId) throws IOException {
     TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withTransactionId(transactionId)
@@ -66,7 +68,10 @@ public interface TestOptimizeBase {
     baseDataFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
 
-    return baseDataFiles;
+    baseTable.refresh();
+    Snapshot snapshot = baseTable.currentSnapshot();
+
+    return Pair.of(snapshot, baseDataFiles);
   }
 
   default List<DataFile> insertOptimizeTargetDataFiles(ArcticTable arcticTable,
@@ -93,7 +98,7 @@ public interface TestOptimizeBase {
     return insertBaseDataFiles(writer, arcticTable.schema());
   }
 
-  default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
+  default Pair<Snapshot, List<DeleteFile>> insertBasePosDeleteFiles(ArcticTable arcticTable,
                                                     Long transactionId,
                                                     List<DataFile> dataFiles,
                                                     Set<DataTreeNode> targetNodes) throws IOException {
@@ -135,7 +140,10 @@ public interface TestOptimizeBase {
     deleteFiles.forEach(rowDelta::addDeletes);
     rowDelta.commit();
 
-    return deleteFiles;
+    baseTable.refresh();
+    Snapshot snapshot = baseTable.currentSnapshot();
+
+    return Pair.of(snapshot, deleteFiles);
   }
 
   default List<DeleteFile> insertOptimizeTargetDeleteFiles(ArcticTable arcticTable,

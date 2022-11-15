@@ -59,8 +59,9 @@ public class TerminalService {
       LoggerFactory.getLogger(TerminalService.class);
 
   private static int sessionId = 1;
-  private static Map<Integer, SqlRunningInfo> sqlSessionInfoCache = new HashMap<>();
+  private static final Map<Integer, SqlRunningInfo> sqlSessionInfoCache = new HashMap<>();
   private static final SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss:SSS");
+  private static final String QUOTE  = "`";
 
   public static LogInfo getLogs(int sessionId) {
     return new LogInfo(sqlSessionInfoCache.get(sessionId).getLogStatus(), sqlSessionInfoCache.get(sessionId).getLogs());
@@ -76,17 +77,17 @@ public class TerminalService {
       sqlSessionInfoCache.remove(sessionId - 10);
     }
     sqlSessionInfoCache.get(sessionId).setSql(sqls);
-    sqls.replace("\r\n", "");
+    sqls = sqls.replace("\r\n", "");
     List<String> tempSqls = Arrays.asList(sqls.split(";"));
     List<String> executeSqls = new ArrayList<>(tempSqls);
-    executeSqls.removeIf(t -> StringUtils.isBlank(t));
+    executeSqls.removeIf(StringUtils::isBlank);
     SesssionInfo sesssionInfo = new SesssionInfo(sessionId, executeSqls.size());
     int threadSession = sessionId;
     Thread sqlExecute = new Thread(() -> {
       SqlRunningInfo sqlRunningInfo = sqlSessionInfoCache.get(threadSession);
       sqlRunningInfo.setLogStatus(SqlStatus.RUNNING.getName());
-      TableMetaStore tableMetaStore = null;
-      UserGroupInformation ugi = null;
+      TableMetaStore tableMetaStore;
+      UserGroupInformation ugi;
       try {
         CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(catalog);
         TableMetaStore.Builder builder = TableMetaStore.builder()
@@ -114,7 +115,7 @@ public class TerminalService {
       } catch (Throwable t) {
         sqlRunningInfo.getLogs().add(df.format(new Date()) + " construct ugi failed " + t);
         while (t != null) {
-          sqlRunningInfo.getLogs().addAll(Arrays.asList(t.getStackTrace()).stream()
+          sqlRunningInfo.getLogs().addAll(Arrays.stream(t.getStackTrace())
               .map(StackTraceElement::toString).collect(Collectors.toList()));
           t = t.getCause();
           if (t != null) {
@@ -124,15 +125,16 @@ public class TerminalService {
         sqlRunningInfo.setLogStatus(SqlStatus.FINISHED.getName());
         return;
       }
+
       ugi.doAs((PrivilegedAction<Object>) () -> {
         SparkSession spark;
         try {
           spark = constructSparkSession(threadSession, catalog);
         } catch (Throwable t) {
-          LOG.error("construct spack session failed ", t);
-          sqlRunningInfo.getLogs().add(df.format(new Date()) + " construct spack session failed " + t);
+          LOG.error("construct spark session failed ", t);
+          sqlRunningInfo.getLogs().add(df.format(new Date()) + " construct spark session failed " + t);
           while (t != null) {
-            sqlRunningInfo.getLogs().addAll(Arrays.asList(t.getStackTrace()).stream()
+            sqlRunningInfo.getLogs().addAll(Arrays.stream(t.getStackTrace())
                 .map(StackTraceElement::toString).collect(Collectors.toList()));
             t = t.getCause();
             if (t != null) {
@@ -148,12 +150,12 @@ public class TerminalService {
         }
         try {
           sqlRunningInfo.getLogs().add(df.format(new Date()) + " use " + catalog);
-          spark.sql("use " + catalog);
+          spark.sql("use " + QUOTE + catalog + QUOTE);
         } catch (Throwable t) {
           LOG.error("use catalog " + catalog + " failed ", t);
           sqlRunningInfo.getLogs().add(df.format(new Date()) + " use catalog " + catalog + " failed " + t);
           while (t != null) {
-            sqlRunningInfo.getLogs().addAll(Arrays.asList(t.getStackTrace()).stream()
+            sqlRunningInfo.getLogs().addAll(Arrays.stream(t.getStackTrace())
                 .map(StackTraceElement::toString).collect(Collectors.toList()));
             t = t.getCause();
             if (t != null) {
@@ -179,7 +181,7 @@ public class TerminalService {
             sqlRunningInfo.getSqlResults().add(new SqlResult());
             sqlRunningInfo.getSqlResults().get(i).setId("Result" + (i + 1));
             sqlRunningInfo.getSqlResults().get(i).setStatus(SqlStatus.RUNNING.getName());
-            sql.replace("\r\n", "");
+            sql = sql.replace("\r\n", "");
             sqlRunningInfo.getLogs().add(df.format(new Date()) + " execute sql " + sql);
             Dataset<Row> result = spark.sql(sql);
             List<Row> rows = result.collectAsList();
@@ -203,7 +205,7 @@ public class TerminalService {
             LOG.error("execute sql failed ", t);
             sqlRunningInfo.getLogs().add(df.format(new Date()) + " execute sql failed " + t);
             while (t != null) {
-              sqlRunningInfo.getLogs().addAll(Arrays.asList(t.getStackTrace()).stream()
+              sqlRunningInfo.getLogs().addAll(Arrays.stream(t.getStackTrace())
                   .map(StackTraceElement::toString).collect(Collectors.toList()));
               t = t.getCause();
               if (t != null) {
@@ -234,7 +236,7 @@ public class TerminalService {
       sqlRunningInfo.getExecuteThread().interrupt();
     } catch (Throwable t) {
       sqlRunningInfo.getLogs().add(df.format(new Date()) + " stop failed " + t);
-      sqlRunningInfo.getLogs().addAll(Arrays.asList(t.getStackTrace()).stream()
+      sqlRunningInfo.getLogs().addAll(Arrays.stream(t.getStackTrace())
           .map(StackTraceElement::toString).collect(Collectors.toList()));
       // unsafe
       sqlRunningInfo.getExecuteThread().stop();

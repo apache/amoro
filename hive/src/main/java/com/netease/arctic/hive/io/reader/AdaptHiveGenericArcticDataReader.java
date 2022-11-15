@@ -39,7 +39,7 @@ import java.util.function.Function;
 /**
  * Implementation of {@link BaseArcticDataReader} with record type {@link Record}.
  */
-public class AdaptHiveGenericArcticDataReader extends BaseArcticDataReader<Record> {
+public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataReader<Record> {
 
   public AdaptHiveGenericArcticDataReader(
       ArcticFileIO fileIO,

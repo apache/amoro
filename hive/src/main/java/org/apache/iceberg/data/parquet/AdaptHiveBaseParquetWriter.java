@@ -149,8 +149,10 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
           return ParquetValueWriters.floats(desc);
         case DOUBLE:
           return ParquetValueWriters.doubles(desc);
+        //Change For Arctic ⬇
         case INT96:
           return new TimestampInt96Writer(desc);
+        //Change For Arctic ⬆
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
@@ -305,6 +307,7 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
     }
   }
 
+  //Change For Arctic ⬇
   private static class TimestampInt96Writer<T> extends AdaptHivePrimitiveWriter<T> {
 
     private static final long JULIAN_DAY_OF_EPOCH = 2440588L;
@@ -371,4 +374,5 @@ public abstract class AdaptHiveBaseParquetWriter<T> {
       }
     }
   }
+  //Change For Arctic ⬆
 }

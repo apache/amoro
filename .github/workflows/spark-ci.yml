@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - "master"
+      - "0.**"
     paths:
       - "spark/**"
       - "!core/**"
@@ -18,6 +19,7 @@ on:
   pull_request:
     branches:
       - "master"
+      - "0.**"
     paths:
       - "spark/**"
       - "!core/**"

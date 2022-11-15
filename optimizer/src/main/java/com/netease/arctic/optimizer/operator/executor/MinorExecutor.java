@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class MinorExecutor extends BaseExecutor<DeleteFile> {
@@ -83,7 +84,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     KeyedTable keyedTable = table.asKeyedTable();
 
-    long insertCount = 0;
+    AtomicLong insertCount = new AtomicLong();
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
     Types.StructType recordStruct = requiredSchema.asStruct();
     for (Map.Entry<DataTreeNode, List<DataFile>> nodeFileEntry : dataFileMap.entrySet()) {
@@ -91,38 +92,46 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
       List<DataFile> dataFiles = nodeFileEntry.getValue();
       dataFiles.addAll(task.deleteFiles());
       List<DeleteFile> posDeleteList = deleteFileMap.get(treeNode);
-      CloseableIterator<Record> iterator =
-          openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
       SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
           .withTransactionId(getMaxTransactionId(dataFiles))
           .withTaskId(task.getAttemptId())
           .buildBasePosDeleteWriter(treeNode.mask(), treeNode.index(), task.getPartition());
-      while (iterator.hasNext()) {
-        Record record = iterator.next();
-        String filePath = (String) record.get(recordStruct.fields()
-            .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
-        Long rowPosition = (Long) record.get(recordStruct.fields()
-            .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
-        posDeleteWriter.delete(filePath, rowPosition);
-        insertCount++;
-        if (insertCount == 1 || insertCount == 100000) {
-          LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-              task.getTaskId(), insertCount, "", 0);
+
+      table.io().doAs(() -> {
+        CloseableIterator<Record> iterator =
+            openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
+
+        while (iterator.hasNext()) {
+          Record record = iterator.next();
+          String filePath = (String) record.get(recordStruct.fields()
+              .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
+          Long rowPosition = (Long) record.get(recordStruct.fields()
+              .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
+          posDeleteWriter.delete(filePath, rowPosition);
+          insertCount.getAndIncrement();
+          if (insertCount.get() == 1 || insertCount.get() == 100000) {
+            LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
+                task.getTaskId(), insertCount, "", 0);
+          }
         }
-      }
+        return null;
+      });
 
       // rewrite pos-delete content
       if (CollectionUtils.isNotEmpty(posDeleteList)) {
         BaseIcebergPosDeleteReader posDeleteReader = new BaseIcebergPosDeleteReader(table.io(), posDeleteList);
-        CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
-        CloseableIterator<Record> posDeleteIterator = table.io().doAs(posDeleteIterable::iterator);
-        while (posDeleteIterator.hasNext()) {
-          Record record = posDeleteIterator.next();
-          String filePath = posDeleteReader.readPath(record);
-          Long rowPosition = posDeleteReader.readPos(record);
-          posDeleteWriter.delete(filePath, rowPosition);
-        }
+        table.io().doAs(() -> {
+          CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
+          CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator();
+          while (posDeleteIterator.hasNext()) {
+            Record record = posDeleteIterator.next();
+            String filePath = posDeleteReader.readPath(record);
+            Long rowPosition = posDeleteReader.readPos(record);
+            posDeleteWriter.delete(filePath, rowPosition);
+          }
+          return null;
+        });
       }
 
       targetFiles.addAll(posDeleteWriter.complete());

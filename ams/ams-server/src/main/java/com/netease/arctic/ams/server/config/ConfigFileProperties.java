@@ -50,6 +50,7 @@ public class ConfigFileProperties {
   public static final String CONTAINER_LIST = "containers";
   public static final String CONTAINER_NAME = "name";
   public static final String CONTAINER_TYPE = "type";
+  public static final String EXTERNAL_CONTAINER_TYPE = "external";
   public static final String CONTAINER_PROPERTIES = "properties";
 
   //optimize config

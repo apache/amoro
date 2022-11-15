@@ -47,6 +47,14 @@ public class TracedRewriteFiles implements RewriteFiles {
   }
 
   @Override
+  public RewriteFiles rewriteFiles(Set<DataFile> filesToDelete, Set<DataFile> filesToAdd, long sequenceNumber) {
+    rewriteFiles.rewriteFiles(filesToDelete, filesToAdd, sequenceNumber);
+    filesToAdd.forEach(tracer::addDataFile);
+    filesToDelete.forEach(tracer::deleteDataFile);
+    return this;
+  }
+
+  @Override
   public RewriteFiles rewriteFiles(Set<DataFile> dataFilesToReplace, Set<DeleteFile> deleteFilesToReplace,
                                    Set<DataFile> dataFilesToAdd, Set<DeleteFile> deleteFilesToAdd) {
     rewriteFiles.rewriteFiles(dataFilesToReplace, deleteFilesToReplace, dataFilesToAdd, deleteFilesToAdd);

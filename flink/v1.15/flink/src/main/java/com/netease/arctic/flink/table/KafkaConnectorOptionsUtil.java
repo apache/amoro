@@ -300,7 +300,7 @@ public class KafkaConnectorOptionsUtil {
           .filter(e -> e.getKey().startsWith(PROPERTIES_PREFIX))
           .collect(
               Collectors.toMap(
-                  e -> e.getKey().substring(PROPERTIES_PREFIX.length() + 1),
+                  e -> e.getKey().substring(PROPERTIES_PREFIX.length()),
                   Map.Entry::getValue));
     }
     return Collections.emptyMap();

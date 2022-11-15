@@ -43,13 +43,13 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 1, "name$name", "john", "op_time",
         LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 2, "name", "lily", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 2, "name$name", "lily", "op_time",
         LocalDateTime.of(2022, 1, 2, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 3, "name", "jake", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 3, "name$name", "jake", "op_time",
         LocalDateTime.of(2022, 1, 3, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 4, "name", "sam", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 4, "name$name", "sam", "op_time",
         LocalDateTime.of(2022, 1, 4, 12, 0, 0))));
 
     return builder.build();
@@ -59,9 +59,9 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 5, "name$name", "mary", "op_time",
         LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 6, "name", "mack", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 6, "name$name", "mack", "op_time",
         LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     return builder.build();
   }
@@ -69,7 +69,7 @@ public abstract class TableTestBaseWithInitDataForTrino extends TableTestBaseFor
   protected List<Record> changeDeleteRecords() {
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "mary", "op_time",
+    builder.add(record.copy(ImmutableMap.of("id", 5, "name$name", "mary", "op_time",
         LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
     return builder.build();
   }

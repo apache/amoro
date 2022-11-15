@@ -46,6 +46,8 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -190,8 +192,7 @@ public class TableExpireService implements ITableExpireService {
       Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFileInfo ->
-                FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
+            .filter(dataFileInfo -> dataFileInfo.getSequence() <= maxTransactionId)
             .collect(Collectors.toList()));
       }
     } else {
@@ -201,13 +202,14 @@ public class TableExpireService implements ITableExpireService {
 
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           deleteFiles.addAll(partitionDataFiles.stream()
-              .filter(dataFileInfo ->
-                  FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= value)
+              .filter(dataFileInfo -> dataFileInfo.getSequence() <= value)
               .collect(Collectors.toList()));
         }
       });
     }
 
+    String fileFormat = keyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     List<PrimaryKeyedFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedTable.changeTable().specs().get((int) dataFileInfo.getSpecId());
 
@@ -215,7 +217,7 @@ public class TableExpireService implements ITableExpireService {
         LOG.error("{} can not find partitionSpec id: {}", dataFileInfo.getPath(), dataFileInfo.specId);
         return null;
       }
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       return new DefaultKeyedFile((DataFile) contentFile);
     }).filter(Objects::nonNull).collect(Collectors.toList());
 

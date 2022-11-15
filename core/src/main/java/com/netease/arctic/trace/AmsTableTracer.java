@@ -272,7 +272,8 @@ public class AmsTableTracer implements TableTracer {
           SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
         }
 
-        return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId, parentSnapshotId));
+        return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
+            snapshot.sequenceNumber(), parentSnapshotId));
       } else {
         return Optional.empty();
       }

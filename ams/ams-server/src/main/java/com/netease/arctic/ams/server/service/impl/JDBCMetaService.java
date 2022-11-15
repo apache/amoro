@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
@@ -30,6 +31,7 @@ import com.netease.arctic.ams.server.service.IInternalTableService;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.PropertiesUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseUnkeyedTable;
@@ -145,14 +147,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public void updateTableProperties(TableIdentifier tableIdentifier, Map<String, String> properties) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      properties.remove("meta_store_site");
-      properties.remove("hdfs_site");
-      properties.remove("core_site");
-      properties.remove("auth_method");
-      properties.remove("hadoop_username");
-      properties.remove("krb_keytab");
-      properties.remove("krb_conf");
-      properties.remove("krb_principal");
+      PropertiesUtil.removeHiddenProperties(properties, ServerTableProperties.HIDDEN_INTERNAL);
       TableMetadata oldTableMetaData = loadTableMetadata(tableIdentifier);
       ServiceContainer.getDdlTracerService().commitProperties(tableIdentifier.buildTableIdentifier(),
           oldTableMetaData.getProperties(),
@@ -177,14 +172,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       }
     } catch (InvalidObjectException | NoSuchObjectException e) {
       LOG.error("get tables failed " + tableIdentifier, e);
-    }
-  }
-
-  @Override
-  public void updateTableTxId(TableIdentifier tableIdentifier, long txId) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      tableMetadataMapper.updateTableTxId(tableIdentifier, txId);
     }
   }
 

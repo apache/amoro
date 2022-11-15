@@ -71,6 +71,7 @@ nav:
     - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
   - Spark:
     - Getting Started: spark/spark-get-started.md
+    - Spark Configuration: spark/spark-conf.md
     - Spark DDL: spark/spark-ddl.md
     - Spark DML: spark/spark-dml.md
     - Spark DataFrame: spark/spark-dataframe.md
