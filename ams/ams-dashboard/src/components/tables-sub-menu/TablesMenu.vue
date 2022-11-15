@@ -103,6 +103,7 @@ export default defineComponent({
       curCatalog: '',
       database: '',
       tableName: '',
+      type: '',
       catalogOptions: [] as ILableAndValue[],
       showCreateDBModal: false,
       loading: false,
@@ -169,6 +170,7 @@ export default defineComponent({
     }
     const handleClickTable = (item: IMap<string>) => {
       state.tableName = item.label
+      state.type = item.type
       localStorage.setItem(storageTableKey, JSON.stringify({
         catalog: state.curCatalog,
         database: state.database,
@@ -180,7 +182,8 @@ export default defineComponent({
         query: {
           catalog: state.curCatalog,
           db: state.database,
-          table: state.tableName
+          table: state.tableName,
+          type: state.type
         }
       }
       if (route.path.indexOf('tables') > -1) {

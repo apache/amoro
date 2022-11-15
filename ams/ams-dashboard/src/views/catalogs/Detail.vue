@@ -48,24 +48,24 @@
           <a-form-item>
             <p class="header">{{$t('authConfig')}}</p>
           </a-form-item>
-          <a-form-item label="auth_config.type" :name="['authConfig', 'auth_config.type']" :rules="[{ required: isEdit }]">
+          <a-form-item label="auth.type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit }]">
             <a-select
               v-if="isEdit"
-              v-model:value="formState.authConfig['auth_config.type']"
+              v-model:value="formState.authConfig['auth.type']"
               :placeholder="placeholder.selectPh"
               :options="authConfigTypeOps"
             />
-            <span v-else class="config-value">{{formState.authConfig['auth_config.type']}}</span>
+            <span v-else class="config-value">{{formState.authConfig['auth.type']}}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth_config.type'] === 'SIMPLE'" label="auth_config.hadoop_username" :name="['authConfig', 'auth_config.hadoop_username']" :rules="[{ required: isEdit }]">
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.hadoop_username']" />
-            <span v-else class="config-value">{{formState.authConfig['auth_config.hadoop_username']}}</span>
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="auth.simple.hadoop_username" :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit }]">
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" />
+            <span v-else class="config-value">{{formState.authConfig['auth.simple.hadoop_username']}}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'" label="auth_config.principal" :name="['authConfig', 'auth_config.principal']" :rules="[{ required: isEdit }]">
-            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth_config.principal']" />
-            <span v-else class="config-value">{{formState.authConfig['auth_config.principal']}}</span>
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="auth.kerberos.principal" :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit }]">
+            <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" />
+            <span v-else class="config-value">{{formState.authConfig['auth.kerberos.principal']}}</span>
           </a-form-item>
-          <div v-if="formState.authConfig['auth_config.type'] === 'KERBEROS'">
+          <div v-if="formState.authConfig['auth.type'] === 'KERBEROS'">
             <a-form-item
               v-for="config in formState.authConfigArray"
               :key="config.label"
@@ -75,7 +75,7 @@
                 v-if="isEdit"
                 v-model:file-list="config.fileList"
                 name="file"
-                :accept="config.label === 'auth_config.keytab' ? '.keytab' : '.conf'"
+                :accept="config.label === 'auth.kerberos.keytab' ? '.keytab' : '.conf'"
                 :showUploadList="false"
                 :action="uploadUrl"
                 :disabled="config.uploadLoading"
@@ -169,18 +169,18 @@ const tableFormatMap = {
   ICEBERG: 'ICEBERG'
 }
 const storageConfigFileNameMap = {
-  'storage_config.core-site': 'core-site.xml',
-  'storage_config.hdfs-site': 'hdfs-site.xml',
-  'storage_config.hive-site': 'hive-site.xml'
+  'hadoop.core.site': 'core-site.xml',
+  'hadoop.hdfs.site': 'hdfs-site.xml',
+  'hive.site': 'hive-site.xml'
 }
 const newCatalogConfig = {
   storageConfig: {
-    'storage_config.core-site': '',
-    'storage_config.hdfs-site': ''
+    'hadoop.core.site': '',
+    'hadoop.hdfs.site': ''
   },
   authConfig: {
-    'auth_config.keytab': '',
-    'auth_config.krb5': ''
+    'auth.kerberos.keytab': '',
+    'auth.kerberos.krb5': ''
   }
 }
 const formState:FormState = reactive({
@@ -246,10 +246,10 @@ async function getConfigInfo() {
     } else {
       const res = await getCatalogsSetting(catalog)
       if (!res) { return }
-      const { name, type, tableFormat, storageConfig, authConfig, properties } = res
+      const { name, type, tableFormatList, storageConfig, authConfig, properties } = res
       formState.catalog.name = name
       formState.catalog.type = type
-      formState.tableFormat = tableFormat
+      formState.tableFormat = tableFormatList.join('')
       formState.authConfig = authConfig
       formState.storageConfig = storageConfig
       formState.properties = properties || {}
@@ -259,9 +259,9 @@ async function getConfigInfo() {
     getMetastoreType()
     const { storageConfig, authConfig } = formState
     Object.keys(storageConfig).forEach(key => {
-      const configArr = ['storage_config.core-site', 'storage_config.hdfs-site']
+      const configArr = ['hadoop.core.site', 'hadoop.hdfs.site']
       if (isHiveMetastore.value) {
-        configArr.push('storage_config.hive-site')
+        configArr.push('hive.site')
       }
       if (configArr.includes(key)) {
         const item: IStorageConfigItem = {
@@ -278,7 +278,7 @@ async function getConfigInfo() {
       }
     })
     Object.keys(authConfig).forEach(key => {
-      if (['auth_config.keytab', 'auth_config.krb5'].includes(key)) {
+      if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
         const item: IStorageConfigItem = {
           label: key,
           value: authConfig[key]?.fileName,
@@ -301,13 +301,13 @@ async function getConfigInfo() {
 function changeMetastore() {
   formState.tableFormat = isHiveMetastore.value ? tableFormatMap.HIVE : tableFormatMap.ICEBERG
   if (!isNewCatalog.value) { return }
-  const index = formState.storageConfigArray.findIndex(item => item.label === 'storage_config.hive-site')
+  const index = formState.storageConfigArray.findIndex(item => item.label === 'hive.site')
   if (isHiveMetastore.value) {
     if (index > -1) {
       return
     }
     formState.storageConfigArray.push({
-      label: 'storage_config.hive-site',
+      label: 'hive.site',
       value: '',
       fileName: '',
       fileUrl: '',
@@ -316,11 +316,11 @@ function changeMetastore() {
       uploadLoading: false,
       isSuccess: false
     })
-    formState.storageConfig['storage_config.hive-site'] = ''
+    formState.storageConfig['hive.site'] = ''
   } else {
     if (index > -1) {
       formState.storageConfigArray.splice(index, 1)
-      delete formState.storageConfig['storage_config.hive-site']
+      delete formState.storageConfig['hive.site']
     }
   }
 }
@@ -352,7 +352,7 @@ async function validatorName(rule, value) {
 function getFileIdParams() {
   const { storageConfig, authConfig, storageConfigArray, authConfigArray } = formState
   Object.keys(authConfig).forEach(key => {
-    if (['auth_config.keytab', 'auth_config.krb5'].includes(key)) {
+    if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
       const id = (authConfigArray.find(item => item.label === key) || {}).fileId
       authConfig[key] = id
     }
@@ -371,11 +371,12 @@ function handleSave() {
       if (!properties) {
         return
       }
+      loading.value = true
       getFileIdParams()
       await saveCatalogsSetting({
         isCreate: isNewCatalog.value,
         ...catalog,
-        tableFormat,
+        tableFormatList: [tableFormat],
         storageConfig,
         authConfig,
         properties
@@ -389,6 +390,8 @@ function handleSave() {
         formRef.value.resetFields()
       }).catch(() => {
         message.error(`${t('save')} ${t('failed')}`)
+      }).finally (() => {
+        loading.value = false
       })
     })
     .catch(() => {
