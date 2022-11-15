@@ -607,7 +607,7 @@ public class OptimizeQueueService extends IJDBCService {
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
           int queueId = getQueueId(properties);
 
-          if (TableTypeUtil.isNativeIceberg(tableItem.getArcticTable(false))) {
+          if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
             optimizePlan = tableItem.getIcebergMajorPlan(queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
 

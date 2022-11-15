@@ -29,7 +29,7 @@ public class ExecutorFactory {
 
   public static Executor<?> constructOptimize(NodeTask nodeTask, ArcticTable table,
                                               long startTime, OptimizerConfig config) {
-    if (TableTypeUtil.isNativeIceberg(table)) {
+    if (TableTypeUtil.isIcebergTableFormat(table)) {
       return new NativeExecutor(nodeTask, table, startTime, config);
     }
 
