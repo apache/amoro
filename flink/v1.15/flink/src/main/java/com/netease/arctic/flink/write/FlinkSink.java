@@ -48,7 +48,6 @@ import org.apache.iceberg.DistributionMode;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.sink.TaskWriterFactory;
-import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
@@ -147,13 +146,14 @@ public class FlinkSink {
         DataStream<RowData> input,
         ArcticLogWriter logWriter,
         ArcticFileWriter fileWriter,
+        ArcticTableLoader tableLoader,
         OneInputStreamOperator<WriteResult, Void> committer,
         int writeOperatorParallelism,
         MetricsGenerator metricsGenerator,
         String arcticEmitMode) {
       SingleOutputStreamOperator writerStream = input
           .transform(ArcticWriter.class.getName(), TypeExtractor.createTypeInfo(WriteResult.class),
-              new ArcticWriter<>(logWriter, fileWriter, metricsGenerator))
+              new ArcticWriter<>(logWriter, fileWriter, tableLoader, metricsGenerator))
           .name(String.format("ArcticWriter %s(%s)", table.name(), arcticEmitMode))
           .setParallelism(writeOperatorParallelism);
       context.generateUid("arctic-writer").ifPresent(writerStream::uid);
@@ -222,6 +222,7 @@ public class FlinkSink {
           rowDataInput,
           logWriter,
           fileWriter,
+          tableLoader,
           createFileCommitter(table, tableLoader, overwrite, arcticEmitMode),
           writeOperatorParallelism,
           metricsGenerator,

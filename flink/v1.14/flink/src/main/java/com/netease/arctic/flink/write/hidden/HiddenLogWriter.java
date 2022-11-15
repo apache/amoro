@@ -20,6 +20,7 @@ package com.netease.arctic.flink.write.hidden;
 
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.log.LogData;
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.table.data.RowData;
@@ -42,8 +43,9 @@ public class HiddenLogWriter extends AbstractHiddenLogWriter {
       LogMsgFactory<RowData> factory,
       LogData.FieldGetterFactory<RowData> fieldGetterFactory,
       byte[] jobId,
-      ShuffleHelper helper) {
-    super(schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper);
+      ShuffleHelper helper,
+      ArcticTableLoader tableLoader) {
+    super(schema, producerConfig, topic, factory, fieldGetterFactory, jobId, helper, tableLoader);
   }
 
   @Override

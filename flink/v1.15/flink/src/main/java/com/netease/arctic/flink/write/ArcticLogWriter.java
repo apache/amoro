@@ -27,5 +27,5 @@ import org.apache.flink.table.data.RowData;
  * This is a common abstract arctic log writer.
  */
 public abstract class ArcticLogWriter extends AbstractStreamOperator<RowData>
-    implements OneInputStreamOperator<RowData, RowData>, BoundedOneInput {
+    implements OneInputStreamOperator<RowData, RowData>, BoundedOneInput, TransactionIdAware {
 }

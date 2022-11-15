@@ -18,14 +18,9 @@
 
 package com.netease.arctic.flink.write;
 
-import org.apache.flink.streaming.api.operators.AbstractStreamOperator;
-import org.apache.flink.streaming.api.operators.BoundedOneInput;
-import org.apache.flink.streaming.api.operators.OneInputStreamOperator;
-import org.apache.flink.table.data.RowData;
-
 /**
- * This is a common abstract arctic log writer.
+ * Indicate the transactionId may be useful for it.
  */
-public abstract class ArcticLogWriter extends AbstractStreamOperator<RowData>
-    implements OneInputStreamOperator<RowData, RowData>, BoundedOneInput, TransactionIdAware {
+public interface TransactionIdAware {
+  void setTransactionId(Long transactionId);
 }

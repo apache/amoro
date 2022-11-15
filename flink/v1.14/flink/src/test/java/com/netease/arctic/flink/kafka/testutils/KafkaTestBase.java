@@ -102,8 +102,16 @@ public class KafkaTestBase {
 
   public void startClusters(boolean secureMode)
       throws Exception {
+    Properties props = new Properties();
+    props.put("offsets.topic.num.partitions", "3");
+    props.put("offsets.topic.segment.bytes", "1048576");
+    props.put("transaction.state.log.num.partitions", "3");
+    props.put("transaction.state.log.segment.bytes", "1048576");
+    props.put("metadata.log.max.record.bytes.between.snapshots", "1048576");
+
     startClusters(
         KafkaTestEnvironment.createConfig()
+            .setKafkaServerProperties(props)
             .setKafkaServersNumber(NUMBER_OF_KAFKA_SERVERS)
             .setSecureMode(secureMode));
   }

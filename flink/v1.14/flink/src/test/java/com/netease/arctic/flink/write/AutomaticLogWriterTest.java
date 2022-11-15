@@ -29,6 +29,7 @@ import com.netease.arctic.flink.util.DataUtil;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
+import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.streaming.api.CheckpointingMode;
@@ -44,7 +45,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -252,15 +252,19 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
             LogRecordV1.mapFactory
         );
     ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
-    Assertions.assertEquals(expects.size(), consumerRecords.count());
     List<RowData> actual = new ArrayList<>();
     consumerRecords.forEach(consumerRecord -> {
       try {
-        actual.add(logDataJsonDeserialization.deserialize(consumerRecord.value()).getActualValue());
+        LogData<RowData> row = logDataJsonDeserialization.deserialize(consumerRecord.value());
+        if (row.getFlip()) {
+          return;
+        }
+        actual.add(row.getActualValue());
       } catch (IOException e) {
         e.printStackTrace();
       }
     });
+    Assertions.assertEquals(expects.size(), actual.size());
     Collection<RowData> expected = DataUtil.toRowData(expects);
     Assertions.assertEquals(
         expected.stream().sorted(
@@ -316,7 +320,8 @@ public class AutomaticLogWriterTest extends FlinkTestBase {
         (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType(),
         tableLoader);
 
-    ArcticWriter<WriteResult> arcticWriter = new ArcticWriter<>(automaticLogWriter, streamWriter, metricsGenerator);
+    ArcticWriter<WriteResult> arcticWriter = new ArcticWriter<>(automaticLogWriter, streamWriter, tableLoader,
+        metricsGenerator);
 
     OneInputStreamOperatorInternTest<RowData, WriteResult> harness =
         new OneInputStreamOperatorInternTest<>(

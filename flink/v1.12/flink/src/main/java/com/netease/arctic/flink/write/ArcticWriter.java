@@ -21,8 +21,8 @@ package com.netease.arctic.flink.write;
 import com.netease.arctic.flink.metric.MetricsGenerator;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
-import com.netease.arctic.flink.write.hidden.AbstractHiddenLogWriter;
 import com.netease.arctic.table.ArcticTable;
+import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.MeterView;
@@ -91,7 +91,8 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
     Long transaction;
     String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
     transaction = table.beginTransaction(signature);
-    LOG.info("get new TransactionId. table:{}, signature:{}, transactionId:{}", table.name(), signature, transaction);
+    LOG.info("get new TransactionId. table:{}, signature:{}, transactionId:{}. From jobId:{}, ckpId:{}",
+        table.name(), signature, transaction, jobId, checkpointId);
     transactionId = transaction;
     return transaction;
   }
@@ -166,6 +167,11 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
     if (fileWriter != null) {
       fileWriter.prepareSnapshotPreBarrier(checkpointId);
     }
+  }
+
+  @VisibleForTesting
+  public long getCheckpointId() {
+    return checkpointId;
   }
 
   @Override

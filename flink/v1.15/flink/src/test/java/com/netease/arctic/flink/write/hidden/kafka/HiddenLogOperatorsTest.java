@@ -47,7 +47,11 @@ import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
+import org.apache.flink.table.data.conversion.DataStructureConverter;
+import org.apache.flink.table.data.conversion.DataStructureConverters;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
+import org.apache.flink.table.types.utils.DataTypeUtils;
+import org.apache.flink.types.Row;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -230,7 +234,8 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
       output.addAll(collect(harness2));
       Assertions.assertEquals(11, output.size());
       ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
-      Assertions.assertEquals(11, consumerRecords.count());
+      // additional one is flip in init
+      Assertions.assertEquals(12, consumerRecords.count());
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
         try {
@@ -293,7 +298,8 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
           e.printStackTrace();
         }
       });
-      Assertions.assertEquals(20, consumerRecords.count());
+      // two flip
+      Assertions.assertEquals(21, consumerRecords.count());
     } catch (Exception e) {
       e.printStackTrace();
       throw e;
@@ -406,10 +412,13 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
 
     List<RowData> actualResult = new ArrayList<>();
 
+    DataStructureConverter converter = DataStructureConverters.getConverter(
+        DataTypeUtils.toInternalDataType(flinkUserSchema).bridgedTo(Row.class));
+
     while (iterator.hasNext()) {
       RowData row = iterator.next();
       actualResult.add(row);
-      LOG.info("size {}, {}.", actualResult.size(), row);
+      LOG.info("size {}, {}.", actualResult.size(), converter.toExternal(row));
       if (actualResult.size() == count) {
         break;
       }
@@ -477,7 +486,8 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
             new HiddenKafkaFactory<>(),
             LogRecordV1.fieldGetterFactory,
             jobId,
-            ShuffleHelper.EMPTY
+            ShuffleHelper.EMPTY,
+            null
         );
 
     OneInputStreamOperatorInternTest<RowData, RowData> harness =

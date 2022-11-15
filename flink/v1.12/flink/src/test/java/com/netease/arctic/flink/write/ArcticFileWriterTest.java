@@ -176,7 +176,10 @@ public class ArcticFileWriterTest extends FlinkTestBase {
       testHarness.initializeState(state);
       testHarness.open();
 
-      ArcticFileWriter fileWriter = (ArcticFileWriter) testHarness.getOneInputOperator();
+      testHarness.prepareSnapshotPreBarrier(checkpointId + 1);
+      testHarness.processElement(createRowData(1, "hello", "2020-10-11T10:10:11.0"), 1);
+
+      ArcticWriter fileWriter = (ArcticWriter) testHarness.getOneInputOperator();
       Assert.assertEquals(checkpointId + 1, fileWriter.getCheckpointId());
     }
   }

@@ -33,7 +33,6 @@ import org.apache.flink.types.RowKind;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
 import org.junit.Test;
 
