@@ -30,9 +30,11 @@ import com.netease.arctic.table.ChangeLocationKind;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
+import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -50,18 +52,21 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
 
   @Test
   public void testMinorOptimize() throws IOException {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));
     insertChangeDeleteFiles(testKeyedTable,3);
     insertChangeDataFiles(testKeyedTable,4);
@@ -98,10 +103,11 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     AppendFiles baseAppend = arcticTable.asKeyedTable().changeTable().newAppend();
     changeDeleteFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    arcticTable.asKeyedTable().changeTable().refresh();
+    Snapshot snapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, arcticTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable))
         .collect(Collectors.toList());
   }
 
@@ -124,10 +130,11 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     AppendFiles baseAppend = arcticTable.asKeyedTable().changeTable().newAppend();
     changeInsertFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    arcticTable.asKeyedTable().changeTable().refresh();
+    Snapshot snapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, arcticTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable))
         .collect(Collectors.toList());
 
     return changeInsertFiles;

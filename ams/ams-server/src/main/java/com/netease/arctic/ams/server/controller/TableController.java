@@ -183,7 +183,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo = null;
@@ -215,7 +215,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
     ctx.json(OkResponse.ok());
   }
@@ -446,10 +446,12 @@ public class TableController extends RestBaseController {
     List<TableIdentifier> tableIdentifiers = ac.listTables(db);
     LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
     List<TableMeta> tables = new ArrayList<>();
-    Optional<com.netease.arctic.ams.api.CatalogMeta> optCatalogMeta = catalogMetadataService.getCatalog(catalog);
-    if (optCatalogMeta.isPresent() && optCatalogMeta.get().getCatalogType()
-        .equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
-      ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog) ac;
+    if (CatalogUtil.isIcebergCatalog(catalog)) {
+      for (TableIdentifier tableIdentifier : tableIdentifiers) {
+        tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ICEBERG.toString()));
+      }
+    } else if (CatalogUtil.isHiveCatalog(catalog)) {
+      ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {
         tempTables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.toString()));

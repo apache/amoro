@@ -18,11 +18,18 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
+import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.BaseIcebergCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -50,5 +57,30 @@ public class CatalogUtil {
       }
     }
     return catalogCache.get(name);
+  }
+
+  public static ArcticCatalog getArcticCatalog(String name) {
+    if (catalogCache.get(name) == null) {
+      synchronized (CatalogUtil.class) {
+        if (catalogCache.get(name) == null) {
+          AmsClient client = ServiceContainer.getTableMetastoreHandler();
+          ArcticCatalog catalog = CatalogLoader.load(client, name);
+          catalogCache.put(name, catalog);
+          return catalog;
+        }
+      }
+    }
+    return catalogCache.get(name);
+  }
+
+  public static boolean isIcebergCatalog(String name) {
+    ArcticCatalog ac = getArcticCatalog(name);
+    return ac instanceof BaseIcebergCatalog;
+  }
+
+  public static boolean isHiveCatalog(String name) {
+    CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
+    Optional<CatalogMeta> opt = catalogMetadataService.getCatalog(name);
+    return opt.isPresent() && CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(opt.get().getCatalogType());
   }
 }

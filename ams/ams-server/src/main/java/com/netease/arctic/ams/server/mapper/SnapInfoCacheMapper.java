@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.model.CacheSnapshotInfo;
-import com.netease.arctic.ams.server.model.SnapshotStatistics;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import org.apache.ibatis.annotations.Delete;
@@ -36,11 +35,12 @@ import java.util.List;
 public interface SnapInfoCacheMapper {
   String TABLE_NAME = "snapshot_info_cache";
 
-  @Insert("insert into " + TABLE_NAME + " (table_identifier, snapshot_id, parent_snapshot_id, action," +
-      " inner_table, producer, file_size, file_count, commit_time) values(" +
+  @Insert("insert into " + TABLE_NAME + " (table_identifier, snapshot_id, snapshot_sequence, parent_snapshot_id," +
+      " action, inner_table, producer, file_size, file_count, commit_time) values(" +
       "#{cacheFileInfo.tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
       ".TableIdentifier2StringConverter}," +
-      " #{cacheFileInfo.snapshotId}, #{cacheFileInfo.parentSnapshotId}, #{cacheFileInfo.action}," +
+      " #{cacheFileInfo.snapshotId}, #{cacheFileInfo.snapshotSequence}, #{cacheFileInfo.parentSnapshotId}," +
+      " #{cacheFileInfo.action}," +
       " #{cacheFileInfo.innerTable}, #{cacheFileInfo.producer}, #{cacheFileInfo.fileSize}, #{cacheFileInfo" +
       ".fileCount}, #{cacheFileInfo.commitTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor})")
   void insertCache(@Param("cacheFileInfo") CacheSnapshotInfo info);

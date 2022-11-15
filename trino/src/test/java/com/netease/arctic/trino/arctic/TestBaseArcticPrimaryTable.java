@@ -48,7 +48,7 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
 
   @Test
   public void tableMORWithProject() throws InterruptedException {
-    assertQuery("select op_time, name from " + PK_TABLE_FULL_NAME,
+    assertQuery("select op_time, \"name$name\" from " + PK_TABLE_FULL_NAME,
         "VALUES (TIMESTAMP '2022-01-01 12:00:00', 'john'), " +
             "(TIMESTAMP'2022-01-02 12:00:00', 'lily'), " +
             "(TIMESTAMP'2022-01-03 12:00:00', 'jake'), " +

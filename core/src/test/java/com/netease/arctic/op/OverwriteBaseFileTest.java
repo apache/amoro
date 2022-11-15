@@ -50,7 +50,7 @@ public class OverwriteBaseFileTest extends TableTestBase {
   protected static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
       .identity("op_time").build();
 
-  private long initTxId = 0;
+  private long initTxId;
 
   @Override
   public void setupTables() throws Exception {
@@ -68,17 +68,17 @@ public class OverwriteBaseFileTest extends TableTestBase {
   @Override
   public void before() {
     long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    initTxId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
     List<DataFile> files = writeBaseNoCommit(testKeyedTable, txId, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 1, "aaa", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 2, "bbb", "2020-1-2"),
         newGenericRecord(TABLE_SCHEMA, 3, "ccc", "2020-1-3")
     ));
-    this.initTxId = txId;
 
-    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
-    files.forEach(overwrite::addDataFile);
-    overwrite.withTransactionId(txId);
-    overwrite.commit();
+    RewritePartitions rewritePartitions = testKeyedTable.newRewritePartitions();
+    files.forEach(rewritePartitions::addDataFile);
+    rewritePartitions.withTransactionId(initTxId);
+    rewritePartitions.commit();
 
     writeChange(PK_TABLE_ID, ChangeAction.INSERT, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 4, "444", "2020-1-1"),
@@ -112,17 +112,18 @@ public class OverwriteBaseFileTest extends TableTestBase {
    */
   @Test
   public void testOverwriteAllPartition() {
-    long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long txId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 8, "888", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
-    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
+    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
-        .withTransactionId(txId)
+        .withTransactionIdForChangedPartition(txId)
         .commit();
     // overwrite all partition and add new data file
 
@@ -155,16 +156,17 @@ public class OverwriteBaseFileTest extends TableTestBase {
 
   @Test
   public void testOverwritePartitionByExpression() {
-    long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    long txId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 8, "888", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
-    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
+    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
-    overwrite.withTransactionId(txId);
+    overwrite.withTransactionIdForChangedPartition(txId);
     overwrite.overwriteByRowFilter(
         Expressions.or(
             Expressions.or(

@@ -31,13 +31,14 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 
 import java.util.List;
 
 public class DataFileInfoUtils {
-  public static DataFileInfo convertToDatafileInfo(DataFile dataFile, long commitTime, ArcticTable arcticTable) {
+  public static DataFileInfo convertToDatafileInfo(DataFile dataFile, Snapshot snapshot, ArcticTable arcticTable) {
     DataFileInfo dataFileInfo = new DataFileInfo();
     dataFileInfo.setSize(dataFile.fileSizeInBytes());
     dataFileInfo.setPath((String) dataFile.path());
@@ -54,11 +55,12 @@ public class DataFileInfoUtils {
       dataFileInfo.setIndex(0);
       dataFileInfo.setMask(0);
     }
-    dataFileInfo.setCommitTime(commitTime);
+    dataFileInfo.setCommitTime(snapshot.timestampMillis());
+    dataFileInfo.setSequence(snapshot.sequenceNumber());
     return dataFileInfo;
   }
 
-  public static DataFileInfo convertToDatafileInfo(DeleteFile deleteFile, long commitTime, KeyedTable keyedTable) {
+  public static DataFileInfo convertToDatafileInfo(DeleteFile deleteFile, Snapshot snapshot, KeyedTable keyedTable) {
     DataFileInfo dataFileInfo = new DataFileInfo();
     dataFileInfo.setSize(deleteFile.fileSizeInBytes());
     dataFileInfo.setPath(deleteFile.path().toString());
@@ -69,7 +71,8 @@ public class DataFileInfoUtils {
     DataTreeNode node = FileUtil.parseFileNodeFromFileName(deleteFile.path().toString());
     dataFileInfo.setIndex(node.getIndex());
     dataFileInfo.setMask(node.getMask());
-    dataFileInfo.setCommitTime(commitTime);
+    dataFileInfo.setCommitTime(snapshot.timestampMillis());
+    dataFileInfo.setCommitTime(snapshot.sequenceNumber());
     return dataFileInfo;
   }
 

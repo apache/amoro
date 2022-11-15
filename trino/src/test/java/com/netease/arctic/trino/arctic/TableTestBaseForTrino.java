@@ -76,7 +76,7 @@ public abstract class TableTestBaseForTrino extends AbstractTestQueryFramework {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
   protected static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "name", Types.StringType.get()),
+      Types.NestedField.required(2, "name$name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
   );
   protected static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);

@@ -19,7 +19,6 @@
 package com.netease.arctic.io;
 
 import com.google.common.collect.Sets;
-import com.netease.arctic.io.reader.BaseIcebergDataReader;
 import com.netease.arctic.io.reader.BaseIcebergPosDeleteReader;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.reader.GenericIcebergDataReader;
@@ -27,22 +26,16 @@ import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BaseArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
-import java.util.Map;
-import java.util.function.Function;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
-import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.types.Types;
-import org.apache.parquet.schema.MessageType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -73,7 +66,7 @@ public class TaskReaderTest extends TableTestBaseWithInitData {
       }
     }
     List<Record> records = builder.build();
-    Set resultIds = records.stream().map(s -> s.get(0)).collect(Collectors.toSet());
+    Set<Object> resultIds = records.stream().map(s -> s.get(0)).collect(Collectors.toSet());
 
     Set<Integer> rightIds = Sets.newHashSet(1, 2, 3, 6);
     Assert.assertEquals(rightIds, resultIds);

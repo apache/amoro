@@ -124,7 +124,7 @@ public class ConvertStructUtil {
     }
   }
 
-  private static List<PartitionFieldData> partitionFields(PartitionSpec partitionSpec, StructLike partitionData) {
+  public static List<PartitionFieldData> partitionFields(PartitionSpec partitionSpec, StructLike partitionData) {
     List<PartitionFieldData> partitionFields = Lists.newArrayListWithCapacity(partitionSpec.fields().size());
     Class<?>[] javaClasses = partitionSpec.javaClasses();
     for (int i = 0; i < javaClasses.length; i += 1) {

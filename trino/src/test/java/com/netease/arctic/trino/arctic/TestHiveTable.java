@@ -102,7 +102,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   @Test
   public void testHiveTableMOR() {
     //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_HIVE_TABLE_FULL_NAME, "VALUES" +
+    assertQuery("select id, name, op_time, \"d$d\" from " + TEST_HIVE_TABLE_FULL_NAME, "VALUES" +
         "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
         "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
         "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
@@ -112,7 +112,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   @Test
   public void testKeyedHiveTableMOR() {
     //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_HIVE_PK_TABLE_FULL_NAME, "VALUES" +
+    assertQuery("select id, name, op_time, \"d$d\" from " + TEST_HIVE_PK_TABLE_FULL_NAME, "VALUES" +
         "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
         "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)," +
         "(6, 'mack', TIMESTAMP'2022-01-01 12:00:00.000000', 105)");
@@ -121,7 +121,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   @Test
   public void testKeyedHiveTableBase() {
     //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_HIVE_PK_TABLE_FULL_NAME_BASE, "VALUES" +
+    assertQuery("select id, name, op_time, \"d$d\" from " + TEST_HIVE_PK_TABLE_FULL_NAME_BASE, "VALUES" +
         "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
         "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
         "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
@@ -131,7 +131,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   @Test
   public void testNoPartitionHiveTableMOR() {
     //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_UN_PARTITION_HIVE_TABLE_FULL_NAME, "VALUES" +
+    assertQuery("select id, name, op_time, \"d$d\" from " + TEST_UN_PARTITION_HIVE_TABLE_FULL_NAME, "VALUES" +
         "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
         "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
         "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
@@ -141,7 +141,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   @Test
   public void testNoPartitionKeyedHiveTableMOR() {
     //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME, "VALUES" +
+    assertQuery("select id, name, op_time, \"d$d\" from " + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME, "VALUES" +
         "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
         "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)," +
         "(6, 'mack', TIMESTAMP'2022-01-01 12:00:00.000000', 105)");
@@ -150,7 +150,7 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   @Test
   public void testNoPartitionKeyedHiveTableBase() {
     //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE, "VALUES" +
+    assertQuery("select id, name, op_time, \"d$d\" from " + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE, "VALUES" +
         "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
         "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
         "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
