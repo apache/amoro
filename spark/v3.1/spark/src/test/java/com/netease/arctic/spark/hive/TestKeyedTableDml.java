@@ -48,6 +48,12 @@ public class TestKeyedTableDml extends SparkTestBase {
       " DATA string, primary key(ID))\n" +
       " using arctic partitioned by (DATA) " ;
 
+  protected String createUnkeyedTable = "create table {0}.{1}( \n" +
+      " id int, \n" +
+      " name string, \n" +
+      " data string) \n" +
+      " using arctic ";
+
   @Before
   public void prepare() {
     sql("use " + catalogNameHive);
@@ -72,7 +78,7 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql(createTableInsert, database, insertTable);
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
     Assert.assertEquals(3, rows.size());
-    sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
+    sql("insert overwrite " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
     Assert.assertEquals(3, rows.size());
@@ -277,5 +283,25 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(2, rows.size());
     Assert.assertEquals(1, rows.get(0)[0]);
     Assert.assertEquals(2, rows.get(1)[0]);
+  }
+
+  @Test
+  public void testInsertSelectUnkeyedTable() {
+    sql(createUnkeyedTable, database, "unkeyedTable");
+    sql("insert into " + database + "." + "unkeyedTable" +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
+    rows = sql("select * from {0}.{1} ", database, "unkeyedTable");
+    Assert.assertEquals(3, rows.size());
+
+    sql("insert into " + database + "." + notUpsertTable + " select * from {0}.{1} ", database, "unkeyedTable");
+    rows = sql("select * from {0}.{1} ", database, notUpsertTable);
+    Assert.assertEquals(6, rows.size());
+
+    sql("insert overwrite " + database + "." + notUpsertTable + " select * from {0}.{1} ", database, "unkeyedTable");
+    rows = sql("select * from {0}.{1} ", database, notUpsertTable);
+    Assert.assertEquals(3, rows.size());
+    sql("drop table if exists " + database + "." + "unkeyedTable");
   }
 }

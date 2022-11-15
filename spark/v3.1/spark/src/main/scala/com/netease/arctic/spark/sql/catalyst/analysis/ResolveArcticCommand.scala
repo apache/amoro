@@ -40,6 +40,7 @@ case class ResolveArcticCommand(spark: SparkSession) extends Rule[LogicalPlan] {
         .withTarget(seqAsJavaList(target))
         .build()
       plans.MigrateToArcticLogicalPlan(command)
+    // set the nullable is false to the primary key field
     case i@InsertIntoStatement(r: DataSourceV2Relation,
     partition, cols, query, overwrite, ifPartitionNotExists) =>
       val output = query.output.map(f =>
