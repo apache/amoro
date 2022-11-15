@@ -53,7 +53,6 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(BaseIcebergOptimizePlan.class);
 
   protected final List<FileScanTask> fileScanTasks;
-  // partition -> fileTree
   protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
   protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
 
