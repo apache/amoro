@@ -28,10 +28,18 @@ import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
+import com.netease.arctic.ams.server.util.TableUtil;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileMetadata;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -49,7 +57,7 @@ import static com.netease.arctic.ams.server.AmsTestBase.catalog;
 
 public class TestFileInfoCacheService extends TableTestBase {
 
-  TableIdentifier tableIdentifier = new TableIdentifier("test", "test", "test");
+  TableIdentifier tableIdentifier = new TableIdentifier(AMS_TEST_CATALOG_NAME, "test", "test");
   Random random = new Random();
 
   @Test
@@ -252,6 +260,81 @@ public class TestFileInfoCacheService extends TableTestBase {
     Assert.assertEquals(
         overwriteCommitSnapInfos.get(0).getTransactionId(),
         overwriteSnapInfos.get(0).getTransactionId());
+  }
+
+  @Test
+  public void testIcebergTable() {
+    Map<String, String> pro = new HashMap<>();
+    pro.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    ArcticTable table = TableUtil.createIcebergTable("test_iceberg_file_cache", TABLE_SCHEMA, pro, TableTestBase.SPEC);
+    DeleteFile posDelete = FileMetadata.deleteFileBuilder(table.spec())
+        .ofPositionDeletes()
+        .withPath("/path/to/data-unpartitioned-pos-deletes.parquet")
+        .withFileSizeInBytes(10)
+        .withPartitionPath("op_time_day=2022-01-01")
+        .withRecordCount(1)
+        .build();
+    DeleteFile eqDelete = FileMetadata.deleteFileBuilder(table.spec())
+        .ofEqualityDeletes()
+        .withPath("/path/to/data-unpartitioned-eq-deletes.parquet")
+        .withFileSizeInBytes(10)
+        .withPartitionPath("op_time_day=2022-01-01")
+        .withRecordCount(1)
+        .build();
+    table.asUnkeyedTable().newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+    table.asUnkeyedTable().newOverwrite()
+        .deleteFile(FILE_A)
+        .addFile(FILE_C)
+        .commit();
+    table.asUnkeyedTable().newRowDelta().addDeletes(eqDelete).addDeletes(posDelete).commit();
+    List<TransactionsOfTable> transactionsOfTables =
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(table.id().buildTableIdentifier());
+    Assert.assertEquals(3, transactionsOfTables.size());
+
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(0).getPath(), FILE_A.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(0).getOperation(), "add");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(1).getPath(), FILE_B.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(1).getOperation(), "add");
+
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(0).getPath(), FILE_C.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(0).getOperation(), "add");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(1).getPath(), FILE_A.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(1).getOperation(), "remove");
+
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(2).getTransactionId()).get(0).getPath(), "/path/to/data-unpartitioned-eq-deletes" +
+        ".parquet");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(2).getTransactionId()).get(0).getType(), FileContent.EQUALITY_DELETES.name());
+    Assert.assertEquals(
+        ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+            table.id().buildTableIdentifier(),
+            transactionsOfTables.get(2).getTransactionId()).get(1).getPath(),
+        "/path/to/data-unpartitioned-pos-deletes.parquet");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(2).getTransactionId()).get(1).getType(), FileContent.POSITION_DELETES.name());
   }
 
   private DataFile genDatafile() {

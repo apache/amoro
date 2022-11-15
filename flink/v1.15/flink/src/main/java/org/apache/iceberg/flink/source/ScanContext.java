@@ -65,7 +65,7 @@ public class ScanContext implements Serializable {
       ConfigOptions.key("split-file-open-cost").longType().defaultValue(null);
 
   public static final ConfigOption<Boolean> STREAMING =
-      ConfigOptions.key("streaming").booleanType().defaultValue(false);
+      ConfigOptions.key("streaming").booleanType().defaultValue(true);
 
   public static final ConfigOption<Duration> MONITOR_INTERVAL =
       ConfigOptions.key("monitor-interval").durationType().defaultValue(Duration.ofSeconds(10));
