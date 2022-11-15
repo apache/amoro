@@ -36,9 +36,12 @@ import org.junit.Assert;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -124,6 +127,17 @@ public class DataUtil {
       throw new RuntimeException(e);
     }
     return records;
+  }
+
+  public static Map<Object, List<Row>> groupByPrimaryKey(List<Row> rowList, int pkIdx) {
+    Map<Object, List<Row>> result = new HashMap<>();
+    for (Row row : rowList) {
+      Object pk = row.getField(pkIdx);
+      List<Row> list = result.getOrDefault(pk, new LinkedList<>());
+      list.add(row);
+      result.put(pk, list);
+    }
+    return result;
   }
 
 }
