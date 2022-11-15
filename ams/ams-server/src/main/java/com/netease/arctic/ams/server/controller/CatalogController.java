@@ -159,28 +159,23 @@ public class CatalogController extends RestBaseController {
   }
 
   private static Map<String, Object> storageConvertFromMetaToServer(String catalogName, Map<String, String> config) {
-
-    String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
     Map<String, Object> storageConfig = new HashMap<>();
-    // todo: need to consider some catalog in config.yaml without xxx-site.id configuration.
-    Map<String, String> coreSiteItem = new HashMap<>();
-    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_CORE_SITE, new ConfigFileItem(
+    storageConfig.put(STORAGE_CONFIGS_KEY_CORE_SITE, new ConfigFileItem(
             ConfigFileProperties.CATALOG_CORE_SITE + ".xml",
             constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
                     STORAGE_CONFIGS_KEY_CORE_SITE.replace("\\.", "-"))));
 
-    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_HDFS_SITE, new ConfigFileItem(
+    storageConfig.put(STORAGE_CONFIGS_KEY_HDFS_SITE, new ConfigFileItem(
             ConfigFileProperties.CATALOG_HDFS_SITE + ".xml",
             constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
                     STORAGE_CONFIGS_KEY_HDFS_SITE.replace("\\.", "-"))));
 
-    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_HIVE_SITE, new ConfigFileItem(
+    storageConfig.put(STORAGE_CONFIGS_KEY_HIVE_SITE, new ConfigFileItem(
             ConfigFileProperties.CATALOG_HIVE_SITE + ".xml",
             constructCatalogConfigFileUrl(catalogName, CONFIG_TYPE_STORAGE,
                     STORAGE_CONFIGS_KEY_HIVE_SITE.replace("\\.", "-"))));
 
-    storageConfig.put(catalogConfPrefix + ConfigFileProperties.CATALOG_STORAGE_TYPE,
-            config.get(STORAGE_CONFIGS_KEY_TYPE));
+    storageConfig.put(STORAGE_CONFIGS_KEY_TYPE, config.get(STORAGE_CONFIGS_KEY_TYPE));
     return storageConfig;
   }
 
@@ -208,7 +203,6 @@ public class CatalogController extends RestBaseController {
     } catch (Exception e) {
       throw new RuntimeException("Invalid table format list, " + String.join(",", info.getTableFormatList()));
     }
-
     if (CATALOG_TYPE_CUSTOM.equals(info.getType())) {
       // check properties contains key 'catalog-impl'
       if (info.getProperties().containsKey("catalog-impl")) {
@@ -217,25 +211,21 @@ public class CatalogController extends RestBaseController {
     }
     catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
     catalogMeta.setAuthConfigs(authConvertFromServerToMeta(info.getAuthConfig(), oldCatalogMeta));
-
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<String, String>();
-    String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
-
     metaStorageConfig.put(STORAGE_CONFIGS_KEY_TYPE,
-            info.getStorageConfig().get(catalogConfPrefix + ConfigFileProperties.CATALOG_STORAGE_TYPE));
+            info.getStorageConfig().get(STORAGE_CONFIGS_KEY_TYPE));
 
-    List<String> confKeyList = Arrays.asList(ConfigFileProperties.CATALOG_HDFS_SITE,
-            ConfigFileProperties.CATALOG_CORE_SITE, ConfigFileProperties.CATALOG_HIVE_SITE);
     List<String> metaKeyList = Arrays.asList(STORAGE_CONFIGS_KEY_HDFS_SITE,
             STORAGE_CONFIGS_KEY_CORE_SITE,
             STORAGE_CONFIGS_KEY_HIVE_SITE);
 
+    // when update catalog, fileId won't be post when config doesn't been changed!
     Integer idx = 0;
     boolean fillUseOld = oldCatalogMeta != null;
-    for (idx = 0; idx < confKeyList.size(); idx++) {
+    for (idx = 0; idx < metaKeyList.size(); idx++) {
       String fileId = info.getStorageConfig()
-              .get(catalogConfPrefix + confKeyList.get(idx));
+              .get(metaKeyList.get(idx));
       if (!StringUtils.isEmpty(fileId)) {
         String fileSite = platformFileInfoService.getFileContentB64ById(Integer.valueOf(fileId));
         metaStorageConfig.put(metaKeyList.get(idx), fileSite);
@@ -293,7 +283,6 @@ public class CatalogController extends RestBaseController {
       info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta.getAuthConfigs()));
       Map<String, Object> storageConfig = storageConvertFromMetaToServer(catalogName, catalogMeta.getStorageConfigs());
       info.setStorageConfig(storageConfig);
-      info.setProperties(catalogMeta.getCatalogProperties());
       // we put the tableformat single
       String tableFormat = catalogMeta.getCatalogProperties().get(CatalogMetaProperties.TABLE_FORMATS);
       if (StringUtils.isEmpty(tableFormat)) {
@@ -303,7 +292,9 @@ public class CatalogController extends RestBaseController {
           tableFormat = TableFormat.ICEBERG.name();
         }
       }
-      info.setTableFormat(tableFormat);
+      info.setTableFormatList(Arrays.asList(tableFormat.split(",")));
+      info.setProperties(catalogMeta.getCatalogProperties());
+      info.getProperties().remove(CatalogMetaProperties.TABLE_FORMATS);
       ctx.json(OkResponse.of(info));
       return;
     }

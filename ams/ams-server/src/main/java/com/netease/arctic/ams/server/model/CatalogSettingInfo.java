@@ -18,22 +18,23 @@
 
 package com.netease.arctic.ams.server.model;
 
+import java.util.List;
 import java.util.Map;
 
 public class CatalogSettingInfo {
   String name;
   String type;
-  String tableFormat;
+  List<String> tableFormatList;
   Map<String, Object> storageConfig;
   Map<String, Object> authConfig;
   Map<String, String> properties;
 
-  public String getTableFormat() {
-    return tableFormat;
+  public List<String> getTableFormatList() {
+    return tableFormatList;
   }
 
-  public void setTableFormat(String tableFormat) {
-    this.tableFormat = tableFormat;
+  public void setTableFormatList(List<String> tableFormatList) {
+    this.tableFormatList = tableFormatList;
   }
 
   public String getName() {
