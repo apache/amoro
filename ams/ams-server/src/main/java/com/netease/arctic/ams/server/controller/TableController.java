@@ -455,7 +455,8 @@ public class TableController extends RestBaseController {
       for (TableIdentifier tableIdentifier : tableIdentifiers) {
         tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ICEBERG.toString()));
       }
-    } else if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
+    } else if (catalogMetadataService.getCatalog(catalog)
+        .getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
       ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {
