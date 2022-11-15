@@ -10,7 +10,6 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
@@ -20,9 +19,7 @@ import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileFormat;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
@@ -65,7 +62,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
-public class TestNativeExecutor {
+public class TestIcebergExecutor {
   @ClassRule
   public static final TemporaryFolder tempFolder = new TemporaryFolder();
   protected static final String ICEBERG_HADOOP_CATALOG_NAME = "iceberg_hadoop";
@@ -146,8 +143,9 @@ public class TestNativeExecutor {
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    NativeExecutor nativeExecutor = new NativeExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = nativeExecutor.execute();
+    IcebergExecutor
+        icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(500, dataFile.recordCount());
@@ -168,8 +166,9 @@ public class TestNativeExecutor {
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    NativeExecutor nativeExecutor = new NativeExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = nativeExecutor.execute();
+    IcebergExecutor
+        icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
     Assert.assertNotEquals(1, Iterables.size(result.getTargetFiles()));
     AtomicLong totalRecordCount = new AtomicLong();
     result.getTargetFiles().forEach(dataFile -> {
