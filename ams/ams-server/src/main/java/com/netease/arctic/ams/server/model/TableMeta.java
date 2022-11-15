@@ -60,7 +60,8 @@ public class TableMeta {
 
   public enum TableType {
     ARCTIC("arctic"),
-    HIVE("hive");
+    HIVE("hive"),
+    ICEBERG("iceberg");
 
     private String name;
 

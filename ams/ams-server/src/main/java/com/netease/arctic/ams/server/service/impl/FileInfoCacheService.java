@@ -42,6 +42,7 @@ import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -53,10 +54,12 @@ import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -505,18 +508,91 @@ public class FileInfoCacheService extends IJDBCService {
     return rs;
   }
 
-  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier tableIdentifier) {
+  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier) {
+    if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
+      List<TransactionsOfTable> result = new ArrayList<>();
+      ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
+      ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
+          identifier.getDatabase(), identifier.getTableName()));
+      arcticTable.asUnkeyedTable().snapshots().forEach(snapshot -> {
+        TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
+        transactionsOfTable.setTransactionId(snapshot.snapshotId());
+        int fileCount = PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
+        if (snapshot.summary().containsKey(org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP)) {
+          fileCount += PropertyUtil
+              .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
+        }
+        transactionsOfTable.setFileCount(fileCount);
+        transactionsOfTable.setFileSize(PropertyUtil
+            .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0));
+        transactionsOfTable.setCommitTime(snapshot.timestampMillis());
+        result.add(transactionsOfTable);
+      });
+      return result;
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.getTxExcludeOptimize(tableIdentifier);
+      return snapInfoCacheMapper.getTxExcludeOptimize(identifier);
     }
   }
 
-  public List<AMSDataFileInfo> getDatafilesInfo(TableIdentifier tableIdentifier, Long transactionId) {
+  public List<AMSDataFileInfo> getDatafilesInfo(TableIdentifier identifier, Long transactionId) {
+    if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
+      return genIcebergFileInfo(identifier, transactionId);
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      return fileInfoCacheMapper.getDatafilesInfo(tableIdentifier, transactionId);
+      return fileInfoCacheMapper.getDatafilesInfo(identifier, transactionId);
     }
+  }
+
+  public List<AMSDataFileInfo> genIcebergFileInfo(TableIdentifier identifier, Long transactionId) {
+    List<AMSDataFileInfo> result = new ArrayList<>();
+    ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
+    ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
+        identifier.getDatabase(), identifier.getTableName()));
+    List<DeleteFile> addFiles = new ArrayList<>();
+    List<DeleteFile> deleteFiles = new ArrayList<>();
+    Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
+    SnapshotFileUtil.getDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
+    snapshot.addedFiles().forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "add"));
+    });
+    snapshot.deletedFiles().forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "remove"));
+    });
+    addFiles.forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "add"));
+    });
+    deleteFiles.forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "remove"));
+    });
+    return result;
   }
 
   public List<PartitionBaseInfo> getPartitionBaseInfoList(TableIdentifier tableIdentifier) {

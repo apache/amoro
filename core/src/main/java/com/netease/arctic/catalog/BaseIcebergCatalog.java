@@ -28,6 +28,7 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
@@ -59,6 +60,9 @@ public class BaseIcebergCatalog implements ArcticCatalog {
     meta.putToCatalogProperties(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
         meta.getCatalogType());
     tableMetaStore = CatalogUtil.buildMetaStore(meta);
+    if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
+      meta.getCatalogProperties().remove("type");
+    }
     icebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
         meta.getCatalogProperties(), tableMetaStore.getConfiguration());
   }
