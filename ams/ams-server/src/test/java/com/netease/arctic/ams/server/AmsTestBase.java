@@ -62,10 +62,13 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.io.FileUtils;
 import org.apache.ibatis.session.SqlSessionFactory;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.PartitionSpec;
 import org.assertj.core.util.Lists;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.mockito.stubbing.Answer;
@@ -129,15 +132,26 @@ public class AmsTestBase {
   private static final File testBaseDir = new File("unit_test_base_tmp");
   public static ArcticTableMetastoreHandler amsHandler;
   public static ArcticCatalog catalog;
+  public static ArcticCatalog icebergCatalog;
   public static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";
+
   public static final String AMS_TEST_DB_NAME = "ams_test_db";
+
+  public static final String AMS_TEST_ICEBERG_CATALOG_NAME = "ams_test_iceberg_catalog";
+
+  public static final String AMS_TEST_ICEBERG_DB_NAME = "ams_test_iceberg_db";
+
+  @ClassRule
+  public static final TemporaryFolder tempFolder = new TemporaryFolder();
 
   @BeforeClass
   public static void beforeAllTest() throws Exception {
     System.setProperty("HADOOP_USER_NAME", System.getProperty("user.name"));
     FileUtils.deleteQuietly(testBaseDir);
     FileUtils.deleteQuietly(testTableBaseDir);
+    tempFolder.create();
     testBaseDir.mkdirs();
+    testTableBaseDir.mkdir();
 
     try {
       DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
@@ -183,9 +197,10 @@ public class AmsTestBase {
 
     //create
     createCatalog();
+    createIcebergCatalog();
   }
 
-  private static void createCatalog() {
+  private static void createCatalog() throws IOException {
     Map<String, String> storageConfig = new HashMap<>();
     storageConfig.put(
         CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
@@ -203,13 +218,39 @@ public class AmsTestBase {
         System.getProperty("user.name"));
 
     Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/tmp");
+    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, tempFolder.newFolder().getPath());
     CatalogMeta catalogMeta = new CatalogMeta(AMS_TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
         storageConfig, authConfig, catalogProperties);
     List<CatalogMeta> catalogMetas = Lists.newArrayList(catalogMeta);
     ServiceContainer.getCatalogMetadataService().addCatalog(catalogMetas);
     catalog = CatalogLoader.load(amsHandler, AMS_TEST_CATALOG_NAME);
     catalog.createDatabase(AMS_TEST_DB_NAME);
+  }
+
+  public static void createIcebergCatalog() throws IOException {
+    Map<String, String> storageConfig = new HashMap<>();
+    storageConfig.put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
+        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
+    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
+    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
+
+    Map<String, String> authConfig = new HashMap<>();
+    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+        CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
+    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+        System.getProperty("user.name"));
+
+    Map<String, String> catalogProperties = new HashMap<>();
+    catalogProperties.put(CatalogProperties.WAREHOUSE_LOCATION, tempFolder.newFolder().getPath());
+    catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, "iceberg");
+
+    CatalogMeta catalogMeta = new CatalogMeta(AMS_TEST_ICEBERG_CATALOG_NAME, CATALOG_TYPE_HADOOP,
+        storageConfig, authConfig, catalogProperties);
+    List<CatalogMeta> catalogMetas = Lists.newArrayList(catalogMeta);
+    ServiceContainer.getCatalogMetadataService().addCatalog(catalogMetas);
+    icebergCatalog = CatalogLoader.load(amsHandler, AMS_TEST_ICEBERG_CATALOG_NAME);
+    icebergCatalog.createDatabase(AMS_TEST_ICEBERG_DB_NAME);
   }
 
   @AfterClass

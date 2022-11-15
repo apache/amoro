@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.ams.server.utils.AmsUtils;
 
-
 public class AMSDataFileInfo {
   String path;
   String partition;
@@ -30,6 +29,19 @@ public class AMSDataFileInfo {
   long commitTime; // 13-bit timestamp
   String file;
   String operation;
+
+  public AMSDataFileInfo() {
+
+  }
+
+  public AMSDataFileInfo(String path, String partition, String type, long fileSize, long commitTime, String operation) {
+    this.path = path;
+    this.partition = partition;
+    this.type = type;
+    this.fileSize = fileSize;
+    this.commitTime = commitTime;
+    this.operation = operation;
+  }
 
   public long getFileSize() {
     return fileSize;

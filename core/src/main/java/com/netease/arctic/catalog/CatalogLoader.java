@@ -28,6 +28,7 @@ import com.netease.arctic.ams.api.client.ArcticThriftUrl;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.utils.CatalogUtil;
+import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.common.DynConstructors;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -134,6 +135,8 @@ public class CatalogLoader {
         case CATALOG_TYPE_CUSTOM:
           Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
               "Custom catalog support iceberg table only.");
+          Preconditions.checkArgument(catalogMeta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL),
+              "Custom catalog properties must contains " + CatalogProperties.CATALOG_IMPL);
           catalogImpl = ICEBERG_CATALOG_IMPL;
           break;
         default:
