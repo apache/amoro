@@ -18,32 +18,24 @@
 
 package com.netease.arctic.spark.reader;
 
+import com.netease.arctic.hive.io.reader.AdaptHiveBaseArcticDataReader;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseArcticDataReader;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
 import com.netease.arctic.spark.util.ArcticSparkUtils;
 import com.netease.arctic.table.PrimaryKeySpec;
-import org.apache.avro.generic.GenericData;
-import org.apache.avro.util.Utf8;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.parquet.ParquetValueReader;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.data.SparkParquetReaders;
-import org.apache.iceberg.types.Type;
-import org.apache.iceberg.util.ByteBuffers;
 import org.apache.parquet.schema.MessageType;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.unsafe.types.UTF8String;
 
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkKeyedDataReader extends BaseArcticDataReader<InternalRow> {
+public class ArcticSparkKeyedDataReader extends AdaptHiveBaseArcticDataReader<InternalRow> {
 
   public ArcticSparkKeyedDataReader(
       ArcticFileIO fileIO,
