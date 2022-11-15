@@ -106,7 +106,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class,
     TestArcticTransactionService.class,
-    TestOptimizerService.class})
+    TestOptimizerService.class
+})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,

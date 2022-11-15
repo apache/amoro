@@ -23,11 +23,15 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
+import com.netease.arctic.ams.server.AmsTestBase;
+import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import io.javalin.testtools.JavalinTest;
 import org.apache.commons.io.FileUtils;
+import org.codehaus.janino.Java;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,43 +46,13 @@ public class TerminalControllerTest {
 
   protected static final Object ANY = new Object();
 
-  protected static File testBaseDir = new File("unit_test_base_tmp");
-  protected static File testSparkDir = new File(testBaseDir, "spark-warehouse");
-  protected static File testArcticDir = new File(testBaseDir, "arctic");
-
-  protected static MockArcticMetastoreServer ams = new MockArcticMetastoreServer();
-
-  protected static String amsUrl;
-  protected static String catalogName;
-
-  final static ConcurrentHashMap<String, ArcticCatalog> catalogs = new ConcurrentHashMap<>();
-
-  public static ArcticCatalog catalog(String name) {
-    return catalogs.computeIfAbsent(name, n -> CatalogLoader.load(amsUrl + "/" + n));
-  }
-
   @Before
   public void startMetastore() throws Exception {
-    FileUtils.deleteQuietly(testBaseDir);
-    testBaseDir.mkdirs();
-
-    AmsClientPools.cleanAll();
-    if (!ams.isStarted()) {
-      ams.start();
+    if (ArcticMetaStore.conf == null){
+      ArcticMetaStore.conf = new Configuration();
     }
-    amsUrl = "thrift://127.0.0.1:" + ams.port();
-
-    CatalogMeta arctic = CatalogMetaTestUtil.createArcticCatalog(testArcticDir);
-    catalogName = arctic.getCatalogName();
-    ams.handler().createCatalog(arctic);
   }
 
-  @After
-  public void stopMetastore() {
-    // ams.stopAndCleanUp();
-    ams.handler().cleanUp();
-    AmsClientPools.cleanAll();
-  }
 
   @Test
   public void testGetExamples() {
@@ -109,7 +83,8 @@ public class TerminalControllerTest {
       JSONObject requestJson = new JSONObject();
       requestJson.put("sql", "create database arctic_test;");
       app.post("/{catalog}/", ctx -> TerminalController.executeScript(ctx));
-      final okhttp3.Response resp1 = client.post("/" + catalogName + "/", requestJson, x -> {
+      app.exception(Exception.class, (e, cxt) -> LOG.error("", e));
+      final okhttp3.Response resp1 = client.post("/" + AmsTestBase.catalog.name() + "/", requestJson, x -> {
       });
       OkResponse result = JSONObject.parseObject(resp1.body().string(), OkResponse.class);
       LOG.info("xxx: {}", JSONObject.toJSONString(result));

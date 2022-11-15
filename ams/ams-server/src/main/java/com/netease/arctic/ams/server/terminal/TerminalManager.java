@@ -301,6 +301,9 @@ public class TerminalManager {
         try {
           List<TerminalSessionContext> sessionToRelease = checkIdleSession();
           sessionToRelease.forEach(this::releaseSession);
+          if (!sessionToRelease.isEmpty()) {
+            LOG.info("Terminal Session release count: " + sessionToRelease.size());
+          }
         } catch (Throwable t) {
           LOG.error("error when check and release session", t);
         }
