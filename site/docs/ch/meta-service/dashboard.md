@@ -90,7 +90,9 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 |Properties|(none)|Map|(none)|catalog需要添加的配置; 当metastore为**Custom**时，Properties必须定义 **catalog-impl**|
 
 ### 推荐
-- 如果是想使用Hive兼容表, Metastore选择Hive Metastore, Table format 选择Hive。 如果是使用 
+- 如果是想使用Hive兼容表, Metastore选择Hive Metastore, Table format 选择Hive。 如果是使用Hive外表的形式访问Iceberg表的形式，可以使用Hive Metastore下的Iceberg。
+- 如果想对接原生Iceberg 表的场景，metastore类型可以选择Hadoop、Custom Catalog。
+- 如果想基于Arctic实现对Iceberg的增强，metastore 类型可以选择Arctic Metastore.
 
 ## 使用 Flink 执行结构优化
 
