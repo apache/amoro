@@ -18,12 +18,13 @@
 
 package com.netease.arctic.ams.server.model;
 
+import java.util.List;
 import java.util.Map;
 
 public class CatalogRegisterInfo {
   String name;
   String type;
-  String tableFormat;
+  List<String> tableFormatList;
   Map<String, String> storageConfig;
   Map<String, String> authConfig;
   Map<String, String> properties;
@@ -72,11 +73,11 @@ public class CatalogRegisterInfo {
     this.properties = properties;
   }
 
-  public String getTableFormat() {
-    return tableFormat;
+  public List<String> getTableFormatList() {
+    return tableFormatList;
   }
 
-  public void setTableFormat(String tableFormat) {
-    this.tableFormat = tableFormat;
+  public void setTableFormatList(List<String> tableFormatList) {
+    this.tableFormatList = tableFormatList;
   }
 }
