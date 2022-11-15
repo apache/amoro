@@ -266,3 +266,5 @@ CREATE TABLE platform_file_info (
   add_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 );
+
+INSERT INTO catalog_metadata(catalog_name,display_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog',NULL,'hadoop','{"storage.type":"hdfs","hive.site":"","hadoop.core.site":"","hadoop.hdfs.site":""}','{"auth.type":"SIMPLE","auth.simple.hadoop_username":"root"}','{"warehouse.dir":"/tmp/arctic/warehouse","table-formats":"HIVE"}');
