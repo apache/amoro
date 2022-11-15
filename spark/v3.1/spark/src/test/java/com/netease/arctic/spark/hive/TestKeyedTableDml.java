@@ -78,7 +78,7 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql(createTableInsert, database, insertTable);
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
     Assert.assertEquals(3, rows.size());
-    sql("insert overwrite " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
+    sql("insert into " + database + "." + insertTable + " select * from {0}.{1} ", database, notUpsertTable);
 
     rows = sql("select * from {0}.{1} ", database, notUpsertTable);
     Assert.assertEquals(3, rows.size());
