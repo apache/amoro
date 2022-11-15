@@ -78,12 +78,18 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
+  public static final String COLUMN_NAME_ID = "id";
+  public static final String COLUMN_NAME_OP_TIME = "op_time";
+  public static final String COLUMN_NAME_OP_TIME_WITH_ZONE = "op_time_with_zone";
+  public static final String COLUMN_NAME_D = "d$d";
+  public static final String COLUMN_NAME_NAME = "name";
+
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "op_time", Types.TimestampType.withoutZone()),
-      Types.NestedField.required(3, "op_time_with_zone", Types.TimestampType.withZone()),
-      Types.NestedField.required(4, "d", Types.DecimalType.of(3, 0)),
-      Types.NestedField.required(5, "name", Types.StringType.get())
+      Types.NestedField.required(1, COLUMN_NAME_ID, Types.IntegerType.get()),
+      Types.NestedField.required(2, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
+      Types.NestedField.required(3, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+      Types.NestedField.required(4, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+      Types.NestedField.required(5, COLUMN_NAME_NAME, Types.StringType.get())
   );
 
   protected static final PartitionSpec HIVE_SPEC =

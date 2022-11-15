@@ -105,7 +105,7 @@ public class TableTestBase {
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
   protected static final DataFile FILE_C = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
+      .withPath("/path/to/data-c.parquet")
       .withFileSizeInBytes(0)
       .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
