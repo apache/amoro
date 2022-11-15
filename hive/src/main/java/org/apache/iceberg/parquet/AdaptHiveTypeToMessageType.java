@@ -116,7 +116,7 @@ public class AdaptHiveTypeToMessageType {
 
   public Type primitive(org.apache.iceberg.types.Type.PrimitiveType primitive,
       Type.Repetition repetition, int id, String originalName) {
-    String name = AvroSchemaUtil.makeCompatibleName(originalName);
+    String name = originalName;
     switch (primitive.typeId()) {
       case BOOLEAN:
         return Types.primitive(BOOLEAN, repetition).id(id).named(name);

@@ -48,7 +48,7 @@ SET table.dynamic-table-options.enabled=true;
 ####非主键表 bounded 数据
 ```sql
 -- 读非主键表全量数据
-SELECT * FROM unkeyed;
+SELECT * FROM unkeyed /*+ OPTIONS('streaming'='false')*/;
 -- 读非主键表指定快照数据
 SELECT * FROM unkeyed /*+ OPTIONS('snapshot-id'='4411985347497777546')*/;
 ```
@@ -65,7 +65,7 @@ SELECT * FROM unkeyed /*+ OPTIONS('snapshot-id'='4411985347497777546')*/;
 ####主键表 bounded 数据
 ```sql
 --读当前全量及部分可能未合并的 CDC 数据
-SELECT * FROM keyed;
+SELECT * FROM keyed /*+ OPTIONS('streaming'='false')*/;
 ```
 
 ### Streaming Mode
@@ -102,7 +102,7 @@ SET execution.runtime-mode = streaming;
 SET table.dynamic-table-options.enabled = true;
 
 -- 读当前快照之后的增量数据
-SELECT * FROM unkeyed /*+ OPTIONS('streaming'='true', 'monitor-interval'='1s')*/ ;
+SELECT * FROM unkeyed /*+ OPTIONS('monitor-interval'='1s')*/ ;
 ```
 Hint Options
 
@@ -124,7 +124,7 @@ SET execution.runtime-mode = streaming;
 SET table.dynamic-table-options.enabled = true;
 
 -- 读全量数据及 changelog 中的 CDC 数据
-SELECT * FROM keyed /*+ OPTIONS('streaming'='true')*/ ;
+SELECT * FROM keyed;
 ```
 
 Hint Options

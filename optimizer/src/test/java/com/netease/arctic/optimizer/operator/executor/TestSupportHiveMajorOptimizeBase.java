@@ -55,10 +55,10 @@ public class TestSupportHiveMajorOptimizeBase extends HiveTableTestBase implemen
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (int i = start; i < start + length; i++) {
-      builder.add(record.copy(ImmutableMap.of("id", i,
-          "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-          "op_time_with_zone", LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).atOffset(ZoneOffset.UTC),
-          "d", new BigDecimal(i), "name", "name")));
+      builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, i,
+          COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 1, 12, 0, 0),
+          COLUMN_NAME_OP_TIME_WITH_ZONE, LocalDateTime.of(2022, 1, i % 2 + 1, 12, 0, 0).atOffset(ZoneOffset.UTC),
+          COLUMN_NAME_D, new BigDecimal(i), COLUMN_NAME_NAME, "name")));
     }
 
     return builder.build();

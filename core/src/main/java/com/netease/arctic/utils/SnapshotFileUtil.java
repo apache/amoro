@@ -19,26 +19,27 @@
 package com.netease.arctic.utils;
 
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseTable;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileMetadata;
+import org.apache.iceberg.HasTableOperations;
+import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class SnapshotFileUtil {
@@ -59,7 +60,11 @@ public class SnapshotFileUtil {
     }
 
     table.io().doAs(() -> {
-      getDeleteFiles(table, snapshot, addFiles, deleteFiles);
+      List<DeleteFile> addIcebergFiles = new ArrayList<>();
+      List<DeleteFile> deleteIcebergFiles = new ArrayList<>();
+      getDeleteFiles(table, snapshot, addIcebergFiles, deleteIcebergFiles);
+      addIcebergFiles.forEach(e -> addFiles.add(ConvertStructUtil.convertToAmsDatafile(e, table)));
+      deleteIcebergFiles.forEach(e -> deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(e, table)));
       return null;
     });
 
@@ -67,19 +72,13 @@ public class SnapshotFileUtil {
         snapshot.snapshotId(), addFiles.size(), deleteFiles.size());
   }
 
-  private static void getDeleteFiles(
+  public static void getDeleteFiles(
       ArcticTable table, Snapshot snapshot,
-      List<com.netease.arctic.ams.api.DataFile> addFiles,
-      List<com.netease.arctic.ams.api.DataFile> deleteFiles) {
-    Configuration hadoopConf = new Configuration();
-    //avoid close file error when use cached FileSystem
-    // hadoopConf.setBoolean("fs.hdfs.impl.disable.cache", true);
-    if (table.io() instanceof ArcticHadoopFileIO) {
-      ArcticHadoopFileIO io = (ArcticHadoopFileIO) table.io();
-      hadoopConf = io.conf();
-    }
-    HadoopTables tables = new HadoopTables(hadoopConf);
-    Table entriesTable = tables.load(table.location() + "#ENTRIES");
+      List<DeleteFile> addFiles,
+      List<DeleteFile> deleteFiles) {
+    Table entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
+        table.name(), table.name() + "#ENTRIES",
+        MetadataTableType.ENTRIES);
     try (CloseableIterable<Record> manifests = IcebergGenerics.read(entriesTable)
         .useSnapshot(snapshot.snapshotId())
         .where(Expressions.equal(ManifestEntryFields.SNAPSHOT_ID.name(), snapshot.snapshotId()))
@@ -99,26 +98,23 @@ public class SnapshotFileUtil {
           Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
           Long recordCount = (Long) dataFile.getField(DataFile.RECORD_COUNT.name());
           DeleteFile deleteFile;
-          if (table.spec().isUnpartitioned()) {
-            deleteFile = FileMetadata.deleteFileBuilder(table.spec())
-                .ofPositionDeletes()
-                .withPath(filePath)
-                .withFileSizeInBytes(fileSize)
-                .withRecordCount(recordCount)
-                .build();
-          } else {
-            deleteFile = FileMetadata.deleteFileBuilder(table.spec())
-                .ofPositionDeletes()
-                .withPath(filePath)
-                .withFileSizeInBytes(fileSize)
-                .withRecordCount(recordCount)
-                .withPartitionPath(partitionPath)
-                .build();
+          FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(table.spec())
+              .withPath(filePath)
+              .withFileSizeInBytes(fileSize)
+              .withRecordCount(recordCount);
+          if (!table.spec().isUnpartitioned()) {
+            builder.withPartitionPath(partitionPath);
           }
+          if (contentId == FileContent.POSITION_DELETES.id()) {
+            builder.ofPositionDeletes();
+          } else {
+            builder.ofEqualityDeletes();
+          }
+          deleteFile = builder.build();
           if (status == ManifestEntryFields.Status.DELETED.id()) {
-            deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(deleteFile, table));
+            deleteFiles.add(deleteFile);
           } else if (status == ManifestEntryFields.Status.ADDED.id()) {
-            addFiles.add(ConvertStructUtil.convertToAmsDatafile(deleteFile, table));
+            addFiles.add(deleteFile);
           }
         }
       });

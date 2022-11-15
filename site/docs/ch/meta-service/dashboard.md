@@ -169,6 +169,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
 ## AMS开启高可用
 
+
 **1.部署Apache Zookeeper**
 
 参考 [Apache QuickStart](https://zookeeper.apache.org/doc/r3.7.1/zookeeperStarted.html)
@@ -184,3 +185,9 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 **3.重启 AMS**
 
 参考 [启动/重启/关闭](#_3)。
+
+**4.更改引擎中的uri**
+
+AMS开启高可用后引擎端配置catalog uri格式变为：zookeeper://{zookeeper server}/{cluster name}/{catalog name}
+
+例如上述增加的配置对应catalog uri为：zookeeper://127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183/default/local_catalog
