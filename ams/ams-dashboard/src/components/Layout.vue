@@ -48,9 +48,10 @@ export default defineComponent({
     flex: 1;
     flex-direction: column;
     transition: width 0.3s;
+    overflow: auto;
     .content {
-      padding: 24px;
-      height: calc(100% - 48px);
+      padding: 16px 24px;
+      height: calc(100% - 64px);
       overflow: auto;
     }
   }

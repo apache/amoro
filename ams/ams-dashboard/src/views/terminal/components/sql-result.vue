@@ -27,7 +27,8 @@
         <tbody class="ant-table-tbody">
           <tr v-for="(rowItem, row) in props.info.rowData" :key="row + 1">
             <td v-for="(val, col) in rowItem" :key="row + val + col" >
-              <span class="td-val" :style="{'maxWidth': `${(100 / (props.info.columns.length)) }%`}">{{ val }}</span>
+              <!-- :style="{'maxWidth': `${(100 / (props.info.columns.length)) }%`}" -->
+              <span class="td-val" :title="val">{{ val }}</span>
             </td>
           </tr>
         </tbody>
@@ -82,6 +83,8 @@ const status = computed(() => {
           overflow: hidden;
           white-space: nowrap;
           text-overflow: ellipsis;
+          max-width: 240px !important;
+          display: inherit;
           // display: inline-block;
           // display: table-cell;
           // min-height: 38px;

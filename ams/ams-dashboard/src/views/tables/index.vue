@@ -25,7 +25,7 @@
           <a-tab-pane key="Details" tab="Details">
             <u-details @setBaseDetailInfo="setBaseDetailInfo" />
           </a-tab-pane>
-           <a-tab-pane key="Files" tab="Files">
+           <a-tab-pane v-if="!isIceberg" key="Files" tab="Files">
             <u-files :hasPartition="baseInfo.hasPartition"/>
           </a-tab-pane>
           <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.key}`">
@@ -40,7 +40,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, watch, shallowReactive } from 'vue'
+import { defineComponent, reactive, toRefs, watch, shallowReactive, computed } from 'vue'
 // import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
@@ -88,6 +88,10 @@ export default defineComponent({
       } as IBaseDetailInfo
     })
 
+    const isIceberg = computed(() => {
+      return route.query.type === 'ICEBERG'
+    })
+
     const setBaseDetailInfo = (baseInfo: IBaseDetailInfo) => {
       state.baseInfo = { ...baseInfo }
     }
@@ -120,6 +124,7 @@ export default defineComponent({
       ...toRefs(state),
       tabConfigs,
       store,
+      isIceberg,
       editTable,
       delTable,
       setBaseDetailInfo,
