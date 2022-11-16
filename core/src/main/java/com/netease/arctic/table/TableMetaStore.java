@@ -348,7 +348,7 @@ public class TableMetaStore implements Serializable {
       String confPath = String.format("%s/%s/%s", path, "arctic_krb_conf", md5() + "_" +
           ManagementFactory.getRuntimeMXBean().getName());
       LOG.info("generate Krb conf path: {}", confPath);
-      Path p = Paths.get(path);
+      Path p = Paths.get(confPath);
       if (!p.toFile().exists()) {
         p.toFile().mkdirs();
       }

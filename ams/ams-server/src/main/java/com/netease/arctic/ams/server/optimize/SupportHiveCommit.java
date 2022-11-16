@@ -14,6 +14,7 @@ import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
@@ -35,9 +36,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
 
   protected Consumer<OptimizeTaskItem> updateTargetFiles;
 
-  public SupportHiveCommit(ArcticTable arcticTable,
-                           Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
-                           Consumer<OptimizeTaskItem> updateTargetFiles) {
+  public SupportHiveCommit(
+      ArcticTable arcticTable,
+      Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
+      Consumer<OptimizeTaskItem> updateTargetFiles) {
     super(arcticTable, optimizeTasksToCommit);
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     this.updateTargetFiles = updateTargetFiles;
@@ -85,14 +87,17 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               } else {
                 String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
                     arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
-                partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                    arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
-                HivePartitionUtil
-                    .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
-                        Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
 
-                partitionPath = HivePartitionUtil
-                    .getPartition(hiveClient, arcticTable, partitionValues).getSd().getLocation();
+                // HivePartitionUtil
+                //     .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
+                //         Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
+                Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
+                if (p == null) {
+                  partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                      arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
+                } else {
+                  partitionPath = p.getSd().getLocation();
+                }
               }
               partitionPathMap.put(partition, partitionPath);
             }

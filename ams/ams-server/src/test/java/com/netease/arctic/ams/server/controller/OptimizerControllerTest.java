@@ -191,17 +191,6 @@ public class OptimizerControllerTest {
     });
   }
 
-  public static void mockDerby() throws Exception {
-    mockStatic(JDBCSqlSessionFactoryProvider.class);
-    when(JDBCSqlSessionFactoryProvider.get()).thenAnswer((Answer<SqlSessionFactory>) invocation -> DerbyTestUtil.get());
-    DerbyTestUtil derbyService = new DerbyTestUtil();
-    derbyService.createTestTable();
-    mockStatic(ArcticMetaStore.class);
-    com.netease.arctic.ams.server.config.Configuration configuration = new com.netease.arctic.ams.server.config.Configuration();
-    configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
-    ArcticMetaStore.conf = configuration;
-  }
-
   public static void deleteDerby() throws IOException {
     DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
   }
