@@ -36,16 +36,21 @@ public class ArcticMetaStoreConf {
           .longType()
           .defaultValue(100 * 1024 * 1024L)
           .withDescription("Maximum message size in bytes a AMS will accept.");
-  public static final ConfigOption<Integer> SERVER_MAX_THREADS =
-      ConfigOptions.key("arctic.ams.server.max.threads")
+  public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
+      ConfigOptions.key("arctic.ams.thrift.worker.threads")
           .intType()
-          .defaultValue(1000)
-          .withDescription("Maximum number of worker threads in the Thrift server's pool.");
-  public static final ConfigOption<Integer> SERVER_MIN_THREADS =
-      ConfigOptions.key("arctic.ams.server.min.threads")
+          .defaultValue(5)
+          .withDescription("The number of worker threads in the Thrift server's pool.");
+  public static final ConfigOption<Integer> THRIFT_SELECTOR_THREADS =
+      ConfigOptions.key("arctic.ams.thrift.selector.threads")
           .intType()
-          .defaultValue(200)
-          .withDescription("Minimum number of worker threads in the Thrift server's pool.");
+          .defaultValue(2)
+          .withDescription("The number of selector threads in the Thrift server's pool.");
+  public static final ConfigOption<Integer> THRIFT_QUEUE_SIZE_PER_THREAD =
+      ConfigOptions.key("arctic.ams.thrift.selector.queue.size")
+          .intType()
+          .defaultValue(4)
+          .withDescription("The number of queue size per selector thread in the Thrift server's pool.");
   public static final ConfigOption<Integer> THRIFT_BIND_PORT =
       ConfigOptions.key("arctic.ams.thrift.port")
           .intType()
