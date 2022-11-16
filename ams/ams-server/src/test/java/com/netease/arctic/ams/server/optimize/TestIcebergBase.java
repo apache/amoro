@@ -176,7 +176,7 @@ public class TestIcebergBase {
     EqualityDeleteWriter<Record> writer = appenderFactory
         .newEqDeleteWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
-    int length = 10;
+    int length = 5;
     for (int i = 1; i < length * 10; i = i + length) {
       List<Record> records = baseRecords(i, length, arcticTable.schema());
       for (int j = 0; j < records.size(); j++) {
@@ -233,7 +233,7 @@ public class TestIcebergBase {
         .newDataWriter(outputFile, FileFormat.PARQUET, null);
 
     List<DataFile> result = new ArrayList<>();
-    int length = 10;
+    int length = 5;
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);

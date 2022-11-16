@@ -148,7 +148,7 @@ public class TestIcebergExecutor {
         icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
-    result.getTargetFiles().forEach(dataFile -> Assert.assertEquals(50, dataFile.recordCount()));
+    result.getTargetFiles().forEach(dataFile -> Assert.assertEquals(46, dataFile.recordCount()));
   }
 
   @Test
@@ -172,7 +172,7 @@ public class TestIcebergExecutor {
     AtomicLong totalRecordCount = new AtomicLong();
     result.getTargetFiles().forEach(dataFile -> totalRecordCount.set(totalRecordCount.get() + dataFile.recordCount()));
 
-    Assert.assertEquals(50, totalRecordCount.get());
+    Assert.assertEquals(46, totalRecordCount.get());
   }
 
   protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable) throws IOException {
@@ -227,7 +227,7 @@ public class TestIcebergExecutor {
     EqualityDeleteWriter<Record> writer = appenderFactory
         .newEqDeleteWriter(outputFile, FileFormat.PARQUET, null);
 
-    int length = 10;
+    int length = 5;
     for (int i = 1; i < length * 10; i = i + length) {
       List<Record> records = baseRecords(i, length, arcticTable.schema());
       for (int j = 0; j < records.size(); j++) {

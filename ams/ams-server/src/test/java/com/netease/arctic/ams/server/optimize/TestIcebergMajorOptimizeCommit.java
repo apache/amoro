@@ -33,7 +33,7 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
   public void testNoPartitionTableMajorOptimizeCommit() throws Exception {
     icebergTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "100")
+        .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
     insertEqDeleteFiles(icebergTable.asUnkeyedTable());

@@ -78,14 +78,6 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
     optimizeCommit.commit(icebergTable.asUnkeyedTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
-    Set<String> newDeleteFilesPath = new HashSet<>();
-    icebergTable.asUnkeyedTable().newScan().planFiles()
-        .forEach(fileScanTask -> {
-          newDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
-        });
-
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
-    Assert.assertEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
 }
