@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -141,5 +140,15 @@ public class TablePropertyUtil {
     changeTable.refresh();
     Snapshot snapshot = changeTable.currentSnapshot();
     return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
+  }
+
+
+  public static long getTableWatermark(Map<String, String> properties) {
+    String watermarkValue = properties.get(TableProperties.WATERMARK_TABLE);
+    if (watermarkValue == null) {
+      return -1;
+    } else {
+      return Long.parseLong(watermarkValue);
+    }
   }
 }

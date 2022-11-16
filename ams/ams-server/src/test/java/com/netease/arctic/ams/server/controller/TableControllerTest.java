@@ -404,10 +404,6 @@ public class TableControllerTest {
         .thenReturn(mockTableBasicInfo(catalog, db, table));
     FileInfoCacheService fileInfoCacheService = mock(FileInfoCacheService.class);
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
-    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),Constants.INNER_TABLE_CHANGE))
-        .thenReturn(1000L);
-    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE))
-        .thenReturn(1000L);
     when(fileInfoCacheService.getTxExcludeOptimize(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
         .thenReturn(mockTableTransactions());
     when(fileInfoCacheService.getDatafilesInfo(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), 1L))

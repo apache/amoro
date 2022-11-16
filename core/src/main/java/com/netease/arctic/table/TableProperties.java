@@ -21,6 +21,8 @@ package com.netease.arctic.table;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.netease.arctic.table.WatermarkGenerator.EVENT_TIME_TIMESTAMP_MS;
+import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
@@ -56,7 +58,26 @@ public class TableProperties {
   public static final String TABLE_CREATE_TIME = "table.create-timestamp";
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
+  /**
+   * table watermark related properties
+   */
+
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
+  public static final String TABLE_EVENT_TIME_FIELD_DEFAULT = INGEST_TIME;
+
+  public static final String TABLE_WATERMARK_ALLOWED_LATENESS = "table.watermark-allowed-lateness-second";
+  public static final long TABLE_WATERMARK_ALLOWED_LATENESS_DEFAULT = 0L;
+
+  public static final String TABLE_EVENT_TIME_STRING_FORMAT = "table.event-time-field.datetime-string-format";
+  public static final String TABLE_EVENT_TIME_STRING_FORMAT_DEFAULT = "yyyy-MM-dd HH:mm:ss";
+
+  public static final String TABLE_EVENT_TIME_NUMBER_FORMAT = "table.event-time-field.datetime-number-format";
+  public static final String TABLE_EVENT_TIME_NUMBER_FORMAT_DEFAULT = EVENT_TIME_TIMESTAMP_MS;
+
+  public static final String WATERMARK_TABLE = "watermark.table";
+
+  public static final String WATERMARK_BASE_STORE = "watermark.base-store";
+
   /**
    * table optimize related properties
    */

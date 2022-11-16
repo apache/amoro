@@ -67,6 +67,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -95,6 +96,80 @@ public class ArcticMetaStore {
     }
   }
 
+
+  public static LinkedHashMap getSystemSettingFromYaml() {
+    JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
+    LinkedHashMap<String, Object> config = new LinkedHashMap<String, Object>();
+
+    if (!systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key())) {
+      throw new RuntimeException("configuration " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " must be set");
+    }
+    InetAddress inetAddress = AmsUtils.getLocalHostExactAddress(
+                    systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+    if (inetAddress == null) {
+      throw new RuntimeException("can't find host address start with " +
+              systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
+    }
+    config.put(ArcticMetaStoreConf.THRIFT_BIND_HOST.key(), inetAddress.getHostAddress());
+
+    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
+    if (systemThriftPort == null) {
+      config.put(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(),
+              systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
+    } else {
+      config.put(ArcticMetaStoreConf.THRIFT_BIND_PORT.key(), Integer.parseInt(systemThriftPort));
+    }
+
+    config.put(ArcticMetaStoreConf.HTTP_SERVER_PORT.key(),
+            systemConfig.getInteger(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
+    config.put(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key(),
+            systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key()));
+    config.put(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key(),
+            systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key()));
+    config.put(ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE.key(),
+            systemConfig.getInteger(ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE.key()));
+    config.put(ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE.key(),
+            systemConfig.getInteger(ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE.key()));
+    config.put(ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE.key(),
+            systemConfig.getInteger(ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE.key()));
+
+    config.put(ArcticMetaStoreConf.DB_TYPE.key(),
+            systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()));
+    config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key(),
+            systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key()));
+    config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key(),
+            systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
+
+    //mysql config
+    if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
+      config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key(),
+              systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key()));
+      config.put(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key(),
+              systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key()));
+    }
+
+    //HA config
+    if (systemConfig.containsKey(ArcticMetaStoreConf.HA_ENABLE.key()) &&
+            systemConfig.getBoolean(ArcticMetaStoreConf.HA_ENABLE.key())) {
+      config.put(ArcticMetaStoreConf.HA_ENABLE.key(), true);
+      config.put(ArcticMetaStoreConf.CLUSTER_NAME.key(),
+              systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key()));
+      config.put(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key(),
+              systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key()));
+    }
+
+    //extension properties
+    Map<String,String> extensionPro =
+            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class) == null ? new HashMap<>() :
+            yamlConfig.getObject(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG, Map.class);
+    config.put(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES.key(), extensionPro);
+
+    config.put(ArcticMetaStoreConf.ARCTIC_HOME.key(), getArcticHome());
+
+    return config;
+
+  }
+
   public static void tryStartServer() {
     try {
       String configPath = getArcticHome() + "/conf/config.yaml";
@@ -114,7 +189,6 @@ public class ArcticMetaStore {
         startMetaStore(conf);
       }
     } catch (Throwable t) {
-      failover();
       LOG.error("MetaStore Thrift Server threw an exception...", t);
     }
   }
@@ -130,8 +204,9 @@ public class ArcticMetaStore {
   public static void startMetaStore(Configuration conf) throws Throwable {
     try {
       long maxMessageSize = conf.getLong(ArcticMetaStoreConf.SERVER_MAX_MESSAGE_SIZE);
-      int minWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MIN_THREADS);
-      int maxWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MAX_THREADS);
+      int selectorThreads = conf.getInteger(ArcticMetaStoreConf.THRIFT_SELECTOR_THREADS);
+      int workerThreads = conf.getInteger(ArcticMetaStoreConf.THRIFT_WORKER_THREADS);
+      int queueSizePerSelector = conf.getInteger(ArcticMetaStoreConf.THRIFT_QUEUE_SIZE_PER_THREAD);
       boolean useCompactProtocol = conf.get(ArcticMetaStoreConf.USE_THRIFT_COMPACT_PROTOCOL);
       int port = conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
 
@@ -169,18 +244,22 @@ public class ArcticMetaStore {
           .transportFactory(new TFramedTransport.Factory())
           .protocolFactory(protocolFactory)
           .inputProtocolFactory(inputProtoFactory)
-          .workerThreads(maxWorkerThreads);
+          .workerThreads(workerThreads)
+          .selectorThreads(selectorThreads)
+          .acceptQueueSizePerThread(queueSizePerSelector);
       server = new TThreadedSelectorServer(args);
       LOG.info("Started the new meta server on port [" + port + "]...");
-      LOG.info("Options.minWorkerThreads = " + minWorkerThreads);
-      LOG.info("Options.maxWorkerThreads = " + maxWorkerThreads);
+      LOG.info("Options.thriftWorkerThreads = " + workerThreads);
+      LOG.info("Options.thriftSelectorThreads = " + selectorThreads);
+      LOG.info("Options.queueSizePerSelector = " + queueSizePerSelector);
 
       // start meta store worker thread
       Lock metaStoreThreadsLock = new ReentrantLock();
       Condition startCondition = metaStoreThreadsLock.newCondition();
       AtomicBoolean startedServing = new AtomicBoolean();
       ThreadPool.initialize(conf);
-      initCatalogConfig();
+      // move configuration initialize to page!
+      //      initCatalogConfig();
       initContainerConfig();
       initOptimizeGroupConfig();
       startMetaStoreThreads(conf, metaStoreThreadsLock, startCondition, startedServing);
@@ -424,81 +503,8 @@ public class ArcticMetaStore {
   }
 
   private static Configuration initSystemConfig() {
-    JSONObject systemConfig = yamlConfig.getJSONObject(ConfigFileProperties.SYSTEM_CONFIG);
-    Configuration config = new Configuration();
+    Configuration config = Configuration.fromObjectMap(getSystemSettingFromYaml());
     config.setString(ArcticMetaStoreConf.ARCTIC_HOME, getArcticHome());
-    String systemThriftPort = System.getProperty(ArcticMetaStoreConf.THRIFT_BIND_PORT.key());
-    if (systemThriftPort == null) {
-      config.setInteger(
-          ArcticMetaStoreConf.THRIFT_BIND_PORT, systemConfig.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT.key()));
-    } else {
-      config.setInteger(
-          ArcticMetaStoreConf.THRIFT_BIND_PORT, Integer.parseInt(systemThriftPort));
-    }
-    if (!systemConfig.containsKey(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key())) {
-      throw new RuntimeException("configuration " + ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key() + " must be set");
-    }
-    InetAddress inetAddress =
-        AmsUtils.getLocalHostExactAddress(systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
-    if (inetAddress == null) {
-      throw new RuntimeException("can't find host address start with " +
-          systemConfig.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST_PREFIX.key()));
-    }
-    config.setString(ArcticMetaStoreConf.THRIFT_BIND_HOST, inetAddress.getHostAddress());
-    config.setInteger(
-        ArcticMetaStoreConf.HTTP_SERVER_PORT, systemConfig.getInteger(ArcticMetaStoreConf.HTTP_SERVER_PORT.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE,
-        systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_CHECK_THREAD_POOL_SIZE.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE,
-        systemConfig.getInteger(ArcticMetaStoreConf.OPTIMIZE_COMMIT_THREAD_POOL_SIZE.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE,
-        systemConfig.getInteger(ArcticMetaStoreConf.EXPIRE_THREAD_POOL_SIZE.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE,
-        systemConfig.getInteger(ArcticMetaStoreConf.ORPHAN_CLEAN_THREAD_POOL_SIZE.key()));
-    config.setInteger(
-        ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE,
-        systemConfig.getInteger(ArcticMetaStoreConf.SYNC_FILE_INFO_CACHE_THREAD_POOL_SIZE.key()));
-
-    config.setString(
-        ArcticMetaStoreConf.DB_TYPE,
-        systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()));
-    config.setString(
-        ArcticMetaStoreConf.MYBATIS_CONNECTION_URL,
-        systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_URL.key()));
-    config.setString(
-        ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME,
-        systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_DRIVER_CLASS_NAME.key()));
-
-    //mysql config
-    if (systemConfig.getString(ArcticMetaStoreConf.DB_TYPE.key()).equalsIgnoreCase("mysql")) {
-      config.setString(
-          ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD,
-          systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD.key()));
-      config.setString(
-          ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME,
-          systemConfig.getString(ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME.key()));
-    }
-
-    //HA config
-    if (systemConfig.containsKey(ArcticMetaStoreConf.HA_ENABLE.key()) &&
-        systemConfig.getBoolean(ArcticMetaStoreConf.HA_ENABLE.key())) {
-      config.setBoolean(ArcticMetaStoreConf.HA_ENABLE, true);
-      config.setString(
-          ArcticMetaStoreConf.CLUSTER_NAME,
-          systemConfig.getString(ArcticMetaStoreConf.CLUSTER_NAME.key()));
-      config.setString(
-          ArcticMetaStoreConf.ZOOKEEPER_SERVER,
-          systemConfig.getString(ArcticMetaStoreConf.ZOOKEEPER_SERVER.key()));
-    }
-
-    //extension properties
-    String extensionPro = yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG) == null ? "" :
-        yamlConfig.getString(ConfigFileProperties.SYSTEM_EXTENSION_CONFIG);
-    config.setString(ArcticMetaStoreConf.SYSTEM_EXTENSION_PROPERTIES, extensionPro);
     return config;
   }
 

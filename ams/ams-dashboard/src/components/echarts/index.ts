@@ -37,7 +37,8 @@ import {
   DatasetComponent,
   DatasetComponentOption,
   // built in component (filter, sort)
-  TransformComponent
+  TransformComponent,
+  LegendComponent
 } from 'echarts/components'
 import { LabelLayout, UniversalTransition } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
@@ -63,7 +64,8 @@ echarts.use([
   BarChart,
   LabelLayout,
   UniversalTransition,
-  CanvasRenderer
+  CanvasRenderer,
+  LegendComponent
 ])
 
 export default echarts

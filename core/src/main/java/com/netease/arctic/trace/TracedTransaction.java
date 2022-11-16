@@ -18,6 +18,7 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.table.ArcticTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataOperations;
@@ -59,12 +60,14 @@ import java.util.Map;
  */
 public class TracedTransaction implements Transaction {
 
+  private final ArcticTable arcticTable;
   private final Transaction transaction;
   private final AmsTableTracer tracer;
 
   private final Table transactionTable;
 
-  public TracedTransaction(Transaction transaction, AmsTableTracer tracer) {
+  public TracedTransaction(ArcticTable arcticTable, Transaction transaction, AmsTableTracer tracer) {
+    this.arcticTable = arcticTable;
     this.transaction = transaction;
     this.tracer = tracer;
 
@@ -78,7 +81,9 @@ public class TracedTransaction implements Transaction {
 
   @Override
   public UpdateSchema updateSchema() {
-    return transaction.updateSchema();
+    UpdateSchema updateSchema = transaction.updateSchema();
+    tracer.setAction(TraceOperations.UPDATE_SCHEMA);
+    return new TracedSchemaUpdate(updateSchema, new TransactionTracker());
   }
 
   @Override
@@ -89,7 +94,7 @@ public class TracedTransaction implements Transaction {
   @Override
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = transaction.updateProperties();
-    tracer.setAction(TrackerOperations.UPDATE_PROPERTIES);
+    tracer.setAction(TraceOperations.UPDATE_PROPERTIES);
     return new TracedUpdateProperties(updateProperties, new TransactionTracker());
   }
 
@@ -106,13 +111,15 @@ public class TracedTransaction implements Transaction {
   @Override
   public AppendFiles newAppend() {
     tracer.setAction(DataOperations.APPEND);
-    return new TracedAppendFiles(transaction.newAppend(), new TransactionTracker());
+    return ArcticAppendFiles.buildFor(arcticTable, false).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
     tracer.setAction(DataOperations.APPEND);
-    return new TracedAppendFiles(transaction.newFastAppend(), new TransactionTracker());
+    return ArcticAppendFiles.buildFor(arcticTable, true).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
@@ -129,19 +136,22 @@ public class TracedTransaction implements Transaction {
   @Override
   public OverwriteFiles newOverwrite() {
     tracer.setAction(DataOperations.OVERWRITE);
-    return new TracedOverwriteFiles(transaction.newOverwrite(), new TransactionTracker());
+    return ArcticOverwriteFiles.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
     tracer.setAction(DataOperations.OVERWRITE);
-    return new TracedRowDelta(transaction.newRowDelta(), new TransactionTracker());
+    return ArcticRowDelta.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
     tracer.setAction(DataOperations.OVERWRITE);
-    return new TracedReplacePartitions(transaction.newReplacePartitions(), new TransactionTracker());
+    return ArcticReplacePartitions.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
