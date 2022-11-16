@@ -55,6 +55,16 @@ Logstore 作为可选组件则需要另外的配置来指明，有关 Logstore �
 SHOW TBLPROPERTIES test_db.test_log_store ('table.watermark');
 ```
 
+预期你将得到以下的结果：
+
+```text
++-----------------+---------------+
+| key             | value         |
++-----------------+---------------+
+| table.watermark | 1668579055000 |
++-----------------+---------------+
+```
+
 ### 参数配置
 Logstore 的相关配置是通过表的额外属性在表创建之时写入表的配置当中的，[Table Config](table-properties.md) 中有当前表的所有的可用配置，
 它们大部分都已经被设置了合理的默认值，你也可以按需在创建语句中进行设置。
