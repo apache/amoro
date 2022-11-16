@@ -39,9 +39,11 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -112,13 +114,17 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
     FilesStatisticsBuilder baseFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder eqDeleteFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder posDeleteFb = new FilesStatisticsBuilder();
+    Set<DeleteFile> deleteFileSet = new HashSet<>();
     for (FileScanTask fileScanTask : fileScanTasks) {
       baseFb.addFile(fileScanTask.file().fileSizeInBytes());
       for (DeleteFile delete : fileScanTask.deletes()) {
-        if (delete.content() == FileContent.POSITION_DELETES) {
-          posDeleteFb.addFile(delete.fileSizeInBytes());
-        } else {
-          eqDeleteFb.addFile(delete.fileSizeInBytes());
+        if (!deleteFileSet.contains(delete)) {
+          if (delete.content() == FileContent.POSITION_DELETES) {
+            posDeleteFb.addFile(delete.fileSizeInBytes());
+          } else {
+            eqDeleteFb.addFile(delete.fileSizeInBytes());
+          }
+          deleteFileSet.add(delete);
         }
       }
     }

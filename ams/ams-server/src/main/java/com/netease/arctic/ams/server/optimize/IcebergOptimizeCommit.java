@@ -122,12 +122,16 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     int dataFileCount = fileScanTasks.size();
     int eqDeleteFileCount = 0;
     int posDeleteFileCount = 0;
+    Set<String> deleteFiles = new HashSet<>();
     for (FileScanTask fileScanTask : fileScanTasks) {
       for (DeleteFile delete : fileScanTask.deletes()) {
-        if (delete.content() == FileContent.POSITION_DELETES) {
-          posDeleteFileCount++;
-        } else {
-          eqDeleteFileCount++;
+        if (!deleteFiles.contains(delete.path().toString())) {
+          if (delete.content() == FileContent.POSITION_DELETES) {
+            posDeleteFileCount++;
+          } else {
+            eqDeleteFileCount++;
+          }
+          deleteFiles.add(delete.path().toString());
         }
       }
     }

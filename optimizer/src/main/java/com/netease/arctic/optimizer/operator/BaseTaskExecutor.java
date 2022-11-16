@@ -187,7 +187,11 @@ public class BaseTaskExecutor implements Serializable {
   private void setPartition(NodeTask nodeTask) {
     // partition
     if (nodeTask.files().size() == 0) {
-      LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
+      if (nodeTask.fileScanTasks().size() == 0) {
+        LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
+      } else {
+        nodeTask.setPartition(nodeTask.fileScanTasks().get(0).file().partition());
+      }
     } else {
       nodeTask.setPartition(nodeTask.files().get(0).partition());
     }
