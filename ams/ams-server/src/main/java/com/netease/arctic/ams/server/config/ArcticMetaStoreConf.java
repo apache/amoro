@@ -39,7 +39,7 @@ public class ArcticMetaStoreConf {
   public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
       ConfigOptions.key("arctic.ams.thrift.worker.threads")
           .intType()
-          .defaultValue(5)
+          .defaultValue(20)
           .withDescription("The number of worker threads in the Thrift server's pool.");
   public static final ConfigOption<Integer> THRIFT_SELECTOR_THREADS =
       ConfigOptions.key("arctic.ams.thrift.selector.threads")
