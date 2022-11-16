@@ -223,7 +223,7 @@ public class CatalogController extends RestBaseController {
             STORAGE_CONFIGS_KEY_CORE_SITE,
             STORAGE_CONFIGS_KEY_HIVE_SITE);
 
-    // when update catalog, fileId won't be post when config doesn't been changed!
+    // when update catalog, fileId won't be post when file doesn't been changed!
     Integer idx = 0;
     boolean fillUseOld = oldCatalogMeta != null;
     for (idx = 0; idx < metaKeyList.size(); idx++) {
@@ -239,9 +239,17 @@ public class CatalogController extends RestBaseController {
         }
       }
     }
-    // if hive.site is not present, we give a default value!
+    // if site.xml is not present, we give a default value!
     if (StringUtils.isEmpty(metaStorageConfig.get(STORAGE_CONFIGS_KEY_HIVE_SITE))) {
       metaStorageConfig.put(STORAGE_CONFIGS_KEY_HIVE_SITE, EMPTY_XML_BASE64);
+    }
+
+    if (StringUtils.isEmpty(metaStorageConfig.get(STORAGE_CONFIGS_KEY_HDFS_SITE))) {
+      metaStorageConfig.put(STORAGE_CONFIGS_KEY_HDFS_SITE, EMPTY_XML_BASE64);
+    }
+
+    if (StringUtils.isEmpty(metaStorageConfig.get(STORAGE_CONFIGS_KEY_CORE_SITE))) {
+      metaStorageConfig.put(STORAGE_CONFIGS_KEY_CORE_SITE, EMPTY_XML_BASE64);
     }
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
