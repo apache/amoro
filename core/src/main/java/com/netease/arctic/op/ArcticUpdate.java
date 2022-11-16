@@ -136,7 +136,9 @@ public abstract class ArcticUpdate<T> implements PendingUpdate<T> {
     if (transaction != null && autoCommitTransaction) {
       transaction.commitTransaction();
     }
-    tracer.commit();
+    if (tracer != null) {
+      tracer.commit();
+    }
   }
 
   public abstract static class Builder<T> {
