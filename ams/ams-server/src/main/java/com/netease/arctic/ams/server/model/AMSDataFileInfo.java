@@ -35,12 +35,12 @@ public class AMSDataFileInfo {
   }
 
   public AMSDataFileInfo(String path, String partition, String type, long fileSize, long commitTime, String operation) {
-    this.path = path;
     this.partition = partition;
     this.type = type;
-    this.fileSize = fileSize;
     this.commitTime = commitTime;
     this.operation = operation;
+    setPath(path);
+    setFileSize(fileSize);
   }
 
   public long getFileSize() {

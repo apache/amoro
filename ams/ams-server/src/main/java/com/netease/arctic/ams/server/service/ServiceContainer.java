@@ -231,7 +231,7 @@ public class ServiceContainer {
     if (tableInfoService == null) {
       synchronized (ServiceContainer.class) {
         if (tableInfoService == null) {
-          tableInfoService = new TableBaseInfoService(getMetaService());
+          tableInfoService = new TableBaseInfoService();
         }
       }
     }

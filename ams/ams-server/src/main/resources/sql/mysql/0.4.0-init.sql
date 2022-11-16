@@ -181,7 +181,7 @@ CREATE TABLE `snapshot_info_cache`
 (
     `table_identifier`   varchar(384) NOT NULL COMMENT 'table full name with catalog.db.table',
     `snapshot_id`        bigint(20) NOT NULL COMMENT 'snapshot id',
-    `snapshot_sequence`  bigint(20) NOT NULL DEFAULT -1 COMMENT 'snapshot sequence'，
+    `snapshot_sequence`  bigint(20) NOT NULL DEFAULT -1 COMMENT 'snapshot sequence',
     `parent_snapshot_id` bigint(20) NOT NULL COMMENT 'parent snapshot id',
     `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
     `inner_table`        varchar(64)          NOT NULL COMMENT 'table type like change/base',
