@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server;
 
+import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
@@ -32,14 +33,14 @@ import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
-import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizeCommit;
-import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportIceberg;
@@ -66,6 +67,7 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.io.FileUtils;
@@ -91,8 +93,10 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 import static com.netease.arctic.ams.server.util.DerbyTestUtil.get;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.when;
@@ -148,6 +152,7 @@ public class AmsTestBase {
   private static final File testTableBaseDir = new File("/tmp");
   private static final File testBaseDir = new File("unit_test_base_tmp");
   public static ArcticTableMetastoreHandler amsHandler;
+  protected static HMSMockServer hms;
   public static ArcticCatalog catalog;
   public static ArcticCatalog icebergCatalog;
   public static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";
@@ -156,11 +161,15 @@ public class AmsTestBase {
   public static final String CATALOG_CONTROLLER_UNITTEST_NAME = "unit_test";
 
   public static final String AMS_TEST_ICEBERG_CATALOG_NAME = "ams_test_iceberg_catalog";
-
   public static final String AMS_TEST_ICEBERG_DB_NAME = "ams_test_iceberg_db";
+
+  public static ArcticCatalog hiveCatalog;
+  public static final String AMS_TEST_HIVE_CATALOG_NAME = "ams_hive_test_catalog";
+  public static final String AMS_TEST_HIVE_DB_NAME = "ams_hive_test_db";
 
   @ClassRule
   public static final TemporaryFolder tempFolder = new TemporaryFolder();
+  protected static final AtomicInteger testCount = new AtomicInteger(0);
 
   @BeforeClass
   public static void beforeAllTest() throws Exception {
@@ -221,6 +230,7 @@ public class AmsTestBase {
     OptimizerService optimizerService = new OptimizerService();
     when(ServiceContainer.getOptimizerService()).thenReturn(optimizerService);
 
+    setUpHMS();
     //create
     createCatalog();
     createCatalogForCatalogController();
@@ -309,12 +319,55 @@ public class AmsTestBase {
   public static void afterAllTest() {
     FileUtils.deleteQuietly(testBaseDir);
     FileUtils.deleteQuietly(testTableBaseDir);
+    stopHMS();
     testBaseDir.mkdirs();
 
     try {
       DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
     } catch (IOException e) {
       e.printStackTrace();
+    }
+  }
+
+  private static void setUpHMS() throws Exception {
+    int ref = testCount.incrementAndGet();
+    if (ref == 1) {
+      tempFolder.create();
+      hms = new HMSMockServer(tempFolder.newFolder("hive"));
+      hms.start();
+
+      Map<String, String> storageConfig = new HashMap<>();
+      storageConfig.put(
+          CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
+          CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
+      storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE, CatalogMetaTestUtil.encodingSite(hms.hiveConf()));
+
+
+      Map<String, String> authConfig = new HashMap<>();
+      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+          CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
+      authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+          System.getProperty("user.name"));
+
+      Map<String, String> hiveCatalogProperties = new HashMap<>();
+      hiveCatalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/hive_tmp");
+      CatalogMeta hiveCatalogMeta = new CatalogMeta(AMS_TEST_HIVE_CATALOG_NAME, CATALOG_TYPE_HIVE,
+          storageConfig, authConfig, hiveCatalogProperties);
+      List<CatalogMeta> catalogMetas = Lists.newArrayList(hiveCatalogMeta);
+      ServiceContainer.getCatalogMetadataService().addCatalog(catalogMetas);
+      hiveCatalog = CatalogLoader.load(AmsTestBase.amsHandler, AMS_TEST_HIVE_CATALOG_NAME);
+      hiveCatalog.createDatabase(AMS_TEST_HIVE_DB_NAME);
+    }
+  }
+
+  private static void stopHMS() {
+    int ref = testCount.decrementAndGet();
+    if (ref == 0){
+      hms.stop();
+      hms = null;
+      tempFolder.delete();
     }
   }
 }
