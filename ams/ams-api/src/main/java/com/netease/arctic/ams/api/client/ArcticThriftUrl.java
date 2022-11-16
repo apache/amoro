@@ -31,7 +31,7 @@ public class ArcticThriftUrl {
   public static final int DEFAULT_SOCKET_TIMEOUT = 5000;
   public static final String ZOOKEEPER_FLAG = "zookeeper";
   public static final String THRIFT_FLAG = "thrift";
-  private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/(\\w+)");
+  private static final Pattern PATTERN = Pattern.compile("zookeeper://(\\S+)/([\\w-]+)");
   private final String schema;
   private final String host;
   private final int port;

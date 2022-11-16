@@ -173,6 +173,14 @@ public class OptimizerService extends IJDBCService {
     }
   }
 
+  public List<OptimizerGroupInfo> getAllOptimizerGroupInfo() {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizerGroupMapper optimizerMapper = getMapper(sqlSession, OptimizerGroupMapper.class);
+      return optimizerMapper.selectAllOptimizerGroupInfo();
+    }
+  }
+
+
   public void insertOptimizer(
       String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
       int coreNumber, long memory, int parallelism, String container) {

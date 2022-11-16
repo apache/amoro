@@ -16,37 +16,23 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.model;
+package com.netease.arctic.ams.server.controller;
 
-public class TableOperation {
-  long ts;
-  String operation;
+import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.controller.response.OkResponse;
+import io.javalin.http.Context;
 
-  public TableOperation() {
-  }
-
-  public TableOperation(long ts, String operation) {
-    this.ts = ts;
-    this.operation = operation;
-  }
-
-  public long getTs() {
-    return ts;
-  }
-
-  public void setTs(long ts) {
-    this.ts = ts;
-  }
-
-  public String getOperation() {
-    return operation;
-  }
-
-  public void setOperation(String operation) {
-    this.operation = operation;
-  }
-
-  public static TableOperation buildFromDDLInfo(DDLInfo ddlInfo) {
-    return ddlInfo != null ? new TableOperation(ddlInfo.getCommitTime(), ddlInfo.getDdl()) : null;
+public class SettingController extends RestBaseController {
+  /**
+   * get systemSetting
+   *
+   * @param ctx
+   */
+  public static void getSystemSetting(Context ctx) {
+    try {
+      ctx.json(OkResponse.of(ArcticMetaStore.getSystemSettingFromYaml()));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }
