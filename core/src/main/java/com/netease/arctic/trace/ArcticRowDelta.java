@@ -18,10 +18,16 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.op.ArcticUpdate;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
 import java.util.function.Consumer;
@@ -29,27 +35,36 @@ import java.util.function.Consumer;
 /**
  * Wrap {@link RowDelta} with {@link TableTracer}.
  */
-public class TracedRowDelta implements RowDelta {
+public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
 
   private final RowDelta rowDelta;
-  private final TableTracer tracer;
 
-  public TracedRowDelta(RowDelta rowDelta, TableTracer tracer) {
+  public static ArcticRowDelta.Builder buildFor(ArcticTable table) {
+    return new ArcticRowDelta.Builder(table);
+  }
+
+  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta, TableTracer tracer) {
+    super(arcticTable, tracer);
     this.rowDelta = rowDelta;
-    this.tracer = tracer;
+  }
+
+  private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta, TableTracer tracer,
+      Transaction transaction, boolean autoCommitTransaction) {
+    super(arcticTable, tracer, transaction, autoCommitTransaction);
+    this.rowDelta = rowDelta;
   }
 
   @Override
   public RowDelta addRows(DataFile inserts) {
     rowDelta.addRows(inserts);
-    tracer.addDataFile(inserts);
+    addIcebergDataFile(inserts);
     return this;
   }
 
   @Override
   public RowDelta addDeletes(DeleteFile deletes) {
     rowDelta.addDeletes(deletes);
-    tracer.addDeleteFile(deletes);
+    addIcebergDeleteFile(deletes);
     return this;
   }
 
@@ -104,7 +119,7 @@ public class TracedRowDelta implements RowDelta {
   @Override
   public RowDelta set(String property, String value) {
     rowDelta.set(property, value);
-    tracer.setSnapshotSummary(property, value);
+    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
     return this;
   }
 
@@ -126,8 +141,37 @@ public class TracedRowDelta implements RowDelta {
   }
 
   @Override
-  public void commit() {
+  public void doCommit() {
     rowDelta.commit();
-    tracer.commit();
+  }
+
+  public static class Builder extends ArcticUpdate.Builder<ArcticRowDelta> {
+
+    private Builder(ArcticTable table) {
+      super(table);
+      generateWatermark();
+    }
+
+    @Override
+    public ArcticUpdate.Builder<ArcticRowDelta> traceTable(
+        AmsClient client, UnkeyedTable traceTable) {
+      if (client != null) {
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
+        traceTable(tracer);
+      }
+      return this;
+    }
+
+    @Override
+    protected ArcticRowDelta updateWithWatermark(
+        TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticRowDelta(table, transaction.newRowDelta(),
+          tableTracer, transaction, autoCommitTransaction);
+    }
+
+    @Override
+    protected ArcticRowDelta updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+      return new ArcticRowDelta(table, tableStore.newRowDelta(), tableTracer);
+    }
   }
 }

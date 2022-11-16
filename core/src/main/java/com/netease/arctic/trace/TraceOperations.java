@@ -23,10 +23,11 @@ import org.apache.iceberg.DataOperations;
 /**
  * Table change operation names.
  */
-public class TrackerOperations {
+public class TraceOperations {
   public static final String APPEND = DataOperations.APPEND;
   public static final String REPLACE = DataOperations.REPLACE;
   public static final String OVERWRITE = DataOperations.OVERWRITE;
   public static final String DELETE = DataOperations.DELETE;
   public static final String UPDATE_PROPERTIES = "update_properties";
+  public static final String UPDATE_SCHEMA = "update_schema";
 }

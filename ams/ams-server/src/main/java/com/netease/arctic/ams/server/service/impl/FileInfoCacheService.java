@@ -47,7 +47,6 @@ import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
@@ -75,7 +74,7 @@ public class FileInfoCacheService extends IJDBCService {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileInfoCacheService.class);
 
-  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
+  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) {
     if (needFixCacheFromTable(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;
@@ -288,7 +287,7 @@ public class FileInfoCacheService extends IJDBCService {
       List<DataFile> deleteFiles = new ArrayList<>();
       SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, snapshot, addFiles, deleteFiles);
       for (DataFile amsFile : addFiles) {
-        CacheFileInfo cacheFileInfo = CacheFileInfo.convert(table, amsFile, identifier, tableType, snapshot);
+        CacheFileInfo cacheFileInfo = CacheFileInfo.convert(amsFile, identifier, tableType, snapshot);
         fileInfos.add(cacheFileInfo);
       }
 
@@ -361,11 +360,11 @@ public class FileInfoCacheService extends IJDBCService {
     List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
     dataFiles.forEach(dataFile -> {
       DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
-      cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
+      cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
     deleteFiles.forEach(dataFile -> {
       DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
-      cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
+      cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
 
     long fileSize = 0L;
@@ -425,16 +424,6 @@ public class FileInfoCacheService extends IJDBCService {
             cacheFileInfo.setFileIndex(datafile.getIndex());
             cacheFileInfo.setRecordCount(datafile.getRecordCount());
             cacheFileInfo.setSpecId(datafile.getSpecId());
-            if (tableCommitMeta.getProperties() != null &&
-                tableCommitMeta.getProperties().containsKey(TableProperties.TABLE_EVENT_TIME_FIELD)) {
-              Long watermark =
-                  datafile.getUpperBounds()
-                      .get(tableCommitMeta.getProperties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
-                      .getLong();
-              cacheFileInfo.setWatermark(watermark);
-            } else {
-              cacheFileInfo.setWatermark(0L);
-            }
             cacheFileInfo.setAction(tableCommitMeta.getAction());
             cacheFileInfo.setCommitTime(tableCommitMeta.getCommitTime());
             cacheFileInfo.setProducer(tableCommitMeta.getCommitMetaProducer().name());
@@ -606,14 +595,6 @@ public class FileInfoCacheService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       return fileInfoCacheMapper.getPartitionFileList(tableIdentifier, partition);
-    }
-  }
-
-  public Long getWatermark(TableIdentifier tableIdentifier, String innerTable) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      Timestamp watermark = fileInfoCacheMapper.getWatermark(tableIdentifier, innerTable);
-      return watermark == null ? 0 : watermark.getTime();
     }
   }
 

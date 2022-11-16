@@ -23,17 +23,17 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.PartitionPropertiesUpdate;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.trace.AmsTableTracer;
+import com.netease.arctic.trace.ArcticAppendFiles;
+import com.netease.arctic.trace.ArcticOverwriteFiles;
+import com.netease.arctic.trace.ArcticReplacePartitions;
+import com.netease.arctic.trace.ArcticRowDelta;
 import com.netease.arctic.trace.TableTracer;
-import com.netease.arctic.trace.TracedAppendFiles;
+import com.netease.arctic.trace.TraceOperations;
 import com.netease.arctic.trace.TracedDeleteFiles;
-import com.netease.arctic.trace.TracedOverwriteFiles;
-import com.netease.arctic.trace.TracedReplacePartitions;
 import com.netease.arctic.trace.TracedRewriteFiles;
-import com.netease.arctic.trace.TracedRowDelta;
 import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
-import com.netease.arctic.trace.TrackerOperations;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DeleteFiles;
@@ -66,7 +66,6 @@ import org.apache.iceberg.util.StructLikeMap;
 
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
@@ -173,7 +172,8 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public UpdateSchema updateSchema() {
     if (client != null) {
-      return new TracedSchemaUpdate(icebergTable.updateSchema(), new AmsTableTracer(this, null, client));
+      return new TracedSchemaUpdate(icebergTable.updateSchema(),
+          new AmsTableTracer(this, TraceOperations.UPDATE_SCHEMA, client));
     } else {
       return icebergTable.updateSchema();
     }
@@ -188,7 +188,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = icebergTable.updateProperties();
     if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TrackerOperations.UPDATE_PROPERTIES, client);
+      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client);
       return new TracedUpdateProperties(updateProperties, tracer);
     } else {
       return updateProperties;
@@ -207,31 +207,21 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public AppendFiles newAppend() {
-    AppendFiles appendFiles = icebergTable.newAppend();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client);
-      return new TracedAppendFiles(appendFiles, tracer);
-    } else {
-      return appendFiles;
-    }
+    return ArcticAppendFiles.buildFor(this, false)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
-    AppendFiles appendFiles = icebergTable.newFastAppend();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.APPEND, client);
-      return new TracedAppendFiles(appendFiles, tracer);
-    } else {
-      return appendFiles;
-    }
+    return ArcticAppendFiles.buildFor(this, true)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
     RewriteFiles rewriteFiles = icebergTable.newRewrite();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.REPLACE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.REPLACE, client);
       return new TracedRewriteFiles(rewriteFiles, tracer);
     } else {
       return rewriteFiles;
@@ -245,42 +235,27 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public OverwriteFiles newOverwrite() {
-    OverwriteFiles overwriteFiles = icebergTable.newOverwrite();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
-      return new TracedOverwriteFiles(overwriteFiles, tracer);
-    } else {
-      return overwriteFiles;
-    }
+    return ArcticOverwriteFiles.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public RowDelta newRowDelta() {
-    RowDelta rowDelta = icebergTable.newRowDelta();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
-      return new TracedRowDelta(rowDelta, tracer);
-    } else {
-      return rowDelta;
-    }
+    return ArcticRowDelta.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public ReplacePartitions newReplacePartitions() {
-    ReplacePartitions replacePartitions = icebergTable.newReplacePartitions();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.OVERWRITE, client);
-      return new TracedReplacePartitions(replacePartitions, tracer);
-    } else {
-      return replacePartitions;
-    }
+    return ArcticReplacePartitions.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
   public DeleteFiles newDelete() {
     DeleteFiles deleteFiles = icebergTable.newDelete();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TrackerOperations.DELETE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.DELETE, client);
       return new TracedDeleteFiles(deleteFiles, tracer);
     } else {
       return deleteFiles;
@@ -306,7 +281,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(transaction, new AmsTableTracer(this, client));
+      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client));
     } else {
       return transaction;
     }
