@@ -21,13 +21,13 @@
  */
 export const bytesToSize = (size: number | null): string => {
   if (size === 0) { return '0' }
-  if (size === null || size === undefined) { return '未知' }
+  if (size === null || size === undefined) { return 'unknown' }
   const num = 1024 // byte
-  if (size < num) { return size + 'B' }
-  if (size < Math.pow(num, 2)) { return (size / num).toFixed(2) + 'KB' } // kb
-  if (size < Math.pow(num, 3)) { return (size / Math.pow(num, 2)).toFixed(2) + 'MB' } // M
-  if (size < Math.pow(num, 4)) { return (size / Math.pow(num, 3)).toFixed(2) + 'G' } // G
-  return (size / Math.pow(num, 4)).toFixed(2) + 'T' // T
+  if (size < num) { return size + ' B' }
+  if (size < Math.pow(num, 2)) { return (size / num).toFixed(2) + ' KB' } // kb
+  if (size < Math.pow(num, 3)) { return (size / Math.pow(num, 2)).toFixed(2) + ' MB' } // M
+  if (size < Math.pow(num, 4)) { return (size / Math.pow(num, 3)).toFixed(2) + ' G' } // G
+  return (size / Math.pow(num, 4)).toFixed(2) + ' T' // T
 }
 
 /**
@@ -37,8 +37,8 @@ export const mbToSize = (size: number): string => {
   if (size === 0) { return '0' }
   const num = 1024 // byte
   if (size < num) { return size + ' MB' }
-  if (size < Math.pow(num, 2)) { return (size / num) + ' G' } // G
-  return (size / Math.pow(num, 2)) + ' T' // T
+  if (size < Math.pow(num, 2)) { return (size / num).toFixed() + ' G' } // G
+  return (size / Math.pow(num, 2)).toFixed() + ' T' // T
 }
 /**
  * Convert ms to d h min s
