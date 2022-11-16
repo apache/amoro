@@ -214,7 +214,9 @@ public class TerminalManager {
     if (auth.isKerberosAuthMethod()) {
       authName = auth.getKrbPrincipal();
     }
-    return loginId + "-" + auth.getAuthMethod() + "-" + authName;
+    String sessionId = loginId + "-" + auth.getAuthMethod() + "-" + authName;
+    sessionId = sessionId.replace("/", "_");
+    return sessionId;
   }
 
   private TableMetaStore getCatalogTableMetaStore(CatalogMeta catalogMeta) {
