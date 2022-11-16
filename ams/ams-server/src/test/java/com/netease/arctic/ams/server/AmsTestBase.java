@@ -31,6 +31,8 @@ import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
@@ -96,27 +98,29 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
     OptimizerControllerTest.class,
-    TableControllerTest.class,
-    TerminalControllerTest.class,
-    TestDDLTracerService.class,
-    LoginControllerTest.class,
-    TestExpiredFileClean.class,
-    TestMajorOptimizeCommit.class,
-    TestMajorOptimizePlan.class,
-    TestMinorOptimizeCommit.class,
-    TestMinorOptimizePlan.class,
+//    TableControllerTest.class,
+//    TerminalControllerTest.class,
+//    TestDDLTracerService.class,
+//    LoginControllerTest.class,
+//    TestExpiredFileClean.class,
+//    TestMajorOptimizeCommit.class,
+//    TestMajorOptimizePlan.class,
+//    TestMinorOptimizeCommit.class,
+//    TestMinorOptimizePlan.class,
+    TestIcebergMajorOptimizePlan.class,
+    TestIcebergMinorOptimizePlan.class,
     TestIcebergMajorOptimizeCommit.class,
     TestIcebergMinorOptimizeCommit.class,
-    TestOrphanFileClean.class,
-    TestFileInfoCacheService.class,
-    TestSupportHiveMajorOptimizePlan.class,
-    TestSupportHiveMajorOptimizeCommit.class,
-    TestSupportHiveSyncService.class,
-    TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class,
+//    TestOrphanFileClean.class,
+//    TestFileInfoCacheService.class,
+//    TestSupportHiveMajorOptimizePlan.class,
+//    TestSupportHiveMajorOptimizeCommit.class,
+//    TestSupportHiveSyncService.class,
+//    TestExpiredFileCleanSupportHive.class,
+//    TestOrphanFileCleanSupportHive.class,
     TestExpireFileCleanSupportIceberg.class,
     TestOrphanFileCleanSupportIceberg.class,
-    TestArcticTransactionService.class,
+//    TestArcticTransactionService.class,
     TestOptimizerService.class})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,

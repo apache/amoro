@@ -26,6 +26,7 @@ import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.EqualityDeleteWriter;
+import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.io.DataWriter;
@@ -134,7 +135,7 @@ public class TestIcebergBase {
     DataWriter<Record> writer = appenderFactory
         .newDataWriter(outputFile, FileFormat.PARQUET, null);
 
-    int length = 100;
+    int length = 10;
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         if (writer.length() > smallSizeByBytes || result.size() > 0) {
@@ -144,7 +145,7 @@ public class TestIcebergBase {
           writer = appenderFactory
               .newDataWriter(newOutputFile, FileFormat.PARQUET, null);
         }
-        writer.add(record);
+        writer.write(record);
       }
     }
     writer.close();
@@ -175,12 +176,12 @@ public class TestIcebergBase {
     EqualityDeleteWriter<Record> writer = appenderFactory
         .newEqDeleteWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
-    int length = 100;
+    int length = 10;
     for (int i = 1; i < length * 10; i = i + length) {
       List<Record> records = baseRecords(i, length, arcticTable.schema());
       for (int j = 0; j < records.size(); j++) {
         if (j % 2 == 0) {
-          writer.delete(records.get(j));
+          writer.write(records.get(j));
         }
       }
     }
@@ -209,12 +210,13 @@ public class TestIcebergBase {
     for (int i = 0; i < dataFiles.size(); i++) {
       DataFile dataFile = dataFiles.get(i);
       if (i % 2 == 0) {
-        writer.delete(dataFile.path().toString(), 0L);
+        PositionDelete<Record> positionDelete = PositionDelete.create();
+        positionDelete.set(dataFile.path().toString(), 0L, null);
+        writer.write(positionDelete);
       }
-
-      writer.close();
-      result.add(writer.toDeleteFile());
     }
+    writer.close();
+    result.add(writer.toDeleteFile());
 
     RowDelta rowDelta = arcticTable.newRowDelta();
     result.forEach(rowDelta::addDeletes);
@@ -231,10 +233,10 @@ public class TestIcebergBase {
         .newDataWriter(outputFile, FileFormat.PARQUET, null);
 
     List<DataFile> result = new ArrayList<>();
-    int length = 100;
+    int length = 10;
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
-        writer.add(record);
+        writer.write(record);
       }
     }
     writer.close();

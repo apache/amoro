@@ -16,7 +16,7 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
   public void testMajorOptimize() throws Exception {
     icebergTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "100")
+        .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
     insertEqDeleteFiles(icebergTable.asUnkeyedTable());
@@ -27,7 +27,6 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
-    Assert.assertEquals(dataFiles.size(), tasks.get(0).getBaseFiles().size());
-    Assert.assertNotEquals(dataFiles.size(), tasks.get(0).getIcebergFileScanTasksSize());
+    Assert.assertEquals(dataFiles.size(), tasks.get(0).getIcebergFileScanTasksSize());
   }
 }

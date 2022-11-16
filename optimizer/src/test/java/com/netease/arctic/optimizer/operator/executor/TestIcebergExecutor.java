@@ -31,6 +31,7 @@ import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.deletes.EqualityDeleteWriter;
+import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.io.DataWriter;
@@ -147,16 +148,14 @@ public class TestIcebergExecutor {
         icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
-    result.getTargetFiles().forEach(dataFile -> {
-      Assert.assertEquals(500, dataFile.recordCount());
-    });
+    result.getTargetFiles().forEach(dataFile -> Assert.assertEquals(50, dataFile.recordCount()));
   }
 
   @Test
   public void testMultiTargetFiles() throws Exception {
     icebergTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1000")
+        .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "100")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
     insertEqDeleteFiles(icebergTable.asUnkeyedTable());
@@ -171,11 +170,9 @@ public class TestIcebergExecutor {
     OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
     Assert.assertNotEquals(1, Iterables.size(result.getTargetFiles()));
     AtomicLong totalRecordCount = new AtomicLong();
-    result.getTargetFiles().forEach(dataFile -> {
-      totalRecordCount.set(totalRecordCount.get() + dataFile.recordCount());
-    });
+    result.getTargetFiles().forEach(dataFile -> totalRecordCount.set(totalRecordCount.get() + dataFile.recordCount()));
 
-    Assert.assertEquals(500, totalRecordCount.get());
+    Assert.assertEquals(50, totalRecordCount.get());
   }
 
   protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable) throws IOException {
@@ -192,7 +189,7 @@ public class TestIcebergExecutor {
     DataWriter<Record> writer = appenderFactory
         .newDataWriter(outputFile, FileFormat.PARQUET, null);
 
-    int length = 100;
+    int length = 10;
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         if (writer.length() > smallSizeByBytes || result.size() > 0) {
@@ -202,7 +199,7 @@ public class TestIcebergExecutor {
           writer = appenderFactory
               .newDataWriter(newOutputFile, FileFormat.PARQUET, null);
         }
-        writer.add(record);
+        writer.write(record);
       }
     }
     writer.close();
@@ -230,12 +227,12 @@ public class TestIcebergExecutor {
     EqualityDeleteWriter<Record> writer = appenderFactory
         .newEqDeleteWriter(outputFile, FileFormat.PARQUET, null);
 
-    int length = 100;
+    int length = 10;
     for (int i = 1; i < length * 10; i = i + length) {
       List<Record> records = baseRecords(i, length, arcticTable.schema());
       for (int j = 0; j < records.size(); j++) {
         if (j % 2 == 0) {
-          writer.delete(records.get(j));
+          writer.write(records.get(j));
         }
       }
     }
@@ -264,12 +261,14 @@ public class TestIcebergExecutor {
     for (int i = 0; i < dataFiles.size(); i++) {
       DataFile dataFile = dataFiles.get(i);
       if (i % 2 == 0) {
-        writer.delete(dataFile.path().toString(), 0L);
+        PositionDelete<Record> positionDelete = PositionDelete.create();
+        positionDelete.set(dataFile.path().toString(), 0L, null);
+        writer.write(positionDelete);
       }
-
-      writer.close();
-      result.add(writer.toDeleteFile());
     }
+
+    writer.close();
+    result.add(writer.toDeleteFile());
 
     RowDelta rowDelta = arcticTable.newRowDelta();
     result.forEach(rowDelta::addDeletes);
