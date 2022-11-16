@@ -52,18 +52,18 @@ import java.util.List;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 
-public class NativeExecutor extends BaseExecutor<DataFile> {
-  private static final Logger LOG = LoggerFactory.getLogger(NativeExecutor.class);
+public class IcebergExecutor extends BaseExecutor<DataFile> {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergExecutor.class);
 
   private final NodeTask task;
   private final ArcticTable table;
   private final long startTime;
   private final OptimizerConfig config;
 
-  public NativeExecutor(NodeTask nodeTask,
-                        ArcticTable table,
-                        long startTime,
-                        OptimizerConfig config) {
+  public IcebergExecutor(NodeTask nodeTask,
+                         ArcticTable table,
+                         long startTime,
+                         OptimizerConfig config) {
     this.task = nodeTask;
     this.table = table;
     this.startTime = startTime;

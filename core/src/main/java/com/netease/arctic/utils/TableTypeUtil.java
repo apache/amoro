@@ -8,11 +8,11 @@ import com.netease.arctic.table.ArcticTable;
  */
 public class TableTypeUtil {
   /**
-   * check arctic table is native iceberg table
+   * check arctic table is iceberg table format
    * @param arcticTable target arctic table
-   * @return Whether native iceberg table. true is native iceberg table, false isn't native iceberg table.
+   * @return Whether iceberg table format
    */
-  public static boolean isNativeIceberg(ArcticTable arcticTable) {
+  public static boolean isIcebergTableFormat(ArcticTable arcticTable) {
     return arcticTable instanceof BaseIcebergCatalog.BaseIcebergTable;
   }
 }

@@ -35,6 +35,7 @@ CREATE TABLE `file_info_cache`
     `add_snapshot_id`    bigint(20) NOT NULL COMMENT 'the snapshot id who add this file',
     `parent_snapshot_id` bigint(20) NOT NULL COMMENT 'parent snapshot of add_snapshot_id',
     `delete_snapshot_id` bigint(20) DEFAULT NULL COMMENT 'the snapshot id who delete this file',
+    `add_snapshot_sequence` bigint(20) NOT NULL DEFAULT -1 COMMENT 'the snapshot sequence who add this file',
     `inner_table`        varchar(64)          DEFAULT NULL COMMENT 'table type like change/base',
     `file_path`          varchar(400)         NOT NULL COMMENT 'table type like change/base',
     `file_type`          varchar(64)          DEFAULT NULL COMMENT 'absolute file path',
@@ -107,25 +108,25 @@ CREATE TABLE `optimize_history`
     KEY                             `table_name_record` (`catalog_name`,`db_name`,`table_name`,`history_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'History of optimizing after each commit';
 
-CREATE TABLE `optimize_job`
+CREATE TABLE `optimizer`
 (
-    `job_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-    `job_name`             varchar(1024) DEFAULT NULL COMMENT 'job name',
+    `optimizer_id`               bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+    `optimizer_name`             varchar(1024) DEFAULT NULL COMMENT 'optimizer name',
     `queue_id`             int(11) DEFAULT NULL COMMENT 'queue id',
     `queue_name`           varchar(1024) DEFAULT NULL COMMENT 'queue name',
-    `job_start_time`       varchar(1024) DEFAULT NULL COMMENT 'job start time',
-    `job_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'job fail time',
-    `job_status`           varchar(16)   DEFAULT NULL COMMENT 'job status',
+    `optimizer_start_time`       varchar(1024) DEFAULT NULL COMMENT 'optimizer start time',
+    `optimizer_fail_time`        varchar(1024) DEFAULT NULL COMMENT 'optimizer fail time',
+    `optimizer_status`           varchar(16)   DEFAULT NULL COMMENT 'optimizer status',
     `core_number`          int(11) DEFAULT NULL COMMENT 'total number of all CPU resources',
-    `memory`               bigint(30) DEFAULT NULL COMMENT 'job use memory size',
-    `parallelism`          int(11) DEFAULT NULL COMMENT 'job parallelism',
+    `memory`               bigint(30) DEFAULT NULL COMMENT 'optimizer use memory size',
+    `parallelism`          int(11) DEFAULT NULL COMMENT 'optimizer parallelism',
     `jobmanager_url`       varchar(1024) DEFAULT NULL COMMENT 'jobmanager url',
     `optimizer_instance`   blob COMMENT 'optimizer instance bytes, use to deserialize optimizer instance',
     `optimizer_state_info` mediumtext COMMENT 'optimizer state info, contains like yarn application id and flink job id',
-    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this job belongs to',
+    `container`            varchar(50)   DEFAULT '' COMMENT 'name of container which this optimizer belongs to',
     `update_time` timestamp not null default CURRENT_TIMESTAMP COMMENT 'update time',
-    PRIMARY KEY (`job_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Job info of optimize';
+    PRIMARY KEY (`optimizer_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'Optimizer info';
 
 CREATE TABLE `optimize_group`
 (
@@ -184,6 +185,7 @@ CREATE TABLE `snapshot_info_cache`
 (
     `table_identifier`   varchar(384) NOT NULL COMMENT 'table full name with catalog.db.table',
     `snapshot_id`        bigint(20) NOT NULL COMMENT 'snapshot id',
+    `snapshot_sequence`  bigint(20) NOT NULL DEFAULT -1 COMMENT 'snapshot sequence'，
     `parent_snapshot_id` bigint(20) NOT NULL COMMENT 'parent snapshot id',
     `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
     `inner_table`        varchar(64)          NOT NULL COMMENT 'table type like change/base',
