@@ -20,7 +20,6 @@ package com.netease.arctic.op;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.TableMeta;
-import com.netease.arctic.trace.TracedSchemaUpdate;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Types;

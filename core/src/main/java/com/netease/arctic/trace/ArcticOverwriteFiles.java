@@ -18,9 +18,15 @@
 
 package com.netease.arctic.trace;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.op.ArcticUpdate;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
 import java.util.function.Consumer;
@@ -28,14 +34,23 @@ import java.util.function.Consumer;
 /**
  * Wrap {@link OverwriteFiles} with {@link TableTracer}.
  */
-public class TracedOverwriteFiles implements OverwriteFiles {
+public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements OverwriteFiles {
 
   private final OverwriteFiles overwriteFiles;
-  private final TableTracer tracer;
 
-  public TracedOverwriteFiles(OverwriteFiles overwriteFiles, TableTracer tracer) {
+  public static ArcticOverwriteFiles.Builder buildFor(ArcticTable table) {
+    return new ArcticOverwriteFiles.Builder(table);
+  }
+
+  private ArcticOverwriteFiles(ArcticTable arcticTable, OverwriteFiles overwriteFiles, TableTracer tracer) {
+    super(arcticTable, tracer);
     this.overwriteFiles = overwriteFiles;
-    this.tracer = tracer;
+  }
+
+  private ArcticOverwriteFiles(ArcticTable arcticTable, OverwriteFiles overwriteFiles, TableTracer tracer,
+      Transaction transaction, boolean autoCommitTransaction) {
+    super(arcticTable, tracer, transaction, autoCommitTransaction);
+    this.overwriteFiles = overwriteFiles;
   }
 
   @Override
@@ -47,14 +62,14 @@ public class TracedOverwriteFiles implements OverwriteFiles {
   @Override
   public OverwriteFiles addFile(DataFile file) {
     overwriteFiles.addFile(file);
-    tracer.addDataFile(file);
+    addIcebergDataFile(file);
     return this;
   }
 
   @Override
   public OverwriteFiles deleteFile(DataFile file) {
     overwriteFiles.deleteFile(file);
-    tracer.deleteDataFile(file);
+    deleteIcebergDataFile(file);
     return this;
   }
 
@@ -103,7 +118,7 @@ public class TracedOverwriteFiles implements OverwriteFiles {
   @Override
   public OverwriteFiles set(String property, String value) {
     overwriteFiles.set(property, value);
-    tracer.setSnapshotSummary(property, value);
+    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
     return this;
   }
 
@@ -125,13 +140,42 @@ public class TracedOverwriteFiles implements OverwriteFiles {
   }
 
   @Override
-  public void commit() {
+  public void doCommit() {
     overwriteFiles.commit();
-    tracer.commit();
   }
 
   @Override
   public Object updateEvent() {
     return overwriteFiles.updateEvent();
+  }
+
+  public static class Builder extends ArcticUpdate.Builder<ArcticOverwriteFiles> {
+
+    private Builder(ArcticTable table) {
+      super(table);
+      generateWatermark();
+    }
+
+    @Override
+    public ArcticUpdate.Builder<ArcticOverwriteFiles> traceTable(
+        AmsClient client, UnkeyedTable traceTable) {
+      if (client != null) {
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
+        traceTable(tracer);
+      }
+      return this;
+    }
+
+    @Override
+    protected ArcticOverwriteFiles updateWithWatermark(
+        TableTracer tableTracer, Transaction transaction, boolean autoCommitTransaction) {
+      return new ArcticOverwriteFiles(table, transaction.newOverwrite(),
+          tableTracer, transaction, autoCommitTransaction);
+    }
+
+    @Override
+    protected ArcticOverwriteFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
+      return new ArcticOverwriteFiles(table, tableStore.newOverwrite(), tableTracer);
+    }
   }
 }
