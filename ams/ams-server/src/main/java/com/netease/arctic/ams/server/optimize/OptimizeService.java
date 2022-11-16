@@ -171,7 +171,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
                                  boolean persistRuntime) {
     cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
-      int queueId = OptimizeQueueService.getQueueId(properties);
+      int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
       optimizeQueueService.bind(arcticTableItem.getTableIdentifier(), queueId);
     } catch (InvalidObjectException e) {
       LOG.error("failed to bind " + arcticTableItem.getTableIdentifier() + " and queue ", e);

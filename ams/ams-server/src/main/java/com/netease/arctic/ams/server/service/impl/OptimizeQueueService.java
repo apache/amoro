@@ -79,7 +79,7 @@ import java.util.stream.Collectors;
 public class OptimizeQueueService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizeQueueService.class);
 
-  private static final Map<Integer, OptimizeQueueWrapper> optimizeQueues = new HashMap<>();
+  private final Map<Integer, OptimizeQueueWrapper> optimizeQueues = new HashMap<>();
 
   private final ReentrantLock queueOperateLock = new ReentrantLock();
 
@@ -95,7 +95,7 @@ public class OptimizeQueueService extends IJDBCService {
     LOG.info("OptimizeQueueManager init completed");
   }
 
-  public static int getQueueId(Map<String, String> properties) throws InvalidObjectException {
+  public int getQueueId(Map<String, String> properties) throws InvalidObjectException {
     String groupName = properties.getOrDefault(TableProperties.OPTIMIZE_GROUP,
         TableProperties.OPTIMIZE_GROUP_DEFAULT);
     return getOptimizeQueue(groupName).getOptimizeQueueMeta().getQueueId();
@@ -222,7 +222,7 @@ public class OptimizeQueueService extends IJDBCService {
    * @return OptimizeQueueItem
    * @throws InvalidObjectException when can't find queue
    */
-  public static OptimizeQueueItem getOptimizeQueue(String queueName) throws InvalidObjectException {
+  public OptimizeQueueItem getOptimizeQueue(String queueName) throws InvalidObjectException {
     Preconditions.checkNotNull(queueName, "queueName can't be null");
     return optimizeQueues.values().stream()
         .filter(q -> queueName.equals(q.getOptimizeQueueItem().getOptimizeQueueMeta().getName()))
@@ -555,7 +555,7 @@ public class OptimizeQueueService extends IJDBCService {
                 arcticTable.properties()
                     .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
             try {
-              OptimizeQueueItem optimizeQueue = getOptimizeQueue(queueName);
+              OptimizeQueueItem optimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(queueName);
               if (optimizeQueue.getOptimizeQueueMeta().getQueueId() == queueId) {
                 tablesInQueue.add(arcticTable.id());
               }
@@ -605,7 +605,7 @@ public class OptimizeQueueService extends IJDBCService {
           BaseOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
-          int queueId = getQueueId(properties);
+          int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
 
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
             optimizePlan = tableItem.getIcebergMajorPlan(queueId, currentTime);
