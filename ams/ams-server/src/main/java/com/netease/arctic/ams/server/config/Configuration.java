@@ -78,6 +78,19 @@ public class Configuration implements java.io.Serializable, Cloneable, ReadableC
     return configuration;
   }
 
+
+  /**
+   * Creates a new configuration that is initialized with the options of the given map.
+   */
+  public static Configuration fromObjectMap(Map<String, Object> map) {
+    final Configuration configuration = new Configuration();
+    map.forEach(configuration::setValueInternal);
+    return configuration;
+  }
+
+
+
+
   // --------------------------------------------------------------------------------------------
 
   /**

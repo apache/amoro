@@ -109,4 +109,12 @@ public interface IMetaService {
    * @param tableMetadata table meta data
    */
   UnkeyedTable buildArcticTable(TableMetadata tableMetadata);
+
+  /**
+   * get talbe count in catalog catalogName
+   * @param catalogName
+   * @return
+   */
+  Integer getTableCountInCatalog(String catalogName);
+
 }

@@ -38,15 +38,18 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * optimize controller.
@@ -68,7 +71,12 @@ public class OptimizerController extends RestBaseController {
     String optimizerGroup = ctx.pathParam("optimizerGroup");
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
-
+    String statusFilter = ctx.queryParam("statusFilter");
+    List<String> statusList = new ArrayList<>();
+    if (StringUtils.isNotEmpty(statusFilter)) {
+      statusList = Arrays.stream(statusFilter.split(","))
+              .map(item -> item.trim().toLowerCase()).collect(Collectors.toList());
+    }
     int offset = (page - 1) * pageSize;
 
     try {
@@ -81,6 +89,12 @@ public class OptimizerController extends RestBaseController {
         tableIdentifier.setCatalog(arcticTable.getTableIdentifier().getCatalog());
 
         TableOptimizeItem arcticTableItem = iOptimizeService.getTableOptimizeItem(tableIdentifier);
+        // if status is specified, we filter item by status
+        if (statusList.size() > 0 &&
+                !statusList.contains(
+                        arcticTableItem.getTableOptimizeRuntime().getOptimizeStatus().toString().toLowerCase())) {
+          continue;
+        }
 
         if ("all".equals(optimizerGroup)) {
           arcticTableItemList.add(arcticTableItem);
