@@ -60,6 +60,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAG
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS;
 
 public class CatalogController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
@@ -69,6 +70,8 @@ public class CatalogController extends RestBaseController {
 
   private static final String CONFIG_TYPE_STORAGE = "storage-config";
   private static final String CONFIG_TYPE_AUTH = "auth-config";
+  // <configuration></configuration>  encoded with base64
+  private static final String EMPTY_XML_BASE64 = "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==";
 
   /**
    * get catalog Type list
@@ -214,13 +217,13 @@ public class CatalogController extends RestBaseController {
     // change fileId to base64Code
     Map<String, String> metaStorageConfig = new HashMap<String, String>();
     metaStorageConfig.put(STORAGE_CONFIGS_KEY_TYPE,
-            info.getStorageConfig().get(STORAGE_CONFIGS_KEY_TYPE));
+            info.getStorageConfig().getOrDefault(STORAGE_CONFIGS_KEY_TYPE, STORAGE_CONFIGS_VALUE_TYPE_HDFS));
 
     List<String> metaKeyList = Arrays.asList(STORAGE_CONFIGS_KEY_HDFS_SITE,
             STORAGE_CONFIGS_KEY_CORE_SITE,
             STORAGE_CONFIGS_KEY_HIVE_SITE);
 
-    // when update catalog, fileId won't be post when config doesn't been changed!
+    // when update catalog, fileId won't be post when file doesn't been changed!
     Integer idx = 0;
     boolean fillUseOld = oldCatalogMeta != null;
     for (idx = 0; idx < metaKeyList.size(); idx++) {
@@ -235,6 +238,18 @@ public class CatalogController extends RestBaseController {
           metaStorageConfig.put(metaKeyList.get(idx), fileSite);
         }
       }
+    }
+    // if site.xml is not present, we give a default value!
+    if (StringUtils.isEmpty(metaStorageConfig.get(STORAGE_CONFIGS_KEY_HIVE_SITE))) {
+      metaStorageConfig.put(STORAGE_CONFIGS_KEY_HIVE_SITE, EMPTY_XML_BASE64);
+    }
+
+    if (StringUtils.isEmpty(metaStorageConfig.get(STORAGE_CONFIGS_KEY_HDFS_SITE))) {
+      metaStorageConfig.put(STORAGE_CONFIGS_KEY_HDFS_SITE, EMPTY_XML_BASE64);
+    }
+
+    if (StringUtils.isEmpty(metaStorageConfig.get(STORAGE_CONFIGS_KEY_CORE_SITE))) {
+      metaStorageConfig.put(STORAGE_CONFIGS_KEY_CORE_SITE, EMPTY_XML_BASE64);
     }
     catalogMeta.setStorageConfigs(metaStorageConfig);
     return catalogMeta;
@@ -275,7 +290,6 @@ public class CatalogController extends RestBaseController {
     String catalogName = ctx.pathParam("catalogName");
     CatalogMeta catalogMeta = catalogMetadataService.getCatalog(catalogName);
     CatalogSettingInfo info = new CatalogSettingInfo();
-    String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
 
     if (catalogMetadataService.catalogExist(catalogName)) {
       info.setName(catalogMeta.getCatalogName());
