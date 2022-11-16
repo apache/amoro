@@ -29,6 +29,10 @@ public class SettingController extends RestBaseController {
    * @param ctx
    */
   public static void getSystemSetting(Context ctx) {
-    ctx.json(OkResponse.of(ArcticMetaStore.getSystemSettingFromYaml()));
+    try {
+      ctx.json(OkResponse.of(ArcticMetaStore.getSystemSettingFromYaml()));
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 }

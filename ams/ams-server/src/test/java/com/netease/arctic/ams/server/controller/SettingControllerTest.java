@@ -34,7 +34,9 @@ public class SettingControllerTest {
       app.get("/", ctx -> SettingController.getSystemSetting(ctx));
       final okhttp3.Response resp = client.get("/", x -> {
       });
+      assert resp.code() == 200;
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
+
       LOG.info("xxx: {}", JSONObject.toJSONString(result));
       assert result.getCode() == 200;
     });

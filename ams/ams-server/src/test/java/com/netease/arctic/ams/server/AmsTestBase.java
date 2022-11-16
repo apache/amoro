@@ -25,7 +25,6 @@ import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.CatalogControllerTest;
 import com.netease.arctic.ams.server.controller.LoginControllerTest;
 import com.netease.arctic.ams.server.controller.OptimizerControllerTest;
-import com.netease.arctic.ams.server.controller.SettingControllerTest;
 import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
@@ -99,7 +98,6 @@ import static org.powermock.api.mockito.PowerMockito.when;
     OptimizerControllerTest.class,
     TableControllerTest.class,
     TerminalControllerTest.class,
-    SettingControllerTest.class,
     TestDDLTracerService.class,
     LoginControllerTest.class,
     TestExpiredFileClean.class,

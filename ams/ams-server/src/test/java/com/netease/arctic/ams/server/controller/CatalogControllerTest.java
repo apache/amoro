@@ -68,12 +68,12 @@ public class CatalogControllerTest {
       app.put("/{catalogName}", ctx->CatalogController.updateCatalog(ctx));
       app.delete("/{catalogName}", ctx -> CatalogController.deleteCatalog(ctx));
       String paramString = "{\"name\":\"unittest\",\"type\":\"hadoop\","
-              + "\"storageConfig\":{\"storage_config.storage.type\":\"hdfs\","
-              + "\"storage_config.core-site\":\"1\","
-              + "\"storage_config.hdfs-site\":\"2\","
-              + "\"storage_config.hive-site\":\"3\"},"
-              + "\"authConfig\":{\"auth_config.type\":\"SIMPLE\",\"auth_config.hadoop_username\":\"arctic\"},"
-              + "\"properties\":{},\"tableFormat\":\"hive\"}";
+              + "\"storageConfig\":{"
+              + "\"hadoop.core.site\":\"1\","
+              + "\"hadoop.hdfs.site\":\"2\","
+              + "\"hive.site\":\"3\"},"
+              + "\"authConfig\":{\"auth.type\":\"SIMPLE\",\"auth.simple.hadoop_username\":\"arctic\"},"
+              + "\"properties\":{},\"tableFormatList\":[\"HIVE\"]}";
       JSONObject param = JSONObject.parseObject(paramString);
       final okhttp3.Response resp = client.post("/", param);
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
@@ -88,8 +88,8 @@ public class CatalogControllerTest {
       assert info.getName().equals(name);
       // update catalog
       JSONObject authConfig = new JSONObject();
-      authConfig.put("auth_config.type", "SIMPLE");
-      authConfig.put("auth_config.hadoop_username", newAuthUser);
+      authConfig.put("auth.type", "SIMPLE");
+      authConfig.put("auth.simple.hadoop_username", newAuthUser);
       param.put("authConfig", authConfig);
       final okhttp3.Response resp2 = client.put("/unittest", param);
       final OkResponse result2 = JSONObject.parseObject(resp2.body().string(), OkResponse.class);
@@ -100,9 +100,17 @@ public class CatalogControllerTest {
       assert result3.getCode() == 200;
       final CatalogSettingInfo infoPut = JSONObject.parseObject(result3.getResult().toString(), CatalogSettingInfo.class);
       assert infoPut != null;
-      assert infoPut.getAuthConfig().get("auth_config.hadoop_username").equals(newAuthUser);
+      assert infoPut.getAuthConfig().get("auth.simple.hadoop_username").equals(newAuthUser);
 
       // delete catalog
+      final okhttp3.Response resp4 = client.delete("/unittest");
+      final OkResponse result4 = JSONObject.parseObject(resp4.body().string(), OkResponse.class);
+      assert result4.getCode() == 200;
+      // check delete result
+      final okhttp3.Response resp5 = client.get("/unittest", x -> {});
+      final OkResponse result5 = JSONObject.parseObject(resp5.body().string(), OkResponse.class);
+      assert result5.getCode() == 200;
+      assert result5.getResult() == null;
 
     });
   }
