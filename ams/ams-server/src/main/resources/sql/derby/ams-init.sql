@@ -191,6 +191,8 @@ CREATE TABLE optimize_history (
     base_file_size_before bigint NOT NULL,
     pos_delete_file_cnt_before int NOT NULL,
     pos_delete_file_size_before bigint NOT NULL,
+    eq_delete_file_cnt_before int NOT NULL,
+    eq_delete_file_size_before bigint NOT NULL,
     total_file_cnt_after int NOT NULL,
     total_file_size_after bigint NOT NULL,
     snapshot_id bigint DEFAULT NULL,
