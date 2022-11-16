@@ -31,23 +31,23 @@ ams:
 extension_properties:
 #test.properties: test
 
-catalogs:
-# arctic catalog config. now can't delete catalog by config file
-  - name: local_catalog
-    # arctic catalog type, now just support hadoop
-    type: hadoop
-    # file system config.sh
-    storage_config:
-      storage.type: hdfs
-      core-site:
-      hdfs-site:
-      hive-site:
-    # auth config.sh now support SIMPLE and KERBEROS
-    auth_config:
-      type: SIMPLE
-      hadoop_username: root
-    properties:
-      warehouse.dir: /tmp/arctic/warehouse
+#catalogs:
+## arctic catalog config. now can't delete catalog by config file
+#  - name: local_catalog
+#    # arctic catalog type, now just support hadoop
+#    type: hadoop
+#    # file system config.sh
+#    storage_config:
+#      storage.type: hdfs
+#      core-site:
+#      hdfs-site:
+#      hive-site:
+#    # auth config.sh now support SIMPLE and KERBEROS
+#    auth_config:
+#      type: SIMPLE
+#      hadoop_username: root
+#    properties:
+#      warehouse.dir: /tmp/arctic/warehouse
 #  - name: ...
 #    type: hadoop
 #    storage_config:

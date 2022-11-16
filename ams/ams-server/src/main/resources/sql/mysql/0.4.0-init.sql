@@ -47,7 +47,6 @@ CREATE TABLE `file_info_cache`
     `partition_name`     varchar(256)         DEFAULT NULL COMMENT 'the partition name which file belongs to',
     `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
     `commit_time`        timestamp   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'file commit time',
-    `watermark`          timestamp  NULL DEFAULT NULL COMMENT 'file max event time',
     `producer`           varchar(64) NOT NULL DEFAULT 'INGESTION' COMMENT 'who produce this snapshot',
     PRIMARY KEY (`primary_key_md5`),
     KEY  `table_snap_index` (`table_identifier`,`add_snapshot_id`)
@@ -181,7 +180,7 @@ CREATE TABLE `snapshot_info_cache`
 (
     `table_identifier`   varchar(384) NOT NULL COMMENT 'table full name with catalog.db.table',
     `snapshot_id`        bigint(20) NOT NULL COMMENT 'snapshot id',
-    `snapshot_sequence`  bigint(20) NOT NULL DEFAULT -1 COMMENT 'snapshot sequence'，
+    `snapshot_sequence`  bigint(20) NOT NULL DEFAULT -1 COMMENT 'snapshot sequence',
     `parent_snapshot_id` bigint(20) NOT NULL COMMENT 'parent snapshot id',
     `action`             varchar(64)          DEFAULT NULL COMMENT 'snapshot type',
     `inner_table`        varchar(64)          NOT NULL COMMENT 'table type like change/base',
@@ -277,3 +276,5 @@ CREATE TABLE `ddl_record`
     `ddl_type`         varchar(256) NOT NULL COMMENT 'ddl type',
     `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'ddl commit time'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'ddl record of table';
+
+INSERT INTO catalog_metadata(catalog_name,display_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog',NULL,'hadoop','{"storage.type":"hdfs","hive.site":"","hadoop.core.site":"","hadoop.hdfs.site":""}','{"auth.type":"SIMPLE","auth.simple.hadoop_username":"root"}','{"warehouse.dir":"/tmp/arctic/warehouse","table-formats":"HIVE"}');

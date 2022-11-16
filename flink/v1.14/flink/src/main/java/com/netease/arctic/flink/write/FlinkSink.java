@@ -91,7 +91,7 @@ public class FlinkSink {
     private Properties producerConfig;
     private String topic;
     private boolean overwrite = false;
-    private DistributionHashMode distributionMode = DistributionHashMode.NONE;
+    private DistributionHashMode distributionMode = null;
 
     private Builder() {
     }

@@ -20,11 +20,13 @@ package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.mybatis.Map2StringConverter;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
@@ -60,4 +62,18 @@ public interface CatalogMetadataMapper {
       ".authConfigs, typeHandler=com.netease.arctic.ams.server.mybatis.Map2StringConverter}, #{catalogMeta" +
       ".catalogProperties, typeHandler=com.netease.arctic.ams.server.mybatis.Map2StringConverter})")
   void insertCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
+
+
+  @Delete("delete from " + TABLE_NAME + " where catalog_name=#{catalogName}")
+  void deleteCatalog(@Param("catalogName") String catalogName);
+
+  @Update("update " + TABLE_NAME  + " set catalog_type=#{catalogMeta.catalogType},"  +
+          "storage_configs=#{catalogMeta.storageConfigs, typeHandler=" +
+       "com.netease.arctic.ams.server.mybatis.Map2StringConverter}," +
+       "auth_configs=#{catalogMeta.authConfigs, typeHandler=" +
+          "com.netease.arctic.ams.server.mybatis.Map2StringConverter}," +
+          "catalog_properties=#{catalogMeta.catalogProperties, typeHandler=" +
+          "com.netease.arctic.ams.server.mybatis.Map2StringConverter}" +
+          "  where catalog_name=#{catalogMeta.catalogName}")
+  void updateCatalog(@Param("catalogMeta") CatalogMeta catalogMeta);
 }

@@ -1,6 +1,15 @@
 <template>
   <div class="overview-wrap">
-    <div class="echarts-wrap">
+    <ResourceCard />
+    <div class="module-card g-flex">
+      <ResourceUsage />
+      <OptimizingTables />
+    </div>
+    <div class="module-card g-flex">
+      <!-- <ResourceUsage /> -->
+      <TopTables />
+    </div>
+    <!-- <div class="echarts-wrap">
       <div class="line-chart">
         <line-chart key='chart1' />
       </div>
@@ -32,7 +41,7 @@
         :data-source="dataSource"
         :pagination="pagination"
       />
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -41,12 +50,20 @@ import { defineComponent, ref, reactive, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { usePagination } from '@/hooks/usePagination'
 import { IColumns } from '@/types/common.type'
-import LineChart from './LineChart.vue'
+// import LineChart from './LineChart.vue'
+import ResourceCard from './ResourceCard.vue'
+import ResourceUsage from './ResourceUsage.vue'
+import OptimizingTables from './OptimizingTable.vue'
+import TopTables from './TopTables.vue'
 
 export default defineComponent({
   name: 'Overview',
   components: {
-    LineChart
+    ResourceCard,
+    ResourceUsage,
+    OptimizingTables,
+    TopTables
+    // LineChart
   },
   setup() {
     const { t, d } = useI18n()
@@ -121,21 +138,22 @@ export default defineComponent({
 
 </script>
 
-<style lang="less" scoped>
-.echarts-wrap {
-  display: flex;
-  align-items: center;
-  .line-chart {
+<style lang="less">
+.overview-wrap {
+  .module-card {
+    height: 414px;
+    margin-top: 16px;
     flex: 1;
   }
-}
-  .top-list {
-    padding: 0 12px;
-    .filter-options {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 12px 0;
-    }
+  .common-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+    color: @header-color;
   }
+}
 </style>

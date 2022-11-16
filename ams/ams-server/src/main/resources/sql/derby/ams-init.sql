@@ -156,7 +156,6 @@ CREATE TABLE file_info_cache (
     partition_name varchar(256) DEFAULT NULL,
     action varchar(64) DEFAULT NULL,
     commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    watermark timestamp DEFAULT NULL,
     PRIMARY KEY (primary_key_md5)
 );
 
@@ -257,3 +256,14 @@ CREATE TABLE ddl_record
     ddl_type       varchar(256) NOT NULL,
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE platform_file_info (
+  id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+  file_name varchar(100) NOT NULL,
+  file_content_b64 varchar(256) NOT NULL,
+  file_path varchar(100) DEFAULT NULL,
+  add_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+);
+
+INSERT INTO catalog_metadata(catalog_name,display_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog',NULL,'hadoop','{"storage.type":"hdfs","hive.site":"","hadoop.core.site":"","hadoop.hdfs.site":""}','{"auth.type":"SIMPLE","auth.simple.hadoop_username":"root"}','{"warehouse.dir":"/tmp/arctic/warehouse","table-formats":"HIVE"}');

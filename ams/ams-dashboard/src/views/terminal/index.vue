@@ -562,7 +562,7 @@ export default defineComponent({
     justify-content: space-between;
     height: 40px;
     line-height: 40px;
-    border-bottom: 1px solid @border-color-dev;
+    border-bottom: 1px solid #e5e5e5;
     padding: 0 20px 0 16px;
     .tab {
       display: flex;

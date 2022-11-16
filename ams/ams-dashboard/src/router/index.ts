@@ -21,6 +21,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 const Home = () => import('@/views/Home.vue')
 const Page404 = () => import('@/views/404.vue')
 const OverView = () => import('@/views/overview/index.vue')
+const Catalogs = () => import('@/views/catalogs/index.vue')
 const Tables = () => import('@/views/tables/index.vue')
 const HiveTables = () => import('@/views/hive-details/index.vue')
 const UpgradeTable = () => import('@/views/hive-details/upgrade.vue')
@@ -42,6 +43,11 @@ const routes: Array<RouteRecordRaw> = [
         path: 'overview',
         name: 'Overview',
         component: OverView
+      },
+      {
+        path: 'catalogs',
+        name: 'Catalogs',
+        component: Catalogs
       },
       {
         path: 'tables',

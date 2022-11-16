@@ -33,6 +33,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
+import com.netease.arctic.ams.server.mapper.PlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
@@ -111,6 +112,7 @@ public class JDBCSqlSessionFactoryProvider {
           configuration.addMapper(OptimizerGroupMapper.class);
           configuration.addMapper(ApiTokensMapper.class);
           configuration.addMapper(DDLRecordMapper.class);
+          configuration.addMapper(PlatformFileInfoMapper.class);
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             configuration.addMapper(DerbyContainerMetadataMapper.class);
             configuration.addMapper(DerbyFileInfoCacheMapper.class);

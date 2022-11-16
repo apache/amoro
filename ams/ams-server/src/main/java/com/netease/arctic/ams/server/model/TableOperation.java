@@ -18,11 +18,6 @@
 
 package com.netease.arctic.ams.server.model;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/8/9 14:17
- * @Description:
- */
 public class TableOperation {
   long ts;
   String operation;

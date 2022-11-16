@@ -2,7 +2,7 @@
   <div class="tables-menu g-flex">
     <div class="database-list">
       <div class="select-catalog g-flex-jsb">
-        <span class="label">{{$t('cluster')}}</span>
+        <span class="label">{{$t('catalog')}}</span>
         <a-select
           v-model:value="curCatalog"
           :options="catalogOptions"
@@ -103,6 +103,7 @@ export default defineComponent({
       curCatalog: '',
       database: '',
       tableName: '',
+      type: '',
       catalogOptions: [] as ILableAndValue[],
       showCreateDBModal: false,
       loading: false,
@@ -169,6 +170,7 @@ export default defineComponent({
     }
     const handleClickTable = (item: IMap<string>) => {
       state.tableName = item.label
+      state.type = item.type
       localStorage.setItem(storageTableKey, JSON.stringify({
         catalog: state.curCatalog,
         database: state.database,
@@ -180,7 +182,8 @@ export default defineComponent({
         query: {
           catalog: state.curCatalog,
           db: state.database,
-          table: state.tableName
+          table: state.tableName,
+          type: state.type
         }
       }
       if (route.path.indexOf('tables') > -1) {

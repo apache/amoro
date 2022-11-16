@@ -41,7 +41,7 @@ public interface FileInfoCacheMapper {
 
   @Insert("insert into " + TABLE_NAME + " (table_identifier, add_snapshot_id, parent_snapshot_id, delete_snapshot_id," +
       " inner_table, file_path, primary_key_md5, file_type, producer, file_size, file_mask, file_index, spec_id, " +
-      "record_count,action, partition_name, commit_time, watermark, add_snapshot_sequence) values(" +
+      "record_count,action, partition_name, commit_time, add_snapshot_sequence) values(" +
       "#{cacheFileInfo.tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
       ".TableIdentifier2StringConverter}, " +
       "#{cacheFileInfo.addSnapshotId}, #{cacheFileInfo.parentSnapshotId}, #{cacheFileInfo" +
@@ -49,8 +49,7 @@ public interface FileInfoCacheMapper {
       "#{cacheFileInfo.fileType}, #{cacheFileInfo.producer}, " +
       "#{cacheFileInfo.fileSize}, #{cacheFileInfo.fileMask}, #{cacheFileInfo.fileIndex}, #{cacheFileInfo.specId}, " +
       "#{cacheFileInfo.recordCount}, #{cacheFileInfo.action}, #{cacheFileInfo.partitionName}, #{cacheFileInfo" +
-      ".commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}, #{cacheFileInfo" +
-      ".watermark,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}," +
+      ".commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}, " +
       "#{cacheFileInfo.addSnapshotSequence})")
   void insertCache(@Param("cacheFileInfo") CacheFileInfo cacheFileInfo);
 
@@ -128,7 +127,7 @@ public interface FileInfoCacheMapper {
 
   @Select("<script>" +
           "select add_snapshot_id, partition_name, file_path, partition_name, " +
-          "file_type, file_size, commit_time, watermark from " + TABLE_NAME +
+          "file_type, file_size, commit_time from " + TABLE_NAME +
           " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
           ".TableIdentifier2StringConverter} and delete_snapshot_id is null " +
           "<if test='partition!=null'> and partition_name = #{partition}</if>" +
@@ -141,8 +140,7 @@ public interface FileInfoCacheMapper {
           @Result(column = "partition_name", property = "partitionName"),
           @Result(column = "file_type", property = "fileType"),
           @Result(column = "file_size", property = "fileSize"),
-          @Result(column = "commit_time", property = "commitTime", typeHandler = Long2TsConvertor.class),
-          @Result(column = "watermark", property = "watermark", typeHandler = Long2TsConvertor.class)
+          @Result(column = "commit_time", property = "commitTime", typeHandler = Long2TsConvertor.class)
   })
   List<PartitionFileBaseInfo> getPartitionFileList(
           @Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("partition") String partition);
@@ -168,12 +166,4 @@ public interface FileInfoCacheMapper {
   List<DataFileInfo> getChangeTableTTLDataFiles(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                                 @Param("innerTable") String innerTable,
                                                 @Param("ttl") long ttl);
-
-  @Select(
-      "select watermark from " + TABLE_NAME + " where " +
-          "table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-          ".TableIdentifier2StringConverter} and inner_table = #{innerTable} order by " +
-          "watermark desc limit 1")
-  Timestamp getWatermark(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-      @Param("innerTable") String innerTable);
 }
