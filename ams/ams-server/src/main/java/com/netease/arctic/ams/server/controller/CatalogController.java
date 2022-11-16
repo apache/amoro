@@ -34,7 +34,6 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,6 +44,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB;
@@ -276,7 +276,8 @@ public class CatalogController extends RestBaseController {
     String catalogName = ctx.pathParam("catalogName");
     Optional<CatalogMeta> optCatalog = catalogMetadataService.getCatalog(catalogName);
     if (!optCatalog.isPresent()){
-      throw new IllegalArgumentException("catalog is not exist");
+      ctx.json(OkResponse.of(null));
+      return;
     }
     CatalogMeta catalogMeta = optCatalog.get();
     CatalogSettingInfo info = new CatalogSettingInfo();
