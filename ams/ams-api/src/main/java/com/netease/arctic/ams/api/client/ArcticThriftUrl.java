@@ -79,7 +79,7 @@ public class ArcticThriftUrl {
               zkService.getData(AmsHAProperties.getMasterPath(cluster)),
               AmsServerInfo.class);
         } catch (Exception e) {
-          throw new RuntimeException("get master server info from zookeeper error");
+          throw new RuntimeException("get master server info from zookeeper error", e);
         }
         url =
             String.format("thrift://%s:%d/%s%s", serverInfo.getHost(), serverInfo.getThriftBindPort(), catalog, query);
