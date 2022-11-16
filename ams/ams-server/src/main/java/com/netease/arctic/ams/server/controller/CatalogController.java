@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
+import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -273,7 +274,11 @@ public class CatalogController extends RestBaseController {
    */
   public static void getCatalogDetail(Context ctx) {
     String catalogName = ctx.pathParam("catalogName");
-    CatalogMeta catalogMeta = catalogMetadataService.getCatalog(catalogName);
+    Optional<CatalogMeta> optCatalog = catalogMetadataService.getCatalog(catalogName);
+    if (!optCatalog.isPresent()){
+      throw new IllegalArgumentException("catalog is not exist");
+    }
+    CatalogMeta catalogMeta = optCatalog.get();
     CatalogSettingInfo info = new CatalogSettingInfo();
     String catalogConfPrefix = ConfigFileProperties.CATALOG_STORAGE_CONFIG + ".";
 
@@ -314,12 +319,13 @@ public class CatalogController extends RestBaseController {
             info.getStorageConfig() == null) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Some configuration is null", null));
     }
-
-    CatalogMeta oldCatalogMeta = catalogMetadataService.getCatalog(info.getName());
-    if (oldCatalogMeta == null) {
+    Optional<CatalogMeta> optCatalog = catalogMetadataService.getCatalog(info.getName());
+    if (!optCatalog.isPresent()){
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Catalog doesn't exist!", null));
       return;
     }
+    CatalogMeta oldCatalogMeta = optCatalog.get();
+
     // check only some item can be modified!
     try {
       CatalogMeta catalogMeta = constructCatalogMeta(info, oldCatalogMeta);
@@ -398,7 +404,11 @@ public class CatalogController extends RestBaseController {
     }
 
     // get file content from catlaog.
-    CatalogMeta catalogMeta = catalogMetadataService.getCatalog(catalogName);
+    Optional<CatalogMeta> optCatalog = catalogMetadataService.getCatalog(catalogName);
+    if (!optCatalog.isPresent()){
+      throw new IllegalArgumentException("catalog is not exist");
+    }
+    CatalogMeta catalogMeta = optCatalog.get();
     if (CONFIG_TYPE_STORAGE.equalsIgnoreCase(confType)) {
       Map<String, String> storageConfig = catalogMeta.getStorageConfigs();
       String key = configKey.replaceAll("-", "\\.");
