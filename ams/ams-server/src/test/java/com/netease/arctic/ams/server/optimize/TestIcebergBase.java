@@ -37,6 +37,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.ArrayUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -58,7 +59,7 @@ public class TestIcebergBase {
   public static final TemporaryFolder tempFolder = new TemporaryFolder();
   protected static final String ICEBERG_HADOOP_CATALOG_NAME = "iceberg_hadoop";
 
-  ArcticCatalog icebergCatalog;
+  static ArcticCatalog icebergCatalog;
   ArcticTable icebergTable;
 
   static final String DATABASE = "native_test_db";
@@ -90,13 +91,19 @@ public class TestIcebergBase {
     MockArcticMetastoreServer.getInstance().handler().createCatalog(catalogMeta);
 
     MockArcticMetastoreServer.getInstance().createCatalogIfAbsent(catalogMeta);
+    icebergCatalog =
+        CatalogLoader.load(MockArcticMetastoreServer.getInstance().getUrl(ICEBERG_HADOOP_CATALOG_NAME));
+    icebergCatalog.createDatabase(DATABASE);
+  }
+
+  @AfterClass
+  public static void clearCatalog() throws Exception {
+    icebergCatalog.dropDatabase(DATABASE);
+    tempFolder.delete();
   }
 
   @Before
   public void initTable() throws Exception {
-    icebergCatalog =
-        CatalogLoader.load(MockArcticMetastoreServer.getInstance().getUrl(ICEBERG_HADOOP_CATALOG_NAME));
-    icebergCatalog.createDatabase(DATABASE);
     CatalogMeta catalogMeta = MockArcticMetastoreServer.getInstance().handler().getCatalog(ICEBERG_HADOOP_CATALOG_NAME);
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
@@ -110,15 +117,13 @@ public class TestIcebergBase {
   }
 
   @After
-  public void clear() throws Exception {
+  public void clearTable() throws Exception {
     CatalogMeta catalogMeta = MockArcticMetastoreServer.getInstance().handler().getCatalog(ICEBERG_HADOOP_CATALOG_NAME);
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
     Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(ICEBERG_HADOOP_CATALOG_NAME,
         catalogProperties, new Configuration());
     nativeIcebergCatalog.dropTable(tableIdentifier);
-    icebergCatalog.dropDatabase(DATABASE);
-    tempFolder.delete();
   }
 
   protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable) throws IOException {
