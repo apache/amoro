@@ -277,4 +277,14 @@ CREATE TABLE `ddl_record`
     `commit_time`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'ddl commit time'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'ddl record of table';
 
-INSERT INTO catalog_metadata(catalog_name,display_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog',NULL,'hadoop','{"storage.type":"hdfs","hive.site":"","hadoop.core.site":"","hadoop.hdfs.site":""}','{"auth.type":"SIMPLE","auth.simple.hadoop_username":"root"}','{"warehouse.dir":"/tmp/arctic/warehouse","table-formats":"HIVE"}');
+
+CREATE TABLE `platform_file_info` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'file id',
+  `file_name` varchar(100) NOT NULL COMMENT 'file name',
+  `file_content_b64` text NOT NULL COMMENT 'file content encoded with base64',
+  `file_path` varchar(100) DEFAULT NULL COMMENT 'may be hdfs path , not be used now',
+  `add_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'add timestamp',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COMMENT='store files info saved in the platform';
+
+INSERT INTO catalog_metadata(catalog_name,display_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog',NULL,'ams','{"storage.type":"hdfs","hive.site":"","hadoop.core.site":"","hadoop.hdfs.site":""}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse.dir":"/tmp/arctic/warehouse","table-formats":"ICEBERG"}');
