@@ -14,7 +14,7 @@ Trino 主要是用来最终执行 TPCH 查询，是最主要的一环。当前�
 
 如果要测试 Arctic 需要安装配置 Arctic 插件：
 
-[Arctic-Plugin-Install](mysql-install.md)
+[Arctic-Plugin-Install](https://arctic.netease.com/ch/trino/)
 
 如果需要测试 Iceberg 需要配置 Iceberg 插件：
 
@@ -45,8 +45,10 @@ Benchmark 的核心工具，负责生成 TPCC 数据进 Mysql 和通过 Trino �
 
 [Oltpbench-Install](https://github.com/NetEase/data-lake-benchmark#readme)
 
-###同步工具
-暂略
+### 数据同步工具 lakehouse-benchmark-ingestion
+基于 Flink-CDC 实现的数据同步工具，能够将数据库中的数据实时同步到数据湖。该工具的使用说明请参考下面地址的文档。
+
+[benchmark-ingestion-install](https://github.com/NetEase/lakehouse-benchmark-ingestion)
 
 #测试流程
 - 把 Mysql 信息配置进 data-lake-benchmark 的 config/mysql/sample_chbenchmark_config.xml 文件中。其中 "scalefactor" 表示的 warehouse 数量用于控制整体数据量的，一般选择10或者100。
@@ -55,7 +57,11 @@ Benchmark 的核心工具，负责生成 TPCC 数据进 Mysql 和通过 Trino �
   java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark -c config/mysql/sample_chbenchmark_config.xml --create=true --load=true
   ```
   执行完了以后 Mysql 的指定数据库下面就能看到这12张表：warehouse,item,stock,district,customer,history,oorder,new_order,order_line,region,nation,supplier
-- 同步工具步骤暂略。
+- 开启数据同步程序，将数据库的数据实时同步到数据湖
+    - 下载 [lakehouse-benchmark-ingestion](https://github.com/NetEase/lakehouse-benchmark-ingestion) 项目代码，参考该项目的快速开始部分，构建项目得到 lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar 和 conf 目录
+    - 修改 conf 目录下的 ingestion-conf.yaml ，填写配置项信息
+    - 通过`java -cp lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar com.netease.arctic.benchmark.ingestion.MainRunner -confDir [confDir] -sinkType [arctic/iceberg/hudi] -sinkDatabase [dbName]`命令启动数据同步工具。命令行的参数说明请参考[该项目的说明文档](https://github.com/NetEase/lakehouse-benchmark-ingestion)
+    - 通过`localhost:8081`打开 Flink Web UI ，通过source算子的Records Sent指标观察数据同步的情况，当该指标不再增加时，表示全量数据同步完成
 - 当全量同步完了，这时候可以用 data-lake-benchmark 工具进行全量静态数据的测试。首先把 Trino 信息配置进 data-lake-benchmark 的 config/trino/trino_chbenchmark_config.xml中,主要是 url 要改成当前 Trino 的地址，
   还有 works.work.time 参数表示 Benchmark 运行时间，单位是秒，全量测试时间可以短一点10分钟左右就行。命令如下：
   ```
@@ -90,4 +96,4 @@ data-lake-benchmark 跑完以后会生成一个 results 目录，测试结果都
 
 ## docker流程
 benchmark还提供了一套docker容器，可以帮助用户单机版本熟悉流程。工程地址 [benchmark-url](https://github.com/NetEase/lakehouse-benchmark)。
-在docker/benchmark目录下又相应的镜像构建和运行文件，具体说明见docker/benchmark/README.md
+在docker/benchmark目录下有相应的镜像构建和运行文件，具体说明见docker/benchmark/README.md
