@@ -29,6 +29,7 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.SupportHiveTestGroup;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
@@ -107,13 +108,10 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
-    TestSupportHiveMajorOptimizePlan.class,
-    TestSupportHiveMajorOptimizeCommit.class,
-    TestSupportHiveSyncService.class,
-    TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class,
+    SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
-    TestOptimizerService.class})
+    TestOptimizerService.class
+})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,

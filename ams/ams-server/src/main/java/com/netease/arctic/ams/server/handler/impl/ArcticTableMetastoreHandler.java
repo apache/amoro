@@ -22,7 +22,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -41,7 +40,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
+
 
 public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetastore.Iface {
   public static final Logger LOG = LoggerFactory.getLogger(ArcticTableMetastoreHandler.class);
@@ -70,11 +71,11 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public CatalogMeta getCatalog(String name) throws TException {
-    CatalogMeta c = catalogMetadataService.getCatalog(name);
-    if (c == null) {
+    Optional<CatalogMeta> c = catalogMetadataService.getCatalog(name);
+    if (!c.isPresent()) {
       throw new NoSuchObjectException("can't find catalog with name: " + name);
     }
-    return c;
+    return c.get();
   }
 
   @Override
@@ -86,8 +87,8 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   @Override
   public void createDatabase(String catalogName, String database) throws TException {
     LOG.info("handle create database: {}.{}", catalogName, database);
-    CatalogMeta c = catalogMetadataService.getCatalog(catalogName);
-    if (c == null) {
+    Optional<CatalogMeta> c = catalogMetadataService.getCatalog(catalogName);
+    if (!c.isPresent()) {
       throw new NoSuchObjectException("can't find catalog with name: " + catalogName);
     }
     if (metaService.listDatabases(catalogName).contains(database)) {
@@ -99,8 +100,8 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   @Override
   public void dropDatabase(String catalogName, String database) throws TException {
     LOG.info("handle drop database: {}.{}", catalogName, database);
-    CatalogMeta c = catalogMetadataService.getCatalog(catalogName);
-    if (c == null) {
+    Optional<CatalogMeta> c = catalogMetadataService.getCatalog(catalogName);
+    if (!c.isPresent()) {
       throw new NoSuchObjectException("can't find catalog with name: " + catalogName);
     }
     if (CollectionUtils.isNotEmpty(listTables(catalogName, database))) {

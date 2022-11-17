@@ -166,6 +166,14 @@ public class ArcticMetaStore {
 
     config.put(ArcticMetaStoreConf.ARCTIC_HOME.key(), getArcticHome());
 
+    // terminal properties
+    for (String key : systemConfig.keySet()) {
+      if (key != null && key.startsWith(ArcticMetaStoreConf.TERMINAL_PREFIX)) {
+        String value = systemConfig.getString(key);
+        config.put(key, value);
+      }
+    }
+
     return config;
 
   }
