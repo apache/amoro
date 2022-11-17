@@ -39,18 +39,18 @@ Arctic 版本：0.3
 
 - 基于 TCP-H 改写的22个 OLAP 型负载，其中由于Q15查询和视图相关，故此次测试舍弃了Q15
 
-![OLTP AND OLAP](images/chbenchmark/OLTP-OLAP.png){:height="60%" width="60%"}
+![OLTP AND OLAP](../images/chbenchmark/OLTP-OLAP.png){:height="60%" width="60%"}
 
 ### 基于TPC-C的数据构造
 
 基于TPC-C标准，本次测试在 MySQL中构造了原始数据，数据集总共包括12张表，其中TPC-C和TPC-H表的关系如下图所示：
 
-![TPCC AND TPCH](images/chbenchmark/TPCC-TPCH.png){:height="60%" width="60%"}
+![TPCC AND TPCH](../images/chbenchmark/TPCC-TPCH.png){:height="60%" width="60%"}
 
 此外，各个数据表数据规模间的联系如下表所示，其中 w 表示 warehouse 的数量。可以观察到中间的 new_order, stock 等表的数据规模受到 warehouse 数量的影响，
 因此在测试过程中可以通过控制 warehouse 的数量来调整数据集的规模。
 
-![chbenchmark](images/chbenchmark/chbenchmark.png){:height="60%" width="60%"}
+![chbenchmark](../images/chbenchmark/chbenchmark.png){:height="60%" width="60%"}
 
 在本次测试中，设置 warehouse 数量为100，MySQL 数据库中对应的初始数据集大小约为10G。下表展示了初始数据集下各张表的数据记录数以及开启一小时 TPC-C 测试后各张表的数据记录变化情况。
 
@@ -144,18 +144,18 @@ ORDER BY revenue DESC, o_entry_d;
 
 4. 基于 TPC-H 标准，通过 Trino 进行查询，并记录每个查询花费的时间以及所有查询的平均查询时间
 
-![over design](images/chbenchmark/benchmark-over-design-cn.png){:height="60%" width="60%"}
+![over design](../images/chbenchmark/benchmark-over-design-cn.png){:height="60%" width="60%"}
 
 ## 测试结果
 
 ## 静态数据
-![arctic iceberg static performence](images/chbenchmark/arctic-iceberg-100-warehouse-static-performence.png)
+![arctic iceberg static performence](../images/chbenchmark/arctic-iceberg-100-warehouse-static-performence.png)
 
 上图表示100个 warehouse 数据量下，纯静态数据没有更新的情况下，10个查询并发 Arctic 和 Iceberg 查询性能比较，通过上图可以看出每个 Query 的查询耗时非常接近。
 
 ## 动态持续查询性能
 
-![Arctic Iceberg Hudi 100 warehouse performence with TPCC time](images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_with_TPCC_time.png)
+![Arctic Iceberg Hudi 100 warehouse performence with TPCC time](../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_with_TPCC_time.png)
 
 在测试时间内 TPCC 持续进行，横轴表示的是查询的时间范围，纵轴表示21个查询（去除Q15）的平均时间，基础静态数据量为100个 warehouse, 查询并发数是10，其中 optimize 表示 Arctic 有小文件合并的场景，no_optimize 表示 Arctic 没有小文件合并的场景。 其中90分钟和120分钟没有 Iceberg 的数据是因为 Iceberg 已经无法跑出结果，打爆了 Trino 集群。
 
@@ -163,13 +163,13 @@ ORDER BY revenue DESC, o_entry_d;
 
 具体query详情见下图：
 
-![Arctic Iceberg Hudi 100 warehouse performence on TPCC 0-30 minutes](images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_0-30_minutes.png)
+![Arctic Iceberg Hudi 100 warehouse performence on TPCC 0-30 minutes](../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_0-30_minutes.png)
 
-![Arctic Iceberg Hudi 100 warehouse performence on TPCC 30-60 minutes](images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_30-60_minutes.png)
+![Arctic Iceberg Hudi 100 warehouse performence on TPCC 30-60 minutes](../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_30-60_minutes.png)
 
-![Arctic Iceberg Hudi 100 warehouse performence on TPCC 60-90 minutes](images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_60-90_minutes.png)
+![Arctic Iceberg Hudi 100 warehouse performence on TPCC 60-90 minutes](../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_60-90_minutes.png)
 
-![Arctic Iceberg Hudi 100 warehouse performence on TPCC 90-120 minutes](images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_90-120_minutes.png)
+![Arctic Iceberg Hudi 100 warehouse performence on TPCC 90-120 minutes](../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_on_TPCC_90-120_minutes.png)
 
 # 小结
 
