@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
@@ -33,8 +32,8 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
