@@ -117,6 +117,7 @@ public class TestSupportHiveBase implements TestOptimizeBase {
     FileUtils.deleteQuietly(testHiveTableBaseDir);
     testHiveBaseDir.mkdirs();
     stopHMS();
+    tempFolder.delete();
   }
 
   @Before
