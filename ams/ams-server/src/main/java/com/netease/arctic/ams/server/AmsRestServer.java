@@ -86,7 +86,7 @@ public class AmsRestServer {
       config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/catalogs", "/static/index.html", Location.CLASSPATH);
-
+      config.addSinglePageRoot("/settings", "/static/index.html", Location.CLASSPATH);
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
