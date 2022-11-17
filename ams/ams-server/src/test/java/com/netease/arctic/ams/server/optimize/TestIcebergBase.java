@@ -68,7 +68,8 @@ public class TestIcebergBase {
 
   @Before
   public void initTable() throws Exception {
-    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME);
+    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService()
+        .getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME).get();
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
     Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(AMS_TEST_ICEBERG_CATALOG_NAME,
@@ -82,7 +83,8 @@ public class TestIcebergBase {
 
   @After
   public void clearTable() throws Exception {
-    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME);
+    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService()
+        .getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME).get();
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
     Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(AMS_TEST_ICEBERG_CATALOG_NAME,
