@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.ArcticTable;
 import java.util.Map;
+import java.util.Optional;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -38,7 +39,11 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 public class TableUtil extends TableTestBase {
   public static ArcticTable createIcebergTable(String tableName, Schema schema, Map<String, String> properties,
       PartitionSpec spec) {
-    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService().getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME);
+    Optional<CatalogMeta> opt = ServiceContainer.getCatalogMetadataService().getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME);
+    if (!opt.isPresent()){
+      throw new IllegalStateException("catalog " + AMS_TEST_ICEBERG_CATALOG_NAME + " not exist");
+    }
+    CatalogMeta catalogMeta = opt.get();
     Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
     catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
     Catalog nativeIcebergTable = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(AMS_TEST_ICEBERG_CATALOG_NAME,

@@ -46,9 +46,9 @@
             <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
           </a-form-item>
           <a-form-item>
-            <p class="header">{{$t('authConfig')}}</p>
+            <p class="header">{{$t('authenticationConfig')}}</p>
           </a-form-item>
-          <a-form-item label="auth.type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit }]">
+          <a-form-item label="Type" :name="['authConfig', 'auth.type']" :rules="[{ required: isEdit }]">
             <a-select
               v-if="isEdit"
               v-model:value="formState.authConfig['auth.type']"
@@ -57,11 +57,11 @@
             />
             <span v-else class="config-value">{{formState.authConfig['auth.type']}}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="auth.simple.hadoop_username" :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit }]">
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'SIMPLE'" label="Hadoop Username" :name="['authConfig', 'auth.simple.hadoop_username']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.simple.hadoop_username']" />
             <span v-else class="config-value">{{formState.authConfig['auth.simple.hadoop_username']}}</span>
           </a-form-item>
-          <a-form-item v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="auth.kerberos.principal" :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit }]">
+          <a-form-item v-if="formState.authConfig['auth.type'] === 'KERBEROS'" label="Kerberos Principal" :name="['authConfig', 'auth.kerberos.principal']" :rules="[{ required: isEdit }]">
             <a-input v-if="isEdit" v-model:value="formState.authConfig['auth.kerberos.principal']" />
             <span v-else class="config-value">{{formState.authConfig['auth.kerberos.principal']}}</span>
           </a-form-item>
@@ -75,7 +75,7 @@
                 v-if="isEdit"
                 v-model:file-list="config.fileList"
                 name="file"
-                :accept="config.label === 'auth.kerberos.keytab' ? '.keytab' : '.conf'"
+                :accept="config.key === 'auth.kerberos.keytab' ? '.keytab' : '.conf'"
                 :showUploadList="false"
                 :action="uploadUrl"
                 :disabled="config.uploadLoading"
@@ -120,6 +120,7 @@ import { useRoute } from 'vue-router'
 interface IStorageConfigItem {
   label: string
   value: string
+  key: string
   fileName: string
   fileUrl: string
   fileId: string
@@ -203,6 +204,16 @@ const authConfigTypeOps = reactive<ILableAndValue[]>([{
   value: 'KERBEROS'
 }])
 
+const storageConfigMap = {
+  'hadoop.core.site': 'Hadoop core-site',
+  'hadoop.hdfs.site': 'Hadoop hdfs-site',
+  'hive.site': 'Hadoop hive-site'
+}
+const authConfigMap = {
+  'auth.kerberos.keytab': 'Kerberos Keytab',
+  'auth.kerberos.krb5': 'Kerberos Krb5'
+}
+
 watch(() => route.query,
   (value) => {
     value && initData()
@@ -265,7 +276,8 @@ async function getConfigInfo() {
       }
       if (configArr.includes(key)) {
         const item: IStorageConfigItem = {
-          label: key,
+          key,
+          label: storageConfigMap[key],
           value: storageConfig[key]?.fileName,
           fileName: storageConfig[key]?.fileName,
           fileUrl: storageConfig[key]?.fileUrl,
@@ -280,7 +292,8 @@ async function getConfigInfo() {
     Object.keys(authConfig).forEach(key => {
       if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
         const item: IStorageConfigItem = {
-          label: key,
+          key,
+          label: authConfigMap[key],
           value: authConfig[key]?.fileName,
           fileName: authConfig[key]?.fileName,
           fileUrl: authConfig[key]?.fileUrl,

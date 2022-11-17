@@ -53,9 +53,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
 
   protected Consumer<OptimizeTaskItem> updateTargetFiles;
 
-  public SupportHiveCommit(ArcticTable arcticTable,
-                           Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
-                           Consumer<OptimizeTaskItem> updateTargetFiles) {
+  public SupportHiveCommit(
+      ArcticTable arcticTable,
+      Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
+      Consumer<OptimizeTaskItem> updateTargetFiles) {
     super(arcticTable, optimizeTasksToCommit);
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     this.updateTargetFiles = updateTargetFiles;
@@ -101,15 +102,15 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                Partition existedPartition = HivePartitionUtil
-                    .getPartition(hiveClient, arcticTable, partitionValues);
-                if (existedPartition == null) {
-                  String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
-                      arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+                String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
+                    arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+
+                Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
+                if (p == null) {
                   partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
                       arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
                 } else {
-                  partitionPath = existedPartition.getSd().getLocation();
+                  partitionPath = p.getSd().getLocation();
                 }
               }
               partitionPathMap.put(partition, partitionPath);
