@@ -23,7 +23,7 @@ public class PlatformFileInfoService extends IJDBCService {
       PlatformFileInfo platformFileInfo = new PlatformFileInfo(name, content);
       platformFileInfoMapper.addFile(platformFileInfo);
       if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
-        return platformFileInfoMapper.derbyGetFileId(content);
+        return platformFileInfoMapper.getFileId(content);
       }
       return platformFileInfo.getFileId();
     }
