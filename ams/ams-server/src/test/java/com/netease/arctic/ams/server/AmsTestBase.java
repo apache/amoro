@@ -329,7 +329,7 @@ public class AmsTestBase {
     }
   }
 
-  private static void setUpHMS() throws Exception {
+  public static void setUpHMS() throws Exception {
     int ref = testCount.incrementAndGet();
     if (ref == 1) {
       tempFolder.create();
@@ -362,7 +362,7 @@ public class AmsTestBase {
     }
   }
 
-  private static void stopHMS() {
+  public static void stopHMS() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){
       hms.stop();
