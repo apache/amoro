@@ -41,7 +41,7 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
       if (condition.isEmpty) {
-        val cond = EqualTo(Literal(1), Literal(1))
+        val cond = Literal.TrueLiteral
         pushFilter(scanBuilder, cond, r.output)
       } else {
         pushFilter(scanBuilder, condition.get, r.output)
