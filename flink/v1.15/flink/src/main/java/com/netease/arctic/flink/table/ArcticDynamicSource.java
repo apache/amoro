@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
 import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE_DEFAULT;
@@ -180,8 +181,9 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
   }
 
   private DataStream<RowData> distribute(DataStream<RowData> source, DistributionHashMode mode) {
+    ShuffleHelper helper = ShuffleHelper.build(arcticTable, readSchema, flinkSchemaRowType);
     if (mode == DistributionHashMode.AUTO) {
-      mode = DistributionHashMode.autoSelect(arcticTable.isKeyedTable(), !arcticTable.spec().isUnpartitioned());
+      mode = DistributionHashMode.autoSelect(arcticTable.isKeyedTable(), helper.isPartitionKeyExist());
     }
     LOG.info("source distribute mode in effect. {}", mode);
     switch (mode) {
@@ -190,23 +192,22 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       case PRIMARY_KEY:
         Preconditions.checkArgument(arcticTable.isKeyedTable(),
             "illegal shuffle policy " + mode.getDesc() + " for table without primary key");
-        return hash(source, DistributionHashMode.PRIMARY_KEY);
+        return hash(source, helper, DistributionHashMode.PRIMARY_KEY);
       case PARTITION_KEY:
         Preconditions.checkArgument(!arcticTable.spec().isUnpartitioned(),
             "illegal shuffle policy " + mode.getDesc() + " for table without partition key");
-        return hash(source, DistributionHashMode.PARTITION_KEY);
+        return hash(source, helper, DistributionHashMode.PARTITION_KEY);
       case PRIMARY_PARTITION_KEY:
         Preconditions.checkArgument(arcticTable.isKeyedTable() && !arcticTable.spec().isUnpartitioned(),
             "illegal shuffle policy " + mode.getDesc() +
                 " for table without primary key or partition key");
-        return hash(source, DistributionHashMode.PRIMARY_PARTITION_KEY);
+        return hash(source, helper, DistributionHashMode.PRIMARY_PARTITION_KEY);
       default:
         throw new RuntimeException("Unrecognized " + READ_DISTRIBUTION_HASH_MODE + ": " + mode);
     }
   }
 
-  public DataStream<RowData> hash(DataStream<RowData> source, DistributionHashMode hashMode) {
-    ShuffleHelper helper = ShuffleHelper.build(arcticTable, readSchema, flinkSchemaRowType);
+  public DataStream<RowData> hash(DataStream<RowData> source, ShuffleHelper helper, DistributionHashMode hashMode) {
     ReadShuffleRulePolicy shuffleRulePolicy = new ReadShuffleRulePolicy(helper, hashMode);
     return source.partitionCustom(shuffleRulePolicy.generatePartitioner(), shuffleRulePolicy.generateKeySelector());
   }
@@ -250,7 +251,11 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       projectionFields[i] = projectedFields[i][0];
     }
     final List<Types.NestedField> columns = readSchema.columns();
-    readSchema = new Schema(Arrays.stream(projectionFields).mapToObj(columns::get).collect(Collectors.toList()));
+    List<Types.NestedField> projectedColumns = Arrays.stream(projectionFields)
+        .mapToObj(columns::get)
+        .collect(Collectors.toList());
+
+    readSchema = new Schema(addPrimaryKey(projectedColumns, arcticTable));
     flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     if (arcticDynamicSource instanceof SupportsProjectionPushDown) {
       ((SupportsProjectionPushDown) arcticDynamicSource).applyProjection(projectedFields);

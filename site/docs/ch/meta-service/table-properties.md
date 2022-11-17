@@ -34,14 +34,16 @@
 | optimize.group                               | default         | 结构优化所属的组                          |
 | optimize.quota                               | 0.1             | 表所能占用的结构优化资源量                     |
 | optimize.num-retries                         | 5               | 结构优化失败时的重试次数                      |
+| optimize.execute.timeout                     | 1800000（30分钟）  | 结构优化执行超时时间                      |
+| optimize.max-file-count                      | 100000          | 一次结构优化最多处理的文件个数                      |
 | optimize.small-file-size-bytes-threshold     | 16777216（16MB）  | 结构优化时判断是否为小文件的阈值                  |
-| optimize.major.trigger.max-interval          | 86400000（1天）    | 触发 major optimize 的最长时间间隔         |
-| optimize.full.trigger.delete-file-size-bytes | 67108864（64MB）  | 触发 full optimize 的 delete 文件大小阈值  |
-| optimize.major.trigger.small-file-count      | 12              | 触发 major optimize 的小文件数数量         |
 | optimize.minor.trigger.max-interval          | 3600000（1小时）    | 触发 minor optimize 的最长时间间隔         |
 | optimize.minor.trigger.delete-file-count     | 12              | 触发 minor optimize 的 delete 文件个数阈值 |
+| optimize.major.trigger.max-interval          | 86400000（1天）    | 触发 major optimize 的最长时间间隔         |
+| optimize.major.trigger.small-file-count      | 12              | 触发 major optimize 的小文件数数量         |
 | optimize.major.max-task-file-size-bytes      | 1073741824（1GB） | major optimize 最大的任务大小            |
 | optimize.full.trigger.max-interval           | -1（关闭）          | 触发 full optimize 的最长时间间隔          |
+| optimize.full.trigger.delete-file-size-bytes | 67108864（64MB）  | 触发 full optimize 的 delete 文件大小阈值  |
 
 ### 数据清理相关参数
 
@@ -65,6 +67,15 @@
 | log-store.data-format              | json             | Logstore 中的消息格式，当前仅支持 json         |
 | log-store.data-version             | v1               | Logstore 中消息的版本，当前仅支持 v1           |
 | log.consistency.guarantee.enable   | false            | 标记是否开启一致性保证                       |
+
+### Watermark 相关配置
+
+| 配置名称                                       | 默认值               | 描述                                     |
+| ----------------------------------------------| ------------------- | ----------------------------------       |
+| table.event-time-field                        | _ingest_time        | 计算 watermark 的事件时间字段，默认的 _ingest_time 表示使用数据写入时间来计算 |
+| table.watermark-allowed-lateness-second       | 0                   | 计算 watermark 时允许的数据乱序时间           |
+| table.event-time-field.datetime-string-format | yyyy-MM-dd HH:mm:ss | 当事件时间为字符串时，事件时间的格式           |
+| table.event-time-field.datetime-number-format | TIMESTAMP_MS | 当事件时间为数字时，事件时间的格式，支持 TIMESTAMP_MS(毫秒级时间戳)与TIMESTAMP_S(秒级时间戳) |
 
 ### Hive format 相关配置
 

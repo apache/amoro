@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.2-SNAPSHOT</version>
+        <version>0.4.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -85,7 +85,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.2.1</version>
                 <configuration>
                     <createDependencyReducedPom>false</createDependencyReducedPom>
                     <filters>
@@ -180,7 +179,7 @@
                             </excludes>
                         </filter>
                         <filter>
-                            <artifact>org.apache.flink:flink-connector-kafka_${scala.binary.version}</artifact>
+                            <artifact>org.apache.flink:flink-connector-kafka</artifact>
                             <excludes>
                                 <exclude>META-INF/**</exclude>
                                 <exclude>org/apache/flink/table/descriptors/**</exclude>
@@ -215,7 +214,7 @@
                             <include>cglib:*</include>
                             <include>com.google.guava:*</include>
                             <include>asm:*</include>
-                            <include>org.apache.flink:flink-connector-kafka_${scala.binary.version}</include>
+                            <include>org.apache.flink:flink-connector-kafka</include>
                             <include>org.apache.kafka:*</include>
                         </includes>
                     </artifactSet>

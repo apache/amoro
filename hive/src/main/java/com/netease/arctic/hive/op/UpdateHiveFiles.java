@@ -9,6 +9,7 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
@@ -17,12 +18,11 @@ import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.OverwriteFiles;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.SnapshotUpdate;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
@@ -39,7 +39,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements SnapshotUpdate<T> {
@@ -99,10 +98,19 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
+    // if no DataFiles to add or delete in Hive location, only commit to iceberg
+    boolean noHiveDataFilesChanged = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles) &&
+        expr != Expressions.alwaysTrue();
+
     getSnapshotUpdateDelegate().commit();
-    commitPartitionProperties();
+    if (!noHiveDataFilesChanged) {
+      commitPartitionProperties();
+    }
     if (!insideTransaction) {
       transaction.commitTransaction();
+    }
+    if (noHiveDataFilesChanged) {
+      return;
     }
 
     if (table.spec().isUnpartitioned()) {

@@ -20,6 +20,7 @@ package com.netease.arctic.spark.sql.optimize
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
+import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
@@ -31,7 +32,6 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.utils.ArcticRewriteHelper
 
 import java.util
 
@@ -56,13 +56,6 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       val upsertQuery = buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       var query = upsertQuery
       var options: Map[String, String] = Map.empty
-      arcticRelation.table match {
-        case a: ArcticSparkTable =>
-          if (a.table().isKeyedTable) {
-            val newQuery = distributionQuery(upsertQuery, a)
-            query = newQuery
-          }
-      }
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)
       ReplaceArcticData(arcticRelation, query, options)
 

@@ -137,13 +137,6 @@ public class TableController extends RestBaseController {
     baseMetrics.put("size", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("file", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
-    Long baseMaxET = fileInfoCacheService
-        .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE);
-    if (baseMaxET != null && baseMaxET != 0L) {
-      baseMetrics.put("maxEventTime", sd.format(new Date(baseMaxET)));
-    } else {
-      baseMetrics.put("maxEventTime", null);
-    }
     serverTableMeta.setBaseMetrics(baseMetrics);
 
     Map changeMetrics = new HashMap();
@@ -154,20 +147,11 @@ public class TableController extends RestBaseController {
       changeMetrics.put("size", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
       changeMetrics.put("file", changeFilesStatistics.getFileCnt());
       changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
-      Long changeMaxET = fileInfoCacheService
-          .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),
-              Constants.INNER_TABLE_CHANGE);
-      if (changeMaxET != null && changeMaxET != 0L) {
-        changeMetrics.put("maxEventTime", sd.format(new Date(changeMaxET)));
-      } else {
-        changeMetrics.put("maxEventTime", null);
-      }
     } else {
       changeMetrics.put("lastCommitTime", null);
       changeMetrics.put("size", null);
       changeMetrics.put("file", null);
       changeMetrics.put("averageFile", null);
-      changeMetrics.put("maxEventTime", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
     ctx.json(OkResponse.of(serverTableMeta));
@@ -451,7 +435,12 @@ public class TableController extends RestBaseController {
     List<TableIdentifier> tableIdentifiers = ac.listTables(db);
     LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
     List<TableMeta> tables = new ArrayList<>();
-    if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
+    if (CatalogUtil.isIcebergCatalog(catalog)) {
+      for (TableIdentifier tableIdentifier : tableIdentifiers) {
+        tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ICEBERG.toString()));
+      }
+    } else if (catalogMetadataService.getCatalog(catalog)
+        .getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
       ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {

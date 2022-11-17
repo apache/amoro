@@ -12,6 +12,8 @@ import java.util.Map;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
+    TestKeyedTableDataFrameAPI.class,
+    TestUnKeyedTableDataFrameAPI.class,
     TestComplexType.class,
     TestCreateTableDDL.class,
     TestCreateTableAsSelectDDL.class,

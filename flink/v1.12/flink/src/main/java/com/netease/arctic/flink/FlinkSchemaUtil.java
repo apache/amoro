@@ -18,21 +18,36 @@
 
 package com.netease.arctic.flink;
 
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.table.api.TableColumn;
 import org.apache.flink.table.api.TableSchema;
+import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
+import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * An util that converts flink table schema.
  */
 public class FlinkSchemaUtil {
+
+  private static final Logger LOG = LoggerFactory.getLogger(FlinkSchemaUtil.class);
+
   /**
    * Convert a {@link RowType} to a {@link TableSchema}.
    *
@@ -121,4 +136,52 @@ public class FlinkSchemaUtil {
     }
     return RowType.of(fields);
   }
+
+  /**
+   * Primary keys are the required fields to guarantee that readers can read keyed table in right order, due to the
+   * automatic scaling in/out of nodes. The required fields should be added even though projection push down
+   */
+  public static List<Types.NestedField> addPrimaryKey(
+      List<Types.NestedField> projectedColumns, ArcticTable table) {
+    List<String> primaryKeys = table.isUnkeyedTable() ? Collections.EMPTY_LIST
+        : table.asKeyedTable().primaryKeySpec().fields().stream()
+        .map(PrimaryKeySpec.PrimaryKeyField::fieldName).collect(Collectors.toList());
+
+    List<Types.NestedField> columns = new ArrayList<>(projectedColumns);
+    Set<String> projectedNames = new HashSet<>();
+
+    projectedColumns.forEach(c -> projectedNames.add(c.name()));
+
+    primaryKeys.forEach(pk -> {
+      if (!projectedNames.contains(pk)) {
+        columns.add(table.schema().findField(pk));
+      }
+    });
+
+    LOG.info("Projected Columns after addPrimaryKey, columns:{}", columns);
+    return columns;
+  }
+
+  /**
+   * Primary keys are the required fields to guarantee that readers can read keyed table in right order, due to the
+   * automatic scaling in/out of nodes. The required fields should be added even though projection push down
+   */
+  public static void addPrimaryKey(
+      TableSchema.Builder builder, ArcticTable table, TableSchema tableSchema, String[] projectedColumns) {
+    Set<String> projectedNames = Arrays.stream(projectedColumns).collect(Collectors.toSet());
+
+    if (!table.isKeyedTable()) {
+      return;
+    }
+
+    List<String> pks = table.asKeyedTable().primaryKeySpec().fieldNames();
+    pks.forEach(pk -> {
+      if (projectedNames.contains(pk)) {
+        return;
+      }
+      builder.field(pk, tableSchema.getFieldDataType(pk)
+          .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
+    });
+  }
+
 }

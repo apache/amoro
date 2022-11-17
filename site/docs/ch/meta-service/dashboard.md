@@ -7,7 +7,7 @@ AMS 依赖 Java8 环境，你可以通过以下命令来检查 Java 是否已经
 ```shell
 java -version
 ```
-可以通过这个[链接](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-0.3.1-bin.zip)下载到最新版的AMS压缩包。
+可以通过这个[链接](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-0.3.2-bin.zip)下载到最新版的AMS压缩包。
 
 ## 参数配置
 AMS所有配置项都在 `conf/config.yaml` 文件中:
@@ -68,63 +68,39 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 ## 导入集群
 
 在默认的 AMS 配置中，我们已经初始化了一个名为 `local` 的基于 AMS 本地文件系统的集群以方便你的测试。
+可以通过 AMS Dashboard 提供的 Catalog 管理功能导入更多测试或线上集群。
 
-### 导入Hadoop集群
+### 新增 Catalog
 
-生产环境中我们如果需要导入 Hadoop 集群，需要在AMS的配置中新增一个 Arctic catalog，并在创建和使用 Arctic 表时使用该 catalog。
+Arctic 中 catalog 为一组表的命名空间，在 catalog 之下会再分到不同的 database 中，database 下则是不同的 table，catalog.database.table 组成了一张表在 Arctic 中唯一的名称。
+在实际应用场景下 catalog 一般对应着一个元数据服务，比如大数据中经常使用的 Hive Metastore，当然 Arctic MetaService 也可以作为一个元数据服务，
+另外定义 catalog 时还需要选择它下面所使用的表格式，当前 Arctic 支持的表格式包括：Iceberg 与 Hive。
 
-新增 Arctic catalog 通过在 `conf/config.yaml` 中 `catalogs` 中增加以下配置：
+创建 catalog 的详细参数如下：
 
-```yaml
-  - name:                           #catalog名称
-    type: hadoop                    #catalog类型配置为hadoop
-    storage_config:
-      storage.type: hdfs
-      core-site:                    #Hadoop集群core-site.xml配置文件绝对路径
-      hdfs-site:                    #Hadoop集群hdfs-site.xml配置文件绝对路径
-    auth_config:
-      type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
-      hadoop_username: hadoop       #访问Hadoop集群用户名
-    properties:
-      warehouse.dir: hdfs://default/default/warehouse         #Hadoop集群仓库地址
-```
+|配置项|默认值|类型|可用值|描述|
+|--- |--- |--- |--- |--- |
+|name|(none)|String|只支持数字、字母、_、- , 以字母开头|catalog名称|
+|metastore|Arctic Metastore|String|Arctic Metastore(代表使用AMS存储元数据),Hive Metastore(代表使用HMS存储元数据),Hadoop(对应iceberg的Hadoop catalog), Custom(其他iceberg的catalog实现)|metastore类型|
+|table format|(none)|String|Hive, Iceberg|数据存储的表格式，当前只有 metastore 类型 为Hive Metastore 时同时支持 Hive/Iceberg 两种，其他 metastore 类型均只支持 Iceberg, 当前一个Metastore只支持一种TableFormat, 未来会支持多种|
+|core-site|(none)|file| 上传hadoop集群的core-site.xml |core-site.xml|
+|hdfs-site|(none)|file| 上传hadoop集群的hdfs-site.xml |hdfs-site.xml|
+|hive-site|(none)|file| 上传Hive的hive-site.xml |hive-site.xml|
+|auth|(none)|string| SIMPLE, KERBEROS |指定Hadoop集群的认证方式|
+|hadoop_username|(none)|string| Hadoop 用户名 |SIMPLE 认证方式下所使用的用户名|
+|keytab|(none)|file| 上传 keytab 文件 | KERBEROS 认证方式下所使用的 keytab 文件 |
+|principal|(none)|string| keytab 对应的principal |keytab 对应的principal|
+|krb5|(none)|string| kerberos的krb5.conf配置文件 |kerberos的krb5.conf配置文件|
+|Properties|(none)|Map|(none)|catalog需要添加的配置; 当metastore为**Custom**时，Properties必须定义 **catalog-impl**|
 
-### 导入Hive集群
-
-生产环境中我们如果需要导入 Hive 集群并利用 Arctic 提供的 Hive 兼容相关功能，需要在AMS的配置中新增一个 Arctic Hive catalog，并在创建和使用 Arctic 表时使用该 Catalog。
-
-新增 Arctic Hive catalog 通过在 `conf/config.yaml` 中 `catalogs` 中增加以下配置：
-
-```yaml
-  - name:                           #catalog名称
-    type: hive                      #catalog类型配置为 hive
-    storage_config:
-      storage.type: hdfs
-      core-site:                    #Hive集群core-site.xml配置文件绝对路径
-      hdfs-site:                    #Hive集群hdfs-site.xml配置文件绝对路径
-      hive-site:                    #Hive集群hive-site.xml配置文件绝对路径
-    auth_config:
-      type: SIMPLE                  #认证类型，目前支持KERBEROS和SIMPLE两种类型
-      hadoop_username: hadoop       #访问Hive集群用户名
-    properties:
-      warehouse.dir: hdfs://default/default/warehouse         #Hive集群仓库地址
-```
-
-### 修改认证方式
-
-如果需要使用 KERBEROS 认证方式访问 Hadoop 或 Hive 集群可以修改 Catalog 中 auth_config 如下：
-
-```yaml
-    auth_config:
-      type: KERBEROS                       #认证类型，目前支持KERBEROS和SIMPLE两种类型
-      principal: user/admin@EXAMPLE.COM    #kerberos认证主体
-      keytab: /etc/user.keytab             #kerberos密钥文件
-      krb5: /etc/user.conf                 #kerberos配置文件
-```
+### 推荐
+- 对于 Hive 用户，如果希望仍然能兼容已有的 Hive 使用习惯，建议选择创建 metastore 为 Hive Metastore，table format 为 Hive 的 Catalog
+- 对于已经熟悉 Iceberg 的用户，希望体验 Arctic 带来了诸多新特性建议创建 metastore 为 Arctic Metastore，table format 为 Iceberg 的 Catalog
+- 对于已经熟悉 Iceberg 的用户，并且希望让 Arctic 自动优化已经存在 Iceberg 表，则按实际情况选择 metastore 类型，table format 选择 Iceberg
 
 ???+ 注意
 
-    修改配置文件后需重启 AMS 服务才可生效，参考[启动/重启/关闭](#_3)。
+    当前 Arctic 支持的 Hadoop 版本包括：2.x、3.x，支持 的 Hive 版本包括：2.x、3.x。
 
 ## 使用 Flink 执行结构优化
 
@@ -169,6 +145,7 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 
 ## AMS开启高可用
 
+
 **1.部署Apache Zookeeper**
 
 参考 [Apache QuickStart](https://zookeeper.apache.org/doc/r3.7.1/zookeeperStarted.html)
@@ -184,3 +161,9 @@ mysql -h {mysql_host} -P {mysql_port} -u {user} -p {password} {database} < {AMS_
 **3.重启 AMS**
 
 参考 [启动/重启/关闭](#_3)。
+
+**4.更改引擎中的uri**
+
+AMS开启高可用后引擎端配置catalog uri格式变为：zookeeper://{zookeeper server}/{cluster name}/{catalog name}
+
+例如上述增加的配置对应catalog uri为：zookeeper://127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183/default/local_catalog

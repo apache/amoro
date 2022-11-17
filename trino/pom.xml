@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-parent</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.2-SNAPSHOT</version>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -533,7 +533,7 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-hadoop</artifactId>
-            <version>${parquet.version}</version>
+            <version>${parquet-hadoop.version}</version>
         </dependency>
 
         <dependency>

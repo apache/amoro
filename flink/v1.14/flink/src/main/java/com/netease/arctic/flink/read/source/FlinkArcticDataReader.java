@@ -20,8 +20,8 @@ package com.netease.arctic.flink.read.source;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.read.AdaptHiveFlinkParquetReaders;
+import com.netease.arctic.hive.io.reader.AdaptHiveBaseIcebergDataReader;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseIcebergDataReader;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.flink.table.data.RowData;
@@ -31,7 +31,6 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.RowDataWrapper;
-import org.apache.iceberg.flink.data.FlinkParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.parquet.ParquetValueReader;
@@ -50,7 +49,8 @@ import java.util.function.Function;
  * see {@link com.netease.arctic.iceberg.optimize.DeleteFilter}.
  * It shall be projected before sent to downstream. This can be processed in {@link DataIterator#next()}
  */
-public class FlinkArcticDataReader extends BaseIcebergDataReader<RowData> implements FileScanTaskReader<RowData> {
+public class FlinkArcticDataReader extends AdaptHiveBaseIcebergDataReader<RowData>
+    implements FileScanTaskReader<RowData> {
   private static final long serialVersionUID = -6773693031945244386L;
 
   public FlinkArcticDataReader(

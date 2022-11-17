@@ -8,6 +8,7 @@
 import enUS from 'ant-design-vue/es/locale/en_US'
 import zhCN from 'ant-design-vue/es/locale/zh_CN'
 import { ref } from 'vue'
+import dayjs from 'dayjs'
 
 const locale = ref(enUS.locale)
 

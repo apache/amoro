@@ -104,7 +104,7 @@ public abstract class BaseArcticDataReader<T> {
         CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
         fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
             DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
-    return fileIO.doAs(dataIterable::iterator);
+    return dataIterable.iterator();
   }
 
   public CloseableIterator<T> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
@@ -122,13 +122,13 @@ public abstract class BaseArcticDataReader<T> {
           fileScanTask -> arcticDeleteFilter.filterNegate(
               newParquetIterable(fileScanTask, newProjectedSchema,
                   DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
-      return fileIO.doAs(dataIterable::iterator);
+      return dataIterable.iterator();
     } else {
       return CloseableIterator.empty();
     }
   }
 
-  private CloseableIterable<T> newParquetIterable(
+  protected CloseableIterable<T> newParquetIterable(
       FileScanTask task, Schema schema, Map<Integer, ?> idToConstant) {
     Parquet.ReadBuilder builder = Parquet.read(fileIO.newInputFile(task.file().path().toString()))
         .split(task.start(), task.length())
@@ -144,7 +144,7 @@ public abstract class BaseArcticDataReader<T> {
       builder.withNameMapping(NameMappingParser.fromJson(nameMapping));
     }
 
-    return builder.build();
+    return fileIO.doAs(builder::build);
   }
 
   protected abstract Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(

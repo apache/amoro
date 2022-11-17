@@ -27,6 +27,7 @@ struct DataFile {
     6: i64 specId;
     7: list<PartitionFieldData> partition;
     8: i64 recordCount;
+    // deprecated, may remove from v0.5
     9: map<string, binary> upperBounds;
 }
 
@@ -36,7 +37,8 @@ struct TableChange {
     2: list<DataFile> addFiles;
     3: list<DataFile> deleteFiles;
     4: i64 snapshotId;
-    5: i64 parentSnapshotId;
+    5: i64 snapshotSequence;
+    6: i64 parentSnapshotId;
 }
 
 // task commit info

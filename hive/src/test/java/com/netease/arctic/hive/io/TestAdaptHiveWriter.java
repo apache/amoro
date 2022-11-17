@@ -21,6 +21,7 @@ package com.netease.arctic.hive.io;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
+import com.netease.arctic.io.TestRecords;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.table.ArcticTable;
@@ -28,14 +29,18 @@ import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.WriteOperationKind;
+import java.time.LocalDateTime;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.parquet.AdaptHiveGenericParquetReaders;
+import org.apache.iceberg.expressions.Expression;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.junit.Assert;
 import org.junit.Test;
@@ -47,6 +52,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.hive.io.TestIOUtils.testWrite;
 
 public class TestAdaptHiveWriter extends HiveTableTestBase {
 
@@ -147,36 +154,5 @@ public class TestAdaptHiveWriter extends HiveTableTestBase {
   @Test
   public void testUnPartitionUnKeyedTableHiveWriteByLocationKind() throws IOException {
     testWrite(testUnPartitionHiveTable, HiveLocationKind.INSTANT, HiveTestRecords.baseRecords(), "hive");
-  }
-
-  public void testWrite(ArcticTable table, LocationKind locationKind, List<Record> records, String pathFeature) throws IOException {
-    AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
-        .builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? 1L : null);
-
-    TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
-    for (Record record: records) {
-      changeWrite.write(record);
-    }
-    WriteResult complete = changeWrite.complete();
-    Arrays.stream(complete.dataFiles()).forEach(s -> Assert.assertTrue(s.path().toString().contains(pathFeature)));
-    CloseableIterable<Record> concat =
-        CloseableIterable.concat(Arrays.stream(complete.dataFiles()).map(s -> readParquet(
-            table.schema(),
-            s.path().toString())).collect(Collectors.toList()));
-    Set<Record> result = new HashSet<>();
-    Iterators.addAll(result, concat.iterator());
-    Assert.assertEquals(result, records.stream().collect(Collectors.toSet()));
-  }
-
-  private CloseableIterable<Record> readParquet(Schema schema, String path){
-    AdaptHiveParquet.ReadBuilder builder = AdaptHiveParquet.read(
-        Files.localInput(path))
-        .project(schema)
-        .createReaderFunc(fileSchema -> AdaptHiveGenericParquetReaders.buildReader(schema, fileSchema, new HashMap<>()))
-        .caseSensitive(false);
-
-    CloseableIterable<Record> iterable = builder.build();
-    return iterable;
   }
 }

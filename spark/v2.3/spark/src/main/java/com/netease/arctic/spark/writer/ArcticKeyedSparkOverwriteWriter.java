@@ -25,6 +25,7 @@ import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.source.SupportsDynamicOverwrite;
 import com.netease.arctic.spark.source.SupportsOverwrite;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
@@ -36,6 +37,7 @@ import org.apache.iceberg.util.Tasks;
 import org.apache.spark.TaskContext;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.sources.Filter;
+import org.apache.spark.sql.sources.v2.DataSourceOptions;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriter;
 import org.apache.spark.sql.sources.v2.writer.DataWriterFactory;
@@ -61,17 +63,25 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   private final KeyedTable table;
   private final StructType dsSchema;
-  private final long transactionId;
+  private final long legacyTxId;
+  private final long txId;
   private final String subDir;
   protected Expression overwriteExpr = null;
 
   private WriteMode writeMode = null;
 
-  public ArcticKeyedSparkOverwriteWriter(KeyedTable table, StructType dsSchema) {
+  private DataSourceOptions options;
+
+  public ArcticKeyedSparkOverwriteWriter(KeyedTable table, StructType dsSchema, DataSourceOptions options) {
+    this.options = options;
+    if (options != null && options.asMap().containsKey(WriteMode.WRITE_MODE_KEY)) {
+      this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY).get());
+    }
     this.table = table;
     this.dsSchema = dsSchema;
-    this.transactionId = table.beginTransaction(null);
-    this.subDir = HiveTableUtil.newHiveSubdirectory(this.transactionId);
+    this.legacyTxId = table.beginTransaction(null);
+    this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
+    this.subDir = HiveTableUtil.newHiveSubdirectory(this.txId);
   }
 
   @Override
@@ -96,7 +106,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   @Override
   public DataWriterFactory<InternalRow> createInternalRowWriterFactory() {
-    return new WriterFactory(table, dsSchema, transactionId, subDir);
+    return new WriterFactory(table, dsSchema, legacyTxId, subDir);
   }
 
   private static class WriterFactory implements DataWriterFactory, Serializable {
@@ -153,7 +163,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
 
   private void rewritePartition(WriterCommitMessage[] messages) {
     RewritePartitions rewritePartitions = table.newRewritePartitions();
-    rewritePartitions.withTransactionId(transactionId);
+    rewritePartitions.withTransactionId(txId);
 
     for (DataFile file : files(messages)) {
       rewritePartitions.addDataFile(file);
@@ -164,7 +174,7 @@ public class ArcticKeyedSparkOverwriteWriter implements SupportsWriteInternalRow
   private void overwriteByFilter(WriterCommitMessage[] messages, Expression overwriteExpr) {
     OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
     overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
-    overwriteBaseFiles.withTransactionId(transactionId);
+    overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
 
     for (DataFile file : files(messages)) {
       overwriteBaseFiles.addFile(file);

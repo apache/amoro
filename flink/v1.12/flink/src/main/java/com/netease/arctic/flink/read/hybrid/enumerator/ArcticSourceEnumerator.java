@@ -32,10 +32,10 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.Snapshot;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -118,7 +118,7 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       long snapshotId = snapshot == null ? EARLIEST_SNAPSHOT_ID : snapshot.snapshotId();
       enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshotId, null));
       LOG.info("{} is {}, the current snapshot id of the change table {}  is {}.",
-          SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshot.snapshotId());
+          SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshotId);
     }
     if (snapshotDiscoveryIntervalMs > 0) {
       LOG.info(

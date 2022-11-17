@@ -21,10 +21,10 @@ package com.netease.arctic.flink.table;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Table;
@@ -136,7 +136,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, age SMALLINT, sex TINYINT, score BIGINT, height FLOAT, speed DOUBLE, ts TIMESTAMP)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     ArcticTable table = arcticCatalog.loadTable(TableIdentifier.of(catalog, db, TABLE));
@@ -162,7 +162,7 @@ public class TestUnkeyed extends FlinkTestBase {
         " id INT, name STRING, age SMALLINT, sex TINYINT, score BIGINT, height FLOAT, speed DOUBLE, ts TIMESTAMP)" +
         " PARTITIONED BY (ts)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     Schema required = new Schema(
@@ -207,7 +207,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -250,7 +250,7 @@ public class TestUnkeyed extends FlinkTestBase {
     sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(id INT, name STRING) " +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE + " select * from input");
@@ -274,7 +274,7 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
   }
 
@@ -306,7 +306,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING) WITH %s", toWithClause(tableProperties));
 
@@ -331,7 +331,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -361,7 +361,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING) WITH %s", toWithClause(tableProperties));
 
@@ -384,7 +384,7 @@ public class TestUnkeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -419,7 +419,7 @@ public class TestUnkeyed extends FlinkTestBase {
         " id INT, name STRING, dt STRING)" +
         " PARTITIONED BY (dt)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -474,7 +474,7 @@ public class TestUnkeyed extends FlinkTestBase {
         " id INT, name STRING, dt STRING)" +
         " PARTITIONED BY (dt)" +
         " WITH (" +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -508,7 +508,7 @@ public class TestUnkeyed extends FlinkTestBase {
         actual.add(iterator.next());
       }
     }
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
     Assert.assertEquals(new HashSet<>(expected), actual);
   }
 
@@ -542,7 +542,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, actualTopic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
 
@@ -567,7 +567,7 @@ public class TestUnkeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -599,7 +599,7 @@ public class TestUnkeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, actualTopic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, dt STRING) PARTITIONED BY (dt) WITH %s", toWithClause(tableProperties));
     sql("insert into arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
@@ -619,7 +619,7 @@ public class TestUnkeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
 }

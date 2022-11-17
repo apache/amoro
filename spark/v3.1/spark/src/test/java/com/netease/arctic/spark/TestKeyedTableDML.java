@@ -110,6 +110,8 @@ public class TestKeyedTableDML extends SparkTestBase {
     ));
     rows = sql("select * from {0}.{1}.change", database, table);
     Assert.assertEquals(2, rows.size());
+    // check column number
+    Assert.assertEquals(6, rows.get(0).length);
   }
 
 

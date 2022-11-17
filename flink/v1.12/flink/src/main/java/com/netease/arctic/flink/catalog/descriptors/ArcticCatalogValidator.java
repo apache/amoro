@@ -40,6 +40,5 @@ public class ArcticCatalogValidator extends CatalogDescriptorValidator {
     super.validate(properties);
     properties.validateValue(CATALOG_TYPE, CATALOG_TYPE_VALUE_ARCTIC, false);
     properties.validateString(METASTORE_URL, false);
-    properties.validatePrefixExclusion(PROPERTIES_PREFIX);
   }
 }

@@ -18,16 +18,10 @@
 
 package com.netease.arctic.ams.server.mapper.derby;
 
-import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.mapper.FileInfoCacheMapper;
 import com.netease.arctic.ams.server.model.CacheFileInfo;
-import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
-import org.apache.ibatis.annotations.Result;
-import org.apache.ibatis.annotations.Select;
-
-import java.sql.Timestamp;
 
 public interface DerbyFileInfoCacheMapper extends FileInfoCacheMapper {
   String TABLE_NAME = "file_info_cache";
@@ -35,8 +29,8 @@ public interface DerbyFileInfoCacheMapper extends FileInfoCacheMapper {
   @Insert("INSERT INTO " + TABLE_NAME +
           " (table_identifier, add_snapshot_id, parent_snapshot_id, delete_snapshot_id, inner_table, file_path, " +
           "primary_key_md5, file_type, producer, file_size, file_mask, file_index, spec_id, record_count, action, " +
-          "partition_name, commit_time, watermark) values(#{cacheFileInfo.tableIdentifier, typeHandler=com" +
-          ".netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}, " +
+          "partition_name, commit_time, add_snapshot_sequence) values(#{cacheFileInfo.tableIdentifier, " +
+          "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}, " +
           "#{cacheFileInfo.addSnapshotId}, #{cacheFileInfo.parentSnapshotId}, #{cacheFileInfo" +
           ".deleteSnapshotId, jdbcType=BIGINT}, #{cacheFileInfo.innerTable, jdbcType=VARCHAR}, " +
           "#{cacheFileInfo.filePath, jdbcType=VARCHAR}, #{cacheFileInfo.primaryKeyMd5, jdbcType=VARCHAR}," +
@@ -45,15 +39,7 @@ public interface DerbyFileInfoCacheMapper extends FileInfoCacheMapper {
           "#{cacheFileInfo.specId}, #{cacheFileInfo.recordCount}, #{cacheFileInfo.action, jdbcType=VARCHAR}, " +
           "#{cacheFileInfo.partitionName, jdbcType=VARCHAR}, " +
           "#{cacheFileInfo.commitTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}, " +
-          "#{cacheFileInfo.watermark, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor})"
+          "#{cacheFileInfo.addSnapshotSequence})"
   )
   void insertCache(@Param("cacheFileInfo") CacheFileInfo cacheFileInfo);
-
-  @Select(
-          "select watermark from " + TABLE_NAME + " where " +
-                  "table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server.mybatis" +
-                  ".TableIdentifier2StringConverter} and inner_table = #{innerTable} order by " +
-                  "watermark desc FETCH FIRST ROW ONLY")
-  Timestamp getWatermark(@Param("tableIdentifier") TableIdentifier tableIdentifier,
-      @Param("innerTable") String innerTable);
 }

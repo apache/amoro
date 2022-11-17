@@ -31,6 +31,8 @@ import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 
+import static org.apache.iceberg.IcebergSchemaUtil.projectPartition;
+
 /**
  * This helper operates to one arctic table and the data of the table.
  */
@@ -50,7 +52,7 @@ public class ShuffleHelper implements Serializable {
     PartitionKey partitionKey = null;
 
     if (table.spec() != null && !CollectionUtil.isNullOrEmpty(table.spec().fields())) {
-      partitionKey = new PartitionKey(table.spec(), schema);
+      partitionKey = new PartitionKey(projectPartition(table.spec(), schema), schema);
     }
     schema = addFieldsNotInArctic(schema, rowType);
 
@@ -67,7 +69,7 @@ public class ShuffleHelper implements Serializable {
   /**
    * If using arctic table as build table, there will be an additional implicit field, valuing process time.
    *
-   * @param schema  The physical schema in Arctic table
+   * @param schema  The physical schema in Arctic table.
    * @param rowType Flink RowData type.
    * @return the Arctic Schema with additional implicit field.
    */
@@ -127,7 +129,7 @@ public class ShuffleHelper implements Serializable {
   }
 
   public boolean isPartitionKeyExist() {
-    return partitionKey != null;
+    return partitionKey != null && partitionKey.size() > 0;
   }
 
   public int hashPartitionValue(RowData rowData) {

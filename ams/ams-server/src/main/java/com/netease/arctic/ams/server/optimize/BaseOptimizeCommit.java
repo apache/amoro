@@ -21,12 +21,14 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
+import com.netease.arctic.utils.ArcticDataFiles;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -98,7 +100,7 @@ public class BaseOptimizeCommit {
                 .map(SerializationUtil::toInternalTableFile)
                 .forEach(minorAddFiles::add);
 
-            minorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), minorAddFiles));
+            minorDeleteFiles.addAll(selectDeletedFiles(task, minorAddFiles));
 
             long maxTransactionId = task.getOptimizeTask().getMaxChangeTransactionId();
             if (maxTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
@@ -106,7 +108,7 @@ public class BaseOptimizeCommit {
                 maxTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, maxTransactionId);
               } else {
                 maxTransactionIds.putIfAbsent(
-                    DataFiles.data(spec, entry.getKey()), maxTransactionId);
+                    ArcticDataFiles.data(spec, entry.getKey()), maxTransactionId);
               }
             }
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
@@ -114,7 +116,7 @@ public class BaseOptimizeCommit {
             task.getOptimizeRuntime().getTargetFiles().stream()
                 .map(SerializationUtil::toInternalTableFile)
                 .forEach(majorAddFiles::add);
-            majorDeleteFiles.addAll(selectDeletedFiles(task.getOptimizeTask(), new HashSet<>()));
+            majorDeleteFiles.addAll(selectDeletedFiles(task, new HashSet<>()));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
           }
         }
@@ -222,11 +224,11 @@ public class BaseOptimizeCommit {
 
       if (arcticTable.spec().isUnpartitioned()) {
         if (maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT) != null) {
-          overwriteBaseFiles.withMaxTransactionId(TablePropertyUtil.EMPTY_STRUCT,
+          overwriteBaseFiles.withTransactionId(TablePropertyUtil.EMPTY_STRUCT,
               maxTransactionIds.get(TablePropertyUtil.EMPTY_STRUCT));
         }
       } else {
-        maxTransactionIds.forEach(overwriteBaseFiles::withMaxTransactionId);
+        maxTransactionIds.forEach(overwriteBaseFiles::withTransactionId);
       }
       overwriteBaseFiles.commit();
 
@@ -303,11 +305,17 @@ public class BaseOptimizeCommit {
       if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
         dataFilesRewrite.validateFromSnapshot(baseSnapshotId);
       }
-      dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
+
+      // if add DataFiles is empty, the DeleteFiles are must exist and apply to old DataFiles
+      if (CollectionUtils.isEmpty(addDataFiles)) {
+        dataFilesRewrite.rewriteFiles(deleteDataFiles, deleteDeleteFiles, addDataFiles, Collections.emptySet());
+      } else {
+        dataFilesRewrite.rewriteFiles(deleteDataFiles, Collections.emptySet(), addDataFiles, Collections.emptySet());
+      }
       dataFilesRewrite.commit();
 
-      // remove DeleteFiles
-      if (CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
+      // if add DataFiles is not empty, should remove DeleteFiles additional, because DeleteFiles maybe aren't existed
+      if (CollectionUtils.isNotEmpty(addDataFiles) && CollectionUtils.isNotEmpty(deleteDeleteFiles)) {
         RewriteFiles removeDeleteFiles = baseArcticTable.newRewrite()
             .validateFromSnapshot(baseArcticTable.currentSnapshot().snapshotId());
         removeDeleteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
@@ -329,12 +337,14 @@ public class BaseOptimizeCommit {
     }
   }
 
-  private static Set<ContentFile<?>> selectDeletedFiles(BaseOptimizeTask optimizeTask,
+  private static Set<ContentFile<?>> selectDeletedFiles(OptimizeTaskItem taskItem,
                                                         Set<ContentFile<?>> addPosDeleteFiles) {
+    BaseOptimizeTask optimizeTask = taskItem.getOptimizeTask();
+    BaseOptimizeTaskRuntime optimizeTaskRuntime = taskItem.getOptimizeRuntime();
     switch (optimizeTask.getTaskId().getType()) {
       case FullMajor:
       case Major:
-        return selectMajorOptimizeDeletedFiles(optimizeTask);
+        return selectMajorOptimizeDeletedFiles(optimizeTask, optimizeTaskRuntime);
       case Minor:
         return selectMinorOptimizeDeletedFiles(optimizeTask, addPosDeleteFiles);
     }
@@ -358,12 +368,15 @@ public class BaseOptimizeCommit {
         .collect(Collectors.toSet());
   }
 
-  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
+  private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask,
+                                                                     BaseOptimizeTaskRuntime optimizeTaskRuntime) {
     // add base deleted files
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
         .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
 
-    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor) {
+    // if full optimize or new DataFiles is empty, can delete DeleteFiles
+    if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor ||
+        CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
     }

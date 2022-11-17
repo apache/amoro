@@ -18,28 +18,67 @@
 
 package com.netease.arctic.spark.table;
 
-import org.apache.iceberg.Table;
+import com.netease.arctic.spark.reader.SparkScanBuilder;
+import com.netease.arctic.table.BaseKeyedTable;
+import com.netease.arctic.table.MetadataColumns;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
+import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.iceberg.spark.source.SparkTable;
+import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.connector.catalog.TableCapability;
+import org.apache.spark.sql.connector.read.ScanBuilder;
 import org.apache.spark.sql.types.StructType;
+import org.apache.spark.sql.util.CaseInsensitiveStringMap;
 
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ArcticSparkChangeTable extends SparkTable {
+
+  private final BaseKeyedTable baseKeyedTable;
+
+  private SparkSession lazySpark = null;
+
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ
       );
 
-  public ArcticSparkChangeTable(Table icebergTable) {
-    super(icebergTable, true);
+  public ArcticSparkChangeTable(BaseKeyedTable baseKeyedTable, boolean refreshEagerly) {
+    super(baseKeyedTable.changeTable(), refreshEagerly);
+    this.baseKeyedTable = baseKeyedTable;
   }
 
-  public ArcticSparkChangeTable(Table icebergTable, StructType requestedSchema, boolean refreshEagerly) {
-    super(icebergTable, requestedSchema, refreshEagerly);
+  private SparkSession sparkSession() {
+    if (lazySpark == null) {
+      this.lazySpark = SparkSession.active();
+    }
+
+    return lazySpark;
   }
 
   public Set<TableCapability> capabilities() {
     return CAPABILITIES;
+  }
+
+  @Override
+  public ScanBuilder newScanBuilder(CaseInsensitiveStringMap options) {
+    return new SparkScanBuilder(sparkSession(), baseKeyedTable, options, buildSchema(baseKeyedTable));
+  }
+
+  public Schema buildSchema(BaseKeyedTable table) {
+    Schema schema = table.schema();
+    List<Types.NestedField> columns = schema.columns().stream().collect(Collectors.toList());
+    columns.add(MetadataColumns.TRANSACTION_ID_FILED);
+    columns.add(MetadataColumns.FILE_OFFSET_FILED);
+    columns.add(MetadataColumns.CHANGE_ACTION_FIELD);
+    return new Schema(columns);
+  }
+
+  @Override
+  public StructType schema() {
+    return SparkSchemaUtil.convert(buildSchema(baseKeyedTable));
   }
 }

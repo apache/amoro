@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Properties;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
@@ -260,33 +259,6 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     checkpointedState.clear();
     checkpointedState.add(context.getCheckpointId());
     epicNo++;
-  }
-
-  @Override
-  public void notifyCheckpointComplete(long checkpointId) throws Exception {
-    LOG.info(
-        "notifyCheckpointComplete subtaskId={}, checkpointId={}, epicNo={}.",
-        subtaskId,
-        checkpointId,
-        epicNo);
-    checkpointedState.clear();
-    checkpointedState.add(checkpointId);
-  }
-
-  @Override
-  public void notifyCheckpointAborted(long checkpointId) throws Exception {
-    LOG.info(
-        "notifyCheckpointAborted subtaskId={}, checkpointId={}.",
-        subtaskId,
-        checkpointId);
-    if (checkpointedState != null) {
-      Iterator<Long> iterator = checkpointedState.get().iterator();
-      while (iterator.hasNext()) {
-        if (iterator.next() >= checkpointId) {
-          iterator.remove();
-        }
-      }
-    }
   }
 
   @Override

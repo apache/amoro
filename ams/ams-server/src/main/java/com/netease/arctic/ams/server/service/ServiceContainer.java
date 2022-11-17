@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.service.impl.OptimizeExecuteService;
 import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
+import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import com.netease.arctic.ams.server.service.impl.QuotaService;
 import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.service.impl.SupportHiveSyncService;
@@ -80,6 +81,8 @@ public class ServiceContainer {
   private static volatile AdaptHiveService adaptHiveService;
 
   private static volatile ISupportHiveSyncService supportHiveSyncService;
+
+  public static volatile  PlatformFileInfoService platformFileInfoService;
 
   public static IOptimizeService getOptimizeService() {
     if (optimizeService == null) {
@@ -228,7 +231,7 @@ public class ServiceContainer {
     if (tableInfoService == null) {
       synchronized (ServiceContainer.class) {
         if (tableInfoService == null) {
-          tableInfoService = new TableBaseInfoService(getMetaService());
+          tableInfoService = new TableBaseInfoService();
         }
       }
     }
@@ -332,5 +335,16 @@ public class ServiceContainer {
       }
     }
     return containerMetaService;
+  }
+
+  public static PlatformFileInfoService getPlatformFileInfoService() {
+    if (platformFileInfoService == null) {
+      synchronized (ServiceContainer.class) {
+        if (platformFileInfoService == null) {
+          platformFileInfoService = new PlatformFileInfoService();
+        }
+      }
+    }
+    return platformFileInfoService;
   }
 }
