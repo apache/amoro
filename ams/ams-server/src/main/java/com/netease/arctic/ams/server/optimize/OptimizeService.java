@@ -152,18 +152,18 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     try {
       deleteTableOptimizeRuntime(tableIdentifier);
     } catch (Throwable t) {
-      LOG.error("failed to delete  " + tableIdentifier + " runtime, ignore", t);
+      LOG.debug("failed to delete  " + tableIdentifier + " runtime, ignore", t);
     }
     try {
       tableItem.clearOptimizeTasks();
     } catch (Throwable t) {
-      LOG.error("failed to delete " + tableIdentifier + " optimize task, ignore", t);
+      LOG.debug("failed to delete " + tableIdentifier + " optimize task, ignore", t);
     }
     try {
       deleteOptimizeRecord(tableIdentifier);
       deleteOptimizeTaskHistory(tableIdentifier);
     } catch (Throwable t) {
-      LOG.error("failed to delete " + tableIdentifier + " optimize(task) history, ignore", t);
+      LOG.debug("failed to delete " + tableIdentifier + " optimize(task) history, ignore", t);
     }
   }
 
@@ -174,13 +174,13 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
       int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
       optimizeQueueService.bind(arcticTableItem.getTableIdentifier(), queueId);
     } catch (InvalidObjectException e) {
-      LOG.error("failed to bind " + arcticTableItem.getTableIdentifier() + " and queue ", e);
+      LOG.debug("failed to bind " + arcticTableItem.getTableIdentifier() + " and queue ", e);
     }
     if (persistRuntime) {
       try {
         insertTableOptimizeRuntime(arcticTableItem.getTableOptimizeRuntime());
       } catch (Throwable t) {
-        LOG.error("failed to insert " + arcticTableItem.getTableIdentifier() + " runtime, ignore", t);
+        LOG.debug("failed to insert " + arcticTableItem.getTableIdentifier() + " runtime, ignore", t);
       }
     }
   }
