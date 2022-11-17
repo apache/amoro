@@ -22,7 +22,14 @@ import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import io.javalin.http.Context;
 
+import java.util.LinkedHashMap;
+
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.MYBATIS_CONNECTION_PASSWORD;
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.MYBATIS_CONNECTION_USER_NAME;
+
 public class SettingController extends RestBaseController {
+  private static String MASK_STRING = "******";
+  
   /**
    * get systemSetting
    *
@@ -30,7 +37,11 @@ public class SettingController extends RestBaseController {
    */
   public static void getSystemSetting(Context ctx) {
     try {
-      ctx.json(OkResponse.of(ArcticMetaStore.getSystemSettingFromYaml()));
+      LinkedHashMap<String, Object> result = ArcticMetaStore.getSystemSettingFromYaml();
+      // hidden password and username
+      result.replace(MYBATIS_CONNECTION_PASSWORD.key(), MASK_STRING);
+      result.replace(MYBATIS_CONNECTION_USER_NAME.key(), MASK_STRING);
+      ctx.json(OkResponse.of(result));
     } catch (Exception e) {
       e.printStackTrace();
     }
