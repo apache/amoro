@@ -32,6 +32,7 @@ import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
@@ -41,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,16 +101,16 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
                   break;
                 }
               } else {
-                String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
-                    arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
-                partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                    arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
-                HivePartitionUtil
-                    .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
-                        Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
-
-                partitionPath = HivePartitionUtil
-                    .getPartition(hiveClient, arcticTable, partitionValues).getSd().getLocation();
+                Partition existedPartition = HivePartitionUtil
+                    .getPartition(hiveClient, arcticTable, partitionValues);
+                if (existedPartition == null) {
+                  String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
+                      arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
+                  partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                      arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
+                } else {
+                  partitionPath = existedPartition.getSd().getLocation();
+                }
               }
               partitionPathMap.put(partition, partitionPath);
             }
