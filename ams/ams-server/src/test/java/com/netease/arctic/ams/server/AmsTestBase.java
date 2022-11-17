@@ -126,7 +126,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class,
-//    TestExpireFileCleanSupportIceberg.class,
+    TestExpireFileCleanSupportIceberg.class,
 //    TestOrphanFileCleanSupportIceberg.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class})
