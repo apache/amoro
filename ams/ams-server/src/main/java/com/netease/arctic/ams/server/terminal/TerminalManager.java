@@ -31,13 +31,14 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
 import com.netease.arctic.table.TableMetaStore;
+import java.util.Map;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -57,7 +58,7 @@ public class TerminalManager {
   int sessionTimeoutCheckInterval = 5;
 
   private final Object sessionMapLock = new Object();
-  private final ConcurrentHashMap<String, TerminalSessionContext> sessionMap = new ConcurrentHashMap<>();
+  private final Map<String, TerminalSessionContext> sessionMap = Maps.newHashMap();
 
   ThreadPoolExecutor executionPool = new ThreadPoolExecutor(
       1, 50, 30, TimeUnit.MINUTES,

@@ -182,9 +182,9 @@ AMS开启高可用后引擎端配置catalog uri格式变为：zookeeper://{zooke
 
 ### 使用 Kyuubi 作为 Terminal Backend
 
-如果您希望在生产环境中使用 Terminal 执行 DML类型的SQL，强烈建议您使用 kyuubi 作为 AMS Terminal 的 SQL执行引擎.
+如果您希望在生产环境中使用 Terminal 执行 DML 类型的 SQL，强烈建议您使用 Kyuubi 作为 AMS Terminal 的 SQL执行引擎.
 
-Kyuubi 是一个多租户的大数据SQL Gateway, 有关 Kyuubi 的知识，
+Kyuubi 是一个多租户的大数据 SQL Gateway, 有关 Kyuubi 的知识，
 您可以从 [Kyuubi 的官网](https://kyuubi.apache.org/docs/latest/index.html) 进一步了解
 
 在准备好 Kyuubi 环境后，修改 `conf/config.yml` 并重启 AMS.
@@ -201,6 +201,6 @@ Kyuubi 是一个多租户的大数据SQL Gateway, 有关 Kyuubi 的知识，
 
 目前对于访问带 kerberos 的集群，terminal 使用 catalog 中配置的 keytab 信息创建 Connection. 
 
-* 如果 KyuubiServer 开启了Kerberos 认证，请确保此 Principal 可以访问 KyuubiServer. 
+* 如果 KyuubiServer 开启了 Kerberos 认证，请确保此 Principal 可以访问 KyuubiServer. 
 * 如果 KyuubiServer 采用账户密码认证，需要在 jdbc.url 中配置好认证信息
 

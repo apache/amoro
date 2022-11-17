@@ -205,6 +205,7 @@ public class TerminalSessionContext {
           // ignore blank lines and comments.
           continue;
         } else if (line.endsWith(";")) {
+          //TODO: sql split need do more to handle multi sql statement in one line.
           statementBuilder.append(line);
           no = lineNumber(reader, no);
 

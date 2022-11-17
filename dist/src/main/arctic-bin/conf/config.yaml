@@ -2,7 +2,7 @@ ams:
   arctic.ams.server-host.prefix: "127." #To facilitate batch deployment can config server host prefix.Must be enclosed in double quotes
   arctic.ams.thrift.port: 1260
   arctic.ams.http.port: 1630
-  arctic.ams.optimize.check.thread.pool-size: 100
+  arctic.ams.optimize.check.thread.pool-size: 10
   arctic.ams.optimize.commit.thread.pool-size: 10
   arctic.ams.expire.thread.pool-size: 10
   arctic.ams.orphan.clean.thread.pool-size: 10
