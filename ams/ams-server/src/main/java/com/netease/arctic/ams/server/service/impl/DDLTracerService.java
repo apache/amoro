@@ -158,8 +158,8 @@ public class DDLTracerService extends IJDBCService {
           break;
       }
       if (sql.length() > 0) {
-        if (j < commitMeta.getUpdateColumns().size() -1){
-          sql.append(";\\n");
+        if (j < commitMeta.getUpdateColumns().size() - 1) {
+          sql.append(";\n");
         }
         schemaSql.append(sql);
       }
@@ -183,7 +183,7 @@ public class DDLTracerService extends IJDBCService {
       }
       if (!after.containsKey(oldPro)) {
         if (c > 0) {
-          unsetPro.append(",").append("\\n");
+          unsetPro.append(",").append("\n");
         }
         unsetPro.append(String.format("'%s'", oldPro));
         c++;
@@ -197,7 +197,7 @@ public class DDLTracerService extends IJDBCService {
       }
       if (!after.get(newPro).equals(before.get(newPro))) {
         if (c1 > 0) {
-          setPro.append(",").append("\\n");
+          setPro.append(",").append("\n");
         }
         setPro.append(String.format("'%s'='%s'", newPro, after.get(newPro)));
         c1++;
@@ -328,7 +328,7 @@ public class DDLTracerService extends IJDBCService {
       }
       if (!after.containsKey(oldPro)) {
         if (c > 0) {
-          unsetPro.append(",").append("\\n");
+          unsetPro.append(",").append("\n");
         }
         unsetPro.append(String.format("'%s'", oldPro));
         c++;
@@ -342,7 +342,7 @@ public class DDLTracerService extends IJDBCService {
       }
       if (!after.get(newPro).equals(before.get(newPro))) {
         if (c1 > 0) {
-          setPro.append(",").append("\\n");
+          setPro.append(",").append("\n");
         }
         setPro.append(String.format("'%s'='%s'", newPro, after.get(newPro)));
         c1++;
@@ -377,7 +377,7 @@ public class DDLTracerService extends IJDBCService {
       if (sb.length() > 0) {
         rs.append(sb);
         if (i < before.columns().size() - 1) {
-          rs.append(";").append("\\n");
+          rs.append(";").append("\n");
         }
       }
     }
@@ -456,8 +456,8 @@ public class DDLTracerService extends IJDBCService {
       }
       if (sb.length() > 0) {
         rs.append(sb);
-        if (i < after.columns().size() -1) {
-          rs.append(";").append("\\n");
+        if (i < after.columns().size() - 1) {
+          rs.append(";").append("\n");
         }
       }
     }
