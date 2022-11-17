@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -44,6 +44,7 @@ import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +55,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -185,7 +187,11 @@ public class BaseTaskExecutor implements Serializable {
   private void setPartition(NodeTask nodeTask) {
     // partition
     if (nodeTask.files().size() == 0) {
-      LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
+      if (nodeTask.fileScanTasks().size() == 0) {
+        LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
+      } else {
+        nodeTask.setPartition(nodeTask.fileScanTasks().get(0).file().partition());
+      }
     } else {
       nodeTask.setPartition(nodeTask.files().get(0).partition());
     }
@@ -249,11 +255,22 @@ public class BaseTaskExecutor implements Serializable {
     for (ByteBuffer file : task.getPosDeleteFiles()) {
       nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
     }
+    List<FileScanTask> fileScanTasks = new ArrayList<>();
+    for (ByteBuffer fileScanTask : task.getIcebergFileScanTasks()) {
+      fileScanTasks.add(SerializationUtil.toIcebergFileScanTask(fileScanTask));
+    }
+    nodeTask.setFileScanTasks(fileScanTasks);
 
     Map<String, String> properties = task.getProperties();
     if (properties != null) {
       String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
-      int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() + nodeTask.deleteFiles().size();
+      int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() +
+          nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size();
+      AtomicInteger fileCntInFileScanTask = new AtomicInteger();
+      nodeTask.fileScanTasks()
+          .forEach(fileScanTask ->
+              fileCntInFileScanTask.set(fileCntInFileScanTask.get() + 1 + fileScanTask.deletes().size()));
+      fileCnt = fileCnt + fileCntInFileScanTask.get();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);

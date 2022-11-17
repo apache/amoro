@@ -21,6 +21,8 @@ package com.netease.arctic.utils;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.BaseIcebergCatalog;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
@@ -38,6 +40,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -163,5 +166,33 @@ public class CatalogUtil {
       }
     }
     return table;
+  }
+
+  /**
+   * check arctic catalog is native iceberg catalog
+   * @param arcticCatalog target arctic catalog
+   * @return Whether native iceberg catalog. true is native iceberg catalog, false isn't native iceberg catalog.
+   */
+  public static boolean isIcebergCatalog(ArcticCatalog arcticCatalog) {
+    return arcticCatalog instanceof BaseIcebergCatalog;
+  }
+
+  /**
+   * merge properties of table level in catalog properties to table(properties key start with table.)
+   * @param tableProperties properties in table
+   * @param catalogProperties properties in catalog
+   * @return merged table properties
+   */
+  public static Map<String, String> mergeCatalogPropertiesToTable(Map<String, String> tableProperties,
+                                                                  Map<String, String> catalogProperties) {
+    Map<String, String> mergedProperties = new HashMap<>();
+    catalogProperties.forEach((key, value) -> {
+      if (key.startsWith(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX)) {
+        mergedProperties.put(key.substring(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX.length()), value);
+      }
+    });
+    mergedProperties.putAll(tableProperties);
+
+    return mergedProperties;
   }
 }

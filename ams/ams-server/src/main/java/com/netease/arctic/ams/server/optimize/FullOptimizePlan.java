@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class FullOptimizePlan extends BaseOptimizePlan {
+public class FullOptimizePlan extends BaseArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(FullOptimizePlan.class);
 
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
@@ -88,7 +88,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   }
 
   @Override
-  protected void addOptimizeFilesTree() {
+  protected void addOptimizeFiles() {
     addBaseFileIntoFileTree();
   }
 
@@ -121,7 +121,6 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   protected boolean tableChanged() {
     return true;
   }
-
 
   protected boolean checkPosDeleteTotalSize(String partitionToPath) {
     long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
