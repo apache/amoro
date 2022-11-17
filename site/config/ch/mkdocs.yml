@@ -76,7 +76,9 @@ nav:
     - Spark DML: spark/spark-dml.md
     - Spark DataFrame: spark/spark-dataframe.md
   - Trino: trino.md
-  - Benchmark: benchmark.md
+  - Benchmark:
+    - Report: benchmark/benchmark.md
+    - How to benchmark:  benchmark/benchmark-step.md
   - Roadmap: roadmap.md
   - How to contribute: contribute.md
 
