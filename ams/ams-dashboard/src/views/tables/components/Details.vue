@@ -80,6 +80,10 @@ const params = computed(() => {
   }
 })
 
+const isIceberg = computed(() => {
+  return route.query.type === 'ICEBERG'
+})
+
 watch(
   () => route.query,
   (val) => {
@@ -148,7 +152,10 @@ const getTableDetails = async() => {
         value: key === 'lastCommitTime' ? ((baseMetrics || {})[key] ? dateFormat((baseMetrics || {})[key]) : '') : (baseMetrics || {})[key]
       }
     })
-
+    if (isIceberg.value) {
+      const findIndex = state.baseMetrics.findIndex(ele => ele.metric === 'Max Event Time')
+      findIndex > -1 && state.baseMetrics.splice(findIndex, 1)
+    }
     state.properties = Object.keys(properties || {}).map(key => {
       return {
         key: key,

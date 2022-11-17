@@ -15,7 +15,7 @@
         <a-collapse-panel v-for="container in containerSetting" :key="container.name" :header="container.name">
           <ul class="content">
             <li class="item">
-              <h3 class="left">{{$t('containerName')}}</h3>
+              <h3 class="left">{{$t('name')}}</h3>
               <span class="right">{{container.name}}</span>
             </li>
             <li class="item">
@@ -70,20 +70,15 @@ const optimzeGroupColumns: IColumns[] = reactive([
 const activeKey = ref<string[]>([])
 
 async function getSystemSettingInfo() {
-  try {
-    loading.value = true
-    const res = await getSystemSetting()
-    if (!res) { return }
-    systemSettingArray.length = 0
-    Object.keys(res).forEach(key => {
-      systemSettingArray.push({
-        key: key,
-        value: res[key]
-      })
+  const res = await getSystemSetting()
+  if (!res) { return }
+  systemSettingArray.length = 0
+  Object.keys(res).forEach(key => {
+    systemSettingArray.push({
+      key: key,
+      value: res[key]
     })
-  } finally {
-    loading.value = false
-  }
+  })
 }
 async function getContainersSettingInfo() {
   const res = await getContainersSetting()
@@ -101,9 +96,13 @@ async function getContainersSettingInfo() {
     })
   })
 }
-onMounted(() => {
-  getSystemSettingInfo()
-  getContainersSettingInfo()
+onMounted(async() => {
+  try {
+    loading.value = true
+    await Promise.all([getSystemSettingInfo(), getContainersSettingInfo()])
+  } finally {
+    loading.value = false
+  }
 })
 
 </script>
@@ -135,7 +134,10 @@ onMounted(() => {
         }
       }
       .ant-collapse-content > .ant-collapse-content-box {
-        padding-top: 6px;
+        padding: 6px 16px 32px;
+      }
+      .ant-collapse-item:last-child .ant-collapse-content > .ant-collapse-content-box {
+        padding-bottom: 16px;
       }
     }
   }
@@ -146,7 +148,7 @@ onMounted(() => {
       word-break: break-all;
     }
     .left {
-      width: 280px;
+      width: 320px;
       flex-shrink: 0;
       margin-right: 16px;
     }
