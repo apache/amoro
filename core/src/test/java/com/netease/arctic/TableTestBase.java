@@ -94,26 +94,26 @@ public class TableTestBase {
       .addColumn("id").build();
   protected static final DataFile FILE_A = DataFiles.builder(SPEC)
       .withPath("/path/to/data-a.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
   protected static final DataFile FILE_B = DataFiles.builder(SPEC)
       .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
   protected static final DataFile FILE_C = DataFiles.builder(SPEC)
       .withPath("/path/to/data-c.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
 
   protected static final DataFile FILE_D = DataFiles.builder(SPEC)
       .withPath("/path/to/data-d.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
