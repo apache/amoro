@@ -116,9 +116,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
     TestIcebergMajorOptimizePlan.class,
-    TestIcebergMinorOptimizePlan.class,
-    TestIcebergMajorOptimizeCommit.class,
-    TestIcebergMinorOptimizeCommit.class,
+//    TestIcebergMinorOptimizePlan.class,
+//    TestIcebergMajorOptimizeCommit.class,
+//    TestIcebergMinorOptimizeCommit.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
     TestSupportHiveMajorOptimizePlan.class,
@@ -126,8 +126,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestSupportHiveSyncService.class,
     TestExpiredFileCleanSupportHive.class,
     TestOrphanFileCleanSupportHive.class,
-    TestExpireFileCleanSupportIceberg.class,
-    TestOrphanFileCleanSupportIceberg.class,
+//    TestExpireFileCleanSupportIceberg.class,
+//    TestOrphanFileCleanSupportIceberg.class,
     TestArcticTransactionService.class,
     TestOptimizerService.class})
 @PrepareForTest({
