@@ -43,6 +43,7 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyPlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
@@ -119,6 +120,7 @@ public class JDBCSqlSessionFactoryProvider {
             configuration.addMapper(DerbyCatalogMetadataMapper.class);
             configuration.addMapper(DerbyTableMetadataMapper.class);
             configuration.addMapper(DerbyOptimizeTasksMapper.class);
+            configuration.addMapper(DerbyPlatformFileInfoMapper.class);
           }
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }

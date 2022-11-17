@@ -1,5 +1,7 @@
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.mapper.PlatformFileInfoMapper;
 import com.netease.arctic.ams.server.model.PlatformFileInfo;
 import com.netease.arctic.ams.server.service.IJDBCService;
@@ -20,6 +22,9 @@ public class PlatformFileInfoService extends IJDBCService {
               getMapper(sqlSession, PlatformFileInfoMapper.class);
       PlatformFileInfo platformFileInfo = new PlatformFileInfo(name, content);
       platformFileInfoMapper.addFile(platformFileInfo);
+      if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
+        return platformFileInfoMapper.getFileId(content);
+      }
       return platformFileInfo.getFileId();
     }
   }

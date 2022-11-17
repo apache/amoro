@@ -30,7 +30,7 @@ public interface PlatformFileInfoMapper {
   /**
    * add a file with content encoded by base64
    */
-  @Insert("insert into " + TABLE_NAME + " (id,file_name,file_content_b64) " +
+  @Insert("insert into " + TABLE_NAME + "(id,file_name,file_content_b64)" +
           "values(#{fileInfo.fileId},#{fileInfo.fileName},#{fileInfo.fileContent})")
   @Options(useGeneratedKeys = true, keyProperty = "fileInfo.fileId", keyColumn = "id")
   void addFile(@Param("fileInfo") PlatformFileInfo platformFileInfo);
@@ -39,4 +39,8 @@ public interface PlatformFileInfoMapper {
   // get file content encoded by base64 by fileId
   @Select("select file_content_b64 from " + TABLE_NAME + " where id=#{fileId}")
   String getFileById(@Param("fileId") Integer fileId);
+
+  // get fileId by content which is encoded with base64. ** caution: for derby only
+  @Select("select id from " + TABLE_NAME + " where file_content_b64=#{content} limit 1")
+  Integer getFileId(@Param("content") String content);
 }
