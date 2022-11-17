@@ -128,8 +128,9 @@ public class TableStatCollector {
         .propertyAsLong(snapshot.summary(), SnapshotSummary.ADDED_RECORDS_PROP, 0));
     info.setRemovedFilesSize(PropertyUtil
         .propertyAsLong(snapshot.summary(), SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
-    info.setRemovedFiles(
-        PropertyUtil.propertyAsInt(snapshot.summary(), SnapshotSummary.DELETED_FILES_PROP, 0));
+    int removedFiles = PropertyUtil.propertyAsInt(snapshot.summary(), SnapshotSummary.DELETED_FILES_PROP, 0) +
+        PropertyUtil.propertyAsInt(snapshot.summary(), SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
+    info.setRemovedFiles(removedFiles);
     info.setRemovedRecords(
         PropertyUtil.propertyAsLong(snapshot.summary(), SnapshotSummary.DELETED_RECORDS_PROP, 0));
     info.setTotalSize(

@@ -35,7 +35,6 @@ import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
@@ -60,8 +59,10 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.util.PropertyUtil;
@@ -428,6 +429,7 @@ public class TableOptimizeItem extends IJDBCService {
         builder.addFiles(task.getInsertFileSize(), task.getInsertFileCnt());
         builder.addFiles(task.getDeleteFileSize(), task.getDeleteFileCnt());
         builder.addFiles(task.getPosDeleteFileSize(), task.getPosDeleteFileCnt());
+        builder.addFiles(task.getEqDeleteFileSize(), task.getEqDeleteFileCnt());
       }
     }
     return builder.build();
@@ -479,7 +481,8 @@ public class TableOptimizeItem extends IJDBCService {
         LOG.info("{} add new task {}", tableIdentifier, optimizeTask);
         // when minor optimize, there is no need to execute task not contains deleteFiles,
         // but the inertFiles need to commit to base table
-        if (optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) && optimizeTask.getDeleteFiles().isEmpty()) {
+        if (optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) && optimizeTask.getDeleteFiles().isEmpty() &&
+            !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(arcticTable)) {
           optimizeTaskItem.onPrepared(System.currentTimeMillis(),
               optimizeTask.getInsertFiles(), optimizeTask.getInsertFileSize(), 0L);
         }
@@ -668,6 +671,7 @@ public class TableOptimizeItem extends IJDBCService {
     FilesStatisticsBuilder baseFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder targetFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder posDeleteFb = new FilesStatisticsBuilder();
+    FilesStatisticsBuilder eqDeleteFb = new FilesStatisticsBuilder();
     tasks.values()
         .forEach(list -> list
             .forEach(t -> {
@@ -676,6 +680,7 @@ public class TableOptimizeItem extends IJDBCService {
               deleteFb.addFiles(task.getDeleteFileSize(), task.getDeleteFileCnt());
               baseFb.addFiles(task.getBaseFileSize(), task.getBaseFileCnt());
               posDeleteFb.addFiles(task.getPosDeleteFileSize(), task.getPosDeleteFileCnt());
+              eqDeleteFb.addFiles(task.getEqDeleteFileSize(), task.getEqDeleteFileCnt());
               BaseOptimizeTaskRuntime runtime = t.getOptimizeRuntime();
               targetFb.addFiles(runtime.getNewFileSize(), runtime.getNewFileCnt());
             }));
@@ -683,12 +688,14 @@ public class TableOptimizeItem extends IJDBCService {
     record.setDeleteFilesStatBeforeOptimize(deleteFb.build());
     record.setBaseFilesStatBeforeOptimize(baseFb.build());
     record.setPosDeleteFilesStatBeforeOptimize(posDeleteFb.build());
+    record.setEqDeleteFilesStatBeforeOptimize(eqDeleteFb.build());
 
     FilesStatistics totalFs = new FilesStatisticsBuilder()
         .addFilesStatistics(record.getInsertFilesStatBeforeOptimize())
         .addFilesStatistics(record.getDeleteFilesStatBeforeOptimize())
         .addFilesStatistics(record.getBaseFilesStatBeforeOptimize())
         .addFilesStatistics(record.getPosDeleteFilesStatBeforeOptimize())
+        .addFilesStatistics(record.getEqDeleteFilesStatBeforeOptimize())
         .build();
     record.setTotalFilesStatBeforeOptimize(totalFs);
     record.setTotalFilesStatAfterOptimize(targetFb.build());
@@ -791,7 +798,7 @@ public class TableOptimizeItem extends IJDBCService {
       tasksLock.unlock();
     }
   }
-  
+
   public void setTableCanCommit() {
     waitCommit.set(false);
   }
@@ -805,7 +812,7 @@ public class TableOptimizeItem extends IJDBCService {
     tasksCommitLock.lock();
 
     // check current base table snapshot whether changed when minor optimize
-    if (isMinorOptimizing()) {
+    if (isMinorOptimizing() && !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(arcticTable)) {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
@@ -820,7 +827,9 @@ public class TableOptimizeItem extends IJDBCService {
       if (MapUtils.isNotEmpty(tasksToCommit)) {
         LOG.info("{} get {} tasks of {} partitions to commit", tableIdentifier, taskCount, tasksToCommit.size());
         BaseOptimizeCommit optimizeCommit;
-        if (TableTypeUtil.isHive(getArcticTable())) {
+        if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+          optimizeCommit = new IcebergOptimizeCommit(getArcticTable(true), tasksToCommit);
+        } else if (TableTypeUtil.isHive(getArcticTable())) {
           optimizeCommit = new SupportHiveCommit(getArcticTable(true),
               tasksToCommit, OptimizeTaskItem::persistTargetFiles);
         } else {
@@ -916,6 +925,36 @@ public class TableOptimizeItem extends IJDBCService {
 
     return new MinorOptimizePlan(getArcticTable(), tableOptimizeRuntime, baseFiles, changeTableFiles, posDeleteFiles,
         generatePartitionRunning(), queueId, currentTime, snapshotIsCached);
+  }
+
+  /**
+   * Get Major Plan.
+   *
+   * @param queueId     -
+   * @param currentTime -
+   * @return -
+   */
+  public IcebergMajorOptimizePlan getIcebergMajorPlan(int queueId, long currentTime) {
+    List<FileScanTask> fileScanTasks =
+        IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator());
+
+    return new IcebergMajorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
+        generatePartitionRunning(), queueId, currentTime);
+  }
+
+  /**
+   * Get Minor Plan.
+   *
+   * @param queueId     -
+   * @param currentTime -
+   * @return -
+   */
+  public IcebergMinorOptimizePlan getIcebergMinorPlan(int queueId, long currentTime) {
+    List<FileScanTask> fileScanTasks =
+        IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator());
+
+    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
+        generatePartitionRunning(), queueId, currentTime);
   }
 
   /**

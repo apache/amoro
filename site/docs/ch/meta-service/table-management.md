@@ -80,6 +80,51 @@ ALTER TABLE test_db.test_log_store ADD COLUMN new_column string comment 'new_col
 
 当前 Terminal 使用 Spark Engine 完成 SQL 的执行，更多有关修改表的语法参考 [Spark DDL](../spark/spark-ddl.md#alter-table)。
 
+## 配置结构优化
+
+Arctic 提供了自动结构优化的功能，触发表的结构优化的前提是 [启动 Optimizer](../docker-quickstart.md#ams)。
+
+### 修改 Optimize Group
+如果要使用在特定的 [Optimizer Group](../optimizers.md#optimizer-group) 下启动的 Optimizer 执行结构优化，则需要修改表的 `optimize.group` 参数，为表指定特定的资源池，设置方式如下：
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'optimize.group' = 'group_name');
+```
+
+默认情况下，`'optimize.group' = 'default'`。
+
+### 调整 Optimize 资源
+
+如果同一个 Optimizer Group 下有多张表要执行 Optimize，可以通过调整 `quota` 来手动调整每张表的资源占比：
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'optimize.quota' = '0.1');
+```
+
+更多信息请参考 [共享 Optimizer 资源的均衡](../optimizers.md#optimizer_2)。
+
+### 设置 Optimize 参数
+
+可以手动设置 Optimize 的执行间隔、任务大小、执行超时时间等参数，比如：
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'optimize.major.trigger.max-interval' = '3600000');
+```
+
+更多 Optimize 参数调整参考 [结构优化配置](../meta-service/table-properties.md#_4)。
+
+### 开启和关闭 Optimize
+
+表的 Optimize 默认即处于开启状态，如果要关闭 Optimize 功能，执行以下命令，反之可以重新开启：
+
+```sql
+ALTER TABLE test_db.test_log_store set tblproperties (
+    'optimize.enable' = 'false');
+```
+
 ## 删除表
 
 登录 [AMS Dashboard](http://localhost:1630) 后，进入 `Terminal`，输入修改语句并执行即可完成表的修改。

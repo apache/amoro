@@ -26,10 +26,14 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.BaseIcebergCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -82,5 +86,20 @@ public class CatalogUtil {
     CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
     Optional<CatalogMeta> opt = catalogMetadataService.getCatalog(name);
     return opt.isPresent() && CatalogMetaProperties.CATALOG_TYPE_HIVE.equalsIgnoreCase(opt.get().getCatalogType());
+  }
+
+  public static Set<TableIdentifier> loadTablesFromCatalog() {
+    Set<TableIdentifier> tables = new HashSet<>();
+    List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
+    catalogMetas.forEach(catalogMeta -> {
+      ArcticCatalog arcticCatalog =
+          CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
+      List<String> databases = arcticCatalog.listDatabases();
+      for (String database : databases) {
+        tables.addAll(arcticCatalog.listTables(database));
+      }
+    });
+
+    return tables;
   }
 }
