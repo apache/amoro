@@ -101,9 +101,10 @@ public class HivePartitionUtil {
     return p;
   }
 
-  public static Partition getPartition(HMSClientPool hmsClient,
-                                       ArcticTable arcticTable,
-                                       List<String> partitionValues) {
+  public static Partition getPartition(
+      HMSClientPool hmsClient,
+      ArcticTable arcticTable,
+      List<String> partitionValues) {
     String db = arcticTable.id().getDatabase();
     String tableName = arcticTable.id().getTableName();
 
@@ -113,13 +114,16 @@ public class HivePartitionUtil {
         partition = client.getPartition(db, tableName, partitionValues);
         return partition;
       });
+    } catch (NoSuchObjectException e) {
+      return null;
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
   }
 
-  public static void rewriteHivePartitions(Partition partition, String location, List<DataFile> dataFiles,
-                                           int accessTimestamp) {
+  public static void rewriteHivePartitions(
+      Partition partition, String location, List<DataFile> dataFiles,
+      int accessTimestamp) {
     partition.getSd().setLocation(location);
     partition.setLastAccessTime(accessTimestamp);
     HiveTableUtil.generateTableProperties(accessTimestamp, dataFiles)
@@ -129,7 +133,7 @@ public class HivePartitionUtil {
   /**
    * Gets all partitions object of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient      Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition objects
    */
@@ -150,13 +154,14 @@ public class HivePartitionUtil {
   /**
    * Gets all partition names of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient      Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition names
    */
   public static List<String> getHivePartitionNames(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
-      return hiveClient.run(client -> client.listPartitionNames(tableIdentifier.getDatabase(),
+      return hiveClient.run(client -> client.listPartitionNames(
+          tableIdentifier.getDatabase(),
           tableIdentifier.getTableName(),
           Short.MAX_VALUE)).stream().collect(Collectors.toList());
     } catch (NoSuchObjectException e) {
@@ -172,15 +177,16 @@ public class HivePartitionUtil {
   /**
    * Gets all partitions location of the Hive table.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient      Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
    * @return A List of Hive partition locations
    */
   public static List<String> getHivePartitionLocations(HMSClientPool hiveClient, TableIdentifier tableIdentifier) {
     try {
-      return hiveClient.run(client -> client.listPartitions(tableIdentifier.getDatabase(),
-          tableIdentifier.getTableName(),
-          Short.MAX_VALUE))
+      return hiveClient.run(client -> client.listPartitions(
+              tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName(),
+              Short.MAX_VALUE))
           .stream()
           .map(partition -> partition.getSd().getLocation())
           .collect(Collectors.toList());
@@ -197,13 +203,14 @@ public class HivePartitionUtil {
   /**
    * Change the Hive partition location.
    *
-   * @param hiveClient Hive client from ArcticHiveCatalog
+   * @param hiveClient      Hive client from ArcticHiveCatalog
    * @param tableIdentifier A table identifier
-   * @param partition A Hive partition name
-   * @param newPath Target partition location
+   * @param partition       A Hive partition name
+   * @param newPath         Target partition location
    */
-  public static void alterPartition(HMSClientPool hiveClient, TableIdentifier tableIdentifier,
-                                    String partition, String newPath) throws IOException {
+  public static void alterPartition(
+      HMSClientPool hiveClient, TableIdentifier tableIdentifier,
+      String partition, String newPath) throws IOException {
     try {
       LOG.info("alter table {} hive partition {} to new location {}",
           tableIdentifier, partition, newPath);
@@ -229,13 +236,14 @@ public class HivePartitionUtil {
       throw new IOException(e);
     }
   }
-  
-  public static void createPartitionIfAbsent(HMSClientPool hmsClient,
-                                             ArcticTable arcticTable,
-                                             List<String> partitionValues,
-                                             String partitionLocation,
-                                             List<DataFile> dataFiles,
-                                             int accessTimestamp) {
+
+  public static void createPartitionIfAbsent(
+      HMSClientPool hmsClient,
+      ArcticTable arcticTable,
+      List<String> partitionValues,
+      String partitionLocation,
+      List<DataFile> dataFiles,
+      int accessTimestamp) {
     String db = arcticTable.id().getDatabase();
     String tableName = arcticTable.id().getTableName();
 
@@ -258,9 +266,10 @@ public class HivePartitionUtil {
     }
   }
 
-  public static void dropPartition(HMSClientPool hmsClient,
-                                   ArcticTable arcticTable,
-                                   Partition hivePartition) {
+  public static void dropPartition(
+      HMSClientPool hmsClient,
+      ArcticTable arcticTable,
+      Partition hivePartition) {
     try {
       hmsClient.run(client -> {
         PartitionDropOptions options = PartitionDropOptions.instance()
@@ -276,12 +285,13 @@ public class HivePartitionUtil {
     }
   }
 
-  public static void updatePartitionLocation(HMSClientPool hmsClient,
-                                             ArcticTable arcticTable,
-                                             Partition hivePartition,
-                                             String newLocation,
-                                             List<DataFile> dataFiles,
-                                             int accessTimestamp) {
+  public static void updatePartitionLocation(
+      HMSClientPool hmsClient,
+      ArcticTable arcticTable,
+      Partition hivePartition,
+      String newLocation,
+      List<DataFile> dataFiles,
+      int accessTimestamp) {
     dropPartition(hmsClient, arcticTable, hivePartition);
     createPartitionIfAbsent(hmsClient, arcticTable, hivePartition.getValues(), newLocation, dataFiles, accessTimestamp);
   }

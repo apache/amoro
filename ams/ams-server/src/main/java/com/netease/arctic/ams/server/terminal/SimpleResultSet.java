@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,33 +16,44 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.model;
+package com.netease.arctic.ams.server.terminal;
 
-public class LatestSessionInfo {
-  private String sessionId;
-  private String sql;
+import java.util.Iterator;
+import java.util.List;
 
-  public LatestSessionInfo() {
+public class SimpleResultSet implements TerminalSession.ResultSet {
+
+  List<String> columns;
+  Iterator<Object[]> it;
+  Object[] current;
+
+  public SimpleResultSet(List<String> columns, List<Object[]> rows) {
+    this.columns = columns;
+    it = rows.iterator();
   }
 
-  public LatestSessionInfo(String sessionId, String sql) {
-    this.sessionId = sessionId;
-    this.sql = sql;
+  @Override
+  public List<String> columns() {
+    return this.columns;
   }
 
-  public String getSessionId() {
-    return sessionId;
+  @Override
+  public boolean next() {
+    if (it.hasNext()) {
+      current = it.next();
+      return true;
+    }
+
+    return false;
   }
 
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
+  @Override
+  public Object[] rowData() {
+    return current;
   }
 
-  public String getSql() {
-    return sql;
-  }
+  @Override
+  public void close() {
 
-  public void setSql(String sql) {
-    this.sql = sql;
   }
 }

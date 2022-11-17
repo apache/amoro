@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,33 +16,37 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.model;
+package com.netease.arctic.ams.server.terminal;
 
-public class LatestSessionInfo {
-  private String sessionId;
-  private String sql;
+import com.google.common.collect.Lists;
+import java.util.Collection;
+import java.util.List;
 
-  public LatestSessionInfo() {
+/**
+ * result of execution a script.
+ */
+public class ExecutionResult {
+
+  List<String> logs = Lists.newArrayList();
+  List<StatementResult> results = Lists.newArrayList();
+
+  public synchronized void appendLog(String log) {
+    this.logs.add(log);
   }
 
-  public LatestSessionInfo(String sessionId, String sql) {
-    this.sessionId = sessionId;
-    this.sql = sql;
+  public synchronized void appendLogs(Collection<String> logs) {
+    this.logs.addAll(logs);
   }
 
-  public String getSessionId() {
-    return sessionId;
+  public synchronized void appendResult(StatementResult result) {
+    this.results.add(result);
   }
 
-  public void setSessionId(String sessionId) {
-    this.sessionId = sessionId;
+  public synchronized List<String> getLogs() {
+    return Lists.newArrayList(logs);
   }
 
-  public String getSql() {
-    return sql;
-  }
-
-  public void setSql(String sql) {
-    this.sql = sql;
+  public synchronized List<StatementResult> getResults() {
+    return Lists.newArrayList(results);
   }
 }

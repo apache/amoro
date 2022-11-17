@@ -18,16 +18,14 @@
 
 package com.netease.arctic.ams.server.model;
 
-public class LatestSessionInfo {
+public class SessionInfo {
   private String sessionId;
-  private String sql;
 
-  public LatestSessionInfo() {
+  public SessionInfo(String sessionId) {
+    this.sessionId = sessionId;
   }
 
-  public LatestSessionInfo(String sessionId, String sql) {
-    this.sessionId = sessionId;
-    this.sql = sql;
+  public SessionInfo() {
   }
 
   public String getSessionId() {
@@ -36,13 +34,5 @@ public class LatestSessionInfo {
 
   public void setSessionId(String sessionId) {
     this.sessionId = sessionId;
-  }
-
-  public String getSql() {
-    return sql;
-  }
-
-  public void setSql(String sql) {
-    this.sql = sql;
   }
 }
