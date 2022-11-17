@@ -29,10 +29,10 @@ Hudi 的 rt 表的查询也就是实时查询目前不支持 Trino，只支持 P
 
 [Hudi-Plugin-Install](https://prestodb.io/docs/current/connector/hudi.html)
 
-### Ams
+### AMS
 Arctic 的元数据服务，当前使用0.4版本，如果需要测试 Arctic 需要安装此服务
 
-[Ams-Install](../meta-service/dashboard.md)
+[AMS-Install](../meta-service/dashboard.md)
 
 根据文档描述，配置一个 optimize-group 例如名称 "benchmark-group"，然后在页面![Ams-Install](../images/chbenchmark-step/start-optimize.png)
 
