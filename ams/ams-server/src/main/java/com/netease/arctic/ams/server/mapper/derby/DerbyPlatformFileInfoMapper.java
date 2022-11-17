@@ -22,5 +22,5 @@ public interface DerbyPlatformFileInfoMapper extends PlatformFileInfoMapper {
 
   // get file content encoded by base64 by fileId
   @Select("select id from " + TABLE_NAME + " where file_content_b64=#{content} limit 1")
-  String getFileId(@Param("content") String content);
+  Integer derbyGetFileId(@Param("content") String content);
 }

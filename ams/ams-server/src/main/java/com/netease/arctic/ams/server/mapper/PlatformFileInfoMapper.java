@@ -41,6 +41,6 @@ public interface PlatformFileInfoMapper {
   String getFileById(@Param("fileId") Integer fileId);
 
   // get file content encoded by base64 by fileId. for derby
-  @Select("select id from " + TABLE_NAME + " where file_content_b64=#{content}")
+  @Select("select id from " + TABLE_NAME + " where file_content_b64=#{content} limit 1")
   Integer derbyGetFileId(@Param("content") String content);
 }
