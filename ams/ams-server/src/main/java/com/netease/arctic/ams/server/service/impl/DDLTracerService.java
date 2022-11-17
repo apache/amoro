@@ -65,19 +65,19 @@ public class DDLTracerService extends IJDBCService {
 
   static final String DOT = ".";
 
-  private static final String ALTER_TABLE = "ALTER TABLE %s ";
+  private static final String ALTER_TABLE = "ALTER TABLE %s";
   private static final String ADD_COLUMN = " ADD COLUMN ";
-  private static final String ALTER_COLUMN = " ALTER COLUMN %s ";
-  private static final String MOVE_FIRST = " ALTER COLUMN %s FIRST ";
+  private static final String ALTER_COLUMN = " ALTER COLUMN %s";
+  private static final String MOVE_FIRST = " ALTER COLUMN %s FIRST";
   private static final String MOVE_AFTER_COLUMN = " ALTER COLUMN %s AFTER %s";
-  private static final String RENAME_COLUMN = " RENAME COLUMN %s TO %s ";
+  private static final String RENAME_COLUMN = " RENAME COLUMN %s TO %s";
   private static final String DROP_COLUMNS = " DROP COLUMN %s";
   private static final String SET_PROPERTIES = " SET TBLPROPERTIES (%s)";
   private static final String UNSET_PROPERTIES = " UNSET TBLPROPERTIES (%s)";
-  private static final String IS_OPTIONAL = " DROP NOT NULL ";
-  private static final String NOT_OPTIONAL = " SET NOT NULL ";
+  private static final String IS_OPTIONAL = " DROP NOT NULL";
+  private static final String NOT_OPTIONAL = " SET NOT NULL";
   private static final String DOC = " COMMENT '%s'";
-  private static final String TYPE = " TYPE %s ";
+  private static final String TYPE = " TYPE %s";
 
   public void commit(TableIdentifier tableIdentifier, SchemaUpdateMeta commitMeta) {
     Long commitTime = System.currentTimeMillis();
@@ -157,9 +157,10 @@ public class DDLTracerService extends IJDBCService {
         default:
           break;
       }
+      sql.append(";");
       if (sql.length() > 0) {
         if (j < commitMeta.getUpdateColumns().size() - 1) {
-          sql.append(";\n");
+          sql.append("\n");
         }
         schemaSql.append(sql);
       }
@@ -375,9 +376,9 @@ public class DDLTracerService extends IJDBCService {
         sortedBefore.remove(field.name());
       }
       if (sb.length() > 0) {
-        rs.append(sb);
+        rs.append(sb).append(";");
         if (i < before.columns().size() - 1) {
-          rs.append(";").append("\n");
+          rs.append("\n");
         }
       }
     }
@@ -455,9 +456,9 @@ public class DDLTracerService extends IJDBCService {
         }
       }
       if (sb.length() > 0) {
-        rs.append(sb);
+        rs.append(sb).append(";");
         if (i < after.columns().size() - 1) {
-          rs.append(";").append("\n");
+          rs.append("\n");
         }
       }
     }
