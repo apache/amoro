@@ -24,7 +24,7 @@ import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, Literal}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
@@ -40,7 +40,12 @@ case class RewriteDeleteFromArcticTable(spark: SparkSession) extends Rule[Logica
       val r = asTableRelation(table)
       val upsertWrite = r.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(r.options)
-      pushFilter(scanBuilder, condition.get, r.output)
+      if (condition.isEmpty) {
+        val cond = EqualTo(Literal(1), Literal(1))
+        pushFilter(scanBuilder, cond, r.output)
+      } else {
+        pushFilter(scanBuilder, condition.get, r.output)
+      }
       val query = buildUpsertQuery(r,upsertWrite, scanBuilder, condition)
       var options: Map[String, String] = Map.empty
       options +=(WriteMode.WRITE_MODE_KEY -> WriteMode.UPSERT.toString)

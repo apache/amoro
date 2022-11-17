@@ -52,7 +52,12 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       val arcticRelation = asTableRelation(u.table)
       val upsertWrite = arcticRelation.table.asUpsertWrite
       val scanBuilder = upsertWrite.newUpsertScanBuilder(arcticRelation.options)
-      pushFilter(scanBuilder, u.condition.get, arcticRelation.output)
+      if (u.condition.isEmpty) {
+        val cond = EqualTo(Literal(1), Literal(1))
+        pushFilter(scanBuilder, cond, arcticRelation.output)
+      } else {
+        pushFilter(scanBuilder, u.condition.get, arcticRelation.output)
+      }
       val upsertQuery = buildUpsertQuery(arcticRelation, upsertWrite, scanBuilder, u.assignments, u.condition)
       var query = upsertQuery
       var options: Map[String, String] = Map.empty

@@ -162,4 +162,21 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
     Assert.assertEquals(3, rows.size());
   }
+
+  @Test
+  public void testUpdateHasNoFilter() {
+    sql("update {0}.{1} set name = \"ddd\"", database, tableA);
+    rows = sql("select name from {0}.{1} group by name", database, tableA);
+
+    Assert.assertEquals(1, rows.size());
+    Assert.assertEquals("ddd", rows.get(0)[0]);
+  }
+
+  @Test
+  public void testDeleteHasNoFilter() {
+    sql("delete from {0}.{1}", database, tableA);
+    rows = sql("select * from {0}.{1}", database, tableA);
+
+    Assert.assertEquals(0, rows.size());
+  }
 }
