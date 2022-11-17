@@ -91,7 +91,8 @@ public class DDLTracerService extends IJDBCService {
     ArcticTable arcticTable = catalog.loadTable(tmp);
     Table table = arcticTable.isKeyedTable() ? arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     StringBuilder schemaSql = new StringBuilder();
-    for (UpdateColumn updateColumn : commitMeta.getUpdateColumns()) {
+    for (int j = 0; j < commitMeta.getUpdateColumns().size(); j++) {
+      UpdateColumn updateColumn = commitMeta.getUpdateColumns().get(j);
       String operateType = updateColumn.getOperate();
       StringBuilder sql =
           new StringBuilder(String.format(ALTER_TABLE, TableMetadataUtil.getTableAllIdentifyName(tableIdentifier)));
@@ -157,7 +158,9 @@ public class DDLTracerService extends IJDBCService {
           break;
       }
       if (sql.length() > 0) {
-        sql.append(";\\n");
+        if (j < commitMeta.getUpdateColumns().size() -1){
+          sql.append(";\\n");
+        }
         schemaSql.append(sql);
       }
     }
@@ -270,7 +273,8 @@ public class DDLTracerService extends IJDBCService {
             newTableMetadata.lastUpdatedMillis()));
       }
     } else {
-      String ddl = DDLTracerService.compareSchema(arcticTable.id().toString(),
+      String ddl = DDLTracerService.compareSchema(
+          arcticTable.id().toString(),
           oldTableMetadata.schema(),
           newTableMetadata.schema());
       if (!ddl.isEmpty()) {
@@ -371,7 +375,10 @@ public class DDLTracerService extends IJDBCService {
         sortedBefore.remove(field.name());
       }
       if (sb.length() > 0) {
-        rs.append(sb).append(";").append("\\n");
+        rs.append(sb);
+        if (i < before.columns().size() - 1) {
+          rs.append(";").append("\\n");
+        }
       }
     }
 
@@ -448,7 +455,10 @@ public class DDLTracerService extends IJDBCService {
         }
       }
       if (sb.length() > 0) {
-        rs.append(sb).append(";").append("\\n");
+        rs.append(sb);
+        if (i < after.columns().size() -1) {
+          rs.append(";").append("\\n");
+        }
       }
     }
     return rs.toString();
