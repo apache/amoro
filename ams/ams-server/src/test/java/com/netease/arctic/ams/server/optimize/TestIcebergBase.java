@@ -97,7 +97,7 @@ public class TestIcebergBase {
   }
 
   @AfterClass
-  public static void clearCatalog() throws Exception {
+  public static void clearCatalog() {
     icebergCatalog.dropDatabase(DATABASE);
     tempFolder.delete();
   }
@@ -126,7 +126,7 @@ public class TestIcebergBase {
     nativeIcebergCatalog.dropTable(tableIdentifier);
   }
 
-  protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable) throws IOException {
+  protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable, int length) throws IOException {
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
@@ -140,7 +140,6 @@ public class TestIcebergBase {
     DataWriter<Record> writer = appenderFactory
         .newDataWriter(outputFile, FileFormat.PARQUET, null);
 
-    int length = 10;
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         if (writer.length() > smallSizeByBytes || result.size() > 0) {
@@ -163,7 +162,7 @@ public class TestIcebergBase {
     return result;
   }
 
-  protected void insertEqDeleteFiles(UnkeyedTable arcticTable) throws IOException {
+  protected void insertEqDeleteFiles(UnkeyedTable arcticTable, int length) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -181,7 +180,6 @@ public class TestIcebergBase {
     EqualityDeleteWriter<Record> writer = appenderFactory
         .newEqDeleteWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
-    int length = 5;
     for (int i = 1; i < length * 10; i = i + length) {
       List<Record> records = baseRecords(i, length, arcticTable.schema());
       for (int j = 0; j < records.size(); j++) {
@@ -228,7 +226,7 @@ public class TestIcebergBase {
     rowDelta.commit();
   }
 
-  protected List<DataFile> insertOptimizeTargetDataFiles(UnkeyedTable arcticTable) throws IOException {
+  protected List<DataFile> insertOptimizeTargetDataFiles(UnkeyedTable arcticTable, int length) throws IOException {
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
@@ -238,7 +236,6 @@ public class TestIcebergBase {
         .newDataWriter(outputFile, FileFormat.PARQUET, null);
 
     List<DataFile> result = new ArrayList<>();
-    int length = 5;
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         writer.write(record);

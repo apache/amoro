@@ -35,8 +35,8 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
         .commit();
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
-    insertEqDeleteFiles(icebergTable.asUnkeyedTable());
+    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
     List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -54,7 +54,7 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 
-    List<DataFile> resultFiles = insertOptimizeTargetDataFiles(icebergTable.asUnkeyedTable());
+    List<DataFile> resultFiles = insertOptimizeTargetDataFiles(icebergTable.asUnkeyedTable(), 10);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());

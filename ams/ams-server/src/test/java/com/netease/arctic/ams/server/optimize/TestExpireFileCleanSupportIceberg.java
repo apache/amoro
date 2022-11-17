@@ -13,7 +13,7 @@ import java.util.List;
 public class TestExpireFileCleanSupportIceberg extends TestIcebergBase {
   @Test
   public void testExpireTableFiles() throws Exception {
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
+    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 1);
 
     DeleteFiles deleteFiles = icebergTable.asUnkeyedTable().newDelete();
     for (DataFile dataFile : dataFiles) {
@@ -22,7 +22,7 @@ public class TestExpireFileCleanSupportIceberg extends TestIcebergBase {
     }
     deleteFiles.commit();
 
-    List<DataFile> newDataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
+    List<DataFile> newDataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 1);
     TableExpireService.expireSnapshots(icebergTable.asUnkeyedTable(), System.currentTimeMillis(), new HashSet<>());
     Assert.assertEquals(1, Iterables.size(icebergTable.asUnkeyedTable().snapshots()));
 

@@ -17,8 +17,8 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     icebergTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .commit();
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
-    insertEqDeleteFiles(icebergTable.asUnkeyedTable());
+    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
     List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergTable,
