@@ -165,6 +165,10 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
   @Test
   public void testUpdateHasNoFilter() {
+    sql("insert into " + database + "." + tableA +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
     sql("update {0}.{1} set name = \"ddd\"", database, tableA);
     rows = sql("select name from {0}.{1} group by name", database, tableA);
 
@@ -174,6 +178,10 @@ public class TestUnkeyedTableDml extends SparkTestBase {
 
   @Test
   public void testDeleteHasNoFilter() {
+    sql("insert into " + database + "." + tableA +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(2, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
     sql("delete from {0}.{1}", database, tableA);
     rows = sql("select * from {0}.{1}", database, tableA);
 
