@@ -180,8 +180,10 @@ public class FileInfoCacheService extends IJDBCService {
           }
         }
       } catch (Exception e) {
-        LOG.warn("load table error when sync file info cache:" + identifier.getCatalog() + identifier.getDatabase() +
-            identifier.getTableName(), e);
+        LOG.warn(
+            String.format("load table error when sync file info cache:%s.%s.%s",
+            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+            e);
       }
 
       // get snapshot info
@@ -673,8 +675,9 @@ public class FileInfoCacheService extends IJDBCService {
           }
         } catch (Exception e) {
           LOG.error(
-              "SyncAndExpireFileCacheTask sync cache error " + tableIdentifier.catalog + tableIdentifier.database +
-                  tableIdentifier.tableName, e);
+              String.format("SyncAndExpireFileCacheTask sync cache error %s.%s.%s",
+                  tableIdentifier.catalog, tableIdentifier.database, tableIdentifier.tableName),
+              e);
         }
       });
     }
