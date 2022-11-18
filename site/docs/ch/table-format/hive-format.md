@@ -51,8 +51,13 @@ Hive 表的结构仍然会存储在 Hive Meta Store 中，Arctic 在不同引擎
 
 ## 结构优化
 
-[结构优化](../table-store/#_3) 中所描述的所有过程对于使用 Hive 作为 Basestore 的表仍然受用，分为两种方式：
+[结构优化](../optimizing.md) 中所描述的所有过程对于使用 Hive 作为 Basestore 的表仍然受用，分为两种方式：
 
-* 当表（或分区）下没有 delete 文件时，会合并所有非 Hive 目录下的文件，并将输出文件移动到当前 Hive 表（或分区）的目录下，之后这些数据将对 Hive 可见
-* 当存在 delete 文件时，则会合并表（或分区）下所有的文件，将合并后的新文件写到临时目录，在提交时执行 alter Hive location，以达到更新 Hive 原生读取内容的目的
+* 当表（或分区）下没有 delete 文件时，会合并所有非 Hive 目录下的文件，并将输出文件移动到当前 Hive 表（或分区）的目录下，之后这些数据将对 Hive 可见，如下：
+
+![Major Optimize](../images/format/hive-optimize-major.png)
+
+* 当存在 delete 文件时，则会合并表（或分区）下所有的文件，将合并后的新文件写到临时目录，在提交时执行 alter Hive location，以达到更新 Hive 原生读取内容的目的，如下：
+
+![Full Optimize](../images/format/hive-optimize-full.png)
 
