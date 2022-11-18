@@ -493,9 +493,11 @@ public class FileInfoCacheService extends IJDBCService {
           fileSize += file.getFileSize();
           fileCount++;
         }
-        for (DataFile file : tableChange.getDeleteFiles()) {
-          fileSize += file.getFileSize();
-          fileCount++;
+        if (CollectionUtils.isNotEmpty(tableChange.getDeleteFiles())) {
+          for (DataFile file : tableChange.getDeleteFiles()) {
+            fileSize += file.getFileSize();
+            fileCount++;
+          }
         }
         cache.setFileSize(fileSize);
         cache.setFileCount(fileCount);
