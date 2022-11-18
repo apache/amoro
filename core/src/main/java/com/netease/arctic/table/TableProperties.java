@@ -123,6 +123,14 @@ public class TableProperties {
   public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
   public static final int MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
 
+  public static final String MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD =
+      "optimize.major.trigger.duplicate-size-bytes-threshold";
+  public static final int MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT = 67108864; // 64 MB
+
+  public static final String MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD =
+      "optimize.major.trigger.duplicate-ratio-threshold";
+  public static final double MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT = 0.5;
+
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
   public static final double OPTIMIZE_QUOTA_DEFAULT = 0.1;
 

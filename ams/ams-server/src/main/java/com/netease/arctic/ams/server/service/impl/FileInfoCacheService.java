@@ -508,13 +508,25 @@ public class FileInfoCacheService extends IJDBCService {
         transactionsOfTable.setTransactionId(snapshot.snapshotId());
         int fileCount = PropertyUtil
             .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
-        if (snapshot.summary().containsKey(org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP)) {
-          fileCount += PropertyUtil
-              .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
-        }
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_POS_DELETES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_EQ_DELETES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP, 0);
         transactionsOfTable.setFileCount(fileCount);
         transactionsOfTable.setFileSize(PropertyUtil
-            .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0));
+            .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
+            PropertyUtil
+                .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
         transactionsOfTable.setCommitTime(snapshot.timestampMillis());
         result.add(transactionsOfTable);
       });

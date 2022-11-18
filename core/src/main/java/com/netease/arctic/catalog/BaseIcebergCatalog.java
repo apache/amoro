@@ -118,7 +118,8 @@ public class BaseIcebergCatalog implements ArcticCatalog {
         .loadTable(toIcebergTableIdentifier(tableIdentifier)));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
     return new BaseIcebergTable(tableIdentifier, CatalogUtil.useArcticTableOperations(icebergTable,
-        icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO);
+        icebergTable.location(), arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO,
+        meta.getCatalogProperties());
   }
 
   @Override
@@ -148,12 +149,27 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   }
 
   public class BaseIcebergTable extends BaseUnkeyedTable {
+    private final Map<String, String> catalogProperties;
 
     public BaseIcebergTable(
         TableIdentifier tableIdentifier,
         Table icebergTable,
         ArcticFileIO arcticFileIO) {
+      this(tableIdentifier, icebergTable, arcticFileIO, null);
+    }
+
+    public BaseIcebergTable(
+        TableIdentifier tableIdentifier,
+        Table icebergTable,
+        ArcticFileIO arcticFileIO,
+        Map<String, String> catalogProperties) {
       super(tableIdentifier, icebergTable, arcticFileIO);
+      this.catalogProperties = catalogProperties;
+    }
+
+    @Override
+    public Map<String, String> properties() {
+      return CatalogUtil.mergeCatalogPropertiesToTable(icebergTable.properties(), catalogProperties);
     }
   }
 }

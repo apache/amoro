@@ -5,7 +5,7 @@
         <div class="g-flex-col">
           <div class="g-flex">
             <span class="table-name g-text-nowrap">{{baseInfo.tableName}}</span>
-            <span class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
+            <span v-if="!isIceberg" class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
           </div>
           <div class="table-info g-flex-ac">
             <p>{{`${$t('table')}${$t('size')}`}}: <span class="text-color">{{baseInfo.size}}</span></p>

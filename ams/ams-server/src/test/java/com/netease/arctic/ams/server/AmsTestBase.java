@@ -29,23 +29,25 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.SupportHiveTestGroup;
+import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
-import com.netease.arctic.ams.server.optimize.TestExpiredFileCleanSupportHive;
+import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestOrphanFileClean;
-import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportHive;
-import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizeCommit;
-import com.netease.arctic.ams.server.optimize.TestSupportHiveMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestOrphanFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestArcticTransactionService;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
-import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
@@ -60,6 +62,7 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.commons.io.FileUtils;
@@ -105,15 +108,18 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMajorOptimizePlan.class,
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
+    TestIcebergMajorOptimizePlan.class,
+    TestIcebergMinorOptimizePlan.class,
+    TestIcebergMajorOptimizeCommit.class,
+    TestIcebergMinorOptimizeCommit.class,
+    TestExpireFileCleanSupportIceberg.class,
+    TestOrphanFileCleanSupportIceberg.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
-    TestSupportHiveMajorOptimizePlan.class,
-    TestSupportHiveMajorOptimizeCommit.class,
-    TestSupportHiveSyncService.class,
-    TestExpiredFileCleanSupportHive.class,
-    TestOrphanFileCleanSupportHive.class,
+    SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
-    TestOptimizerService.class})
+    TestOptimizerService.class
+})
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
     ArcticMetaStore.class,
@@ -136,6 +142,7 @@ public class AmsTestBase {
   private static final File testTableBaseDir = new File("/tmp");
   private static final File testBaseDir = new File("unit_test_base_tmp");
   public static ArcticTableMetastoreHandler amsHandler;
+  protected static HMSMockServer hms;
   public static ArcticCatalog catalog;
   public static ArcticCatalog icebergCatalog;
   public static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";
@@ -144,7 +151,6 @@ public class AmsTestBase {
   public static final String CATALOG_CONTROLLER_UNITTEST_NAME = "unit_test";
 
   public static final String AMS_TEST_ICEBERG_CATALOG_NAME = "ams_test_iceberg_catalog";
-
   public static final String AMS_TEST_ICEBERG_DB_NAME = "ams_test_iceberg_db";
 
   @ClassRule

@@ -37,6 +37,7 @@ public class OptimizeHistory {
   private FilesStatistics deleteFilesStatBeforeOptimize;
   private FilesStatistics baseFilesStatBeforeOptimize;
   private FilesStatistics posDeleteFilesStatBeforeOptimize;
+  private FilesStatistics eqDeleteFilesStatBeforeOptimize;
   private FilesStatistics totalFilesStatAfterOptimize;
   private SnapshotInfo snapshotInfo;
 
@@ -197,6 +198,15 @@ public class OptimizeHistory {
     this.posDeleteFilesStatBeforeOptimize = posDeleteFilesStatBeforeOptimize;
   }
 
+  public FilesStatistics getEqDeleteFilesStatBeforeOptimize() {
+    return eqDeleteFilesStatBeforeOptimize;
+  }
+
+  public void setEqDeleteFilesStatBeforeOptimize(
+      FilesStatistics eqDeleteFilesStatBeforeOptimize) {
+    this.eqDeleteFilesStatBeforeOptimize = eqDeleteFilesStatBeforeOptimize;
+  }
+
   @Override
   public String toString() {
     return "OptimizeHistory{" +
@@ -213,6 +223,7 @@ public class OptimizeHistory {
         ", deleteFilesStatBeforeOptimize=" + deleteFilesStatBeforeOptimize +
         ", baseFilesStatBeforeOptimize=" + baseFilesStatBeforeOptimize +
         ", posDeleteFilesStatBeforeOptimize=" + posDeleteFilesStatBeforeOptimize +
+        ", eqDeleteFilesStatBeforeOptimize=" + eqDeleteFilesStatBeforeOptimize +
         ", totalFilesStatAfterOptimize=" + totalFilesStatAfterOptimize +
         ", snapshotInfo=" + snapshotInfo +
         ", partitionCnt=" + partitionCnt +

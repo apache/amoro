@@ -86,7 +86,7 @@ public class AmsRestServer {
       config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/catalogs", "/static/index.html", Location.CLASSPATH);
-
+      config.addSinglePageRoot("/settings", "/static/index.html", Location.CLASSPATH);
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
@@ -166,9 +166,9 @@ public class AmsRestServer {
         /** console controller **/
         get("/terminal/examples", TerminalController::getExamples);
         get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeScript);
         get("/terminal/{sessionId}/logs", TerminalController::getLogs);
-        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlResult);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
 
@@ -221,9 +221,9 @@ public class AmsRestServer {
         /** console controller **/
         get("/terminal/examples", TerminalController::getExamples);
         get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeScript);
         get("/terminal/{sessionId}/logs", TerminalController::getLogs);
-        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlResult);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
 

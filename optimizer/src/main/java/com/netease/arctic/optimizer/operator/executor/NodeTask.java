@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -27,6 +27,7 @@ import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
@@ -44,6 +45,7 @@ public class NodeTask {
   private final List<DataFile> insertFiles = new ArrayList<>();
   private final List<DataFile> deleteFiles = new ArrayList<>();
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
+  private List<FileScanTask> fileScanTasks = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;
@@ -119,6 +121,10 @@ public class NodeTask {
     return posDeleteFiles;
   }
 
+  public List<FileScanTask> fileScanTasks() {
+    return fileScanTasks;
+  }
+
   public Set<DataTreeNode> getSourceNodes() {
     return sourceNodes;
   }
@@ -163,6 +169,10 @@ public class NodeTask {
     return taskId.getType();
   }
 
+  public void setFileScanTasks(List<FileScanTask> fileScanTasks) {
+    this.fileScanTasks = fileScanTasks;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
@@ -173,6 +183,7 @@ public class NodeTask {
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
         .add("posDeleteFiles", posDeleteFiles.size())
+        .add("fileScanTasks", fileScanTasks.size())
         .add("customHiveSubdirectory", customHiveSubdirectory)
         .toString();
   }

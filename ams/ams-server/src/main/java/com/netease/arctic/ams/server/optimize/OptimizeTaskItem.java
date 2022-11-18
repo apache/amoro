@@ -226,36 +226,40 @@ public class OptimizeTaskItem extends IJDBCService {
     this.optimizeTask.setInsertFiles(Collections.emptyList());
     this.optimizeTask.setBaseFiles(Collections.emptyList());
     this.optimizeTask.setPosDeleteFiles(Collections.emptyList());
+    this.optimizeTask.setIcebergFileScanTasks(Collections.emptyList());
   }
 
   public void setFiles() {
-    List<ByteBuffer> insertFiles = selectOptimizeTaskFiles(DataFileType.INSERT_FILE, 0)
+    List<ByteBuffer> insertFiles = selectOptimizeTaskFiles(DataFileType.INSERT_FILE.name(), 0)
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
-    List<ByteBuffer> deleteFiles = selectOptimizeTaskFiles(DataFileType.EQ_DELETE_FILE, 0)
+    List<ByteBuffer> deleteFiles = selectOptimizeTaskFiles(DataFileType.EQ_DELETE_FILE.name(), 0)
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
-    List<ByteBuffer> baseFiles = selectOptimizeTaskFiles(DataFileType.BASE_FILE, 0)
+    List<ByteBuffer> baseFiles = selectOptimizeTaskFiles(DataFileType.BASE_FILE.name(), 0)
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
-    List<ByteBuffer> posDeleteFiles = selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE, 0)
+    List<ByteBuffer> posDeleteFiles = selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE.name(), 0)
+        .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
+    List<ByteBuffer> fileScanTasks = selectOptimizeTaskFiles(InternalTableFilesMapper.FILE_SCAN_TASK_FILE_TYPE, 0)
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
     optimizeTask.setInsertFiles(insertFiles);
     optimizeTask.setDeleteFiles(deleteFiles);
     optimizeTask.setBaseFiles(baseFiles);
     optimizeTask.setPosDeleteFiles(posDeleteFiles);
+    optimizeTask.setIcebergFileScanTasks(fileScanTasks);
     // for ams restart, files is not loaded from sysdb, reload here
     List<byte[]> targetFiles =
-        selectOptimizeTaskFiles(DataFileType.BASE_FILE, 1);
+        selectOptimizeTaskFiles(DataFileType.BASE_FILE.name(), 1);
     targetFiles.addAll(
-        selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE, 1));
+        selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE.name(), 1));
     optimizeRuntime.setTargetFiles(targetFiles.stream()
         .map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList()));
   }
 
-  private List<byte[]> selectOptimizeTaskFiles(DataFileType fileType, int isTarget) {
+  private List<byte[]> selectOptimizeTaskFiles(String contentType, int isTarget) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       InternalTableFilesMapper internalTableFilesMapper =
           getMapper(sqlSession, InternalTableFilesMapper.class);
 
-      return internalTableFilesMapper.selectOptimizeTaskFiles(getTaskId(), fileType, isTarget);
+      return internalTableFilesMapper.selectOptimizeTaskFiles(getTaskId(), contentType, isTarget);
     }
   }
 
@@ -274,10 +278,10 @@ public class OptimizeTaskItem extends IJDBCService {
             ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
             if (contentFile.content() == FileContent.DATA) {
               internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
-                  DataFileType.BASE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+                  DataFileType.BASE_FILE.name(), 1, SerializationUtil.byteBufferToByteArray(file));
             } else {
               internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
-                  DataFileType.POS_DELETE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+                  DataFileType.POS_DELETE_FILE.name(), 1, SerializationUtil.byteBufferToByteArray(file));
             }
           });
         } catch (Exception e) {
@@ -301,10 +305,10 @@ public class OptimizeTaskItem extends IJDBCService {
           ContentFile<?> contentFile = SerializationUtil.toInternalTableFile(file);
           if (contentFile.content() == FileContent.DATA) {
             internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
-                DataFileType.BASE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+                DataFileType.BASE_FILE.name(), 1, SerializationUtil.byteBufferToByteArray(file));
           } else {
             internalTableFilesMapper.insertOptimizeTaskFile(optimizeTask.getTaskId(),
-                DataFileType.POS_DELETE_FILE, 1, SerializationUtil.byteBufferToByteArray(file));
+                DataFileType.POS_DELETE_FILE.name(), 1, SerializationUtil.byteBufferToByteArray(file));
           }
         });
       } catch (Exception e) {
@@ -369,25 +373,31 @@ public class OptimizeTaskItem extends IJDBCService {
         optimizeTask.getInsertFiles()
             .forEach(f -> internalTableFilesMapper
                 .insertOptimizeTaskFile(optimizeTaskId,
-                    DataFileType.INSERT_FILE,
+                    DataFileType.INSERT_FILE.name(),
                     0,
                     SerializationUtil.byteBufferToByteArray(f)));
         optimizeTask.getDeleteFiles()
             .forEach(f -> internalTableFilesMapper
                 .insertOptimizeTaskFile(optimizeTaskId,
-                    DataFileType.EQ_DELETE_FILE,
+                    DataFileType.EQ_DELETE_FILE.name(),
                     0,
                     SerializationUtil.byteBufferToByteArray(f)));
         optimizeTask.getBaseFiles()
             .forEach(f -> internalTableFilesMapper
                 .insertOptimizeTaskFile(optimizeTaskId,
-                    DataFileType.BASE_FILE,
+                    DataFileType.BASE_FILE.name(),
                     0,
                     SerializationUtil.byteBufferToByteArray(f)));
         optimizeTask.getPosDeleteFiles()
             .forEach(f -> internalTableFilesMapper
                 .insertOptimizeTaskFile(optimizeTaskId,
-                    DataFileType.POS_DELETE_FILE,
+                    DataFileType.POS_DELETE_FILE.name(),
+                    0,
+                    SerializationUtil.byteBufferToByteArray(f)));
+        optimizeTask.getIcebergFileScanTasks()
+            .forEach(f -> internalTableFilesMapper
+                .insertOptimizeTaskFile(optimizeTaskId,
+                    InternalTableFilesMapper.FILE_SCAN_TASK_FILE_TYPE,
                     0,
                     SerializationUtil.byteBufferToByteArray(f)));
 

@@ -198,6 +198,7 @@ public class TestSupportHiveBase implements TestOptimizeBase {
   private static void stopHMS() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){
+      hiveCatalog.dropDatabase(AMS_TEST_HIVE_DB_NAME);
       hms.stop();
       hms = null;
       tempFolder.delete();

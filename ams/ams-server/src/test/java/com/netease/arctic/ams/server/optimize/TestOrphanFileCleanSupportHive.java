@@ -52,7 +52,7 @@ public class TestOrphanFileCleanSupportHive extends TestSupportHiveBase {
     mockStatic(JDBCSqlSessionFactoryProvider.class);
     mockStatic(ServiceContainer.class);
     when(JDBCSqlSessionFactoryProvider.get()).thenReturn(null);
-    TestOrphanFileCleanSupportHive.FakeFileInfoCacheService fakeFileInfoCacheService = new TestOrphanFileCleanSupportHive.FakeFileInfoCacheService();
+    FakeFileInfoCacheService fakeFileInfoCacheService = new FakeFileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fakeFileInfoCacheService);
   }
 

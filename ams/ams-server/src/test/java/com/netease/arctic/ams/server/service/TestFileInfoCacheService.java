@@ -319,6 +319,8 @@ public class TestFileInfoCacheService extends TableTestBase {
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
         table.id().buildTableIdentifier(),
         transactionsOfTables.get(1).getTransactionId()).get(1).getOperation(), "remove");
+    Assert.assertEquals(transactionsOfTables.get(1).getFileCount(), 2);
+    Assert.assertEquals(transactionsOfTables.get(1).getFileSize(), 20);
 
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
         table.id().buildTableIdentifier(),

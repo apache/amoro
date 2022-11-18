@@ -292,6 +292,7 @@ public class HMSMockServer {
     try (Reader reader = new InputStreamReader(inputStream)) {
       runScript(connection, reader);
     }
+    connection.close();
   }
 
   private void runScript(Connection connection, Reader reader) throws SQLException, IOException {
