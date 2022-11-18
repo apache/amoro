@@ -22,10 +22,8 @@ import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
 import com.netease.arctic.ams.server.model.Optimizer;
-import com.netease.arctic.ams.server.model.OptimizerGroup;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.model.OptimizerResourceInfo;
-import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
@@ -81,13 +79,9 @@ public class OptimizerController extends RestBaseController {
 
     try {
       List<TableOptimizeItem> arcticTableItemList = new ArrayList<>();
-      List<TableMetadata> tables = iMetaService.listTables();
-      for (TableMetadata arcticTable : tables) {
-        TableIdentifier tableIdentifier = new TableIdentifier();
-        tableIdentifier.setTableName(arcticTable.getTableIdentifier().getTableName());
-        tableIdentifier.setDatabase(arcticTable.getTableIdentifier().getDatabase());
-        tableIdentifier.setCatalog(arcticTable.getTableIdentifier().getCatalog());
+      List<TableIdentifier> tables = ServiceContainer.getOptimizeService().listCachedTables(false);
 
+      for (TableIdentifier tableIdentifier : tables) {
         TableOptimizeItem arcticTableItem = iOptimizeService.getTableOptimizeItem(tableIdentifier);
         // if status is specified, we filter item by status
         if (statusList.size() > 0 &&
@@ -99,7 +93,7 @@ public class OptimizerController extends RestBaseController {
         if ("all".equals(optimizerGroup)) {
           arcticTableItemList.add(arcticTableItem);
         } else {
-          String groupName = arcticTable.getProperties()
+          String groupName = arcticTableItem.getArcticTable().properties()
               .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
           if (null != groupName) {
             if (optimizerGroup.equals(groupName)) {
