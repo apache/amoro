@@ -61,8 +61,8 @@ CREATE TABLE optimize_task (
     trace_id varchar(40) NOT NULL,
     optimize_type varchar(10) NOT NULL,
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     partition varchar(128) DEFAULT NULL,
     task_commit_group varchar(40) DEFAULT NULL,
     max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
@@ -102,8 +102,8 @@ CREATE TABLE optimize_task (
 
 CREATE TABLE optimize_table_runtime (
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     current_snapshot_id bigint NOT NULL DEFAULT -1,
     latest_major_optimize_time clob(64m),
     latest_full_optimize_time clob(64m),
@@ -117,8 +117,8 @@ CREATE TABLE optimize_table_runtime (
 
 CREATE TABLE table_metadata (
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     primary_key varchar(256) DEFAULT NULL,
     sort_key varchar(256) DEFAULT NULL,
     table_location varchar(256) DEFAULT NULL,
@@ -174,8 +174,8 @@ CREATE TABLE optimize_file (
 CREATE TABLE optimize_history (
     history_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     optimize_range varchar(10) NOT NULL,
     visible_time timestamp DEFAULT NULL,
     commit_time timestamp DEFAULT NULL,
@@ -227,8 +227,8 @@ CREATE TABLE optimize_task_history (
     retry             int NOT NULL,
     task_plan_group   varchar(40) NOT NULL,
     catalog_name      varchar(64) NOT NULL,
-    db_name           varchar(64) NOT NULL,
-    table_name        varchar(64) NOT NULL,
+    db_name           varchar(128) NOT NULL,
+    table_name        varchar(128) NOT NULL,
     start_time        timestamp DEFAULT NULL,
     end_time          timestamp DEFAULT NULL,
     cost_time         bigint DEFAULT NULL,
@@ -239,7 +239,7 @@ CREATE TABLE optimize_task_history (
 CREATE TABLE database_metadata (
     db_id int NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
     PRIMARY KEY (db_id),
     UNIQUE (catalog_name,db_name)
 );

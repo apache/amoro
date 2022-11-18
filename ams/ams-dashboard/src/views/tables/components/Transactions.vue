@@ -30,7 +30,16 @@
         :loading="loading"
         @change="change"
         class="g-mt-8"
-      ></a-table>
+      >
+        <template #bodyCell="{ column, record }">
+          <template v-if="column.dataIndex === 'path'">
+            <a-tooltip>
+              <template #title>{{record.path}}</template>
+              <span>{{record.path}}</span>
+            </a-tooltip>
+          </template>
+        </template>
+      </a-table>
     </template>
 
   </div>
