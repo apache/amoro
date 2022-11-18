@@ -129,8 +129,9 @@ public class ArcticMetaStore {
   public static void startMetaStore(Configuration conf) throws Throwable {
     try {
       long maxMessageSize = conf.getLong(ArcticMetaStoreConf.SERVER_MAX_MESSAGE_SIZE);
-      int minWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MIN_THREADS);
-      int maxWorkerThreads = conf.getInteger(ArcticMetaStoreConf.SERVER_MAX_THREADS);
+      int selectorThreads = conf.getInteger(ArcticMetaStoreConf.THRIFT_SELECTOR_THREADS);
+      int workerThreads = conf.getInteger(ArcticMetaStoreConf.THRIFT_WORKER_THREADS);
+      int queueSizePerSelector = conf.getInteger(ArcticMetaStoreConf.THRIFT_QUEUE_SIZE_PER_THREAD);
       boolean useCompactProtocol = conf.get(ArcticMetaStoreConf.USE_THRIFT_COMPACT_PROTOCOL);
       int port = conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
 
@@ -168,11 +169,14 @@ public class ArcticMetaStore {
           .transportFactory(new TFramedTransport.Factory())
           .protocolFactory(protocolFactory)
           .inputProtocolFactory(inputProtoFactory)
-          .workerThreads(maxWorkerThreads);
+          .workerThreads(workerThreads)
+          .selectorThreads(selectorThreads)
+          .acceptQueueSizePerThread(queueSizePerSelector);
       server = new TThreadedSelectorServer(args);
       LOG.info("Started the new meta server on port [" + port + "]...");
-      LOG.info("Options.minWorkerThreads = " + minWorkerThreads);
-      LOG.info("Options.maxWorkerThreads = " + maxWorkerThreads);
+      LOG.info("Options.thriftWorkerThreads = " + workerThreads);
+      LOG.info("Options.thriftSelectorThreads = " + selectorThreads);
+      LOG.info("Options.queueSizePerSelector = " + queueSizePerSelector);
 
       // start meta store worker thread
       Lock metaStoreThreadsLock = new ReentrantLock();

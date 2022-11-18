@@ -175,11 +175,11 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (String partitionValue : partitionValues) {
-      builder.add(record.copy(ImmutableMap.of("id", 1, "name", partitionValue,
-          "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-          "op_time_with_zone", OffsetDateTime.of(
+      builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 1, COLUMN_NAME_NAME, partitionValue,
+          COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 1, 12, 0, 0),
+          COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
               LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-          "d", new BigDecimal("100"))));
+          COLUMN_NAME_D, new BigDecimal("100"))));
     }
     return builder.build();
   }
