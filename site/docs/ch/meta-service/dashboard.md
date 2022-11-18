@@ -194,12 +194,13 @@ Kyuubi 是一个多租户的大数据 SQL Gateway, 有关 Kyuubi 的知识，
   arctic.ams.terminal.backend: kyuubi
 
   # 新增以下配置
-  arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://<endpoint>/;<params>    # kyuubi 的JDBC 连接信息
+  arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://<endpoint>/;kerberosAuthType=fromSubject;<params>    # kyuubi 的JDBC 连接信息
 ```
 
 **关于Kyuubi的认证**
 
 目前对于访问带 kerberos 的集群，terminal 使用 catalog 中配置的 keytab 信息创建 Connection. 
+因此在 arctic.ams.terminal.kyuubi.jdbc.url 配置中需加上 kerberosAuthType=fromSubject 
 
 * 如果 KyuubiServer 开启了 Kerberos 认证，请确保此 Principal 可以访问 KyuubiServer. 
 * 如果 KyuubiServer 采用账户密码认证，需要在 jdbc.url 中配置好认证信息
