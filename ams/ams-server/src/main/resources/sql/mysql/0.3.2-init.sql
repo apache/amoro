@@ -23,7 +23,7 @@ CREATE TABLE `database_metadata`
 (
     `db_id`        int(11) NOT NULL AUTO_INCREMENT,
     `catalog_name` varchar(64) NOT NULL COMMENT 'catalog name',
-    `db_name`      varchar(64) NOT NULL COMMENT 'database name',
+    `db_name`      varchar(128) NOT NULL COMMENT 'database name',
     PRIMARY KEY (`db_id`),
     UNIQUE KEY `database_name_uindex` (`catalog_name`,`db_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT 'database metadata';
@@ -68,8 +68,8 @@ CREATE TABLE `optimize_history`
 (
     `history_id`                     bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'History auto increment id',
     `catalog_name`                  varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`                       varchar(64) NOT NULL COMMENT 'Database name',
-    `table_name`                    varchar(64) NOT NULL COMMENT 'Table name',
+    `db_name`                       varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`                    varchar(128) NOT NULL COMMENT 'Table name',
     `optimize_range`                varchar(10) NOT NULL COMMENT 'Optimize Range: Table, Partition, Node',
     `visible_time`                  datetime(3) DEFAULT NULL COMMENT 'Latest visible time',
     `commit_time`                   datetime(3) DEFAULT NULL COMMENT 'Commit time',
@@ -140,8 +140,8 @@ CREATE TABLE `optimize_task`
     `trace_id`                  varchar(40) NOT NULL COMMENT 'Optimize task uuid',
     `optimize_type`             varchar(10) NOT NULL COMMENT 'Optimize type: Major, Minor',
     `catalog_name`              varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`                   varchar(64) NOT NULL COMMENT 'Database name',
-    `table_name`                varchar(64) NOT NULL COMMENT 'Table name',
+    `db_name`                   varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`                varchar(128) NOT NULL COMMENT 'Table name',
     `partition`                 varchar(128)  DEFAULT NULL COMMENT 'Partition',
     `task_commit_group`         varchar(40)   DEFAULT NULL COMMENT 'UUID. Commit group of task, task of one commit group should commit together',
     `max_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Max change transaction id',
@@ -193,8 +193,8 @@ CREATE TABLE `snapshot_info_cache`
 CREATE TABLE `table_metadata`
 (
     `catalog_name`    varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`         varchar(64) NOT NULL COMMENT 'Database name',
-    `table_name`      varchar(64) NOT NULL COMMENT 'Table name',
+    `db_name`         varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`      varchar(128) NOT NULL COMMENT 'Table name',
     `primary_key`     varchar(256) DEFAULT NULL COMMENT 'Primary key',
     `sort_key`        varchar(256) DEFAULT NULL COMMENT 'Sort key',
     `table_location`  varchar(256) DEFAULT NULL COMMENT 'Table location',
@@ -218,8 +218,8 @@ CREATE TABLE `table_metadata`
 CREATE TABLE `optimize_table_runtime`
 (
     `catalog_name`               varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`                    varchar(64) NOT NULL COMMENT 'Database name',
-    `table_name`                 varchar(64) NOT NULL COMMENT 'Table name',
+    `db_name`                    varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`                 varchar(128) NOT NULL COMMENT 'Table name',
     `current_snapshot_id`        bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Base table current snapshot id',
     `latest_major_optimize_time` mediumtext COMMENT 'Latest Major Optimize time for all partitions',
     `latest_minor_optimize_time` mediumtext COMMENT 'Latest Minor Optimize time for all partitions',
@@ -237,8 +237,8 @@ CREATE TABLE `optimize_task_history`
     `retry`             int(11) NOT NULL COMMENT 'Retry times for the same task_trace_id',
     `task_plan_group`   varchar(40) NOT NULL COMMENT 'Plan group of task, task of one plan group are planned together',
     `catalog_name`      varchar(64) NOT NULL COMMENT 'Catalog name',
-    `db_name`           varchar(64) NOT NULL COMMENT 'Database name',
-    `table_name`        varchar(64) NOT NULL COMMENT 'Table name',
+    `db_name`           varchar(128) NOT NULL COMMENT 'Database name',
+    `table_name`        varchar(128) NOT NULL COMMENT 'Table name',
     `start_time`        datetime(3) DEFAULT NULL COMMENT 'Task start time',
     `end_time`          datetime(3) DEFAULT NULL COMMENT 'Task end time',
     `cost_time`         bigint(20) DEFAULT NULL COMMENT 'Task cost time',
