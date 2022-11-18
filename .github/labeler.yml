@@ -46,6 +46,10 @@
   - "core/**/*"
 
 "module:ams":
+  - "ams/api/**/*"
+  - "ams/ams-server/**/*"
+
+"module:dashboard":
   - "ams/**/*"
 
 "module:spark":
