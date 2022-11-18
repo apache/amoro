@@ -312,6 +312,10 @@ public class FileInfoCacheService extends IJDBCService {
         fileSize += file.getFileSize();
         fileCount++;
       }
+      for (DataFile file : deleteFiles) {
+        fileSize += file.getFileSize();
+        fileCount++;
+      }
       CacheSnapshotInfo snapshotInfo = syncSnapInfo(identifier, tableType, snapshot, fileSize, fileCount);
       //remove snapshot to release memory of snapshot, because there is too much cache in BaseSnapshot
       iterator.remove();
@@ -489,6 +493,10 @@ public class FileInfoCacheService extends IJDBCService {
           fileSize += file.getFileSize();
           fileCount++;
         }
+        for (DataFile file : tableChange.getDeleteFiles()) {
+          fileSize += file.getFileSize();
+          fileCount++;
+        }
         cache.setFileSize(fileSize);
         cache.setFileCount(fileCount);
         rs.add(cache);
@@ -514,14 +522,6 @@ public class FileInfoCacheService extends IJDBCService {
             .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
         fileCount += PropertyUtil
             .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
-        fileCount += PropertyUtil
-            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_POS_DELETES_PROP, 0);
-        fileCount += PropertyUtil
-            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_POS_DELETES_PROP, 0);
-        fileCount += PropertyUtil
-            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_EQ_DELETES_PROP, 0);
-        fileCount += PropertyUtil
-            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_EQ_DELETES_PROP, 0);
         transactionsOfTable.setFileCount(fileCount);
         transactionsOfTable.setFileSize(PropertyUtil
             .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
