@@ -17,7 +17,7 @@
 name: Arctic Bug Report
 description: File a bug report
 title: "[Bug]: "
-labels: ["bug"]
+labels: ["type:bug"]
 body:
   - type: markdown
     attributes:
