@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static com.google.common.collect.ImmutableSet.toImmutableSet;
 
 /**
  * KeyedDeleteFilter is used to do MOR for Keyed Table
@@ -51,13 +52,8 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
       List<IcebergColumnHandle> requestedSchema,
       PrimaryKeySpec primaryKeySpec,
       FileIO fileIO) {
-    super(keyedTableScanTask, tableSchema, getSchemas(requestedSchema), primaryKeySpec);
+    super(keyedTableScanTask, tableSchema, filterSchema(tableSchema, requestedSchema), primaryKeySpec);
     this.fileIO = fileIO;
-  }
-
-  private static Schema getSchemas(List<IcebergColumnHandle> requestedColumns) {
-    return new Schema(requestedColumns.stream().map(s -> Types.NestedField.optional(s.getId(), s.getName(),
-        TypeConverter.toIcebergType(s.getType()))).collect(Collectors.toList()));
   }
 
   @Override
@@ -71,13 +67,10 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
   }
 
   private static Schema filterSchema(Schema tableSchema, List<IcebergColumnHandle> requestedColumns) {
-    return new Schema(filterFieldList(tableSchema.columns(), requestedColumns));
-  }
-
-  private static List<Types.NestedField> filterFieldList(List<Types.NestedField> fields,
-      List<IcebergColumnHandle> requestedColumns) {
-    return requestedColumns.stream().map(c -> filterField(c, fields).get())
-        .collect(Collectors.toList());
+    Set<Integer> requestedFieldIds = requestedColumns.stream()
+        .map(IcebergColumnHandle::getId)
+        .collect(toImmutableSet());
+    return new Schema(filterFieldList(tableSchema.columns(), requestedFieldIds));
   }
 
   private static List<Types.NestedField> filterFieldList(
@@ -88,23 +81,6 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(toImmutableList());
-  }
-
-  private static Optional<Types.NestedField> filterField(IcebergColumnHandle requestColumn,
-      List<Types.NestedField> fields) {
-    for (Types.NestedField nestedField: fields) {
-      if (nestedField.fieldId() == requestColumn.getId()) {
-        return Optional.of(nestedField);
-      }
-      if (nestedField.type().isStructType()) {
-        Optional<Types.NestedField> childField = filterField(requestColumn, nestedField.type().asStructType().fields());
-        if (childField.isEmpty()) {
-          return Optional.empty();
-        }
-        return childField;
-      }
-    }
-    throw new RuntimeException("can not found columns " + requestColumn);
   }
 
   private static Optional<Types.NestedField> filterField(Types.NestedField field, Set<Integer> requestedFieldIds) {
