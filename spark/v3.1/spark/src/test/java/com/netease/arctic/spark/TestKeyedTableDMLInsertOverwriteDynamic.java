@@ -93,6 +93,18 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
     Assert.assertEquals(6, rows.size());
 
     assertContainIdSet(rows, 0, 7, 8, 9, 3, 6, 1024);
+
+    writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
+        newRecord(keyedTable, 1, "ddd", quickDateWithZone(1)),
+        newRecord(keyedTable, 3, "eee", quickDateWithZone(2)),
+        newRecord(keyedTable, 5, "666", quickDateWithZone(3)),
+        newRecord(keyedTable, 2004, "1024", quickDateWithZone(4))
+    ));
+
+    rows = sql("select id, data, ts from {0}.{1} order by id", database, table);
+    Assert.assertEquals(10, rows.size());
+
+    assertContainIdSet(rows, 0, 1, 3, 5, 7, 8, 9, 3, 6, 1024, 2004);
   }
 
   @Test
