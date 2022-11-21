@@ -20,9 +20,9 @@ package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IOrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
@@ -72,13 +72,13 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     if (cleanTasks == null) {
       cleanTasks = new ScheduledTasks<>(ThreadPool.Type.ORPHAN);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids = tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
+
+    Set<TableIdentifier> tableIds = CatalogUtil.loadTablesFromCatalog();
+    cleanTasks.checkRunningTask(tableIds,
         t -> CHECK_INTERVAL,
         TableOrphanFileClean::new,
         true);
-    LOG.info("Schedule Orphan Cleaner finished with {} tasks", ids.size());
+    LOG.info("Schedule Orphan Cleaner finished with {} tasks", tableIds.size());
   }
 
   public static class TableOrphanFileClean implements ScheduledTasks.Task {

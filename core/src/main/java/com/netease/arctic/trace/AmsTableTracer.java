@@ -27,7 +27,6 @@ import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableMetric;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.ChangeTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
@@ -61,25 +60,20 @@ public class AmsTableTracer implements TableTracer {
   private final String innerTable;
   private final AmsClient client;
 
-  private String action;
-  private Map<String, String> properties;
   private final Map<String, String> snapshotSummary = new HashMap<>();
-  private InternalTableChange defaultTableChange;
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
   private final List<UpdateColumn> updateColumns = new ArrayList<>();
+
+  private String action;
+  private Map<String, String> properties;
+  private InternalTableChange defaultTableChange;
 
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
     this.innerTable = table instanceof ChangeTable ?
         Constants.INNER_TABLE_CHANGE : Constants.INNER_TABLE_BASE;
     this.table = table;
-    this.action = action;
     this.client = client;
-  }
-
-  public AmsTableTracer(KeyedTable table, String action, AmsClient client) {
-    this.table = table;
-    this.innerTable = null;
-    this.client = client;
+    setAction(action);
   }
 
   public AmsTableTracer(UnkeyedTable table, AmsClient client) {
@@ -276,7 +270,8 @@ public class AmsTableTracer implements TableTracer {
           SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
         }
 
-        return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId, parentSnapshotId));
+        return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
+            snapshot.sequenceNumber(), parentSnapshotId));
       } else {
         return Optional.empty();
       }

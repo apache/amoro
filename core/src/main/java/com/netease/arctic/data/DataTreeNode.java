@@ -20,8 +20,8 @@ package com.netease.arctic.data;
 
 import com.netease.arctic.ams.api.TreeNode;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -77,7 +77,7 @@ public final class DataTreeNode implements Serializable {
     return index;
   }
 
-  public boolean isSonOf(@NotNull DataTreeNode another) {
+  public boolean isSonOf(@Nonnull DataTreeNode another) {
     if (another.equals(this)) {
       return true;
     }

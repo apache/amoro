@@ -21,7 +21,8 @@ struct OptimizeTask {
     5:optional list<binary> baseFiles;
     6:optional list<binary> posDeleteFiles;
     7:optional list<TreeNode> sourceNodes;
-    8:optional map<string, string> properties;
+    8:optional list<binary> icebergFileScanTasks;
+    9:optional map<string, string> properties;
 }
 
 
@@ -92,6 +93,24 @@ struct DataFileInfo {
     7: string partition;
     8: i64 commitTime;
     9: i64 recordCount;
+    10: i64 sequence;
+}
+
+struct OptimizerRegisterInfo {
+    1: string optimizerGroupName;
+    2: i32 coreNumber;
+    3: i64 memorySize;
+}
+
+struct OptimizerDescriptor {
+    1: i32 optimizerId;
+    2: i32 groupId;
+    3: string groupName;
+    4: i32 coreNumber;
+    5: i64 memorySize;
+    6: string container;
+    7: string status;
+    8: i64 updateTime;
 }
 
 struct OptimizerMetric {
@@ -114,6 +133,8 @@ service OptimizeManager {
     void reportOptimizeResult(1:OptimizeTaskStat optimizeTaskStat)
 
     void reportOptimizerState(1: OptimizerStateReport reportData)
+
+    OptimizerDescriptor registerOptimizer(1: OptimizerRegisterInfo registerInfo)
 
     void reportOptimizerMetric(1: list<OptimizerMetric> metrics)
 }

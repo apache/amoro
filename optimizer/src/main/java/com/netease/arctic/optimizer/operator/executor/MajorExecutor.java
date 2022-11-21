@@ -82,9 +82,11 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     List<DataFile> dataFiles = task.dataFiles();
     dataFiles.addAll(task.deleteFiles());
-    CloseableIterator<Record> recordIterator =
-        openTask(dataFiles, deleteFileMap, table.schema(), task.getSourceNodes());
-    targetFiles = optimizeTable(recordIterator);
+    targetFiles = table.io().doAs(() -> {
+      CloseableIterator<Record> recordIterator =
+          openTask(dataFiles, deleteFileMap, table.schema(), task.getSourceNodes());
+      return optimizeTable(recordIterator);
+    });
 
     long totalFileSize = 0;
     List<ByteBuffer> baseFileBytesList = new ArrayList<>();

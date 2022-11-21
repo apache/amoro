@@ -19,9 +19,13 @@
 package com.netease.arctic.ams.server;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.server.controller.CatalogController;
 import com.netease.arctic.ams.server.controller.HealthCheckController;
 import com.netease.arctic.ams.server.controller.LoginController;
+import com.netease.arctic.ams.server.controller.OptimizeContainerController;
 import com.netease.arctic.ams.server.controller.OptimizerController;
+import com.netease.arctic.ams.server.controller.PlatformFileInfoController;
+import com.netease.arctic.ams.server.controller.SettingController;
 import com.netease.arctic.ams.server.controller.TableController;
 import com.netease.arctic.ams.server.controller.TerminalController;
 import com.netease.arctic.ams.server.controller.VersionController;
@@ -32,10 +36,8 @@ import com.netease.arctic.ams.server.service.impl.ApiTokenService;
 import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import com.netease.arctic.ams.server.utils.Utils;
 import io.javalin.Javalin;
-import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import io.javalin.http.staticfiles.Location;
-import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
@@ -83,6 +85,8 @@ public class AmsRestServer {
       config.addSinglePageRoot("/hive-tables", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
       config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/catalogs", "/static/index.html", Location.CLASSPATH);
+      config.addSinglePageRoot("/settings", "/static/index.html", Location.CLASSPATH);
 
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
@@ -137,11 +141,20 @@ public class AmsRestServer {
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/partitions/{partition}/files",
                 TableController::getPartitionFileListInfo);
         get("/tables/catalogs/{catalog}/dbs/{db}/tables/{table}/operations", TableController::getTableOperations);
-
         get("/catalogs/{catalog}/databases/{db}/tables", TableController::getTableList);
         get("/catalogs/{catalog}/databases", TableController::getDatabaseList);
         get("/catalogs", TableController::getCatalogs);
+        /** catalog controller **/
+        post("/catalogs", CatalogController::createCatalog);
+        // make sure types is before
+        get("/catalogs/types", CatalogController::getCatalogTypeList);
+        get("/catalog/metastore/types", CatalogController::getCatalogTypeList);
 
+        get("/catalogs/{catalogName}", CatalogController::getCatalogDetail);
+        delete("/catalogs/{catalogName}", CatalogController::deleteCatalog);
+        put("/catalogs/{catalogName}", CatalogController::updateCatalog);
+        get("/catalogs/{catalogName}/delete/check", CatalogController::catalogDeleteCheck);
+        get("/catalogs/{catalogName}/config/{type}/{key}", CatalogController::getCatalogConfFileContent);
         /** optimize controller **/
         get("/optimize/optimizerGroups/{optimizerGroup}/tables", OptimizerController::getOptimizerTables);
         get("/optimize/optimizerGroups/{optimizerGroup}/optimizers", OptimizerController::getOptimizers);
@@ -153,11 +166,21 @@ public class AmsRestServer {
         /** console controller **/
         get("/terminal/examples", TerminalController::getExamples);
         get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeScript);
         get("/terminal/{sessionId}/logs", TerminalController::getLogs);
-        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlResult);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
+
+        /** file controller **/
+        post("/files", PlatformFileInfoController::uploadFile);
+        get("/files/{fileId}", PlatformFileInfoController::downloadFile);
+
+        /** overview controller **/
+
+        /** setting controller **/
+        get("/settings/containers", OptimizeContainerController::getContainerSetting);
+        get("/settings/system", SettingController::getSystemSetting);
 
         /** health check **/
         get("/health/status", HealthCheckController::healthCheck);
@@ -198,9 +221,9 @@ public class AmsRestServer {
         /** console controller **/
         get("/terminal/examples", TerminalController::getExamples);
         get("/terminal/examples/{exampleName}", TerminalController::getSqlExamples);
-        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeSql);
+        post("/terminal/catalogs/{catalog}/execute", TerminalController::executeScript);
         get("/terminal/{sessionId}/logs", TerminalController::getLogs);
-        get("/terminal/{sessionId}/result", TerminalController::getSqlStatus);
+        get("/terminal/{sessionId}/result", TerminalController::getSqlResult);
         put("/terminal/{sessionId}/stop", TerminalController::stopSql);
         get("/terminal/latestInfos/", TerminalController::getLatestInfo);
 
@@ -246,22 +269,22 @@ public class AmsRestServer {
   }
 
   private static final String[] urlWhiteList = {
-      "/ams/v1/versionInfo",
-      "/ams/v1/login",
-      "/",
-      "/overview",
-      "/introduce",
-      "/tables",
-      "/optimizers",
-      "/login",
-      "/terminal",
-      "/hive-tables/upgrade",
-      "/hive-tables",
-      "/index.html",
-      "/favicon.ico",
-      "/js/*",
-      "/img/*",
-      "/css/*"
+    "/ams/v1/versionInfo",
+    "/ams/v1/login",
+    "/",
+    "/overview",
+    "/introduce",
+    "/tables",
+    "/optimizers",
+    "/login",
+    "/terminal",
+    "/hive-tables/upgrade",
+    "/hive-tables",
+    "/index.html",
+    "/favicon.ico",
+    "/js/*",
+    "/img/*",
+    "/css/*"
   };
 
   private static boolean needLoginCheck(String uri) {

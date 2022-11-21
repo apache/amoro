@@ -35,7 +35,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,18 +61,6 @@ public class ConvertStructUtil {
     amsDataFile.setPartition(partitionFields(table.spec(), dataFile.partition()));
     amsDataFile.setSpecId(table.spec().specId());
     amsDataFile.setRecordCount(dataFile.recordCount());
-    Map<Integer, ByteBuffer> upperBounds = dataFile.upperBounds();
-    if (upperBounds != null) {
-      Map<String, ByteBuffer> amsUpperBounds = new HashMap<>();
-      upperBounds.forEach((fieldId, value) -> {
-        Types.NestedField field = table.schema().findField(fieldId);
-        if (field != null) {
-          amsUpperBounds.put(field.name(), value);
-        }
-      });
-      amsDataFile.setUpperBounds(amsUpperBounds);
-    }
-
 
     /*
     Iceberg file has 3 types(FileContent) : DATA, POSITION_DELETES, EQUALITY_DELETES
@@ -113,7 +100,7 @@ public class ConvertStructUtil {
       case INSERT_FILE:
       case EQ_DELETE_FILE:
         Preconditions.checkArgument(content == FileContent.DATA,
-            "%s, File content should be POSITION_DELETES, but is %s", path, content);
+            "%s, File content should be DATA, but is %s", path, content);
         break;
       case POS_DELETE_FILE:
         Preconditions.checkArgument(content == FileContent.POSITION_DELETES,
@@ -124,7 +111,7 @@ public class ConvertStructUtil {
     }
   }
 
-  private static List<PartitionFieldData> partitionFields(PartitionSpec partitionSpec, StructLike partitionData) {
+  public static List<PartitionFieldData> partitionFields(PartitionSpec partitionSpec, StructLike partitionData) {
     List<PartitionFieldData> partitionFields = Lists.newArrayListWithCapacity(partitionSpec.fields().size());
     Class<?>[] javaClasses = partitionSpec.javaClasses();
     for (int i = 0; i < javaClasses.length; i += 1) {

@@ -27,39 +27,56 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
 public class ArcticTransactionService extends IJDBCService {
 
-  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature, int retry) {
-    for (int i = 0; i < retry; i++) {
-      try (SqlSession sqlSession = getSqlSession(false)) {
-        try {
-          com.netease.arctic.table.TableIdentifier identifier =
-              new com.netease.arctic.table.TableIdentifier(tableIdentifier);
-          TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-          TableMetadata tableMetadata = tableMetadataMapper.loadTableMetaInLock(identifier);
-          TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
-          Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
-          Long currentTxId = tableMetadata.getCurrentTxId() == null ? 0 : tableMetadata.getCurrentTxId();
-          Long finalTxId = currentTxId + 1;
-          if (!StringUtils.isEmpty(transactionSignature)) {
-            Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);
-            if (txId != null) {
-              sqlSession.commit(true);
-              return txId;
-            }
-            mapper.insertTransaction(finalTxId, transactionSignature, tableIdentifier);
-          }
+  private static final ConcurrentHashMap<String, ReentrantLock> TABLE_LOCK_MAP = new ConcurrentHashMap<>();
 
-          tableMetadataMapper.updateTableTxId(identifier, finalTxId);
-          sqlSession.commit();
-          return finalTxId;
-        } catch (Exception e) {
-          sqlSession.rollback();
-        }
-      }
+  public long allocateTransactionId(TableIdentifier tableIdentifier, String transactionSignature) {
+    ReentrantLock lock = TABLE_LOCK_MAP.putIfAbsent(tableIdentifier.toString(), new ReentrantLock());
+    if (lock == null) {
+      lock = TABLE_LOCK_MAP.get(tableIdentifier.toString());
     }
-    throw new RuntimeException(String.format("table %s allocateTransactionId error after retry %d times",
-        tableIdentifier.toString(), retry));
+    try {
+      if (!lock.tryLock(5, TimeUnit.SECONDS)) {
+        throw new RuntimeException("get lock timeout");
+      }
+    } catch (InterruptedException e) {
+      throw new RuntimeException("get lock failed", e);
+    }
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      try {
+        com.netease.arctic.table.TableIdentifier identifier =
+            new com.netease.arctic.table.TableIdentifier(tableIdentifier);
+        TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
+        TableMetadata tableMetadata = tableMetadataMapper.loadTableMeta(identifier);
+        TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
+        Preconditions.checkNotNull(tableMetadata, "lost table " + identifier);
+        Long currentTxId = tableMetadata.getCurrentTxId();
+        Long finalTxId = currentTxId + 1;
+        if (!StringUtils.isEmpty(transactionSignature)) {
+          Long txId = mapper.getTxIdBySign(tableIdentifier, transactionSignature);
+          if (txId != null) {
+            sqlSession.commit(true);
+            return txId;
+          }
+          mapper.insertTransaction(finalTxId, transactionSignature, tableIdentifier);
+        }
+
+        tableMetadataMapper.updateTableTxId(identifier, finalTxId);
+        sqlSession.commit();
+        return finalTxId;
+      } catch (Exception e) {
+        sqlSession.rollback();
+      }
+    } finally {
+      lock.unlock();
+    }
+
+    throw new RuntimeException(String.format("table %s allocateTransactionId error", tableIdentifier));
   }
 
   public void delete(TableIdentifier tableIdentifier) {

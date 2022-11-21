@@ -33,12 +33,12 @@ import com.netease.arctic.hive.utils.HiveSchemaUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
-import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.TableType;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.FileFormat;
@@ -125,18 +125,20 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
   @Override
   protected void doDropTable(TableMeta meta, boolean purge) {
-    super.doDropTable(meta, purge);
+    // drop hive table operation will only delete hive table metadata
+    // delete data files operation will use BaseArcticCatalog
     try {
       hiveClientPool.run(client -> {
         client.dropTable(meta.getTableIdentifier().getDatabase(),
             meta.getTableIdentifier().getTableName(),
-            purge /* deleteData */,
+            false /* deleteData */,
             false /* ignoreUnknownTab */);
         return null;
       });
     } catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to drop table:" + meta.getTableIdentifier(), e);
     }
+    super.doDropTable(meta, purge);
   }
 
   public void dropTableButNotDropHiveTable(TableIdentifier tableIdentifier) {
@@ -160,12 +162,13 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     UnkeyedHiveTable baseTable = new UnkeyedHiveTable(tableIdentifier,
-        useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, tableLocation, client, hiveClientPool, false);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
-    ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-        useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+    ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
+        CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+            tableMetaStore.getConfiguration()),
         fileIO, client);
     return new KeyedHiveTable(tableMeta, tableLocation,
         buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, hiveClientPool, baseTable, changeTable);
@@ -178,7 +181,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     String tableLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_TABLE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
-    return new UnkeyedHiveTable(tableIdentifier, useArcticTableOperations(table, baseLocation,
+    return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, tableLocation, client, hiveClientPool);
   }
 
@@ -268,14 +271,11 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
     @Override
     protected KeyedHiveTable createKeyedTable(TableMeta meta) {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
-      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
-      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
-
-      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-      meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
+      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
+      fillTableProperties(meta);
+      String hiveLocation = meta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
       // default 1 day
       if (!meta.properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL)) {
         meta.putToProperties(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000");
@@ -293,7 +293,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         }
       });
       UnkeyedHiveTable baseTable = new UnkeyedHiveTable(tableIdentifier,
-          useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+          CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
+              tableMetaStore.getConfiguration()),
           fileIO, tableLocation, client, hiveClientPool, false);
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
@@ -306,8 +307,9 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
           throw new IllegalStateException("create change table failed", e);
         }
       });
-      ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-          useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+      ChangeTable changeTable = new KeyedHiveTable.HiveChangeInternalTable(tableIdentifier,
+          CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+              tableMetaStore.getConfiguration()),
           fileIO, client);
 
       Map<String, String> metaProperties = meta.properties;
@@ -342,11 +344,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
-      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
-
-      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
-      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      fillTableProperties(meta);
+      String hiveLocation = meta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
 
       Table table = tableMetaStore.doAs(() -> {
         try {
@@ -382,7 +381,7 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         throw new RuntimeException("Failed to create hive table:" + meta.getTableIdentifier(), e);
       }
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-      return new UnkeyedHiveTable(tableIdentifier, useArcticTableOperations(table, baseLocation, fileIO,
+      return new UnkeyedHiveTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, tableLocation, client, hiveClientPool);
     }
 
@@ -405,6 +404,14 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
 
       newTable.getParameters().put("EXTERNAL", "TRUE"); // using the external table type also requires this
       return newTable;
+    }
+
+    @Override
+    protected void fillTableProperties(TableMeta meta) {
+      super.fillTableProperties(meta);
+      String tableLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_TABLE);
+      String hiveLocation = HiveTableUtil.hiveRootLocation(tableLocation);
+      meta.putToProperties(HiveTableProperties.BASE_HIVE_LOCATION_ROOT, hiveLocation);
     }
 
     @Override

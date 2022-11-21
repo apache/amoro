@@ -17,17 +17,17 @@ Flink Connector 包括：
 
 | Connector Version | Flink Version | Dependent Iceberg Version | 下载                                                                                                                         |
 | ----------------- |---------------|  ----------------- |----------------------------------------------------------------------------------------------------------------------------|
-| 0.3.1             | 1.12.x        | 0.12.0            | [flink-1.12-0.3.1-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.12-0.3.1.jar) |
-| 0.3.1             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.1-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.14-0.3.1.jar) |
-| 0.3.1             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.1-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.15-0.3.1.jar) |
+| 0.3.2             | 1.12.x        | 0.12.0            | [flink-1.12-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.12-0.3.2.jar) |
+| 0.3.2             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.14-0.3.2.jar) |
+| 0.3.2             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.15-0.3.2.jar) |
 
 Kafka 作为 Logstore 版本说明：
 
 | Connector Version | Flink Version | Kafka Versions |
 | ----------------- |---------------|  ----------------- |
-| 0.3.1             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
-| 0.3.1             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
-| 0.3.1             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.2             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.2             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.3.2             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
 
 
 对 Arctic 工程自行编译也可以获取该 runtime jar
@@ -53,7 +53,7 @@ tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
 # 下载 hadoop 依赖
 wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
 # 下载 arctic flink connector
-wget https://github.com/NetEase/arctic/releases/download/v0.3.1-rc1/arctic-flink-runtime-1.12-0.3.1.jar
+wget https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.12-0.3.2.jar
 ```
 
 修改 Flink 相关配置文件：
@@ -98,3 +98,7 @@ Arctic 0.3.1 版本开始支持 Hive 兼容的功能，可以通过 Flink 读取
 ## 常见问题
 ### 写 Arctic 表 File 数据不可见
 需要打开 Flink checkpoint，修改 Flink conf 中的 [Flink checkpoint 配置](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/config.html#execution-checkpointing-interval)，数据只有在 checkpoint 时才会提交。
+### 通过 Flink SQL-Client 读取开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据
+通过 Flink SQL-Client 得到的查询结果不能提供基于主键的 MOR 语义，如果需要通过 Flink 引擎查询得到合并后的结果，可以将 Arctic 表的内容通过 JDBC connector 写入到 MySQL 表中进行查看
+### Flink 1.15 版本下通过 SQL-Client 写入开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据
+需要在 SQL-Client 中执行命令 set table.exec.sink.upsert-materialize = none，以关闭 upsert materialize 算子生成的 upsert 视图。该算子会影响 ArcticWriter 在 write.upsert 特性开启时生成 delete 数据，导致重复主键的数据无法合并

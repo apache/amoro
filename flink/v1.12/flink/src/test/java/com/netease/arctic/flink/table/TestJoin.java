@@ -21,9 +21,9 @@ package com.netease.arctic.flink.table;
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.ArcticUtils;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.runtime.testutils.CommonTestUtils;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.TableResult;
@@ -98,7 +98,7 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
@@ -120,7 +120,7 @@ public class TestJoin extends FlinkTestBase {
         actual.add(row);
       }
     }
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
 
     List<Object[]> expected = new LinkedList<>();
     expected.add(new Object[]{"a", 1000004L, null, null});
@@ -155,7 +155,7 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
@@ -203,7 +203,7 @@ public class TestJoin extends FlinkTestBase {
         actual.add(row);
       }
     }
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
 
     List<Object[]> expected = new LinkedList<>();
     expected.add(new Object[]{"a", 1L, 123, "a"});

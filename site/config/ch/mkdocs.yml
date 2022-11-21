@@ -71,11 +71,14 @@ nav:
     - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
   - Spark:
     - Getting Started: spark/spark-get-started.md
+    - Spark Configuration: spark/spark-conf.md
     - Spark DDL: spark/spark-ddl.md
     - Spark DML: spark/spark-dml.md
     - Spark DataFrame: spark/spark-dataframe.md
   - Trino: trino.md
-  - Benchmark: benchmark.md
+  - Benchmark:
+    - Report: benchmark/benchmark.md
+    - How to benchmark:  benchmark/benchmark-step.md
   - Roadmap: roadmap.md
   - How to contribute: contribute.md
 

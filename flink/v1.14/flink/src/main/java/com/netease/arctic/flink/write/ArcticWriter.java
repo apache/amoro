@@ -143,22 +143,6 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
   }
 
   @Override
-  public void notifyCheckpointComplete(long checkpointId) throws Exception {
-    super.notifyCheckpointComplete(checkpointId);
-    if (logWriter != null) {
-      logWriter.notifyCheckpointComplete(checkpointId);
-    }
-  }
-
-  @Override
-  public void notifyCheckpointAborted(long checkpointId) throws Exception {
-    super.notifyCheckpointAborted(checkpointId);
-    if (logWriter != null) {
-      logWriter.notifyCheckpointAborted(checkpointId);
-    }
-  }
-
-  @Override
   public void endInput() throws Exception {
     if (logWriter != null) {
       logWriter.endInput();

@@ -26,10 +26,10 @@ import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.types.Type;
 import org.apache.iceberg.types.Types;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -411,7 +411,7 @@ public class KeyedSchemaUpdate implements UpdateSchema {
     }
 
     @Override
-    public int compareTo(@NotNull Add o) {
+    public int compareTo(@Nonnull Add o) {
       return this.baseFieldId - o.baseFieldId;
     }
 

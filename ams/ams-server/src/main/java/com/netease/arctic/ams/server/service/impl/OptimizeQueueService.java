@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -32,6 +33,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
+import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
@@ -41,8 +43,12 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -327,7 +333,7 @@ public class OptimizeQueueService extends IJDBCService {
     private final AtomicBoolean planThreadStarted = new AtomicBoolean(false);
     private final OptimizeQueueItem optimizeQueue;
     private final Queue<OptimizeTaskItem> tasks;
-    private final Set<TableIdentifier> tables = new HashSet<>();
+    private Set<TableIdentifier> tables = new HashSet<>();
     // plan retry times
     private final int retryTime = 5;
     // plan retry interval unit ms
@@ -535,7 +541,37 @@ public class OptimizeQueueService extends IJDBCService {
       return optimizeQueue;
     }
 
+    private Set<TableIdentifier> loadTablesByQueueId(int queueId) {
+      Set<TableIdentifier> tablesInQueue = new HashSet<>();
+      List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
+      catalogMetas.forEach(catalogMeta -> {
+        ArcticCatalog arcticCatalog =
+            CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
+        List<String> databases = arcticCatalog.listDatabases();
+        for (String database : databases) {
+          for (TableIdentifier tableIdentifier : arcticCatalog.listTables(database)) {
+            ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
+            String queueName =
+                arcticTable.properties()
+                    .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+            try {
+              OptimizeQueueItem optimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(queueName);
+              if (optimizeQueue.getOptimizeQueueMeta().getQueueId() == queueId) {
+                tablesInQueue.add(arcticTable.id());
+              }
+            } catch (Exception e) {
+              // skip, and load next table
+              LOG.error("{} get optimize group failed, group name is {}", arcticTable.id(), queueName);
+            }
+          }
+        }
+      });
+
+      return tablesInQueue;
+    }
+
     private List<OptimizeTaskItem> plan(long currentTime) {
+      tables = loadTablesByQueueId(optimizeQueue.getOptimizeQueueMeta().getQueueId());
       List<TableIdentifier> tableSort = sortTableByQuota(new ArrayList<>(tables));
 
       for (TableIdentifier tableIdentifier : tableSort) {
@@ -554,26 +590,47 @@ public class OptimizeQueueService extends IJDBCService {
 
           if (tableItem.getTableOptimizeRuntime().isRunning()) {
             LOG.debug("{} is running continue", tableIdentifier);
-            continue;
+
+            // add failed tasks and retry
+            List<OptimizeTaskItem> toExecuteTasks = addTask(tableItem, Collections.emptyList());
+            if (!toExecuteTasks.isEmpty()) {
+              LOG.info("{} add {} failed tasks into queue and retry",
+                  tableItem.getTableIdentifier(), toExecuteTasks.size());
+              return toExecuteTasks;
+            } else {
+              continue;
+            }
           }
 
-          List<BaseOptimizeTask> optimizeTasks;
           BaseOptimizePlan optimizePlan;
+          List<BaseOptimizeTask> optimizeTasks;
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
-          optimizePlan = tableItem.getFullPlan(queueId, currentTime);
-          optimizeTasks = optimizePlan.plan();
 
-          // if no full tasks, then plan minor tasks
-          if (CollectionUtils.isEmpty(optimizeTasks)) {
-            optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
+          if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
+            optimizePlan = tableItem.getIcebergMajorPlan(queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
-          }
 
-          // if no major tasks and keyed table, then plan minor tasks
-          if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-            optimizePlan = tableItem.getMinorPlan(queueId, currentTime);
+            // if no major tasks, then plan minor tasks
+            if (CollectionUtils.isEmpty(optimizeTasks)) {
+              optimizePlan = tableItem.getIcebergMinorPlan(queueId, currentTime);
+              optimizeTasks = optimizePlan.plan();
+            }
+          } else {
+            optimizePlan = tableItem.getFullPlan(queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
+
+            // if no full tasks, then plan minor tasks
+            if (CollectionUtils.isEmpty(optimizeTasks)) {
+              optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
+              optimizeTasks = optimizePlan.plan();
+            }
+
+            // if no major tasks and keyed table, then plan minor tasks
+            if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
+              optimizePlan = tableItem.getMinorPlan(queueId, currentTime);
+              optimizeTasks = optimizePlan.plan();
+            }
           }
 
           initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizePlan.getPartitionOptimizeType());
@@ -664,32 +721,38 @@ public class OptimizeQueueService extends IJDBCService {
                                           List<BaseOptimizeTask> optimizeTasks,
                                           Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {
-        // set latest optimize time
-        for (String currentPartition : optimizePlan.getCurrentPartitions()) {
-          if (partitionOptimizeType.get(currentPartition) != null) {
-            switch (partitionOptimizeType.get(currentPartition)) {
-              case Minor:
-                tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
-                break;
-              case Major:
-                tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
-                break;
-              case FullMajor:
-                tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
-                break;
+        TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
+        try {
+          // set latest optimize time
+          for (String currentPartition : optimizePlan.getCurrentPartitions()) {
+            if (partitionOptimizeType.get(currentPartition) != null) {
+              switch (partitionOptimizeType.get(currentPartition)) {
+                case Minor:
+                  tableItem.getTableOptimizeRuntime().putLatestMinorOptimizeTime(currentPartition, -1);
+                  break;
+                case Major:
+                  tableItem.getTableOptimizeRuntime().putLatestMajorOptimizeTime(currentPartition, -1);
+                  break;
+                case FullMajor:
+                  tableItem.getTableOptimizeRuntime().putLatestFullOptimizeTime(currentPartition, -1);
+                  break;
+              }
             }
           }
-        }
 
-        // set current snapshot id
-        tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentBaseSnapshotId());
-        if (tableItem.isKeyedTable()) {
-          tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentChangeSnapshotId());
-        }
+          // set current snapshot id
+          tableItem.getTableOptimizeRuntime().setCurrentSnapshotId(optimizePlan.getCurrentSnapshotId());
+          if (tableItem.isKeyedTable()) {
+            tableItem.getTableOptimizeRuntime().setCurrentChangeSnapshotId(optimizePlan.getCurrentSnapshotId());
+          }
 
-        tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
-        tableItem.getTableOptimizeRuntime().setRunning(true);
-        tableItem.persistTableOptimizeRuntime();
+          tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
+          tableItem.getTableOptimizeRuntime().setRunning(true);
+          tableItem.persistTableOptimizeRuntime();
+        } catch (Throwable e) {
+          tableItem.getTableOptimizeRuntime().restoreTableOptimizeRuntime(oldTableOptimizeRuntime);
+          throw e;
+        }
       }
     }
 

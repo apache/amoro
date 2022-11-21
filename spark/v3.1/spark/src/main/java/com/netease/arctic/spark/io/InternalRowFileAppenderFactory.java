@@ -18,7 +18,6 @@
 
 package com.netease.arctic.spark.io;
 
-import com.netease.arctic.spark.hive.AdaptHiveSparkParquetWriters;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.PartitionSpec;
@@ -37,9 +36,9 @@ import org.apache.iceberg.io.OutputFile;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.parquet.Parquet;
-import org.apache.iceberg.parquet.ParquetValueWriter;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.spark.data.AdaptHiveSparkParquetWriters;
 import org.apache.iceberg.spark.data.SparkAvroWriter;
 import org.apache.iceberg.spark.data.SparkOrcWriter;
 import org.apache.iceberg.spark.data.SparkParquetWriters;

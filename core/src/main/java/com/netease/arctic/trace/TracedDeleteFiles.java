@@ -57,6 +57,12 @@ public class TracedDeleteFiles implements DeleteFiles {
   }
 
   @Override
+  public DeleteFiles caseSensitive(boolean caseSensitive) {
+    deleteFiles.caseSensitive(caseSensitive);
+    return this;
+  }
+
+  @Override
   public DeleteFiles set(String property, String value) {
     deleteFiles.set(property, value);
     tracer.setSnapshotSummary(property, value);

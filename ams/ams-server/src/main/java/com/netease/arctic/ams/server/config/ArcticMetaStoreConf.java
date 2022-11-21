@@ -36,16 +36,21 @@ public class ArcticMetaStoreConf {
           .longType()
           .defaultValue(100 * 1024 * 1024L)
           .withDescription("Maximum message size in bytes a AMS will accept.");
-  public static final ConfigOption<Integer> SERVER_MAX_THREADS =
-      ConfigOptions.key("arctic.ams.server.max.threads")
+  public static final ConfigOption<Integer> THRIFT_WORKER_THREADS =
+      ConfigOptions.key("arctic.ams.thrift.worker.threads")
           .intType()
-          .defaultValue(1000)
-          .withDescription("Maximum number of worker threads in the Thrift server's pool.");
-  public static final ConfigOption<Integer> SERVER_MIN_THREADS =
-      ConfigOptions.key("arctic.ams.server.min.threads")
+          .defaultValue(20)
+          .withDescription("The number of worker threads in the Thrift server's pool.");
+  public static final ConfigOption<Integer> THRIFT_SELECTOR_THREADS =
+      ConfigOptions.key("arctic.ams.thrift.selector.threads")
           .intType()
-          .defaultValue(200)
-          .withDescription("Minimum number of worker threads in the Thrift server's pool.");
+          .defaultValue(2)
+          .withDescription("The number of selector threads in the Thrift server's pool.");
+  public static final ConfigOption<Integer> THRIFT_QUEUE_SIZE_PER_THREAD =
+      ConfigOptions.key("arctic.ams.thrift.selector.queue.size")
+          .intType()
+          .defaultValue(4)
+          .withDescription("The number of queue size per selector thread in the Thrift server's pool.");
   public static final ConfigOption<Integer> THRIFT_BIND_PORT =
       ConfigOptions.key("arctic.ams.thrift.port")
           .intType()
@@ -178,4 +183,38 @@ public class ArcticMetaStoreConf {
           .stringType()
           .defaultValue("")
           .withDescription("arctic install path.");
+
+  /**
+   * config key prefix of terminal
+   */
+  public static final String TERMINAL_PREFIX = "arctic.ams.terminal.";
+  public static final ConfigOption<String> TERMINAL_BACKEND =
+      ConfigOptions.key("arctic.ams.terminal.backend")
+          .stringType()
+          .defaultValue("local")
+          .withDescription("terminal backend implement. local, kyuubi are supported");
+
+  public static final ConfigOption<String> TERMINAL_SESSION_FACTORY =
+      ConfigOptions.key("arctic.ams.terminal.factory")
+          .stringType()
+          .noDefaultValue()
+          .withDescription("session factory implement of terminal.");
+
+  public static final ConfigOption<Integer> TERMINAL_RESULT_LIMIT =
+      ConfigOptions.key("arctic.ams.terminal.result.limit")
+          .intType()
+          .defaultValue(1000)
+          .withDescription("limit of result-set");
+
+  public static final ConfigOption<Boolean> TERMINAL_STOP_ON_ERROR =
+      ConfigOptions.key("arctic.ams.terminal.stop-on-error")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("stop script execution if any statement execute failed.");
+
+  public static final ConfigOption<Integer> TERMINAL_SESSION_TIMEOUT =
+      ConfigOptions.key("arctic.ams.terminal.session.timeout")
+          .intType()
+          .defaultValue(30)
+          .withDescription("session timeout in minute");
 }

@@ -28,18 +28,13 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
@@ -60,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MajorOptimizePlan extends BaseOptimizePlan {
+public class MajorOptimizePlan extends BaseArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MajorOptimizePlan.class);
 
   // partition -> need major optimize files
@@ -77,7 +72,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   }
 
   @Override
-  public void addOptimizeFilesTree() {
+  public void addOptimizeFiles() {
     addBaseFileIntoFileTree();
   }
 
@@ -191,9 +186,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());

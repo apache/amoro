@@ -21,11 +21,12 @@ package com.netease.arctic.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -57,7 +58,7 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(null, map.get(key));
         } else {
-          StructLike partitionData = DataFiles.data(spec, key);
+          StructLike partitionData = ArcticDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
@@ -77,7 +78,7 @@ public class TablePropertyUtil {
         if (spec.isUnpartitioned()) {
           results.put(EMPTY_STRUCT, map.get(key));
         } else {
-          StructLike partitionData = DataFiles.data(spec, key);
+          StructLike partitionData = ArcticDataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }
@@ -109,11 +110,45 @@ public class TablePropertyUtil {
     StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
     partitionProperty.forEach((partitionKey, propertyValue) -> {
       Long maxTxId = (propertyValue == null ||
-          propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null) ?
-          0 : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
+          propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID) == null) ?
+          TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT :
+          Long.parseLong(propertyValue.get(TableProperties.PARTITION_MAX_TRANSACTION_ID));
       baseTableMaxTransactionId.put(partitionKey, maxTxId);
     });
 
     return baseTableMaxTransactionId;
+  }
+
+  public static StructLikeMap<Long> getLegacyPartitionMaxTransactionId(KeyedTable keyedTable) {
+    StructLikeMap<Long> baseTableMaxTransactionId = StructLikeMap.create(keyedTable.spec().partitionType());
+
+    StructLikeMap<Map<String, String>> partitionProperty = keyedTable.asKeyedTable().baseTable().partitionProperty();
+    partitionProperty.forEach((partitionKey, propertyValue) -> {
+      Long maxTxId = (propertyValue == null ||
+          propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID) == null) ?
+          null : Long.parseLong(propertyValue.get(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID));
+      if (maxTxId != null) {
+        baseTableMaxTransactionId.put(partitionKey, maxTxId);
+      }
+    });
+
+    return baseTableMaxTransactionId;
+  }
+
+  public static long allocateTransactionId(KeyedTable keyedTable) {
+    ChangeTable changeTable = keyedTable.changeTable();
+    changeTable.refresh();
+    Snapshot snapshot = changeTable.currentSnapshot();
+    return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
+  }
+
+
+  public static long getTableWatermark(Map<String, String> properties) {
+    String watermarkValue = properties.get(TableProperties.WATERMARK_TABLE);
+    if (watermarkValue == null) {
+      return -1;
+    } else {
+      return Long.parseLong(watermarkValue);
+    }
   }
 }

@@ -29,7 +29,6 @@ import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.PageResult;
-import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
@@ -57,7 +56,6 @@ import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
-import com.netease.arctic.ams.server.utils.ParamSignatureCalculator;
 import com.netease.arctic.ams.server.utils.Utils;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -68,7 +66,6 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
-import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.slf4j.Logger;
@@ -83,12 +80,12 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
  * Table moudle controller.
- *
  */
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
@@ -123,7 +120,7 @@ public class TableController extends RestBaseController {
     try {
       // set basic info
       tableBasicInfo = tableInfoService.getTableBasicInfo(
-              TableIdentifier.of(catalog, db, table));
+          TableIdentifier.of(catalog, db, table));
     } catch (MetaException | NoSuchObjectException e) {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "", ""));
       return;
@@ -137,13 +134,6 @@ public class TableController extends RestBaseController {
     baseMetrics.put("size", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("file", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
-    Long baseMaxET = fileInfoCacheService
-        .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE);
-    if (baseMaxET != null && baseMaxET != 0L) {
-      baseMetrics.put("maxEventTime", sd.format(new Date(baseMaxET)));
-    } else {
-      baseMetrics.put("maxEventTime", null);
-    }
     serverTableMeta.setBaseMetrics(baseMetrics);
 
     Map changeMetrics = new HashMap();
@@ -154,20 +144,11 @@ public class TableController extends RestBaseController {
       changeMetrics.put("size", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
       changeMetrics.put("file", changeFilesStatistics.getFileCnt());
       changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
-      Long changeMaxET = fileInfoCacheService
-          .getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),
-              Constants.INNER_TABLE_CHANGE);
-      if (changeMaxET != null && changeMaxET != 0L) {
-        changeMetrics.put("maxEventTime", sd.format(new Date(changeMaxET)));
-      } else {
-        changeMetrics.put("maxEventTime", null);
-      }
     } else {
       changeMetrics.put("lastCommitTime", null);
       changeMetrics.put("size", null);
       changeMetrics.put("file", null);
       changeMetrics.put("averageFile", null);
-      changeMetrics.put("maxEventTime", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
     ctx.json(OkResponse.of(serverTableMeta));
@@ -229,7 +210,6 @@ public class TableController extends RestBaseController {
     ctx.json(OkResponse.of(adaptHiveService.getUpgradeRunningInfo(TableIdentifier.of(catalog, db, table))));
   }
 
-
   /**
    * upgrade hive table to arctic.
    */
@@ -266,7 +246,6 @@ public class TableController extends RestBaseController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-
     int offset = (page - 1) * pageSize;
     int limit = pageSize;
     checkOffsetAndLimit(offset, limit);
@@ -275,26 +254,26 @@ public class TableController extends RestBaseController {
     List<BaseMajorCompactRecord> baseMajorCompactRecords = null;
     try {
       List<OptimizeHistory> tmpRecords = optimizeService.getOptimizeHistory(
-              tableIdentifier);
+          tableIdentifier);
       if (tmpRecords == null) {
         ctx.json(OkResponse.of(PageResult.of(new ArrayList<>(), 0)));
         return;
       }
       baseMajorCompactRecords = tmpRecords.stream()
-              .map(AmsUtils::transferToBaseMajorCompactRecord)
-              .collect(Collectors.toList());
+          .map(AmsUtils::transferToBaseMajorCompactRecord)
+          .collect(Collectors.toList());
     } catch (Exception e) {
       LOG.error("Failed to get optimize info", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST,
-              "Failed to get optimize info", ""));
+          "Failed to get optimize info", ""));
       return;
     }
     int total = baseMajorCompactRecords.size();
     Collections.reverse(baseMajorCompactRecords);
     List<BaseMajorCompactRecord> result = baseMajorCompactRecords.stream()
-            .skip(offset)
-            .limit(limit)
-            .collect(Collectors.toList());
+        .skip(offset)
+        .limit(limit)
+        .collect(Collectors.toList());
     ctx.json(OkResponse.of(PageResult.of(result, total)));
     return;
   }
@@ -312,10 +291,10 @@ public class TableController extends RestBaseController {
 
     try {
       List<TransactionsOfTable> transactionsOfTables = fileInfoCacheService.getTxExcludeOptimize(
-              AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
+          AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
       Integer offset = (page - 1) * pageSize;
       PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
-              offset, pageSize, AmsUtils::toTransactionsOfTable);
+          offset, pageSize, AmsUtils::toTransactionsOfTable);
       ctx.json(OkResponse.of(pageResult));
       return;
     } catch (Exception e) {
@@ -338,10 +317,10 @@ public class TableController extends RestBaseController {
 
     try {
       List<AMSDataFileInfo> dataFileInfo = fileInfoCacheService.getDatafilesInfo(
-              AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Long.valueOf(transactionId));
+          AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Long.valueOf(transactionId));
       Integer offset = (page - 1) * pageSize;
       PageResult<DataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(dataFileInfo,
-              offset, pageSize);
+          offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
       return;
     } catch (Exception e) {
@@ -364,10 +343,10 @@ public class TableController extends RestBaseController {
     try {
       // First determine whether there is a partitioned table, and then get different information
       List<PartitionBaseInfo> partitionBaseInfos = fileInfoCacheService.getPartitionBaseInfoList(
-              AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
+          AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
       Integer offset = (page - 1) * pageSize;
       PageResult<PartitionBaseInfo, PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
-              offset, pageSize);
+          offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
       return;
     } catch (Exception e) {
@@ -388,7 +367,6 @@ public class TableController extends RestBaseController {
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
 
-
     // Determine whether there is a partitioned table
     try {
       // The partition passed by the no-partition table is null
@@ -408,10 +386,10 @@ public class TableController extends RestBaseController {
         partition = java.net.URLDecoder.decode(partition, StandardCharsets.UTF_8.name());
       }
       List<PartitionFileBaseInfo> partitionFileBaseInfos = fileInfoCacheService.getPartitionFileList(
-              AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), partition);
+          AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), partition);
       Integer offset = (page - 1) * pageSize;
       PageResult<PartitionFileBaseInfo, PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
-              offset, pageSize);
+          offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
       return;
     } catch (Exception e) {
@@ -433,7 +411,7 @@ public class TableController extends RestBaseController {
 
     List<DDLInfo> ddlInfos = ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfos,
-            offset, pageSize, TableOperation::buildFromDDLInfo);
+        offset, pageSize, TableOperation::buildFromDDLInfo);
     ctx.json(OkResponse.of(amsPageResult));
   }
 
@@ -451,7 +429,11 @@ public class TableController extends RestBaseController {
     List<TableIdentifier> tableIdentifiers = ac.listTables(db);
     LinkedHashSet<TableMeta> tempTables = new LinkedHashSet<>();
     List<TableMeta> tables = new ArrayList<>();
-    if (catalogMetadataService.getCatalog(catalog).getCatalogType().equals(CatalogMetaProperties.CATALOG_TYPE_HIVE)) {
+    if (CatalogUtil.isIcebergCatalog(catalog)) {
+      for (TableIdentifier tableIdentifier : tableIdentifiers) {
+        tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ICEBERG.toString()));
+      }
+    } else if (CatalogUtil.isHiveCatalog(catalog)) {
       ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {
@@ -485,8 +467,8 @@ public class TableController extends RestBaseController {
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticCatalog ac = CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     List<String> dbList = ac.listDatabases().stream()
-            .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
-            .collect(Collectors.toList());
+        .filter(item -> StringUtils.isEmpty(keywords) || item.contains(keywords))
+        .collect(Collectors.toList());
     ctx.json(OkResponse.of(dbList));
   }
 
@@ -495,21 +477,21 @@ public class TableController extends RestBaseController {
    */
   public static void getCatalogs(Context ctx) {
     List<CatalogMeta> catalogs = catalogMetadataService.getCatalogs().stream().map(t ->
-            new CatalogMeta(t.getCatalogName(), t.getCatalogType())).collect(Collectors.toList());
+        new CatalogMeta(t.getCatalogName(), t.getCatalogType())).collect(Collectors.toList());
     ctx.json(OkResponse.of(catalogs));
   }
 
   /**
    * get single page query token
+   *
    * @param ctx
    */
   public static void getTableDetailTabToken(Context ctx) {
-    String catalog =  ctx.pathParam("catalog");
-    String db =  ctx.pathParam("db");
-    String table =  ctx.pathParam("table");
+    String catalog = ctx.pathParam("catalog");
+    String db = ctx.pathParam("db");
+    String table = ctx.pathParam("table");
 
     String signCal = Utils.generateTablePageToken(catalog, db, table);
     ctx.json(OkResponse.of(signCal));
   }
-
 }

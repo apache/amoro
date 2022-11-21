@@ -19,7 +19,6 @@
 package com.netease.arctic.optimizer.util;
 
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -71,8 +70,7 @@ public class CircularArray<E> implements Iterable<E>, Serializable {
       return currentIndex;
     }
   }
-
-  @NotNull
+  
   @Override
   public Iterator<E> iterator() {
     return new ListIterator<>(currentIndex);

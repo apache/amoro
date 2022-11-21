@@ -310,6 +310,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
         case INT64:
         case DOUBLE:
           return new ParquetValueReaders.UnboxedReader<>(desc);
+        //Change For Arctic ⬇
         case INT96:
           // Impala & Spark used to write timestamps as INT96 without a logical type. For backwards
           // compatibility we try to read INT96 as timestamps.
@@ -319,6 +320,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
           } else {
             return new TimestampIntWithOutTZ96Reader(desc);
           }
+        //Change For Arctic ⬆
         default:
           throw new UnsupportedOperationException("Unsupported type: " + primitive);
       }
@@ -365,6 +367,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
     }
   }
 
+  //Change For Arctic ⬇
   private static class TimestampIntWithOutTZ96Reader extends ParquetValueReaders.PrimitiveReader<LocalDateTime> {
     private static final long UNIX_EPOCH_JULIAN = 2_440_588L;
 
@@ -403,6 +406,7 @@ public abstract class AdaptHiveBaseParquetReaders<T> {
           .plusNanos(timeOfDayNanos).atOffset(ZoneOffset.UTC);
     }
   }
+  //Change For Arctic ⬆
 
   private static class TimestamptzReader extends ParquetValueReaders.PrimitiveReader<OffsetDateTime> {
     private TimestamptzReader(ColumnDescriptor desc) {

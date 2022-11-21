@@ -93,8 +93,27 @@ public interface OptimizerMapper {
   void deleteOptimizerByName(String optimizerName);
 
   @Select("select optimizer_id, queue_name, queue_id, optimizer_status, core_number, " +
-      "memory, parallelism, container, jobmanager_url, optimizer_instance, optimizer_state_info " +
+      "memory, parallelism, container, jobmanager_url, optimizer_instance, optimizer_state_info ,update_time " +
       "from " + TABLE_NAME + " where optimizer_id = #{optimizerId}")
+  @Results({
+          @Result(property = "jobId", column = "optimizer_id"),
+          @Result(property = "groupName", column = "queue_name"),
+          @Result(property = "queueId", column = "queue_id"),
+          @Result(property = "jobStatus", column = "optimizer_status"),
+          @Result(property = "coreNumber", column = "core_number"),
+          @Result(property = "memory", column = "memory"),
+          @Result(property = "parallelism", column = "parallelism"),
+          @Result(property = "container", column = "container"),
+          @Result(property = "jobmanagerUrl", column = "jobmanager_url"),
+          @Result(property = "instance", column = "optimizer_instance"),
+          @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class),
+          @Result(property = "updateTime", column = "update_time")
+  })
+  Optimizer selectOptimizer(@Param("optimizerId") Long optimizerId);
+
+  @Select("select optimizer_id, queue_name, queue_id, optimizer_status, core_number, " +
+      "memory, parallelism, container, jobmanager_url, optimizer_instance, optimizer_state_info ,update_time " +
+      "from " + TABLE_NAME + " where optimizer_name = #{optimizerName}")
   @Results({
       @Result(property = "jobId", column = "optimizer_id"),
       @Result(property = "groupName", column = "queue_name"),
@@ -106,9 +125,11 @@ public interface OptimizerMapper {
       @Result(property = "container", column = "container"),
       @Result(property = "jobmanagerUrl", column = "jobmanager_url"),
       @Result(property = "instance", column = "optimizer_instance"),
-      @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class)
+      @Result(property = "stateInfo", column = "optimizer_state_info", typeHandler = Map2StringConverter.class),
+      @Result(property = "updateTime", column = "update_time")
   })
-  Optimizer selectOptimizer(@Param("optimizerId") Long optimizerId);
+  Optimizer selectOptimizerByName(@Param("optimizerName") String optimizerName);
+
 
   @Update("update " + TABLE_NAME + " set" +
       " optimizer_instance = #{instance}, optimizer_state_info = #{state,typeHandler=com.netease.arctic.ams" +

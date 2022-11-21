@@ -18,8 +18,8 @@
 
 package com.netease.arctic.spark.reader;
 
+import com.netease.arctic.hive.io.reader.AdaptHiveBaseIcebergDataReader;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.io.reader.BaseIcebergDataReader;
 import com.netease.arctic.spark.parquet.SparkParquetRowReaders;
 import com.netease.arctic.spark.util.ArcticSparkUtil;
 import org.apache.iceberg.Schema;
@@ -32,7 +32,7 @@ import org.apache.spark.sql.Row;
 import java.util.Map;
 import java.util.function.Function;
 
-public class ArcticSparkUnkeyedDataReader extends BaseIcebergDataReader<Row> {
+public class ArcticSparkUnkeyedDataReader extends AdaptHiveBaseIcebergDataReader<Row> {
   public ArcticSparkUnkeyedDataReader(
       ArcticFileIO fileIO,
       Schema tableSchema,

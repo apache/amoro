@@ -3,11 +3,7 @@ package com.netease.arctic.ams.server;
 import com.google.common.collect.Lists;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
-import com.netease.arctic.ams.server.model.SesssionInfo;
-import com.netease.arctic.ams.server.model.SqlResult;
-import com.netease.arctic.ams.server.model.SqlStatus;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.service.TerminalService;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
@@ -47,7 +43,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
@@ -352,10 +347,6 @@ public class OptimizeIntegrationTest {
     }
   }
 
-  private boolean waitSessionResult(SesssionInfo sessionInfo) throws TimeoutException {
-    return waitUntilFinish(() -> checkSessionResult(sessionInfo), TIMEOUT);
-  }
-
   private boolean waitUntilFinish(Supplier<Status> statusSupplier, final long timeout) throws TimeoutException {
     long start = System.currentTimeMillis();
     while (true) {
@@ -382,30 +373,6 @@ public class OptimizeIntegrationTest {
     SUCCESS,
     FAILED,
     RUNNING
-  }
-
-  private Status checkSessionResult(SesssionInfo sessionInfo) {
-    List<SqlResult> sqlStatus = TerminalService.getSqlStatus(sessionInfo.getSessionId());
-    if (Objects.isNull(sqlStatus)) {
-      return Status.FAILED;
-    }
-    boolean notFinish = false;
-    if (sqlStatus.size() == 0) {
-      notFinish = true;
-      LOG.info("status : empty");
-    }
-    for (SqlResult status : sqlStatus) {
-      LOG.info("status : {}", status.getStatus());
-      if (!Objects.equals(status.getStatus(), SqlStatus.FINISHED.getName())) {
-        if (!Objects.equals(status.getStatus(), SqlStatus.RUNNING.getName()) &&
-            !Objects.equals(status.getStatus(), SqlStatus.CREATED.getName())) {
-          return Status.FAILED;
-        }
-        notFinish = true;
-        break;
-      }
-    }
-    return notFinish ? Status.RUNNING : Status.SUCCESS;
   }
 
   public void writeBase(UnkeyedTable table, List<Record> insertRows) {

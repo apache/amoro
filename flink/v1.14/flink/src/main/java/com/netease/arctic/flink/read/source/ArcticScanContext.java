@@ -64,6 +64,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       Schema schema,
       List<Expression> filters,
       long limit,
+      boolean includeColumnStats,
       String scanStartupMode) {
     super(caseSensitive,
         snapshotId,
@@ -78,7 +79,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
         nameMapping,
         schema,
         filters,
-        limit);
+        limit,
+        includeColumnStats);
     this.scanStartupMode = scanStartupMode;
   }
 
@@ -162,6 +164,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
     private List<Expression> filters;
     private long limit = -1L;
     private String scanStartupMode;
+    private boolean includeColumnStats = INCLUDE_COLUMN_STATS.defaultValue();
 
     private Builder() {
     }
@@ -241,6 +244,11 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return this;
     }
 
+    public Builder includeColumnStats(boolean newIncludeColumnStats) {
+      this.includeColumnStats = newIncludeColumnStats;
+      return this;
+    }
+
     public Builder fromProperties(Map<String, String> properties) {
       Configuration config = new Configuration();
       properties.forEach(config::setString);
@@ -256,7 +264,8 @@ public class ArcticScanContext extends ScanContext implements Serializable {
           .streaming(config.get(STREAMING))
           .monitorInterval(config.get(MONITOR_INTERVAL))
           .nameMapping(properties.get(DEFAULT_NAME_MAPPING))
-          .scanStartupMode(properties.get(SCAN_STARTUP_MODE.key()));
+          .scanStartupMode(properties.get(SCAN_STARTUP_MODE.key()))
+          .includeColumnStats(config.get(INCLUDE_COLUMN_STATS));
     }
 
     public ArcticScanContext build() {
@@ -269,7 +278,7 @@ public class ArcticScanContext extends ScanContext implements Serializable {
       return new ArcticScanContext(caseSensitive, snapshotId, startSnapshotId,
           endSnapshotId, asOfTimestamp, splitSize, splitLookback,
           splitOpenFileCost, isStreaming, monitorInterval, nameMapping, projectedSchema,
-          filters, limit, scanStartupMode);
+          filters, limit, includeColumnStats, scanStartupMode);
     }
   }
 }

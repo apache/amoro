@@ -94,7 +94,9 @@ class AdaptHiveParquetWriter<T> implements FileAppender<T>, Closeable {
     this.props = properties;
     this.metadata = ImmutableMap.copyOf(metadata);
     this.compressor = new CodecFactory(conf, props.getPageSizeThreshold()).getCompressor(codec);
+    //Change For Arctic
     this.parquetSchema = AdaptHiveParquetSchemaUtil.convert(schema, "table");
+    //Change For Arctic
     this.model = (ParquetValueWriter<T>) createWriterFunc.apply(parquetSchema);
     this.metricsConfig = metricsConfig;
     this.columnIndexTruncateLength = conf.getInt(COLUMN_INDEX_TRUNCATE_LENGTH, DEFAULT_COLUMN_INDEX_TRUNCATE_LENGTH);

@@ -17,7 +17,7 @@
 name: Arctic Improvement
 title: "[Improvement]: "
 description: Suggest an improvement on performance, code quality, user experience, etc
-labels: [ "improvement" ]
+labels: [ "type:improvement" ]
 body:
   - type: markdown
     attributes:
@@ -29,7 +29,7 @@ body:
       label: Search before asking
       options:
         - label: >
-            I have searched in the [issues](https://github.com/NetEase/arctic/issues?page=4&q=is%3Aissue) and found no similar
+            I have searched in the [issues](https://github.com/NetEase/arctic/issues?q=is%3Aissue) and found no similar
             issues.
           required: true
 
@@ -58,6 +58,19 @@ body:
         Arctic is a community-managed project and we love to bring new contributors in.
       options:
         - label: Yes I am willing to submit a PR!
+
+  - type: textarea
+    attributes:
+      label: Subtasks
+      description: >
+        Split subtasks if necessary
+      placeholder: >
+        Please create sub-tasks with the pre-create issues here and @ the assignees if you know any of them. A simple example is as follows:
+          - [ ] #1
+          - [ ] #2 @user2
+          - [ ] #3
+    validations:
+      required: false
 
   - type: checkboxes
     attributes:

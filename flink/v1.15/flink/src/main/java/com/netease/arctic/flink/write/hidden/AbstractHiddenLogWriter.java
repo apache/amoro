@@ -28,7 +28,6 @@ import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.flink.api.common.state.ListState;
 import org.apache.flink.api.common.state.ListStateDescriptor;
 import org.apache.flink.api.common.typeutils.base.IntSerializer;
-import org.apache.flink.api.common.typeutils.base.LongSerializer;
 import org.apache.flink.api.common.typeutils.base.StringSerializer;
 import org.apache.flink.runtime.state.StateInitializationContext;
 import org.apache.flink.runtime.state.StateSnapshotContext;
@@ -42,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Properties;
 
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
@@ -59,7 +57,6 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
 
   private static final long serialVersionUID = 1L;
   private int subtaskId;
-  private transient ListState<Long> checkpointedState;
   private transient ListState<String> hiddenLogJobIdentifyState;
   private transient ListState<Integer> parallelismState;
   private transient Long ckpComplete;
@@ -105,12 +102,6 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
   public void initializeState(StateInitializationContext context) throws Exception {
     super.initializeState(context);
     subtaskId = getRuntimeContext().getIndexOfThisSubtask();
-    checkpointedState =
-        context.getOperatorStateStore()
-            .getListState(
-                new ListStateDescriptor<>(
-                    subtaskId + "-task-writer-state",
-                    LongSerializer.INSTANCE));
 
     hiddenLogJobIdentifyState =
         context.getOperatorStateStore()
@@ -141,8 +132,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
     int parallelism = getRuntimeContext().getNumberOfParallelSubtasks();
 
     if (context.isRestored() && parallelismSame(parallelism)) {
-      // get last ckp num from state when failover continuously
-      ckpComplete = checkpointedState.get().iterator().next();
+      ckpComplete = context.getRestoredCheckpointId().getAsLong();
 
       jobIdentify = hiddenLogJobIdentifyState.get().iterator().next().getBytes(StandardCharsets.UTF_8);
 
@@ -257,36 +247,7 @@ public abstract class AbstractHiddenLogWriter extends ArcticLogWriter {
         "snapshotState subtaskId={}, checkpointId={}.",
         subtaskId,
         context.getCheckpointId());
-    checkpointedState.clear();
-    checkpointedState.add(context.getCheckpointId());
     epicNo++;
-  }
-
-  @Override
-  public void notifyCheckpointComplete(long checkpointId) throws Exception {
-    LOG.info(
-        "notifyCheckpointComplete subtaskId={}, checkpointId={}, epicNo={}.",
-        subtaskId,
-        checkpointId,
-        epicNo);
-    checkpointedState.clear();
-    checkpointedState.add(checkpointId);
-  }
-
-  @Override
-  public void notifyCheckpointAborted(long checkpointId) throws Exception {
-    LOG.info(
-        "notifyCheckpointAborted subtaskId={}, checkpointId={}.",
-        subtaskId,
-        checkpointId);
-    if (checkpointedState != null) {
-      Iterator<Long> iterator = checkpointedState.get().iterator();
-      while (iterator.hasNext()) {
-        if (iterator.next() >= checkpointId) {
-          iterator.remove();
-        }
-      }
-    }
   }
 
   @Override

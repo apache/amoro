@@ -21,6 +21,8 @@ package com.netease.arctic.table;
 import java.util.HashSet;
 import java.util.Set;
 
+import static com.netease.arctic.table.WatermarkGenerator.EVENT_TIME_TIMESTAMP_MS;
+import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 
 /**
@@ -38,6 +40,7 @@ public class TableProperties {
 
   static {
     PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
     PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
     PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
@@ -47,12 +50,34 @@ public class TableProperties {
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
+  public static final String PARTITION_MAX_TRANSACTION_ID = "max-txId";
+  public static final long PARTITION_MAX_TRANSACTION_ID_DEFAULT = -1L;
+
   public static final String LOCATION = "location";
 
   public static final String TABLE_CREATE_TIME = "table.create-timestamp";
   public static final long TABLE_CREATE_TIME_DEFAULT = 0L;
 
+  /**
+   * table watermark related properties
+   */
+
   public static final String TABLE_EVENT_TIME_FIELD = "table.event-time-field";
+  public static final String TABLE_EVENT_TIME_FIELD_DEFAULT = INGEST_TIME;
+
+  public static final String TABLE_WATERMARK_ALLOWED_LATENESS = "table.watermark-allowed-lateness-second";
+  public static final long TABLE_WATERMARK_ALLOWED_LATENESS_DEFAULT = 0L;
+
+  public static final String TABLE_EVENT_TIME_STRING_FORMAT = "table.event-time-field.datetime-string-format";
+  public static final String TABLE_EVENT_TIME_STRING_FORMAT_DEFAULT = "yyyy-MM-dd HH:mm:ss";
+
+  public static final String TABLE_EVENT_TIME_NUMBER_FORMAT = "table.event-time-field.datetime-number-format";
+  public static final String TABLE_EVENT_TIME_NUMBER_FORMAT_DEFAULT = EVENT_TIME_TIMESTAMP_MS;
+
+  public static final String WATERMARK_TABLE = "watermark.table";
+
+  public static final String WATERMARK_BASE_STORE = "watermark.base-store";
+
   /**
    * table optimize related properties
    */
@@ -73,6 +98,12 @@ public class TableProperties {
   public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
   public static final int OPTIMIZE_RETRY_NUMBER_DEFAULT = 5;
 
+  public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
+  public static final int OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
+  
+  public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
+  public static final int OPTIMIZE_MAX_FILE_COUNT_DEFAULT = 100000;
+
   public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
   public static final long MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 86_400_000; // 1 day
 
@@ -91,6 +122,14 @@ public class TableProperties {
 
   public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
   public static final int MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
+
+  public static final String MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD =
+      "optimize.major.trigger.duplicate-size-bytes-threshold";
+  public static final int MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT = 67108864; // 64 MB
+
+  public static final String MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD =
+      "optimize.major.trigger.duplicate-ratio-threshold";
+  public static final double MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT = 0.5;
 
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
   public static final double OPTIMIZE_QUOTA_DEFAULT = 0.1;

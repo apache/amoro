@@ -34,6 +34,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
+import com.netease.arctic.ams.server.mapper.PlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
@@ -45,6 +46,7 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyPlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetricsStatisticMapper;
@@ -119,12 +121,14 @@ public class JDBCSqlSessionFactoryProvider {
           configuration.addMapper(TableMetricsStatisticMapper.class);
           configuration.addMapper(MetricsSummaryMapper.class);
           configuration.addMapper(OptimizerMetricsStatisticMapper.class);
+          configuration.addMapper(PlatformFileInfoMapper.class);
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             configuration.addMapper(DerbyContainerMetadataMapper.class);
             configuration.addMapper(DerbyFileInfoCacheMapper.class);
             configuration.addMapper(DerbyCatalogMetadataMapper.class);
             configuration.addMapper(DerbyTableMetadataMapper.class);
             configuration.addMapper(DerbyOptimizeTasksMapper.class);
+            configuration.addMapper(DerbyPlatformFileInfoMapper.class);
             configuration.addMapper(DerbyTableMetricsStatisticMapper.class);
             configuration.addMapper(DerbyOptimizerMetricsStatisticMapper.class);
           }

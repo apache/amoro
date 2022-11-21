@@ -279,7 +279,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     jobClient.cancel();
   }
 
-  @Test
+  @Test(timeout = 30000)
   public void testArcticContinuousSourceWithEmptyChangeInInit() throws Exception {
     TableIdentifier tableId = TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_empty_change");
     KeyedTable table = testCatalog

@@ -22,6 +22,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;

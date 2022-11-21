@@ -42,21 +42,23 @@ import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ConvertStructUtil;
 import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +74,7 @@ public class FileInfoCacheService extends IJDBCService {
 
   private static final Logger LOG = LoggerFactory.getLogger(FileInfoCacheService.class);
 
-  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) throws MetaException {
+  public void commitCacheFileInfo(TableCommitMeta tableCommitMeta) {
     if (needFixCacheFromTable(tableCommitMeta)) {
       LOG.warn("should not cache {}", tableCommitMeta);
       return;
@@ -285,7 +287,7 @@ public class FileInfoCacheService extends IJDBCService {
       List<DataFile> deleteFiles = new ArrayList<>();
       SnapshotFileUtil.getSnapshotFiles((ArcticTable) table, snapshot, addFiles, deleteFiles);
       for (DataFile amsFile : addFiles) {
-        CacheFileInfo cacheFileInfo = CacheFileInfo.convert(table, amsFile, identifier, tableType, snapshot);
+        CacheFileInfo cacheFileInfo = CacheFileInfo.convert(amsFile, identifier, tableType, snapshot);
         fileInfos.add(cacheFileInfo);
       }
 
@@ -307,6 +309,10 @@ public class FileInfoCacheService extends IJDBCService {
       long fileSize = 0L;
       int fileCount = 0;
       for (DataFile file : addFiles) {
+        fileSize += file.getFileSize();
+        fileCount++;
+      }
+      for (DataFile file : deleteFiles) {
         fileSize += file.getFileSize();
         fileCount++;
       }
@@ -358,11 +364,11 @@ public class FileInfoCacheService extends IJDBCService {
     List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
     dataFiles.forEach(dataFile -> {
       DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
-      cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
+      cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
     deleteFiles.forEach(dataFile -> {
       DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);
-      cacheFileInfos.add(CacheFileInfo.convert(table, amsFile, identifier, tableType, curr));
+      cacheFileInfos.add(CacheFileInfo.convert(amsFile, identifier, tableType, curr));
     });
 
     long fileSize = 0L;
@@ -402,6 +408,7 @@ public class FileInfoCacheService extends IJDBCService {
             CacheFileInfo cacheFileInfo = new CacheFileInfo();
             cacheFileInfo.setTableIdentifier(tableCommitMeta.getTableIdentifier());
             cacheFileInfo.setAddSnapshotId(tableChange.getSnapshotId());
+            cacheFileInfo.setAddSnapshotSequence(tableChange.getSnapshotSequence());
             cacheFileInfo.setParentSnapshotId(tableChange.getParentSnapshotId());
             cacheFileInfo.setInnerTable(tableChange.getInnerTable());
             cacheFileInfo.setFilePath(datafile.getPath());
@@ -421,16 +428,6 @@ public class FileInfoCacheService extends IJDBCService {
             cacheFileInfo.setFileIndex(datafile.getIndex());
             cacheFileInfo.setRecordCount(datafile.getRecordCount());
             cacheFileInfo.setSpecId(datafile.getSpecId());
-            if (tableCommitMeta.getProperties() != null &&
-                tableCommitMeta.getProperties().containsKey(TableProperties.TABLE_EVENT_TIME_FIELD)) {
-              Long watermark =
-                  datafile.getUpperBounds()
-                      .get(tableCommitMeta.getProperties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
-                      .getLong();
-              cacheFileInfo.setWatermark(watermark);
-            } else {
-              cacheFileInfo.setWatermark(0L);
-            }
             cacheFileInfo.setAction(tableCommitMeta.getAction());
             cacheFileInfo.setCommitTime(tableCommitMeta.getCommitTime());
             cacheFileInfo.setProducer(tableCommitMeta.getCommitMetaProducer().name());
@@ -465,6 +462,7 @@ public class FileInfoCacheService extends IJDBCService {
     CacheSnapshotInfo cache = new CacheSnapshotInfo();
     cache.setTableIdentifier(identifier);
     cache.setSnapshotId(snapshot.snapshotId());
+    cache.setSnapshotSequence(snapshot.sequenceNumber());
     cache.setParentSnapshotId(snapshot.parentId() == null ? -1 : snapshot.parentId());
     cache.setAction(snapshot.operation());
     cache.setInnerTable(tableType);
@@ -483,6 +481,7 @@ public class FileInfoCacheService extends IJDBCService {
         CacheSnapshotInfo cache = new CacheSnapshotInfo();
         cache.setTableIdentifier(tableCommitMeta.getTableIdentifier());
         cache.setSnapshotId(tableChange.getSnapshotId());
+        cache.setSnapshotSequence(tableChange.getSnapshotSequence());
         cache.setParentSnapshotId(tableChange.getParentSnapshotId());
         cache.setAction(tableCommitMeta.getAction());
         cache.setInnerTable(tableChange.getInnerTable());
@@ -494,6 +493,12 @@ public class FileInfoCacheService extends IJDBCService {
           fileSize += file.getFileSize();
           fileCount++;
         }
+        if (CollectionUtils.isNotEmpty(tableChange.getDeleteFiles())) {
+          for (DataFile file : tableChange.getDeleteFiles()) {
+            fileSize += file.getFileSize();
+            fileCount++;
+          }
+        }
         cache.setFileSize(fileSize);
         cache.setFileCount(fileCount);
         rs.add(cache);
@@ -502,18 +507,95 @@ public class FileInfoCacheService extends IJDBCService {
     return rs;
   }
 
-  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier tableIdentifier) {
+  public List<TransactionsOfTable> getTxExcludeOptimize(TableIdentifier identifier) {
+    if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
+      List<TransactionsOfTable> result = new ArrayList<>();
+      ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
+      ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
+          identifier.getDatabase(), identifier.getTableName()));
+      arcticTable.asUnkeyedTable().snapshots().forEach(snapshot -> {
+        TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
+        transactionsOfTable.setTransactionId(snapshot.snapshotId());
+        int fileCount = PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_DELETE_FILES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.DELETED_FILES_PROP, 0);
+        fileCount += PropertyUtil
+            .propertyAsInt(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
+        transactionsOfTable.setFileCount(fileCount);
+        transactionsOfTable.setFileSize(PropertyUtil
+            .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.ADDED_FILE_SIZE_PROP, 0) +
+            PropertyUtil
+                .propertyAsLong(snapshot.summary(), org.apache.iceberg.SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
+        transactionsOfTable.setCommitTime(snapshot.timestampMillis());
+        result.add(transactionsOfTable);
+      });
+      return result;
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
-      return snapInfoCacheMapper.getTxExcludeOptimize(tableIdentifier);
+      return snapInfoCacheMapper.getTxExcludeOptimize(identifier);
     }
   }
 
-  public List<AMSDataFileInfo> getDatafilesInfo(TableIdentifier tableIdentifier, Long transactionId) {
+  public List<AMSDataFileInfo> getDatafilesInfo(TableIdentifier identifier, Long transactionId) {
+    if (CatalogUtil.isIcebergCatalog(identifier.getCatalog())) {
+      return genIcebergFileInfo(identifier, transactionId);
+    }
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      return fileInfoCacheMapper.getDatafilesInfo(tableIdentifier, transactionId);
+      return fileInfoCacheMapper.getDatafilesInfo(identifier, transactionId);
     }
+  }
+
+  public List<AMSDataFileInfo> genIcebergFileInfo(TableIdentifier identifier, Long transactionId) {
+    List<AMSDataFileInfo> result = new ArrayList<>();
+    ArcticCatalog catalog = CatalogUtil.getArcticCatalog(identifier.getCatalog());
+    ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
+        identifier.getDatabase(), identifier.getTableName()));
+    List<DeleteFile> addFiles = new ArrayList<>();
+    List<DeleteFile> deleteFiles = new ArrayList<>();
+    Snapshot snapshot = arcticTable.asUnkeyedTable().snapshot(transactionId);
+    SnapshotFileUtil.getDeleteFiles(arcticTable, snapshot, addFiles, deleteFiles);
+    snapshot.addedFiles().forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "add"));
+    });
+    snapshot.deletedFiles().forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "remove"));
+    });
+    addFiles.forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "add"));
+    });
+    deleteFiles.forEach(f -> {
+      result.add(new AMSDataFileInfo(
+          f.path().toString(),
+          partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
+          f.content().name(),
+          f.fileSizeInBytes(),
+          snapshot.timestampMillis(),
+          "remove"));
+    });
+    return result;
   }
 
   public List<PartitionBaseInfo> getPartitionBaseInfoList(TableIdentifier tableIdentifier) {
@@ -527,14 +609,6 @@ public class FileInfoCacheService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
       return fileInfoCacheMapper.getPartitionFileList(tableIdentifier, partition);
-    }
-  }
-
-  public Long getWatermark(TableIdentifier tableIdentifier, String innerTable) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      FileInfoCacheMapper fileInfoCacheMapper = getMapper(sqlSession, FileInfoCacheMapper.class);
-      Timestamp watermark = fileInfoCacheMapper.getWatermark(tableIdentifier, innerTable);
-      return watermark == null ? 0 : watermark.getTime();
     }
   }
 

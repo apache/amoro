@@ -67,6 +67,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.testtools.JavalinTest;
+import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
@@ -404,10 +405,6 @@ public class TableControllerTest {
         .thenReturn(mockTableBasicInfo(catalog, db, table));
     FileInfoCacheService fileInfoCacheService = mock(FileInfoCacheService.class);
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
-    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)),Constants.INNER_TABLE_CHANGE))
-        .thenReturn(1000L);
-    when(fileInfoCacheService.getWatermark(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Constants.INNER_TABLE_BASE))
-        .thenReturn(1000L);
     when(fileInfoCacheService.getTxExcludeOptimize(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table))))
         .thenReturn(mockTableTransactions());
     when(fileInfoCacheService.getDatafilesInfo(AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), 1L))
@@ -430,7 +427,7 @@ public class TableControllerTest {
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     when(ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier()))
         .thenReturn(mockDDLTracer());
-    when(catalogMetadataService.getCatalog(catalog)).thenReturn(mockCatalogMeta(catalog));
+    when(catalogMetadataService.getCatalog(catalog)).thenReturn(Optional.of(mockCatalogMeta(catalog)));
     ArcticHiveCatalog arcticHiveCatalog = mock(ArcticHiveCatalog.class);
     when(CatalogUtil.getArcticCatalog(ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
         ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT), catalog)).
