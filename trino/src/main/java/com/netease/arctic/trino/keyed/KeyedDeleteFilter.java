@@ -29,6 +29,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileIO;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.types.Type;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.stream.Collectors;
 
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.collect.ImmutableSet.toImmutableSet;
+import static io.trino.plugin.iceberg.TypeConverter.toIcebergType;
 
 /**
  * KeyedDeleteFilter is used to do MOR for Keyed Table
@@ -67,41 +69,33 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
   }
 
   private static Schema filterSchema(Schema tableSchema, List<IcebergColumnHandle> requestedColumns) {
-    Set<Integer> requestedFieldIds = requestedColumns.stream()
-        .map(IcebergColumnHandle::getId)
-        .collect(toImmutableSet());
-    return new Schema(filterFieldList(tableSchema.columns(), requestedFieldIds));
+    return new Schema(filterFieldList(tableSchema.columns(), requestedColumns));
   }
 
   private static List<Types.NestedField> filterFieldList(
       List<Types.NestedField> fields,
-      Set<Integer> requestedFieldIds) {
-    return fields.stream()
-        .map(field -> filterField(field, requestedFieldIds))
+      List<IcebergColumnHandle> requestedSchemas) {
+    return requestedSchemas.stream()
+        .map(id -> filterField(id, fields))
         .filter(Optional::isPresent)
         .map(Optional::get)
         .collect(toImmutableList());
   }
 
-  private static Optional<Types.NestedField> filterField(Types.NestedField field, Set<Integer> requestedFieldIds) {
-    Type fieldType = field.type();
-    if (requestedFieldIds.contains(field.fieldId())) {
-      return Optional.of(field);
-    }
-
-    if (fieldType.isStructType()) {
-      List<Types.NestedField> requiredChildren = filterFieldList(fieldType.asStructType().fields(), requestedFieldIds);
-      if (requiredChildren.isEmpty()) {
-        return Optional.empty();
+  private static Optional<Types.NestedField> filterField(
+      IcebergColumnHandle requestedSchema, List<Types.NestedField> fields) {
+    for (Types.NestedField nestedField: fields) {
+      if (nestedField.fieldId() == requestedSchema.getId()) {
+        return Optional.of(nestedField);
       }
-      return Optional.of(Types.NestedField.of(
-          field.fieldId(),
-          field.isOptional(),
-          field.name(),
-          Types.StructType.of(requiredChildren),
-          field.doc()));
+      if (nestedField.type().isStructType()) {
+        Optional<Types.NestedField> optional = filterField(requestedSchema, nestedField.type().asStructType().fields());
+        if (optional.isPresent()) {
+          return optional;
+        }
+      }
     }
-
-    return Optional.empty();
+    return Optional.of(Types.NestedField.optional(requestedSchema.getId(), requestedSchema.getName(),
+        toIcebergType(requestedSchema.getType())));
   }
 }
