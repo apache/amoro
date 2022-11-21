@@ -23,6 +23,7 @@ import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -30,6 +31,7 @@ import org.apache.iceberg.DataTask;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.Metrics;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
@@ -39,13 +41,12 @@ import org.apache.iceberg.expressions.InclusiveMetricsEvaluator;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -56,8 +57,10 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Expression dataFilter;
 
+  private Schema entriesTableSchema;
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
   private Map<String, Integer> lazyIndexOfDataFileType;
+  private Map<String, Integer> lazyIndexOfEntryType;
 
   public BaseChangeTableIncrementalScan(ChangeTable table) {
     this.table = table;
@@ -103,16 +106,18 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       hadoopConf = io.conf();
     }
     HadoopTables tables = new HadoopTables(hadoopConf);
-    Table entriesTable = tables.load(table.location() + "#" + MetadataTableType.ALL_ENTRIES);
+    Table entriesTable = tables.load(table.location() + "#" + MetadataTableType.ENTRIES);
+    this.entriesTableSchema = entriesTable.schema();
     CloseableIterable<FileScanTask> manifestFileScanTasks = entriesTable.newScan().planFiles();
 
     CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
 
     CloseableIterable<ArcticFileScanTask> allFileTasks =
         CloseableIterable.transform(entries, (entry -> {
-          int status = entry.get(0, Integer.class);
-          long sequence = entry.get(2, Long.class);
-          StructLike dataFileRecord = entry.get(3, StructLike.class);
+          int status = entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class);
+          long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
+          StructLike dataFileRecord =
+              entry.get(entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
           Integer contentId = dataFileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class);
           String filePath = dataFileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
           StructLike partition;
@@ -224,17 +229,25 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
         (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
   }
 
+  private int entryFieldIndex(String fieldName) {
+    if (lazyIndexOfEntryType == null) {
+      List<Types.NestedField> fields = entriesTableSchema.columns();
+      Map<String, Integer> map = Maps.newHashMap();
+      for (int i = 0; i < fields.size(); i++) {
+        map.put(fields.get(i).name(), i);
+      }
+      lazyIndexOfEntryType = map;
+    }
+    return lazyIndexOfEntryType.get(fieldName);
+  }
+
   private int dataFileFieldIndex(String fieldName) {
     if (lazyIndexOfDataFileType == null) {
+      List<Types.NestedField> fields =
+          entriesTableSchema.findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
       Map<String, Integer> map = Maps.newHashMap();
-      Types.StructType dataFileType = DataFile.getType(table.spec().partitionType());
-      ArrayList<Types.NestedField> validFields = Lists.newArrayList(dataFileType.fields());
-      if (table.spec().isUnpartitioned()) {
-        // for no pk table, the partition field is not included
-        validFields.removeIf(f -> f.name().equals(DataFile.PARTITION_NAME));
-      }
-      for (int i = 0; i < validFields.size(); i++) {
-        map.put(validFields.get(i).name(), i);
+      for (int i = 0; i < fields.size(); i++) {
+        map.put(fields.get(i).name(), i);
       }
       lazyIndexOfDataFileType = map;
     }
