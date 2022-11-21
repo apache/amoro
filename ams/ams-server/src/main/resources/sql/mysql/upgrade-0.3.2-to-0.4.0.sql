@@ -20,3 +20,16 @@ ALTER TABLE `optimize_task` ADD COLUMN `eq_delete_file_size` bigint(20) DEFAULT 
 ALTER TABLE `optimize_history` ADD COLUMN `eq_delete_file_cnt_before` int(11) NOT NULL COMMENT 'Eq-Delete file cnt before optimizing';
 ALTER TABLE `optimize_history` ADD COLUMN `eq_delete_file_size_before` bigint(20) NOT NULL COMMENT 'Eq-Delete file size in bytes before optimizing';
 ALTER TABLE `optimize_file` CHANGE `file_type` `content_type` varchar(32) NOT NULL COMMENT 'File type: BASE_FILE, INSERT_FILE, EQ_DELETE_FILE, POS_DELETE_FILE, FILE_SCAN_TASK';
+ALTER TABLE `optimize_file` MODIFY COLUMN file_content MEDIUMBLOB NULL COMMENT 'File bytes after serialization';
+
+ALTER TABLE `database_metadata` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'database name';
+ALTER TABLE `optimize_history` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'Database name';
+ALTER TABLE `optimize_history` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
+ALTER TABLE `optimize_task` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'Database name';
+ALTER TABLE `optimize_task` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
+ALTER TABLE `table_metadata` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'Database name';
+ALTER TABLE `table_metadata` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
+ALTER TABLE `optimize_table_runtime` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'Database name';
+ALTER TABLE `optimize_table_runtime` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
+ALTER TABLE `optimize_task_history` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'Database name';
+ALTER TABLE `optimize_task_history` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
