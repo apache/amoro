@@ -19,30 +19,33 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.DataTask;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.Metrics;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.data.GenericRecord;
-import org.apache.iceberg.data.IcebergGenerics;
-import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.InclusiveMetricsEvaluator;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 
@@ -54,6 +57,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   private Expression dataFilter;
 
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
+  private Map<String, Integer> lazyIndexOfDataFileType;
 
   public BaseChangeTableIncrementalScan(ChangeTable table) {
     this.table = table;
@@ -93,37 +97,31 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       // return no files for table without snapshot
       return CloseableIterable.empty();
     }
-    long currentSnapshotSequence = table.currentSnapshot().sequenceNumber();
     Configuration hadoopConf = new Configuration();
     if (table.io() instanceof ArcticHadoopFileIO) {
       ArcticHadoopFileIO io = (ArcticHadoopFileIO) table.io();
       hadoopConf = io.conf();
     }
     HadoopTables tables = new HadoopTables(hadoopConf);
-    Table entriesTable = tables.load(table.location() + "#ENTRIES");
-    CloseableIterable<Record> entries = IcebergGenerics.read(entriesTable)
-        .useSnapshot(currentSnapshot.snapshotId())
-        .build();
+    Table entriesTable = tables.load(table.location() + "#" + MetadataTableType.ALL_ENTRIES);
+    CloseableIterable<FileScanTask> manifestFileScanTasks = entriesTable.newScan().planFiles();
+
+    CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
 
     CloseableIterable<ArcticFileScanTask> allFileTasks =
         CloseableIterable.transform(entries, (entry -> {
-          int status = (int) entry.getField(ManifestEntryFields.STATUS.name());
-          GenericRecord dataFileRecord = (GenericRecord) entry.getField(ManifestEntryFields.DATA_FILE_FIELD_NAME);
-          Integer contentId = (Integer) dataFileRecord.getField(DataFile.CONTENT.name());
-          // metricsEvaluator.eval()
-          // status == 0 means EXISTING, status == 1 means ADDED
-          // contentId == 0 means FileContent.DATA
+          int status = entry.get(0, Integer.class);
+          long sequence = entry.get(2, Long.class);
+          StructLike dataFileRecord = entry.get(3, StructLike.class);
+          Integer contentId = dataFileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class);
+          String filePath = dataFileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
+          StructLike partition;
+          if (table.spec().isUnpartitioned()) {
+            partition = null;
+          } else {
+            partition = dataFileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
+          }
           if ((status == 0 || status == 1) && contentId != null && contentId == 0) {
-            long sequence;
-            if (status == 1) {
-              // for files ADDED in this snapshot, sequence is equals to the current snapshot sequence
-              sequence = currentSnapshotSequence;
-            } else {
-              // for EXISTING files, sequence is record in entry
-              sequence = (long) entry.getField(ManifestEntryFields.SEQUENCE_NUMBER.name());
-            }
-            String filePath = (String) dataFileRecord.getField(DataFile.FILE_PATH.name());
-            StructLike partition = getPartition(dataFileRecord);
             Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequence);
             if (shouldKeep == null) {
               // if not sure should keep, use legacy transactionId to check
@@ -145,6 +143,13 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
           return null;
         }));
     return CloseableIterable.filter(allFileTasks, Objects::nonNull);
+  }
+
+  private Iterable<CloseableIterable<StructLike>> entriesOfManifest(CloseableIterable<FileScanTask> fileScanTasks) {
+    return Iterables.transform(fileScanTasks, task -> {
+      assert task != null;
+      return ((DataTask) task).rows();
+    });
   }
 
   private Boolean shouldKeepFile(StructLike partition, long txId) {
@@ -185,9 +190,9 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
     Boolean shouldKeep(StructLike partition, long transactionId);
   }
 
-  private DataFile buildDataFile(GenericRecord dataFile, String filePath, StructLike partition) {
-    Long fileSize = (Long) dataFile.getField(DataFile.FILE_SIZE.name());
-    Long recordCount = (Long) dataFile.getField(DataFile.RECORD_COUNT.name());
+  private DataFile buildDataFile(StructLike dataFile, String filePath, StructLike partition) {
+    Long fileSize = dataFile.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
+    Long recordCount = dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
     DataFile file;
     if (table.spec().isUnpartitioned()) {
       file = DataFiles.builder(table.spec())
@@ -208,25 +213,32 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
     return file;
   }
 
-  private StructLike getPartition(GenericRecord dataFile) {
-    GenericRecord parRecord = (GenericRecord) dataFile.getField(DataFile.PARTITION_NAME);
-    if (parRecord != null) {
-      InternalRecordWrapper wrapper = new InternalRecordWrapper(parRecord.struct());
-      return wrapper.wrap(parRecord);
-    } else {
-      return null;
-    }
+  @SuppressWarnings("unchecked")
+  public Metrics buildMetrics(StructLike dataFile) {
+    return new Metrics(dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
+        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
+        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
+        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
+        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class),
+        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class),
+        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
   }
 
-  @SuppressWarnings("unchecked")
-  public Metrics buildMetrics(GenericRecord dataFile) {
-    return new Metrics((Long) dataFile.getField(DataFile.RECORD_COUNT.name()),
-        (Map<Integer, Long>) dataFile.getField(DataFile.COLUMN_SIZES.name()),
-        (Map<Integer, Long>) dataFile.getField(DataFile.VALUE_COUNTS.name()),
-        (Map<Integer, Long>) dataFile.getField(DataFile.NULL_VALUE_COUNTS.name()),
-        (Map<Integer, Long>) dataFile.getField(DataFile.NAN_VALUE_COUNTS.name()),
-        (Map<Integer, ByteBuffer>) dataFile.getField(DataFile.LOWER_BOUNDS.name()),
-        (Map<Integer, ByteBuffer>) dataFile.getField(DataFile.UPPER_BOUNDS.name()));
+  private int dataFileFieldIndex(String fieldName) {
+    if (lazyIndexOfDataFileType == null) {
+      Map<String, Integer> map = Maps.newHashMap();
+      Types.StructType dataFileType = DataFile.getType(table.spec().partitionType());
+      ArrayList<Types.NestedField> validFields = Lists.newArrayList(dataFileType.fields());
+      if (table.spec().isUnpartitioned()) {
+        // for no pk table, the partition field is not included
+        validFields.removeIf(f -> f.name().equals(DataFile.PARTITION_NAME));
+      }
+      for (int i = 0; i < validFields.size(); i++) {
+        map.put(validFields.get(i).name(), i);
+      }
+      lazyIndexOfDataFileType = map;
+    }
+    return lazyIndexOfDataFileType.get(fieldName);
   }
 
   private InclusiveMetricsEvaluator metricsEvaluator() {
