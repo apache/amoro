@@ -239,7 +239,7 @@ public class OptimizerController extends RestBaseController {
         optimizerService.insertOptimizer(optimizerName, optimizerGroupInfo.getId(), optimizerGroupInfo.getName(),
             TableTaskStatus.STARTING,
             new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date()),
-            parallelism + 1, Long.parseLong(memory), parallelism, container);
+            parallelism, Long.parseLong(memory), parallelism, container);
       } else if (containerType.equals("flink")) {
         int tmMemory = Integer.parseInt(optimizerGroupInfo.getProperties().get("taskmanager.memory"));
         int jmMemory = Integer.parseInt(optimizerGroupInfo.getProperties().get("jobmanager.memory"));
