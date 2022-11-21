@@ -320,6 +320,7 @@ function changeMetastore() {
       return
     }
     formState.storageConfigArray.push({
+      key: 'hive.site',
       label: 'hive.site',
       value: '',
       fileName: '',
@@ -366,12 +367,12 @@ function getFileIdParams() {
   const { storageConfig, authConfig, storageConfigArray, authConfigArray } = formState
   Object.keys(authConfig).forEach(key => {
     if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
-      const id = (authConfigArray.find(item => item.label === key) || {}).fileId
+      const id = (authConfigArray.find(item => item.key === key) || {}).fileId
       authConfig[key] = id
     }
   })
   Object.keys(storageConfig).forEach(key => {
-    const id = (storageConfigArray.find(item => item.label === key) || {}).fileId
+    const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
     storageConfig[key] = id
   })
 }
@@ -434,7 +435,7 @@ function uploadFile(info: UploadChangeParam, config, type?) {
     }
     if (info.file.status === 'done') {
       config.isSuccess = true
-      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.label] : info.file.name
+      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.key] : info.file.name
       const { url, id } = info.file.response.result || {}
       config.fileUrl = url
       config.fileId = id
