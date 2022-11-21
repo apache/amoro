@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
+import com.netease.arctic.ams.api.properties.OptimizeTaskProperties;
 import com.netease.arctic.ams.server.mapper.InternalTableFilesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
@@ -31,12 +32,17 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
 import com.netease.arctic.ams.server.service.IJDBCService;
+import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,6 +93,18 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
           "task prepared, can't on pending");
+
+      // can update max execute time on optimizing
+      try {
+        ArcticTable arcticTable = ServiceContainer.getOptimizeService()
+            .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
+        Long maxExecuteTime = PropertyUtil.propertyAsLong(arcticTable.properties(),
+            TableProperties.OPTIMIZE_EXECUTE_TIMEOUT, TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
+        optimizeTask.getProperties().put(OptimizeTaskProperties.MAX_EXECUTE_TIME, String.valueOf(maxExecuteTime));
+      } catch (Exception e) {
+        LOG.error("update task max execute time failed.", e);
+      }
+
       BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       if (newRuntime.getStatus() == OptimizeStatus.Failed) {
         newRuntime.setRetry(newRuntime.getRetry() + 1);
@@ -151,7 +169,6 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setStatus(OptimizeStatus.Failed);
       newRuntime.setPreparedTime(BaseOptimizeTaskRuntime.INVALID_TIME);
       newRuntime.setReportTime(reportTime);
-      newRuntime.setAttemptId(null);
       newRuntime.setCostTime(costTime);
       persistTaskRuntime(newRuntime, false);
       optimizeRuntime = newRuntime;
@@ -192,15 +209,37 @@ public class OptimizeTaskItem extends IJDBCService {
     if (getOptimizeStatus() == OptimizeStatus.Init) {
       return true;
     } else if (getOptimizeStatus() == OptimizeStatus.Failed) {
+      // clear useless files produced by failed full optimize task support hive
+      String location = getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
+      if (location != null) {
+        try {
+          ArcticTable arcticTable = ServiceContainer.getOptimizeService()
+              .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
+          for (FileStatus fileStatus : arcticTable.io().list(location)) {
+            String fileLocation = fileStatus.getPath().toUri().getPath();
+            if (fileLocation.contains(optimizeRuntime.getAttemptId())) {
+              arcticTable.io().deleteFile(fileLocation);
+              LOG.debug("delete file {} by produced failed optimize task.", fileLocation);
+            }
+          }
+        } catch (Exception e) {
+          LOG.error("delete files failed", e);
+          return false;
+        }
+      }
+
       return getOptimizeRuntime().getRetry() <= maxRetry.get() && System.currentTimeMillis() >
           getOptimizeRuntime().getFailTime() + RETRY_INTERVAL;
     }
     return false;
   }
 
-  public boolean executeTimeout(Supplier<Long> maxExecuteTime) {
+  public boolean executeTimeout() {
+    long maxExecuteTime = PropertyUtil
+        .propertyAsLong(optimizeTask.getProperties(), OptimizeTaskProperties.MAX_EXECUTE_TIME,
+            TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
     if (getOptimizeStatus() == OptimizeStatus.Executing) {
-      return System.currentTimeMillis() - optimizeRuntime.getExecuteTime() > maxExecuteTime.get();
+      return System.currentTimeMillis() - optimizeRuntime.getExecuteTime() > maxExecuteTime;
     }
     return false;
   }
