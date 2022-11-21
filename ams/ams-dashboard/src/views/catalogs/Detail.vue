@@ -3,6 +3,9 @@
     <div class="detail-content-wrap">
       <div class="content-wrap">
         <a-form ref="formRef" :model="formState" class="catalog-form">
+          <a-form-item>
+            <p class="header">{{$t('basic')}}</p>
+          </a-form-item>
           <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
             <span v-else>{{formState.catalog.name}}</span>
@@ -96,12 +99,12 @@
       </div>
     </div>
     <div v-if="isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
+      <a-button type="primary" @click="handleSave" class="save-btn g-mr-12">{{$t('save')}}</a-button>
       <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
     </div>
     <div v-if="!isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
-      <a-button @click="handleRemove">{{$t('remove')}}</a-button>
+      <a-button type="primary" @click="handleEdit" class="edit-btn g-mr-12">{{$t('edit')}}</a-button>
+      <a-button @click="handleRemove" class="remove-btn">{{$t('remove')}}</a-button>
     </div>
     <u-loading v-if="loading" />
   </div>
@@ -464,7 +467,8 @@ onMounted(() => {
   display: flex;
   flex: 1;
   flex-direction: column;
-  box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
+  border: 1px solid #e8e8f0;
+  border-left: 0;
   .detail-content-wrap {
     height: 100%;
     padding-right: 200px;
@@ -475,6 +479,9 @@ onMounted(() => {
     flex: 1;
     overflow: auto;
     flex-direction: column;
+    .ant-form-item {
+      margin-bottom: 8px;
+    }
     :deep(.ant-form-item-label) {
       > label {
         word-break: break-all;
@@ -484,7 +491,7 @@ onMounted(() => {
       margin-right: 16px;
     }
     .header {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 600;
       color: #102048;
     }
@@ -498,6 +505,16 @@ onMounted(() => {
     flex-shrink: 0;
     padding-top: 12px;
     background-color: #fff;
+    .edit-btn, .save-btn {
+      min-width: 60px;
+    }
+    .remove-btn {
+      &:hover {
+        background-color: #ff4d4f;
+        border-color: transparent;
+        color: #fff;
+      }
+    }
   }
 }
 </style>

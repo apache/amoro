@@ -164,15 +164,15 @@ onBeforeRouteLeave((to, form, next) => {
   .catalog-list-left {
     width: 200px;
     height: 100%;
-    // border: 1px solid #e8e8f0;
-    box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
+    border: 1px solid #e8e8f0;
     text-align: center;
   }
   .catalog-header {
-    height: 48px;
-    line-height: 48px;
+    height: 40px;
+    line-height: 40px;
     font-size: 14px;
-    border-bottom: 1px solid #e8e8f0;
+    font-weight: 500;
+    background-color: #fafafa;
   }
   .catalog-list {
     background-color: #fff;
@@ -184,13 +184,13 @@ onBeforeRouteLeave((to, form, next) => {
       border-bottom: 1px solid #e8e8f0;
       padding: 0 12px;
       &.active {
-        color: #fff;
+        color: #fff !important;
         background-color: @primary-color;
+        border-color: transparent;
       }
       &:hover {
         cursor: pointer;
-        color: #fff;
-        background-color: @primary-color;
+        color: @primary-color;
       }
       &:last-child {
         border-bottom: 0;

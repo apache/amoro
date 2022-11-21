@@ -57,14 +57,14 @@ export default defineComponent ({
 
 <style lang="less" scoped>
   .top-bar {
-    height: 64px;
+    height: 48px;
     display: flex;
     flex: 1;
     align-items: center;
     justify-content: flex-end;
     background: #fff;
     border-bottom: 1px solid #e8e8e8;
-    box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
+    box-shadow: 0 1px 2px rgb(0 21 41 / 5%);
     padding: 0 12px 0 0;
     .question-icon {
       font-size: 14px;
