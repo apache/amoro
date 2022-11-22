@@ -53,6 +53,7 @@ import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
@@ -516,6 +517,9 @@ public class FileInfoCacheService extends IJDBCService {
       ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
           identifier.getDatabase(), identifier.getTableName()));
       arcticTable.asUnkeyedTable().snapshots().forEach(snapshot -> {
+        if (snapshot.operation().equals(DataOperations.REPLACE)) {
+          return;
+        }
         TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
         transactionsOfTable.setTransactionId(snapshot.snapshotId());
         int fileCount = PropertyUtil

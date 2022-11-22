@@ -285,6 +285,8 @@ public class TestFileInfoCacheService extends TableTestBase {
         .appendFile(FILE_A)
         .appendFile(FILE_B)
         .commit();
+    table.asUnkeyedTable().newRewrite().rewriteFiles(Sets.newHashSet(FILE_B), Sets.newHashSet(FILE_D))
+        .commit();
     table.asUnkeyedTable().newOverwrite()
         .deleteFile(FILE_A)
         .addFile(FILE_C)
