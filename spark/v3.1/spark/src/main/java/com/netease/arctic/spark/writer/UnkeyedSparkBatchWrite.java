@@ -59,7 +59,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private final UnkeyedTable table;
   private final StructType dsSchema;
-  private static final long transactionId = IdGenerator.randomId();
+  private final long transactionId = IdGenerator.randomId();
   private final String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
 
   public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema) {
@@ -194,10 +194,10 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     protected final UnkeyedTable table;
     protected final StructType dsSchema;
 
-    private final long transactionId;
-    private final String hiveSubdirectory;
+    protected final long transactionId;
+    protected final String hiveSubdirectory;
 
-    private final boolean isOverwrite;
+    protected final boolean isOverwrite;
 
     WriterFactory(UnkeyedTable table,
                   StructType dsSchema,

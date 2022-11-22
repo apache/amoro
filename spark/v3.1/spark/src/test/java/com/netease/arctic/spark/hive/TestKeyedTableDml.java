@@ -126,6 +126,23 @@ public class TestKeyedTableDml extends SparkTestBase {
   }
 
   @Test
+  public void testUpdateHasNoFilter() {
+    sql("update {0}.{1} set name = \"ddd\"", database, notUpsertTable);
+    rows = sql("select name from {0}.{1} group by name", database, notUpsertTable);
+
+    Assert.assertEquals(1, rows.size());
+    Assert.assertEquals("ddd", rows.get(0)[0]);
+  }
+
+  @Test
+  public void testDeleteHasNoFilter() {
+    sql("delete from {0}.{1}", database, notUpsertTable);
+    rows = sql("select * from {0}.{1}", database, notUpsertTable);
+
+    Assert.assertEquals(0, rows.size());
+  }
+
+  @Test
   public void testUpdateDiffColType() {
     sql(createDoubleColTableTemplate, database, doubleColTable);
     sql("insert into " + database + "." + doubleColTable +
