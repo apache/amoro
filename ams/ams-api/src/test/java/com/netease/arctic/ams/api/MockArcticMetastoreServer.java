@@ -359,5 +359,10 @@ public class MockArcticMetastoreServer implements Runnable {
     public OptimizerDescriptor registerOptimizer(OptimizerRegisterInfo registerInfo) throws TException {
       return new OptimizerDescriptor();
     }
+
+    @Override
+    public void reportOptimizerMetric(List<OptimizerMetric> metrics) throws TException {
+
+    }
   }
 }

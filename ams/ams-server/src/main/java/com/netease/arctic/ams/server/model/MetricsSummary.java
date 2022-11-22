@@ -18,10 +18,12 @@
 
 package com.netease.arctic.ams.server.model;
 
+import java.math.BigDecimal;
+
 public class MetricsSummary {
 
   private String metricName;
-  private String metricValue;
+  private BigDecimal metricValue;
   private Long commitTime;
 
   public String getMetricName() {
@@ -32,11 +34,11 @@ public class MetricsSummary {
     this.metricName = metricName;
   }
 
-  public String getMetricValue() {
+  public BigDecimal getMetricValue() {
     return metricValue;
   }
 
-  public void setMetricValue(String metricValue) {
+  public void setMetricValue(BigDecimal metricValue) {
     this.metricValue = metricValue;
   }
 

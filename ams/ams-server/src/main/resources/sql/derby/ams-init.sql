@@ -277,14 +277,14 @@ CREATE TABLE table_metric_statistics
     table_identifier varchar(384) NOT NULL,
     inner_table varchar(64) NOT NULL,
     metric_name      varchar(256),
-    metric_value     varchar(256),
+    metric_value     DECIMAL(15,2),
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE metric_statistics_summary
 (
     metric_name      varchar(256),
-    metric_value     varchar(256),
+    metric_value     DECIMAL(15,2),
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -293,6 +293,6 @@ CREATE TABLE optimizer_metric_statistics
     optimizer_id    bigint NOT NULL,
     subtask_id      varchar(256)  NOT NULL,
     metric_name     varchar(256) NOT NULL,
-    metric_value    varchar(256) NOT NULL,
+    metric_value    DECIMAL(15,2),
     commit_time     timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

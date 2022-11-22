@@ -26,8 +26,8 @@ public interface DerbyOptimizerMetricsStatisticMapper extends OptimizerMetricsSt
 
   String TABLE_NAME = "optimizer_metric_statistics";
 
-  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select metric_name, VARCHAR " +
-      "(CHAR(avg(DOUBLE (metric_value)))), #{commitTime, typeHandler=com.netease.arctic.ams" +
+  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select metric_name, avg" +
+      "(metric_value), #{commitTime, typeHandler=com.netease.arctic.ams" +
       ".server.mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName} group by " +
       "metric_name")
   void summaryMetrics(

@@ -19,12 +19,13 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.ams.api.TableIdentifier;
+import java.math.BigDecimal;
 
 public class OptimizerMetricsStatistic {
   private long optimizerId;
   private String subtaskId;
   private String metricName;
-  private String metricValue;
+  private BigDecimal metricValue;
   private Long commitTime;
 
   public long getOptimizerId() {
@@ -51,11 +52,11 @@ public class OptimizerMetricsStatistic {
     this.metricName = metricName;
   }
 
-  public String getMetricValue() {
+  public BigDecimal getMetricValue() {
     return metricValue;
   }
 
-  public void setMetricValue(String metricValue) {
+  public void setMetricValue(BigDecimal metricValue) {
     this.metricValue = metricValue;
   }
 

@@ -24,8 +24,12 @@ import com.netease.arctic.ams.api.properties.OptimizerProperties;
 import com.netease.arctic.ams.server.model.MetricsSummary;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
 import com.netease.arctic.ams.server.service.impl.MetricsStatisticService;
+import com.netease.arctic.ams.server.util.TableUtil;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.SnapshotSummary;
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,7 +38,10 @@ import java.util.List;
 
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_DB_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_CATALOG_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_DB_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.catalog;
+import static com.netease.arctic.ams.server.AmsTestBase.icebergCatalog;
 
 public class TestMetricsStatisticService extends TableTestBase {
 
@@ -62,30 +69,92 @@ public class TestMetricsStatisticService extends TableTestBase {
     Assert.assertEquals(1, baseSizeMetrics.size());
     Assert.assertEquals(
         FILE_A.fileSizeInBytes() + FILE_B.fileSizeInBytes(),
-        Long.parseLong(baseSizeMetrics.get(0).getMetricValue()));
+        baseSizeMetrics.get(0).getMetricValue().longValue());
     List<TableMetricsStatistic> baseCountMetrics =
         service.getTableMetrics(tableId, "base", SnapshotSummary.TOTAL_DATA_FILES_PROP);
     Assert.assertEquals(1, baseCountMetrics.size());
-    Assert.assertEquals(2, Long.parseLong(baseCountMetrics.get(0).getMetricValue()));
+    Assert.assertEquals(2, baseCountMetrics.get(0).getMetricValue().longValue());
     List<TableMetricsStatistic> changeSizeMetrics =
         service.getTableMetrics(tableId, "change", SnapshotSummary.TOTAL_FILE_SIZE_PROP);
     Assert.assertEquals(1, changeSizeMetrics.size());
     Assert.assertEquals(
         FILE_A.fileSizeInBytes() + FILE_B.fileSizeInBytes(),
-        Long.parseLong(changeSizeMetrics.get(0).getMetricValue()));
+        changeSizeMetrics.get(0).getMetricValue().longValue());
     List<TableMetricsStatistic> changeCountMetrics =
         service.getTableMetrics(tableId, "change", SnapshotSummary.TOTAL_DATA_FILES_PROP);
     Assert.assertEquals(1, changeCountMetrics.size());
-    Assert.assertEquals(2, Long.parseLong(changeCountMetrics.get(0).getMetricValue()));
+    Assert.assertEquals(2, changeCountMetrics.get(0).getMetricValue().longValue());
     service.summaryMetrics();
     List<MetricsSummary> summaries = service.getMetricsSummary("total-files-size");
     Assert.assertNotEquals(
         0,
-        Long.parseLong(summaries.get(summaries.size() - 1).getMetricValue().trim()));
+        summaries.get(summaries.size() - 1).getMetricValue().longValue());
     service.deleteTableMetrics(tableId.buildTableIdentifier());
     service.metricSummaryExpire(System.currentTimeMillis());
     List<MetricsSummary> summaries1 = service.getMetricsSummary("total-files-size");
     Assert.assertEquals(0, summaries1.size());
+  }
+
+  @Test
+  public void statisticTableFileMetrics() {
+    com.netease.arctic.table.TableIdentifier tableId =
+        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME,
+            "metric_sync_test_keyed_table");
+    KeyedTable arcticTable = catalog
+        .newTableBuilder(
+            tableId,
+            TABLE_SCHEMA).withPrimaryKeySpec(PRIMARY_KEY_SPEC).withPartitionSpec(SPEC).create().asKeyedTable();
+    arcticTable.baseTable().newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+    arcticTable.changeTable().newFastAppend()
+        .appendFile(FILE_A)
+        .commit();
+    service.statisticTableFileMetrics(arcticTable);
+    List<TableMetricsStatistic> baseStatistics = service.getTableMetrics(tableId, "base",
+        SnapshotSummary.TOTAL_FILE_SIZE_PROP);
+    List<TableMetricsStatistic> changeStatistics = service.getTableMetrics(tableId, "change",
+        SnapshotSummary.TOTAL_FILE_SIZE_PROP);
+    Assert.assertEquals(
+        FILE_A.fileSizeInBytes() + FILE_B.fileSizeInBytes(),
+        baseStatistics.get(0).getMetricValue().longValue());
+    Assert.assertEquals(
+        FILE_A.fileSizeInBytes(),
+        changeStatistics.get(0).getMetricValue().longValue());
+    service.summaryMetrics();
+    List<MetricsSummary> summaries = service.getMetricsSummary(SnapshotSummary.TOTAL_FILE_SIZE_PROP);
+    Assert.assertEquals(
+        summaries.get(summaries.size() - 1).getMetricValue().longValue(),
+        baseStatistics.get(0).getMetricValue().add(changeStatistics.get(0).getMetricValue()).longValue());
+    service.deleteTableMetrics(tableId.buildTableIdentifier());
+
+    com.netease.arctic.table.TableIdentifier icebergTableId =
+        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_ICEBERG_CATALOG_NAME, AMS_TEST_ICEBERG_DB_NAME,
+            "metric_sync_test_iceberg_table");
+    ArcticTable icebergTable =
+        TableUtil.createIcebergTable(
+            "metric_sync_test_iceberg_table",
+            TABLE_SCHEMA,
+            null,
+            PartitionSpec.unpartitioned());
+    icebergTable.asUnkeyedTable().newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+    service.statisticTableFileMetrics(icebergTable);
+    List<TableMetricsStatistic> icebergMetricsStatistics = service.getTableMetrics(icebergTableId, "base",
+        SnapshotSummary.TOTAL_FILE_SIZE_PROP);
+    Assert.assertEquals(
+        FILE_A.fileSizeInBytes() + FILE_B.fileSizeInBytes(),
+        icebergMetricsStatistics.get(0).getMetricValue().longValue());
+    service.metricSummaryExpire(System.currentTimeMillis());
+    service.summaryMetrics();
+    List<MetricsSummary> icebergSummaries = service.getMetricsSummary(SnapshotSummary.TOTAL_FILE_SIZE_PROP);
+    Assert.assertEquals(
+        icebergMetricsStatistics.get(0).getMetricValue().longValue(),
+        icebergSummaries.get(icebergSummaries.size() - 1).getMetricValue().longValue());
+    service.deleteTableMetrics(icebergTable.id().buildTableIdentifier());
   }
 
   @Test
@@ -99,8 +168,11 @@ public class TestMetricsStatisticService extends TableTestBase {
     optimizerMetricList.add(optimizerMetric);
     service.commitOptimizerMetrics(optimizerMetricList);
     Assert.assertEquals(
-        "56.1",
-        service.getOptimizerMetrics(1, "1", OptimizerProperties.QUOTA_USAGE).get(0).getMetricValue());
+        0,
+        service.getOptimizerMetrics(1, "1", OptimizerProperties.QUOTA_USAGE)
+            .get(0)
+            .getMetricValue()
+            .compareTo(new BigDecimal("56.1")));
     List<OptimizerMetric> optimizerMetricList2 = new ArrayList<>();
     OptimizerMetric optimizerMetric2 = new OptimizerMetric();
     optimizerMetric2.setOptimizerId(1);
@@ -110,8 +182,11 @@ public class TestMetricsStatisticService extends TableTestBase {
     optimizerMetricList2.add(optimizerMetric2);
     service.commitOptimizerMetrics(optimizerMetricList2);
     Assert.assertEquals(
-        "78.1",
-        service.getOptimizerMetrics(1, "1", OptimizerProperties.QUOTA_USAGE).get(0).getMetricValue());
+        0,
+        service.getOptimizerMetrics(1, "1", OptimizerProperties.QUOTA_USAGE)
+            .get(0)
+            .getMetricValue()
+            .compareTo(new BigDecimal("78.1")));
 
     List<OptimizerMetric> optimizerMetricList3 = new ArrayList<>();
     OptimizerMetric optimizerMetric3 = new OptimizerMetric();
@@ -124,7 +199,9 @@ public class TestMetricsStatisticService extends TableTestBase {
     service.summaryMetrics();
     List<MetricsSummary> summaries = service.getMetricsSummary(OptimizerProperties.QUOTA_USAGE);
     Assert.assertEquals(
-        String.valueOf((78.1 + 66.1) / 2),
-        summaries.get(summaries.size() - 1).getMetricValue().trim());
+        0,
+        summaries.get(summaries.size() - 1)
+            .getMetricValue()
+            .compareTo(new BigDecimal(String.valueOf((78.1 + 66.1) / 2))));
   }
 }

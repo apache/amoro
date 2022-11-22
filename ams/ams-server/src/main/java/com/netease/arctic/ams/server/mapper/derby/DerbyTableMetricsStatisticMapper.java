@@ -24,9 +24,8 @@ import org.apache.ibatis.annotations.Param;
 
 public interface DerbyTableMetricsStatisticMapper extends TableMetricsStatisticMapper {
   @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select #{metricName}, " +
-      "cast(cast(sum(cast (metric_value as BIGINT)) as char(200)) as varchar(200)), #{commitTime, typeHandler=com" +
-      ".netease" +
-      ".arctic.ams.server.mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}")
+      "sum(metric_value), #{commitTime, typeHandler=com.netease.arctic.ams.server.mybatis" +
+      ".Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}")
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);

@@ -44,7 +44,7 @@ struct TableChange {
 struct TableMetric {
     1: string innerTable;
     2: string metricName;
-    3: string metricValue;
+    3: double metricValue;
 }
 
 // task commit info

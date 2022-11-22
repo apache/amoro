@@ -19,13 +19,14 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.ams.api.TableIdentifier;
+import java.math.BigDecimal;
 
 public class TableMetricsStatistic {
 
   private TableIdentifier tableIdentifier;
   private String innerTable;
   private String metricName;
-  private String metricValue;
+  private BigDecimal metricValue;
   private Long commitTime;
 
   public TableIdentifier getTableIdentifier() {
@@ -52,11 +53,11 @@ public class TableMetricsStatistic {
     this.metricName = metricName;
   }
 
-  public String getMetricValue() {
+  public BigDecimal getMetricValue() {
     return metricValue;
   }
 
-  public void setMetricValue(String metricValue) {
+  public void setMetricValue(BigDecimal metricValue) {
     this.metricValue = metricValue;
   }
 

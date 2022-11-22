@@ -28,6 +28,7 @@ import com.netease.arctic.optimizer.TaskWrapper;
 import com.netease.arctic.optimizer.metric.TaskRecorder;
 import com.netease.arctic.optimizer.metric.TaskStat;
 import com.netease.arctic.optimizer.operator.BaseTaskExecutor;
+import com.sun.istack.NotNull;
 import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.Meter;
@@ -37,7 +38,6 @@ import org.apache.flink.util.Collector;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Streams;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
