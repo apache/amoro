@@ -124,7 +124,7 @@ public class IcebergExecutor extends BaseExecutor<DataFile> {
 
     long insertCount = 0;
     while (recordIterator.hasNext()) {
-      executeTimeout(writer);
+      checkIfTimeout(writer);
 
       if (writer.length() >= targetSizeByBytes) {
         writer.close();

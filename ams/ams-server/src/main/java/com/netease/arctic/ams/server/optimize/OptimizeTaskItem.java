@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class OptimizeTaskItem extends IJDBCService {
@@ -217,7 +218,8 @@ public class OptimizeTaskItem extends IJDBCService {
               .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
           for (FileStatus fileStatus : arcticTable.io().list(location)) {
             String fileLocation = fileStatus.getPath().toUri().getPath();
-            if (fileLocation.contains(optimizeRuntime.getAttemptId())) {
+            String pattern = ".*(\\d{5}-)" + optimizeRuntime.getAttemptId() + "(-\\d{10}).*";
+            if (Pattern.matches(pattern, fileLocation)) {
               arcticTable.io().deleteFile(fileLocation);
               LOG.debug("delete file {} by produced failed optimize task.", fileLocation);
             }

@@ -131,7 +131,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
     while (recordIterator.hasNext()) {
-      executeTimeout(writer);
+      checkIfTimeout(writer);
 
       Record baseRecord = recordIterator.next();
       writer.write(baseRecord);

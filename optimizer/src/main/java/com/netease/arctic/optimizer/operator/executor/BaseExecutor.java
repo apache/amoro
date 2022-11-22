@@ -76,7 +76,7 @@ public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor
     return 0;
   }
 
-  protected void executeTimeout(Closeable writer) throws Exception {
+  protected void checkIfTimeout(Closeable writer) throws Exception {
     long maxExecuteTime = task.getMaxExecuteTime() != null ?
         task.getMaxExecuteTime() : TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT;
     if (System.currentTimeMillis() - startTime > maxExecuteTime * factor) {
