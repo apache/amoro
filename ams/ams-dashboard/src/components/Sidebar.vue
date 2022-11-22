@@ -77,14 +77,14 @@ export default defineComponent({
         //   icon: 'overview'
         // },
         {
-          key: 'catalogs',
-          title: t('catalogs'),
-          icon: 'catalogs'
-        },
-        {
           key: 'tables',
           title: t('tables'),
           icon: 'tables'
+        },
+        {
+          key: 'catalogs',
+          title: t('catalogs'),
+          icon: 'catalogs'
         },
         {
           key: 'optimizers',
@@ -186,21 +186,21 @@ export default defineComponent({
         .logo {
           padding-left: 14px;
         }
-        .ant-menu-item {
-          margin: 0;
-          padding-left: 22px !important;
-        }
         .toggle-btn {
-          right: 2px;
+          position: absolute;
+          right: -68px;
+          top: 8px;
+          font-size: 18px;
+          padding: 0 24px;
         }
       }
     }
     :deep(.ant-menu-item) {
       margin: 0;
-      padding-left: 16px !important;
+      padding-left: 22px !important;
       .ant-menu-title-content {
         width: 100%;
-        margin-left: 8px;
+        margin-left: 12px;
       }
       &.active {
         background-color: @primary-color;
@@ -214,7 +214,7 @@ export default defineComponent({
       }
     }
     .logo {
-      padding: 16px 0 20px 16px;
+      padding: 12px 0 12px 16px;
       overflow: hidden;
       background-color: #001529;
     }
@@ -228,15 +228,10 @@ export default defineComponent({
     }
     .toggle-btn {
       position: absolute;
-      right: 0;
-      bottom: 24px;
+      right: -68px;
+      top: 8px;
       font-size: 18px;
       padding: 0 24px;
-    }
-    &.side-bar-collapsed {
-      .toggle-btn {
-        right: 2px;
-      }
     }
     .svg-icon {
       font-size: 16px;
