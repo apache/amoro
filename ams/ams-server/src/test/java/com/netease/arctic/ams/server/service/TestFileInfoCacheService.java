@@ -35,6 +35,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import java.util.Collections;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileMetadata;
@@ -294,6 +295,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     table.asUnkeyedTable().newRowDelta().addDeletes(eqDelete).addDeletes(posDelete).commit();
     List<TransactionsOfTable> transactionsOfTables =
         ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(table.id().buildTableIdentifier());
+    Collections.reverse(transactionsOfTables);
     Assert.assertEquals(3, transactionsOfTables.size());
 
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(

@@ -66,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -538,6 +539,7 @@ public class FileInfoCacheService extends IJDBCService {
         transactionsOfTable.setCommitTime(snapshot.timestampMillis());
         result.add(transactionsOfTable);
       });
+      Collections.reverse(result);
       return result;
     }
     try (SqlSession sqlSession = getSqlSession(true)) {
