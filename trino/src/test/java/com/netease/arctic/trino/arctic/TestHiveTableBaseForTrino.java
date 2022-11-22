@@ -83,17 +83,32 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   public static final String COLUMN_NAME_OP_TIME_WITH_ZONE = "op_time_with_zone";
   public static final String COLUMN_NAME_D = "d$d";
   public static final String COLUMN_NAME_NAME = "name";
+  public static final String COLUMN_NAME_MAP = "map_name";
+  public static final String COLUMN_NAME_ARRAY = "array_name";
+  public static final String COLUMN_NAME_STRUCT = "struct_name";
+  public static final String COLUMN_NAME_STRUCT_SUB1 = "struct_name_sub_1";
+  public static final String COLUMN_NAME_STRUCT_SUB2 = "struct_name_sub_2";
 
+  public static final Schema STRUCT_SUB_SCHEMA = new Schema(
+      Types.NestedField.required(12, COLUMN_NAME_STRUCT_SUB1, Types.StringType.get()),
+      Types.NestedField.required(13, COLUMN_NAME_STRUCT_SUB2, Types.StringType.get())
+  );
+
+  private static int i = 0;
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, COLUMN_NAME_ID, Types.IntegerType.get()),
-      Types.NestedField.required(2, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
-      Types.NestedField.required(3, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
-      Types.NestedField.required(4, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
-      Types.NestedField.required(5, COLUMN_NAME_NAME, Types.StringType.get())
+      Types.NestedField.required(++i, COLUMN_NAME_ID, Types.IntegerType.get()),
+      Types.NestedField.required(++i, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
+      Types.NestedField.required(++i, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+      Types.NestedField.required(++i, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+      Types.NestedField.required(++i, COLUMN_NAME_MAP, Types.MapType.ofOptional(++i,++i, Types.StringType.get(),
+          Types.StringType.get())),
+      Types.NestedField.required(++i, COLUMN_NAME_ARRAY, Types.ListType.ofOptional(++i, Types.StringType.get())),
+      Types.NestedField.required(++i, COLUMN_NAME_STRUCT, Types.StructType.of(STRUCT_SUB_SCHEMA.columns())),
+      Types.NestedField.required(++i, COLUMN_NAME_NAME, Types.StringType.get())
   );
 
   protected static final PartitionSpec HIVE_SPEC =
-      PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity("name").build();
+      PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity(COLUMN_NAME_NAME).build();
 
   protected ArcticHiveCatalog hiveCatalog;
   protected UnkeyedHiveTable testHiveTable;
