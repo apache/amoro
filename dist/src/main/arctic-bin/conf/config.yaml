@@ -25,7 +25,7 @@ ams:
 
   # kyuubi config
   #arctic.ams.terminal.backend: kyuubi
-  #arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183/;k1=v2;serviceDiscoveryMode=zooKeeper
+  #arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/;
 
 # extension properties for like syste
 extension_properties:

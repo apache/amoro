@@ -69,8 +69,13 @@ public interface TerminalSession {
   List<String> logs();
 
   /**
-   * to check current session is alive.
+   * to check current session is alive. DO-NOT-THROW-ANYTHING of this method.
    * @return - false if session is not able to execute statement.
    */
   boolean active();
+
+  /**
+   * close session and release resources.
+   */
+  void release();
 }
