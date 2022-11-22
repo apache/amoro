@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
@@ -73,7 +74,8 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
-      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName());
+      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
+          "," + IcebergSparkSessionExtensions.class.getName());
       context = SparkSession
           .builder()
           .config(sparkconf)

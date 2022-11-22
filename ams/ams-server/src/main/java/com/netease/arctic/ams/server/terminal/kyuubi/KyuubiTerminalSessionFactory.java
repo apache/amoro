@@ -25,8 +25,10 @@ import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
+import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -103,6 +105,8 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
 
+    connectionParams.getHiveVars().put("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
+        "," + IcebergSparkSessionExtensions.class.getName());
     List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
     for (String catalog : catalogs) {
       String catalogUrl = configuration.get(SessionConfigOptions.catalogUrl(catalog));
