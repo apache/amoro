@@ -404,6 +404,7 @@ export default defineComponent({
 .console-wrap {
   user-select: none;
   height: 100%;
+  padding: 16px 24px;
   .console-content {
     background-color: #fff;
     height: 100%;

@@ -1,42 +1,44 @@
 <template>
-  <div class="optimize-wrap">
-    <div class="optimize-group g-flex-ac">
-      <div class="left-group">
-        <span class="g-mr-16">{{$t('optimzerGroup')}}</span>
-        <a-select
-          v-model:value="curGroupName"
-          :showSearch="true"
-          :options="groupList"
-          :placeholder="placeholder.selectOptGroupPh"
-          @change="onChangeGroup"
-          style="width: 240px"
-        />
+  <div class="border-wrap">
+    <div class="optimize-wrap">
+      <div class="optimize-group g-flex-ac">
+        <div class="left-group">
+          <span class="g-mr-16">{{$t('optimzerGroup')}}</span>
+          <a-select
+            v-model:value="curGroupName"
+            :showSearch="true"
+            :options="groupList"
+            :placeholder="placeholder.selectOptGroupPh"
+            @change="onChangeGroup"
+            style="width: 240px"
+          />
+        </div>
+        <div class="btn-wrap">
+          <span class="g-ml-16 f-shink-0">{{$t('resourceOccupation')}}  <span class="text-color">{{groupInfo.occupationCore}}</span> {{$t('core')}} <span class="text-color">{{groupInfo.occupationMemory}}</span> {{groupInfo.unit}}</span>
+          <a-button type="primary" @click="expansionJob" class="g-ml-8">{{$t('scaleOut')}}</a-button>
+        </div>
       </div>
-      <div class="btn-wrap">
-        <span class="g-ml-16 f-shink-0">{{$t('resourceOccupation')}}  <span class="text-color">{{groupInfo.occupationCore}}</span> {{$t('core')}} <span class="text-color">{{groupInfo.occupationMemory}}</span> {{groupInfo.unit}}</span>
-        <a-button type="primary" @click="expansionJob" class="g-ml-8">{{$t('scaleOut')}}</a-button>
+      <div class="content">
+        <a-tabs v-model:activeKey="activeTab" destroyInactiveTabPane>
+          <a-tab-pane
+            v-for="tab in tabConfig"
+            :key="tab.value"
+            :tab="tab.label"
+            :class="[activeTab === tab.value ? 'active' : '']"
+            >
+            <List :curGroupName="curGroupName" :type="tab.value" :needFresh="needFresh" />
+          </a-tab-pane>
+        </a-tabs>
       </div>
     </div>
-    <div class="content">
-      <a-tabs v-model:activeKey="activeTab" destroyInactiveTabPane>
-        <a-tab-pane
-          v-for="tab in tabConfig"
-          :key="tab.value"
-          :tab="tab.label"
-          :class="[activeTab === tab.value ? 'active' : '']"
-          >
-          <List :curGroupName="curGroupName" :type="tab.value" :needFresh="needFresh" />
-        </a-tab-pane>
-      </a-tabs>
-    </div>
+    <scale-out-modal
+      v-if="showScaleOutModal"
+      :visible="showScaleOutModal"
+      :resourceGroup="curGroupName === 'all' ? '' : curGroupName"
+      @cancel="showScaleOutModal = false"
+      @refreshOptimizersTab="refreshOptimizersTab"
+    />
   </div>
-  <scale-out-modal
-    v-if="showScaleOutModal"
-    :visible="showScaleOutModal"
-    :resourceGroup="curGroupName === 'all' ? '' : curGroupName"
-    @cancel="showScaleOutModal = false"
-    @refreshOptimizersTab="refreshOptimizersTab"
-   />
 </template>
 
 <script lang="ts">
@@ -142,6 +144,9 @@ export default defineComponent({
 </script>
 
 <style lang="less" scoped>
+.border-wrap {
+  padding: 16px 24px;
+}
 .optimize-wrap {
   border: 1px solid #e5e5e5;
   padding: 12px 0;
