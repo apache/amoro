@@ -207,7 +207,7 @@ const propertiesColumns: IColumns[] = shallowReactive([
     margin-top: 16px;
   }
   .attr-title {
-    font-size: 20px;
+    font-size: 16px;
     line-height: 24px;
     font-weight: bold;
     color: #102048;
