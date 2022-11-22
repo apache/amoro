@@ -27,7 +27,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-
 public class KyuubiSession implements TerminalSession {
 
   final List<String> logs = Lists.newArrayList();
@@ -71,7 +70,21 @@ public class KyuubiSession implements TerminalSession {
 
   @Override
   public boolean active() {
-    return true;
+    try {
+      execute("SELECT 1");
+      return true;
+    } catch (Throwable t) {
+      return false;
+    }
+  }
+
+  @Override
+  public void release() {
+    try {
+      this.connection.close();
+    } catch (SQLException e) {
+      this.logs.add("error when release connection." + e.toString());
+    }
   }
 
   private void execute(String sql) {
