@@ -102,7 +102,7 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
@@ -160,7 +160,7 @@ public class TestJoin extends FlinkTestBase {
 
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     String table = String.format("arcticCatalog.%s.%s", DB, TABLE);
 
     String sql = String.format("CREATE TABLE IF NOT EXISTS %s (" +
