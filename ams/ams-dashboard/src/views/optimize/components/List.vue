@@ -134,7 +134,7 @@ async function getTableList () {
     const { list, total } = result
     pagination.total = total;
     (list || []).forEach((p: IOptimizeTableItem) => {
-      p.quotaOccupationDesc = p.quotaOccupation ? `${(p.quotaOccupation * 100)}%` : '0'
+      p.quotaOccupationDesc = p.quotaOccupation - 0.0005 > 0 ? `${(p.quotaOccupation * 100).toFixed(1)}%` : '0'
       p.durationDesc = formatMS2Time(p.duration || 0)
       p.durationDisplay = formatMS2DisplayTime(p.duration || 0)
       p.fileSizeDesc = bytesToSize(p.fileSize)
