@@ -36,7 +36,6 @@ public class TestBaseArcticPrimaryTable extends TableTestBaseWithInitDataForTrin
     setupTables();
     initData();
     return ArcticQueryRunner.builder()
-        .setExtraProperties(ImmutableMap.of("http-server.http.port", "8080"))
         .setIcebergProperties(ImmutableMap.of("arctic.url",
             String.format("thrift://localhost:%s/%s",AMS.port(), TEST_CATALOG_NAME)))
         .build();
