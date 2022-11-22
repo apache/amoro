@@ -161,6 +161,7 @@ onBeforeRouteLeave((to, form, next) => {
 <style lang="less" scoped>
 .catalogs-wrap {
   height: 100%;
+  padding: 16px 24px;
   .catalog-list-left {
     width: 200px;
     height: 100%;
