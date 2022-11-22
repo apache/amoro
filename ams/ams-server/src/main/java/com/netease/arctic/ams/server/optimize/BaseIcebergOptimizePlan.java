@@ -32,6 +32,8 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.util.BinPacking;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,6 +92,28 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
 
     LOG.debug("{} ==== {} add {} data files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, fileScanTasks.size(), partitionFileList.size());
+  }
+
+  protected List<List<FileScanTask>> binPackFileScanTask(List<FileScanTask> fileScanTasks) {
+    long splitSize =
+        PropertyUtil.propertyAsLong(
+            arcticTable.properties(),
+            org.apache.iceberg.TableProperties.SPLIT_SIZE,
+            org.apache.iceberg.TableProperties.SPLIT_SIZE_DEFAULT);
+    long targetFileSize =
+        PropertyUtil.propertyAsLong(
+            arcticTable.properties(),
+            org.apache.iceberg.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+            org.apache.iceberg.TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long targetSizeInBytes = Math.min(splitSize, targetFileSize);
+
+    Long sum = fileScanTasks.stream().map(fileScanTask -> fileScanTask.file().fileSizeInBytes() +
+        fileScanTask.deletes().stream().mapToLong(DeleteFile::fileSizeInBytes).sum()).reduce(0L, Long::sum);
+    int taskCnt = (int) (sum / targetSizeInBytes) + 1;
+
+    return new BinPacking.ListPacker<FileScanTask>(targetSizeInBytes, taskCnt, true)
+        .pack(fileScanTasks, fileScanTask -> fileScanTask.file().fileSizeInBytes() +
+            fileScanTask.deletes().stream().mapToLong(DeleteFile::fileSizeInBytes).sum());
   }
 
   protected BaseOptimizeTask buildOptimizeTask(List<FileScanTask> fileScanTasks,

@@ -103,7 +103,13 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
         commitGroup, planGroup, OptimizeType.Major, createTime, "");
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
-    collector.add(buildOptimizeTask(fileScanTasks, taskPartitionConfig));
+
+    List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(fileScanTasks);
+    for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
+      if (CollectionUtils.isNotEmpty(fileScanTask)) {
+        collector.add(buildOptimizeTask(fileScanTask, taskPartitionConfig));
+      }
+    }
 
     return collector;
   }
