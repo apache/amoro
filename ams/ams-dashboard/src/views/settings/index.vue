@@ -65,9 +65,9 @@ const containerSetting = reactive<IContainerSetting[]>([
   }
 ])
 const optimzeGroupColumns: IColumns[] = reactive([
-  { title: t('name'), dataIndex: 'name', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', ellipsis: true }
+  { title: t('name'), dataIndex: 'name', width: 340, ellipsis: true },
+  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', width: '50%', ellipsis: true },
+  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', width: '50%', ellipsis: true }
 ])
 
 const basicColumns: IColumns[] = reactive([
@@ -118,6 +118,7 @@ onMounted(async() => {
 .setting-wrap {
   height: 100%;
   overflow: auto;
+  padding: 16px 24px;
   h1,h2,h3 {
     font-weight: 500;
   }

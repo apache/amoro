@@ -57,16 +57,10 @@ import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useI18n } from 'vue-i18n'
 
-interface IItem {
-  key: string
-  value: string
-  uuid: string
-}
-
 const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()
 const propertiesColumns = shallowReactive([
-  { dataIndex: 'key', title: t('key'), ellipsis: true },
+  { dataIndex: 'key', title: t('key'), width: 284, ellipsis: true },
   { dataIndex: 'value', title: t('value'), ellipsis: true }
 ])
 const propertiesFormRef = ref()
