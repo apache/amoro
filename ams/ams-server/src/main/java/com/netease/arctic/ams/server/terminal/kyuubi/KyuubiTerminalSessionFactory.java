@@ -40,6 +40,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static org.apache.kyuubi.jdbc.hive.JdbcConnectionParams.AUTH_USER;
+
 
 public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
 
@@ -113,7 +115,11 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     logMessage(logs, "try to create a kyuubi connection via url: " + kyuubiJdbcUrl);
     logMessage(logs, "");
 
-    Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, new Properties()));
+    Properties properties = new Properties();
+    if (!metaStore.isKerberosAuthMethod()) {
+      properties.put(AUTH_USER, metaStore.getHadoopUsername());
+    }
+    Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, properties));
 
     return new KyuubiSession(connection, logs);
   }
