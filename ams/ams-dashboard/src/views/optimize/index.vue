@@ -146,6 +146,7 @@ export default defineComponent({
 <style lang="less" scoped>
 .border-wrap {
   padding: 16px 24px;
+  height: 100%;
 }
 .optimize-wrap {
   border: 1px solid #e5e5e5;
