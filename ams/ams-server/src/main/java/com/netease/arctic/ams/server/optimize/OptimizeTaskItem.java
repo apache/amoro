@@ -218,6 +218,8 @@ public class OptimizeTaskItem extends IJDBCService {
               .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
           for (FileStatus fileStatus : arcticTable.io().list(location)) {
             String fileLocation = fileStatus.getPath().toUri().getPath();
+            // now file naming rule is nodeId-fileType-txId-partitionId-taskId-fileCount(%d-%s-%d-%05d-%d-%010d)
+            // for files produced by optimize, the taskId is attemptId
             String pattern = ".*(\\d{5}-)" + optimizeRuntime.getAttemptId() + "(-\\d{10}).*";
             if (Pattern.matches(pattern, fileLocation)) {
               arcticTable.io().deleteFile(fileLocation);
