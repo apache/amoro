@@ -159,7 +159,7 @@ const uploadUrl = computed(() => {
   return '/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
-  const catalog = (route.query?.catalog || '').toString()
+  const catalog = (route.query?.catalogname || '').toString()
   return decodeURIComponent(catalog) === 'new catalog'
 })
 const isHiveMetastore = computed(() => {
@@ -246,8 +246,8 @@ function getMetastoreType() {
 async function getConfigInfo() {
   try {
     loading.value = true
-    const { catalog, type } = route.query
-    if (!catalog) { return }
+    const { catalogname, type } = route.query
+    if (!catalogname) { return }
     if (isNewCatalog.value) {
       formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
@@ -258,7 +258,7 @@ async function getConfigInfo() {
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
-      const res = await getCatalogsSetting(catalog)
+      const res = await getCatalogsSetting(catalogname)
       if (!res) { return }
       const { name, type, tableFormatList, storageConfig, authConfig, properties } = res
       formState.catalog.name = name
