@@ -24,11 +24,6 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-/**
- * @Auth: hzwangtao6
- * @Time: 2022/11/16 18:49
- * @Description:
- */
 public interface DerbyPlatformFileInfoMapper extends PlatformFileInfoMapper {
   String TABLE_NAME = "platform_file_info";
   /**

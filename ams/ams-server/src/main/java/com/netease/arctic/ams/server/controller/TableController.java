@@ -127,6 +127,13 @@ public class TableController extends RestBaseController {
     }
     SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     ServerTableMeta serverTableMeta = MetaService.getServerTableMeta(ac, TableIdentifier.of(catalog, db, table));
+    if (CatalogUtil.isIcebergCatalog(catalog)) {
+      serverTableMeta.setTableType(TableMeta.TableType.ICEBERG.toString());
+    } else if (ServiceContainer.getMetaService().loadTableMetadata(TableIdentifier.of(catalog, db, table)) != null) {
+      serverTableMeta.setTableType(TableMeta.TableType.ARCTIC.toString());
+    } else {
+      serverTableMeta.setTableType(TableMeta.TableType.HIVE.toString());
+    }
     Map baseMetrics = new HashMap();
     FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
     Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
@@ -434,7 +441,7 @@ public class TableController extends RestBaseController {
         tables.add(new TableMeta(tableIdentifier.getTableName(), TableMeta.TableType.ICEBERG.toString()));
       }
     } else if (CatalogUtil.isHiveCatalog(catalog)) {
-      ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog)ac;
+      ArcticHiveCatalog arcticHiveCatalog = (ArcticHiveCatalog) ac;
       List<String> hiveTables = HiveTableUtil.getAllHiveTables(arcticHiveCatalog.getHMSClient(), db);
       for (String hiveTable : hiveTables) {
         tempTables.add(new TableMeta(hiveTable, TableMeta.TableType.HIVE.toString()));
