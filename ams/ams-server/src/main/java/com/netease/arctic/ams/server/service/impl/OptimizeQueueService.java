@@ -379,7 +379,8 @@ public class OptimizeQueueService extends IJDBCService {
         }
         // clear useless files produced by failed full optimize task support hive
         if (task.getOptimizeRuntime().getStatus() == OptimizeStatus.Failed) {
-          String location = task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
+          String location =
+              task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
 
           if (location != null) {
             try {
