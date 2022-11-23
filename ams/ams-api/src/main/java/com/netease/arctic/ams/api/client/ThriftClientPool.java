@@ -56,6 +56,8 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
 
   private static final int retryInterval = 2000;
 
+  private static final int maxMessageSize = 100 * 1024 * 1024;
+
   /**
    * Construct a new pool using default config
    *
@@ -173,9 +175,9 @@ public class ThriftClientPool<T extends org.apache.thrift.TServiceClient> {
     TTransport transport = null;
     if (poolConfig.getTimeout() > 0) {
       transport = new TFramedTransport(new TSocket(serviceInfo.getHost(), serviceInfo.getPort(),
-          poolConfig.getTimeout()));
+          poolConfig.getTimeout()), maxMessageSize);
     } else {
-      transport = new TFramedTransport(new TSocket(serviceInfo.getHost(), serviceInfo.getPort()));
+      transport = new TFramedTransport(new TSocket(serviceInfo.getHost(), serviceInfo.getPort()), maxMessageSize);
     }
     return transport;
   }
