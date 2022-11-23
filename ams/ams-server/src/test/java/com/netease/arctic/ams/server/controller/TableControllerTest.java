@@ -53,6 +53,7 @@ import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.TableBaseInfoService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.AmsUtils;
@@ -120,7 +121,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     DDLTracerService.class,
     OptimizeManagerHandler.class,
     AdaptHiveService.class,
-    HiveTableUtil.class
+    HiveTableUtil.class,
+    JDBCMetaService.class
 })
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class TableControllerTest {
@@ -445,6 +447,8 @@ public class TableControllerTest {
     when(hiveTable.getSd()).thenReturn(sd);
     when(sd.getCols()).thenReturn(mockHiveTableSchema());
     when(hiveTable.getPartitionKeys()).thenReturn(mockHivePartitionKeys());
+    JDBCMetaService metaService = new JDBCMetaService();
+    when(ServiceContainer.getMetaService()).thenReturn(metaService);
   }
 
   private TableBasicInfo mockTableBasicInfo(String catalog, String db, String table) {
