@@ -18,6 +18,9 @@
 
 package com.netease.arctic.spark;
 
+import com.netease.arctic.AmsClient;
+import com.netease.arctic.PooledAmsClient;
+import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
@@ -57,6 +60,7 @@ import org.apache.spark.sql.connector.catalog.TableChange.SetProperty;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import org.apache.thrift.TException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -68,6 +72,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
@@ -76,6 +81,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
   private ArcticCatalog catalog;
+  private AmsClient client;
 
   /**
    * Build an Arctic {@link TableIdentifier} for the given Spark identifier.
@@ -167,28 +173,17 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
     properties = Maps.newHashMap(properties);
-    Schema convertSchema;
-    SparkSession sparkSession = SparkSession.active();
-    if (Boolean.parseBoolean(
-            sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-                    USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
-      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
-      convertSchema = SparkSchemaUtil.convert(schema, true);
-    } else {
-      convertSchema = SparkSchemaUtil.convert(schema, false);
-    }
-    Schema icebergSchema = checkAndConvertSchema(
-            convertSchema, properties);
+    Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
-    TableBuilder builder = catalog.newTableBuilder(identifier, icebergSchema);
-    PartitionSpec spec = Spark3Util.toPartitionSpec(icebergSchema, transforms);
+    TableBuilder builder = catalog.newTableBuilder(identifier, finalSchema);
+    PartitionSpec spec = Spark3Util.toPartitionSpec(finalSchema, transforms);
     if (properties.containsKey(TableCatalog.PROP_LOCATION) &&
         isIdentifierLocation(properties.get(TableCatalog.PROP_LOCATION), ident)) {
       properties.remove(TableCatalog.PROP_LOCATION);
     }
     try {
       if (properties.containsKey("primary.keys")) {
-        PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(icebergSchema)
+        PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(finalSchema)
             .addDescription(properties.get("primary.keys"))
             .build();
         properties.remove("primary.keys");
@@ -206,15 +201,37 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
   }
 
-  private Schema checkAndConvertSchema(Schema schema, Map<String, String> properties) {
+  private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
+    Schema convertSchema;
+    try {
+      CatalogMeta catalogMeta = client.getCatalog(catalogName);
+      String catalogType = catalogMeta.getCatalogType();
+      if (CATALOG_TYPE_HIVE.equals(catalogType)) {
+        SparkSession sparkSession = SparkSession.active();
+        if (Boolean.parseBoolean(
+            sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+                USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
+          sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
+          convertSchema = SparkSchemaUtil.convert(schema, true);
+        } else {
+          convertSchema = SparkSchemaUtil.convert(schema, false);
+        }
+      } else {
+        convertSchema = SparkSchemaUtil.convert(schema, false);
+      }
+    } catch (TException e) {
+      throw new IllegalStateException("failed when load catalog " + catalogName, e);
+    }
+
+    // schema add primary keys
     if (properties.containsKey("primary.keys")) {
-      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(schema)
+      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(convertSchema)
           .addDescription(properties.get("primary.keys"))
           .build();
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
       List<Types.NestedField> columnsWithPk = new ArrayList<>();
-      schema.columns().forEach(nestedField -> {
+      convertSchema.columns().forEach(nestedField -> {
         if (pkSet.contains(nestedField.name())) {
           columnsWithPk.add(nestedField.asRequired());
         } else {
@@ -223,7 +240,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       });
       return new Schema(columnsWithPk);
     }
-    return schema;
+    return convertSchema;
   }
 
   private boolean isIdentifierLocation(String location, Identifier identifier) {
@@ -397,6 +414,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     String catalogUrl = options.get("url");
+    this.client = new PooledAmsClient(catalogUrl);
     if (StringUtils.isBlank(catalogUrl)) {
       throw new IllegalArgumentException("lack required properties: url");
     }
