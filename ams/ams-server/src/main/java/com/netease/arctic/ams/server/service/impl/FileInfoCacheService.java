@@ -53,6 +53,7 @@ import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
@@ -65,6 +66,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -516,6 +518,9 @@ public class FileInfoCacheService extends IJDBCService {
       ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
           identifier.getDatabase(), identifier.getTableName()));
       arcticTable.asUnkeyedTable().snapshots().forEach(snapshot -> {
+        if (snapshot.operation().equals(DataOperations.REPLACE)) {
+          return;
+        }
         TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
         transactionsOfTable.setTransactionId(snapshot.snapshotId());
         int fileCount = PropertyUtil
@@ -534,6 +539,7 @@ public class FileInfoCacheService extends IJDBCService {
         transactionsOfTable.setCommitTime(snapshot.timestampMillis());
         result.add(transactionsOfTable);
       });
+      Collections.reverse(result);
       return result;
     }
     try (SqlSession sqlSession = getSqlSession(true)) {

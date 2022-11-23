@@ -24,6 +24,7 @@ import java.util.Set;
 import static com.netease.arctic.table.WatermarkGenerator.EVENT_TIME_TIMESTAMP_MS;
 import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
 /**
  * Reserved Arctic table properties list.
@@ -31,19 +32,6 @@ import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 public class TableProperties {
 
   private TableProperties() {
-  }
-
-  /**
-   * Protected properties which should not be exposed to user.
-   */
-  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
-
-  static {
-    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
-    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
-    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
   }
 
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
@@ -242,4 +230,19 @@ public class TableProperties {
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
 
   public static final String OWNER = "owner";
+
+  /**
+   * Protected properties which should not be exposed to user.
+   */
+  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
+
+  static {
+    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
+    PROTECTED_PROPERTIES.add(FORMAT_VERSION);
+    PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
+  }
 }

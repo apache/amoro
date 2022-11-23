@@ -21,5 +21,6 @@ PRGDIR=$(dirname $0)
 PRGDIR=$(cd $PRGDIR;pwd)
 source ${PRGDIR}/config.sh
 LIB_PATH=$APP_HOME/lib
-export CLASSPATH=$APP_HOME/conf/:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
-$JAVA_RUN -Xmx$1m com.netease.arctic.optimizer.local.LocalOptimizer -a $2 -q $3 -p $4 --heart-beat $5 -id $6 > ${APP_HOME}/logs/localOptimizer-${6}.log
+LOG_DIR=$APP_HOME/logs
+export CLASSPATH=$APP_HOME/conf/optimize:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
+$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-${6} -Xmx$1m com.netease.arctic.optimizer.local.LocalOptimizer -a $2 -q $3 -p $4 --heart-beat $5 -id $6
