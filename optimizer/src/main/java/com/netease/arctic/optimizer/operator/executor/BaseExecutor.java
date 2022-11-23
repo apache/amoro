@@ -79,11 +79,14 @@ public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor
   protected void checkIfTimeout(Closeable writer) throws Exception {
     long maxExecuteTime = task.getMaxExecuteTime() != null ?
         task.getMaxExecuteTime() : TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT;
-    if (System.currentTimeMillis() - startTime > maxExecuteTime * factor) {
+    long actualExecuteTime = System.currentTimeMillis() - startTime;
+    if (actualExecuteTime > maxExecuteTime * factor) {
       writer.close();
-      LOG.info("table {} execute task {} timeout, max execute time is {}",
-          table.id(), task.getTaskId(), task.getMaxExecuteTime());
-      throw new TimeoutException("optimizer execute timeout");
+      LOG.error("table {} execute task {} timeout, actual execute time is {}ms, max execute time is {}ms",
+          table.id(), task.getTaskId(), actualExecuteTime, task.getMaxExecuteTime());
+      throw new TimeoutException(String.format("optimizer execute timeout, " +
+          "actual execute time is %sms, max execute time is %sms, factor is %s",
+          actualExecuteTime, task.getMaxExecuteTime(), factor));
     }
   }
 }

@@ -94,18 +94,6 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       Preconditions.checkArgument(optimizeRuntime.getStatus() != OptimizeStatus.Prepared,
           "task prepared, can't on pending");
-
-      // can update max execute time on optimizing
-      try {
-        ArcticTable arcticTable = ServiceContainer.getOptimizeService()
-            .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
-        Long maxExecuteTime = PropertyUtil.propertyAsLong(arcticTable.properties(),
-            TableProperties.OPTIMIZE_EXECUTE_TIMEOUT, TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
-        optimizeTask.getProperties().put(OptimizeTaskProperties.MAX_EXECUTE_TIME, String.valueOf(maxExecuteTime));
-      } catch (Exception e) {
-        LOG.error("update task max execute time failed.", e);
-      }
-
       BaseOptimizeTaskRuntime newRuntime = optimizeRuntime.clone();
       if (newRuntime.getStatus() == OptimizeStatus.Failed) {
         newRuntime.setRetry(newRuntime.getRetry() + 1);
@@ -210,28 +198,6 @@ public class OptimizeTaskItem extends IJDBCService {
     if (getOptimizeStatus() == OptimizeStatus.Init) {
       return true;
     } else if (getOptimizeStatus() == OptimizeStatus.Failed) {
-      // clear useless files produced by failed full optimize task support hive
-      String location = getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
-      if (location != null) {
-        try {
-          ArcticTable arcticTable = ServiceContainer.getOptimizeService()
-              .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
-          for (FileStatus fileStatus : arcticTable.io().list(location)) {
-            String fileLocation = fileStatus.getPath().toUri().getPath();
-            // now file naming rule is nodeId-fileType-txId-partitionId-taskId-fileCount(%d-%s-%d-%05d-%d-%010d)
-            // for files produced by optimize, the taskId is attemptId
-            String pattern = ".*(\\d{5}-)" + optimizeRuntime.getAttemptId() + "(-\\d{10}).*";
-            if (Pattern.matches(pattern, fileLocation)) {
-              arcticTable.io().deleteFile(fileLocation);
-              LOG.debug("delete file {} by produced failed optimize task.", fileLocation);
-            }
-          }
-        } catch (Exception e) {
-          LOG.error("delete files failed", e);
-          return false;
-        }
-      }
-
       return getOptimizeRuntime().getRetry() <= maxRetry.get() && System.currentTimeMillis() >
           getOptimizeRuntime().getFailTime() + RETRY_INTERVAL;
     }
@@ -295,6 +261,19 @@ public class OptimizeTaskItem extends IJDBCService {
         selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE.name(), 1));
     optimizeRuntime.setTargetFiles(targetFiles.stream()
         .map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList()));
+  }
+
+  public void setMaxExecuteTime() {
+    // can update max execute time on optimizing
+    try {
+      ArcticTable arcticTable = ServiceContainer.getOptimizeService()
+          .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
+      Long maxExecuteTime = PropertyUtil.propertyAsLong(arcticTable.properties(),
+          TableProperties.OPTIMIZE_EXECUTE_TIMEOUT, TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
+      optimizeTask.getProperties().put(OptimizeTaskProperties.MAX_EXECUTE_TIME, String.valueOf(maxExecuteTime));
+    } catch (Exception e) {
+      LOG.error("update task max execute time failed.", e);
+    }
   }
 
   private List<byte[]> selectOptimizeTaskFiles(String contentType, int isTarget) {
