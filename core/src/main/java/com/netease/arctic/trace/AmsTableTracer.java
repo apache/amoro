@@ -285,7 +285,8 @@ public class AmsTableTracer implements TableTracer {
     String datafileCount = table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DATA_FILES_PROP, "0");
     String deleteFileCount =
         table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_DELETE_FILES_PROP, "0");
-    Double dataSize = Double.valueOf(table.currentSnapshot().summary().getOrDefault(SnapshotSummary.TOTAL_FILE_SIZE_PROP,
+    Double dataSize = Double.valueOf(table.currentSnapshot().summary().getOrDefault(
+        SnapshotSummary.TOTAL_FILE_SIZE_PROP,
         "0"));
     List<TableMetric> tableMetrics = Lists.newArrayList();
     tableMetrics.add(new TableMetric(
