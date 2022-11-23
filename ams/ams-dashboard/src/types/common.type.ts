@@ -59,6 +59,7 @@ export interface IKeyAndValue {
   value: string
 }
 export interface IBaseDetailInfo {
+  tableType: string
   tableName: string
   createTime: string
   size: string

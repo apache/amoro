@@ -97,6 +97,7 @@ const metricsMap: IMap<string | number> = {
 const state = reactive({
   detailLoading: false,
   baseDetailInfo: {
+    tableType: '',
     tableName: '',
     createTime: '',
     size: '',
@@ -122,9 +123,10 @@ const getTableDetails = async() => {
     const result = await getTableDetail({
       ...params.value
     })
-    const { pkList = [], partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics } = result
+    const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics } = result
     state.baseDetailInfo = {
       ...baseMetrics,
+      tableType,
       tableName: tableIdentifier?.tableName || '',
       createTime: createTime ? dateFormat(createTime) : '',
       hasPartition: !!(partitionColumnList?.length)
