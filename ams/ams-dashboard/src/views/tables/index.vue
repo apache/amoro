@@ -25,7 +25,7 @@
           <a-tab-pane key="Details" tab="Details">
             <u-details @setBaseDetailInfo="setBaseDetailInfo" />
           </a-tab-pane>
-           <a-tab-pane v-if="!isIceberg" key="Files" tab="Files">
+          <a-tab-pane v-if="!isIceberg && detailLoaded" key="Files" tab="Files">
             <u-files :hasPartition="baseInfo.hasPartition"/>
           </a-tab-pane>
           <a-tab-pane v-for="tab in tabConfigs" :key="tab.key" :tab="`${tab.key}`">
@@ -79,20 +79,23 @@ export default defineComponent({
       activeKey: 'Details',
       isSecondaryNav: false,
       baseInfo: {
+        tableType: '',
         tableName: '',
         createTime: '',
         size: '',
         file: '',
         averageFile: '',
         hasPartition: false
-      } as IBaseDetailInfo
+      } as IBaseDetailInfo,
+      detailLoaded: false
     })
 
     const isIceberg = computed(() => {
-      return route.query.type === 'ICEBERG'
+      return state.baseInfo.tableType === 'ICEBERG'
     })
 
     const setBaseDetailInfo = (baseInfo: IBaseDetailInfo) => {
+      state.detailLoaded = true
       state.baseInfo = { ...baseInfo }
     }
 

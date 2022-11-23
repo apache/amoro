@@ -51,14 +51,14 @@ async function getCatalogs() {
   }
 }
 function initSelectCatalog() {
-  const { catalog = '', type } = route.query
+  const { catalogname = '', type } = route.query
   const item: ICatalogItem = {}
-  if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
+  if (decodeURIComponent(catalogname as string) === NEW_CATALOG) {
     addCatalog()
     return
   }
-  if (catalog) {
-    item.catalogName = catalog
+  if (catalogname) {
+    item.catalogName = catalogname
     item.catalogType = type
   } else {
     item.catalogName = catalogs[0]?.catalogName
@@ -84,7 +84,7 @@ function selectCatalog(item: ICatalogItem) {
   router.replace({
     path: '/catalogs',
     query: {
-      catalog: encodeURIComponent(curCatalog.catalogName),
+      catalogname: encodeURIComponent(curCatalog.catalogName),
       type: curCatalog.catalogType
     }
   })
@@ -161,6 +161,7 @@ onBeforeRouteLeave((to, form, next) => {
 <style lang="less" scoped>
 .catalogs-wrap {
   height: 100%;
+  padding: 16px 24px;
   .catalog-list-left {
     width: 200px;
     height: 100%;

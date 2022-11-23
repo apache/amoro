@@ -80,10 +80,6 @@ const params = computed(() => {
   }
 })
 
-const isIceberg = computed(() => {
-  return route.query.type === 'ICEBERG'
-})
-
 watch(
   () => route.query,
   (val) => {
@@ -95,13 +91,13 @@ const metricsMap: IMap<string | number> = {
   averageFile: 'Average File Size',
   file: 'File',
   lastCommitTime: 'Last Commit Time',
-  size: 'Size',
-  maxEventTime: 'Max Event Time'
+  size: 'Size'
 }
 
 const state = reactive({
   detailLoading: false,
   baseDetailInfo: {
+    tableType: '',
     tableName: '',
     createTime: '',
     size: '',
@@ -127,9 +123,10 @@ const getTableDetails = async() => {
     const result = await getTableDetail({
       ...params.value
     })
-    const { pkList = [], partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics } = result
+    const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics } = result
     state.baseDetailInfo = {
       ...baseMetrics,
+      tableType,
       tableName: tableIdentifier?.tableName || '',
       createTime: createTime ? dateFormat(createTime) : '',
       hasPartition: !!(partitionColumnList?.length)
@@ -152,10 +149,6 @@ const getTableDetails = async() => {
         value: key === 'lastCommitTime' ? ((baseMetrics || {})[key] ? dateFormat((baseMetrics || {})[key]) : '') : (baseMetrics || {})[key]
       }
     })
-    if (isIceberg.value) {
-      const findIndex = state.baseMetrics.findIndex(ele => ele.metric === 'Max Event Time')
-      findIndex > -1 && state.baseMetrics.splice(findIndex, 1)
-    }
     state.properties = Object.keys(properties || {}).map(key => {
       return {
         key: key,
@@ -216,7 +209,7 @@ const propertiesColumns: IColumns[] = shallowReactive([
     margin-top: 16px;
   }
   .attr-title {
-    font-size: 20px;
+    font-size: 16px;
     line-height: 24px;
     font-weight: bold;
     color: #102048;

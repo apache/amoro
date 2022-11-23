@@ -100,7 +100,13 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
     List<FileScanTask> smallFileScanTasks = fileScanTasks.stream()
         .filter(fileScanTask -> fileScanTask.file().fileSizeInBytes() <= smallFileSize).collect(Collectors.toList());
-    collector.add(buildOptimizeTask(smallFileScanTasks, taskPartitionConfig));
+
+    List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(smallFileScanTasks);
+    for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
+      if (CollectionUtils.isNotEmpty(fileScanTask)) {
+        collector.add(buildOptimizeTask(fileScanTask, taskPartitionConfig));
+      }
+    }
 
     return collector;
   }

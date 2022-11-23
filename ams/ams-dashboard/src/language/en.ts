@@ -24,8 +24,8 @@ export default {
   optimizing: 'Optimizing',
   terminal: 'Terminal',
   settings: 'Settings',
-  systemSetting: 'System Setting',
-  containerSetting: 'Container Setting',
+  systemSetting: 'System Settings',
+  containerSetting: 'Container Settings',
   backHome: 'Back to Home',
   version: 'Version',
   userGuide: 'User Guide',
@@ -161,5 +161,6 @@ export default {
   leavePageModalTitle: 'Leave this page？',
   leavePageModalContent: 'Changes you made may not be saved.',
   leave: 'Leave',
-  invalidInput: 'Invalid input'
+  invalidInput: 'Invalid input',
+  metastoreTooltip: 'We can create arctic tables using iceberg format under an arctic metastore, or upgrade hive tables to arctic tables in-place under a hive metastore'
 }

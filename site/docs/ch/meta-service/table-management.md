@@ -52,7 +52,7 @@ Logstore 作为可选组件则需要另外的配置来指明，有关 Logstore �
 可以在 [AMS Dashboard](http://localhost:1630) 的表详情中看到表当前的水位，也可以在`Terminal`中输入下面的 SQL 来查询表的水位：
 
 ```sql
-SHOW TBLPROPERTIES test_db.test_log_store ('table.watermark');
+SHOW TBLPROPERTIES test_db.test_log_store ('watermark.table');
 ```
 
 预期你将得到以下的结果：
@@ -61,7 +61,7 @@ SHOW TBLPROPERTIES test_db.test_log_store ('table.watermark');
 +-----------------+---------------+
 | key             | value         |
 +-----------------+---------------+
-| table.watermark | 1668579055000 |
+| watermark.table | 1668579055000 |
 +-----------------+---------------+
 ```
 

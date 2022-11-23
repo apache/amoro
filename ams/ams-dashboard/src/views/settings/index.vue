@@ -65,9 +65,9 @@ const containerSetting = reactive<IContainerSetting[]>([
   }
 ])
 const optimzeGroupColumns: IColumns[] = reactive([
-  { title: t('name'), dataIndex: 'name', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', ellipsis: true }
+  { title: t('name'), dataIndex: 'name', width: 340, ellipsis: true },
+  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', width: '50%', ellipsis: true },
+  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', width: '50%', ellipsis: true }
 ])
 
 const basicColumns: IColumns[] = reactive([
@@ -79,7 +79,6 @@ const activeKey = ref<string[]>([])
 async function getSystemSettingInfo() {
   const res = await getSystemSetting()
   if (!res) { return }
-  systemSettingArray.length = 0
   Object.keys(res).forEach(key => {
     systemSettingArray.push({
       key: key,
@@ -89,7 +88,6 @@ async function getSystemSettingInfo() {
 }
 async function getContainersSettingInfo() {
   const res = await getContainersSetting()
-  containerSetting.length = 0
   activeKey.value = [];
   (res || []).forEach((ele, index) => {
     ele.propertiesArray = []
@@ -118,6 +116,7 @@ onMounted(async() => {
 .setting-wrap {
   height: 100%;
   overflow: auto;
+  padding: 16px 24px;
   h1,h2,h3 {
     font-weight: 500;
   }

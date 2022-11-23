@@ -8,9 +8,16 @@
           </a-form-item>
           <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
-            <span v-else>{{formState.catalog.name}}</span>
+            <span v-else class="config-value">{{formState.catalog.name}}</span>
           </a-form-item>
-          <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+          <a-form-item :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+            <template #label>
+              {{$t('metastore')}}
+              <a-tooltip>
+                <template #title>{{$t('metastoreTooltip')}}</template>
+                <question-circle-outlined class="question-icon" />
+              </a-tooltip>
+            </template>
             <a-select
               v-if="isEdit && isNewCatalog"
               v-model:value="formState.catalog.type"
@@ -86,7 +93,7 @@
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
               </a-upload>
-              <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
+              <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)" :title="config.fileName">{{config.fileName}}</span>
             </a-form-item>
           </div>
           <a-form-item>
@@ -112,6 +119,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
 import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
 import { Modal, message, UploadChangeParam } from 'ant-design-vue'
@@ -159,7 +167,7 @@ const uploadUrl = computed(() => {
   return '/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
-  const catalog = (route.query?.catalog || '').toString()
+  const catalog = (route.query?.catalogname || '').toString()
   return decodeURIComponent(catalog) === 'new catalog'
 })
 const isHiveMetastore = computed(() => {
@@ -246,8 +254,8 @@ function getMetastoreType() {
 async function getConfigInfo() {
   try {
     loading.value = true
-    const { catalog, type } = route.query
-    if (!catalog) { return }
+    const { catalogname, type } = route.query
+    if (!catalogname) { return }
     if (isNewCatalog.value) {
       formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
@@ -258,7 +266,7 @@ async function getConfigInfo() {
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
-      const res = await getCatalogsSetting(catalog)
+      const res = await getCatalogsSetting(catalogname)
       if (!res) { return }
       const { name, type, tableFormatList, storageConfig, authConfig, properties } = res
       formState.catalog.name = name
@@ -499,6 +507,18 @@ onMounted(() => {
       color: @primary-color;
       cursor: pointer;
     }
+    .config-value {
+      word-break: break-all;
+      &.auth-filename {
+        max-width: 72%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        vertical-align: middle;
+        margin-top: -4px;
+      }
+    }
   }
   .footer-btn {
     height: 44px;
@@ -515,6 +535,9 @@ onMounted(() => {
         color: #fff;
       }
     }
+  }
+  .question-icon {
+    color: #79809a;
   }
 }
 </style>
