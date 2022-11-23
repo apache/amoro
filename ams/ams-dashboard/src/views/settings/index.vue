@@ -79,7 +79,6 @@ const activeKey = ref<string[]>([])
 async function getSystemSettingInfo() {
   const res = await getSystemSetting()
   if (!res) { return }
-  systemSettingArray.length = 0
   Object.keys(res).forEach(key => {
     systemSettingArray.push({
       key: key,
@@ -89,7 +88,6 @@ async function getSystemSettingInfo() {
 }
 async function getContainersSettingInfo() {
   const res = await getContainersSetting()
-  containerSetting.length = 0
   activeKey.value = [];
   (res || []).forEach((ele, index) => {
     ele.propertiesArray = []

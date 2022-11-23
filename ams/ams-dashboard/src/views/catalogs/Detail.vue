@@ -8,7 +8,7 @@
           </a-form-item>
           <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
-            <span v-else>{{formState.catalog.name}}</span>
+            <span v-else class="config-value">{{formState.catalog.name}}</span>
           </a-form-item>
           <a-form-item :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
             <template #label>
@@ -93,7 +93,7 @@
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
               </a-upload>
-              <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
+              <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)" :title="config.fileName">{{config.fileName}}</span>
             </a-form-item>
           </div>
           <a-form-item>
@@ -506,6 +506,18 @@ onMounted(() => {
     .view-active {
       color: @primary-color;
       cursor: pointer;
+    }
+    .config-value {
+      word-break: break-all;
+      &.auth-filename {
+        max-width: 72%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        vertical-align: middle;
+        margin-top: -4px;
+      }
     }
   }
   .footer-btn {
