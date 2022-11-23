@@ -205,3 +205,11 @@ Kyuubi 是一个多租户的大数据 SQL Gateway, 有关 Kyuubi 的知识，
 * 如果 KyuubiServer 开启了 Kerberos 认证，请确保此 Principal 可以访问 KyuubiServer. 
 * 如果 KyuubiServer 采用账户密码认证，需要在 jdbc.url 中配置好认证信息
 
+**关于访问 Iceberg Table**
+
+由于 Arctic 的 Spark Connector 中尚未支持直接访问原生的 Iceberg Table, 因此 Terminal 中使用的是 Iceberg 官方的 Connector，
+Iceberg 原生的 Connector 会从 HADOOP_CONF_DIR 目录读取 hadoop site 文件， 因此需要提前在 Kyuubi 的 `conf/kyuubi-env.sh` 中，
+或者 Kyuubi 配置的 Spark 计算引擎的 `spark-env.sh` 中配置正确的 hadoop site 文件。
+
+如果有多个 hadoop 集群，并且希望用同一个 Kyuubi 服务访问多个 catalog， 需要在 Kyuubi 对应的 hadoop site 文件中配置好互通。
+
