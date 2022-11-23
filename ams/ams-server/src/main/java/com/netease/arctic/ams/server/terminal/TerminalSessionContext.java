@@ -176,7 +176,11 @@ public class TerminalSessionContext {
         int fetchLimits,
         boolean stopOnError) {
       this.catalog = catalog;
-      this.script = script;
+      if (script.trim().endsWith(";")) {
+        this.script = script;
+      } else {
+        this.script = script + ";";
+      }
       this.fetchLimits = fetchLimits;
       this.stopOnError = stopOnError;
     }
@@ -188,6 +192,10 @@ public class TerminalSessionContext {
           TerminalSession session = lazyLoadSession(this);
           executionResult.appendLog("fetch terminal session: " + sessionId);
           executionResult.appendLogs(session.logs());
+          for (String key : session.configs().keySet()) {
+            executionResult.appendLog("session configuration: " + key + " => " + session.configs().get(key));
+          }
+
           return execute(session);
         });
       } catch (Throwable t) {
