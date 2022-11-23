@@ -378,26 +378,32 @@ public class OptimizeQueueService extends IJDBCService {
               queueName() + " not allow task of table " + task.getTableIdentifier());
         }
         // clear useless files produced by failed full optimize task support hive
-        String location = task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
-        if (location != null) {
-          try {
-            ArcticTable arcticTable = ServiceContainer.getOptimizeService()
-                .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();
-            for (FileStatus fileStatus : arcticTable.io().list(location)) {
-              String fileLocation = fileStatus.getPath().toUri().getPath();
-              // now file naming rule is nodeId-fileType-txId-partitionId-taskId-fileCount(%d-%s-%d-%05d-%d-%010d)
-              // for files produced by optimize, the taskId is attemptId
-              String pattern = ".*(\\d{5}-)" + task.getOptimizeRuntime().getAttemptId() + "(-\\d{10}).*";
-              if (Pattern.matches(pattern, fileLocation)) {
-                arcticTable.io().deleteFile(fileLocation);
-                LOG.debug("delete file {} by produced failed optimize task.", fileLocation);
+        if (task.getOptimizeRuntime().getStatus() == OptimizeStatus.Failed) {
+          String location = task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
+
+          if (location != null) {
+            try {
+              ArcticTable arcticTable = ServiceContainer.getOptimizeService()
+                  .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();
+              if (arcticTable.io().exists(location)) {
+                for (FileStatus fileStatus : arcticTable.io().list(location)) {
+                  String fileLocation = fileStatus.getPath().toUri().getPath();
+                  // now file naming rule is nodeId-fileType-txId-partitionId-taskId-fileCount(%d-%s-%d-%05d-%d-%010d)
+                  // for files produced by optimize, the taskId is attemptId
+                  String pattern = ".*(\\d{5}-)" + task.getOptimizeRuntime().getAttemptId() + "(-\\d{10}).*";
+                  if (Pattern.matches(pattern, fileLocation)) {
+                    arcticTable.io().deleteFile(fileLocation);
+                    LOG.debug("delete file {} by produced failed optimize task.", fileLocation);
+                  }
+                }
               }
+            } catch (Exception e) {
+              LOG.error("delete files failed", e);
+              return;
             }
-          } catch (Exception e) {
-            LOG.error("delete files failed", e);
-            return;
           }
         }
+
         if (tasks.offer(task)) {
           if (!OptimizeStatusUtil.in(task.getOptimizeStatus(), OptimizeStatus.Pending) ||
               task.getOptimizeTask().getQueueId() != optimizeQueue.getOptimizeQueueMeta()
