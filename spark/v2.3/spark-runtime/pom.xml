@@ -27,13 +27,13 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-spark_2.3-runtime</artifactId>
+    <artifactId>arctic-spark-2.3-runtime</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark_2.3</artifactId>
+            <artifactId>arctic-spark-2.3</artifactId>
             <version>${parent.version}</version>
         </dependency>
     </dependencies>
