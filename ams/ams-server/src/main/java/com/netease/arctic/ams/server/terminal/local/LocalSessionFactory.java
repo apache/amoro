@@ -80,7 +80,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     if (context == null) {
       SparkConf sparkconf = new SparkConf()
           .setAppName("spark-local-context")
-          .setMaster("local[*]");
+          .setMaster("local");
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
