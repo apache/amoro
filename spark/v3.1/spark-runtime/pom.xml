@@ -58,7 +58,7 @@
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <artifactSet>
                                 <includes>
-                                    <include>com.netease.arctic:arctic-spark_3.1</include>
+                                    <include>com.netease.arctic:arctic-spark-3.1</include>
                                     <include>com.netease.arctic:arctic-core</include>
                                     <include>com.netease.arctic:arctic-ams-api</include>
                                     <incluede>com.netease.arctic:arctic-hive</incluede>
