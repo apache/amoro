@@ -76,4 +76,11 @@ public class LocalTerminalSession implements TerminalSession {
       return false;
     }
   }
+
+  @Override
+  public void release() {
+    // do not call release in local mode.
+    // spark session.release will release spark context.
+    // spark session is a hash-map, release reference is enough.
+  }
 }
