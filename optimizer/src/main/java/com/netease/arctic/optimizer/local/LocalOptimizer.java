@@ -67,7 +67,7 @@ public class LocalOptimizer implements StatefulOptimizer {
   private ExecutorService executeThreadPool;
 
   private ScheduledExecutorService toucherService;
-  
+
   private volatile boolean stopped = false;
 
   public LocalOptimizer() {
@@ -110,11 +110,11 @@ public class LocalOptimizer implements StatefulOptimizer {
     LOG.info("starting compact job use command:" + cmd);
     Runtime runtime = Runtime.getRuntime();
     try {
-      if (containerProperties.containsKey("hadoop_home")) {
+      if (containerProperties != null && containerProperties.containsKey("hadoop_home")) {
         String[] tmpCmd = {"/bin/sh", "-c", "export HADOOP_HOME=" + containerProperties.getString("hadoop_home")};
         runtime.exec(tmpCmd);
       }
-      if (containerProperties.containsKey("java_home")) {
+      if (containerProperties != null && containerProperties.containsKey("java_home")) {
         String[] tmpCmd = {"/bin/sh", "-c", "export JAVA_HOME=" + containerProperties.getString("java_home")};
         runtime.exec(tmpCmd);
       }
@@ -179,7 +179,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     toucherService.scheduleAtFixedRate(new Toucher(), 3000, config.getHeartBeat(), TimeUnit.MILLISECONDS);
     executeThreadPool.execute(new Executor());
   }
-  
+
   public void release() {
     this.stopped = true;
     if (executeThreadPool != null) {

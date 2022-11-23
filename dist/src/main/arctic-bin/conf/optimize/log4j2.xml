@@ -20,6 +20,7 @@
 <Configuration>
     <properties>
         <property name="LOG_HOME">${sys:log.home}</property>
+        <property name="SUBDIR">${sys:log.subdir}</property>
     </properties>
 
     <Appenders>
@@ -33,8 +34,8 @@
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
-                     fileName="${LOG_HOME}/ams-debug.log"
-                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/ams-debug-%d{yyyy-MM-dd}-%i.log.gz">
+                     fileName="${LOG_HOME}/${SUBDIR}/local_optimizer-debug.log"
+                     filePattern="${LOG_HOME}/${SUBDIR}/$${date:yyyy-MM}/ams-debug-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -54,8 +55,8 @@
 
         <!--Logs with a grade of info-->
         <RollingFile name="infoFileAppender"
-                     fileName="${LOG_HOME}/ams-info.log"
-                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/ams-info-%d{yyyy-MM-dd}-%i.log.gz">
+                     fileName="${LOG_HOME}/${SUBDIR}/local_optimizer-info.log"
+                     filePattern="${LOG_HOME}/${SUBDIR}/$${date:yyyy-MM}/local_optimizer-info-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
@@ -73,10 +74,10 @@
             <DefaultRolloverStrategy max="20"/>
         </RollingFile>
 
-        <!--Logs with a grade of error-->
+        <!--Logs with a grade of warn and higher level-->
         <RollingFile name="errorFileAppender"
-                     fileName="${LOG_HOME}/ams-error.log"
-                     filePattern="${LOG_HOME}/$${date:yyyy-MM}/ams-error-%d{yyyy-MM-dd}-%i.log.gz">
+                     fileName="${LOG_HOME}/${SUBDIR}/local_optimizer-error.log"
+                     filePattern="${LOG_HOME}/${SUBDIR}/$${date:yyyy-MM}/local_optimizer-error-%d{yyyy-MM-dd}-%i.log.gz">
             <!--Set log format-->
             <PatternLayout>
                 <pattern>%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n</pattern>
