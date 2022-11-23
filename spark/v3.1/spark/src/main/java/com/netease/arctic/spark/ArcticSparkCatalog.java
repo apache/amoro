@@ -204,7 +204,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
     Schema convertSchema;
     try {
-      CatalogMeta catalogMeta = client.getCatalog(catalogName);
+      CatalogMeta catalogMeta = client.getCatalog(catalog.name());
       String catalogType = catalogMeta.getCatalogType();
       if (CATALOG_TYPE_HIVE.equals(catalogType)) {
         SparkSession sparkSession = SparkSession.active();
@@ -220,7 +220,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
         convertSchema = SparkSchemaUtil.convert(schema, false);
       }
     } catch (TException e) {
-      throw new IllegalStateException("failed when load catalog " + catalogName, e);
+      throw new IllegalStateException("failed when load catalog " + catalog.name(), e);
     }
 
     // schema add primary keys
