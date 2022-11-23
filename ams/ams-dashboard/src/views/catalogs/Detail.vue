@@ -10,7 +10,14 @@
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
             <span v-else>{{formState.catalog.name}}</span>
           </a-form-item>
-          <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+          <a-form-item :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
+            <template #label>
+              {{$t('metastore')}}
+              <a-tooltip>
+                <template #title>{{$t('metastoreTooltip')}}</template>
+                <question-circle-outlined class="question-icon" />
+              </a-tooltip>
+            </template>
             <a-select
               v-if="isEdit && isNewCatalog"
               v-model:value="formState.catalog.type"
@@ -112,6 +119,7 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
 import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
 import { Modal, message, UploadChangeParam } from 'ant-design-vue'
@@ -515,6 +523,9 @@ onMounted(() => {
         color: #fff;
       }
     }
+  }
+  .question-icon {
+    color: #79809a;
   }
 }
 </style>
