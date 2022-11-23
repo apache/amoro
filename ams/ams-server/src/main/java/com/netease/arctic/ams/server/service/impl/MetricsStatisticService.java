@@ -26,24 +26,21 @@ import com.netease.arctic.ams.server.mapper.OptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
 import com.netease.arctic.ams.server.model.MetricsSummary;
 import com.netease.arctic.ams.server.model.OptimizerMetricsStatistic;
-import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
 import com.netease.arctic.ams.server.service.IJDBCService;
-import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.SnapshotSummary;
 import org.apache.iceberg.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 import static com.netease.arctic.ams.api.Constants.INNER_TABLE_BASE;
