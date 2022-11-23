@@ -63,6 +63,12 @@ public class CatalogUtil {
     return catalogCache.get(name);
   }
 
+  public static void removeCatalogCache(String name) {
+    synchronized (CatalogUtil.class) {
+      catalogCache.remove(name);
+    }
+  }
+
   public static ArcticCatalog getArcticCatalog(String name) {
     if (catalogCache.get(name) == null) {
       synchronized (CatalogUtil.class) {

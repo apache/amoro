@@ -358,7 +358,7 @@ public class CatalogController extends RestBaseController {
     try {
       CatalogMeta catalogMeta = constructCatalogMeta(info, oldCatalogMeta);
       catalogMetadataService.updateCatalog(catalogMeta);
-      CatalogUtil.catalogCache.remove(catalogMeta.getCatalogName());
+      CatalogUtil.removeCatalogCache(catalogMeta.getCatalogName());
     } catch (Exception e) {
       LOG.error("Failed to update catalog!", e);
       ctx.json(new ErrorResponse(e.getMessage()));
