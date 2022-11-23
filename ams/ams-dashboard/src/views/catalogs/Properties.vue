@@ -7,7 +7,7 @@
         <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
       </div>
       <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
-        <div class="config-row g-flex-ac" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
+        <div class="config-row" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
           <!-- validator: validateUnique -->
           <a-form-item
             :name="['data', index, 'key']"
@@ -170,6 +170,7 @@ onMounted(() => {
       }
     }
     .config-row {
+      display: flex;
       // height: 40px;
       position: relative;
       padding-right: 32px;
