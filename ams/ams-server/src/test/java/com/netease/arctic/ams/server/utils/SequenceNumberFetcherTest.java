@@ -1,24 +1,40 @@
-package com.netease.arctic.ams.server.optimize;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.ams.server.utils;
 
 import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestBase;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.server.AmsTestBase;
-import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.table.ArcticTable;
+import jline.internal.Log;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableProperties;
-import org.apache.iceberg.catalog.Catalog;
-import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.Tables;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
@@ -26,6 +42,8 @@ import org.apache.iceberg.deletes.EqualityDeleteWriter;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.hadoop.HadoopTables;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.DataWriter;
 import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
@@ -33,66 +51,125 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.ArrayUtil;
 import org.apache.iceberg.util.PropertyUtil;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
-import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_CATALOG_NAME;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
+public class SequenceNumberFetcherTest {
+  private static final Logger LOG = LoggerFactory.getLogger(SequenceNumberFetcherTest.class);
+  private Table table;
 
-public class TestIcebergBase {
-  ArcticTable icebergTable;
-
-  static final String DATABASE = "native_test_db";
-  static final String TABLE_NAME = "native_test_tb";
-  TableIdentifier tableIdentifier = TableIdentifier.of(DATABASE, TABLE_NAME);
-
-  @BeforeClass
-  public static void createDatabase() {
-    AmsTestBase.icebergCatalog.createDatabase(DATABASE);
-  }
-
-  @AfterClass
-  public static void clearCatalog() {
-    AmsTestBase.icebergCatalog.dropDatabase(DATABASE);
-  }
+  @Rule
+  public TemporaryFolder tempFolder = new TemporaryFolder();
 
   @Before
-  public void initTable() throws Exception {
-    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService()
-        .getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME).get();
-    Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
-    catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
-    Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(AMS_TEST_ICEBERG_CATALOG_NAME,
-        catalogProperties, new Configuration());
-    Map<String, String> tableProperty = new HashMap<>();
-    tableProperty.put(TableProperties.FORMAT_VERSION, "2");
-    nativeIcebergCatalog.createTable(tableIdentifier, TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperty);
-    icebergTable = AmsTestBase.icebergCatalog.loadTable(
-        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_ICEBERG_CATALOG_NAME, DATABASE, TABLE_NAME));
+  public void init() {
+    Tables hadoopTables = new HadoopTables(new Configuration());
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+
+    String path = tempFolder.getRoot().getPath();
+    Log.info(path);
+    table = hadoopTables.create(TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperties,
+        path + "/test/table1");
+
   }
 
   @After
-  public void clearTable() throws Exception {
-    CatalogMeta catalogMeta = ServiceContainer.getCatalogMetadataService()
-        .getCatalog(AMS_TEST_ICEBERG_CATALOG_NAME).get();
-    Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
-    catalogProperties.put(ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
-    Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(AMS_TEST_ICEBERG_CATALOG_NAME,
-        catalogProperties, new Configuration());
-    nativeIcebergCatalog.dropTable(tableIdentifier);
+  public void clean() {
+
   }
 
-  protected List<DataFile> insertDataFiles(Table arcticTable, int length) throws IOException {
+  @Test
+  public void testUnpartitionedTable() throws IOException {
+    Map<String, Long> checkedDeletes = Maps.newHashMap();
+    Map<String, Long> checkedDataFiles = Maps.newHashMap();
+
+    List<DataFile> dataFiles1 = insertDataFiles(table, 10);
+    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 1);
+
+    insertEqDeleteFiles(table, 1);
+    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 2);
+
+    insertPosDeleteFiles(table, dataFiles1);
+    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 3);
+
+    List<DataFile> dataFiles2 = insertDataFiles(table, 1);
+    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 4);
+
+    overwriteDataFiles(table, 1, dataFiles2);
+    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 5);
+
+  }
+
+  private void checkNewFileSequenceNumber(Map<String, Long> checkedDeletes, Map<String, Long> checkedDataFiles,
+                                          long expectSequence) {
+    SequenceNumberFetcher sequenceNumberFetcher;
+    sequenceNumberFetcher = SequenceNumberFetcher.with(table, table.currentSnapshot().snapshotId());
+    for (FileScanTask fileScanTask : table.newScan().planFiles()) {
+      String path = fileScanTask.file().path().toString();
+      long sequenceNumber = sequenceNumberFetcher.sequenceNumberOf(path);
+      if (checkedDataFiles.containsKey(path)) {
+        Assert.assertEquals((long) checkedDataFiles.get(path), sequenceNumber);
+      } else {
+        LOG.info("get sequence {} of {}", sequenceNumber, path);
+        checkedDataFiles.put(path, sequenceNumber);
+        Assert.assertEquals(expectSequence, sequenceNumber);
+      }
+      List<DeleteFile> deletes = fileScanTask.deletes();
+      for (DeleteFile delete : deletes) {
+        path = delete.path().toString();
+        sequenceNumber = sequenceNumberFetcher.sequenceNumberOf(path);
+        if (checkedDeletes.containsKey(path)) {
+          Assert.assertEquals((long) checkedDeletes.get(path), sequenceNumber);
+        } else {
+          LOG.info("get sequence {} of {}", sequenceNumber, path);
+          checkedDeletes.put(path, sequenceNumber);
+          Assert.assertEquals(expectSequence, sequenceNumber);
+        }
+      }
+    }
+  }
+
+  private List<DataFile> getCurrentAllDataFiles() {
+    return Lists.newArrayList(CloseableIterable.transform(table.newScan().planFiles(), FileScanTask::file));
+  }
+
+  private List<DataFile> insertDataFiles(Table arcticTable, int length) throws IOException {
+    List<DataFile> result = writeNewDataFiles(arcticTable, length);
+
+    AppendFiles baseAppend = arcticTable.newAppend();
+    result.forEach(baseAppend::appendFile);
+    baseAppend.commit();
+
+    return result;
+  }
+
+  private List<DataFile> overwriteDataFiles(Table arcticTable, int length, List<DataFile> dataFiles) throws IOException {
+    List<DataFile> result = writeNewDataFiles(arcticTable, length);
+
+    OverwriteFiles overwrite = arcticTable.newOverwrite();
+    result.forEach(overwrite::addFile);
+    dataFiles.forEach(overwrite::deleteFile);
+    overwrite.commit();
+
+    return result;
+  }
+
+  @NotNull
+  private List<DataFile> writeNewDataFiles(Table arcticTable, int length) throws IOException {
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
@@ -120,15 +197,10 @@ public class TestIcebergBase {
     }
     writer.close();
     result.add(writer.toDataFile());
-
-    AppendFiles baseAppend = arcticTable.newAppend();
-    result.forEach(baseAppend::appendFile);
-    baseAppend.commit();
-
     return result;
   }
 
-  protected void insertEqDeleteFiles(Table arcticTable, int length) throws IOException {
+  private void insertEqDeleteFiles(Table arcticTable, int length) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -162,7 +234,7 @@ public class TestIcebergBase {
     rowDelta.commit();
   }
 
-  protected void insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
+  private void insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -192,27 +264,7 @@ public class TestIcebergBase {
     rowDelta.commit();
   }
 
-  protected List<DataFile> insertOptimizeTargetDataFiles(Table arcticTable, int length) throws IOException {
-    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
-    OutputFileFactory outputFileFactory =
-        OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
-            .build();
-    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
-    DataWriter<Record> writer = appenderFactory
-        .newDataWriter(outputFile, FileFormat.PARQUET, null);
-
-    List<DataFile> result = new ArrayList<>();
-    for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length, arcticTable.schema())) {
-        writer.write(record);
-      }
-    }
-    writer.close();
-    result.add(writer.toDataFile());
-    return result;
-  }
-
-  public List<Record> baseRecords(int start, int length, Schema tableSchema) {
+  private List<Record> baseRecords(int start, int length, Schema tableSchema) {
     GenericRecord record = GenericRecord.create(tableSchema);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
