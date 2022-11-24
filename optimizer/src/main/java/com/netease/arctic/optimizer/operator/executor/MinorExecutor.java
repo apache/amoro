@@ -63,22 +63,14 @@ import java.util.stream.Collectors;
 public class MinorExecutor extends BaseExecutor<DeleteFile> {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
-  private final NodeTask task;
-  private final ArcticTable table;
-  private final long startTime;
-  private final OptimizerConfig config;
-
   public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
-    this.task = nodeTask;
-    this.table = table;
-    this.startTime = startTime;
-    this.config = config;
+    super(nodeTask, table, startTime, config);
   }
 
   @Override
   public OptimizeTaskResult<DeleteFile> execute() throws Exception {
     List<DeleteFile> targetFiles = new ArrayList<>();
-    LOG.info("start process minor optimize task: {}", task);
+    LOG.info("Start processing arctic table minor optimize task: {}", task);
 
     Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
@@ -109,10 +101,10 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
           Long rowPosition = (Long) record.get(recordStruct.fields()
               .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
           posDeleteWriter.delete(filePath, rowPosition);
-          insertCount.getAndIncrement();
-          if (insertCount.get() == 1 || insertCount.get() == 100000) {
+          insertCount.incrementAndGet();
+          if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
             LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-                task.getTaskId(), insertCount, "", 0);
+                task.getTaskId(), insertCount.get(), filePath, rowPosition);
           }
         }
         return null;
@@ -138,35 +130,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
     }
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
 
-    long totalFileSize = 0;
-    List<ByteBuffer> deleteFileBytesList = new ArrayList<>();
-    for (DeleteFile deleteFile : targetFiles) {
-      totalFileSize += deleteFile.fileSizeInBytes();
-      deleteFileBytesList.add(SerializationUtil.toByteBuffer(deleteFile));
-    }
-
-    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
-    BeanUtils.copyProperties(optimizeTaskStat, task);
-    JobId jobId = new JobId();
-    jobId.setId(config.getOptimizerId());
-    jobId.setType(JobType.Optimize);
-    optimizeTaskStat.setJobId(jobId);
-
-    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
-    optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
-    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
-
-    optimizeTaskStat.setNewFileSize(totalFileSize);
-    optimizeTaskStat.setReportTime(System.currentTimeMillis());
-    optimizeTaskStat.setFiles(deleteFileBytesList);
-    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
-    optimizeTaskStat.setTaskId(task.getTaskId());
-
-    OptimizeTaskResult<DeleteFile> result = new OptimizeTaskResult<>();
-    result.setTargetFiles(targetFiles);
-    result.setOptimizeTaskStat(optimizeTaskStat);
-
-    return result;
+    return buildOptimizeResult(targetFiles);
   }
 
   @Override
