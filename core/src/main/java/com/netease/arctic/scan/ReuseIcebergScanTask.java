@@ -19,29 +19,28 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.IcebergContentFile;
-import java.util.List;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+
+import java.util.List;
 
 public class ReuseIcebergScanTask {
 
-  IcebergContentFile<DataFile>[] dataFiles;
+  IcebergContentFile[] dataFiles;
 
-  IcebergContentFile<DeleteFile>[] deleteFiles;
+  IcebergContentFile[] deleteFiles;
 
   public ReuseIcebergScanTask(
-      IcebergContentFile<DataFile>[] dataFiles,
-      IcebergContentFile<DeleteFile>[] deleteFiles) {
+      IcebergContentFile[] dataFiles,
+      IcebergContentFile[] deleteFiles) {
     this.dataFiles = dataFiles;
     this.deleteFiles = deleteFiles;
   }
 
-  public List<IcebergContentFile<DataFile>> getDataFiles() {
+  public List<IcebergContentFile> getDataFiles() {
     return ImmutableList.copyOf(dataFiles);
   }
 
-  public List<IcebergContentFile<DeleteFile>> getDeleteFiles() {
+  public List<IcebergContentFile> getDeleteFiles() {
     return ImmutableList.copyOf(deleteFiles);
   }
 }

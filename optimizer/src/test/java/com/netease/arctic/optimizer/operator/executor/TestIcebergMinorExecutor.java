@@ -13,7 +13,6 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.CatalogProperties;
@@ -63,73 +62,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
-public class TestIcebergExecutor {
-  @ClassRule
-  public static final TemporaryFolder tempFolder = new TemporaryFolder();
-  protected static final String ICEBERG_HADOOP_CATALOG_NAME = "iceberg_hadoop";
-
-  ArcticCatalog icebergCatalog;
-  ArcticTable icebergTable;
-
-  static final String DATABASE = "native_test_db";
-  static final String TABLE_NAME = "native_test_tb";
-  TableIdentifier tableIdentifier = TableIdentifier.of(DATABASE, TABLE_NAME);
-
-  @BeforeClass
-  public static void createIcebergCatalog() throws IOException {
-    Map<String, String> storageConfig = new HashMap<>();
-    storageConfig.put(
-        CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, MockArcticMetastoreServer.getHadoopSite());
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, MockArcticMetastoreServer.getHadoopSite());
-
-    Map<String, String> authConfig = new HashMap<>();
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-        System.getProperty("user.name"));
-
-    tempFolder.create();
-    Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogProperties.WAREHOUSE_LOCATION, tempFolder.newFolder().getPath());
-    catalogProperties.put(CatalogMetaProperties.TABLE_FORMATS, "iceberg");
-
-    CatalogMeta catalogMeta = new CatalogMeta(ICEBERG_HADOOP_CATALOG_NAME, CATALOG_TYPE_HADOOP,
-        storageConfig, authConfig, catalogProperties);
-    MockArcticMetastoreServer.getInstance().handler().createCatalog(catalogMeta);
-
-    MockArcticMetastoreServer.getInstance().createCatalogIfAbsent(catalogMeta);
-  }
-
-  @Before
-  public void initTable() throws Exception {
-    icebergCatalog =
-        CatalogLoader.load(MockArcticMetastoreServer.getInstance().getUrl(ICEBERG_HADOOP_CATALOG_NAME));
-    icebergCatalog.createDatabase(DATABASE);
-    CatalogMeta catalogMeta = MockArcticMetastoreServer.getInstance().handler().getCatalog(ICEBERG_HADOOP_CATALOG_NAME);
-    Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
-    catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
-    Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(ICEBERG_HADOOP_CATALOG_NAME,
-        catalogProperties, new Configuration());
-    Map<String, String> tableProperty = new HashMap<>();
-    tableProperty.put(TableProperties.FORMAT_VERSION, "2");
-    nativeIcebergCatalog.createTable(tableIdentifier, TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperty);
-    icebergTable = icebergCatalog.loadTable(
-        com.netease.arctic.table.TableIdentifier.of(ICEBERG_HADOOP_CATALOG_NAME, DATABASE, TABLE_NAME));
-  }
-
-  @After
-  public void clear() throws Exception {
-    CatalogMeta catalogMeta = MockArcticMetastoreServer.getInstance().handler().getCatalog(ICEBERG_HADOOP_CATALOG_NAME);
-    Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
-    catalogProperties.put(ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
-    Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(ICEBERG_HADOOP_CATALOG_NAME,
-        catalogProperties, new Configuration());
-    nativeIcebergCatalog.dropTable(tableIdentifier);
-    icebergCatalog.dropDatabase(DATABASE);
-    tempFolder.delete();
-  }
+public class TestIcebergMinorExecutor extends TestIcebergExecutorBase {
 
   @Test
   public void testSingleTargetFiles() throws Exception {
@@ -144,9 +77,9 @@ public class TestIcebergExecutor {
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    IcebergExecutor
-        icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
+    IcebergMajorExecutor
+        icebergMajorExecutor = new IcebergMajorExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = icebergMajorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
     result.getTargetFiles().forEach(dataFile -> Assert.assertEquals(46, dataFile.recordCount()));
   }
@@ -165,9 +98,9 @@ public class TestIcebergExecutor {
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
-    IcebergExecutor
-        icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = icebergExecutor.execute();
+    IcebergMajorExecutor
+        icebergMajorExecutor = new IcebergMajorExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
+    OptimizeTaskResult<DataFile> result = icebergMajorExecutor.execute();
     Assert.assertNotEquals(1, Iterables.size(result.getTargetFiles()));
     AtomicLong totalRecordCount = new AtomicLong();
     result.getTargetFiles().forEach(dataFile -> totalRecordCount.set(totalRecordCount.get() + dataFile.recordCount()));

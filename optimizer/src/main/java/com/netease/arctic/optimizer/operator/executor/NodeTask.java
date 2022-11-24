@@ -25,6 +25,7 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -124,7 +125,7 @@ public class NodeTask {
     return dataFiles;
   }
 
-  public List<ContentFile<?>> files() {
+    public List<ContentFile<?>> files() {
     allFiles.clear();
     Iterables.addAll(allFiles, baseFiles);
     Iterables.addAll(allFiles, insertFiles);
@@ -159,6 +160,21 @@ public class NodeTask {
 
   public List<DeleteFile> posDeleteFiles() {
     return posDeleteFiles;
+  }
+
+  public List<IcebergContentFile> icebergDataFiles() {
+    return icebergDataFiles;
+  }
+
+  public List<IcebergContentFile> icebergSmallDataFiles() {
+    return icebergSmallDataFiles;
+  }
+
+  public List<IcebergContentFile> icebergDeleteFiles() {
+    List<IcebergContentFile> icebergDeleteFiles = Lists.newArrayList();
+    icebergDeleteFiles.addAll(icebergPosDeleteFiles);
+    icebergDeleteFiles.addAll(icebergPosDeleteFiles);
+    return icebergDeleteFiles;
   }
 
   public Set<DataTreeNode> getSourceNodes() {
