@@ -30,6 +30,14 @@ public class IcebergContentFile implements Serializable {
   private ContentFile<?> contentFile;
   private Long sequenceNumber;
 
+  public IcebergContentFile() {
+  }
+
+  public IcebergContentFile(ContentFile<?> contentFile, Long sequenceNumber) {
+    this.contentFile = contentFile;
+    this.sequenceNumber = sequenceNumber;
+  }
+
   public ContentFile<?> getContentFile() {
     return contentFile;
   }
@@ -75,6 +83,4 @@ public class IcebergContentFile implements Serializable {
         ", sequenceNumber=" + sequenceNumber +
         '}';
   }
-
-
 }

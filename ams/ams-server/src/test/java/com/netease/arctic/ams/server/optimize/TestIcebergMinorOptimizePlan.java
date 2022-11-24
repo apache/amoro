@@ -2,9 +2,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,12 +18,10 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
+        new TableOptimizeRuntime(icebergTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
-    Assert.assertEquals(1, tasks.size());
-    Assert.assertEquals(dataFiles.size() - 1, tasks.get(0).getIcebergFileScanTasksSize());
+    Assert.assertEquals(2, tasks.size());
   }
 }

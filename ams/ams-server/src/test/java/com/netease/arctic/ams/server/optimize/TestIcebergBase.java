@@ -162,7 +162,7 @@ public class TestIcebergBase {
     rowDelta.commit();
   }
 
-  protected void insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
+  protected List<DeleteFile> insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -190,6 +190,8 @@ public class TestIcebergBase {
     RowDelta rowDelta = arcticTable.newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
+
+    return result;
   }
 
   protected List<DataFile> insertOptimizeTargetDataFiles(Table arcticTable, int length) throws IOException {

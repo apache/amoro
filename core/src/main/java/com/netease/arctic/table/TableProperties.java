@@ -108,6 +108,9 @@ public class TableProperties {
   public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
   public static final int MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT = 12; // 12
 
+  public static final String MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.minor.trigger.small-file-count";
+  public static final int MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
+
   public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
   public static final int MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
 

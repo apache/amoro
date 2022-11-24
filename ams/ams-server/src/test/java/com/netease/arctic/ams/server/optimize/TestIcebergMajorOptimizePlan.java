@@ -22,13 +22,11 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
+        new TableOptimizeRuntime(icebergTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
-    Assert.assertEquals(dataFiles.size(), tasks.get(0).getIcebergFileScanTasksSize());
   }
 
   @Test
@@ -36,14 +34,13 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
     icebergTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
-        .set(TableProperties.SPLIT_SIZE, "1500")
+        .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1500")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
+        new TableOptimizeRuntime(icebergTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(50, tasks.size());

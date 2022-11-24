@@ -33,20 +33,42 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergMajorOptimizePlan.class);
 
+  protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
+
   public IcebergMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                  List<FileScanTask> fileScanTasks,
                                   Map<String, Boolean> partitionTaskRunning,
                                   int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
+    super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
+  }
+
+  protected void addOptimizeFiles() {
+    LOG.debug("{} start plan iceberg table files", tableId());
+    AtomicInteger addCnt = new AtomicInteger();
+    for (FileScanTask fileScanTask : arcticTable.asUnkeyedTable().newScan().planFiles()) {
+      DataFile dataFile = fileScanTask.file();
+      String partitionPath = arcticTable.spec().partitionToPath(dataFile.partition());
+      currentPartitions.add(partitionPath);
+      if (!anyTaskRunning(partitionPath)) {
+        List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
+        fileScanTasks.add(fileScanTask);
+        addCnt.getAndIncrement();
+      }
+    }
+
+    LOG.debug("{} ==== {} add {} data files" + " After added, partition cnt of tree: {}",
+        tableId(), getOptimizeType(), addCnt, partitionFileList.size());
   }
 
   @Override
@@ -94,6 +116,10 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
     return OptimizeType.Major;
   }
 
+  public boolean hasFileToOptimize() {
+    return !partitionFileList.isEmpty();
+  }
+
   @Override
   protected List<BaseOptimizeTask> collectTask(String partition) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
@@ -106,9 +132,13 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
 
     List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(fileScanTasks);
     for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
-      if (CollectionUtils.isNotEmpty(fileScanTask)) {
-        collector.add(buildOptimizeTask(fileScanTask, taskPartitionConfig));
-      }
+      List<DataFile> dataFiles = new ArrayList<>();
+      List<DeleteFile> eqDeleteFiles = new ArrayList<>();
+      List<DeleteFile> posDeleteFiles = new ArrayList<>();
+      getOptimizeFile(fileScanTask, dataFiles, eqDeleteFiles, posDeleteFiles);
+
+      collector.add(buildOptimizeTask(dataFiles, Collections.emptyList(),
+          eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
     }
 
     return collector;
