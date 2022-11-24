@@ -46,8 +46,12 @@ public class IcebergContentFile<T extends ContentFile<T>> implements Serializabl
     this.sequenceNumber = sequenceNumber;
   }
 
+  public FileContent content(){
+    return contentFile.content();
+  }
+
   public boolean isDataFile() {
-    return contentFile.content() == FileContent.DATA;
+    return content() == FileContent.DATA;
   }
 
   public boolean isDeleteFile() {
@@ -71,4 +75,6 @@ public class IcebergContentFile<T extends ContentFile<T>> implements Serializabl
         ", sequenceNumber=" + sequenceNumber +
         '}';
   }
+
+
 }
