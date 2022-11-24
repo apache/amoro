@@ -23,6 +23,7 @@ import org.apache.iceberg.ContentFile;
 
 public class OptimizeTaskResult<F extends ContentFile<?>> {
   private OptimizeTaskStat optimizeTaskStat;
+
   private Iterable<F> targetFiles;
 
   public OptimizeTaskStat getOptimizeTaskStat() {
