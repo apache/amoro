@@ -203,19 +203,21 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
     Schema convertSchema;
+    boolean defaultTimeZoneUsed;
     try {
       CatalogMeta catalogMeta = client.getCatalog(catalog.name());
       String catalogType = catalogMeta.getCatalogType();
+      SparkSession sparkSession = SparkSession.active();
       if (CATALOG_TYPE_HIVE.equals(catalogType)) {
-        SparkSession sparkSession = SparkSession.active();
-        if (Boolean.parseBoolean(
+        defaultTimeZoneUsed = true;
+      } else {
+        defaultTimeZoneUsed = Boolean.parseBoolean(
             sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-                USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
-          sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
-          convertSchema = SparkSchemaUtil.convert(schema, true);
-        } else {
-          convertSchema = SparkSchemaUtil.convert(schema, false);
-        }
+                "false"));
+      }
+      if (defaultTimeZoneUsed) {
+        sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
+        convertSchema = SparkSchemaUtil.convert(schema, true);
       } else {
         convertSchema = SparkSchemaUtil.convert(schema, false);
       }
