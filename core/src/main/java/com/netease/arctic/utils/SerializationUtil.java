@@ -18,7 +18,7 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.ams.api.optimize.TaskFileWrapper;
+import com.netease.arctic.data.IcebergContentFile;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.util.ByteBuffers;
 
@@ -80,7 +80,7 @@ public class SerializationUtil {
     return (ContentFile<?>) toObject(bytes);
   }
 
-  public static TaskFileWrapper<?> toIcebergTaskFileWrapper(ByteBuffer buffer) {
-    return (TaskFileWrapper<?>) toObject(buffer);
+  public static IcebergContentFile<?> toIcebergContentFile(ByteBuffer buffer) {
+    return (IcebergContentFile<?>) toObject(buffer);
   }
 }

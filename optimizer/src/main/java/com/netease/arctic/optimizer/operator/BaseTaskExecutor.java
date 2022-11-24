@@ -240,16 +240,16 @@ public class BaseTaskExecutor implements Serializable {
 
     if (TableTypeUtil.isIcebergTableFormat(table)) {
       for (ByteBuffer file : task.getBaseFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergTaskFileWrapper(file), DataFileType.BASE_FILE);
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.BASE_FILE);
       }
       for (ByteBuffer file : task.getInsertFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergTaskFileWrapper(file), DataFileType.INSERT_FILE);
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.INSERT_FILE);
       }
       for (ByteBuffer file : task.getDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergTaskFileWrapper(file), DataFileType.EQ_DELETE_FILE);
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.EQ_DELETE_FILE);
       }
       for (ByteBuffer file : task.getPosDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergTaskFileWrapper(file), DataFileType.POS_DELETE_FILE);
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.POS_DELETE_FILE);
       }
     } else {
       for (ByteBuffer file : task.getBaseFiles()) {

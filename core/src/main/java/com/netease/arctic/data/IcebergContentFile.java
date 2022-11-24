@@ -16,20 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.api.optimize;
+package com.netease.arctic.data;
+
+import org.apache.iceberg.ContentFile;
 
 import java.io.Serializable;
 
-public class TaskFileWrapper<T> implements Serializable {
-  private T taskFile;
+public class IcebergContentFile<T extends ContentFile<T>> implements Serializable {
+  private T contentFile;
   private Long sequenceNumber;
 
-  public T getTaskFile() {
-    return taskFile;
+  public T getContentFile() {
+    return contentFile;
   }
 
-  public void setTaskFile(T taskFile) {
-    this.taskFile = taskFile;
+  public void setContentFile(T contentFile) {
+    this.contentFile = contentFile;
   }
 
   public Long getSequenceNumber() {
@@ -42,8 +44,8 @@ public class TaskFileWrapper<T> implements Serializable {
 
   @Override
   public String toString() {
-    return "TaskFileWrapper{" +
-        "taskFile=" + taskFile +
+    return "IcebergContentFile{" +
+        "contentFile=" + contentFile +
         ", sequenceNumber=" + sequenceNumber +
         '}';
   }

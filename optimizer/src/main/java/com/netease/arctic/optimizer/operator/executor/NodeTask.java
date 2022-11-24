@@ -21,9 +21,9 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.google.common.collect.Iterables;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.api.optimize.TaskFileWrapper;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -45,10 +45,10 @@ public class NodeTask {
   private final List<DataFile> insertFiles = new ArrayList<>();
   private final List<DataFile> deleteFiles = new ArrayList<>();
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
-  private final List<TaskFileWrapper<DataFile>> icebergDataFiles = new ArrayList<>();
-  private final List<TaskFileWrapper<DataFile>> icebergSmallDataFiles = new ArrayList<>();
-  private final List<TaskFileWrapper<DeleteFile>> icebergEqDeleteFiles = new ArrayList<>();
-  private final List<TaskFileWrapper<DeleteFile>> icebergPosDeleteFiles = new ArrayList<>();
+  private final List<IcebergContentFile<DataFile>> icebergDataFiles = new ArrayList<>();
+  private final List<IcebergContentFile<DataFile>> icebergSmallDataFiles = new ArrayList<>();
+  private final List<IcebergContentFile<DeleteFile>> icebergEqDeleteFiles = new ArrayList<>();
+  private final List<IcebergContentFile<DeleteFile>> icebergPosDeleteFiles = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;
@@ -92,7 +92,7 @@ public class NodeTask {
     }
   }
 
-  public void addFile(TaskFileWrapper taskFileWrapper, DataFileType fileType) {
+  public void addFile(IcebergContentFile icebergContentFile, DataFileType fileType) {
     if (fileType == null) {
       LOG.warn("file type is null");
       return;
@@ -100,16 +100,16 @@ public class NodeTask {
 
     switch (fileType) {
       case BASE_FILE:
-        icebergDataFiles.add(taskFileWrapper);
+        icebergDataFiles.add(icebergContentFile);
         break;
       case INSERT_FILE:
-        icebergSmallDataFiles.add(taskFileWrapper);
+        icebergSmallDataFiles.add(icebergContentFile);
         break;
       case EQ_DELETE_FILE:
-        icebergEqDeleteFiles.add(taskFileWrapper);
+        icebergEqDeleteFiles.add(icebergContentFile);
         break;
       case POS_DELETE_FILE:
-        icebergPosDeleteFiles.add(taskFileWrapper);
+        icebergPosDeleteFiles.add(icebergContentFile);
         break;
       default:
         LOG.warn("file type is {}, not add in node", fileType);
@@ -130,17 +130,17 @@ public class NodeTask {
     Iterables.addAll(allFiles, insertFiles);
     Iterables.addAll(allFiles, deleteFiles);
     Iterables.addAll(allFiles, posDeleteFiles);
-    for (TaskFileWrapper<DataFile> icebergDataFile : icebergDataFiles) {
-      allFiles.add(icebergDataFile.getTaskFile());
+    for (IcebergContentFile<DataFile> icebergDataFile : icebergDataFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
     }
-    for (TaskFileWrapper<DataFile> icebergDataFile : icebergSmallDataFiles) {
-      allFiles.add(icebergDataFile.getTaskFile());
+    for (IcebergContentFile<DataFile> icebergDataFile : icebergSmallDataFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
     }
-    for (TaskFileWrapper<DeleteFile> icebergDataFile : icebergEqDeleteFiles) {
-      allFiles.add(icebergDataFile.getTaskFile());
+    for (IcebergContentFile<DeleteFile> icebergDataFile : icebergEqDeleteFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
     }
-    for (TaskFileWrapper<DeleteFile> icebergDataFile : icebergPosDeleteFiles) {
-      allFiles.add(icebergDataFile.getTaskFile());
+    for (IcebergContentFile<DeleteFile> icebergDataFile : icebergPosDeleteFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
     }
     return allFiles;
   }
