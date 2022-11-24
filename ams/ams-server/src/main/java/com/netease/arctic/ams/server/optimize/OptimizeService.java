@@ -64,9 +64,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 public class OptimizeService extends IJDBCService implements IOptimizeService {
@@ -78,8 +77,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private static final long DEFAULT_CACHE_REFRESH_TIME = 60_000; // 1min
-  private final Map<TableIdentifier, TableOptimizeItem> cachedTables = new HashMap<>();
-  private final ReadWriteLock tablesLock = new ReentrantReadWriteLock();
+  private final ConcurrentHashMap<TableIdentifier, TableOptimizeItem> cachedTables = new ConcurrentHashMap<>();
 
   private long refreshTime = 0;
 
@@ -97,16 +95,14 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   }
 
   private void init() {
-    tablesLock.writeLock().lock();
     try {
       LOG.info("OptimizeService init...");
       loadTables();
       initOptimizeTasksIntoOptimizeQueue();
+      scheduleRefresh();
       LOG.info("OptimizeService init completed");
     } catch (Exception e) {
       LOG.error("OptimizeService init failed", e);
-    } finally {
-      tablesLock.writeLock().unlock();
     }
   }
 
@@ -124,7 +120,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     if (checkTasks == null) {
       return;
     }
-    List<TableIdentifier> validTables = listCachedTables(true);
+    List<TableIdentifier> validTables = listCachedTables();
     checkTasks.checkRunningTask(
         new HashSet<>(validTables),
         identifier -> checkInterval,
@@ -134,16 +130,8 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   }
 
   @Override
-  public List<TableIdentifier> listCachedTables(boolean forceRefresh) {
-    tablesLock.readLock().lock();
-    try {
-      if (!forceRefresh && !cacheExpired()) {
-        return new ArrayList<>(cachedTables.keySet());
-      }
-    } finally {
-      tablesLock.readLock().unlock();
-    }
-    return refreshAndListTables(forceRefresh);
+  public List<TableIdentifier> listCachedTables() {
+    return new ArrayList<>(cachedTables.keySet());
   }
 
   private void clearTableCache(TableIdentifier tableIdentifier) {
@@ -167,8 +155,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private void addTableIntoCache(TableOptimizeItem arcticTableItem, Map<String, String> properties,
-                                 boolean persistRuntime) {
+  private void addTableIntoCache(
+      TableOptimizeItem arcticTableItem, Map<String, String> properties,
+      boolean persistRuntime) {
     cachedTables.put(arcticTableItem.getTableIdentifier(), arcticTableItem);
     try {
       int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
@@ -189,7 +178,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   public TableOptimizeItem getTableOptimizeItem(TableIdentifier tableIdentifier) throws NoSuchObjectException {
     TableOptimizeItem tableOptimizeItem = cachedTables.get(tableIdentifier);
     if (tableOptimizeItem == null) {
-      listCachedTables(true);
+      listCachedTables();
       TableOptimizeItem reloadTableOptimizeItem = cachedTables.get(tableIdentifier);
       if (reloadTableOptimizeItem == null) {
         throw new NoSuchObjectException("can't find table " + tableIdentifier);
@@ -281,36 +270,31 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     }
   }
 
-  private List<TableIdentifier> refreshAndListTables(boolean forceRefresh) {
-    tablesLock.writeLock().lock();
-    try {
-      if (forceRefresh || cacheExpired()) {
-        LOG.info("refresh tables");
-        Set<TableIdentifier> tableIdentifiers =
-            new HashSet<>(com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog());
-        final long now = System.currentTimeMillis();
-        List<TableIdentifier> toAddTables = tableIdentifiers.stream()
-            .filter(t -> !cachedTables.containsKey(t))
-            .collect(Collectors.toList());
-        List<TableIdentifier> toRemoveTables = cachedTables.keySet().stream()
-            .filter(t -> !tableIdentifiers.contains(t))
-            .collect(Collectors.toList());
+  private void refreshAndListTables() {
+    if (cacheExpired()) {
+      LOG.info("refresh tables");
+      Set<TableIdentifier> tableIdentifiers =
+          new HashSet<>(com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog());
+      final long now = System.currentTimeMillis();
+      List<TableIdentifier> toAddTables = tableIdentifiers.stream()
+          .filter(t -> !cachedTables.containsKey(t))
+          .collect(Collectors.toList());
+      List<TableIdentifier> toRemoveTables = cachedTables.keySet().stream()
+          .filter(t -> !tableIdentifiers.contains(t))
+          .collect(Collectors.toList());
 
-        addNewTables(toAddTables);
-        clearRemovedTables(toRemoveTables);
-        if (!toAddTables.isEmpty() || !toRemoveTables.isEmpty()) {
-          internalCheckOptimizeChecker(
-              this.optimizeStatusCheckInterval == null ? DEFAULT_CHECK_INTERVAL : this.optimizeStatusCheckInterval);
-        }
-        this.refreshTime = now;
+      addNewTables(toAddTables);
+      clearRemovedTables(toRemoveTables);
+      if (!toAddTables.isEmpty() || !toRemoveTables.isEmpty()) {
+        internalCheckOptimizeChecker(
+            this.optimizeStatusCheckInterval == null ? DEFAULT_CHECK_INTERVAL : this.optimizeStatusCheckInterval);
       }
-      return new ArrayList<>(cachedTables.keySet());
-    } finally {
-      tablesLock.writeLock().unlock();
+      this.refreshTime = now;
     }
   }
 
-  private void addNewTables(List<TableIdentifier> toAddTables) {
+  @Override
+  public void addNewTables(List<TableIdentifier> toAddTables) {
     if (CollectionUtils.isEmpty(toAddTables)) {
       return;
     }
@@ -377,7 +361,8 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
             LOG.error("can't find optimize task runtime in sysdb, tableIdentifier = {}, taskId = {}",
                 t.getTableIdentifier(), t.getTaskId());
           }
-          return new OptimizeTaskItem(t,
+          return new OptimizeTaskItem(
+              t,
               optimizeTaskRuntimes.getOrDefault(t.getTaskId(), new BaseOptimizeTaskRuntime(t.getTaskId())));
         })
         .collect(Collectors.toList());
@@ -508,5 +493,23 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           getMapper(sqlSession, TableOptimizeRuntimeMapper.class);
       return tableOptimizeRuntimeMapper.selectTableOptimizeRuntimes();
     }
+  }
+
+  private void scheduleRefresh() {
+    LOG.info("start schedule refresh");
+    new Thread(() -> {
+      while (true) {
+        try {
+          refreshAndListTables();
+        } catch (Exception e) {
+          LOG.error("schedule refresh error", e);
+        }
+        try {
+          Thread.sleep(DEFAULT_CACHE_REFRESH_TIME);
+        } catch (InterruptedException e) {
+          throw new RuntimeException(e);
+        }
+      }
+    }).start();
   }
 }

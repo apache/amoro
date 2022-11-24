@@ -28,7 +28,6 @@ import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
-import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
@@ -43,7 +42,6 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +56,6 @@ import java.util.stream.Collectors;
  */
 public class OptimizerController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerController.class);
-  private static final IMetaService iMetaService = ServiceContainer.getMetaService();
   private static final IOptimizeService iOptimizeService = ServiceContainer.getOptimizeService();
 
   /**
@@ -79,7 +76,7 @@ public class OptimizerController extends RestBaseController {
 
     try {
       List<TableOptimizeItem> arcticTableItemList = new ArrayList<>();
-      List<TableIdentifier> tables = ServiceContainer.getOptimizeService().listCachedTables(false);
+      List<TableIdentifier> tables = ServiceContainer.getOptimizeService().listCachedTables();
 
       for (TableIdentifier tableIdentifier : tables) {
         TableOptimizeItem arcticTableItem = iOptimizeService.getTableOptimizeItem(tableIdentifier);
@@ -203,8 +200,6 @@ public class OptimizerController extends RestBaseController {
 
   /**
    * release optimizer.
-   *
-   * @pathParam jobId
    */
   public static void releaseOptimizer(Context ctx) {
     String jobId = ctx.pathParam("jobId");

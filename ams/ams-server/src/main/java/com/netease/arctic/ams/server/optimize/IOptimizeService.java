@@ -35,10 +35,9 @@ public interface IOptimizeService {
   /**
    * List cached tables in OptimizeService.
    *
-   * @param forceRefresh whether force refresh
    * @return table id list
    */
-  List<TableIdentifier> listCachedTables(boolean forceRefresh);
+  List<TableIdentifier> listCachedTables();
 
   /**
    * Get TableOptimizeItem in OptimizeService.
@@ -92,4 +91,6 @@ public interface IOptimizeService {
    * @param expireTime min timestamp which record need to retain
    */
   void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
+
+  void addNewTables(List<TableIdentifier> toAddTables);
 }
