@@ -75,7 +75,7 @@ public class IcebergExecutor extends BaseExecutor<DataFile> {
     Iterable<DataFile> targetFiles;
     LOG.info("start process native optimize task: {}", task);
 
-    List<FileScanTask> fileScanTasks = task.fileScanTasks();
+    List<FileScanTask> fileScanTasks = null;
 
     targetFiles = table.io().doAs(() -> {
       CloseableIterator<Record> recordIterator = openTask(fileScanTasks, table.schema());
