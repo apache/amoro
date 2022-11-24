@@ -606,7 +606,7 @@ public class TableMetaStore implements Serializable {
         }
       }
       if (properties.containsKey(AUTH_METHOD)) {
-        String authMethod = properties.get(AUTH_METHOD);
+        String authMethod = properties.get(AUTH_METHOD).toUpperCase();
         if (AUTH_METHOD_SIMPLE.equals(authMethod) && properties.containsKey(SIMPLE_USER_NAME)) {
           withSimpleAuth(properties.get(SIMPLE_USER_NAME));
         } else if (AUTH_METHOD_KERBEROS.equals(authMethod) && properties.containsKey(KEYTAB_LOGIN_USER) &&
