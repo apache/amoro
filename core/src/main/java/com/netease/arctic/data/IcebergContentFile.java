@@ -26,15 +26,15 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Serializable;
 
-public class IcebergContentFile<T extends ContentFile<T>> implements Serializable {
-  private T contentFile;
+public class IcebergContentFile implements Serializable {
+  private ContentFile<?> contentFile;
   private Long sequenceNumber;
 
-  public T getContentFile() {
+  public ContentFile<?> getContentFile() {
     return contentFile;
   }
 
-  public void setContentFile(T contentFile) {
+  public void setContentFile(ContentFile<?> contentFile) {
     this.contentFile = contentFile;
   }
 

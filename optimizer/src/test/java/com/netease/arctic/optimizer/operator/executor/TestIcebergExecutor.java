@@ -292,7 +292,6 @@ public class TestIcebergExecutor {
     nodeTask.setTableIdentifier(arcticTable.id());
     nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Minor, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
-    nodeTask.setFileScanTasks(IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator()));
 
     return nodeTask;
   }

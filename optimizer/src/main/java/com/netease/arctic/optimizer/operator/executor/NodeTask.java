@@ -45,10 +45,10 @@ public class NodeTask {
   private final List<DataFile> insertFiles = new ArrayList<>();
   private final List<DataFile> deleteFiles = new ArrayList<>();
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
-  private final List<IcebergContentFile<DataFile>> icebergDataFiles = new ArrayList<>();
-  private final List<IcebergContentFile<DataFile>> icebergSmallDataFiles = new ArrayList<>();
-  private final List<IcebergContentFile<DeleteFile>> icebergEqDeleteFiles = new ArrayList<>();
-  private final List<IcebergContentFile<DeleteFile>> icebergPosDeleteFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergDataFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergSmallDataFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergEqDeleteFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergPosDeleteFiles = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;
@@ -130,16 +130,16 @@ public class NodeTask {
     Iterables.addAll(allFiles, insertFiles);
     Iterables.addAll(allFiles, deleteFiles);
     Iterables.addAll(allFiles, posDeleteFiles);
-    for (IcebergContentFile<DataFile> icebergDataFile : icebergDataFiles) {
+    for (IcebergContentFile icebergDataFile : icebergDataFiles) {
       allFiles.add(icebergDataFile.getContentFile());
     }
-    for (IcebergContentFile<DataFile> icebergDataFile : icebergSmallDataFiles) {
+    for (IcebergContentFile icebergDataFile : icebergSmallDataFiles) {
       allFiles.add(icebergDataFile.getContentFile());
     }
-    for (IcebergContentFile<DeleteFile> icebergDataFile : icebergEqDeleteFiles) {
+    for (IcebergContentFile icebergDataFile : icebergEqDeleteFiles) {
       allFiles.add(icebergDataFile.getContentFile());
     }
-    for (IcebergContentFile<DeleteFile> icebergDataFile : icebergPosDeleteFiles) {
+    for (IcebergContentFile icebergDataFile : icebergPosDeleteFiles) {
       allFiles.add(icebergDataFile.getContentFile());
     }
     return allFiles;

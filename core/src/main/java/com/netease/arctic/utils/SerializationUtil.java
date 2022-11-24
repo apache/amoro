@@ -80,7 +80,7 @@ public class SerializationUtil {
     return (ContentFile<?>) toObject(bytes);
   }
 
-  public static IcebergContentFile<?> toIcebergContentFile(ByteBuffer buffer) {
-    return (IcebergContentFile<?>) toObject(buffer);
+  public static IcebergContentFile toIcebergContentFile(ByteBuffer buffer) {
+    return (IcebergContentFile) toObject(buffer);
   }
 }
