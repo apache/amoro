@@ -18,8 +18,8 @@
 
 package com.netease.arctic.utils;
 
+import com.netease.arctic.ams.api.optimize.TaskFileWrapper;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.util.ByteBuffers;
 
 import java.io.ByteArrayInputStream;
@@ -80,7 +80,7 @@ public class SerializationUtil {
     return (ContentFile<?>) toObject(bytes);
   }
 
-  public static FileScanTask toIcebergFileScanTask(ByteBuffer buffer) {
-    return (FileScanTask) toObject(buffer);
+  public static TaskFileWrapper<?> toIcebergTaskFileWrapper(ByteBuffer buffer) {
+    return (TaskFileWrapper<?>) toObject(buffer);
   }
 }

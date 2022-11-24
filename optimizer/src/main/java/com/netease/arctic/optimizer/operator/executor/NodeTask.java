@@ -21,13 +21,13 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.google.common.collect.Iterables;
 import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
+import com.netease.arctic.ams.api.optimize.TaskFileWrapper;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.MoreObjects;
 import org.slf4j.Logger;
@@ -45,7 +45,10 @@ public class NodeTask {
   private final List<DataFile> insertFiles = new ArrayList<>();
   private final List<DataFile> deleteFiles = new ArrayList<>();
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
-  private List<FileScanTask> fileScanTasks = new ArrayList<>();
+  private final List<TaskFileWrapper<DataFile>> icebergDataFiles = new ArrayList<>();
+  private final List<TaskFileWrapper<DataFile>> icebergSmallDataFiles = new ArrayList<>();
+  private final List<TaskFileWrapper<DeleteFile>> icebergEqDeleteFiles = new ArrayList<>();
+  private final List<TaskFileWrapper<DeleteFile>> icebergPosDeleteFiles = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;
@@ -89,6 +92,31 @@ public class NodeTask {
     }
   }
 
+  public void addFile(TaskFileWrapper taskFileWrapper, DataFileType fileType) {
+    if (fileType == null) {
+      LOG.warn("file type is null");
+      return;
+    }
+
+    switch (fileType) {
+      case BASE_FILE:
+        icebergDataFiles.add(taskFileWrapper);
+        break;
+      case INSERT_FILE:
+        icebergSmallDataFiles.add(taskFileWrapper);
+        break;
+      case EQ_DELETE_FILE:
+        icebergEqDeleteFiles.add(taskFileWrapper);
+        break;
+      case POS_DELETE_FILE:
+        icebergPosDeleteFiles.add(taskFileWrapper);
+        break;
+      default:
+        LOG.warn("file type is {}, not add in node", fileType);
+        // ignore the object
+    }
+  }
+
   public List<DataFile> dataFiles() {
     dataFiles.clear();
     Iterables.addAll(dataFiles, baseFiles);
@@ -102,6 +130,18 @@ public class NodeTask {
     Iterables.addAll(allFiles, insertFiles);
     Iterables.addAll(allFiles, deleteFiles);
     Iterables.addAll(allFiles, posDeleteFiles);
+    for (TaskFileWrapper<DataFile> icebergDataFile : icebergDataFiles) {
+      allFiles.add(icebergDataFile.getTaskFile());
+    }
+    for (TaskFileWrapper<DataFile> icebergDataFile : icebergSmallDataFiles) {
+      allFiles.add(icebergDataFile.getTaskFile());
+    }
+    for (TaskFileWrapper<DeleteFile> icebergDataFile : icebergEqDeleteFiles) {
+      allFiles.add(icebergDataFile.getTaskFile());
+    }
+    for (TaskFileWrapper<DeleteFile> icebergDataFile : icebergPosDeleteFiles) {
+      allFiles.add(icebergDataFile.getTaskFile());
+    }
     return allFiles;
   }
 
@@ -119,10 +159,6 @@ public class NodeTask {
 
   public List<DeleteFile> posDeleteFiles() {
     return posDeleteFiles;
-  }
-
-  public List<FileScanTask> fileScanTasks() {
-    return fileScanTasks;
   }
 
   public Set<DataTreeNode> getSourceNodes() {
@@ -169,9 +205,6 @@ public class NodeTask {
     return taskId.getType();
   }
 
-  public void setFileScanTasks(List<FileScanTask> fileScanTasks) {
-    this.fileScanTasks = fileScanTasks;
-  }
 
   @Override
   public String toString() {
@@ -183,7 +216,10 @@ public class NodeTask {
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
         .add("posDeleteFiles", posDeleteFiles.size())
-        .add("fileScanTasks", fileScanTasks.size())
+        .add("icebergDataFiles", icebergDataFiles.size())
+        .add("icebergSmallDataFiles", icebergSmallDataFiles.size())
+        .add("icebergEqDeleteFiles", icebergEqDeleteFiles.size())
+        .add("icebergPosDeleteFiles", icebergPosDeleteFiles.size())
         .add("customHiveSubdirectory", customHiveSubdirectory)
         .toString();
   }
