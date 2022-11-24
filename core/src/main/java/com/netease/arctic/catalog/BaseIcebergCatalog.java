@@ -75,7 +75,7 @@ public class BaseIcebergCatalog implements ArcticCatalog {
           .map(namespace -> namespace.level(0)).distinct().collect(Collectors.toList()));
     } else {
       throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s do now implement SupportsNamespaces",
+          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
   }
@@ -89,7 +89,7 @@ public class BaseIcebergCatalog implements ArcticCatalog {
       });
     } else {
       throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s do now implement SupportsNamespaces",
+          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
   }
@@ -103,7 +103,7 @@ public class BaseIcebergCatalog implements ArcticCatalog {
       });
     } else {
       throw new UnsupportedOperationException(String.format(
-          "Iceberg catalog: %s do now implement SupportsNamespaces",
+          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
   }
