@@ -77,6 +77,12 @@ public class CatalogUtil {
     return catalogCache.get(name);
   }
 
+  public static void removeCatalogCache(String name) {
+    synchronized (CatalogUtil.class) {
+      catalogCache.remove(name);
+    }
+  }
+
   public static boolean isIcebergCatalog(String name) {
     ArcticCatalog ac = getArcticCatalog(name);
     return ac instanceof BaseIcebergCatalog;
