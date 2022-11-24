@@ -132,7 +132,8 @@ public class OptimizeQueueService extends IJDBCService {
       validateAddQueue(queue);
       OptimizeQueueMapper optimizeQueueMapper = getMapper(sqlSession, OptimizeQueueMapper.class);
       optimizeQueueMapper.insertQueue(queue);
-      optimizeQueues.put(queue.getQueueId(), OptimizeQueueWrapper.build(queue));
+      OptimizeQueueMeta finalQueue = optimizeQueueMapper.selectOptimizeQueue(queue.getName());
+      optimizeQueues.put(finalQueue.getQueueId(), OptimizeQueueWrapper.build(finalQueue));
 
       return queue;
     } finally {

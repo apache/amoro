@@ -42,6 +42,15 @@ public interface OptimizeQueueMapper {
   })
   List<OptimizeQueueMeta> selectOptimizeQueues();
 
+  @Select("select group_id, name, properties, container from " + TABLE_NAME + " where name = #{queueName}")
+  @Results({
+      @Result(property = "queueId", column = "group_id"),
+      @Result(property = "name", column = "name"),
+      @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
+      @Result(property = "container", column = "container")
+  })
+  OptimizeQueueMeta selectOptimizeQueue(@Param("queueName") String queueName);
+
   @Insert("insert into " + TABLE_NAME + " (name,properties,container) values " +
       "(#{optimizeQueue.name}, #{optimizeQueue.properties, typeHandler=com.netease.arctic" +
       ".ams.server.mybatis.Map2StringConverter}, #{optimizeQueue.container})")
