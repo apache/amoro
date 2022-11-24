@@ -19,6 +19,10 @@
 package com.netease.arctic.data;
 
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Serializable;
 
@@ -40,6 +44,24 @@ public class IcebergContentFile<T extends ContentFile<T>> implements Serializabl
 
   public void setSequenceNumber(Long sequenceNumber) {
     this.sequenceNumber = sequenceNumber;
+  }
+
+  public boolean isDataFile() {
+    return contentFile.content() == FileContent.DATA;
+  }
+
+  public boolean isDeleteFile() {
+    return !isDataFile();
+  }
+
+  public DataFile asDataFile() {
+    Preconditions.checkArgument(isDataFile(), "Not a data file");
+    return (DataFile) contentFile;
+  }
+
+  public DeleteFile asDeleteFile() {
+    Preconditions.checkArgument(isDeleteFile(), "Not a delete file");
+    return (DeleteFile) contentFile;
   }
 
   @Override
