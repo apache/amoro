@@ -194,12 +194,12 @@ public class AmsTestBase {
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
+    AdaptHiveService adaptHiveService = new AdaptHiveService();
+    when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     JDBCMetaService metaService = new JDBCMetaService();
     when(ServiceContainer.getMetaService()).thenReturn(metaService);
     PlatformFileInfoService platformFileInfoService = new PlatformFileInfoService();
     when(ServiceContainer.getPlatformFileInfoService()).thenReturn(platformFileInfoService);
-    AdaptHiveService adaptHiveService = new AdaptHiveService();
-    when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
 
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());
