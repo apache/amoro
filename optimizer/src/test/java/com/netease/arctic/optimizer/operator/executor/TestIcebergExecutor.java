@@ -11,6 +11,7 @@ import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.optimizer.OptimizerConfig;
+import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.commons.collections.IteratorUtils;
@@ -173,6 +174,33 @@ public class TestIcebergExecutor {
     result.getTargetFiles().forEach(dataFile -> totalRecordCount.set(totalRecordCount.get() + dataFile.recordCount()));
 
     Assert.assertEquals(46, totalRecordCount.get());
+  }
+
+  @Test
+  public void testExecuteTimeout() throws Exception {
+    icebergTable.asUnkeyedTable().updateProperties()
+        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "100")
+        .commit();
+    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable());
+    insertEqDeleteFiles(icebergTable.asUnkeyedTable());
+    insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
+
+    NodeTask nodeTask = constructNodeTask(icebergTable.asUnkeyedTable());
+    nodeTask.setMaxExecuteTime(0L);
+    String[] arg = new String[0];
+    OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
+    optimizerConfig.setOptimizerId("UnitTest");
+    IcebergExecutor
+        icebergExecutor = new IcebergExecutor(nodeTask, icebergTable, System.currentTimeMillis(), optimizerConfig);
+    boolean isTimeout = false;
+    try {
+      icebergExecutor.execute();
+    } catch (TimeoutException e) {
+      isTimeout = true;
+    }
+
+    Assert.assertTrue(isTimeout);
   }
 
   protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable) throws IOException {

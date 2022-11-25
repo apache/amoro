@@ -34,18 +34,21 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.TaskWrapper;
+import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.optimizer.operator.executor.Executor;
 import com.netease.arctic.optimizer.operator.executor.ExecutorFactory;
 import com.netease.arctic.optimizer.operator.executor.NodeTask;
 import com.netease.arctic.optimizer.operator.executor.OptimizeTaskResult;
 import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,6 +129,10 @@ public class BaseTaskExecutor implements Serializable {
       OptimizeTaskResult<?> result = optimize.execute();
       onTaskFinish(result.getTargetFiles());
       return result.getOptimizeTaskStat();
+    } catch (TimeoutException timeoutException) {
+      LOG.error("execute task timeout {}", task.getTaskId());
+      onTaskFailed(timeoutException);
+      return constructFailedResult(task, timeoutException);
     } catch (Throwable t) {
       LOG.error("failed to execute task {}", task.getTaskId(), t);
       onTaskFailed(t);
@@ -279,6 +286,10 @@ public class BaseTaskExecutor implements Serializable {
 
       String customHiveSubdirectory = properties.get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
       nodeTask.setCustomHiveSubdirectory(customHiveSubdirectory);
+
+      Long maxExecuteTime = PropertyUtil.propertyAsLong(properties,
+          OptimizeTaskProperties.MAX_EXECUTE_TIME, TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
+      nodeTask.setMaxExecuteTime(maxExecuteTime);
     }
 
     return nodeTask;
