@@ -30,6 +30,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -49,12 +50,11 @@ import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.ArrayUtil;
 import org.apache.iceberg.util.PropertyUtil;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -64,57 +64,81 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class SequenceNumberFetcherTest {
   private static final Logger LOG = LoggerFactory.getLogger(SequenceNumberFetcherTest.class);
-  private Table table;
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
 
-  @Before
-  public void init() {
+  @Test
+  public void testUnPartitionTable() throws IOException {
     Tables hadoopTables = new HadoopTables(new Configuration());
     Map<String, String> tableProperties = Maps.newHashMap();
     tableProperties.put(TableProperties.FORMAT_VERSION, "2");
 
     String path = tempFolder.getRoot().getPath();
     Log.info(path);
-    table = hadoopTables.create(TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperties,
+    Table table = hadoopTables.create(TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperties,
         path + "/test/table1");
-
-  }
-
-  @After
-  public void clean() {
-
+    testTable(table);
   }
 
   @Test
-  public void testUnpartitionedTable() throws IOException {
+  public void testPartitionTable() throws IOException {
+    Tables hadoopTables = new HadoopTables(new Configuration());
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+
+    String path = tempFolder.getRoot().getPath();
+    Log.info(path);
+    PartitionSpec spec = PartitionSpec.builderFor(TableTestBase.TABLE_SCHEMA)
+        .identity("name").build();
+    Table table = hadoopTables.create(TableTestBase.TABLE_SCHEMA, spec, tableProperties,
+        path + "/test/table2");
+    testTable(table);
+  }
+
+  private void testTable(Table table) throws IOException {
     Map<String, Long> checkedDeletes = Maps.newHashMap();
     Map<String, Long> checkedDataFiles = Maps.newHashMap();
 
     List<DataFile> dataFiles1 = insertDataFiles(table, 10);
-    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 1);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 1);
 
-    insertEqDeleteFiles(table, 1);
-    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 2);
+    List<DeleteFile> deleteFiles1 = insertEqDeleteFiles(table, 1);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 2);
 
-    insertPosDeleteFiles(table, dataFiles1);
-    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 3);
+    List<DeleteFile> deleteFiles2 = insertPosDeleteFiles(table, dataFiles1);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 3);
 
-    List<DataFile> dataFiles2 = insertDataFiles(table, 1);
-    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 4);
+    List<DataFile> dataFiles2 = insertDataFiles(table, 10);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 4);
 
-    overwriteDataFiles(table, 1, dataFiles2);
-    checkNewFileSequenceNumber(checkedDeletes, checkedDataFiles, 5);
+    List<DataFile> dataFiles3 = overwriteDataFiles(table, dataFiles1, writeNewDataFiles(table, 10));
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 5);
 
+    List<DataFile> dataFiles4 = rewriteFiles(table, dataFiles2, writeNewDataFiles(table, 10), 4);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 4);
+
+    List<DeleteFile> deleteFiles3 = insertEqDeleteFiles(table, 1);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 7);
+
+    List<DeleteFile> deleteFiles4 = insertPosDeleteFiles(table, dataFiles4);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 8);
+
+    Set<DeleteFile> currentAllDeleteFiles = getCurrentAllDeleteFiles(table);
+    Assert.assertEquals(2, currentAllDeleteFiles.size());
+    rewriteFiles(table, currentAllDeleteFiles, writePosDeleteFiles(table, dataFiles3));
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 9);
   }
 
-  private void checkNewFileSequenceNumber(Map<String, Long> checkedDeletes, Map<String, Long> checkedDataFiles,
+  private void checkNewFileSequenceNumber(Table table, Map<String, Long> checkedDeletes,
+                                          Map<String, Long> checkedDataFiles,
                                           long expectSequence) {
     SequenceNumberFetcher sequenceNumberFetcher;
     sequenceNumberFetcher = SequenceNumberFetcher.with(table, table.currentSnapshot().snapshotId());
@@ -143,8 +167,13 @@ public class SequenceNumberFetcherTest {
     }
   }
 
-  private List<DataFile> getCurrentAllDataFiles() {
-    return Lists.newArrayList(CloseableIterable.transform(table.newScan().planFiles(), FileScanTask::file));
+  private Set<DeleteFile> getCurrentAllDeleteFiles(Table table) {
+    Set<DeleteFile> results = Sets.newHashSet();
+    CloseableIterable<FileScanTask> fileScanTasks = table.newScan().planFiles();
+    for (FileScanTask fileScanTask : fileScanTasks) {
+      results.addAll(fileScanTask.deletes());
+    }
+    return results;
   }
 
   private List<DataFile> insertDataFiles(Table arcticTable, int length) throws IOException {
@@ -157,40 +186,62 @@ public class SequenceNumberFetcherTest {
     return result;
   }
 
-  private List<DataFile> overwriteDataFiles(Table arcticTable, int length, List<DataFile> dataFiles) throws IOException {
-    List<DataFile> result = writeNewDataFiles(arcticTable, length);
-
+  private List<DataFile> overwriteDataFiles(Table arcticTable, List<DataFile> toDeleteDataFiles,
+                                            List<DataFile> newDataFiles) {
     OverwriteFiles overwrite = arcticTable.newOverwrite();
-    result.forEach(overwrite::addFile);
-    dataFiles.forEach(overwrite::deleteFile);
+    toDeleteDataFiles.forEach(overwrite::deleteFile);
+    newDataFiles.forEach(overwrite::addFile);
     overwrite.commit();
 
-    return result;
+    return newDataFiles;
+  }
+
+  private List<DataFile> rewriteFiles(Table arcticTable, List<DataFile> toDeleteDataFiles, List<DataFile> newDataFiles,
+                                      long sequence) {
+    RewriteFiles rewriteFiles = arcticTable.newRewrite();
+    rewriteFiles.rewriteFiles(Sets.newHashSet(toDeleteDataFiles), Sets.newHashSet(newDataFiles), sequence);
+    rewriteFiles.validateFromSnapshot(arcticTable.currentSnapshot().snapshotId());
+    rewriteFiles.commit();
+    return newDataFiles;
+  }
+
+  private List<DeleteFile> rewriteFiles(Table arcticTable, Set<DeleteFile> toDeleteFiles,
+                                        List<DeleteFile> newFiles) {
+    RewriteFiles rewriteFiles = arcticTable.newRewrite();
+    rewriteFiles.rewriteFiles(Collections.emptySet(), Sets.newHashSet(toDeleteFiles), Collections.emptySet(),
+        Sets.newHashSet(newFiles));
+    rewriteFiles.validateFromSnapshot(arcticTable.currentSnapshot().snapshotId());
+    rewriteFiles.commit();
+    return newFiles;
   }
 
   @NotNull
-  private List<DataFile> writeNewDataFiles(Table arcticTable, int length) throws IOException {
-    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
+  private List<DataFile> writeNewDataFiles(Table table, int length) throws IOException {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
     OutputFileFactory outputFileFactory =
-        OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
             .build();
     EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
 
-    long smallSizeByBytes = PropertyUtil.propertyAsLong(arcticTable.properties(),
+    Record tempRecord = baseRecords(0, 1, table.schema()).get(0);
+    PartitionKey partitionKey = new PartitionKey(table.spec(), table.schema());
+    partitionKey.partition(tempRecord);
+
+    long smallSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
         com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
         com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
     List<DataFile> result = new ArrayList<>();
     DataWriter<Record> writer = appenderFactory
-        .newDataWriter(outputFile, FileFormat.PARQUET, null);
+        .newDataWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
     for (int i = 1; i < length * 10; i = i + length) {
-      for (Record record : baseRecords(i, length, arcticTable.schema())) {
+      for (Record record : baseRecords(i, length, table.schema())) {
         if (writer.length() > smallSizeByBytes || result.size() > 0) {
           writer.close();
           result.add(writer.toDataFile());
           EncryptedOutputFile newOutputFile = outputFileFactory.newOutputFile();
           writer = appenderFactory
-              .newDataWriter(newOutputFile, FileFormat.PARQUET, null);
+              .newDataWriter(newOutputFile, FileFormat.PARQUET, partitionKey);
         }
         writer.write(record);
       }
@@ -200,26 +251,36 @@ public class SequenceNumberFetcherTest {
     return result;
   }
 
-  private void insertEqDeleteFiles(Table arcticTable, int length) throws IOException {
-    Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
-    PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
+  private List<DeleteFile> insertEqDeleteFiles(Table arcticTable, int length) throws IOException {
+    List<DeleteFile> result = writeEqDeleteFiles(arcticTable, length);
+
+    RowDelta rowDelta = arcticTable.newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+    return result;
+  }
+
+  @NotNull
+  private List<DeleteFile> writeEqDeleteFiles(Table table, int length) throws IOException {
+    List<DeleteFile> result = new ArrayList<>();
+    Record tempRecord = baseRecords(0, 1, table.schema()).get(0);
+    PartitionKey partitionKey = new PartitionKey(table.spec(), table.schema());
     partitionKey.partition(tempRecord);
-    List<Integer> equalityFieldIds = Lists.newArrayList(arcticTable.schema().findField("id").fieldId());
-    Schema eqDeleteRowSchema = arcticTable.schema().select("id");
+    List<Integer> equalityFieldIds = Lists.newArrayList(table.schema().findField("id").fieldId());
+    Schema eqDeleteRowSchema = table.schema().select("id");
     GenericAppenderFactory appenderFactory =
-        new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec(),
+        new GenericAppenderFactory(table.schema(), table.spec(),
             ArrayUtil.toIntArray(equalityFieldIds), eqDeleteRowSchema, null);
     OutputFileFactory outputFileFactory =
-        OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
             .build();
-    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(arcticTable.spec(), partitionKey);
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(table.spec(), partitionKey);
 
-    List<DeleteFile> result = new ArrayList<>();
     EqualityDeleteWriter<Record> writer = appenderFactory
         .newEqDeleteWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
     for (int i = 1; i < length * 10; i = i + length) {
-      List<Record> records = baseRecords(i, length, arcticTable.schema());
+      List<Record> records = baseRecords(i, length, table.schema());
       for (int j = 0; j < records.size(); j++) {
         if (j % 2 == 0) {
           writer.write(records.get(j));
@@ -228,13 +289,20 @@ public class SequenceNumberFetcherTest {
     }
     writer.close();
     result.add(writer.toDeleteFile());
+    return result;
+  }
+
+  private List<DeleteFile> insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
+    List<DeleteFile> result = writePosDeleteFiles(arcticTable, dataFiles);
 
     RowDelta rowDelta = arcticTable.newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
+    return result;
   }
 
-  private void insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
+  @NotNull
+  private List<DeleteFile> writePosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -258,10 +326,7 @@ public class SequenceNumberFetcherTest {
     }
     writer.close();
     result.add(writer.toDeleteFile());
-
-    RowDelta rowDelta = arcticTable.newRowDelta();
-    result.forEach(rowDelta::addDeletes);
-    rowDelta.commit();
+    return result;
   }
 
   private List<Record> baseRecords(int start, int length, Schema tableSchema) {
