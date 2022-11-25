@@ -149,22 +149,28 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
 
 
       Transaction minorTransaction = baseArcticTable.newTransaction();
-      RewriteFiles dataFileRewrite = minorTransaction.newRewrite();
-      if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-        dataFileRewrite.validateFromSnapshot(baseSnapshotId);
-        long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
-        dataFileRewrite.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
-      } else {
-        dataFileRewrite.rewriteFiles(deleteDataFiles, addDataFiles);
-      }
-      dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      dataFileRewrite.commit();
 
-      RewriteFiles deleteFileRewrite = minorTransaction.newRewrite();
-      deleteFileRewrite.rewriteFiles(Collections.emptySet(),
-          deletedDeleteFiles, Collections.emptySet(), addDeleteFiles);
-      deleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      deleteFileRewrite.commit();
+      if (CollectionUtils.isNotEmpty(deleteDataFiles) || CollectionUtils.isNotEmpty(addDataFiles)) {
+        RewriteFiles dataFileRewrite = minorTransaction.newRewrite();
+        if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+          dataFileRewrite.validateFromSnapshot(baseSnapshotId);
+          long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
+          dataFileRewrite.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
+        } else {
+          dataFileRewrite.rewriteFiles(deleteDataFiles, addDataFiles);
+        }
+        dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        dataFileRewrite.commit();
+      }
+
+      if (CollectionUtils.isNotEmpty(deletedDeleteFiles) || CollectionUtils.isNotEmpty(addDeleteFiles)) {
+        RewriteFiles deleteFileRewrite = minorTransaction.newRewrite();
+        deleteFileRewrite.rewriteFiles(Collections.emptySet(),
+            deletedDeleteFiles, Collections.emptySet(), addDeleteFiles);
+        deleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        deleteFileRewrite.commit();
+      }
+
       minorTransaction.commitTransaction();
 
       LOG.info("{} iceberg minor optimize committed, delete {} data files and {} delete files, " +

@@ -27,6 +27,8 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import java.io.Serializable;
 
 public class IcebergContentFile implements Serializable {
+  private static final long serialVersionUID = 1L;
+
   private ContentFile<?> contentFile;
   private Long sequenceNumber;
 

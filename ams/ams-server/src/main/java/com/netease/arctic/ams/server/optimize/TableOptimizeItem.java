@@ -303,7 +303,8 @@ public class TableOptimizeItem extends IJDBCService {
         List<ByteBuffer> targetFiles = optimizeTaskStat.getFiles();
         long targetFileSize = optimizeTaskStat.getNewFileSize();
         // if minor optimize, insert files as base new files
-        if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor) {
+        if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor
+            && !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
           targetFiles.addAll(optimizeTaskItem.getOptimizeTask().getInsertFiles());
           targetFileSize = targetFileSize + optimizeTaskItem.getOptimizeTask().getInsertFileSize();
         }
@@ -799,7 +800,7 @@ public class TableOptimizeItem extends IJDBCService {
     tasksCommitLock.lock();
 
     // check current base table snapshot whether changed when minor optimize
-    if (isMinorOptimizing() && !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(arcticTable)) {
+    if (isMinorOptimizing() && !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
       if (tableOptimizeRuntime.getCurrentSnapshotId() !=
           UnKeyedTableUtil.getSnapshotId(getArcticTable().asKeyedTable().baseTable())) {
         LOG.info("the latest snapshot has changed in base table {}, give up commit.", tableIdentifier);
