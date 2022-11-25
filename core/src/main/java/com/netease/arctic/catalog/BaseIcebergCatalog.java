@@ -57,24 +57,26 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   public void initialize(
       AmsClient client, CatalogMeta meta, Map<String, String> properties) {
     this.meta = meta;
-    meta.putToCatalogProperties(org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
+    meta.putToCatalogProperties(
+        org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
         meta.getCatalogType());
     tableMetaStore = CatalogUtil.buildMetaStore(meta);
     if (meta.getCatalogProperties().containsKey(CatalogProperties.CATALOG_IMPL)) {
       meta.getCatalogProperties().remove("type");
     }
-    icebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
-        meta.getCatalogProperties(), tableMetaStore.getConfiguration());
+    icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
+        meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
   }
 
   @Override
   public List<String> listDatabases() {
     if (icebergCatalog instanceof SupportsNamespaces) {
-      return tableMetaStore.doAs(() -> ((SupportsNamespaces)icebergCatalog).listNamespaces(Namespace.empty()).stream()
+      return tableMetaStore.doAs(() -> ((SupportsNamespaces) icebergCatalog).listNamespaces(Namespace.empty()).stream()
           .map(namespace -> namespace.level(0)).distinct().collect(Collectors.toList()));
     } else {
-      throw new UnsupportedOperationException(String.format("Iceberg catalog: %s do now implement SupportsNamespaces",
-       icebergCatalog.getClass().getName()));
+      throw new UnsupportedOperationException(String.format(
+          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
+          icebergCatalog.getClass().getName()));
     }
   }
 
@@ -82,11 +84,12 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   public void createDatabase(String databaseName) {
     if (icebergCatalog instanceof SupportsNamespaces) {
       tableMetaStore.doAs(() -> {
-        ((SupportsNamespaces)icebergCatalog).createNamespace(Namespace.of(databaseName));
+        ((SupportsNamespaces) icebergCatalog).createNamespace(Namespace.of(databaseName));
         return null;
       });
     } else {
-      throw new UnsupportedOperationException(String.format("Iceberg catalog: %s do now implement SupportsNamespaces",
+      throw new UnsupportedOperationException(String.format(
+          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
   }
@@ -95,11 +98,12 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   public void dropDatabase(String databaseName) {
     if (icebergCatalog instanceof SupportsNamespaces) {
       tableMetaStore.doAs(() -> {
-        ((SupportsNamespaces)icebergCatalog).dropNamespace(Namespace.of(databaseName));
+        ((SupportsNamespaces) icebergCatalog).dropNamespace(Namespace.of(databaseName));
         return null;
       });
     } else {
-      throw new UnsupportedOperationException(String.format("Iceberg catalog: %s do now implement SupportsNamespaces",
+      throw new UnsupportedOperationException(String.format(
+          "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
   }
@@ -107,9 +111,9 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   @Override
   public List<TableIdentifier> listTables(String database) {
     return tableMetaStore.doAs(() -> icebergCatalog.listTables(Namespace.of(database)).stream()
-      .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1)
-      .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
-      .collect(Collectors.toList()));
+        .filter(tableIdentifier -> tableIdentifier.namespace().levels().length == 1)
+        .map(tableIdentifier -> TableIdentifier.of(name(), database, tableIdentifier.name()))
+        .collect(Collectors.toList()));
   }
 
   @Override
@@ -125,8 +129,10 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
     tableMetaStore.doAs(() -> {
-      icebergCatalog.renameTable(toIcebergTableIdentifier(from),
-          org.apache.iceberg.catalog.TableIdentifier.of(Namespace.of(from.getDatabase()),
+      icebergCatalog.renameTable(
+          toIcebergTableIdentifier(from),
+          org.apache.iceberg.catalog.TableIdentifier.of(
+              Namespace.of(from.getDatabase()),
               newTableName));
       return null;
     });
@@ -144,7 +150,8 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {
-    return org.apache.iceberg.catalog.TableIdentifier.of(Namespace.of(tableIdentifier.getDatabase()),
+    return org.apache.iceberg.catalog.TableIdentifier.of(
+        Namespace.of(tableIdentifier.getDatabase()),
         tableIdentifier.getTableName());
   }
 

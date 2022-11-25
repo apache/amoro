@@ -19,19 +19,23 @@
 package com.netease.arctic.ams.server.terminal;
 
 import com.google.common.collect.Lists;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 /**
  * result of execution a script.
  */
 public class ExecutionResult {
+  static final SimpleDateFormat patten = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 
   List<String> logs = Lists.newArrayList();
   List<StatementResult> results = Lists.newArrayList();
 
   public synchronized void appendLog(String log) {
-    this.logs.add(log);
+    String date = patten.format(new Date());
+    this.logs.add(date + " " + log);
   }
 
   public synchronized void appendLogs(Collection<String> logs) {

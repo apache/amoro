@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.ams.api.TableIdentifier;
+import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSTransactionsOfTable;
@@ -42,17 +43,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.CLUSTER_NAME;
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.HA_ENABLE;
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.THRIFT_BIND_HOST;
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.THRIFT_BIND_PORT;
+import static com.netease.arctic.ams.server.config.ArcticMetaStoreConf.ZOOKEEPER_SERVER;
+
 public class AmsUtils {
   public static TableIdentifier toTableIdentifier(com.netease.arctic.table.TableIdentifier tableIdentifier) {
     if (tableIdentifier == null) {
       return null;
     }
     return new TableIdentifier(tableIdentifier.getCatalog(), tableIdentifier.getDatabase(),
-            tableIdentifier.getTableName());
+        tableIdentifier.getTableName());
   }
 
   public static AMSTransactionsOfTable toTransactionsOfTable(
-          TransactionsOfTable info) {
+      TransactionsOfTable info) {
     AMSTransactionsOfTable transactionsOfTable = new AMSTransactionsOfTable();
     transactionsOfTable.setTransactionId(info.getTransactionId() + "");
     transactionsOfTable.setFileCount(info.getFileCount());
@@ -63,7 +70,7 @@ public class AmsUtils {
   }
 
   public static BaseMajorCompactRecord transferToBaseMajorCompactRecord(
-          OptimizeHistory record) {
+      OptimizeHistory record) {
     BaseMajorCompactRecord result = new BaseMajorCompactRecord();
     result.setTableIdentifier(record.getTableIdentifier());
     result.setOptimizeType(record.getOptimizeType());
@@ -93,12 +100,11 @@ public class AmsUtils {
     }
   }
 
-
   /**
    * Convert size to a different unit, ensuring that the converted value is > 1
    */
   public static String byteToXB(long size) {
-    String[] units = new String[]{"B", "KB", "MB", "GB", "TB", "PB", "EB"};
+    String[] units = new String[] {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
     float result = size, tmpResult = size;
     int unitIdx = 0;
     int unitCnt = units.length;
@@ -177,8 +183,17 @@ public class AmsUtils {
     return null;
   }
 
+  public static String getAMSHaAddress() {
+    if (ArcticMetaStore.conf.getBoolean(HA_ENABLE)) {
+      return "zookeeper://" + ArcticMetaStore.conf.getString(ZOOKEEPER_SERVER) + "/" +
+          ArcticMetaStore.conf.getString(CLUSTER_NAME);
+    } else {
+      return "thrift://" + ArcticMetaStore.conf.getString(THRIFT_BIND_HOST) + ":" +
+          ArcticMetaStore.conf.getInteger(THRIFT_BIND_PORT) + "/";
+    }
+  }
+
   private static boolean checkHostAddress(InetAddress address, String prefix) {
     return address != null && address.getHostAddress().startsWith(prefix);
   }
-  
 }

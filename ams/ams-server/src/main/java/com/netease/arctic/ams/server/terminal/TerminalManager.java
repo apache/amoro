@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.terminal;
 
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
@@ -28,8 +27,11 @@ import com.netease.arctic.ams.server.model.LatestSessionInfo;
 import com.netease.arctic.ams.server.model.LogInfo;
 import com.netease.arctic.ams.server.model.SqlResult;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.terminal.TerminalSessionFactory.SessionConfigOptions;
 import com.netease.arctic.ams.server.terminal.kyuubi.KyuubiTerminalSessionFactory;
 import com.netease.arctic.ams.server.terminal.local.LocalSessionFactory;
+import com.netease.arctic.ams.server.utils.AmsUtils;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -91,34 +93,32 @@ public class TerminalManager {
     CatalogMeta catalogMeta = optCatalogMeta.get();
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
     String sessionId = getSessionId(terminalId, metaStore);
+    String catalogType = CatalogUtil.isIcebergCatalog(catalog) ? "iceberg" : "arctic";
+    Configuration configuration = new Configuration();
+    configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
+    configuration.set(SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
+    configuration.set(SessionConfigOptions.catalogConnector(catalog), catalogType);
+    configuration.set(SessionConfigOptions.CATALOG_URL_BASE, AmsUtils.getAMSHaAddress());
+    for (String key : catalogMeta.getCatalogProperties().keySet()) {
+      String value = catalogMeta.getCatalogProperties().get(key);
+      configuration.set(SessionConfigOptions.catalogProperty(catalog, key), value);
+    }
+    configuration.set(SessionConfigOptions.catalogProperty(catalog, "type"),
+        catalogMeta.getCatalogType());
 
     TerminalSessionContext context;
     synchronized (sessionMapLock) {
-      sessionMap.computeIfAbsent(sessionId, id -> {
-        Configuration configuration = new Configuration();
-        configuration.setInteger(TerminalSessionFactory.SessionConfigOptions.FETCH_SIZE, resultLimits);
-        configuration.set(TerminalSessionFactory.SessionConfigOptions.CATALOGS, Lists.newArrayList(catalog));
-        configuration.set(
-            TerminalSessionFactory.SessionConfigOptions.catalogType(catalog),
-            catalogMeta.getCatalogType());
-        configuration.set(
-            TerminalSessionFactory.SessionConfigOptions.catalogUrl(catalog),
-            String.format(
-                "thrift://%s:%d/%s",
-                ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST),
-                ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT),
-                catalog));
-        return new TerminalSessionContext(id, metaStore, executionPool, sessionFactory, configuration);
-      });
+      sessionMap.computeIfAbsent(
+          sessionId, id -> new TerminalSessionContext(id, metaStore, executionPool, sessionFactory, configuration)
+      );
 
       context = sessionMap.get(sessionId);
     }
+
     if (!context.isReadyToExecute()) {
       throw new IllegalStateException("current session is not ready to execute script. status:" + context.getStatus());
     }
-
     context.submit(catalog, script, resultLimits, stopOnError);
-
     return sessionId;
   }
 
