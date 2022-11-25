@@ -21,7 +21,7 @@ package com.netease.arctic;
 import org.apache.iceberg.ContentFile;
 
 public class ManifestEntry {
-  enum Status {
+  public enum Status {
     EXISTING(0),
     ADDED(1),
     DELETED(2);
@@ -36,7 +36,7 @@ public class ManifestEntry {
       return id;
     }
 
-    static Status of(int id) {
+    public static Status of(int id) {
       for (Status status : Status.values()) {
         if (status.id() == id) {
           return status;

@@ -1,8 +1,25 @@
-package com.netease.arctic;
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-import com.netease.arctic.io.ArcticHadoopFileIO;
+package com.netease.arctic.scan;
+
+import com.netease.arctic.ManifestEntry;
 import com.netease.arctic.utils.ManifestEntryFields;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -11,16 +28,16 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
+import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Metrics;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.expressions.InclusiveMetricsEvaluator;
-import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
@@ -28,13 +45,13 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-
-public class ManifestReader {
+public class TableEntriesScan {
   private final Table table;
   private final Long snapshotId;
   private final Expression dataFilter;
@@ -42,7 +59,7 @@ public class ManifestReader {
   private final boolean allFileContent;
   private final Set<FileContent> validFileContent;
 
-  private Schema entriesTableSchema;
+  private Table entriesTable;
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
   private Map<String, Integer> lazyIndexOfDataFileType;
   private Map<String, Integer> lazyIndexOfEntryType;
@@ -72,42 +89,34 @@ public class ManifestReader {
       return this;
     }
 
-    public Builder includeFileContent(FileContent fileContent) {
-      this.fileContents.add(fileContent);
+    public Builder includeFileContent(FileContent... fileContent) {
+      this.fileContents.addAll(Arrays.asList(fileContent));
       return this;
     }
-    
+
     public Builder useSnapshot(long snapshotId) {
       this.snapshotId = snapshotId;
       return this;
     }
 
-    public ManifestReader build() {
-      return new ManifestReader(table, snapshotId, dataFilter, aliveEntry, fileContents.size() == 3, fileContents);
+    public TableEntriesScan build() {
+      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents);
     }
   }
 
 
-  public ManifestReader(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry, boolean allFileContent,
-                        Set<FileContent> validFileContent) {
+  public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
+                          Set<FileContent> validFileContent) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
-    this.allFileContent = allFileContent;
+    this.allFileContent = validFileContent.containsAll(Arrays.asList(FileContent.values()));
     this.validFileContent = validFileContent;
     this.snapshotId = snapshotId;
   }
 
   public CloseableIterable<ManifestEntry> entries() {
-    Configuration hadoopConf = new Configuration();
-    if (table.io() instanceof ArcticHadoopFileIO) {
-      ArcticHadoopFileIO io = (ArcticHadoopFileIO) table.io();
-      hadoopConf = io.conf();
-    }
-    HadoopTables tables = new HadoopTables(hadoopConf);
-    Table entriesTable = tables.load(table.location() + "#" + MetadataTableType.ENTRIES);
-    this.entriesTableSchema = entriesTable.schema();
-    TableScan tableScan = entriesTable.newScan();
+    TableScan tableScan = getEntriesTable().newScan();
     if (snapshotId != null) {
       tableScan = tableScan.useSnapshot(snapshotId);
     }
@@ -135,7 +144,16 @@ public class ManifestReader {
         }));
     return CloseableIterable.filter(allEntries, Objects::nonNull);
   }
-  
+
+  private Table getEntriesTable() {
+    if (this.entriesTable == null) {
+      this.entriesTable = MetadataTableUtils.createMetadataTableInstance(((HasTableOperations) table).operations(),
+          table.name(), table.name() + "#ENTRIES",
+          MetadataTableType.ENTRIES);
+    }
+    return this.entriesTable;
+  }
+
   private FileContent getFileContent(int contentId) {
     for (FileContent content : FileContent.values()) {
       if (content.id() == contentId) {
@@ -223,7 +241,7 @@ public class ManifestReader {
 
   private int entryFieldIndex(String fieldName) {
     if (lazyIndexOfEntryType == null) {
-      List<Types.NestedField> fields = entriesTableSchema.columns();
+      List<Types.NestedField> fields = getEntriesTable().schema().columns();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);
@@ -236,7 +254,7 @@ public class ManifestReader {
   private int dataFileFieldIndex(String fieldName) {
     if (lazyIndexOfDataFileType == null) {
       List<Types.NestedField> fields =
-          entriesTableSchema.findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
+          getEntriesTable().schema().findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
       Map<String, Integer> map = Maps.newHashMap();
       for (int i = 0; i < fields.size(); i++) {
         map.put(fields.get(i).name(), i);
