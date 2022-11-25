@@ -106,6 +106,7 @@ public class NodeTask {
       case INSERT_FILE:
         icebergSmallDataFiles.add(icebergContentFile);
         break;
+      case ICEBERG_EQ_DELETE_FILE:
       case EQ_DELETE_FILE:
         icebergEqDeleteFiles.add(icebergContentFile);
         break;

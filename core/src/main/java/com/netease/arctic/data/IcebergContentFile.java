@@ -30,7 +30,12 @@ public class IcebergContentFile implements Serializable {
   private ContentFile<?> contentFile;
   private Long sequenceNumber;
 
+  public static IcebergContentFile of(ContentFile<?> contentFile, long sequenceNumber) {
+    return new IcebergContentFile(contentFile, sequenceNumber);
+  }
+
   public IcebergContentFile() {
+
   }
 
   public IcebergContentFile(ContentFile<?> contentFile, Long sequenceNumber) {
