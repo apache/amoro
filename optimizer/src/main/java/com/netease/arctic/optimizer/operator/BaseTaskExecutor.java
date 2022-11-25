@@ -104,7 +104,9 @@ public class BaseTaskExecutor implements Serializable {
     NodeTask task;
     String amsUrl = config.getAmsUrl();
     ArcticTable table =
-        getArcticTable(new TableIdentificationInfo(amsUrl, toTableIdentifier(sourceTask.getTask().getTableIdentifier())));
+        getArcticTable(
+            new TableIdentificationInfo(amsUrl,
+                toTableIdentifier(sourceTask.getTask().getTableIdentifier())));
     LOG.info("start execute {}", sourceTask.getTask().getTaskId());
     try {
       task = constructTask(table, sourceTask.getTask(), sourceTask.getAttemptId());
@@ -271,7 +273,8 @@ public class BaseTaskExecutor implements Serializable {
       String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
       int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() +
           nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size() +
-          nodeTask.icebergDeleteFiles().size() + nodeTask.icebergDataFiles().size() + nodeTask.icebergSmallDataFiles().size();
+          nodeTask.icebergDeleteFiles().size() + nodeTask.icebergDataFiles().size() +
+          nodeTask.icebergSmallDataFiles().size();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);

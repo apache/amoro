@@ -161,7 +161,8 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
       dataFileRewrite.commit();
 
       RewriteFiles deleteFileRewrite = minorTransaction.newRewrite();
-      deleteFileRewrite.rewriteFiles(Collections.emptySet(), deletedDeleteFiles, Collections.emptySet(), addDeleteFiles);
+      deleteFileRewrite.rewriteFiles(Collections.emptySet(),
+          deletedDeleteFiles, Collections.emptySet(), addDeleteFiles);
       deleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       deleteFileRewrite.commit();
       minorTransaction.commitTransaction();
