@@ -23,7 +23,6 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.CombinedDeleteFilter;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
-import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.DataFile;
@@ -41,13 +40,12 @@ import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.Type;
 
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
- * Abstract implementation of iceberg data reader consuming {@link ArcticFileScanTask}.
+ * Read data by {@link CombinedIcebergScanTask} for optimizer of native iceberg.
  */
-public abstract class GenericCombinedIcebergDataReader {
+public class GenericCombinedIcebergDataReader {
 
   protected final Schema tableSchema;
   protected final Schema projectedSchema;
@@ -61,14 +59,6 @@ public abstract class GenericCombinedIcebergDataReader {
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer) {
-    this(fileIO, tableSchema, projectedSchema, null, nameMapping,
-        caseSensitive, convertConstant, null, reuseContainer);
-  }
-
-  public GenericCombinedIcebergDataReader(
-      ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema, PrimaryKeySpec primaryKeySpec,
-      String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
-      Set<DataTreeNode> sourceNodes, boolean reuseContainer) {
     this.tableSchema = tableSchema;
     this.projectedSchema = projectedSchema;
     this.nameMapping = nameMapping;
@@ -140,6 +130,7 @@ public abstract class GenericCombinedIcebergDataReader {
 
       case ORC:
         org.apache.iceberg.orc.ORC.ReadBuilder orc = org.apache.iceberg.orc.ORC.read(input)
+            .project(projectedSchema)
             .createReaderFunc(fileSchema -> GenericOrcReader.buildReader(fileProjection, fileSchema, idToConstant));
         return orc.build();
 
