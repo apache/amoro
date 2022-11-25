@@ -1,6 +1,7 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.google.common.collect.Iterables;
+import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import org.apache.iceberg.ContentFile;
@@ -23,7 +24,8 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
         Lists.newArrayList(),
         Lists.newArrayList(smallDataFile1, smallDataFile2),
         Lists.newArrayList(),
-        Lists.newArrayList());
+        Lists.newArrayList(),
+        OptimizeType.Minor);
 
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -52,7 +54,8 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
         Lists.newArrayList(),
         Lists.newArrayList(smallDataFile1, smallDataFile2),
         Lists.newArrayList(posDeleteFile),
-        Lists.newArrayList(equDeleteFile));
+        Lists.newArrayList(equDeleteFile),
+        OptimizeType.Minor);
 
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -67,7 +70,7 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
   }
 
   @Test
-  public void testCompactBigDataFiles() throws Exception {
+  public void testCompactDeleteFiles() throws Exception {
 
     // sequence 0
     IcebergContentFile equDeleteFile1 = IcebergContentFile.of(insertEqDeleteFiles(2, 6), 0);
@@ -76,14 +79,15 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
 
     // sequence 1
     IcebergContentFile posDeleteFile = IcebergContentFile.of(insertPosDeleteFiles(dataFile1.asDataFile(), 1, 5), 1);
-    IcebergContentFile equDeleteFile2 = IcebergContentFile.of(insertEqDeleteFiles(3, 7, 10, 13), 1);
+    IcebergContentFile equDeleteFile2 = IcebergContentFile.of(insertEqDeleteFiles(10, 13, 20, 23), 1);
 
     // 2 data file, 2 quality delete file, 1 positional delete file
     NodeTask nodeTask = constructNodeTask(
         Lists.newArrayList(dataFile1, dataFile2),
         Lists.newArrayList(),
         Lists.newArrayList(equDeleteFile1, equDeleteFile2),
-        Lists.newArrayList(posDeleteFile));
+        Lists.newArrayList(posDeleteFile),
+        OptimizeType.Minor);
 
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -113,7 +117,8 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
         Lists.newArrayList(dataFile1, dataFile2),
         Lists.newArrayList(),
         Lists.newArrayList(posDeleteFile),
-        Lists.newArrayList(equDeleteFile));
+        Lists.newArrayList(equDeleteFile),
+        OptimizeType.FullMajor);
 
     String[] arg = new String[0];
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
@@ -121,7 +126,7 @@ public class TestIcebergExecutor extends TestIcebergExecutorBase {
     IcebergExecutor icebergExecutor = new IcebergExecutor(nodeTask, icebergTable,
         System.currentTimeMillis(), optimizerConfig);
     OptimizeTaskResult result = icebergExecutor.execute();
-    Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
+    Assert.assertEquals(1, Iterables.size(result.getTargetFiles()));
     ContentFile<?> resultFile = result.getTargetFiles().iterator().next();
     Assert.assertEquals(FileContent.DATA, resultFile.content());
     Assert.assertEquals(14, resultFile.recordCount());

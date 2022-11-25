@@ -69,11 +69,9 @@ public class IcebergExecutor extends BaseExecutor {
     if (task.getOptimizeType().equals(OptimizeType.Minor) && task.icebergDataFiles().size() > 0) {
       // optimize iceberg delete files only in minor process
       targetFiles = table.io().doAs(this::optimizeDeleteFiles);
-    } else if (task.icebergSmallDataFiles().size() > 0) {
+    } else {
       // optimize iceberg data files.
       targetFiles = table.io().doAs(this::optimizeDataFiles);
-    } else {
-      targetFiles = Lists.newArrayList();
     }
 
     return buildOptimizeResult(targetFiles);
@@ -148,7 +146,7 @@ public class IcebergExecutor extends BaseExecutor {
             .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
       }
       Record record = records.next();
-      writer.write(records.next());
+      writer.write(record);
 
       insertCount++;
       if (insertCount % SAMPLE_DATA_INTERVAL == 1) {

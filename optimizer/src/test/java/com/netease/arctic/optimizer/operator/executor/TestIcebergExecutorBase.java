@@ -210,10 +210,10 @@ public class TestIcebergExecutorBase {
   }
 
   protected NodeTask constructNodeTask(List<IcebergContentFile> dataFiles, List<IcebergContentFile> smallDataFiles,
-      List<IcebergContentFile> posDeleteFiles, List<IcebergContentFile> equDeleteFiles) {
+      List<IcebergContentFile> posDeleteFiles, List<IcebergContentFile> equDeleteFiles, OptimizeType optimizeType) {
     NodeTask nodeTask = new NodeTask();
     nodeTask.setTableIdentifier(icebergTable.id());
-    nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Minor, UUID.randomUUID().toString()));
+    nodeTask.setTaskId(new OptimizeTaskId(optimizeType, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
 
     dataFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.BASE_FILE));
