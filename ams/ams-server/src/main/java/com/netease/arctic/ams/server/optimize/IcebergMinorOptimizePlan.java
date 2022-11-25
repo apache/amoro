@@ -75,14 +75,12 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
           List<FileScanTask> smallFileScanTasks =
               partitionSmallDataFilesTask.computeIfAbsent(partitionPath, c -> new ArrayList<>());
           smallFileScanTasks.add(fileScanTask);
-          partitionSmallDataFilesTask.put(partitionPath, smallFileScanTasks);
         } else {
           // collect need optimize delete file info
           if (fileScanTask.deletes().size() > 1) {
             List<FileScanTask> bigFileScanTasks =
                 partitionBigDataFilesTask.computeIfAbsent(partitionPath, c -> new ArrayList<>());
             bigFileScanTasks.add(fileScanTask);
-            partitionBigDataFilesTask.put(partitionPath, bigFileScanTasks);
           }
 
           // add DeleteFile info
@@ -91,14 +89,12 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
               Set<DeleteFile> deleteFiles =
                   partitionDeleteFiles.computeIfAbsent(partitionPath, c -> new HashSet<>());
               deleteFiles.add(deleteFile);
-              partitionDeleteFiles.put(partitionPath, deleteFiles);
             }
 
             String deletePath = deleteFile.path().toString();
             Set<FileScanTask> fileScanTasks =
                 deleteDataFileMap.computeIfAbsent(deletePath, c -> new HashSet<>());
             fileScanTasks.add(fileScanTask);
-            deleteDataFileMap.put(deletePath, fileScanTasks);
           }
         }
       }
