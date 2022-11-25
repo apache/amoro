@@ -21,7 +21,7 @@ package com.netease.arctic;
 import org.apache.iceberg.ContentFile;
 
 public class ManifestEntry {
-  enum Status {
+  public enum Status {
     EXISTING(0),
     ADDED(1),
     DELETED(2);
@@ -36,7 +36,7 @@ public class ManifestEntry {
       return id;
     }
 
-    static Status of(int id) {
+    public static Status of(int id) {
       for (Status status : Status.values()) {
         if (status.id() == id) {
           return status;
@@ -47,27 +47,16 @@ public class ManifestEntry {
     }
   }
   
-  private int contentId;
   private Status status;
   private Long snapshotId;
   private long sequenceNumber;
   private ContentFile<?> file;
 
-  public ManifestEntry(int contentId, Status status, Long snapshotId, long sequenceNumber,
-                       ContentFile<?> file) {
-    this.contentId = contentId;
+  public ManifestEntry(Status status, Long snapshotId, long sequenceNumber, ContentFile<?> file) {
     this.status = status;
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
     this.file = file;
-  }
-
-  public int getContentId() {
-    return contentId;
-  }
-
-  public void setContentId(int contentId) {
-    this.contentId = contentId;
   }
 
   public Status getStatus() {

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.ams.server.utils;
 
-import com.netease.arctic.ManifestReader;
+import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -58,11 +58,9 @@ public class SequenceNumberFetcher {
   private Map<String, Long> getCached() {
     if (cached == null) {
       cached = Maps.newHashMap();
-      ManifestReader manifestReader = ManifestReader.builder(table)
+      TableEntriesScan manifestReader = TableEntriesScan.builder(table)
           .withAliveEntry(true)
-          .includeFileContent(FileContent.DATA)
-          .includeFileContent(FileContent.POSITION_DELETES)
-          .includeFileContent(FileContent.EQUALITY_DELETES)
+          .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
           .useSnapshot(snapshotId)
           .build();
       manifestReader.entries().forEach(e -> cached.put(e.getFile().path().toString(), e.getSequenceNumber()));
