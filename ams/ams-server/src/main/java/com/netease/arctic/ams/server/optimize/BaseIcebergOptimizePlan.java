@@ -89,7 +89,8 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
                                                List<DeleteFile> posDeleteFiles,
                                                long baseSnapshotId,
                                                TaskConfig taskConfig) {
-    SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), baseSnapshotId);
+    SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
+        arcticTable.asUnkeyedTable(), baseSnapshotId);
     // build task
     BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());

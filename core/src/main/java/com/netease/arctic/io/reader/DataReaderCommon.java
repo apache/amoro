@@ -5,7 +5,6 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.table.MetadataColumns;
-import java.util.List;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionField;
@@ -19,6 +18,7 @@ import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.PartitionUtil;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 

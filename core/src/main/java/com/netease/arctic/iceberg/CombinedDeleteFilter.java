@@ -25,15 +25,6 @@ import com.netease.arctic.iceberg.optimize.StructLikeMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -56,6 +47,16 @@ import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Filter;
 import org.apache.parquet.Preconditions;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Special point:
@@ -118,7 +119,8 @@ public abstract class CombinedDeleteFilter<T> {
     this.eqDeletes = eqDeleteBuilder.build();
     this.requiredSchema = fileProjection(tableSchema, requestedSchema, !posDeletes.isEmpty(), deleteIds);
     this.deleteSchema = TypeUtil.select(requiredSchema, deleteIds);
-    this.dataTransactionIdAccessor = requiredSchema.accessorForField(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_ID);
+    this.dataTransactionIdAccessor = requiredSchema
+        .accessorForField(com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED_ID);
     this.posAccessor = requiredSchema.accessorForField(MetadataColumns.ROW_POSITION.fieldId());
     this.filePathAccessor = requiredSchema.accessorForField(org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId());
 
@@ -200,7 +202,7 @@ public abstract class CombinedDeleteFilter<T> {
       while (it.hasNext()) {
         RecordWithLsn recordWithLsn = it.next();
         Long lsn = recordWithLsn.getLsn();
-        StructLike structLike =internalRecordWrapper.copyFor(recordWithLsn.getRecord());
+        StructLike structLike = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
         StructLike deletePK = deletePKProjectRow.copyWrap(structLike);
         structLikeMap.put(deletePK, lsn);
       }
@@ -255,7 +257,7 @@ public abstract class CombinedDeleteFilter<T> {
     return applyPosDeletesBase(records, applyPosDeletes().negate());
   }
 
-  private Predicate<T> applyPosDeletes(){
+  private Predicate<T> applyPosDeletes() {
     if (posPredicate != null) {
       return posPredicate;
     }
@@ -287,25 +289,24 @@ public abstract class CombinedDeleteFilter<T> {
     }
 
     Predicate<T> predicate = record -> {
+      Set<Long> posSet;
+      if (currentDataPath != null) {
+        if (currentPosSet == null) {
+          currentPosSet = positionMap.get(currentDataPath);
+        }
+        posSet = currentPosSet;
+      } else {
+        posSet = positionMap.get(filePath(record));
+      }
 
-        Set<Long> posSet;
-        if (currentDataPath != null) {
-          if (currentPosSet == null) {
-            currentPosSet = positionMap.get(currentDataPath);
-          }
-          posSet = currentPosSet;
-        } else {
-          posSet = positionMap.get(filePath(record));
-        }
-
-        if (posSet == null) {
-          return false;
-        }
-        if (!posSet.contains(pos(record))) {
-          return false;
-        }
-        return true;
-      };
+      if (posSet == null) {
+        return false;
+      }
+      if (!posSet.contains(pos(record))) {
+        return false;
+      }
+      return true;
+    };
     return predicate;
   }
 
@@ -382,9 +383,9 @@ public abstract class CombinedDeleteFilter<T> {
     // TODO: support adding nested columns. this will currently fail when finding nested columns to add
     List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
     for (int fieldId : missingIds) {
-      if (fieldId == MetadataColumns.ROW_POSITION.fieldId()
-          || fieldId == MetadataColumns.IS_DELETED.fieldId()
-          || fieldId == MetadataColumns.FILE_PATH.fieldId() ) {
+      if (fieldId == MetadataColumns.ROW_POSITION.fieldId() ||
+          fieldId == MetadataColumns.IS_DELETED.fieldId() ||
+          fieldId == MetadataColumns.FILE_PATH.fieldId()) {
         continue; // add _pos and _deleted at the end
       }
 

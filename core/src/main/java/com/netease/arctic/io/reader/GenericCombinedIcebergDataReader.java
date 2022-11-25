@@ -26,9 +26,6 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiFunction;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -42,6 +39,10 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.types.Type;
+
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Abstract implementation of iceberg data reader consuming {@link ArcticFileScanTask}.
@@ -82,7 +83,7 @@ public abstract class GenericCombinedIcebergDataReader {
 
     CloseableIterable<Record> concat = CloseableIterable.concat(CloseableIterable.transform(
         CloseableIterable.withNoopClose(task.getDataFiles()),
-        s -> readData(s,
+        s -> openFile(s,
             task.getPartitionSpec(), deleteFilter.requiredSchema())));
 
     CloseableIterable<Record> iterable = deleteFilter.filter(concat);
@@ -94,14 +95,15 @@ public abstract class GenericCombinedIcebergDataReader {
 
     CloseableIterable<Record> concat = CloseableIterable.concat(CloseableIterable.transform(
         CloseableIterable.withNoopClose(task.getDataFiles()),
-        s -> readData(s,
+        s -> openFile(s,
             task.getPartitionSpec(), deleteFilter.requiredSchema())));
 
     CloseableIterable<Record> iterable = deleteFilter.filterNegate(concat);
     return iterable;
   }
 
-  private CloseableIterable<Record> readData(IcebergContentFile icebergContentFile, PartitionSpec spec, Schema require) {
+  private CloseableIterable<Record> openFile(IcebergContentFile icebergContentFile,
+      PartitionSpec spec, Schema require) {
     Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(icebergContentFile, projectedSchema, spec,
         convertConstant);
 

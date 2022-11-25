@@ -38,7 +38,7 @@ public class RecordWithLsn {
     return record;
   }
 
-  public RecordWithLsn recordCopy(){
+  public RecordWithLsn recordCopy() {
     record = record.copy();
     return this;
   }
