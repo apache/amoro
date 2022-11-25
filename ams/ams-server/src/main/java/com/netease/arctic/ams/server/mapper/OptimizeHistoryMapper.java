@@ -38,7 +38,6 @@ public interface OptimizeHistoryMapper {
       "total_file_size_before, insert_file_cnt_before, insert_file_size_before, " +
       "delete_file_cnt_before, delete_file_size_before, base_file_cnt_before, " +
       "base_file_size_before, pos_delete_file_cnt_before, pos_delete_file_size_before, " +
-      "eq_delete_file_cnt_before, eq_delete_file_size_before, " +
       "total_file_cnt_after,total_file_size_after,snapshot_id, total_size, " +
       "added_files, removed_files, added_records, removed_records, added_files_size, " +
       "removed_files_size, total_files, total_records, partition_cnt, partitions, " +
@@ -82,8 +81,6 @@ public interface OptimizeHistoryMapper {
       @Result(column = "base_file_size_before", property = "baseFilesStatBeforeOptimize.totalSize"),
       @Result(column = "pos_delete_file_cnt_before", property = "posDeleteFilesStatBeforeOptimize.fileCnt"),
       @Result(column = "pos_delete_file_size_before", property = "posDeleteFilesStatBeforeOptimize.totalSize"),
-      @Result(column = "eq_delete_file_cnt_before", property = "eqDeleteFilesStatBeforeOptimize.fileCnt"),
-      @Result(column = "eq_delete_file_size_before", property = "eqDeleteFilesStatBeforeOptimize.totalSize"),
       @Result(column = "total_file_cnt_after", property = "totalFilesStatAfterOptimize.fileCnt"),
       @Result(column = "total_file_size_after", property = "totalFilesStatAfterOptimize.totalSize")
   })
@@ -100,7 +97,6 @@ public interface OptimizeHistoryMapper {
           "total_file_size_before, insert_file_cnt_before, insert_file_size_before, " +
           "delete_file_cnt_before, delete_file_size_before, base_file_cnt_before, " +
           "base_file_size_before, pos_delete_file_cnt_before, pos_delete_file_size_before, " +
-          "eq_delete_file_cnt_before, eq_delete_file_size_before, " +
           "total_file_cnt_after, total_file_size_after,snapshot_id, total_size," +
           "added_files, removed_files, added_records, removed_records, added_files_size, " +
           "removed_files_size, total_files, total_records, partition_cnt, partitions, " +
@@ -126,8 +122,6 @@ public interface OptimizeHistoryMapper {
           "#{optimizeHistory.baseFilesStatBeforeOptimize.totalSize}, " +
           "#{optimizeHistory.posDeleteFilesStatBeforeOptimize.fileCnt}, " +
           "#{optimizeHistory.posDeleteFilesStatBeforeOptimize.totalSize}, " +
-          "#{optimizeHistory.eqDeleteFilesStatBeforeOptimize.fileCnt}, " +
-          "#{optimizeHistory.eqDeleteFilesStatBeforeOptimize.totalSize}, " +
           "#{optimizeHistory.totalFilesStatAfterOptimize.fileCnt}, " +
           "#{optimizeHistory.totalFilesStatAfterOptimize.totalSize}, " +
           "#{optimizeHistory.snapshotInfo.snapshotId}, " +

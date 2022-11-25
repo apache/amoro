@@ -270,7 +270,8 @@ public class BaseTaskExecutor implements Serializable {
     if (properties != null) {
       String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
       int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() +
-          nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size();
+          nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size() +
+          nodeTask.icebergDeleteFiles().size() + nodeTask.icebergDataFiles().size() + nodeTask.icebergSmallDataFiles().size();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);

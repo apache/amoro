@@ -689,7 +689,6 @@ public class TableOptimizeItem extends IJDBCService {
         .addFilesStatistics(record.getDeleteFilesStatBeforeOptimize())
         .addFilesStatistics(record.getBaseFilesStatBeforeOptimize())
         .addFilesStatistics(record.getPosDeleteFilesStatBeforeOptimize())
-        .addFilesStatistics(record.getEqDeleteFilesStatBeforeOptimize())
         .build();
     record.setTotalFilesStatBeforeOptimize(totalFs);
     record.setTotalFilesStatAfterOptimize(targetFb.build());

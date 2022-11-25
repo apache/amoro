@@ -172,7 +172,7 @@ public class NodeTask {
 
   public List<IcebergContentFile> icebergDeleteFiles() {
     List<IcebergContentFile> icebergDeleteFiles = Lists.newArrayList();
-    icebergDeleteFiles.addAll(icebergPosDeleteFiles);
+    icebergDeleteFiles.addAll(icebergEqDeleteFiles);
     icebergDeleteFiles.addAll(icebergPosDeleteFiles);
     return icebergDeleteFiles;
   }

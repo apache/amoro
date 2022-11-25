@@ -107,9 +107,9 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
 
   @Override
   protected boolean partitionNeedPlan(String partitionToPath) {
-    List<FileScanTask> smallDataFileTask = partitionSmallDataFilesTask.get(partitionToPath);
+    List<FileScanTask> smallDataFileTask = partitionSmallDataFilesTask.getOrDefault(partitionToPath, new ArrayList<>());
 
-    List<DeleteFile> smallDeleteFile = partitionDeleteFiles.get(partitionToPath).stream()
+    List<DeleteFile> smallDeleteFile = partitionDeleteFiles.getOrDefault(partitionToPath, new HashSet<>()).stream()
         .filter(deleteFile -> deleteFile.fileSizeInBytes() <= getSmallFileSize()).collect(Collectors.toList());
 
     long smallFileCountThreshold = PropertyUtil.propertyAsLong(arcticTable.properties(),
@@ -156,6 +156,10 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
   private List<BaseOptimizeTask> collectSmallDataFileTask(String partition, TaskConfig taskPartitionConfig) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     List<FileScanTask> smallFileScanTasks = partitionSmallDataFilesTask.get(partition);
+    if (CollectionUtils.isEmpty(smallFileScanTasks)) {
+      return collector;
+    }
+
     List<List<FileScanTask>> packedList = binPackFileScanTask(smallFileScanTasks);
 
     if (CollectionUtils.isNotEmpty(packedList)) {
@@ -176,6 +180,10 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
   private List<BaseOptimizeTask> collectDeleteFileTask(String partition, TaskConfig taskPartitionConfig) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     Set<DeleteFile> needOptimizeDeleteFiles = partitionDeleteFiles.get(partition);
+    if (CollectionUtils.isEmpty(needOptimizeDeleteFiles)) {
+      return collector;
+    }
+
     Set<FileScanTask> allNeedOptimizeTask = new HashSet<>();
     for (DeleteFile needOptimizeDeleteFile : needOptimizeDeleteFiles) {
       allNeedOptimizeTask.addAll(deleteDataFileMap.get(needOptimizeDeleteFile.path().toString()));
