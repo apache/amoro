@@ -18,11 +18,13 @@
 
 package com.netease.arctic.ams.server.terminal;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.server.config.ConfigOption;
 import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.table.TableMetaStore;
 import java.util.List;
+import java.util.Map;
 
 /**
  * factory to create a TerminalSession
@@ -57,16 +59,35 @@ public interface TerminalSessionFactory {
         .asList()
         .noDefaultValue();
 
-    public static ConfigOption<String> catalogType(String catalog) {
-      return ConfigOptions.key("catalog." + catalog + ".type")
+    public static ConfigOption<String> CATALOG_URL_BASE = ConfigOptions
+        .key("catalog-url-base")
+        .stringType()
+        .noDefaultValue();
+
+    public static ConfigOption<String> catalogConnector(String catalog) {
+      return ConfigOptions.key("session.catalog." + catalog + ".connector")
           .stringType()
           .noDefaultValue();
     }
 
-    public static ConfigOption<String> catalogUrl(String catalog) {
-      return ConfigOptions.key("catalog." + catalog + ".url")
+    public static ConfigOption<String> catalogProperty(String catalog, String propertyKey) {
+      return ConfigOptions.key("catalog." + catalog + "." + propertyKey)
           .stringType()
           .noDefaultValue();
+    }
+
+    public static Map<String, String> getCatalogProperties(Configuration configuration, String catalog) {
+      final String prefix = "catalog." + catalog + ".";
+      Map<String, String> properties = Maps.newHashMap();
+      for (String key : configuration.keySet()) {
+        if (key.startsWith(prefix)) {
+          ConfigOption<String> confOption = ConfigOptions.key(key)
+              .stringType()
+              .noDefaultValue();
+          properties.put(key.substring(prefix.length()), configuration.getString(confOption));
+        }
+      }
+      return properties;
     }
   }
 

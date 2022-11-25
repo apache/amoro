@@ -19,14 +19,19 @@
 package com.netease.arctic.ams.server.terminal.kyuubi;
 
 import com.clearspring.analytics.util.Lists;
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.server.config.ConfigOption;
 import com.netease.arctic.ams.server.config.ConfigOptions;
 import com.netease.arctic.ams.server.config.Configuration;
+import com.netease.arctic.ams.server.terminal.SparkContextUtil;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
 import com.netease.arctic.spark.ArcticSparkCatalog;
+import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.iceberg.relocated.com.google.common.base.Joiner;
+import org.apache.iceberg.spark.SparkCatalog;
+import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
 import org.apache.kyuubi.jdbc.KyuubiHiveDriver;
 import org.apache.kyuubi.jdbc.hive.JdbcConnectionParams;
 import org.apache.kyuubi.jdbc.hive.Utils;
@@ -103,25 +108,24 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
     List<String> logs = Lists.newArrayList();
     JdbcConnectionParams connectionParams = new JdbcConnectionParams(this.params);
 
-    List<String> catalogs = configuration.get(SessionConfigOptions.CATALOGS);
-    for (String catalog : catalogs) {
-      String catalogUrl = configuration.get(SessionConfigOptions.catalogUrl(catalog));
-      String type = configuration.get(SessionConfigOptions.catalogType(catalog));
+    Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
+    sparkConf.forEach((k, v) -> connectionParams.getHiveVars().put(k, v));
 
-      connectionParams.getHiveVars().put("spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
-      connectionParams.getHiveVars().put("spark.sql.catalog." + catalog + ".url", catalogUrl);
-    }
     String kyuubiJdbcUrl = getConnectionUrl(connectionParams);
     logMessage(logs, "try to create a kyuubi connection via url: " + kyuubiJdbcUrl);
     logMessage(logs, "");
 
+    Map<String, String> sessionConf = Maps.newLinkedHashMap();
+    sessionConf.put("jdbc.url", kyuubiJdbcUrl);
     Properties properties = new Properties();
+
     if (!metaStore.isKerberosAuthMethod()) {
       properties.put(AUTH_USER, metaStore.getHadoopUsername());
+      sessionConf.put(AUTH_USER, metaStore.getHadoopUsername());
     }
-    Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, properties));
 
-    return new KyuubiSession(connection, logs);
+    Connection connection = metaStore.doAs(() -> driver.connect(kyuubiJdbcUrl, properties));
+    return new KyuubiSession(connection, logs, sessionConf);
   }
 
 
