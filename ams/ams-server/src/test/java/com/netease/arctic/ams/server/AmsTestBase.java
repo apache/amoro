@@ -198,7 +198,8 @@ public class AmsTestBase {
     when(ServiceContainer.getMetaService()).thenReturn(metaService);
     PlatformFileInfoService platformFileInfoService = new PlatformFileInfoService();
     when(ServiceContainer.getPlatformFileInfoService()).thenReturn(platformFileInfoService);
-
+    AdaptHiveService adaptHiveService = new AdaptHiveService();
+    when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
 
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());
