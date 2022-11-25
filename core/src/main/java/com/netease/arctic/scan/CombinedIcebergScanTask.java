@@ -22,26 +22,44 @@ import com.netease.arctic.data.IcebergContentFile;
 import java.util.List;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
-public class ReuseIcebergScanTask {
+public class CombinedIcebergScanTask {
 
-  IcebergContentFile<DataFile>[] dataFiles;
+  private IcebergContentFile[] dataFiles;
 
-  IcebergContentFile<DeleteFile>[] deleteFiles;
+  private IcebergContentFile[] deleteFiles;
 
-  public ReuseIcebergScanTask(
-      IcebergContentFile<DataFile>[] dataFiles,
-      IcebergContentFile<DeleteFile>[] deleteFiles) {
+  private PartitionSpec partitionSpec;
+
+  private StructLike partitionData;
+
+  public CombinedIcebergScanTask(
+      IcebergContentFile[] dataFiles,
+      IcebergContentFile[] deleteFiles,
+      PartitionSpec partitionSpec, StructLike partitionData) {
     this.dataFiles = dataFiles;
     this.deleteFiles = deleteFiles;
+    this.partitionSpec = partitionSpec;
+    this.partitionData = partitionData;
   }
 
-  public List<IcebergContentFile<DataFile>> getDataFiles() {
+  public List<IcebergContentFile> getDataFiles() {
     return ImmutableList.copyOf(dataFiles);
   }
 
-  public List<IcebergContentFile<DeleteFile>> getDeleteFiles() {
+  public List<IcebergContentFile> getDeleteFiles() {
     return ImmutableList.copyOf(deleteFiles);
+  }
+
+  public PartitionSpec getPartitionSpec() {
+    return partitionSpec;
+  }
+
+  public StructLike getPartitionData() {
+    return partitionData;
   }
 }
