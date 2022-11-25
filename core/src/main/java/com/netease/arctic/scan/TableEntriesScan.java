@@ -137,7 +137,7 @@ public class TableEntriesScan {
           if (shouldKeep(status, fileContent)) {
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {
-              return new ManifestEntry(fileContent.id(), status, snapshotId, sequence, contentFile);
+              return new ManifestEntry(status, snapshotId, sequence, contentFile);
             }
           }
           return null;

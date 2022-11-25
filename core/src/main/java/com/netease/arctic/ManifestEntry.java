@@ -47,27 +47,16 @@ public class ManifestEntry {
     }
   }
   
-  private int contentId;
   private Status status;
   private Long snapshotId;
   private long sequenceNumber;
   private ContentFile<?> file;
 
-  public ManifestEntry(int contentId, Status status, Long snapshotId, long sequenceNumber,
-                       ContentFile<?> file) {
-    this.contentId = contentId;
+  public ManifestEntry(Status status, Long snapshotId, long sequenceNumber, ContentFile<?> file) {
     this.status = status;
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
     this.file = file;
-  }
-
-  public int getContentId() {
-    return contentId;
-  }
-
-  public void setContentId(int contentId) {
-    this.contentId = contentId;
   }
 
   public Status getStatus() {
