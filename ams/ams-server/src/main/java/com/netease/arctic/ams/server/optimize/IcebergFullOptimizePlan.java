@@ -42,14 +42,14 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(IcebergMajorOptimizePlan.class);
+public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergFullOptimizePlan.class);
 
   protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
 
-  public IcebergMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                  Map<String, Boolean> partitionTaskRunning,
-                                  int queueId, long currentTime) {
+  public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                 Map<String, Boolean> partitionTaskRunning,
+                                 int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
   }
 
@@ -98,8 +98,8 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
         TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT);
     // delete files total size reach target or delete files rate reach target
     if (deleteFilesTotalSize > duplicateSize || deleteFilesTotalSize / dataFilesTotalSize >= duplicateRatio) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
-      LOG.debug("{} ==== need native Major optimize plan, partition is {}, " +
+      partitionOptimizeType.put(partitionToPath, getOptimizeType());
+      LOG.debug("{} ==== need native Full optimize plan, partition is {}, " +
               "delete files totalSize is {}, data files totalSize is {}",
           tableId(), partitionToPath, deleteFilesTotalSize, dataFilesTotalSize);
       return true;
@@ -113,7 +113,7 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
 
   @Override
   protected OptimizeType getOptimizeType() {
-    return OptimizeType.Major;
+    return OptimizeType.FullMajor;
   }
 
   public boolean hasFileToOptimize() {
@@ -127,7 +127,7 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        commitGroup, planGroup, OptimizeType.Major, createTime, "");
+        commitGroup, planGroup, getOptimizeType(), createTime, "");
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
 
     List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(fileScanTasks);

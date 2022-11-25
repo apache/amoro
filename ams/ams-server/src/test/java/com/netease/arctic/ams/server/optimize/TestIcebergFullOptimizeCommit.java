@@ -6,9 +6,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
@@ -28,7 +26,7 @@ import java.util.stream.Collectors;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
+public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
   @Test
   public void testNoPartitionTableMajorOptimizeCommit() throws Exception {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
@@ -48,7 +46,7 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
           }
         });
 
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergNoPartitionTable,
+    IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
@@ -107,7 +105,7 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
           }
         });
 
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergPartitionTable,
+    IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();

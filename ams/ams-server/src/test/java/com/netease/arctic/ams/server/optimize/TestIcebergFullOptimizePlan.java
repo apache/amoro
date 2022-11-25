@@ -2,9 +2,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.TableProperties;
 import org.junit.Assert;
 import org.junit.Test;
@@ -12,7 +10,7 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.List;
 
-public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
+public class TestIcebergFullOptimizePlan extends TestIcebergBase {
   @Test
   public void testNoPartitionMajorOptimize() throws Exception {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
@@ -22,7 +20,7 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergNoPartitionTable,
+    IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
@@ -38,7 +36,7 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergPartitionTable,
+    IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
@@ -55,7 +53,7 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergNoPartitionTable,
+    IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();

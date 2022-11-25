@@ -225,7 +225,7 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
   private static Set<ContentFile<?>> selectDeletedFiles(OptimizeTaskItem taskItem) {
     BaseOptimizeTask optimizeTask = taskItem.getOptimizeTask();
     switch (optimizeTask.getTaskId().getType()) {
-      case Major:
+      case FullMajor:
         return selectMajorOptimizeDeletedFiles(optimizeTask);
       case Minor:
         return selectMinorOptimizeDeletedFiles(optimizeTask);

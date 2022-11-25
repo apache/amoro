@@ -927,8 +927,8 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public IcebergMajorOptimizePlan getIcebergMajorPlan(int queueId, long currentTime) {
-    return new IcebergMajorOptimizePlan(arcticTable, tableOptimizeRuntime,
+  public IcebergFullOptimizePlan getIcebergMajorPlan(int queueId, long currentTime) {
+    return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime,
         generatePartitionRunning(), queueId, currentTime);
   }
 
