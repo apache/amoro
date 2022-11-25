@@ -62,16 +62,11 @@ import java.util.stream.Collectors;
 public class MajorExecutor extends BaseExecutor<DataFile> {
   private static final Logger LOG = LoggerFactory.getLogger(MajorExecutor.class);
 
-  private final NodeTask task;
-  private final ArcticTable table;
-  private final long startTime;
-  private final OptimizerConfig config;
-
-  public MajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
-    this.task = nodeTask;
-    this.table = table;
-    this.startTime = startTime;
-    this.config = config;
+  public MajorExecutor(NodeTask nodeTask,
+                       ArcticTable table,
+                       long startTime,
+                       OptimizerConfig config) {
+    super(nodeTask, table, startTime, config);
   }
 
   @Override
@@ -136,6 +131,8 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
     while (recordIterator.hasNext()) {
+      checkIfTimeout(writer);
+
       Record baseRecord = recordIterator.next();
       writer.write(baseRecord);
       insertCount++;

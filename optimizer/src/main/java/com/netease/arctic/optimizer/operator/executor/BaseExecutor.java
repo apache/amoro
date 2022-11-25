@@ -19,11 +19,18 @@
 package com.netease.arctic.optimizer.operator.executor;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.optimizer.OptimizerConfig;
+import com.netease.arctic.optimizer.exception.TimeoutException;
+import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +38,24 @@ import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
 public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor<F> {
+  private static final Logger LOG = LoggerFactory.getLogger(BaseExecutor.class);
+
+  protected final NodeTask task;
+  protected final ArcticTable table;
+  protected final OptimizerConfig config;
+  protected final long startTime;
+  protected double factor = 0.9;
+
+  public BaseExecutor(NodeTask nodeTask,
+                      ArcticTable table,
+                      long startTime,
+                      OptimizerConfig config) {
+    this.startTime = startTime;
+    this.task = nodeTask;
+    this.table = table;
+    this.config = config;
+  }
+
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
     return new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(dataFile ->
         FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
@@ -49,5 +74,19 @@ public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor
     }
 
     return 0;
+  }
+
+  protected void checkIfTimeout(Closeable writer) throws Exception {
+    long maxExecuteTime = task.getMaxExecuteTime() != null ?
+        task.getMaxExecuteTime() : TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT;
+    long actualExecuteTime = System.currentTimeMillis() - startTime;
+    if (actualExecuteTime > maxExecuteTime * factor) {
+      writer.close();
+      LOG.error("table {} execute task {} timeout, actual execute time is {}ms, max execute time is {}ms",
+          table.id(), task.getTaskId(), actualExecuteTime, task.getMaxExecuteTime());
+      throw new TimeoutException(String.format("optimizer execute timeout, " +
+          "actual execute time is %sms, max execute time is %sms, factor is %s",
+          actualExecuteTime, task.getMaxExecuteTime(), factor));
+    }
   }
 }
