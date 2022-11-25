@@ -33,10 +33,12 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.avro.Avro;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.data.avro.DataReader;
+import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.InputFile;
+import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
@@ -102,7 +104,7 @@ public abstract class CombinedDeleteFilter<T> {
           posDeleteBuilder.add(delete);
           break;
         case EQUALITY_DELETES:
-          if (deleteIds != null) {
+          if (deleteIds == null) {
             deleteIds = ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds());
           }
           eqDeleteBuilder.add(delete);
@@ -340,14 +342,19 @@ public abstract class CombinedDeleteFilter<T> {
             .build();
 
       case PARQUET:
-        Parquet.ReadBuilder builder = Parquet.read(input)
+        return Parquet.read(input)
             .project(deleteSchema)
             .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
-
-        return builder.build();
+            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema))
+            .build();
 
       case ORC:
+        // Reusing containers is automatic for ORC. No need to set 'reuseContainers' here.
+        return ORC.read(input)
+            .project(deleteSchema)
+            .createReaderFunc(fileSchema -> GenericOrcReader.buildReader(deleteSchema, fileSchema))
+            .build();
+
       default:
         throw new UnsupportedOperationException(String.format(
             "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
@@ -385,6 +392,7 @@ public abstract class CombinedDeleteFilter<T> {
     for (int fieldId : missingIds) {
       if (fieldId == MetadataColumns.ROW_POSITION.fieldId() ||
           fieldId == MetadataColumns.IS_DELETED.fieldId() ||
+          fieldId == com.netease.arctic.table.MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
           fieldId == MetadataColumns.FILE_PATH.fieldId()) {
         continue; // add _pos and _deleted at the end
       }
