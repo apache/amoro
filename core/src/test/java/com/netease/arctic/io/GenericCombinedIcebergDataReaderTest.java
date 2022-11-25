@@ -21,29 +21,35 @@ package com.netease.arctic.io;
 import com.google.common.collect.Iterables;
 import com.netease.arctic.IcebergTableBase;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
 
-  protected Schema schema = new Schema(
-      Types.NestedField.required(1, "id", Types.LongType.get())
-  );
-
   protected GenericCombinedIcebergDataReader dataReader;
+
+  protected GenericCombinedIcebergDataReader partitionDataReader;
 
   @Before
   public void init() {
     dataReader = new GenericCombinedIcebergDataReader(
-        new ArcticFileIoDummy(table.io()),
-        schema,
-        schema,
+        new ArcticFileIoDummy(unPartitionTable.io()),
+        unPartitionSchema,
+        unPartitionSchema,
+        null,
+        false,
+        IdentityPartitionConverters::convertConstant,
+        false
+    );
+
+    partitionDataReader = new GenericCombinedIcebergDataReader(
+        new ArcticFileIoDummy(partitionTable.io()),
+        partitionSchema,
+        partitionSchema,
         null,
         false,
         IdentityPartitionConverters::convertConstant,
@@ -53,7 +59,7 @@ public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
 
   @Test
   public void readAllData(){
-    CloseableIterable<Record> records = dataReader.readData(allFileTask);
+    CloseableIterable<Record> records = dataReader.readData(unPartitionAllFileTask);
     Assert.assertTrue(Iterables.size(records) == 1);
     Record record = Iterables.getFirst(records, null);
     Assert.assertEquals(record.get(0), 3L);
@@ -61,7 +67,7 @@ public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
 
   @Test
   public void readAllDataNegate(){
-    CloseableIterable<Record> records = dataReader.readDeleteData(allFileTask);
+    CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionAllFileTask);
     Assert.assertTrue(Iterables.size(records) == 2);
     Record first = Iterables.getFirst(records, null);
     Assert.assertEquals(first.get(0), 1L);
@@ -71,13 +77,23 @@ public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
 
   @Test
   public void readOnlyData(){
-    CloseableIterable<Record> records = dataReader.readData(onlyDataTask);
+    CloseableIterable<Record> records = dataReader.readData(unPartitionOnlyDataTask);
     Assert.assertEquals(Iterables.size(records), 3);
   }
 
   @Test
   public void readOnlyDataNegate(){
-    CloseableIterable<Record> records = dataReader.readDeleteData(onlyDataTask);
+    CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionOnlyDataTask);
     Assert.assertEquals(Iterables.size(records), 0);
+  }
+
+  @Test
+  public void readPartitionAllData(){
+    CloseableIterable<Record> records = partitionDataReader.readData(partitionAllFileTask);
+    records.forEach(System.out::println);
+    Assert.assertTrue(Iterables.size(records) == 1);
+    Record record = Iterables.getFirst(records, null);
+    Assert.assertEquals(record.get(0), 3L);
+    Assert.assertEquals(record.get(1), "3");
   }
 }
