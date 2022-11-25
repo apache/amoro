@@ -66,7 +66,9 @@ public class IcebergTableBase {
       Types.NestedField.required(1, "id", Types.LongType.get())
   );
 
-  protected CombinedIcebergScanTask combinedIcebergScanTask;
+  protected CombinedIcebergScanTask allFileTask;
+
+  protected CombinedIcebergScanTask onlyDataTask;
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -108,9 +110,16 @@ public class IcebergTableBase {
         PositionDelete.<Record>create().set(parquetData.asDataFile().path(), 0, record.copy("id", 2L))
     ), FileFormat.AVRO),5L);
 
-    combinedIcebergScanTask = new CombinedIcebergScanTask(
+    allFileTask = new CombinedIcebergScanTask(
         new IcebergContentFile[]{avroData, parquetData, orcData},
         new IcebergContentFile[]{eqDeleteFile, posDeleteFile},
+        PartitionSpec.unpartitioned(),
+        null
+    );
+
+    onlyDataTask = new CombinedIcebergScanTask(
+        new IcebergContentFile[]{avroData, parquetData, orcData},
+        null,
         PartitionSpec.unpartitioned(),
         null
     );

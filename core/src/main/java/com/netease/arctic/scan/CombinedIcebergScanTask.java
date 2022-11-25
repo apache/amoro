@@ -19,12 +19,16 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.io.reader.GenericIcebergDataReader;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 
 import java.util.List;
 
+/**
+ * Be used in {@link GenericIcebergDataReader} to read iceberg for optimizing
+ */
 public class CombinedIcebergScanTask {
 
   private final IcebergContentFile[] dataFiles;
@@ -39,8 +43,8 @@ public class CombinedIcebergScanTask {
       IcebergContentFile[] dataFiles,
       IcebergContentFile[] deleteFiles,
       PartitionSpec partitionSpec, StructLike partitionData) {
-    this.dataFiles = dataFiles;
-    this.deleteFiles = deleteFiles;
+    this.dataFiles = dataFiles == null ? new IcebergContentFile[0] : dataFiles;
+    this.deleteFiles = deleteFiles == null ? new IcebergContentFile[0] : deleteFiles;
     this.partitionSpec = partitionSpec;
     this.partitionData = partitionData;
   }
