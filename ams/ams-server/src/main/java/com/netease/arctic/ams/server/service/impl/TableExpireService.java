@@ -170,6 +170,10 @@ public class TableExpireService implements ITableExpireService {
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
+    if (CollectionUtils.isEmpty(changeDataFiles)) {
+      return;
+    }
+
     StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
     if (MapUtils.isEmpty(baseMaxTransactionId)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
@@ -186,7 +190,7 @@ public class TableExpireService implements ITableExpireService {
     List<DataFileInfo> deleteFiles = new ArrayList<>();
     if (keyedTable.baseTable().spec().isUnpartitioned()) {
       List<DataFileInfo> partitionDataFiles =
-          partitionDataFileMap.get(null);
+          partitionDataFileMap.get(changeDataFiles.get(0).getPartition());
 
       Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
