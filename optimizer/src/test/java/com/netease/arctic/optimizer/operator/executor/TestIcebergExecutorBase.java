@@ -22,16 +22,37 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
+import com.netease.arctic.ams.api.OptimizeTaskId;
+import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.CatalogProperties;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
+import org.apache.iceberg.data.GenericAppenderFactory;
+import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.deletes.EqualityDeleteWriter;
+import org.apache.iceberg.deletes.PositionDelete;
+import org.apache.iceberg.deletes.PositionDeleteWriter;
+import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.io.DataWriter;
+import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.ArrayUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -39,8 +60,12 @@ import org.junit.ClassRule;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
@@ -96,7 +121,8 @@ public class TestIcebergExecutorBase {
         catalogProperties, new Configuration());
     Map<String, String> tableProperty = new HashMap<>();
     tableProperty.put(TableProperties.FORMAT_VERSION, "2");
-    nativeIcebergCatalog.createTable(tableIdentifier, TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperty);
+    nativeIcebergCatalog.createTable(tableIdentifier, TableTestBase.TABLE_SCHEMA,
+        PartitionSpec.unpartitioned(), tableProperty);
     icebergTable = icebergCatalog.loadTable(
         com.netease.arctic.table.TableIdentifier.of(ICEBERG_HADOOP_CATALOG_NAME, DATABASE, TABLE_NAME));
   }
@@ -111,6 +137,91 @@ public class TestIcebergExecutorBase {
     nativeIcebergCatalog.dropTable(tableIdentifier);
     icebergCatalog.dropDatabase(DATABASE);
     tempFolder.delete();
+  }
+
+  protected DataFile insertDataFiles( int recordNumber, int startId) throws IOException {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(icebergTable.schema(), icebergTable.spec());
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(icebergTable.asUnkeyedTable(), icebergTable.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+
+    DataWriter<Record> writer = appenderFactory
+        .newDataWriter(outputFile, FileFormat.PARQUET, null);
+
+    for (Record record : baseRecords(startId, recordNumber, icebergTable.schema())) {
+      writer.write(record);
+    }
+    writer.close();
+    return writer.toDataFile();
+  }
+
+  protected DeleteFile insertEqDeleteFiles(Integer... deleteIds) throws IOException {
+    List<Integer> equalityFieldIds = Lists.newArrayList(icebergTable.schema().findField("id").fieldId());
+    Schema eqDeleteRowSchema = icebergTable.schema().select("id");
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(icebergTable.schema(), icebergTable.spec(),
+            ArrayUtil.toIntArray(equalityFieldIds), eqDeleteRowSchema, null);
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(icebergTable.asUnkeyedTable(), icebergTable.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+
+    EqualityDeleteWriter<Record> writer = appenderFactory
+        .newEqDeleteWriter(outputFile, FileFormat.PARQUET, null);
+
+    GenericRecord record = GenericRecord.create(eqDeleteRowSchema);
+    for (Integer deleteId : deleteIds) {
+      writer.write(record.copy("id", deleteId));
+    }
+    writer.close();
+    return writer.toDeleteFile();
+  }
+
+  protected DeleteFile insertPosDeleteFiles(DataFile dataFile, Integer... positions) throws IOException {
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(icebergTable.schema(), icebergTable.spec());
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(icebergTable.asUnkeyedTable(), icebergTable.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+
+    PositionDeleteWriter<Record> writer = appenderFactory
+        .newPosDeleteWriter(outputFile, FileFormat.PARQUET, null);
+    for (Integer position : positions) {
+      PositionDelete<Record> positionDelete = PositionDelete.create();
+      positionDelete.set(dataFile.path().toString(), position, null);
+      writer.write(positionDelete);
+    }
+    writer.close();
+    return writer.toDeleteFile();
+  }
+
+  protected List<Record> baseRecords(int start, int length, Schema tableSchema) {
+    GenericRecord record = GenericRecord.create(tableSchema);
+
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    for (int i = start; i < start + length; i++) {
+      builder.add(record.copy(ImmutableMap.of("id", i, "name", "name",
+          "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
+    }
+
+    return builder.build();
+  }
+
+  protected NodeTask constructNodeTask(List<IcebergContentFile> dataFiles, List<IcebergContentFile> smallDataFiles,
+      List<IcebergContentFile> posDeleteFiles, List<IcebergContentFile> equDeleteFiles) {
+    NodeTask nodeTask = new NodeTask();
+    nodeTask.setTableIdentifier(icebergTable.id());
+    nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Minor, UUID.randomUUID().toString()));
+    nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
+
+    dataFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.BASE_FILE));
+    smallDataFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.INSERT_FILE));
+    posDeleteFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.POS_DELETE_FILE));
+    equDeleteFiles.forEach(dataFile -> nodeTask.addFile(dataFile, DataFileType.ICEBERG_EQ_DELETE_FILE));
+
+    return nodeTask;
   }
 
 }

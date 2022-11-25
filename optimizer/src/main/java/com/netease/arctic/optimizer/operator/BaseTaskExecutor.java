@@ -122,9 +122,9 @@ public class BaseTaskExecutor implements Serializable {
       onTaskFailed(e);
       return constructFailedResult(task, e);
     }
-    Executor<?> optimize = ExecutorFactory.constructOptimize(task, table, startTime, config);
+    Executor optimize = ExecutorFactory.constructOptimize(task, table, startTime, config);
     try {
-      OptimizeTaskResult<?> result = optimize.execute();
+      OptimizeTaskResult result = optimize.execute();
       onTaskFinish(result.getTargetFiles());
       return result.getOptimizeTaskStat();
     } catch (Throwable t) {
@@ -273,8 +273,7 @@ public class BaseTaskExecutor implements Serializable {
       String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
       int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() +
           nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size() +
-          nodeTask.icebergDeleteFiles().size() + nodeTask.icebergDataFiles().size() +
-          nodeTask.icebergSmallDataFiles().size();
+          nodeTask.allIcebergDataFiles().size() + nodeTask.allIcebergDeleteFiles().size();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);

@@ -27,13 +27,13 @@ import java.util.List;
 
 public class CombinedIcebergScanTask {
 
-  private IcebergContentFile[] dataFiles;
+  private final IcebergContentFile[] dataFiles;
 
-  private IcebergContentFile[] deleteFiles;
+  private final IcebergContentFile[] deleteFiles;
 
-  private PartitionSpec partitionSpec;
+  private final PartitionSpec partitionSpec;
 
-  private StructLike partitionData;
+  private final StructLike partitionData;
 
   public CombinedIcebergScanTask(
       IcebergContentFile[] dataFiles,

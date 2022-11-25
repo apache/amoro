@@ -106,6 +106,7 @@ public class NodeTask {
       case INSERT_FILE:
         icebergSmallDataFiles.add(icebergContentFile);
         break;
+      case ICEBERG_EQ_DELETE_FILE:
       case EQ_DELETE_FILE:
         icebergEqDeleteFiles.add(icebergContentFile);
         break;
@@ -170,11 +171,18 @@ public class NodeTask {
     return icebergSmallDataFiles;
   }
 
-  public List<IcebergContentFile> icebergDeleteFiles() {
-    List<IcebergContentFile> icebergDeleteFiles = Lists.newArrayList();
-    icebergDeleteFiles.addAll(icebergEqDeleteFiles);
-    icebergDeleteFiles.addAll(icebergPosDeleteFiles);
-    return icebergDeleteFiles;
+  public List<IcebergContentFile> allIcebergDataFiles() {
+    List<IcebergContentFile> allIcebergDataFiles = Lists.newArrayList();
+    allIcebergDataFiles.addAll(icebergDataFiles);
+    allIcebergDataFiles.addAll(icebergSmallDataFiles);
+    return allIcebergDataFiles;
+  }
+
+  public List<IcebergContentFile> allIcebergDeleteFiles() {
+    List<IcebergContentFile> allIcebergDeleteFiles = Lists.newArrayList();
+    allIcebergDeleteFiles.addAll(icebergEqDeleteFiles);
+    allIcebergDeleteFiles.addAll(icebergPosDeleteFiles);
+    return allIcebergDeleteFiles;
   }
 
   public Set<DataTreeNode> getSourceNodes() {

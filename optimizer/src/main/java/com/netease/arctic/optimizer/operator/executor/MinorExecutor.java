@@ -18,10 +18,6 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
-import com.netease.arctic.ams.api.JobId;
-import com.netease.arctic.ams.api.JobType;
-import com.netease.arctic.ams.api.OptimizeStatus;
-import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
@@ -36,8 +32,6 @@ import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -52,7 +46,6 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +53,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class MinorExecutor extends BaseExecutor<DeleteFile> {
+public class MinorExecutor extends BaseExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
   public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
@@ -68,7 +61,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
   }
 
   @Override
-  public OptimizeTaskResult<DeleteFile> execute() throws Exception {
+  public OptimizeTaskResult execute() throws Exception {
     List<DeleteFile> targetFiles = new ArrayList<>();
     LOG.info("Start processing arctic table minor optimize task: {}", task);
 
