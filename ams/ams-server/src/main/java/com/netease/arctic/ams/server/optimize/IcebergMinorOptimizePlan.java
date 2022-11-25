@@ -29,6 +29,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -165,8 +166,12 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
         List<DeleteFile> posDeleteFiles = new ArrayList<>();
         getOptimizeFile(fileScanTasks, dataFiles, eqDeleteFiles, posDeleteFiles);
 
-        collector.add(buildOptimizeTask(dataFiles, Collections.emptyList(),
-            eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
+        // only return tasks with at least 2 files
+        int totalFileCnt = dataFiles.size() + eqDeleteFiles.size() + posDeleteFiles.size();
+        if (totalFileCnt > 1) {
+          collector.add(buildOptimizeTask(dataFiles, Collections.emptyList(),
+              eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
+        }
       }
     }
 
@@ -195,6 +200,9 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
         List<DeleteFile> eqDeleteFiles = new ArrayList<>();
         List<DeleteFile> posDeleteFiles = new ArrayList<>();
         getOptimizeFile(fileScanTasks, dataFiles, eqDeleteFiles, posDeleteFiles);
+
+        int totalFileCnt = dataFiles.size() + eqDeleteFiles.size() + posDeleteFiles.size();
+        Preconditions.checkArgument(totalFileCnt > 1, "task only have " + totalFileCnt + " files");
 
         collector.add(buildOptimizeTask(Collections.emptyList(), dataFiles,
             eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
