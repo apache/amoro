@@ -65,6 +65,8 @@ import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -178,12 +180,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   public TableOptimizeItem getTableOptimizeItem(TableIdentifier tableIdentifier) throws NoSuchObjectException {
     TableOptimizeItem tableOptimizeItem = cachedTables.get(tableIdentifier);
     if (tableOptimizeItem == null) {
-      listCachedTables();
-      TableOptimizeItem reloadTableOptimizeItem = cachedTables.get(tableIdentifier);
-      if (reloadTableOptimizeItem == null) {
-        throw new NoSuchObjectException("can't find table " + tableIdentifier);
-      }
-      return reloadTableOptimizeItem;
+      throw new NoSuchObjectException("can't find table " + tableIdentifier);
     }
     return tableOptimizeItem;
   }
@@ -497,19 +494,17 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private void scheduleRefresh() {
     LOG.info("start schedule refresh");
-    new Thread(() -> {
-      while (true) {
-        try {
-          refreshAndListTables();
-        } catch (Exception e) {
-          LOG.error("schedule refresh error", e);
-        }
-        try {
-          Thread.sleep(DEFAULT_CACHE_REFRESH_TIME);
-        } catch (InterruptedException e) {
-          throw new RuntimeException(e);
-        }
-      }
-    }).start();
+    ScheduledExecutorService pool = ThreadPool.getPool(ThreadPool.Type.COMMON_SCHEDULE_POOL);
+    pool.scheduleWithFixedDelay(
+        () -> {
+          try {
+            refreshAndListTables();
+          } catch (Exception e) {
+            LOG.error("schedule refresh error", e);
+          }
+        },
+        3 * 1000L,
+        60 * 1000L,
+        TimeUnit.MILLISECONDS);
   }
 }

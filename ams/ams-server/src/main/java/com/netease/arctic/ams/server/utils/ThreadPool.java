@@ -47,6 +47,8 @@ public class ThreadPool {
   private static ThreadPoolExecutor syncFileInfoCachePool;
   private static ScheduledExecutorService tableRuntimeDataExpirePool;
 
+  private static ScheduledExecutorService commonScheduledPool;
+
   public enum Type {
     OPTIMIZE_CHECK,
     COMMIT,
@@ -55,7 +57,8 @@ public class ThreadPool {
     SYNC_FILE_INFO_CACHE,
     OPTIMIZER_MONITOR,
     TABLE_RUNTIME_DATA_EXPIRE,
-    HIVE_SYNC
+    HIVE_SYNC,
+    COMMON_SCHEDULE_POOL
   }
 
   public static synchronized ThreadPool initialize(Configuration conf) {
@@ -120,6 +123,12 @@ public class ThreadPool {
     tableRuntimeDataExpirePool = Executors.newScheduledThreadPool(
         1,
         tableRuntimeDataExpirePoolThreadFactory);
+
+    ThreadFactory commonScheduledPoolThreadFactory = new ThreadFactoryBuilder().setDaemon(false)
+        .setNameFormat("Common Scheduled Pool %d").build();
+    commonScheduledPool = Executors.newScheduledThreadPool(
+        1,
+        commonScheduledPoolThreadFactory);
   }
 
   public static ScheduledExecutorService getPool(Type type) {
@@ -141,6 +150,8 @@ public class ThreadPool {
         return tableRuntimeDataExpirePool;
       case HIVE_SYNC:
         return supportHiveSyncPool;
+      case COMMON_SCHEDULE_POOL:
+        return commonScheduledPool;
       default:
         throw new RuntimeException("ThreadPool not support this type: " + type);
     }
