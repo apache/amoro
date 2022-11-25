@@ -1,6 +1,7 @@
 package com.netease.arctic.ams.server;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -9,7 +10,6 @@ import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -17,14 +17,36 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.table.WriteOperationKind;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
+import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.Tables;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
+import org.apache.iceberg.data.IcebergGenerics;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.deletes.EqualityDeleteWriter;
+import org.apache.iceberg.deletes.PositionDelete;
+import org.apache.iceberg.deletes.PositionDeleteWriter;
+import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.hadoop.HadoopTables;
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.DataWriter;
+import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.ArrayUtil;
+import org.apache.iceberg.util.PropertyUtil;
+import org.jetbrains.annotations.NotNull;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -39,11 +61,14 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
@@ -53,12 +78,16 @@ public class OptimizeIntegrationTest {
   private static AmsEnvironment amsEnvironment;
   private static final long TIMEOUT = 30_000;
 
-  private static final String CATALOG = "local_catalog";
+  private static final String CATALOG = "local_catalog1";
+  private static final String ICEBERG_CATALOG = "iceberg_catalog";
   private static final String DATABASE = "test_db";
+  private static String CATALOG_DIR;
+  private static String ICEBERG_CATALOG_DIR;
   private static final TableIdentifier TB_1 = TableIdentifier.of(CATALOG, DATABASE, "test_table1");
   private static final TableIdentifier TB_2 = TableIdentifier.of(CATALOG, DATABASE, "test_table2");
   private static final TableIdentifier TB_3 = TableIdentifier.of(CATALOG, DATABASE, "test_table3");
   private static final TableIdentifier TB_4 = TableIdentifier.of(CATALOG, DATABASE, "test_table4");
+  private static final TableIdentifier TB_5 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "test_table5");
 
   private static final ConcurrentHashMap<String, ArcticCatalog> catalogsCache = new ConcurrentHashMap<>();
 
@@ -73,11 +102,17 @@ public class OptimizeIntegrationTest {
 
   @BeforeClass
   public static void beforeClass() {
-    LOG.info("TEMP folder {}", tempFolder.getRoot().getAbsolutePath());
+    String rootPath = tempFolder.getRoot().getAbsolutePath();
+    CATALOG_DIR = rootPath + "/arctic/warehouse";
+    ICEBERG_CATALOG_DIR = rootPath + "/iceberg/warehouse";
+    LOG.info("TEMP folder {}", rootPath);
     catalogsCache.clear();
-    amsEnvironment = new AmsEnvironment(tempFolder.getRoot().getAbsolutePath());
+    amsEnvironment = new AmsEnvironment(rootPath);
     amsEnvironment.start();
+    amsEnvironment.createLocalCatalog(CATALOG, CATALOG_DIR);
+    amsEnvironment.createIcebergCatalog(ICEBERG_CATALOG, ICEBERG_CATALOG_DIR);
     catalog(CATALOG).createDatabase(DATABASE);
+    catalog(ICEBERG_CATALOG).createDatabase(DATABASE);
   }
 
   @Test
@@ -104,21 +139,21 @@ public class OptimizeIntegrationTest {
 
     TableIdentifier tb = table.id();
     long startId = getOptimizeHistoryStartId();
-    
+
     // Step 1: insert data
     writeBase(table, Lists.newArrayList(
-        newRecord(table, 3, "aaa", quickDateWithZone(3)),
-        newRecord(table, 4, "bbb", quickDateWithZone(3)),
-        newRecord(table, 5, "eee", quickDateWithZone(4)),
-        newRecord(table, 6, "ddd", quickDateWithZone(4))
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord( 4, "bbb", quickDateWithZone(3)),
+        newRecord(5, "eee", quickDateWithZone(4)),
+        newRecord( 6, "ddd", quickDateWithZone(4))
     ));
 
     // Step 2: insert data
     writeBase(table, Lists.newArrayList(
-        newRecord(table, 7, "fff", quickDateWithZone(3)),
-        newRecord(table, 8, "ggg", quickDateWithZone(3)),
-        newRecord(table, 9, "hhh", quickDateWithZone(4)),
-        newRecord(table, 10, "iii", quickDateWithZone(4))
+        newRecord(7, "fff", quickDateWithZone(3)),
+        newRecord(8, "ggg", quickDateWithZone(3)),
+        newRecord(9, "hhh", quickDateWithZone(4)),
+        newRecord(10, "iii", quickDateWithZone(4))
     ));
     // wait Major Optimize result
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
@@ -126,10 +161,10 @@ public class OptimizeIntegrationTest {
 
     // Step 3: insert data
     writeBase(table, Lists.newArrayList(
-        newRecord(table, 11, "jjj", quickDateWithZone(3)),
-        newRecord(table, 12, "kkk", quickDateWithZone(3)),
-        newRecord(table, 13, "lll", quickDateWithZone(4)),
-        newRecord(table, 14, "mmm", quickDateWithZone(4))
+        newRecord(11, "jjj", quickDateWithZone(3)),
+        newRecord(12, "kkk", quickDateWithZone(3)),
+        newRecord(13, "lll", quickDateWithZone(4)),
+        newRecord(14, "mmm", quickDateWithZone(4))
     ));
     // wait Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 2);
@@ -146,18 +181,18 @@ public class OptimizeIntegrationTest {
 
     // Step 1: insert data
     writeBase(table, Lists.newArrayList(
-        newRecord(table, 3, "aaa", quickDateWithZone(3)),
-        newRecord(table, 4, "bbb", quickDateWithZone(3)),
-        newRecord(table, 5, "eee", quickDateWithZone(4)),
-        newRecord(table, 6, "ddd", quickDateWithZone(4))
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3)),
+        newRecord(5, "eee", quickDateWithZone(4)),
+        newRecord(6, "ddd", quickDateWithZone(4))
     ));
 
     // Step 2: insert data
     writeBase(table, Lists.newArrayList(
-        newRecord(table, 7, "fff", quickDateWithZone(3)),
-        newRecord(table, 8, "ggg", quickDateWithZone(3)),
-        newRecord(table, 9, "hhh", quickDateWithZone(4)),
-        newRecord(table, 10, "iii", quickDateWithZone(4))
+        newRecord(7, "fff", quickDateWithZone(3)),
+        newRecord(8, "ggg", quickDateWithZone(3)),
+        newRecord(9, "hhh", quickDateWithZone(4)),
+        newRecord(10, "iii", quickDateWithZone(4))
     ));
     // wait Major Optimize result
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
@@ -165,14 +200,50 @@ public class OptimizeIntegrationTest {
 
     // Step 3: insert data
     writeBase(table, Lists.newArrayList(
-        newRecord(table, 11, "jjj", quickDateWithZone(3)),
-        newRecord(table, 12, "kkk", quickDateWithZone(3)),
-        newRecord(table, 13, "lll", quickDateWithZone(4)),
-        newRecord(table, 14, "mmm", quickDateWithZone(4))
+        newRecord(11, "jjj", quickDateWithZone(3)),
+        newRecord(12, "kkk", quickDateWithZone(3)),
+        newRecord(13, "lll", quickDateWithZone(4)),
+        newRecord(14, "mmm", quickDateWithZone(4))
     ));
     // wait Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 2);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Major, 4, 2);
+  }
+
+  @Test
+  public void testIcebergTableOptimizing() throws IOException {
+    Table table = createIcebergTable(TB_5);
+    TableIdentifier tb = TB_5;
+    long startId = getOptimizeHistoryStartId();
+
+    // Step 1: insert 2 data file
+    insertDataFiles(table, Lists.newArrayList(
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3))
+    ));
+
+    insertDataFiles(table, Lists.newArrayList(
+        newRecord(5, "ccc", quickDateWithZone(3)),
+        newRecord(6, "ddd", quickDateWithZone(3))
+    ));
+
+    // wait Major Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+
+    assertContainIdSet(readRecords(table), 0, 3, 4, 5, 6);
+
+    // Step 2: insert delete file
+    insertEqDeleteFiles(table, Lists.newArrayList(
+        newRecord(3, "aaa", quickDateWithZone(3))
+    ));
+
+    // wait Major Optimize result
+    optimizeHistory = waitOptimizeResult(tb, startId + 2);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+
+    assertContainIdSet(readRecords(table), 0, 4, 5, 6);
+
   }
 
   private void testKeyedTableContinueOptimizing(KeyedTable table) {
@@ -180,10 +251,10 @@ public class OptimizeIntegrationTest {
     long startId = getOptimizeHistoryStartId();
     // Step1: insert change data
     writeChange(table, Lists.newArrayList(
-        newRecord(table, 3, "aaa", quickDateWithZone(3)),
-        newRecord(table, 4, "bbb", quickDateWithZone(3)),
-        newRecord(table, 5, "eee", quickDateWithZone(4)),
-        newRecord(table, 6, "ddd", quickDateWithZone(4))
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3)),
+        newRecord(5, "eee", quickDateWithZone(4)),
+        newRecord(6, "ddd", quickDateWithZone(4))
     ), null);
 
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
@@ -192,10 +263,10 @@ public class OptimizeIntegrationTest {
 
     // Step2: insert change data
     writeChange(table, Lists.newArrayList(
-        newRecord(table, 7, "fff", quickDateWithZone(3)),
-        newRecord(table, 8, "ggg", quickDateWithZone(3)),
-        newRecord(table, 9, "hhh", quickDateWithZone(4)),
-        newRecord(table, 10, "iii", quickDateWithZone(4))
+        newRecord(7, "fff", quickDateWithZone(3)),
+        newRecord(8, "ggg", quickDateWithZone(3)),
+        newRecord(9, "hhh", quickDateWithZone(4)),
+        newRecord(10, "iii", quickDateWithZone(4))
     ), null);
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 2);
@@ -205,8 +276,8 @@ public class OptimizeIntegrationTest {
 
     // Step3: delete change data
     writeChange(table, null, Lists.newArrayList(
-        newRecord(table, 7, "fff", quickDateWithZone(3)),
-        newRecord(table, 8, "ggg", quickDateWithZone(3))
+        newRecord(7, "fff", quickDateWithZone(3)),
+        newRecord(8, "ggg", quickDateWithZone(3))
     ));
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 4);
@@ -214,11 +285,11 @@ public class OptimizeIntegrationTest {
 
     // Step4: update change data
     writeChange(table, Lists.newArrayList(
-        newRecord(table, 9, "hhh_new", quickDateWithZone(4)),
-        newRecord(table, 10, "iii_new", quickDateWithZone(4))
+        newRecord(9, "hhh_new", quickDateWithZone(4)),
+        newRecord(10, "iii_new", quickDateWithZone(4))
     ), Lists.newArrayList(
-        newRecord(table, 9, "fff", quickDateWithZone(4)),
-        newRecord(table, 10, "ggg", quickDateWithZone(4))
+        newRecord(9, "fff", quickDateWithZone(4)),
+        newRecord(10, "ggg", quickDateWithZone(4))
     ));
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 5);
@@ -228,12 +299,12 @@ public class OptimizeIntegrationTest {
 
     // Step5: delete all change data
     writeChange(table, null, Lists.newArrayList(
-        newRecord(table, 3, "aaa", quickDateWithZone(3)),
-        newRecord(table, 4, "bbb", quickDateWithZone(3)),
-        newRecord(table, 5, "eee", quickDateWithZone(4)),
-        newRecord(table, 6, "ddd", quickDateWithZone(4)),
-        newRecord(table, 9, "hhh_new", quickDateWithZone(4)),
-        newRecord(table, 10, "iii_new", quickDateWithZone(4))
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3)),
+        newRecord(5, "eee", quickDateWithZone(4)),
+        newRecord(6, "ddd", quickDateWithZone(4)),
+        newRecord(9, "hhh_new", quickDateWithZone(4)),
+        newRecord(10, "iii_new", quickDateWithZone(4))
     ));
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 7);
@@ -241,7 +312,7 @@ public class OptimizeIntegrationTest {
 
     // Step6: insert change data
     writeChange(table, Lists.newArrayList(
-        newRecord(table, 11, "jjj", quickDateWithZone(3))
+        newRecord(11, "jjj", quickDateWithZone(3))
     ), null);
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
     optimizeHistory = waitOptimizeResult(tb, startId + 8);
@@ -251,9 +322,9 @@ public class OptimizeIntegrationTest {
   }
 
   private void assertOptimizeHistory(OptimizeHistory optimizeHistory,
-                                    OptimizeType optimizeType,
-                                    int fileCntBefore,
-                                    int fileCntAfter) {
+                                     OptimizeType optimizeType,
+                                     int fileCntBefore,
+                                     int fileCntAfter) {
     Assert.assertNotNull(optimizeHistory);
     Assert.assertEquals(optimizeType, optimizeHistory.getOptimizeType());
     Assert.assertEquals(fileCntBefore, optimizeHistory.getTotalFilesStatBeforeOptimize().getFileCnt());
@@ -301,6 +372,16 @@ public class OptimizeIntegrationTest {
         .withProperty(TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000");
 
     tableBuilder.create();
+  }
+
+  private Table createIcebergTable(TableIdentifier tableIdentifier) {
+    Tables hadoopTables = new HadoopTables(new Configuration());
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    tableProperties.put(TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "2");
+
+    return hadoopTables.create(SCHEMA, PartitionSpec.unpartitioned(), tableProperties,
+        ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
   }
 
   private void createNoPkPartitionArcticTable(TableIdentifier tableIdentifier) {
@@ -443,12 +524,163 @@ public class OptimizeIntegrationTest {
     return ofDateWithZone(2022, 1, day, 0);
   }
 
-  public static GenericRecord newRecord(ArcticTable table, Object... val) {
-    GenericRecord writeRecord = GenericRecord.create(table.schema());
+  public static GenericRecord newRecord(Object... val) {
+    GenericRecord writeRecord = GenericRecord.create(SCHEMA);
     for (int i = 0; i < val.length; i++) {
       writeRecord.set(i, val[i]);
     }
     return writeRecord;
+  }
+
+  private List<DataFile> insertDataFiles(Table table, List<Record> records) throws IOException {
+    List<DataFile> result = writeNewDataFiles(table, records);
+
+    AppendFiles baseAppend = table.newAppend();
+    result.forEach(baseAppend::appendFile);
+    baseAppend.commit();
+
+    return result;
+  }
+
+  private List<DataFile> overwriteDataFiles(Table table, List<DataFile> toDeleteDataFiles,
+                                            List<DataFile> newDataFiles) {
+    OverwriteFiles overwrite = table.newOverwrite();
+    toDeleteDataFiles.forEach(overwrite::deleteFile);
+    newDataFiles.forEach(overwrite::addFile);
+    overwrite.commit();
+
+    return newDataFiles;
+  }
+
+  private List<DataFile> rewriteFiles(Table table, List<DataFile> toDeleteDataFiles, List<DataFile> newDataFiles,
+                                      long sequence) {
+    RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.rewriteFiles(Sets.newHashSet(toDeleteDataFiles), Sets.newHashSet(newDataFiles), sequence);
+    rewriteFiles.validateFromSnapshot(table.currentSnapshot().snapshotId());
+    rewriteFiles.commit();
+    return newDataFiles;
+  }
+
+  private List<DeleteFile> rewriteFiles(Table table, Set<DeleteFile> toDeleteFiles,
+                                        List<DeleteFile> newFiles) {
+    RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.rewriteFiles(Collections.emptySet(), Sets.newHashSet(toDeleteFiles), Collections.emptySet(),
+        Sets.newHashSet(newFiles));
+    rewriteFiles.validateFromSnapshot(table.currentSnapshot().snapshotId());
+    rewriteFiles.commit();
+    return newFiles;
+  }
+
+  @NotNull
+  private List<DataFile> writeNewDataFiles(Table table, List<Record> records) throws IOException {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+
+    long smallSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
+        com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
+        com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    List<DataFile> result = new ArrayList<>();
+    DataWriter<Record> writer = appenderFactory
+        .newDataWriter(outputFile, FileFormat.PARQUET, null);
+
+    for (Record record : records) {
+      if (writer.length() > smallSizeByBytes || result.size() > 0) {
+        writer.close();
+        result.add(writer.toDataFile());
+        EncryptedOutputFile newOutputFile = outputFileFactory.newOutputFile();
+        writer = appenderFactory
+            .newDataWriter(newOutputFile, FileFormat.PARQUET, null);
+      }
+      writer.write(record);
+    }
+    writer.close();
+    result.add(writer.toDataFile());
+    return result;
+  }
+
+  private List<DeleteFile> insertEqDeleteFiles(Table table, List<Record> records) throws IOException {
+    List<DeleteFile> result = writeEqDeleteFiles(table, records);
+
+    RowDelta rowDelta = table.newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+    return result;
+  }
+
+  @NotNull
+  private List<DeleteFile> writeEqDeleteFiles(Table table, List<Record> records) throws IOException {
+    List<DeleteFile> result = new ArrayList<>();
+    List<Integer> equalityFieldIds = org.apache.iceberg.relocated.com.google.common.collect.Lists.newArrayList(
+        table.schema().findField("id").fieldId());
+    Schema eqDeleteRowSchema = table.schema().select("id");
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(table.schema(), table.spec(),
+            ArrayUtil.toIntArray(equalityFieldIds), eqDeleteRowSchema, null);
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(table.spec(), null);
+
+    EqualityDeleteWriter<Record> writer = appenderFactory
+        .newEqDeleteWriter(outputFile, FileFormat.PARQUET, null);
+
+    for (Record record : records) {
+      writer.write(record);
+    }
+    writer.close();
+    result.add(writer.toDeleteFile());
+    return result;
+  }
+
+  private List<DeleteFile> insertPosDeleteFiles(Table table, List<DataFile> dataFiles) throws IOException {
+    List<DeleteFile> result = writePosDeleteFiles(table, dataFiles);
+
+    RowDelta rowDelta = table.newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+    return result;
+  }
+
+  @NotNull
+  private List<DeleteFile> writePosDeleteFiles(Table table, List<DataFile> dataFiles) throws IOException {
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(table.schema(), table.spec());
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(table.spec(), null);
+
+    List<DeleteFile> result = new ArrayList<>();
+    PositionDeleteWriter<Record> writer = appenderFactory
+        .newPosDeleteWriter(outputFile, FileFormat.PARQUET, null);
+    for (int i = 0; i < dataFiles.size(); i++) {
+      DataFile dataFile = dataFiles.get(i);
+      if (i % 2 == 0) {
+        PositionDelete<Record> positionDelete = PositionDelete.create();
+        positionDelete.set(dataFile.path().toString(), 0L, null);
+        writer.write(positionDelete);
+      }
+    }
+    writer.close();
+    result.add(writer.toDeleteFile());
+    return result;
+  }
+  
+  private CloseableIterable<Record> readRecords(Table table) {
+    return IcebergGenerics.read(table).select("id").build();
+  }
+
+  public static void assertContainIdSet(CloseableIterable<Record> rows, int idIndex, Object... idList) {
+    Set<Object> idSet = org.glassfish.jersey.internal.guava.Sets.newHashSet();
+    rows.forEach(r -> idSet.add(r.get(idIndex)));
+    for (Object id : idList) {
+      if (!idSet.contains(id)) {
+        throw new AssertionError("assert id contain " + id + ", but not found");
+      }
+    }
   }
 
   @AfterClass

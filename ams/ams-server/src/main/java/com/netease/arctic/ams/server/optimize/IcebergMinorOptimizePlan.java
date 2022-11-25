@@ -30,6 +30,7 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,8 +107,11 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
   protected boolean partitionNeedPlan(String partitionToPath) {
     List<FileScanTask> smallDataFileTask = partitionSmallDataFilesTask.getOrDefault(partitionToPath, new ArrayList<>());
 
-    List<DeleteFile> smallDeleteFile = partitionDeleteFiles.getOrDefault(partitionToPath, new HashSet<>()).stream()
-        .filter(deleteFile -> deleteFile.fileSizeInBytes() <= getSmallFileSize()).collect(Collectors.toList());
+    Set<DeleteFile> smallDeleteFile = partitionDeleteFiles.getOrDefault(partitionToPath, new HashSet<>()).stream()
+        .filter(deleteFile -> deleteFile.fileSizeInBytes() <= getSmallFileSize()).collect(Collectors.toSet());
+    for (FileScanTask task : smallDataFileTask) {
+      smallDeleteFile.addAll(task.deletes());
+    }
 
     long smallFileCountThreshold = PropertyUtil.propertyAsLong(arcticTable.properties(),
         TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT,
