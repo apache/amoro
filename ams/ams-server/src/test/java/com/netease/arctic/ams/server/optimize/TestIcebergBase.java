@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -16,6 +15,7 @@ import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -92,7 +92,7 @@ public class TestIcebergBase {
     nativeIcebergCatalog.dropTable(tableIdentifier);
   }
 
-  protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable, int length) throws IOException {
+  protected List<DataFile> insertDataFiles(Table arcticTable, int length) throws IOException {
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
@@ -128,7 +128,7 @@ public class TestIcebergBase {
     return result;
   }
 
-  protected void insertEqDeleteFiles(UnkeyedTable arcticTable, int length) throws IOException {
+  protected void insertEqDeleteFiles(Table arcticTable, int length) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -162,7 +162,7 @@ public class TestIcebergBase {
     rowDelta.commit();
   }
 
-  protected void insertPosDeleteFiles(UnkeyedTable arcticTable, List<DataFile> dataFiles) throws IOException {
+  protected List<DeleteFile> insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
     Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
     PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
     partitionKey.partition(tempRecord);
@@ -190,9 +190,11 @@ public class TestIcebergBase {
     RowDelta rowDelta = arcticTable.newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
+
+    return result;
   }
 
-  protected List<DataFile> insertOptimizeTargetDataFiles(UnkeyedTable arcticTable, int length) throws IOException {
+  protected List<DataFile> insertOptimizeTargetDataFiles(Table arcticTable, int length) throws IOException {
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)

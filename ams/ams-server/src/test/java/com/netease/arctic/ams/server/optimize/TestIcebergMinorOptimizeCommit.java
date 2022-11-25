@@ -6,15 +6,16 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.collections.IteratorUtils;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.DeleteFile;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -37,7 +38,6 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
     icebergTable.asUnkeyedTable().newScan().planFiles()
@@ -49,11 +49,15 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
         });
 
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
+        new TableOptimizeRuntime(icebergTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 
-    List<DataFile> resultFiles = insertOptimizeTargetDataFiles(icebergTable.asUnkeyedTable(), 10);
+    List<DataFile> resultDataFiles = insertOptimizeTargetDataFiles(icebergTable.asUnkeyedTable(), 10);
+    List<DeleteFile> resultDeleteFiles = insertPosDeleteFiles(icebergTable.asUnkeyedTable(), resultDataFiles);
+    List<ContentFile<?>> resultFiles = new ArrayList<>();
+    resultFiles.addAll(resultDataFiles);
+    resultFiles.addAll(resultDeleteFiles);
     List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
       BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
       optimizeRuntime.setPreparedTime(System.currentTimeMillis());
@@ -64,7 +68,6 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
         optimizeRuntime.setTargetFiles(resultFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
       }
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
-      finalTargetFiles.addAll(task.getInsertFiles());
       optimizeRuntime.setTargetFiles(finalTargetFiles);
       optimizeRuntime.setNewFileCnt(finalTargetFiles.size());
       // 1min

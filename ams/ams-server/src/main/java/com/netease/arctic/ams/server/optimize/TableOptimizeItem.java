@@ -59,10 +59,8 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.util.PropertyUtil;
@@ -429,7 +427,6 @@ public class TableOptimizeItem extends IJDBCService {
         builder.addFiles(task.getInsertFileSize(), task.getInsertFileCnt());
         builder.addFiles(task.getDeleteFileSize(), task.getDeleteFileCnt());
         builder.addFiles(task.getPosDeleteFileSize(), task.getPosDeleteFileCnt());
-        builder.addFiles(task.getEqDeleteFileSize(), task.getEqDeleteFileCnt());
       }
     }
     return builder.build();
@@ -671,7 +668,6 @@ public class TableOptimizeItem extends IJDBCService {
     FilesStatisticsBuilder baseFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder targetFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder posDeleteFb = new FilesStatisticsBuilder();
-    FilesStatisticsBuilder eqDeleteFb = new FilesStatisticsBuilder();
     tasks.values()
         .forEach(list -> list
             .forEach(t -> {
@@ -680,7 +676,6 @@ public class TableOptimizeItem extends IJDBCService {
               deleteFb.addFiles(task.getDeleteFileSize(), task.getDeleteFileCnt());
               baseFb.addFiles(task.getBaseFileSize(), task.getBaseFileCnt());
               posDeleteFb.addFiles(task.getPosDeleteFileSize(), task.getPosDeleteFileCnt());
-              eqDeleteFb.addFiles(task.getEqDeleteFileSize(), task.getEqDeleteFileCnt());
               BaseOptimizeTaskRuntime runtime = t.getOptimizeRuntime();
               targetFb.addFiles(runtime.getNewFileSize(), runtime.getNewFileCnt());
             }));
@@ -688,14 +683,12 @@ public class TableOptimizeItem extends IJDBCService {
     record.setDeleteFilesStatBeforeOptimize(deleteFb.build());
     record.setBaseFilesStatBeforeOptimize(baseFb.build());
     record.setPosDeleteFilesStatBeforeOptimize(posDeleteFb.build());
-    record.setEqDeleteFilesStatBeforeOptimize(eqDeleteFb.build());
 
     FilesStatistics totalFs = new FilesStatisticsBuilder()
         .addFilesStatistics(record.getInsertFilesStatBeforeOptimize())
         .addFilesStatistics(record.getDeleteFilesStatBeforeOptimize())
         .addFilesStatistics(record.getBaseFilesStatBeforeOptimize())
         .addFilesStatistics(record.getPosDeleteFilesStatBeforeOptimize())
-        .addFilesStatistics(record.getEqDeleteFilesStatBeforeOptimize())
         .build();
     record.setTotalFilesStatBeforeOptimize(totalFs);
     record.setTotalFilesStatAfterOptimize(targetFb.build());
@@ -935,10 +928,7 @@ public class TableOptimizeItem extends IJDBCService {
    * @return -
    */
   public IcebergMajorOptimizePlan getIcebergMajorPlan(int queueId, long currentTime) {
-    List<FileScanTask> fileScanTasks =
-        IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator());
-
-    return new IcebergMajorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
+    return new IcebergMajorOptimizePlan(arcticTable, tableOptimizeRuntime,
         generatePartitionRunning(), queueId, currentTime);
   }
 
@@ -950,10 +940,7 @@ public class TableOptimizeItem extends IJDBCService {
    * @return -
    */
   public IcebergMinorOptimizePlan getIcebergMinorPlan(int queueId, long currentTime) {
-    List<FileScanTask> fileScanTasks =
-        IteratorUtils.toList(arcticTable.asUnkeyedTable().newScan().planFiles().iterator());
-
-    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
+    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime,
         generatePartitionRunning(), queueId, currentTime);
   }
 

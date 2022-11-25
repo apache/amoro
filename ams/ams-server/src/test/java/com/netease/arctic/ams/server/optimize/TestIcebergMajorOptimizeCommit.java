@@ -38,7 +38,6 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
     icebergTable.asUnkeyedTable().newScan().planFiles()
@@ -50,7 +49,7 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
         });
 
     IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
+        new TableOptimizeRuntime(icebergTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 
@@ -65,7 +64,6 @@ public class TestIcebergMajorOptimizeCommit extends TestIcebergBase {
         optimizeRuntime.setTargetFiles(resultFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
       }
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
-      finalTargetFiles.addAll(task.getInsertFiles());
       optimizeRuntime.setTargetFiles(finalTargetFiles);
       optimizeRuntime.setNewFileCnt(finalTargetFiles.size());
       // 1min

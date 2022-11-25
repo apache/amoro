@@ -21,6 +21,7 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableTypeUtil;
+import org.apache.iceberg.ContentFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,18 +31,27 @@ public class ExecutorFactory {
   public static Executor<?> constructOptimize(NodeTask nodeTask, ArcticTable table,
                                               long startTime, OptimizerConfig config) {
     if (TableTypeUtil.isIcebergTableFormat(table)) {
-      return new IcebergExecutor(nodeTask, table, startTime, config);
-    }
-
-    switch (nodeTask.getOptimizeType()) {
-      case Minor:
-        return new MinorExecutor(nodeTask, table, startTime, config);
-      case Major:
-      case FullMajor:
-        return new MajorExecutor(nodeTask, table, startTime, config);
-      default:
-        LOG.error("not support optimize type: {}", nodeTask.getOptimizeType());
-        throw new UnsupportedOperationException();
+      switch (nodeTask.getOptimizeType()) {
+        case Minor:
+          return new IcebergMinorExecutor<>(nodeTask, table, startTime, config);
+        case Major:
+        case FullMajor:
+          return new IcebergMajorExecutor(nodeTask, table, startTime, config);
+        default:
+          LOG.error("not support optimize type: {}", nodeTask.getOptimizeType());
+          throw new UnsupportedOperationException();
+      }
+    } else {
+      switch (nodeTask.getOptimizeType()) {
+        case Minor:
+          return new MinorExecutor(nodeTask, table, startTime, config);
+        case Major:
+        case FullMajor:
+          return new MajorExecutor(nodeTask, table, startTime, config);
+        default:
+          LOG.error("not support optimize type: {}", nodeTask.getOptimizeType());
+          throw new UnsupportedOperationException();
+      }
     }
   }
 }
