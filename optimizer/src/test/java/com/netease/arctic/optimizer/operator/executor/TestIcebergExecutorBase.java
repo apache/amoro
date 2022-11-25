@@ -139,7 +139,7 @@ public class TestIcebergExecutorBase {
     tempFolder.delete();
   }
 
-  protected DataFile insertDataFiles( int recordNumber, int startId) {
+  protected DataFile insertDataFiles( int recordNumber, int startId) throws IOException {
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(icebergTable.schema(), icebergTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(icebergTable.asUnkeyedTable(), icebergTable.spec().specId(), 1)
@@ -152,7 +152,7 @@ public class TestIcebergExecutorBase {
     for (Record record : baseRecords(startId, recordNumber, icebergTable.schema())) {
       writer.write(record);
     }
-
+    writer.close();
     return writer.toDataFile();
   }
 
@@ -178,8 +178,7 @@ public class TestIcebergExecutorBase {
     return writer.toDeleteFile();
   }
 
-  protected DeleteFile insertPosDeleteFiles(DataFile dataFile,
-      Integer... positions) {
+  protected DeleteFile insertPosDeleteFiles(DataFile dataFile, Integer... positions) throws IOException {
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(icebergTable.schema(), icebergTable.spec());
     OutputFileFactory outputFileFactory =
@@ -194,7 +193,7 @@ public class TestIcebergExecutorBase {
       positionDelete.set(dataFile.path().toString(), position, null);
       writer.write(positionDelete);
     }
-
+    writer.close();
     return writer.toDeleteFile();
   }
 

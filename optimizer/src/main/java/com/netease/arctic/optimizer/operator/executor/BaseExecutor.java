@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
-public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor<F> {
+public abstract class BaseExecutor implements Executor {
 
   protected static final int SAMPLE_DATA_INTERVAL = 100000;
 
@@ -77,11 +77,11 @@ public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor
     return 0;
   }
 
-  protected <F extends ContentFile<F>> OptimizeTaskResult<F> buildOptimizeResult(Iterable<F> targetFiles)
+  protected OptimizeTaskResult buildOptimizeResult(Iterable<? extends ContentFile<?>> targetFiles)
       throws InvocationTargetException, IllegalAccessException {
     long totalFileSize = 0;
     List<ByteBuffer> baseFileBytesList = new ArrayList<>();
-    for (F targetFile : targetFiles) {
+    for (ContentFile<?> targetFile : targetFiles) {
       totalFileSize += targetFile.fileSizeInBytes();
       baseFileBytesList.add(SerializationUtil.toByteBuffer(targetFile));
     }
@@ -101,7 +101,7 @@ public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor
     optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
     optimizeTaskStat.setTaskId(task.getTaskId());
 
-    OptimizeTaskResult<F> result = new OptimizeTaskResult<>();
+    OptimizeTaskResult result = new OptimizeTaskResult();
     result.setTargetFiles(targetFiles);
     result.setOptimizeTaskStat(optimizeTaskStat);
     return result;

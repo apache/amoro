@@ -21,10 +21,10 @@ package com.netease.arctic.optimizer.operator.executor;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import org.apache.iceberg.ContentFile;
 
-public class OptimizeTaskResult<F extends ContentFile<?>> {
+public class OptimizeTaskResult {
   private OptimizeTaskStat optimizeTaskStat;
 
-  private Iterable<F> targetFiles;
+  private Iterable<? extends ContentFile<?>> targetFiles;
 
   public OptimizeTaskStat getOptimizeTaskStat() {
     return optimizeTaskStat;
@@ -34,11 +34,11 @@ public class OptimizeTaskResult<F extends ContentFile<?>> {
     this.optimizeTaskStat = optimizeTaskStat;
   }
 
-  public Iterable<F> getTargetFiles() {
+  public Iterable<? extends ContentFile<?>> getTargetFiles() {
     return targetFiles;
   }
 
-  public void setTargetFiles(Iterable<F> targetFiles) {
+  public void setTargetFiles(Iterable<? extends ContentFile<?>> targetFiles) {
     this.targetFiles = targetFiles;
   }
 }

@@ -1,0 +1,170 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.optimizer.operator.executor;
+
+import com.netease.arctic.ams.api.OptimizeType;
+import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
+import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
+import com.netease.arctic.optimizer.OptimizerConfig;
+import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.table.ArcticTable;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.data.GenericAppenderFactory;
+import org.apache.iceberg.data.IdentityPartitionConverters;
+import org.apache.iceberg.data.Record;
+import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.DataWriter;
+import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.util.PropertyUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
+
+import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT;
+import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
+import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
+
+public class IcebergExecutor extends BaseExecutor {
+
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergExecutor.class);
+
+  public IcebergExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
+    super(nodeTask, table, startTime, config);
+  }
+
+  @Override
+  public OptimizeTaskResult execute() throws Exception {
+    LOG.info("Start processing iceberg table optimize task: {}", task);
+
+
+    List<? extends ContentFile<?>> targetFiles = null;
+
+    if (task.getOptimizeType().equals(OptimizeType.Minor) && task.icebergDataFiles().size() > 0) {
+      // optimize iceberg delete files only in minor process
+      targetFiles = table.io().doAs(this::optimizeDeleteFiles);
+    } else if (task.icebergSmallDataFiles().size() > 0) {
+      // optimize iceberg data files.
+      targetFiles = table.io().doAs(this::optimizeDataFiles);
+    } else {
+      targetFiles = Lists.newArrayList();
+    }
+
+    return buildOptimizeResult(targetFiles);
+  }
+
+  private List<? extends ContentFile<?>> optimizeDeleteFiles() throws IOException {
+    Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
+    GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
+        table.io(), table.schema(), requiredSchema, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+        false, IdentityPartitionConverters::convertConstant, false);
+
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(table.schema(), table.spec());
+    String deleteFileFormatName =
+        table.properties().getOrDefault(DELETE_DEFAULT_FILE_FORMAT, DELETE_DEFAULT_FILE_FORMAT);
+    FileFormat deleteFileFormat = FileFormat.valueOf(deleteFileFormatName);
+
+    IcebergFanoutPosDeleteWriter<Record> icebergPosDeleteWriter = new IcebergFanoutPosDeleteWriter<>(
+        appenderFactory, deleteFileFormat, task.getPartition(), table.io(), table.asUnkeyedTable().encryption());
+
+    AtomicLong insertCount = new AtomicLong();
+    icebergDataReader.readDeleteData(buildIcebergScanTask()).forEach(record -> {
+      String filePath = (String) record.getField(MetadataColumns.FILE_PATH.name());
+      Long rowPosition = (Long) record.getField(MetadataColumns.ROW_POSITION.name());
+      icebergPosDeleteWriter.delete(filePath, rowPosition);
+
+      insertCount.incrementAndGet();
+      if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
+        LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
+            task.getTaskId(), insertCount.get(), filePath, rowPosition);
+      }
+    });
+
+    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount.get());
+
+    return icebergPosDeleteWriter.complete();
+  }
+
+  private CombinedIcebergScanTask buildIcebergScanTask() {
+    return new CombinedIcebergScanTask(task.allIcebergDataFiles().toArray(new IcebergContentFile[]{}),
+        task.allIcebergDeleteFiles().toArray(new IcebergContentFile[]{}),
+        table.spec(), task.getPartition());
+  }
+
+  private List<? extends ContentFile<?>> optimizeDataFiles() throws IOException {
+    List<DataFile> result = Lists.newArrayList();
+    GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
+        table.io(), table.schema(), table.schema(), table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+        false, IdentityPartitionConverters::convertConstant, false);
+
+    String formatAsString = table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
+    long targetSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
+        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+
+
+    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table.asUnkeyedTable(), table.spec().specId(),
+        task.getAttemptId()).build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(task.getPartition());
+
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
+    DataWriter<Record> writer = appenderFactory
+        .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
+
+    CloseableIterator<Record> records =  icebergDataReader.readData(buildIcebergScanTask()).iterator();
+    long insertCount = 0;
+    while(records.hasNext()) {
+      if (writer.length() > targetSizeByBytes) {
+        writer.close();
+        result.add(writer.toDataFile());
+        outputFile = outputFileFactory.newOutputFile(task.getPartition());
+        writer = appenderFactory
+            .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
+      }
+      Record record = records.next();
+      writer.write(records.next());
+
+      insertCount++;
+      if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
+        LOG.info("task {} insert records number {} and data sampling {}",
+            task.getTaskId(), insertCount, record);
+      }
+    }
+    writer.close();
+    result.add(writer.toDataFile());
+
+    LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
+    return result;
+  }
+
+  @Override
+  public void close() {
+
+  }
+}

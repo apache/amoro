@@ -51,7 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MajorExecutor extends BaseExecutor<DataFile> {
+public class MajorExecutor extends BaseExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MajorExecutor.class);
 
   public MajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
@@ -59,7 +59,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
   }
 
   @Override
-  public OptimizeTaskResult<DataFile> execute() throws Exception {
+  public OptimizeTaskResult execute() throws Exception {
     Iterable<DataFile> targetFiles;
     LOG.info("Start processing arctic table major optimize task: {}", task);
 
