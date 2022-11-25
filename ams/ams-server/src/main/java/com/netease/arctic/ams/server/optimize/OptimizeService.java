@@ -99,8 +99,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private void init() {
     try {
       LOG.info("OptimizeService init...");
-      loadTables();
-      initOptimizeTasksIntoOptimizeQueue();
+      new Thread(() -> {
+        loadTables();
+        initOptimizeTasksIntoOptimizeQueue();
+      }).start();
       scheduleRefresh();
       LOG.info("OptimizeService init completed");
     } catch (Exception e) {
