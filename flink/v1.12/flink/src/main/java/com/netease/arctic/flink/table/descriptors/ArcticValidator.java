@@ -74,7 +74,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String SCAN_STARTUP_MODE_TIMESTAMP = "timestamp";
 
   public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE =
-      ConfigOptions.key("log.consistency.guarantee.enable")
+      ConfigOptions.key("log-store.consistency-guarantee.enable")
           .booleanType()
           .defaultValue(false)
           .withDescription("Flag hidden kafka read retraction enable or not.");

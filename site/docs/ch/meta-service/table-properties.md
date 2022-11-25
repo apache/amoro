@@ -68,7 +68,7 @@
 | log-store.topic                    | NULL             | 当 log-store.enable=true 时必填，Logstore 使用的 topic                      |
 | log-store.data-format              | json             | Logstore 中的消息格式，当前仅支持 json         |
 | log-store.data-version             | v1               | Logstore 中消息的版本，当前仅支持 v1           |
-| log.consistency.guarantee.enable   | false            | 标记是否开启一致性保证                       |
+| log-store.consistency-guarantee.enable   | false            | 标记是否开启一致性保证                       |
 
 ### Watermark 相关配置
 

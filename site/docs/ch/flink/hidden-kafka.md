@@ -54,7 +54,7 @@ Logstore 的配置请参考[这里](../meta-service/table-properties.md#logstore
 ###开启一致性读取
 ```sql
 select * from arctic.db.arctic
-/*+ OPTIONS('arctic.read.mode'='log','log.consistency.guarantee.enable'='true') */;
+/*+ OPTIONS('arctic.read.mode'='log','log-store.consistency-guarantee.enable'='true') */;
 
 --或者是创建表时开启一致性读取
 create table catalog.db.arctic (
@@ -63,7 +63,7 @@ create table catalog.db.arctic (
     'log-store.enable' = 'true',
     'log-store.topic'='topic_log_test',
     'log-store.address'='localhost:9092',
-    'log.consistency.guarantee.enable'='true'
+    'log-store.consistency-guarantee.enable'='true'
 );
 ```
 
