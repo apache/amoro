@@ -86,7 +86,7 @@ public abstract class CombinedDeleteFilter<T> {
   private Set<Long> positionSet;
 
   // equity-field is primary key
-  private Set<Integer> deleteIds;
+  private Set<Integer> deleteIds = new HashSet<>();
   private final Set<String> pathSets;
 
   private String currentDataPath;
@@ -104,7 +104,7 @@ public abstract class CombinedDeleteFilter<T> {
           posDeleteBuilder.add(delete);
           break;
         case EQUALITY_DELETES:
-          if (deleteIds == null) {
+          if (deleteIds.isEmpty()) {
             deleteIds = ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds());
           }
           eqDeleteBuilder.add(delete);

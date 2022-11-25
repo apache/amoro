@@ -18,16 +18,16 @@
 
 package com.netease.arctic.io;
 
+import com.google.common.collect.Iterables;
 import com.netease.arctic.IcebergTableBase;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
-import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.types.Types;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
@@ -36,9 +36,11 @@ public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
       Types.NestedField.required(1, "id", Types.LongType.get())
   );
 
-  @Test
-  public void read(){
-    GenericCombinedIcebergDataReader dataReader = new GenericCombinedIcebergDataReader(
+  protected GenericCombinedIcebergDataReader dataReader;
+
+  @Before
+  public void init() {
+    dataReader = new GenericCombinedIcebergDataReader(
         new ArcticFileIoDummy(table.io()),
         schema,
         schema,
@@ -47,9 +49,35 @@ public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
         IdentityPartitionConverters::convertConstant,
         false
     );
-
-    CloseableIterable<Record> records = dataReader.readData(combinedIcebergScanTask);
-    records.forEach(System.out::println);
   }
 
+  @Test
+  public void readAllData(){
+    CloseableIterable<Record> records = dataReader.readData(allFileTask);
+    Assert.assertTrue(Iterables.size(records) == 1);
+    Record record = Iterables.getFirst(records, null);
+    Assert.assertEquals(record.get(0), 3L);
+  }
+
+  @Test
+  public void readAllDataNegate(){
+    CloseableIterable<Record> records = dataReader.readDeleteData(allFileTask);
+    Assert.assertTrue(Iterables.size(records) == 2);
+    Record first = Iterables.getFirst(records, null);
+    Assert.assertEquals(first.get(0), 1L);
+    Record last = Iterables.getLast(records);
+    Assert.assertEquals(last.get(0), 2L);
+  }
+
+  @Test
+  public void readOnlyData(){
+    CloseableIterable<Record> records = dataReader.readData(onlyDataTask);
+    Assert.assertEquals(Iterables.size(records), 3);
+  }
+
+  @Test
+  public void readOnlyDataNegate(){
+    CloseableIterable<Record> records = dataReader.readDeleteData(onlyDataTask);
+    Assert.assertEquals(Iterables.size(records), 0);
+  }
 }
