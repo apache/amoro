@@ -134,6 +134,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         fileInfoCacheService.deleteTableCache(tableIdentifier);
         transactionService.delete(tableIdentifier.buildTableIdentifier());
         ddlTracerService.dropTableData(tableIdentifier.buildTableIdentifier());
+        ServiceContainer.getAdaptHiveService().removeTableCache(tableIdentifier);
       } catch (Exception e) {
         LOG.error("The internal table service drop table failed.");
         sqlSession.rollback(true);
