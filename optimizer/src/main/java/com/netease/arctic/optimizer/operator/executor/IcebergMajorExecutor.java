@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class IcebergMajorExecutor extends BaseExecutor<DataFile> {
+
   private static final Logger LOG = LoggerFactory.getLogger(IcebergMajorExecutor.class);
 
   public IcebergMajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
