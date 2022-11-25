@@ -88,8 +88,8 @@ public class IcebergExecutor extends BaseExecutor {
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
     String deleteFileFormatName =
-        table.properties().getOrDefault(DELETE_DEFAULT_FILE_FORMAT, DELETE_DEFAULT_FILE_FORMAT);
-    FileFormat deleteFileFormat = FileFormat.valueOf(deleteFileFormatName);
+        table.properties().getOrDefault(DELETE_DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
+    FileFormat deleteFileFormat = FileFormat.valueOf(deleteFileFormatName.toUpperCase());
 
     IcebergFanoutPosDeleteWriter<Record> icebergPosDeleteWriter = new IcebergFanoutPosDeleteWriter<>(
         appenderFactory, deleteFileFormat, task.getPartition(), table.io(), table.asUnkeyedTable().encryption());
