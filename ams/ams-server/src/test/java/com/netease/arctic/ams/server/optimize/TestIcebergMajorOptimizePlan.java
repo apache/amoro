@@ -14,16 +14,32 @@ import java.util.List;
 
 public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
   @Test
-  public void testMajorOptimize() throws Exception {
-    icebergTable.asUnkeyedTable().updateProperties()
+  public void testNoPartitionMajorOptimize() throws Exception {
+    icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
         .commit();
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
-    insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
-    insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()),
+    List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergNoPartitionTable,
+        new TableOptimizeRuntime(icebergNoPartitionTable.id()),
+        new HashMap<>(), 1, System.currentTimeMillis());
+    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+    Assert.assertEquals(1, tasks.size());
+  }
+
+  @Test
+  public void testPartitionMajorOptimize() throws Exception {
+    icebergPartitionTable.asUnkeyedTable().updateProperties()
+        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
+        .commit();
+    List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergPartitionTable,
+        new TableOptimizeRuntime(icebergPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
@@ -31,16 +47,16 @@ public class TestIcebergMajorOptimizePlan extends TestIcebergBase {
 
   @Test
   public void testBinPackPlan() throws Exception {
-    icebergTable.asUnkeyedTable().updateProperties()
+    icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .set(com.netease.arctic.table.TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
         .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1500")
         .commit();
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
-    insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
-    insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()),
+    List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMajorOptimizePlan optimizePlan = new IcebergMajorOptimizePlan(icebergNoPartitionTable,
+        new TableOptimizeRuntime(icebergNoPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(50, tasks.size());

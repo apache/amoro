@@ -19,7 +19,6 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.ManifestEntry;
-import com.netease.arctic.ManifestReader;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
@@ -78,7 +77,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       // return no files for table without snapshot
       return CloseableIterable.empty();
     }
-    ManifestReader manifestReader = ManifestReader.builder(table)
+    TableEntriesScan manifestReader = TableEntriesScan.builder(table)
         .withAliveEntry(true)
         .withDataFilter(dataFilter)
         .includeFileContent(FileContent.DATA)

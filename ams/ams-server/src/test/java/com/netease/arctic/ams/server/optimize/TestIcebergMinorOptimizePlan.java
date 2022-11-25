@@ -11,15 +11,30 @@ import java.util.List;
 
 public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
   @Test
-  public void testMinorOptimize() throws Exception {
-    icebergTable.asUnkeyedTable().updateProperties()
+  public void testUnPartitionMinorOptimize() throws Exception {
+    icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .commit();
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
-    insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
-    insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()),
+    List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
+        new TableOptimizeRuntime(icebergNoPartitionTable.id()),
+        new HashMap<>(), 1, System.currentTimeMillis());
+    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+    Assert.assertEquals(2, tasks.size());
+  }
+
+  @Test
+  public void testPartitionMinorOptimize() throws Exception {
+    icebergPartitionTable.asUnkeyedTable().updateProperties()
+        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .commit();
+    List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
+        new TableOptimizeRuntime(icebergPartitionTable.id()),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(2, tasks.size());
