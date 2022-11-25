@@ -137,7 +137,7 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
       List<DeleteFile> posDeleteFiles = new ArrayList<>();
       getOptimizeFile(fileScanTask, dataFiles, eqDeleteFiles, posDeleteFiles);
 
-      collector.add(buildOptimizeTask(dataFiles, Collections.emptyList(),
+      collector.add(buildOptimizeTask(Collections.emptyList(), dataFiles,
           eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
     }
 
