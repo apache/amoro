@@ -125,7 +125,7 @@ public class NodeTask {
     return dataFiles;
   }
 
-    public List<ContentFile<?>> files() {
+  public List<ContentFile<?>> files() {
     allFiles.clear();
     Iterables.addAll(allFiles, baseFiles);
     Iterables.addAll(allFiles, insertFiles);
