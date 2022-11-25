@@ -16,31 +16,30 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.scan;
+package com.netease.arctic.data;
 
-import com.netease.arctic.data.IcebergContentFile;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
+import com.netease.arctic.iceberg.CombinedDeleteFilter;
+import org.apache.iceberg.data.Record;
 
-import java.util.List;
+public class RecordWithLsn {
+  private Long lsn;
+  private Record record;
 
-public class ReuseIcebergScanTask {
-
-  IcebergContentFile[] dataFiles;
-
-  IcebergContentFile[] deleteFiles;
-
-  public ReuseIcebergScanTask(
-      IcebergContentFile[] dataFiles,
-      IcebergContentFile[] deleteFiles) {
-    this.dataFiles = dataFiles;
-    this.deleteFiles = deleteFiles;
+  public RecordWithLsn(Long lsn, Record record) {
+    this.lsn = lsn;
+    this.record = record;
   }
 
-  public List<IcebergContentFile> getDataFiles() {
-    return ImmutableList.copyOf(dataFiles);
+  public Long getLsn() {
+    return lsn;
   }
 
-  public List<IcebergContentFile> getDeleteFiles() {
-    return ImmutableList.copyOf(deleteFiles);
+  public Record getRecord() {
+    return record;
+  }
+
+  public RecordWithLsn recordCopy() {
+    record = record.copy();
+    return this;
   }
 }

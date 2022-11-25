@@ -18,17 +18,13 @@
 
 package com.netease.arctic.io.writer;
 
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
-import java.io.Closeable;
-import java.io.IOException;
-import java.util.List;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.FileAppenderFactory;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.iceberg.util.CharSequenceWrapper;
+
+import java.io.Closeable;
+import java.io.IOException;
 
 public class NoFanOutPosDeleteWriter<T> implements Closeable {
 

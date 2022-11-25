@@ -54,7 +54,7 @@ public class IcebergContentFile implements Serializable {
     this.sequenceNumber = sequenceNumber;
   }
 
-  public FileContent content(){
+  public FileContent content() {
     return contentFile.content();
   }
 
