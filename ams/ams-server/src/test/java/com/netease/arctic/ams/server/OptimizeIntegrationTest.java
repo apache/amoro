@@ -29,6 +29,7 @@ import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Tables;
+import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IcebergGenerics;
@@ -215,9 +216,12 @@ public class OptimizeIntegrationTest {
     Table table = createIcebergTable(TB_5);
     TableIdentifier tb = TB_5;
     long startId = getOptimizeHistoryStartId();
+    long offset = 1;
 
-    // Step 1: insert 2 data file
+    // Step 1: insert 2 data file and Minor Optimize
     insertDataFiles(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(3)),
+        newRecord(2, "bbb", quickDateWithZone(3)),
         newRecord(3, "aaa", quickDateWithZone(3)),
         newRecord(4, "bbb", quickDateWithZone(3))
     ));
@@ -227,23 +231,51 @@ public class OptimizeIntegrationTest {
         newRecord(6, "ddd", quickDateWithZone(3))
     ));
 
-    // wait Major Optimize result
-    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
+    // wait Minor Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+    assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
 
-    assertContainIdSet(readRecords(table), 0, 3, 4, 5, 6);
+    // Step 2: insert delete file and Minor Optimize
+    insertEqDeleteFiles(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(3))
+    ));
 
-    // Step 2: insert delete file
+    // wait Minor Optimize result
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+    assertContainIdSet(readRecords(table), 0, 2, 3, 4, 5, 6);
+
+    // Step 3: insert 2 delete file and Minor Optimize(big file)
+    long dataFileSize = getDataFileSize(table);
+    updateProperties(table, TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, (dataFileSize - 1) + "");
+    updateProperties(table, TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD, "100.0");
+
+    insertEqDeleteFiles(table, Lists.newArrayList(
+        newRecord(2, "aaa", quickDateWithZone(3))
+    ));
+
     insertEqDeleteFiles(table, Lists.newArrayList(
         newRecord(3, "aaa", quickDateWithZone(3))
     ));
 
-    // wait Major Optimize result
-    optimizeHistory = waitOptimizeResult(tb, startId + 2);
-    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-
+    // wait Minor Optimize result
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
     assertContainIdSet(readRecords(table), 0, 4, 5, 6);
 
+    // Step 4: insert 1 delete and full optimize
+    insertEqDeleteFiles(table, Lists.newArrayList(
+        newRecord(4, "bbb", quickDateWithZone(3))
+    ));
+    updateProperties(table, TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "1");
+
+    // wait FullMajor Optimize result
+    optimizeHistory = waitOptimizeResult(tb, startId + offset);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 3, 1);
+
+    assertContainIdSet(readRecords(table), 0, 5, 6);
+    
   }
 
   private void testKeyedTableContinueOptimizing(KeyedTable table) {
@@ -382,6 +414,12 @@ public class OptimizeIntegrationTest {
 
     return hadoopTables.create(SCHEMA, PartitionSpec.unpartitioned(), tableProperties,
         ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
+  }
+  
+  private void updateProperties(Table table, String key, String value) {
+    UpdateProperties updateProperties = table.updateProperties();
+    updateProperties.set(key, value);
+    updateProperties.commit();
   }
 
   private void createNoPkPartitionArcticTable(TableIdentifier tableIdentifier) {
@@ -681,6 +719,13 @@ public class OptimizeIntegrationTest {
         throw new AssertionError("assert id contain " + id + ", but not found");
       }
     }
+  }
+  
+  private long getDataFileSize(Table table) {
+    table.refresh();
+    DataFile file = table.newScan().planFiles().iterator().next().file();
+    LOG.info("get file size {} of {}", file.fileSizeInBytes(), file.path());
+    return file.fileSizeInBytes();
   }
 
   @AfterClass
