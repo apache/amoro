@@ -29,6 +29,7 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
+import org.apache.iceberg.MetricsModes;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.data.GenericAppenderFactory;
@@ -84,6 +85,13 @@ public class IcebergExecutor extends BaseExecutor {
 
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
+    appenderFactory.setAll(table.properties());
+    appenderFactory.set(
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_PATH.name(),
+        MetricsModes.Full.get().toString());
+    appenderFactory.set(
+        org.apache.iceberg.TableProperties.METRICS_MODE_COLUMN_CONF_PREFIX + MetadataColumns.DELETE_FILE_POS.name(),
+        MetricsModes.Full.get().toString());
     String deleteFileFormatName =
         table.properties().getOrDefault(DELETE_DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
     FileFormat deleteFileFormat = FileFormat.valueOf(deleteFileFormatName.toUpperCase());
@@ -136,6 +144,7 @@ public class IcebergExecutor extends BaseExecutor {
     EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(task.getPartition());
 
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
+    appenderFactory.setAll(table.properties());
     DataWriter<Record> writer = appenderFactory
         .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
 
