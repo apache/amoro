@@ -132,6 +132,9 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
     }
 
     posDeletes.forEach((filePath, posDeletes) -> {
+      if (posDeletes.size() <= 0) {
+        return;
+      }
       String fileName = FileUtil.getFileName(filePath.get().toString());
       FileFormat fileFormat = FileFormat.fromFileName(fileName);
       if (fileFormat != null) {

@@ -92,18 +92,19 @@ public class IcebergExecutor extends BaseExecutor {
         appenderFactory, deleteFileFormat, task.getPartition(), table.io(), table.asUnkeyedTable().encryption());
 
     AtomicLong insertCount = new AtomicLong();
-    CloseableIterator<Record> iterator = icebergDataReader.readDeleteData(buildIcebergScanTask()).iterator();
-    while (iterator.hasNext()) {
-      checkIfTimeout(icebergPosDeleteWriter);
-      Record record = iterator.next();
-      String filePath = (String) record.getField(MetadataColumns.FILE_PATH.name());
-      Long rowPosition = (Long) record.getField(MetadataColumns.ROW_POSITION.name());
-      icebergPosDeleteWriter.delete(filePath, rowPosition);
+    try(CloseableIterator<Record> iterator = icebergDataReader.readDeleteData(buildIcebergScanTask()).iterator()) {
+      while (iterator.hasNext()) {
+        checkIfTimeout(icebergPosDeleteWriter);
+        Record record = iterator.next();
+        String filePath = (String) record.getField(MetadataColumns.FILE_PATH.name());
+        Long rowPosition = (Long) record.getField(MetadataColumns.ROW_POSITION.name());
+        icebergPosDeleteWriter.delete(filePath, rowPosition);
 
-      insertCount.incrementAndGet();
-      if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
-        LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-            task.getTaskId(), insertCount.get(), filePath, rowPosition);
+        insertCount.incrementAndGet();
+        if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
+          LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
+              task.getTaskId(), insertCount.get(), filePath, rowPosition);
+        }
       }
     }
 
@@ -137,28 +138,32 @@ public class IcebergExecutor extends BaseExecutor {
     DataWriter<Record> writer = appenderFactory
         .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
 
-    CloseableIterator<Record> records =  icebergDataReader.readData(buildIcebergScanTask()).iterator();
     long insertCount = 0;
-    while(records.hasNext()) {
-      checkIfTimeout(writer);
-      if (writer.length() > targetSizeByBytes) {
-        writer.close();
-        result.add(writer.toDataFile());
-        outputFile = outputFileFactory.newOutputFile(task.getPartition());
-        writer = appenderFactory
-            .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
-      }
-      Record record = records.next();
-      writer.write(record);
+    try(CloseableIterator<Record> records =  icebergDataReader.readData(buildIcebergScanTask()).iterator()) {
+      while(records.hasNext()) {
+        checkIfTimeout(writer);
+        if (writer.length() > targetSizeByBytes) {
+          writer.close();
+          result.add(writer.toDataFile());
+          outputFile = outputFileFactory.newOutputFile(task.getPartition());
+          writer = appenderFactory
+              .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
+        }
+        Record record = records.next();
+        writer.write(record);
 
-      insertCount++;
-      if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-        LOG.info("task {} insert records number {} and data sampling {}",
-            task.getTaskId(), insertCount, record);
+        insertCount++;
+        if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
+          LOG.info("task {} insert records number {} and data sampling {}",
+              task.getTaskId(), insertCount, record);
+        }
       }
     }
-    writer.close();
-    result.add(writer.toDataFile());
+
+    if (writer.length() > 0) {
+      writer.close();
+      result.add(writer.toDataFile());
+    }
 
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
     return result;
