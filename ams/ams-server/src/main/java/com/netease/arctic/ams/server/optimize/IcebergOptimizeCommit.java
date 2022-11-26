@@ -267,6 +267,9 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
       deletedFiles.add(SerializationUtil.toIcebergContentFile(insertFile).asDataFile());
     }
+    for (ByteBuffer baseFile : optimizeTask.getBaseFiles()) {
+      deletedFiles.add(SerializationUtil.toIcebergContentFile(baseFile).asDataFile());
+    }
 
     // delete files
     for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {

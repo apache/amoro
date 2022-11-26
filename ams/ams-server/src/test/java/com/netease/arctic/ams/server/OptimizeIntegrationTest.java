@@ -234,7 +234,8 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
+    int size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
+    Assert.assertEquals(6, size);
 
     // Step 2: insert delete file and Minor Optimize
     insertEqDeleteFiles(table, Lists.newArrayList(
@@ -244,7 +245,8 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
-    assertContainIdSet(readRecords(table), 0, 2, 3, 4, 5, 6);
+    size = assertContainIdSet(readRecords(table), 0, 2, 3, 4, 5, 6);
+    Assert.assertEquals(5, size);
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
@@ -262,7 +264,8 @@ public class OptimizeIntegrationTest {
     // wait Minor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
-    assertContainIdSet(readRecords(table), 0, 4, 5, 6);
+    size = assertContainIdSet(readRecords(table), 0, 4, 5, 6);
+    Assert.assertEquals(3, size);
 
     // Step 4: insert 1 delete and full optimize
     insertEqDeleteFiles(table, Lists.newArrayList(
@@ -274,7 +277,8 @@ public class OptimizeIntegrationTest {
     optimizeHistory = waitOptimizeResult(tb, startId + offset);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 3, 1);
 
-    assertContainIdSet(readRecords(table), 0, 5, 6);
+    size = assertContainIdSet(readRecords(table), 0, 5, 6);
+    Assert.assertEquals(2, size);
     
   }
 
@@ -711,14 +715,19 @@ public class OptimizeIntegrationTest {
     return IcebergGenerics.read(table).select("id").build();
   }
 
-  public static void assertContainIdSet(CloseableIterable<Record> rows, int idIndex, Object... idList) {
+  public static int assertContainIdSet(CloseableIterable<Record> rows, int idIndex, Object... idList) {
     Set<Object> idSet = org.glassfish.jersey.internal.guava.Sets.newHashSet();
-    rows.forEach(r -> idSet.add(r.get(idIndex)));
+    int cnt = 0;
+    for (Record r : rows) {
+      idSet.add(r.get(idIndex));
+      cnt++;
+    }
     for (Object id : idList) {
       if (!idSet.contains(id)) {
         throw new AssertionError("assert id contain " + id + ", but not found");
       }
     }
+    return cnt;
   }
   
   private long getDataFileSize(Table table) {
