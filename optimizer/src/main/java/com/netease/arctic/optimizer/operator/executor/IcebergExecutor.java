@@ -101,7 +101,7 @@ public class IcebergExecutor extends BaseExecutor {
         String.format("%s-%d", task.getTaskId().traceId, task.getAttemptId()));
 
     AtomicLong insertCount = new AtomicLong();
-    try(CloseableIterator<Record> iterator = icebergDataReader.readDeleteData(buildIcebergScanTask()).iterator()) {
+    try (CloseableIterator<Record> iterator = icebergDataReader.readDeleteData(buildIcebergScanTask()).iterator()) {
       while (iterator.hasNext()) {
         checkIfTimeout(icebergPosDeleteWriter);
         Record record = iterator.next();
@@ -149,8 +149,8 @@ public class IcebergExecutor extends BaseExecutor {
         .newDataWriter(outputFile, FileFormat.valueOf(formatAsString.toUpperCase()), task.getPartition());
 
     long insertCount = 0;
-    try(CloseableIterator<Record> records =  icebergDataReader.readData(buildIcebergScanTask()).iterator()) {
-      while(records.hasNext()) {
+    try (CloseableIterator<Record> records =  icebergDataReader.readData(buildIcebergScanTask()).iterator()) {
+      while (records.hasNext()) {
         checkIfTimeout(writer);
         if (writer.length() > targetSizeByBytes) {
           writer.close();

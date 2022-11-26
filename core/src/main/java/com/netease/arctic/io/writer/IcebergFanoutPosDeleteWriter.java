@@ -157,8 +157,8 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
       } catch (IOException e) {
         setFailure(e);
         throw new UncheckedIOException(
-            "Failed to write the sorted path/pos pairs to pos-delete file: "
-                + outputFile.encryptingOutputFile().location(),
+            "Failed to write the sorted path/pos pairs to pos-delete file: " +
+                outputFile.encryptingOutputFile().location(),
             e);
       }
       // Add the referenced data files.

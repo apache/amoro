@@ -303,8 +303,8 @@ public class TableOptimizeItem extends IJDBCService {
         List<ByteBuffer> targetFiles = optimizeTaskStat.getFiles();
         long targetFileSize = optimizeTaskStat.getNewFileSize();
         // if minor optimize, insert files as base new files
-        if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor
-            && !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+        if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor &&
+            !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
           targetFiles.addAll(optimizeTaskItem.getOptimizeTask().getInsertFiles());
           targetFileSize = targetFileSize + optimizeTaskItem.getOptimizeTask().getInsertFileSize();
         }

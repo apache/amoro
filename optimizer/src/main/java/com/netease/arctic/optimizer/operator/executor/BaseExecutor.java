@@ -82,6 +82,7 @@ public abstract class BaseExecutor implements Executor {
 
     return 0;
   }
+
   protected OptimizeTaskResult buildOptimizeResult(Iterable<? extends ContentFile<?>> targetFiles)
       throws InvocationTargetException, IllegalAccessException {
     long totalFileSize = 0;

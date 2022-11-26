@@ -86,7 +86,7 @@ public class OptimizeQueueService extends IJDBCService {
 
   private final ReentrantLock queueOperateLock = new ReentrantLock();
 
-  private static final int MAX_POOL_TASK_CNT = 10;
+  private static final int MAX_POOL_TASK_CNT = 50;
 
   public OptimizeQueueService() {
     init();
@@ -457,7 +457,9 @@ public class OptimizeQueueService extends IJDBCService {
                   while (retry <= retryTime) {
                     LOG.debug("start get plan task retry {}", retry);
                     retry++;
-                    List<OptimizeTaskItem> tasks = plan(System.currentTimeMillis());
+                    long planStartTime = System.currentTimeMillis();
+                    List<OptimizeTaskItem> tasks = plan(planStartTime);
+                    LOG.debug("this plan {} cost time is {} ms", attemptId, System.currentTimeMillis() - planStartTime);
                     if (CollectionUtils.isNotEmpty(tasks)) {
                       isHaveTask = true;
                       break;
