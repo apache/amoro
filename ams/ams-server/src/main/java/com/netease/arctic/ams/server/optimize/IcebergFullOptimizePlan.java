@@ -130,6 +130,8 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
         commitGroup, planGroup, getOptimizeType(), createTime, "");
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
 
+    fileScanTasks = filterRepeatFileScanTask(fileScanTasks);
+
     List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(fileScanTasks);
     for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
       List<DataFile> dataFiles = new ArrayList<>();

@@ -161,6 +161,8 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
       return collector;
     }
 
+    smallFileScanTasks = filterRepeatFileScanTask(smallFileScanTasks);
+
     List<List<FileScanTask>> packedList = binPackFileScanTask(smallFileScanTasks);
 
     if (CollectionUtils.isNotEmpty(packedList)) {
@@ -189,10 +191,13 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
       return collector;
     }
 
-    Set<FileScanTask> allNeedOptimizeTask = new HashSet<>();
+    List<FileScanTask> allNeedOptimizeTask = new ArrayList<>();
     for (DeleteFile needOptimizeDeleteFile : needOptimizeDeleteFiles) {
       allNeedOptimizeTask.addAll(deleteDataFileMap.get(needOptimizeDeleteFile.path().toString()));
     }
+
+    allNeedOptimizeTask = filterRepeatFileScanTask(allNeedOptimizeTask);
+
     List<FileScanTask> sortedNeedOptimizeTask = allNeedOptimizeTask.stream()
         .sorted(Comparator.comparing(fileScanTask -> fileScanTask.file().path().toString()))
         .collect(Collectors.toList());

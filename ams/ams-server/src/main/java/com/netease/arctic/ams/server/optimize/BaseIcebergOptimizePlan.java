@@ -41,14 +41,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -70,6 +70,19 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
     LOG.debug("{} ==== {} currentSnapshotId={}, lastSnapshotId={}", tableId(), getOptimizeType(),
         currentSnapshotId, lastSnapshotId);
     return currentSnapshotId != lastSnapshotId;
+  }
+
+  protected List<FileScanTask> filterRepeatFileScanTask(Collection<FileScanTask> fileScanTasks) {
+    Set<String> dataFilesPath = new HashSet<>();
+    List<FileScanTask> finalFileScanTasks = new ArrayList<>();
+    for (FileScanTask fileScanTask : fileScanTasks) {
+      if (!dataFilesPath.contains(fileScanTask.file().path().toString())) {
+        finalFileScanTasks.add(fileScanTask);
+        dataFilesPath.add(fileScanTask.file().path().toString());
+      }
+    }
+
+    return finalFileScanTasks;
   }
 
   protected List<List<FileScanTask>> binPackFileScanTask(List<FileScanTask> fileScanTasks) {
