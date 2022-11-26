@@ -94,6 +94,8 @@ public class MajorExecutor extends BaseExecutor {
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
     while (recordIterator.hasNext()) {
+      checkIfTimeout(writer);
+
       Record baseRecord = recordIterator.next();
       writer.write(baseRecord);
       insertCount++;

@@ -43,7 +43,6 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -77,7 +76,7 @@ public class IcebergExecutor extends BaseExecutor {
     return buildOptimizeResult(targetFiles);
   }
 
-  private List<? extends ContentFile<?>> optimizeDeleteFiles() throws IOException {
+  private List<? extends ContentFile<?>> optimizeDeleteFiles() throws Exception {
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
     GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
         table.io(), table.schema(), requiredSchema, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
@@ -93,7 +92,10 @@ public class IcebergExecutor extends BaseExecutor {
         appenderFactory, deleteFileFormat, task.getPartition(), table.io(), table.asUnkeyedTable().encryption());
 
     AtomicLong insertCount = new AtomicLong();
-    icebergDataReader.readDeleteData(buildIcebergScanTask()).forEach(record -> {
+    CloseableIterator<Record> iterator = icebergDataReader.readDeleteData(buildIcebergScanTask()).iterator();
+    while (iterator.hasNext()) {
+      checkIfTimeout(icebergPosDeleteWriter);
+      Record record = iterator.next();
       String filePath = (String) record.getField(MetadataColumns.FILE_PATH.name());
       Long rowPosition = (Long) record.getField(MetadataColumns.ROW_POSITION.name());
       icebergPosDeleteWriter.delete(filePath, rowPosition);
@@ -103,7 +105,7 @@ public class IcebergExecutor extends BaseExecutor {
         LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
             task.getTaskId(), insertCount.get(), filePath, rowPosition);
       }
-    });
+    }
 
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount.get());
 
@@ -116,7 +118,7 @@ public class IcebergExecutor extends BaseExecutor {
         table.spec(), task.getPartition());
   }
 
-  private List<? extends ContentFile<?>> optimizeDataFiles() throws IOException {
+  private List<? extends ContentFile<?>> optimizeDataFiles() throws Exception {
     List<DataFile> result = Lists.newArrayList();
     GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
         table.io(), table.schema(), table.schema(), table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
@@ -138,6 +140,7 @@ public class IcebergExecutor extends BaseExecutor {
     CloseableIterator<Record> records =  icebergDataReader.readData(buildIcebergScanTask()).iterator();
     long insertCount = 0;
     while(records.hasNext()) {
+      checkIfTimeout(writer);
       if (writer.length() > targetSizeByBytes) {
         writer.close();
         result.add(writer.toDataFile());

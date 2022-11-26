@@ -88,6 +88,8 @@ public class MinorExecutor extends BaseExecutor {
             openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
         while (iterator.hasNext()) {
+          checkIfTimeout(posDeleteWriter);
+
           Record record = iterator.next();
           String filePath = (String) record.get(recordStruct.fields()
               .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
@@ -110,6 +112,8 @@ public class MinorExecutor extends BaseExecutor {
           CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
           CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator();
           while (posDeleteIterator.hasNext()) {
+            checkIfTimeout(posDeleteWriter);
+
             Record record = posDeleteIterator.next();
             String filePath = posDeleteReader.readPath(record);
             Long rowPosition = posDeleteReader.readPos(record);

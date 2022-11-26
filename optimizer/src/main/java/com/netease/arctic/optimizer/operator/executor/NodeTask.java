@@ -56,6 +56,7 @@ public class NodeTask {
   private TableIdentifier tableIdentifier;
   private int attemptId;
   private String customHiveSubdirectory;
+  private Long maxExecuteTime;
 
   public NodeTask() {
   }
@@ -225,6 +226,14 @@ public class NodeTask {
     this.customHiveSubdirectory = customHiveSubdirectory;
   }
 
+  public Long getMaxExecuteTime() {
+    return maxExecuteTime;
+  }
+
+  public void setMaxExecuteTime(Long maxExecuteTime) {
+    this.maxExecuteTime = maxExecuteTime;
+  }
+
   public OptimizeType getOptimizeType() {
     return taskId.getType();
   }
@@ -245,6 +254,7 @@ public class NodeTask {
         .add("icebergEqDeleteFiles", icebergEqDeleteFiles.size())
         .add("icebergPosDeleteFiles", icebergPosDeleteFiles.size())
         .add("customHiveSubdirectory", customHiveSubdirectory)
+        .add("maxExecuteTime", maxExecuteTime)
         .toString();
   }
 }
