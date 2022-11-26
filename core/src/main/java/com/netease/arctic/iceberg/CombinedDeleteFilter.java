@@ -206,7 +206,10 @@ public abstract class CombinedDeleteFilter<T> {
         Long lsn = recordWithLsn.getLsn();
         StructLike structLike = internalRecordWrapper.copyFor(recordWithLsn.getRecord());
         StructLike deletePK = deletePKProjectRow.copyWrap(structLike);
-        structLikeMap.put(deletePK, lsn);
+        Long old = structLikeMap.get(deletePK);
+        if (old == null || old.compareTo(lsn) <= 0) {
+          structLikeMap.put(deletePK, lsn);
+        }
       }
     } catch (IOException e) {
       throw new RuntimeException(e);
