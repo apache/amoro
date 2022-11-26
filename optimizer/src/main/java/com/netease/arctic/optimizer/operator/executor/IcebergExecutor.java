@@ -89,7 +89,8 @@ public class IcebergExecutor extends BaseExecutor {
     FileFormat deleteFileFormat = FileFormat.valueOf(deleteFileFormatName.toUpperCase());
 
     IcebergFanoutPosDeleteWriter<Record> icebergPosDeleteWriter = new IcebergFanoutPosDeleteWriter<>(
-        appenderFactory, deleteFileFormat, task.getPartition(), table.io(), table.asUnkeyedTable().encryption());
+        appenderFactory, deleteFileFormat, task.getPartition(), table.io(), table.asUnkeyedTable().encryption(),
+        String.format("%s-%d", task.getTaskId().traceId, task.getAttemptId()));
 
     AtomicLong insertCount = new AtomicLong();
     try(CloseableIterator<Record> iterator = icebergDataReader.readDeleteData(buildIcebergScanTask()).iterator()) {

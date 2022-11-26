@@ -53,6 +53,7 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
   private final StructLike partition;
   private final FileIO fileIO;
   private final EncryptionManager encryptionManager;
+  private final String fileNameSuffix;
 
   private boolean closed = false;
   private Throwable failure;
@@ -62,12 +63,14 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
       FileFormat format,
       StructLike partition,
       FileIO fileIO,
-      EncryptionManager encryptionManager) {
+      EncryptionManager encryptionManager,
+      String fileNameSuffix) {
     this.appenderFactory = appenderFactory;
     this.format = format;
     this.partition = partition;
     this.fileIO = fileIO;
     this.encryptionManager = encryptionManager;
+    this.fileNameSuffix = fileNameSuffix;
   }
 
   protected void setFailure(Throwable throwable) {
@@ -141,7 +144,8 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
         fileName = fileName.substring(0, fileName.length() - fileFormat.name().length() - 1);
       }
       String fileDir = FileUtil.getFileDir(filePath.get().toString());
-      String deleteFilePath = format.addExtension(String.format("%s/%s-delete", fileDir, fileName));
+      String deleteFilePath = format.addExtension(String.format("%s/%s-delete-%s", fileDir, fileName,
+          fileNameSuffix));
       EncryptedOutputFile outputFile = encryptionManager.encrypt(fileIO.newOutputFile(deleteFilePath));
 
       PositionDeleteWriter<T> writer =
