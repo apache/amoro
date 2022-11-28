@@ -37,6 +37,7 @@ import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TableQuotaInfo;
 import com.netease.arctic.ams.server.model.TableTaskHistory;
+import com.netease.arctic.ams.server.optimize.BaseIcebergOptimizePlan;
 import com.netease.arctic.ams.server.optimize.BaseOptimizePlan;
 import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
@@ -54,6 +55,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
@@ -459,7 +461,6 @@ public class OptimizeQueueService extends IJDBCService {
                     retry++;
                     long planStartTime = System.currentTimeMillis();
                     List<OptimizeTaskItem> tasks = plan(planStartTime);
-                    LOG.debug("this plan {} cost time is {} ms", attemptId, System.currentTimeMillis() - planStartTime);
                     if (CollectionUtils.isNotEmpty(tasks)) {
                       isHaveTask = true;
                       break;
@@ -607,13 +608,22 @@ public class OptimizeQueueService extends IJDBCService {
     }
 
     private List<OptimizeTaskItem> plan(long currentTime) {
-      tables = loadTablesByQueueId(optimizeQueue.getOptimizeQueueMeta().getQueueId());
       List<TableIdentifier> tableSort = sortTableByQuota(new ArrayList<>(tables));
 
       for (TableIdentifier tableIdentifier : tableSort) {
         LOG.debug("{} try plan", tableIdentifier);
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+
+          Map<String, String> properties = tableItem.getArcticTable(false).properties();
+          int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
+
+          // queue was updated
+          if (optimizeQueue.getOptimizeQueueMeta().getQueueId() != queueId) {
+            releaseTable(tableIdentifier);
+            ServiceContainer.getOptimizeQueueService().getQueue(queueId).bindTable(tableIdentifier);
+            continue;
+          }
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
@@ -640,16 +650,23 @@ public class OptimizeQueueService extends IJDBCService {
 
           BaseOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
-          Map<String, String> properties = tableItem.getArcticTable(false).properties();
-          int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
 
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
-            optimizePlan = tableItem.getIcebergMajorPlan(queueId, currentTime);
-            optimizeTasks = optimizePlan.plan();
+            if (!BaseIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
+                tableItem.getTableOptimizeRuntime())) {
+              tableItem.persistTableOptimizeRuntime();
+              LOG.debug("table {} not changed, no need plan",
+                  tableIdentifier);
+              continue;
+            }
+            Iterable<FileScanTask> fileScanTasks =
+                tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles();
 
+            optimizePlan = tableItem.getIcebergMajorPlan(fileScanTasks, queueId, currentTime);
+            optimizeTasks = optimizePlan.plan();
             // if no major tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getIcebergMinorPlan(queueId, currentTime);
+              optimizePlan = tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime);
               optimizeTasks = optimizePlan.plan();
             }
           } else {

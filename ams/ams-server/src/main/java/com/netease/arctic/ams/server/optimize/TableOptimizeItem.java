@@ -61,6 +61,7 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
 import org.apache.iceberg.util.PropertyUtil;
@@ -922,8 +923,10 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public IcebergFullOptimizePlan getIcebergMajorPlan(int queueId, long currentTime) {
-    return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime,
+  public IcebergFullOptimizePlan getIcebergMajorPlan(Iterable<FileScanTask> fileScanTasks,
+                                                     int queueId,
+                                                     long currentTime) {
+    return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
         generatePartitionRunning(), queueId, currentTime);
   }
 
@@ -934,8 +937,10 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public IcebergMinorOptimizePlan getIcebergMinorPlan(int queueId, long currentTime) {
-    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime,
+  public IcebergMinorOptimizePlan getIcebergMinorPlan(Iterable<FileScanTask> fileScanTasks,
+                                                      int queueId,
+                                                      long currentTime) {
+    return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
         generatePartitionRunning(), queueId, currentTime);
   }
 

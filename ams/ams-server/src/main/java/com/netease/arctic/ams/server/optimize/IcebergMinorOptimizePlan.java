@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
+import com.netease.arctic.ams.server.utils.SequenceNumberFetcher;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
@@ -30,7 +31,6 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,15 +58,16 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
   private final Map<String, Set<FileScanTask>> deleteDataFileMap = new HashMap<>();
 
   public IcebergMinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                  Iterable<FileScanTask> fileScanTasks,
                                   Map<String, Boolean> partitionTaskRunning,
                                   int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
+    super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
   }
 
   @Override
   protected void addOptimizeFiles() {
     long smallFileSize = getSmallFileSize();
-    for (FileScanTask fileScanTask : arcticTable.asUnkeyedTable().newScan().planFiles()) {
+    for (FileScanTask fileScanTask : fileScanTasks) {
       StructLike partition = fileScanTask.file().partition();
       String partitionPath = arcticTable.asUnkeyedTable().spec().partitionToPath(partition);
       currentPartitions.add(partitionPath);
@@ -166,6 +167,8 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     List<List<FileScanTask>> packedList = binPackFileScanTask(smallFileScanTasks);
 
     if (CollectionUtils.isNotEmpty(packedList)) {
+      SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
+          arcticTable.asUnkeyedTable(), currentSnapshotId);
       for (List<FileScanTask> fileScanTasks : packedList) {
         List<DataFile> dataFiles = new ArrayList<>();
         List<DeleteFile> eqDeleteFiles = new ArrayList<>();
@@ -176,7 +179,7 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
         int totalFileCnt = dataFiles.size() + eqDeleteFiles.size() + posDeleteFiles.size();
         if (totalFileCnt > 1) {
           collector.add(buildOptimizeTask(dataFiles, Collections.emptyList(),
-              eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
+              eqDeleteFiles, posDeleteFiles, sequenceNumberFetcher, taskPartitionConfig));
         }
       }
     }
@@ -204,6 +207,8 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     List<List<FileScanTask>> packedList = binPackFileScanTask(sortedNeedOptimizeTask);
 
     if (CollectionUtils.isNotEmpty(packedList)) {
+      SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
+          arcticTable.asUnkeyedTable(), currentSnapshotId);
       for (List<FileScanTask> fileScanTasks : packedList) {
         List<DataFile> dataFiles = new ArrayList<>();
         List<DeleteFile> eqDeleteFiles = new ArrayList<>();
@@ -214,7 +219,7 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
         Preconditions.checkArgument(totalFileCnt > 1, "task only have " + totalFileCnt + " files");
 
         collector.add(buildOptimizeTask(Collections.emptyList(), dataFiles,
-            eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
+            eqDeleteFiles, posDeleteFiles, sequenceNumberFetcher, taskPartitionConfig));
       }
     }
 

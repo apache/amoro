@@ -1,14 +1,8 @@
 package com.netease.arctic.ams.server.optimize;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
-import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.catalog.Catalog;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,6 +20,7 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
+        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(2, tasks.size());
@@ -39,8 +34,9 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
-    IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
+    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
+        icebergPartitionTable.asUnkeyedTable().newScan().planFiles(),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(2, tasks.size());

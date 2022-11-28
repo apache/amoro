@@ -48,6 +48,7 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
 
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
+        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 
@@ -107,6 +108,7 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
 
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
+        icebergPartitionTable.asUnkeyedTable().newScan().planFiles(),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 

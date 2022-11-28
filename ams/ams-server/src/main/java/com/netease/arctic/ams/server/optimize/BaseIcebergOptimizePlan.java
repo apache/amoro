@@ -58,18 +58,24 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(BaseIcebergOptimizePlan.class);
 
   protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
+  Iterable<FileScanTask> fileScanTasks;
 
   public BaseIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                 Iterable<FileScanTask> fileScanTasks,
                                  Map<String, Boolean> partitionTaskRunning,
                                  int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
+    this.fileScanTasks = fileScanTasks;
   }
 
-  protected boolean tableChanged() {
+  public static boolean tableChanged(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime) {
+    long arcticCurrentSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
+    LOG.debug("{} ==== currentSnapshotId={}, lastSnapshotId={}", arcticTable.id(),
+        arcticCurrentSnapshotId, tableOptimizeRuntime.getCurrentSnapshotId());
     long lastSnapshotId = tableOptimizeRuntime.getCurrentSnapshotId();
-    LOG.debug("{} ==== {} currentSnapshotId={}, lastSnapshotId={}", tableId(), getOptimizeType(),
-        currentSnapshotId, lastSnapshotId);
-    return currentSnapshotId != lastSnapshotId;
+    boolean isChanged = arcticCurrentSnapshotId != lastSnapshotId;
+    tableOptimizeRuntime.setCurrentSnapshotId(arcticCurrentSnapshotId);
+    return isChanged;
   }
 
   protected List<FileScanTask> filterRepeatFileScanTask(Collection<FileScanTask> fileScanTasks) {
@@ -100,10 +106,8 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
                                                List<DataFile> baseFiles,
                                                List<DeleteFile> eqDeleteFiles,
                                                List<DeleteFile> posDeleteFiles,
-                                               long baseSnapshotId,
+                                               SequenceNumberFetcher sequenceNumberFetcher,
                                                TaskConfig taskConfig) {
-    SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
-        arcticTable.asUnkeyedTable(), baseSnapshotId);
     // build task
     BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
     optimizeTask.setTaskCommitGroup(taskConfig.getCommitGroup());
@@ -185,7 +189,7 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
 
   public boolean tableNeedPlan() {
     this.currentSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
-    return tableChanged();
+    return true;
   }
 
   public long getCurrentSnapshotId() {

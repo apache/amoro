@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
+import com.netease.arctic.ams.server.utils.SequenceNumberFetcher;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
@@ -48,15 +49,16 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
   protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
 
   public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                 Iterable<FileScanTask> fileScanTasks,
                                  Map<String, Boolean> partitionTaskRunning,
                                  int queueId, long currentTime) {
-    super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);
+    super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
   }
 
   protected void addOptimizeFiles() {
     LOG.debug("{} start plan iceberg table files", tableId());
     AtomicInteger addCnt = new AtomicInteger();
-    for (FileScanTask fileScanTask : arcticTable.asUnkeyedTable().newScan().planFiles()) {
+    for (FileScanTask fileScanTask : fileScanTasks) {
       DataFile dataFile = fileScanTask.file();
       String partitionPath = arcticTable.spec().partitionToPath(dataFile.partition());
       currentPartitions.add(partitionPath);
@@ -133,15 +135,21 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
     fileScanTasks = filterRepeatFileScanTask(fileScanTasks);
 
     List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(fileScanTasks);
-    for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
-      List<DataFile> dataFiles = new ArrayList<>();
-      List<DeleteFile> eqDeleteFiles = new ArrayList<>();
-      List<DeleteFile> posDeleteFiles = new ArrayList<>();
-      getOptimizeFile(fileScanTask, dataFiles, eqDeleteFiles, posDeleteFiles);
 
-      collector.add(buildOptimizeTask(Collections.emptyList(), dataFiles,
-          eqDeleteFiles, posDeleteFiles, currentSnapshotId, taskPartitionConfig));
+    if (CollectionUtils.isNotEmpty(binPackFileScanTasks)) {
+      SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
+          arcticTable.asUnkeyedTable(), currentSnapshotId);
+      for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
+        List<DataFile> dataFiles = new ArrayList<>();
+        List<DeleteFile> eqDeleteFiles = new ArrayList<>();
+        List<DeleteFile> posDeleteFiles = new ArrayList<>();
+        getOptimizeFile(fileScanTask, dataFiles, eqDeleteFiles, posDeleteFiles);
+
+        collector.add(buildOptimizeTask(Collections.emptyList(), dataFiles,
+            eqDeleteFiles, posDeleteFiles, sequenceNumberFetcher, taskPartitionConfig));
+      }
     }
+
 
     return collector;
   }
