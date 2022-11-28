@@ -20,6 +20,7 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
@@ -28,6 +29,7 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
+import java.util.regex.Pattern;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -70,14 +72,24 @@ public class BaseIcebergCatalog implements ArcticCatalog {
 
   @Override
   public List<String> listDatabases() {
-    if (icebergCatalog instanceof SupportsNamespaces) {
-      return tableMetaStore.doAs(() -> ((SupportsNamespaces) icebergCatalog).listNamespaces(Namespace.empty()).stream()
-          .map(namespace -> namespace.level(0)).distinct().collect(Collectors.toList()));
-    } else {
+    if (!(icebergCatalog instanceof SupportsNamespaces)) {
       throw new UnsupportedOperationException(String.format(
           "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
+
+    List<String> databases =
+        tableMetaStore.doAs(() ->
+            ((SupportsNamespaces) icebergCatalog).listNamespaces(Namespace.empty())
+                .stream()
+                .map(namespace -> namespace.level(0))
+                .distinct()
+                .collect(Collectors.toList())
+        );
+    String filter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_INCLUDE_DATABASES);
+    return databases.stream()
+        .filter(database -> filter == null || Pattern.matches(filter, database))
+        .collect(Collectors.toList());
   }
 
   @Override
