@@ -20,6 +20,7 @@ package com.netease.arctic.log;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.netease.arctic.log.LogData.FieldGetterFactory;
 import org.apache.iceberg.Schema;
 
 import java.io.Serializable;
@@ -29,7 +30,10 @@ import java.io.Serializable;
  */
 public class LogDataJsonSerialization<T> implements Serializable {
   private static final long serialVersionUID = 66420071549145794L;
-  private LogDataToJsonConverters.LogDataToJsonConverter<T> logDataToJsonConverter;
+  private transient LogDataToJsonConverters.LogDataToJsonConverter<T> logDataToJsonConverter;
+
+  private Schema schema;
+  private LogData.FieldGetterFactory<T> fieldGetterFactory;
 
   /**
    * Reusable object node.
@@ -42,7 +46,12 @@ public class LogDataJsonSerialization<T> implements Serializable {
 
   private transient LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext converterContext;
 
-  public LogDataJsonSerialization(Schema schema, LogData.FieldGetterFactory<T> fieldGetterFactory) {
+  public LogDataJsonSerialization(Schema schema, FieldGetterFactory<T> fieldGetterFactory) {
+    this.schema = schema;
+    this.fieldGetterFactory = fieldGetterFactory;
+  }
+
+  public void init() {
     this.logDataToJsonConverter = LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
   }
 

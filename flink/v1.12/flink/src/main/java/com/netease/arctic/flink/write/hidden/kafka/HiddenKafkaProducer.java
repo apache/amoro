@@ -100,6 +100,7 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
     transactionalProducer.initTransactions();
     partitions = getPartitionsByTopic(topic, producer);
     LOG.info("HiddenKafkaPartition topic:{}, partitions:{}.", topic, partitions);
+    logDataJsonSerialization.init();
   }
 
   @Override
