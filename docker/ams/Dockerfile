@@ -10,7 +10,8 @@ RUN apt update \
     && apt-get install -y telnet
 
 ARG AMS_FILE
-ADD AMS_FILE /usr/local/ams
+WORKDIR ${AMS_FILE}
+ADD arctic-0.4.0-SNAPSHOT-bin.zip /usr/local/ams
 RUN unzip arctic-${ARCTIC_VERSION}-bin.zip
 
 WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}

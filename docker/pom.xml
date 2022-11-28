@@ -20,14 +20,13 @@
     <artifactId>arctic-parent</artifactId>
     <groupId>com.netease.arctic</groupId>
     <version>0.4.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>arctic-hadoop-docker</artifactId>
   <packaging>pom</packaging>
   <modules>
-    <module>base</module>
     <module>namenode</module>
     <module>datanode</module>
     <module>ams</module>
@@ -61,9 +60,6 @@
         <groupId>com.spotify</groupId>
         <artifactId>dockerfile-maven-plugin</artifactId>
         <version>${dockerfile.maven.version}</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
       </plugin>
     </plugins>
   </build>

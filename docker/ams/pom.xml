@@ -58,6 +58,16 @@
             <goals>
                 <goal>build</goal>
             </goals>
+            <configuration>
+              <username>arctic163</username>
+              <password>arctic163</password>
+              <pullNewerImage>false</pullNewerImage>
+              <repository>arctic163/arctic-hadoop_${docker.hadoop.version}-ams</repository>
+              <tag>${project.version}</tag>
+              <buildArgs>
+                <AMS_FILE>../../dist/target</AMS_FILE>
+              </buildArgs>
+            </configuration>
           </execution>
           <execution>
             <id>tag-version</id>
@@ -70,13 +80,12 @@
             <configuration>
               <username>arctic163</username>
               <password>arctic163</password>
-              <skip>${docker.build.skip}</skip>
               <pullNewerImage>false</pullNewerImage>
               <repository>arctic163/arctic-hadoop_${docker.hadoop.version}-ams</repository>
               <force>true</force>
               <tag>${project.version}</tag>
               <buildArgs>
-                <AMS_FILE>dist/target/arctic-${project.version}-bin.zip</AMS_FILE>
+                <AMS_FILE>../../dist/target</AMS_FILE>
               </buildArgs>
             </configuration>
           </execution>
