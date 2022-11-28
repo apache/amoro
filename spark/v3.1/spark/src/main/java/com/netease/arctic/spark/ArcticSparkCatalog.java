@@ -173,7 +173,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
     properties = Maps.newHashMap(properties);
-    Schema finalSchema = checkAndConvertSchema(schema, properties);
+    Schema finalSchema = useTimestampWithoutZoneInNewTables(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
     TableBuilder builder = catalog.newTableBuilder(identifier, finalSchema);
     PartitionSpec spec = Spark3Util.toPartitionSpec(finalSchema, transforms);
@@ -201,7 +201,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
   }
 
-  private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
+  private Schema useTimestampWithoutZoneInNewTables(StructType schema, Map<String, String> properties) {
     Schema convertSchema;
     boolean defaultTimeZoneUsed;
     try {
@@ -213,7 +213,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       } else {
         defaultTimeZoneUsed = Boolean.parseBoolean(
             sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-                "false"));
+                USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
       }
       if (defaultTimeZoneUsed) {
         sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
