@@ -70,7 +70,7 @@ public class OptimizerController extends RestBaseController {
     List<String> statusList = new ArrayList<>();
     if (StringUtils.isNotEmpty(statusFilter)) {
       statusList = Arrays.stream(statusFilter.split(","))
-              .map(item -> item.trim().toLowerCase()).collect(Collectors.toList());
+          .map(item -> item.trim().toLowerCase()).collect(Collectors.toList());
     }
     int offset = (page - 1) * pageSize;
 
@@ -82,20 +82,24 @@ public class OptimizerController extends RestBaseController {
         TableOptimizeItem arcticTableItem = iOptimizeService.getTableOptimizeItem(tableIdentifier);
         // if status is specified, we filter item by status
         if (statusList.size() > 0 &&
-                !statusList.contains(
-                        arcticTableItem.getTableOptimizeRuntime().getOptimizeStatus().toString().toLowerCase())) {
+            !statusList.contains(
+                arcticTableItem.getTableOptimizeRuntime().getOptimizeStatus().toString().toLowerCase())) {
           continue;
         }
 
         if ("all".equals(optimizerGroup)) {
           arcticTableItemList.add(arcticTableItem);
         } else {
-          String groupName = arcticTableItem.getArcticTable().properties()
-              .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
-          if (null != groupName) {
-            if (optimizerGroup.equals(groupName)) {
-              arcticTableItemList.add(arcticTableItem);
+          try {
+            String groupName = arcticTableItem.getArcticTable().properties()
+                .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+            if (null != groupName) {
+              if (optimizerGroup.equals(groupName)) {
+                arcticTableItemList.add(arcticTableItem);
+              }
             }
+          } catch (Exception e) {
+            LOG.error("get table of optimize group {} error", optimizerGroup, e);
           }
         }
       }

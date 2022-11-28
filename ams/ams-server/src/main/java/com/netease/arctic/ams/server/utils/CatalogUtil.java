@@ -107,10 +107,14 @@ public class CatalogUtil {
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
         List<String> databases = arcticCatalog.listDatabases();
         for (String database : databases) {
-          tables.addAll(arcticCatalog.listTables(database));
+          try {
+            tables.addAll(arcticCatalog.listTables(database));
+          } catch (Exception e1) {
+            LOG.error("list tables for database {} error", database, e1);
+          }
         }
-      } catch (Exception e) {
-        LOG.error(String.format("load table for catalog %s error", catalogMeta.getCatalogName()), e);
+      } catch (Exception e2) {
+        LOG.error("load table for catalog {} error", catalogMeta.getCatalogName(), e2);
       }
     });
 
