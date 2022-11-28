@@ -29,7 +29,6 @@ import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.utils.CatalogUtil;
-import java.util.regex.Pattern;
 import org.apache.iceberg.CatalogProperties;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -39,6 +38,7 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
