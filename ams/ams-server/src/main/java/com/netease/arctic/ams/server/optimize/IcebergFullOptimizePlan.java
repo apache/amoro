@@ -91,11 +91,11 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
     double dataFilesTotalSize = partitionDataFiles.stream().mapToLong(DataFile::fileSizeInBytes).sum();
 
     long duplicateSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD,
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT);
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD,
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT);
     double duplicateRatio = PropertyUtil.propertyAsDouble(arcticTable.properties(),
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD,
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT);
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD,
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT);
     // delete files total size reach target or delete files rate reach target
     if (deleteFilesTotalSize > duplicateSize || deleteFilesTotalSize / dataFilesTotalSize >= duplicateRatio) {
       partitionOptimizeType.put(partitionToPath, getOptimizeType());

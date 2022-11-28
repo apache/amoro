@@ -32,6 +32,7 @@ import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Metrics;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.TableScan;
@@ -268,13 +269,23 @@ public class TableEntriesScan {
     if (lazyMetricsEvaluator == null) {
       if (dataFilter != null) {
         this.lazyMetricsEvaluator =
-            new InclusiveMetricsEvaluator(table.spec().schema(), dataFilter, true);
+            new InclusiveMetricsEvaluator(table.spec().schema(), dataFilter);
       } else {
-        this.lazyMetricsEvaluator =
-            new InclusiveMetricsEvaluator(table.spec().schema(), Expressions.alwaysTrue(), true);
+        this.lazyMetricsEvaluator = new AlwaysTrueEvaluator(table.spec().schema());
       }
     }
     return lazyMetricsEvaluator;
+  }
+  
+  private static class AlwaysTrueEvaluator extends InclusiveMetricsEvaluator {
+    public AlwaysTrueEvaluator(Schema schema) {
+      super(schema, Expressions.alwaysTrue());
+    }
+
+    @Override
+    public boolean eval(ContentFile<?> file) {
+      return true;
+    }
   }
 
 }
