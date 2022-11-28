@@ -325,14 +325,14 @@ async function getConfigInfo() {
 function changeMetastore() {
   formState.tableFormat = isHiveMetastore.value ? tableFormatMap.HIVE : tableFormatMap.ICEBERG
   if (!isNewCatalog.value) { return }
-  const index = formState.storageConfigArray.findIndex(item => item.label === 'hive.site')
+  const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
   if (isHiveMetastore.value) {
     if (index > -1) {
       return
     }
     formState.storageConfigArray.push({
       key: 'hive.site',
-      label: 'hive.site',
+      label: storageConfigMap['hive.site'],
       value: '',
       fileName: '',
       fileUrl: '',

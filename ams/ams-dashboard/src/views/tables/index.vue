@@ -4,7 +4,7 @@
       <div class="g-flex-jsb">
         <div class="g-flex-col">
           <div class="g-flex">
-            <span class="table-name g-text-nowrap">{{baseInfo.tableName}}</span>
+            <span :title="baseInfo.tableName" class="table-name g-text-nowrap">{{baseInfo.tableName}}</span>
             <span v-if="!isIceberg" class="create-time">{{ `${$t('createTime')}: ${baseInfo.createTime}` }}</span>
           </div>
           <div class="table-info g-flex-ac">
