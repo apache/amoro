@@ -23,6 +23,7 @@ import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
@@ -173,7 +174,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
     properties = Maps.newHashMap(properties);
-    Schema finalSchema = useTimestampWithoutZoneInNewTables(schema, properties);
+    Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
     TableBuilder builder = catalog.newTableBuilder(identifier, finalSchema);
     PartitionSpec spec = Spark3Util.toPartitionSpec(finalSchema, transforms);
@@ -201,28 +202,22 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
   }
 
-  private Schema useTimestampWithoutZoneInNewTables(StructType schema, Map<String, String> properties) {
+  private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
     Schema convertSchema;
-    boolean defaultTimeZoneUsed;
-    try {
-      CatalogMeta catalogMeta = client.getCatalog(catalog.name());
-      String catalogType = catalogMeta.getCatalogType();
-      SparkSession sparkSession = SparkSession.active();
-      if (CATALOG_TYPE_HIVE.equals(catalogType)) {
-        defaultTimeZoneUsed = true;
-      } else {
-        defaultTimeZoneUsed = Boolean.parseBoolean(
-            sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-                USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
-      }
-      if (defaultTimeZoneUsed) {
-        sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
-        convertSchema = SparkSchemaUtil.convert(schema, true);
-      } else {
-        convertSchema = SparkSchemaUtil.convert(schema, false);
-      }
-    } catch (TException e) {
-      throw new IllegalStateException("failed when load catalog " + catalog.name(), e);
+    boolean useTimestampWithoutZoneInNewTables;
+    SparkSession sparkSession = SparkSession.active();
+    if (CatalogUtil.isHiveCatalog(catalog)) {
+      useTimestampWithoutZoneInNewTables = true;
+    } else {
+      useTimestampWithoutZoneInNewTables = Boolean.parseBoolean(
+          sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+              USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
+    }
+    if (useTimestampWithoutZoneInNewTables) {
+      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
+      convertSchema = SparkSchemaUtil.convert(schema, true);
+    } else {
+      convertSchema = SparkSchemaUtil.convert(schema, false);
     }
 
     // schema add primary keys
