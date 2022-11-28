@@ -2,7 +2,7 @@
   <div class="hive-tables-wrap">
     <div v-if="!isSecondaryNav" class="tables-content">
       <div class="g-flex-jsb table-top">
-        <span class="table-name g-text-nowrap">{{tableName}}</span>
+        <span :title="tableName" class="table-name g-text-nowrap">{{tableName}}</span>
         <div class="right-btn">
           <a-button type="primary" :disabled="status === upgradeStatus.upgrading" @click="upgradeTable">{{displayStatus}}</a-button>
           <p v-if="status === upgradeStatus.failed" @click="showErrorMsg = true" class="fail-msg">{{$t('lastUpgradingFailed')}}</p>
