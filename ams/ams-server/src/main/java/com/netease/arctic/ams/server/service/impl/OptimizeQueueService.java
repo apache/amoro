@@ -96,7 +96,8 @@ public class OptimizeQueueService extends IJDBCService {
   }
 
   public int getQueueId(Map<String, String> properties) throws InvalidObjectException {
-    String groupName = properties.getOrDefault(TableProperties.OPTIMIZE_GROUP,
+    String groupName = properties.getOrDefault(
+        TableProperties.OPTIMIZE_GROUP,
         TableProperties.OPTIMIZE_GROUP_DEFAULT);
     return getOptimizeQueue(groupName).getOptimizeQueueMeta().getQueueId();
   }
@@ -196,9 +197,8 @@ public class OptimizeQueueService extends IJDBCService {
 
   /**
    * delete all OptimizeQueue
-   *
    */
-  public void removeAllQueue()  {
+  public void removeAllQueue() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizeQueueMapper optimizeQueueMapper = getMapper(sqlSession, OptimizeQueueMapper.class);
       optimizeQueueMapper.deleteAllQueue();
@@ -441,7 +441,8 @@ public class OptimizeQueueService extends IJDBCService {
 
                   // no task have planned
                   if (!isHaveTask) {
-                    LOG.debug("The queue {} has retry {} times, no task have planned",
+                    LOG.debug(
+                        "The queue {} has retry {} times, no task have planned",
                         optimizeQueue.getOptimizeQueueMeta().queueId,
                         retryTime);
                   }
@@ -467,7 +468,8 @@ public class OptimizeQueueService extends IJDBCService {
               lock();
               try {
                 // if timeout, return null
-                if (!planThreadCondition.await(waitTime - (System.currentTimeMillis() - startTime),
+                if (!planThreadCondition.await(
+                    waitTime - (System.currentTimeMillis() - startTime),
                     TimeUnit.MILLISECONDS)) {
                   LOG.debug("The queue {} has no task have planned", optimizeQueue.getOptimizeQueueMeta().getQueueId());
                   return null;
@@ -546,25 +548,30 @@ public class OptimizeQueueService extends IJDBCService {
       Set<TableIdentifier> tablesInQueue = new HashSet<>();
       List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
       catalogMetas.forEach(catalogMeta -> {
-        ArcticCatalog arcticCatalog =
-            CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
-        List<String> databases = arcticCatalog.listDatabases();
-        for (String database : databases) {
-          for (TableIdentifier tableIdentifier : arcticCatalog.listTables(database)) {
-            ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
-            String queueName =
-                arcticTable.properties()
-                    .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
-            try {
-              OptimizeQueueItem optimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(queueName);
-              if (optimizeQueue.getOptimizeQueueMeta().getQueueId() == queueId) {
-                tablesInQueue.add(arcticTable.id());
+        try {
+          ArcticCatalog arcticCatalog =
+              CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
+          List<String> databases = arcticCatalog.listDatabases();
+          for (String database : databases) {
+            for (TableIdentifier tableIdentifier : arcticCatalog.listTables(database)) {
+              try {
+                ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
+                String queueName =
+                    arcticTable.properties()
+                        .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+                OptimizeQueueItem optimizeQueue =
+                    ServiceContainer.getOptimizeQueueService().getOptimizeQueue(queueName);
+                if (optimizeQueue.getOptimizeQueueMeta().getQueueId() == queueId) {
+                  tablesInQueue.add(arcticTable.id());
+                }
+              } catch (Exception e1) {
+                LOG.error("get optimize group for table {} failed, group id is {}", tableIdentifier, queueId, e1);
               }
-            } catch (Exception e) {
-              // skip, and load next table
-              LOG.error("{} get optimize group failed, group name is {}", arcticTable.id(), queueName);
             }
           }
+        } catch (Exception e) {
+          // skip, and load next table
+          LOG.error("get optimize group failed, group id is {}", queueId, e);
         }
       });
 
@@ -704,7 +711,8 @@ public class OptimizeQueueService extends IJDBCService {
       }
 
       BigDecimal currentQuota = new BigDecimal(totalCostTime)
-          .divide(new BigDecimal(currentTime - latestStartTime),
+          .divide(
+              new BigDecimal(currentTime - latestStartTime),
               2,
               RoundingMode.HALF_UP);
 
@@ -717,10 +725,11 @@ public class OptimizeQueueService extends IJDBCService {
       return currentQuota.divide(tableQuota, 2, RoundingMode.HALF_UP);
     }
 
-    private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
-                                          BaseOptimizePlan optimizePlan,
-                                          List<BaseOptimizeTask> optimizeTasks,
-                                          Map<String, OptimizeType> partitionOptimizeType) {
+    private void initTableOptimizeRuntime(
+        TableOptimizeItem tableItem,
+        BaseOptimizePlan optimizePlan,
+        List<BaseOptimizeTask> optimizeTasks,
+        Map<String, OptimizeType> partitionOptimizeType) {
       if (CollectionUtils.isNotEmpty(optimizeTasks)) {
         TableOptimizeRuntime oldTableOptimizeRuntime = tableItem.getTableOptimizeRuntime().clone();
         try {
