@@ -39,12 +39,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * catalog util class。cache thrift objects
+ * catalog util class. cache thrift objects
  */
 public class CatalogUtil {
 
   private static final Logger LOG = LoggerFactory.getLogger(CatalogUtil.class);
-  public static final ConcurrentHashMap<String, ArcticCatalog> catalogCache = new ConcurrentHashMap<>();
+  public static final ConcurrentHashMap<String, ArcticCatalog> CATALOG_CACHE = new ConcurrentHashMap<>();
 
   /**
    * add cache
@@ -54,36 +54,36 @@ public class CatalogUtil {
       thriftHost = "localhost";
     }
 
-    if (catalogCache.get(name) == null) {
+    if (CATALOG_CACHE.get(name) == null) {
       synchronized (CatalogUtil.class) {
-        if (catalogCache.get(name) == null) {
+        if (CATALOG_CACHE.get(name) == null) {
           String catalogThriftUrl = String.format("thrift://%s:%d/%s", thriftHost, thriftPort, name);
           ArcticCatalog catalog = CatalogLoader.load(catalogThriftUrl, new HashMap<>());
-          catalogCache.put(name, catalog);
+          CATALOG_CACHE.put(name, catalog);
           return catalog;
         }
       }
     }
-    return catalogCache.get(name);
+    return CATALOG_CACHE.get(name);
   }
 
   public static ArcticCatalog getArcticCatalog(String name) {
-    if (catalogCache.get(name) == null) {
+    if (CATALOG_CACHE.get(name) == null) {
       synchronized (CatalogUtil.class) {
-        if (catalogCache.get(name) == null) {
+        if (CATALOG_CACHE.get(name) == null) {
           AmsClient client = ServiceContainer.getTableMetastoreHandler();
           ArcticCatalog catalog = CatalogLoader.load(client, name);
-          catalogCache.put(name, catalog);
+          CATALOG_CACHE.put(name, catalog);
           return catalog;
         }
       }
     }
-    return catalogCache.get(name);
+    return CATALOG_CACHE.get(name);
   }
 
   public static void removeCatalogCache(String name) {
     synchronized (CatalogUtil.class) {
-      catalogCache.remove(name);
+      CATALOG_CACHE.remove(name);
     }
   }
 

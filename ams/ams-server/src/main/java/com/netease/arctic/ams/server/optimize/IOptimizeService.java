@@ -40,6 +40,13 @@ public interface IOptimizeService {
   List<TableIdentifier> listCachedTables();
 
   /**
+   * List and refresh cached tables in OptimizeService.
+   *
+   * @return table id list
+   */
+  List<TableIdentifier> refreshAndListTables();
+
+  /**
    * Get TableOptimizeItem in OptimizeService.
    *
    * @param tableIdentifier table id
