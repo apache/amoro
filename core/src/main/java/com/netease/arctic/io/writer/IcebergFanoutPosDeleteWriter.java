@@ -38,9 +38,16 @@ import org.apache.iceberg.util.CharSequenceWrapper;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Positional delete file writer for iceberg tables. Write to different delete file for every data file.
+ * The output delete files are named with pattern: {data_file_name}-delete-{delete_file_suffix}.
+ * 
+ * @param <T> to indicate the record data type.
+ */
 public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelete<T>, DeleteWriteResult> {
 
   private final List<DeleteFile> completedFiles = Lists.newArrayList();
@@ -138,6 +145,7 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
       if (posDeletes.size() <= 0) {
         return;
       }
+      posDeletes.sort(Comparator.comparingLong(PosRow::pos));
       String fileName = FileUtil.getFileName(filePath.get().toString());
       FileFormat fileFormat = FileFormat.fromFileName(fileName);
       if (fileFormat != null) {
