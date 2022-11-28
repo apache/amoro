@@ -38,7 +38,7 @@ public class CatalogMetaProperties {
     public static final String AUTH_CONFIGS_VALUE_TYPE_KERBEROS = "kerberos";
 
     public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
-    public static final String KEY_INCLUDE_DATABASES = "database.filter-regular-expression";
+    public static final String KEY_DATABASE_FILTER_REGULAR_EXPRESSION = "database.filter-regular-expression";
 
     public static final String CATALOG_TYPE_HADOOP = "hadoop";
     public static final String CATALOG_TYPE_HIVE = "hive";

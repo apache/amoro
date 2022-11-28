@@ -69,8 +69,9 @@ public class BaseIcebergCatalog implements ArcticCatalog {
     }
     icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
         meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
-    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_INCLUDE_DATABASES)) {
-      String databaseFilter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_INCLUDE_DATABASES);
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+      String databaseFilter =
+          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
       databaseFilterPattern = Pattern.compile(databaseFilter);
     }
   }
