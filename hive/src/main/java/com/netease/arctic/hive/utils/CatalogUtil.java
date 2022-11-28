@@ -15,10 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.netease.arctic.hive.utils;
 
-import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
