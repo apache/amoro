@@ -9,8 +9,9 @@ RUN apt update \
     && apt-get install -y net-tools \
     && apt-get install -y telnet
 
-RUN wget https://github.com/NetEase/arctic/releases/download/${RELEASE}/arctic-${ARCTIC_VERSION}-bin.zip \
-    && unzip arctic-${ARCTIC_VERSION}-bin.zip
+ARG AMS_FILE
+ADD AMS_FILE /usr/local/ams
+RUN unzip arctic-${ARCTIC_VERSION}-bin.zip
 
 WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
 
