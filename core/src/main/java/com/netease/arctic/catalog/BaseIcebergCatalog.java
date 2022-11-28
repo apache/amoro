@@ -47,6 +47,7 @@ import java.util.stream.Collectors;
 public class BaseIcebergCatalog implements ArcticCatalog {
 
   private CatalogMeta meta;
+  private Pattern databaseFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
 
@@ -68,6 +69,10 @@ public class BaseIcebergCatalog implements ArcticCatalog {
     }
     icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
         meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_INCLUDE_DATABASES)) {
+      String databaseFilter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_INCLUDE_DATABASES);
+      databaseFilterPattern = Pattern.compile(databaseFilter);
+    }
   }
 
   @Override
@@ -86,9 +91,8 @@ public class BaseIcebergCatalog implements ArcticCatalog {
                 .distinct()
                 .collect(Collectors.toList())
         );
-    String filter = meta.getCatalogProperties().get(CatalogMetaProperties.KEY_INCLUDE_DATABASES);
     return databases.stream()
-        .filter(database -> filter == null || Pattern.matches(filter, database))
+        .filter(database -> databaseFilterPattern == null || databaseFilterPattern.matcher(database).matches())
         .collect(Collectors.toList());
   }
 
