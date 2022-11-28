@@ -41,6 +41,7 @@ public class LogDataJsonSerializationTest extends BaseFormatTest {
 
     LogDataJsonSerialization<UserPojo> logDataJsonSerialization =
         new LogDataJsonSerialization<>(userSchema, fieldGetterFactory);
+    logDataJsonSerialization.init();
     UserPojo subUserPojo = new UserPojo();
     subUserPojo.objects = new Object[]{false, 2, 987654321L};
     UserPojo userPojo = new UserPojo();
