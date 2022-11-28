@@ -18,6 +18,7 @@
 
 package com.netease.arctic.io;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.IcebergTableBase;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import org.apache.iceberg.DataFile;
@@ -45,6 +46,8 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
@@ -84,8 +87,10 @@ public class IcebergFanoutPosDeleteWriterTest extends IcebergTableBase {
 
     List<DeleteFile> deleteFiles = icebergPosDeleteWriter.complete();
     Assert.assertEquals(2, deleteFiles.size());
-    DeleteFile deleteFile1 = deleteFiles.get(0);
-    Assert.assertEquals(dataDir + "/data-1-delete-suffix.parquet", deleteFile1.path().toString());
+    Map<String, DeleteFile> deleteFileMap = deleteFiles.stream().collect(Collectors.toMap(f -> f.path().toString(),
+        f -> f));
+    DeleteFile deleteFile1 = deleteFileMap.get(dataDir + "/data-1-delete-suffix.parquet");
+    Assert.assertNotNull(deleteFile1);
     Assert.assertEquals(3, deleteFile1.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
     Schema pathPosSchema = DeleteSchemaUtil.pathPosSchema();
@@ -97,7 +102,8 @@ public class IcebergFanoutPosDeleteWriterTest extends IcebergTableBase {
             record.copy("file_path", dataFile1Path, "pos", 3L));
     Assert.assertEquals(expectedDeletes, readRecordsAsList(FileFormat.PARQUET, pathPosSchema, deleteFile1.path()));
 
-    DeleteFile deleteFile2 = deleteFiles.get(1);
+    DeleteFile deleteFile2 = deleteFileMap.get(dataDir + "/data-2-delete-suffix.parquet");
+    Assert.assertNotNull(deleteFile2);
     Assert.assertEquals(dataDir + "/data-2-delete-suffix.parquet", deleteFile2.path().toString());
     Assert.assertEquals(3, deleteFile2.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
