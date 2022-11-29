@@ -32,8 +32,8 @@ import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.SupportHiveTestGroup;
 import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
-import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizeCommit;
-import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestIcebergFullOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestIcebergFullOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
@@ -108,9 +108,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMajorOptimizePlan.class,
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
-    TestIcebergMajorOptimizePlan.class,
+    TestIcebergFullOptimizePlan.class,
     TestIcebergMinorOptimizePlan.class,
-    TestIcebergMajorOptimizeCommit.class,
+    TestIcebergFullOptimizeCommit.class,
     TestIcebergMinorOptimizeCommit.class,
     TestExpireFileCleanSupportIceberg.class,
     TestOrphanFileCleanSupportIceberg.class,

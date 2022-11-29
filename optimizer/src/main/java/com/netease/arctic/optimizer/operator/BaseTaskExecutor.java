@@ -41,10 +41,10 @@ import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -67,25 +66,41 @@ public class BaseTaskExecutor implements Serializable {
 
   private final ExecuteListener listener;
 
-  public interface ExecuteListener {
-    default void onTaskStart(Iterable<ContentFile<?>> inputFiles) {
-    }
-
-    default void onTaskFinish(Iterable<ContentFile<?>> outputFiles) {
-    }
-
-    default void onTaskFailed(Throwable t) {
-    }
-  }
-
   public BaseTaskExecutor(OptimizerConfig config) {
     this(config, null);
   }
 
-  public BaseTaskExecutor(OptimizerConfig config,
-                          ExecuteListener listener) {
+  public BaseTaskExecutor(
+      OptimizerConfig config,
+      ExecuteListener listener) {
     this.config = config;
     this.listener = listener;
+  }
+
+  private static ArcticTable buildTable(TableIdentificationInfo tableIdentifierInfo) {
+    String amsUrl = tableIdentifierInfo.getAmsUrl();
+    amsUrl = amsUrl.trim();
+    if (!amsUrl.endsWith("/")) {
+      amsUrl = amsUrl + "/";
+    }
+    ArcticCatalog arcticCatalog = CatalogLoader.load(amsUrl + tableIdentifierInfo.getTableIdentifier().getCatalog());
+    return arcticCatalog.loadTable(tableIdentifierInfo.getTableIdentifier());
+  }
+
+  private static DataTreeNode toTreeNode(com.netease.arctic.ams.api.TreeNode treeNode) {
+    if (treeNode == null) {
+      return null;
+    }
+    return DataTreeNode.of(treeNode.getMask(), treeNode.getIndex());
+  }
+
+  public static com.netease.arctic.table.TableIdentifier toTableIdentifier(
+      TableIdentifier tableIdentifier) {
+    if (tableIdentifier == null) {
+      return null;
+    }
+    return com.netease.arctic.table.TableIdentifier.of(tableIdentifier.getCatalog(),
+        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
   }
 
   /**
@@ -97,27 +112,29 @@ public class BaseTaskExecutor implements Serializable {
   public OptimizeTaskStat execute(TaskWrapper sourceTask) {
     long startTime = System.currentTimeMillis();
     NodeTask task;
-    ArcticTable table;
+    String amsUrl = config.getAmsUrl();
+    ArcticTable table = buildTable(
+        new TableIdentificationInfo(
+            amsUrl,
+            toTableIdentifier(sourceTask.getTask().getTableIdentifier())));
     LOG.info("start execute {}", sourceTask.getTask().getTaskId());
     try {
-      task = constructTask(sourceTask.getTask(), sourceTask.getAttemptId());
+      task = constructTask(table, sourceTask.getTask(), sourceTask.getAttemptId());
     } catch (Throwable t) {
       LOG.error("failed to build task {}", sourceTask.getTask(), t);
       throw new IllegalArgumentException(t);
     }
     onTaskStart(task.files());
     try {
-      String amsUrl = config.getAmsUrl();
-      table = buildTable(new TableIdentificationInfo(amsUrl, task.getTableIdentifier()));
       setPartition(task);
     } catch (Exception e) {
       LOG.error("failed to set partition info {}", task.getTaskId(), e);
       onTaskFailed(e);
       return constructFailedResult(task, e);
     }
-    Executor<?> optimize = ExecutorFactory.constructOptimize(task, table, startTime, config);
+    Executor optimize = ExecutorFactory.constructOptimize(task, table, startTime, config);
     try {
-      OptimizeTaskResult<?> result = optimize.execute();
+      OptimizeTaskResult result = optimize.execute();
       onTaskFinish(result.getTargetFiles());
       return result.getOptimizeTaskStat();
     } catch (TimeoutException timeoutException) {
@@ -155,25 +172,10 @@ public class BaseTaskExecutor implements Serializable {
     }
   }
 
-
-  private static ArcticTable buildTable(TableIdentificationInfo tableIdentifierInfo) {
-    String amsUrl = tableIdentifierInfo.getAmsUrl();
-    amsUrl = amsUrl.trim();
-    if (!amsUrl.endsWith("/")) {
-      amsUrl = amsUrl + "/";
-    }
-    ArcticCatalog arcticCatalog = CatalogLoader.load(amsUrl + tableIdentifierInfo.getTableIdentifier().getCatalog());
-    return arcticCatalog.loadTable(tableIdentifierInfo.getTableIdentifier());
-  }
-
   private void setPartition(NodeTask nodeTask) {
     // partition
     if (nodeTask.files().size() == 0) {
-      if (nodeTask.fileScanTasks().size() == 0) {
-        LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
-      } else {
-        nodeTask.setPartition(nodeTask.fileScanTasks().get(0).file().partition());
-      }
+      LOG.warn("task: {} no files to optimize.", nodeTask.getTaskId());
     } else {
       nodeTask.setPartition(nodeTask.files().get(0).partition());
     }
@@ -215,7 +217,7 @@ public class BaseTaskExecutor implements Serializable {
     return result.length() > 4000 ? result.substring(0, 4000) : result;
   }
 
-  private NodeTask constructTask(OptimizeTask task, int attemptId) {
+  private NodeTask constructTask(ArcticTable table, OptimizeTask task, int attemptId) {
     NodeTask nodeTask = new NodeTask();
     if (CollectionUtils.isNotEmpty(task.getSourceNodes())) {
       nodeTask.setSourceNodes(
@@ -225,34 +227,40 @@ public class BaseTaskExecutor implements Serializable {
     nodeTask.setTaskId(task.getTaskId());
     nodeTask.setAttemptId(attemptId);
 
-    for (ByteBuffer file : task.getBaseFiles()) {
-      nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.BASE_FILE);
+    if (TableTypeUtil.isIcebergTableFormat(table)) {
+      for (ByteBuffer file : task.getBaseFiles()) {
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.BASE_FILE);
+      }
+      for (ByteBuffer file : task.getInsertFiles()) {
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.INSERT_FILE);
+      }
+      for (ByteBuffer file : task.getDeleteFiles()) {
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.EQ_DELETE_FILE);
+      }
+      for (ByteBuffer file : task.getPosDeleteFiles()) {
+        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.POS_DELETE_FILE);
+      }
+    } else {
+      for (ByteBuffer file : task.getBaseFiles()) {
+        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.BASE_FILE);
+      }
+      for (ByteBuffer file : task.getInsertFiles()) {
+        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.INSERT_FILE);
+      }
+      for (ByteBuffer file : task.getDeleteFiles()) {
+        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.EQ_DELETE_FILE);
+      }
+      for (ByteBuffer file : task.getPosDeleteFiles()) {
+        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
+      }
     }
-    for (ByteBuffer file : task.getInsertFiles()) {
-      nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.INSERT_FILE);
-    }
-    for (ByteBuffer file : task.getDeleteFiles()) {
-      nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.EQ_DELETE_FILE);
-    }
-    for (ByteBuffer file : task.getPosDeleteFiles()) {
-      nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
-    }
-    List<FileScanTask> fileScanTasks = new ArrayList<>();
-    for (ByteBuffer fileScanTask : task.getIcebergFileScanTasks()) {
-      fileScanTasks.add(SerializationUtil.toIcebergFileScanTask(fileScanTask));
-    }
-    nodeTask.setFileScanTasks(fileScanTasks);
 
     Map<String, String> properties = task.getProperties();
     if (properties != null) {
       String allFileCnt = properties.get(OptimizeTaskProperties.ALL_FILE_COUNT);
       int fileCnt = nodeTask.baseFiles().size() + nodeTask.insertFiles().size() +
-          nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size();
-      AtomicInteger fileCntInFileScanTask = new AtomicInteger();
-      nodeTask.fileScanTasks()
-          .forEach(fileScanTask ->
-              fileCntInFileScanTask.set(fileCntInFileScanTask.get() + 1 + fileScanTask.deletes().size()));
-      fileCnt = fileCnt + fileCntInFileScanTask.get();
+          nodeTask.deleteFiles().size() + nodeTask.posDeleteFiles().size() +
+          nodeTask.allIcebergDataFiles().size() + nodeTask.allIcebergDeleteFiles().size();
       if (allFileCnt != null && Integer.parseInt(allFileCnt) != fileCnt) {
         LOG.error("{} check file cnt error, expected {}, actual {}, {}, value = {}", task.getTaskId(), allFileCnt,
             fileCnt, nodeTask, task);
@@ -270,19 +278,14 @@ public class BaseTaskExecutor implements Serializable {
     return nodeTask;
   }
 
-  private static DataTreeNode toTreeNode(com.netease.arctic.ams.api.TreeNode treeNode) {
-    if (treeNode == null) {
-      return null;
+  public interface ExecuteListener {
+    default void onTaskStart(Iterable<ContentFile<?>> inputFiles) {
     }
-    return DataTreeNode.of(treeNode.getMask(), treeNode.getIndex());
-  }
 
-  public static com.netease.arctic.table.TableIdentifier toTableIdentifier(
-      TableIdentifier tableIdentifier) {
-    if (tableIdentifier == null) {
-      return null;
+    default void onTaskFinish(Iterable<ContentFile<?>> outputFiles) {
     }
-    return com.netease.arctic.table.TableIdentifier.of(tableIdentifier.getCatalog(),
-        tableIdentifier.getDatabase(), tableIdentifier.getTableName());
+
+    default void onTaskFailed(Throwable t) {
+    }
   }
 }

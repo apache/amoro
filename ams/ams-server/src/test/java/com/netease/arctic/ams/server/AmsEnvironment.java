@@ -1,10 +1,15 @@
 package com.netease.arctic.ams.server;
 
+import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
+import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
+import com.netease.arctic.utils.FileUtil;
 import org.apache.commons.io.FileUtils;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +17,9 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.BindException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -124,7 +132,60 @@ public class AmsEnvironment {
     }
     LOG.info("ams start");
   }
-  
+
+  public void createIcebergCatalog(String catalogName, String warehouseDir) {
+    CatalogMeta icebergCatalog = new CatalogMeta();
+    icebergCatalog.setCatalogName(catalogName);
+    icebergCatalog.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_HADOOP);
+    Map<String, String> storageConfigs = Maps.newHashMap();
+    storageConfigs.put("storage.type", "hdfs");
+    storageConfigs.put("hadoop.core.site", "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==");
+    storageConfigs.put("hadoop.hdfs.site", "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==");
+    icebergCatalog.setStorageConfigs(storageConfigs);
+    Map<String, String> authConfigs = Maps.newHashMap();
+    authConfigs.put("auth.type", "simple");
+    authConfigs.put("auth.simple.hadoop_username", "root");
+    icebergCatalog.setAuthConfigs(authConfigs);
+    Map<String, String> properties = Maps.newHashMap();
+    try {
+      Files.createDirectories(Paths.get(warehouseDir));
+    } catch (IOException e) {
+      LOG.error("failed to create iceberg warehouse dir {}", warehouseDir, e);
+      throw new RuntimeException(e);
+    }
+    properties.put("warehouse", warehouseDir);
+    properties.put("table-formats", "ICEBERG");
+    icebergCatalog.setCatalogProperties(properties);
+    ServiceContainer.getCatalogMetadataService().addCatalog(icebergCatalog);
+  }
+
+  public void createLocalCatalog(String catalogName, String warehouseDir) {
+    CatalogMeta localCatalog = new CatalogMeta();
+    localCatalog.setCatalogName(catalogName);
+    localCatalog.setCatalogType(CatalogMetaProperties.CATALOG_TYPE_AMS);
+    Map<String, String> storageConfigs = Maps.newHashMap();
+    storageConfigs.put("storage.type", "hdfs");
+    storageConfigs.put("hive.site", "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==");
+    storageConfigs.put("hadoop.core.site", "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==");
+    storageConfigs.put("hadoop.hdfs.site", "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==");
+    localCatalog.setStorageConfigs(storageConfigs);
+    Map<String, String> authConfigs = Maps.newHashMap();
+    authConfigs.put("auth.type", "simple");
+    authConfigs.put("auth.simple.hadoop_username", "root");
+    localCatalog.setAuthConfigs(authConfigs);
+    Map<String, String> properties = Maps.newHashMap();
+    try {
+      Files.createDirectories(Paths.get(warehouseDir));
+    } catch (IOException e) {
+      LOG.error("failed to create iceberg warehouse dir {}", warehouseDir, e);
+      throw new RuntimeException(e);
+    }
+    properties.put("warehouse.dir", warehouseDir);
+    properties.put("table-formats", "ICEBERG");
+    localCatalog.setCatalogProperties(properties);
+    ServiceContainer.getCatalogMetadataService().addCatalog(localCatalog);
+  }
+
   private void stopAms() {
     ArcticMetaStore.shutDown();
     LOG.info("ams stop");
@@ -184,24 +245,6 @@ public class AmsEnvironment {
         "# extension properties for like system\n" +
         "extension_properties:\n" +
         "#test.properties: test\n" +
-        "\n" +
-        "catalogs:\n" +
-        "# arctic catalog config. now can't delete catalog by config file\n" +
-        "  - name: local_catalog\n" +
-        "    # arctic catalog type, now just support hadoop\n" +
-        "    type: hadoop\n" +
-        "    # file system config.sh\n" +
-        "    storage_config:\n" +
-        "      storage.type: hdfs\n" +
-        "      core-site:\n" +
-        "      hdfs-site:\n" +
-        "      hive-site:\n" +
-        "    # auth config.sh now support SIMPLE and KERBEROS\n" +
-        "    auth_config:\n" +
-        "      type: SIMPLE\n" +
-        "      hadoop_username: root\n" +
-        "    properties:\n" +
-        "      warehouse.dir: " + rootPath + "/warehouse\n" +
         "\n" +
         "containers:\n" +
         "  # arctic optimizer container config.sh\n" +

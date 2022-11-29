@@ -18,12 +18,18 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
+import com.netease.arctic.ams.api.JobId;
+import com.netease.arctic.ams.api.JobType;
+import com.netease.arctic.ams.api.OptimizeStatus;
+import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.SerializationUtil;
+import org.apache.commons.beanutils.BeanUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -31,28 +37,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.stream.Collectors;
 
-public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor<F> {
+public abstract class BaseExecutor implements Executor {
   private static final Logger LOG = LoggerFactory.getLogger(BaseExecutor.class);
+  protected static final int SAMPLE_DATA_INTERVAL = 100000;
 
   protected final NodeTask task;
   protected final ArcticTable table;
-  protected final OptimizerConfig config;
   protected final long startTime;
+  protected final OptimizerConfig config;
   protected double factor = 0.9;
 
-  public BaseExecutor(NodeTask nodeTask,
-                      ArcticTable table,
-                      long startTime,
-                      OptimizerConfig config) {
-    this.startTime = startTime;
-    this.task = nodeTask;
+  public BaseExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
+    this.task = task;
     this.table = table;
+    this.startTime = startTime;
     this.config = config;
   }
 
@@ -74,6 +81,36 @@ public abstract class BaseExecutor<F extends ContentFile<F>> implements Executor
     }
 
     return 0;
+  }
+
+  protected OptimizeTaskResult buildOptimizeResult(Iterable<? extends ContentFile<?>> targetFiles)
+      throws InvocationTargetException, IllegalAccessException {
+    long totalFileSize = 0;
+    List<ByteBuffer> baseFileBytesList = new ArrayList<>();
+    for (ContentFile<?> targetFile : targetFiles) {
+      totalFileSize += targetFile.fileSizeInBytes();
+      baseFileBytesList.add(SerializationUtil.toByteBuffer(targetFile));
+    }
+
+    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
+    BeanUtils.copyProperties(optimizeTaskStat, task);
+    JobId jobId = new JobId();
+    jobId.setId(config.getOptimizerId());
+    jobId.setType(JobType.Optimize);
+    optimizeTaskStat.setJobId(jobId);
+    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
+    optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
+    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
+    optimizeTaskStat.setNewFileSize(totalFileSize);
+    optimizeTaskStat.setReportTime(System.currentTimeMillis());
+    optimizeTaskStat.setFiles(baseFileBytesList);
+    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
+    optimizeTaskStat.setTaskId(task.getTaskId());
+
+    OptimizeTaskResult result = new OptimizeTaskResult();
+    result.setTargetFiles(targetFiles);
+    result.setOptimizeTaskStat(optimizeTaskStat);
+    return result;
   }
 
   protected void checkIfTimeout(Closeable writer) throws Exception {

@@ -18,10 +18,6 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
-import com.netease.arctic.ams.api.JobId;
-import com.netease.arctic.ams.api.JobType;
-import com.netease.arctic.ams.api.OptimizeStatus;
-import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
@@ -36,8 +32,6 @@ import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -52,7 +46,6 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -60,20 +53,17 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class MinorExecutor extends BaseExecutor<DeleteFile> {
+public class MinorExecutor extends BaseExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
-  public MinorExecutor(NodeTask nodeTask,
-                       ArcticTable table,
-                       long startTime,
-                       OptimizerConfig config) {
+  public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
     super(nodeTask, table, startTime, config);
   }
 
   @Override
-  public OptimizeTaskResult<DeleteFile> execute() throws Exception {
+  public OptimizeTaskResult execute() throws Exception {
     List<DeleteFile> targetFiles = new ArrayList<>();
-    LOG.info("start process minor optimize task: {}", task);
+    LOG.info("Start processing arctic table minor optimize task: {}", task);
 
     Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
@@ -106,10 +96,10 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
           Long rowPosition = (Long) record.get(recordStruct.fields()
               .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
           posDeleteWriter.delete(filePath, rowPosition);
-          insertCount.getAndIncrement();
-          if (insertCount.get() == 1 || insertCount.get() == 100000) {
+          insertCount.incrementAndGet();
+          if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
             LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-                task.getTaskId(), insertCount, "", 0);
+                task.getTaskId(), insertCount.get(), filePath, rowPosition);
           }
         }
         return null;
@@ -137,35 +127,7 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
     }
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
 
-    long totalFileSize = 0;
-    List<ByteBuffer> deleteFileBytesList = new ArrayList<>();
-    for (DeleteFile deleteFile : targetFiles) {
-      totalFileSize += deleteFile.fileSizeInBytes();
-      deleteFileBytesList.add(SerializationUtil.toByteBuffer(deleteFile));
-    }
-
-    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
-    BeanUtils.copyProperties(optimizeTaskStat, task);
-    JobId jobId = new JobId();
-    jobId.setId(config.getOptimizerId());
-    jobId.setType(JobType.Optimize);
-    optimizeTaskStat.setJobId(jobId);
-
-    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
-    optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
-    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
-
-    optimizeTaskStat.setNewFileSize(totalFileSize);
-    optimizeTaskStat.setReportTime(System.currentTimeMillis());
-    optimizeTaskStat.setFiles(deleteFileBytesList);
-    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
-    optimizeTaskStat.setTaskId(task.getTaskId());
-
-    OptimizeTaskResult<DeleteFile> result = new OptimizeTaskResult<>();
-    result.setTargetFiles(targetFiles);
-    result.setOptimizeTaskStat(optimizeTaskStat);
-
-    return result;
+    return buildOptimizeResult(targetFiles);
   }
 
   @Override
