@@ -110,6 +110,7 @@ public class TableOptimizeItem extends IJDBCService {
   private final IQuotaService quotaService;
   private final AmsClient metastoreClient;
   private volatile double quotaCache;
+  private volatile String groupNameCache;
   private final Predicate<Long> snapshotIsCached = new Predicate<Long>() {
     @Override
     public boolean apply(@Nullable Long snapshotId) {
@@ -125,6 +126,9 @@ public class TableOptimizeItem extends IJDBCService {
     this.quotaCache = PropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
         TableProperties.OPTIMIZE_QUOTA,
         TableProperties.OPTIMIZE_QUOTA_DEFAULT);
+    this.groupNameCache = PropertyUtil.propertyAsString(tableMetadata.getProperties(),
+        TableProperties.OPTIMIZE_GROUP,
+        TableProperties.OPTIMIZE_GROUP_DEFAULT);
     this.tableIdentifier = tableMetadata.getTableIdentifier();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.metastoreClient = ServiceContainer.getTableMetastoreHandler();
@@ -245,6 +249,10 @@ public class TableOptimizeItem extends IJDBCService {
     return quotaCache;
   }
 
+  public String getGroupNameCache() {
+    return groupNameCache;
+  }
+
   private void tryRefresh(boolean force) {
     if (force || isMetaExpired() || arcticTable == null) {
       tableLock.lock();
@@ -265,6 +273,9 @@ public class TableOptimizeItem extends IJDBCService {
     this.quotaCache = PropertyUtil.propertyAsDouble(arcticTable.properties(),
         TableProperties.OPTIMIZE_QUOTA,
         TableProperties.OPTIMIZE_QUOTA_DEFAULT);
+    this.groupNameCache = PropertyUtil.propertyAsString(arcticTable.properties(),
+        TableProperties.OPTIMIZE_GROUP,
+        TableProperties.OPTIMIZE_GROUP_DEFAULT);
   }
 
   private int optimizeMaxRetry() {
@@ -756,7 +767,7 @@ public class TableOptimizeItem extends IJDBCService {
    * If task execute timeout, set it to be Failed.
    */
   public void checkTaskExecuteTimeout() {
-    optimizeTasks.values().stream().filter(task -> task.executeTimeout())
+    optimizeTasks.values().stream().filter(OptimizeTaskItem::executeTimeout)
         .forEach(task -> {
           task.onFailed(new ErrorMessage(System.currentTimeMillis(), "execute expired"),
               System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());

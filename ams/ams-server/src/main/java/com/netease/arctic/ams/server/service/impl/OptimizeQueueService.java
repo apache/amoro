@@ -200,7 +200,7 @@ public class OptimizeQueueService extends IJDBCService {
    * delete all OptimizeQueue
    *
    */
-  public void removeAllQueue()  {
+  public void removeAllQueue() {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizeQueueMapper optimizeQueueMapper = getMapper(sqlSession, OptimizeQueueMapper.class);
       optimizeQueueMapper.deleteAllQueue();
