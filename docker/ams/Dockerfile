@@ -12,13 +12,13 @@ RUN apt update \
 ARG AMS_FILE
 WORKDIR /usr/local/ams
 
-ADD run_dn.sh /run_dn.sh
-RUN chmod a+x /run_dn.sh
-CMD ["/run_dn.sh"]
-
+ADD arctic-${ARCTIC_VERSION}-bin.zip /usr/local/ams/arctic-${ARCTIC_VERSION}-bin.zip
 RUN unzip arctic-${ARCTIC_VERSION}-bin.zip
 
 WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
+
+EXPOSE 1630/tcp
+EXPOSE 1260/tcp
 
 CMD ["bash","-c","./bin/ams.sh start && tail -f /dev/null"]
 
