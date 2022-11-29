@@ -578,35 +578,6 @@ public class OptimizeQueueService extends IJDBCService {
       return optimizeQueue;
     }
 
-    private Set<TableIdentifier> loadTablesByQueueId(int queueId) {
-      Set<TableIdentifier> tablesInQueue = new HashSet<>();
-      List<CatalogMeta> catalogMetas = ServiceContainer.getCatalogMetadataService().getCatalogs();
-      catalogMetas.forEach(catalogMeta -> {
-        ArcticCatalog arcticCatalog =
-            CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), catalogMeta.getCatalogName());
-        List<String> databases = arcticCatalog.listDatabases();
-        for (String database : databases) {
-          for (TableIdentifier tableIdentifier : arcticCatalog.listTables(database)) {
-            ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
-            String queueName =
-                arcticTable.properties()
-                    .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
-            try {
-              OptimizeQueueItem optimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(queueName);
-              if (optimizeQueue.getOptimizeQueueMeta().getQueueId() == queueId) {
-                tablesInQueue.add(arcticTable.id());
-              }
-            } catch (Exception e) {
-              // skip, and load next table
-              LOG.error("{} get optimize group failed, group name is {}", arcticTable.id(), queueName);
-            }
-          }
-        }
-      });
-
-      return tablesInQueue;
-    }
-
     private List<OptimizeTaskItem> plan(long currentTime) {
       List<TableIdentifier> tableSort = sortTableByQuota(new ArrayList<>(tables));
 

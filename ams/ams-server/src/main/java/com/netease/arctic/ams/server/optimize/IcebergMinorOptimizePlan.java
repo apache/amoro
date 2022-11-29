@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -200,11 +199,7 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     }
 
     allNeedOptimizeTask = filterRepeatFileScanTask(allNeedOptimizeTask);
-
-    List<FileScanTask> sortedNeedOptimizeTask = allNeedOptimizeTask.stream()
-        .sorted(Comparator.comparing(fileScanTask -> fileScanTask.file().path().toString()))
-        .collect(Collectors.toList());
-    List<List<FileScanTask>> packedList = binPackFileScanTask(sortedNeedOptimizeTask);
+    List<List<FileScanTask>> packedList = binPackFileScanTask(allNeedOptimizeTask);
 
     if (CollectionUtils.isNotEmpty(packedList)) {
       SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(

@@ -26,6 +26,9 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
 import java.io.Serializable;
 
+/**
+ * A struct of iceberg content file and the associated sequence number.
+ */
 public class IcebergContentFile implements Serializable {
   private static final long serialVersionUID = 1L;
 
