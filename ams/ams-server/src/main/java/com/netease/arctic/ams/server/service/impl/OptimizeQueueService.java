@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
-import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -45,8 +44,6 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;

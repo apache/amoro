@@ -18,7 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.ManifestEntry;
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.io.TableTestBaseWithInitData;
 import com.netease.arctic.utils.FileUtil;
@@ -42,7 +42,7 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         .build();
     long currentSnapshotId = changeTable.currentSnapshot().snapshotId();
     int cnt = 0;
-    for (ManifestEntry entry : dataFileScan.entries()) {
+    for (IcebergFileEntry entry : dataFileScan.entries()) {
       cnt++;
       DataFile file = (DataFile) entry.getFile();
       DataFileType dataFileType = FileUtil.parseFileTypeFromFileName(file.path().toString());
@@ -53,7 +53,6 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         Assert.assertEquals(currentSnapshotId, (long) entry.getSnapshotId());
       }
       Assert.assertEquals(FileContent.DATA, file.content());
-      Assert.assertEquals(ManifestEntry.Status.ADDED, entry.getStatus());
     }
     Assert.assertEquals(3, cnt);
   }
@@ -67,13 +66,12 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         .build();
     long currentSnapshotId = baseTable.currentSnapshot().snapshotId();
     int cnt = 0;
-    for (ManifestEntry entry : deleteFileScan.entries()) {
+    for (IcebergFileEntry entry : deleteFileScan.entries()) {
       cnt++;
       DeleteFile file = (DeleteFile) entry.getFile();
       Assert.assertEquals(2, entry.getSequenceNumber());
       Assert.assertEquals(currentSnapshotId, (long) entry.getSnapshotId());
       Assert.assertEquals(FileContent.POSITION_DELETES, file.content());
-      Assert.assertEquals(ManifestEntry.Status.ADDED, entry.getStatus());
     }
     Assert.assertEquals(1, cnt);
   }
@@ -87,7 +85,7 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         .build();
     long currentSnapshotId = baseTable.currentSnapshot().snapshotId();
     int cnt = 0;
-    for (ManifestEntry entry : deleteFileScan.entries()) {
+    for (IcebergFileEntry entry : deleteFileScan.entries()) {
       cnt++;
       ContentFile<?> file = entry.getFile();
       if (file.content() == FileContent.DATA) {
@@ -97,7 +95,6 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         Assert.assertEquals(currentSnapshotId, (long) entry.getSnapshotId());
         Assert.assertEquals(FileContent.POSITION_DELETES, file.content());
       }
-      Assert.assertEquals(ManifestEntry.Status.ADDED, entry.getStatus());
     }
     Assert.assertEquals(5, cnt);
   }
@@ -112,7 +109,7 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         .build();
     long currentSnapshotId = changeTable.currentSnapshot().snapshotId();
     int cnt = 0;
-    for (ManifestEntry entry : dataFileScan.entries()) {
+    for (IcebergFileEntry entry : dataFileScan.entries()) {
       cnt++;
       DataFile file = (DataFile) entry.getFile();
       DataFileType dataFileType = FileUtil.parseFileTypeFromFileName(file.path().toString());
@@ -123,7 +120,6 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
         Assert.assertEquals(currentSnapshotId, (long) entry.getSnapshotId());
       }
       Assert.assertEquals(FileContent.DATA, file.content());
-      Assert.assertEquals(ManifestEntry.Status.ADDED, entry.getStatus());
     }
     Assert.assertEquals(2, cnt);
   }

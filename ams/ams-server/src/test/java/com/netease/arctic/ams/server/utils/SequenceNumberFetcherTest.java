@@ -94,6 +94,39 @@ public class SequenceNumberFetcherTest {
     testTable(table);
   }
 
+  @Test
+  public void testV1IcebergTable() throws IOException {
+    Tables hadoopTables = new HadoopTables(new Configuration());
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(TableProperties.FORMAT_VERSION, "1");
+
+    String path = tempFolder.getRoot().getPath();
+    Log.info(path);
+    Table table = hadoopTables.create(TableTestBase.TABLE_SCHEMA, TableTestBase.SPEC, tableProperties,
+        path + "/test/table3");
+    Map<String, Long> checkedDeletes = Maps.newHashMap();
+    Map<String, Long> checkedDataFiles = Maps.newHashMap();
+    StructLike partitionData = partitionData(table.schema(), table.spec(), getOpTime());
+
+    List<DataFile> dataFiles1 = insertDataFiles(table, 10);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 0);
+
+    List<DataFile> dataFiles2 = insertDataFiles(table, 10);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 0);
+
+    List<DataFile> dataFiles3 = overwriteDataFiles(table, dataFiles1,
+        Collections.singletonList(writeNewDataFile(table, records(0, 10, table.schema()),
+            partitionData)));
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 0);
+
+
+    List<DataFile> dataFiles4 = rewriteFiles(table, dataFiles2,
+        Collections.singletonList(writeNewDataFile(table, records(0, 10, table.schema()), partitionData)),
+        4);
+    checkNewFileSequenceNumber(table, checkedDeletes, checkedDataFiles, 0);
+    
+  }
+
   private void testTable(Table table) throws IOException {
     Map<String, Long> checkedDeletes = Maps.newHashMap();
     Map<String, Long> checkedDataFiles = Maps.newHashMap();

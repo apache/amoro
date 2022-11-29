@@ -87,6 +87,7 @@ public class OptimizeIntegrationTest {
   private static final TableIdentifier TB_5 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "test_table5");
   private static final TableIdentifier TB_6 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "test_table6");
   private static final TableIdentifier TB_7 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "test_table7");
+  private static final TableIdentifier TB_8 = TableIdentifier.of(ICEBERG_CATALOG, DATABASE, "test_table8");
 
   private static final ConcurrentHashMap<String, ArcticCatalog> catalogsCache = new ConcurrentHashMap<>();
 
@@ -355,6 +356,47 @@ public class OptimizeIntegrationTest {
   }
 
   @Test
+  public void testV1IcebergTableOptimizing() throws IOException {
+    Table table = createIcebergTable(TB_8, PartitionSpec.unpartitioned());
+    TableIdentifier tb = TB_8;
+    long startId = getOptimizeHistoryStartId();
+    long offset = 1;
+    StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
+
+    // Step 1: insert 2 data file and Minor Optimize
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(1, "aaa", quickDateWithZone(3)),
+        newRecord(2, "bbb", quickDateWithZone(3)),
+        newRecord(3, "aaa", quickDateWithZone(3)),
+        newRecord(4, "bbb", quickDateWithZone(3))
+    ), partitionData);
+
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(5, "ccc", quickDateWithZone(3)),
+        newRecord(6, "ddd", quickDateWithZone(3))
+    ), partitionData);
+
+    // wait Minor Optimize result
+    OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+    int size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6);
+    Assert.assertEquals(6, size);
+
+    // Step 1: insert 2 data file and Minor Optimize
+    insertDataFile(table, Lists.newArrayList(
+        newRecord(7, "ccc", quickDateWithZone(3)),
+        newRecord(8, "ddd", quickDateWithZone(3))
+    ), partitionData);
+
+    // wait Minor Optimize result
+    optimizeHistory = waitOptimizeResult(tb, startId + offset++);
+    assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 2, 1);
+    size = assertContainIdSet(readRecords(table), 0, 1, 2, 3, 4, 5, 6, 7, 8);
+    Assert.assertEquals(8, size);
+    
+  }
+
+  @Test
   public void testPartitionIcebergTableOptimizing() throws IOException {
     Table table = createIcebergTable(TB_7, SPEC);
     TableIdentifier tb = TB_7;
@@ -562,6 +604,16 @@ public class OptimizeIntegrationTest {
     Tables hadoopTables = new HadoopTables(new Configuration());
     Map<String, String> tableProperties = Maps.newHashMap();
     tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    tableProperties.put(TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "2");
+
+    return hadoopTables.create(SCHEMA, partitionSpec, tableProperties,
+        ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
+  }
+
+  private Table createIcebergV1Table(TableIdentifier tableIdentifier, PartitionSpec partitionSpec) {
+    Tables hadoopTables = new HadoopTables(new Configuration());
+    Map<String, String> tableProperties = Maps.newHashMap();
+    tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "1");
     tableProperties.put(TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "2");
 
     return hadoopTables.create(SCHEMA, partitionSpec, tableProperties,

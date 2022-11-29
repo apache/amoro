@@ -18,7 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.ManifestEntry;
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
@@ -82,7 +82,7 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
         .withDataFilter(dataFilter)
         .includeFileContent(FileContent.DATA)
         .build();
-    CloseableIterable<ManifestEntry> filteredEntry = CloseableIterable.filter(manifestReader.entries(), entry -> {
+    CloseableIterable<IcebergFileEntry> filteredEntry = CloseableIterable.filter(manifestReader.entries(), entry -> {
       StructLike partition = entry.getFile().partition();
       long sequenceNumber = entry.getSequenceNumber();
       Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequenceNumber);

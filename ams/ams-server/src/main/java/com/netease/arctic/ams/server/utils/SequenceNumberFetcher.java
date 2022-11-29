@@ -27,12 +27,14 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.util.Map;
 
+/**
+ * Utils to get the sequence number of iceberg file.
+ * If iceberg table is v1 format, will always return 0.
+ */
 public class SequenceNumberFetcher {
   private final Table table;
   private final long snapshotId;
   private volatile Map<String, Long> cached;
-
-  private Schema entriesTableSchema;
 
   public static SequenceNumberFetcher with(Table table, long snapshotId) {
     return new SequenceNumberFetcher(table, snapshotId);

@@ -18,7 +18,7 @@
 
 package com.netease.arctic.scan;
 
-import com.netease.arctic.ManifestEntry;
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.utils.ManifestEntryFields;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -52,6 +52,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+/**
+ * API for configuring a scan to get the {@link IcebergFileEntry} of an Iceberg Table.
+ */
 public class TableEntriesScan {
   private final Table table;
   private final Long snapshotId;
@@ -80,21 +83,41 @@ public class TableEntriesScan {
       this.table = table;
     }
 
+    /**
+     * Set the filter
+     * @param dataFilter default is always true
+     * @return this for chain
+     */
     public Builder withDataFilter(Expression dataFilter) {
       this.dataFilter = dataFilter;
       return this;
     }
 
+    /**
+     * If only return the Existing, Add entries
+     * @param aliveEntry true for only Existing, Add
+     * @return this for chain
+     */
     public Builder withAliveEntry(boolean aliveEntry) {
       this.aliveEntry = aliveEntry;
       return this;
     }
 
+    /**
+     * Set the fileContent
+     * @param fileContent default is nothing
+     * @return this for chain
+     */
     public Builder includeFileContent(FileContent... fileContent) {
       this.fileContents.addAll(Arrays.asList(fileContent));
       return this;
     }
 
+    /**
+     * Set the snapshotId
+     * @param snapshotId snapshotId
+     * @return this for chain
+     */
     public Builder useSnapshot(long snapshotId) {
       this.snapshotId = snapshotId;
       return this;
@@ -116,7 +139,7 @@ public class TableEntriesScan {
     this.snapshotId = snapshotId;
   }
 
-  public CloseableIterable<ManifestEntry> entries() {
+  public CloseableIterable<IcebergFileEntry> entries() {
     TableScan tableScan = getEntriesTable().newScan();
     if (snapshotId != null) {
       tableScan = tableScan.useSnapshot(snapshotId);
@@ -125,10 +148,11 @@ public class TableEntriesScan {
 
     CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
 
-    CloseableIterable<ManifestEntry> allEntries =
+    CloseableIterable<IcebergFileEntry> allEntries =
         CloseableIterable.transform(entries, (entry -> {
-          ManifestEntry.Status status =
-              ManifestEntry.Status.of(entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
+          ManifestEntryFields.Status status =
+              ManifestEntryFields.Status.of(
+                  entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class));
           long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
           Long snapshotId = entry.get(entryFieldIndex(ManifestEntryFields.SNAPSHOT_ID.name()), Long.class);
           StructLike fileRecord =
@@ -138,7 +162,7 @@ public class TableEntriesScan {
           if (shouldKeep(status, fileContent)) {
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {
-              return new ManifestEntry(status, snapshotId, sequence, contentFile);
+              return new IcebergFileEntry(snapshotId, sequence, contentFile);
             }
           }
           return null;
@@ -164,8 +188,8 @@ public class TableEntriesScan {
     throw new IllegalArgumentException("not support content id " + contentId);
   }
 
-  private boolean shouldKeep(ManifestEntry.Status status, FileContent fileContent) {
-    if (aliveEntry && status == ManifestEntry.Status.DELETED) {
+  private boolean shouldKeep(ManifestEntryFields.Status status, FileContent fileContent) {
+    if (aliveEntry && status == ManifestEntryFields.Status.DELETED) {
       return false;
     }
     if (allFileContent) {

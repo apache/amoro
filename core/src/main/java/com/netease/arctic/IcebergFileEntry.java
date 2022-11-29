@@ -20,51 +20,19 @@ package com.netease.arctic;
 
 import org.apache.iceberg.ContentFile;
 
-public class ManifestEntry {
-  public enum Status {
-    EXISTING(0),
-    ADDED(1),
-    DELETED(2);
-
-    private final int id;
-
-    Status(int id) {
-      this.id = id;
-    }
-
-    public int id() {
-      return id;
-    }
-
-    public static Status of(int id) {
-      for (Status status : Status.values()) {
-        if (status.id() == id) {
-          return status;
-        }
-      }
-      throw new IllegalArgumentException("not support status id " + id);
-
-    }
-  }
-  
-  private Status status;
+/**
+ * Entry of Iceberg ContentFile, include ContentFile, snapshotId and sequenceNumber.
+ * The sequenceNumber is inherited from metadata, not the actual value in manifest file.
+ */
+public class IcebergFileEntry {
   private Long snapshotId;
   private long sequenceNumber;
   private ContentFile<?> file;
 
-  public ManifestEntry(Status status, Long snapshotId, long sequenceNumber, ContentFile<?> file) {
-    this.status = status;
+  public IcebergFileEntry(Long snapshotId, long sequenceNumber, ContentFile<?> file) {
     this.snapshotId = snapshotId;
     this.sequenceNumber = sequenceNumber;
     this.file = file;
-  }
-
-  public Status getStatus() {
-    return status;
-  }
-
-  public void setStatus(Status status) {
-    this.status = status;
   }
 
   public Long getSnapshotId() {
