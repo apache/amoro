@@ -55,19 +55,11 @@ import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 public class IcebergExecutor extends BaseExecutor<DataFile> {
   private static final Logger LOG = LoggerFactory.getLogger(IcebergExecutor.class);
 
-  private final NodeTask task;
-  private final ArcticTable table;
-  private final long startTime;
-  private final OptimizerConfig config;
-
   public IcebergExecutor(NodeTask nodeTask,
                          ArcticTable table,
                          long startTime,
                          OptimizerConfig config) {
-    this.task = nodeTask;
-    this.table = table;
-    this.startTime = startTime;
-    this.config = config;
+    super(nodeTask, table, startTime, config);
   }
 
   @Override
@@ -132,6 +124,8 @@ public class IcebergExecutor extends BaseExecutor<DataFile> {
 
     long insertCount = 0;
     while (recordIterator.hasNext()) {
+      checkIfTimeout(writer);
+
       if (writer.length() >= targetSizeByBytes) {
         writer.close();
         result.add(writer.toDataFile());

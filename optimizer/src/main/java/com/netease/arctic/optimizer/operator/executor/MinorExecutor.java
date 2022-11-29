@@ -63,16 +63,11 @@ import java.util.stream.Collectors;
 public class MinorExecutor extends BaseExecutor<DeleteFile> {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
-  private final NodeTask task;
-  private final ArcticTable table;
-  private final long startTime;
-  private final OptimizerConfig config;
-
-  public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
-    this.task = nodeTask;
-    this.table = table;
-    this.startTime = startTime;
-    this.config = config;
+  public MinorExecutor(NodeTask nodeTask,
+                       ArcticTable table,
+                       long startTime,
+                       OptimizerConfig config) {
+    super(nodeTask, table, startTime, config);
   }
 
   @Override
@@ -103,6 +98,8 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
             openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
         while (iterator.hasNext()) {
+          checkIfTimeout(posDeleteWriter);
+
           Record record = iterator.next();
           String filePath = (String) record.get(recordStruct.fields()
               .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
@@ -125,6 +122,8 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
           CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
           CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator();
           while (posDeleteIterator.hasNext()) {
+            checkIfTimeout(posDeleteWriter);
+
             Record record = posDeleteIterator.next();
             String filePath = posDeleteReader.readPath(record);
             Long rowPosition = posDeleteReader.readPos(record);

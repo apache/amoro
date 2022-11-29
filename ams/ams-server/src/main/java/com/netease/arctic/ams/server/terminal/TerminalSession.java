@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.terminal;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TerminalSession {
 
@@ -55,6 +56,11 @@ public interface TerminalSession {
      */
     void close();
   }
+
+  /**
+   * get current session configs for logs
+   */
+  Map<String, String> configs();
 
   /**
    * execute a statement and return result set.

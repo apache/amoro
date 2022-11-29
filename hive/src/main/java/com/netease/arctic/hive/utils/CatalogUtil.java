@@ -16,15 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.hive.utils;
 
-public class SparkSQLProperties {
+import com.netease.arctic.catalog.ArcticCatalog;
+import com.netease.arctic.hive.catalog.ArcticHiveCatalog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-  public static final String DELEGATE_DEFAULT_CATALOG_TABLE = "spark.arctic.sql.delegate.enable";
+public class CatalogUtil {
+  private static final Logger LOG = LoggerFactory.getLogger(CatalogUtil.class);
 
-  public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES =
-          "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
-
-  public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT =
-          "false";
+  /**
+   * check arctic catalog is hive catalog
+   * @param arcticCatalog target arctic catalog
+   * @return Whether hive catalog. true is hive catalog, false isn't hive catalog.
+   */
+  public static boolean isHiveCatalog(ArcticCatalog arcticCatalog) {
+    return arcticCatalog instanceof ArcticHiveCatalog;
+  }
 }

@@ -16,15 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark;
+package com.netease.arctic.optimizer.exception;
 
-public class SparkSQLProperties {
-
-  public static final String DELEGATE_DEFAULT_CATALOG_TABLE = "spark.arctic.sql.delegate.enable";
-
-  public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES =
-          "spark.sql.arctic.use-timestamp-without-timezone-in-new-tables";
-
-  public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT =
-          "false";
+public class TimeoutException extends RuntimeException {
+  public TimeoutException(String errorMessage) {
+    super(errorMessage);
+  }
 }

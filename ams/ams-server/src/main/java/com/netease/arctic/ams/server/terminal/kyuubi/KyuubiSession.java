@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.Map;
 
 public class KyuubiSession implements TerminalSession {
 
@@ -33,17 +34,24 @@ public class KyuubiSession implements TerminalSession {
   final Connection connection;
 
   private volatile String currentCatalog;
+  Map<String, String> sessionConf;
 
-  public KyuubiSession(Connection connection, List<String> logs) {
+  public KyuubiSession(Connection connection, List<String> logs, Map<String, String> sessionConf) {
     this.logs.addAll(logs);
     this.connection = connection;
+    this.sessionConf = sessionConf;
+  }
+
+  @Override
+  public Map<String, String> configs() {
+    return this.sessionConf;
   }
 
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
     if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
       logs.add("current catalog is " + currentCatalog + ", switch to " + catalog + " before execution");
-      execute("use " + catalog);
+      execute("use `" + catalog + "`");
       this.currentCatalog = catalog;
     }
     java.sql.ResultSet rs = null;
