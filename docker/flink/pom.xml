@@ -37,7 +37,7 @@
     <dependencies>
       <dependency>
         <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-hadoop-base-docker</artifactId>
+        <artifactId>arctic-hadoop-docker</artifactId>
         <version>${project.version}</version>
         <type>pom</type>
         <scope>import</scope>
