@@ -2,9 +2,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
-import org.apache.commons.collections.IteratorUtils;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.FileScanTask;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -13,19 +11,34 @@ import java.util.List;
 
 public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
   @Test
-  public void testMinorOptimize() throws Exception {
-    icebergTable.asUnkeyedTable().updateProperties()
+  public void testUnPartitionMinorOptimize() throws Exception {
+    icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
         .commit();
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 10);
-    insertEqDeleteFiles(icebergTable.asUnkeyedTable(), 5);
-    insertPosDeleteFiles(icebergTable.asUnkeyedTable(), dataFiles);
-    List<FileScanTask> fileScanTasks = IteratorUtils.toList(icebergTable.asUnkeyedTable().newScan().planFiles().iterator());
-    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergTable,
-        new TableOptimizeRuntime(icebergTable.id()), fileScanTasks,
+    List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
+        new TableOptimizeRuntime(icebergNoPartitionTable.id()),
+        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
-    Assert.assertEquals(1, tasks.size());
-    Assert.assertEquals(dataFiles.size() - 1, tasks.get(0).getIcebergFileScanTasksSize());
+    Assert.assertEquals(2, tasks.size());
+  }
+
+  @Test
+  public void testPartitionMinorOptimize() throws Exception {
+    icebergPartitionTable.asUnkeyedTable().updateProperties()
+        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .commit();
+    List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
+    insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
+    insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
+    IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
+        new TableOptimizeRuntime(icebergPartitionTable.id()),
+        icebergPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        new HashMap<>(), 1, System.currentTimeMillis());
+    List<BaseOptimizeTask> tasks = optimizePlan.plan();
+    Assert.assertEquals(2, tasks.size());
   }
 }

@@ -235,7 +235,6 @@ public class OptimizeTaskItem extends IJDBCService {
     this.optimizeTask.setInsertFiles(Collections.emptyList());
     this.optimizeTask.setBaseFiles(Collections.emptyList());
     this.optimizeTask.setPosDeleteFiles(Collections.emptyList());
-    this.optimizeTask.setIcebergFileScanTasks(Collections.emptyList());
   }
 
   public void setFiles() {
@@ -247,13 +246,10 @@ public class OptimizeTaskItem extends IJDBCService {
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
     List<ByteBuffer> posDeleteFiles = selectOptimizeTaskFiles(DataFileType.POS_DELETE_FILE.name(), 0)
         .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
-    List<ByteBuffer> fileScanTasks = selectOptimizeTaskFiles(InternalTableFilesMapper.FILE_SCAN_TASK_FILE_TYPE, 0)
-        .stream().map(SerializationUtil::byteArrayToByteBuffer).collect(Collectors.toList());
     optimizeTask.setInsertFiles(insertFiles);
     optimizeTask.setDeleteFiles(deleteFiles);
     optimizeTask.setBaseFiles(baseFiles);
     optimizeTask.setPosDeleteFiles(posDeleteFiles);
-    optimizeTask.setIcebergFileScanTasks(fileScanTasks);
     // for ams restart, files is not loaded from sysdb, reload here
     List<byte[]> targetFiles =
         selectOptimizeTaskFiles(DataFileType.BASE_FILE.name(), 1);
@@ -414,12 +410,6 @@ public class OptimizeTaskItem extends IJDBCService {
             .forEach(f -> internalTableFilesMapper
                 .insertOptimizeTaskFile(optimizeTaskId,
                     DataFileType.POS_DELETE_FILE.name(),
-                    0,
-                    SerializationUtil.byteBufferToByteArray(f)));
-        optimizeTask.getIcebergFileScanTasks()
-            .forEach(f -> internalTableFilesMapper
-                .insertOptimizeTaskFile(optimizeTaskId,
-                    InternalTableFilesMapper.FILE_SCAN_TASK_FILE_TYPE,
                     0,
                     SerializationUtil.byteBufferToByteArray(f)));
 
