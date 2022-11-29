@@ -19,7 +19,6 @@
 package com.netease.arctic.iceberg;
 
 import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.data.RecordWithLsn;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.iceberg.optimize.StructLikeMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
@@ -37,9 +36,11 @@ import org.apache.iceberg.data.orc.GenericOrcReader;
 import org.apache.iceberg.data.parquet.GenericParquetReaders;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.DeleteSchemaUtil;
 import org.apache.iceberg.io.InputFile;
 import org.apache.iceberg.orc.ORC;
 import org.apache.iceberg.parquet.Parquet;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
@@ -48,7 +49,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Filter;
-import org.apache.parquet.Preconditions;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -63,12 +63,10 @@ import java.util.stream.Collectors;
 /**
  * Special point:
  * 1. Apply all delete file to all data file
- * 2. EQUALITY_DELETES only be writen by flink in current, so the schemas of  all EQUALITY_DELETES is primary key
+ * 2. EQUALITY_DELETES only be written by flink in current, so the schemas of  all EQUALITY_DELETES is primary key
  */
 public abstract class CombinedDeleteFilter<T> {
-  private static final Schema POS_DELETE_SCHEMA = new Schema(
-      MetadataColumns.DELETE_FILE_PATH,
-      MetadataColumns.DELETE_FILE_POS);
+  private static final Schema POS_DELETE_SCHEMA = DeleteSchemaUtil.pathPosSchema();
 
   private static final Accessor<StructLike> FILENAME_ACCESSOR = POS_DELETE_SCHEMA
       .accessorForField(MetadataColumns.DELETE_FILE_PATH.fieldId());
@@ -82,17 +80,12 @@ public abstract class CombinedDeleteFilter<T> {
   private final Accessor<StructLike> posAccessor;
   private final Accessor<StructLike> filePathAccessor;
   private final Accessor<StructLike> dataTransactionIdAccessor;
-  private List<Predicate<T>> eqDeletePredicate;
-  private Set<Long> positionSet;
 
   // equity-field is primary key
   private Set<Integer> deleteIds = new HashSet<>();
   private final Set<String> pathSets;
 
-  private String currentDataPath;
-  private Set<Long> currentPosSet;
   private Predicate<T> eqPredicate;
-  private Predicate<T> posPredicate;
   private final Schema deleteSchema;
 
   protected CombinedDeleteFilter(CombinedIcebergScanTask task, Schema tableSchema, Schema requestedSchema) {
@@ -106,6 +99,9 @@ public abstract class CombinedDeleteFilter<T> {
         case EQUALITY_DELETES:
           if (deleteIds.isEmpty()) {
             deleteIds = ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds());
+          } else {
+            Preconditions.checkArgument(deleteIds.equals(delete.asDeleteFile().equalityFieldIds()),
+                "Equality delete files have different delete fields");
           }
           eqDeleteBuilder.add(delete);
           break;
@@ -130,10 +126,6 @@ public abstract class CombinedDeleteFilter<T> {
 
   public Schema requiredSchema() {
     return requiredSchema;
-  }
-
-  Accessor<StructLike> posAccessor() {
-    return posAccessor;
   }
 
   protected abstract StructLike asStructLike(T record);
@@ -237,11 +229,6 @@ public abstract class CombinedDeleteFilter<T> {
     return eqDeletesBase(records, remainingRows);
   }
 
-  private CloseableIterable<T> readEqDeletes(CloseableIterable<T> records) {
-    Predicate<T> remainingRows = applyEqDeletes();
-    return eqDeletesBase(records, remainingRows);
-  }
-
   private CloseableIterable<T> eqDeletesBase(CloseableIterable<T> records, Predicate<T> predicate) {
     // Predicate to test whether a row should be visible to user after applying equality deletions.
     if (eqDeletes.isEmpty()) {
@@ -263,9 +250,6 @@ public abstract class CombinedDeleteFilter<T> {
   }
 
   private Predicate<T> applyPosDeletes() {
-    if (posPredicate != null) {
-      return posPredicate;
-    }
 
     if (posDeletes.isEmpty()) {
       return record -> false;
@@ -275,7 +259,7 @@ public abstract class CombinedDeleteFilter<T> {
     if (positionMap == null) {
       positionMap = new HashMap<>();
       List<CloseableIterable<Record>> deletes = Lists.transform(posDeletes.stream()
-              .map(s -> s.asDeleteFile()).collect(Collectors.toList()),
+              .map(IcebergContentFile::asDeleteFile).collect(Collectors.toList()),
           this::openPosDeletes);
       CloseableIterator<Record> iterator = CloseableIterable.concat(deletes).iterator();
       while (iterator.hasNext()) {
@@ -284,35 +268,20 @@ public abstract class CombinedDeleteFilter<T> {
         if (!pathSets.contains(path)) {
           continue;
         }
-        Set<Long> posSet = positionMap.get(path);
-        if (posSet == null) {
-          posSet = new HashSet<>();
-          positionMap.put(path, posSet);
-        }
+        Set<Long> posSet = positionMap.computeIfAbsent(path, k -> new HashSet<>());
         posSet.add((Long) POSITION_ACCESSOR.get(deleteRecord));
       }
     }
 
-    Predicate<T> predicate = record -> {
+    return record -> {
       Set<Long> posSet;
-      if (currentDataPath != null) {
-        if (currentPosSet == null) {
-          currentPosSet = positionMap.get(currentDataPath);
-        }
-        posSet = currentPosSet;
-      } else {
-        posSet = positionMap.get(filePath(record));
-      }
+      posSet = positionMap.get(filePath(record));
 
       if (posSet == null) {
         return false;
       }
-      if (!posSet.contains(pos(record))) {
-        return false;
-      }
-      return true;
+      return posSet.contains(pos(record));
     };
-    return predicate;
   }
 
   private CloseableIterable<T> applyPosDeletesBase(CloseableIterable<T> records, Predicate<T> predicate) {
@@ -423,5 +392,28 @@ public abstract class CombinedDeleteFilter<T> {
     }
 
     return new Schema(columns);
+  }
+
+  static class RecordWithLsn {
+    private final Long lsn;
+    private Record record;
+
+    public RecordWithLsn(Long lsn, Record record) {
+      this.lsn = lsn;
+      this.record = record;
+    }
+
+    public Long getLsn() {
+      return lsn;
+    }
+
+    public Record getRecord() {
+      return record;
+    }
+
+    public RecordWithLsn recordCopy() {
+      record = record.copy();
+      return this;
+    }
   }
 }
