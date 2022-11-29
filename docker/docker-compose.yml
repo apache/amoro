@@ -1,7 +1,7 @@
 version: "3"
 services:
   namenode:
-    image: arctic-hadoop_2.8.4-namenode:latest
+    image: arctic163/arctic-hadoop_2.8.4-namenode:latest
     hostname: namenode
     container_name: namenode
     environment:
@@ -13,6 +13,10 @@ services:
       - "5005"
     env_file:
       - ./hadoop.env
+    volumes:
+      - ./config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
+      - ./name_node_name:/hadoop/dfs/name
     healthcheck:
       test: ["CMD", "curl", "-f", "http://namenode:50070"]
       interval: 30s
@@ -20,13 +24,15 @@ services:
       retries: 3
 
   datanode1:
-    image: arctic-hadoop_2.8.4-datanode:0.4.0-SNAPSHOT
+    image: arctic163/arctic-hadoop_2.8.4-datanode:0.4.0-SNAPSHOT
     container_name: datanode
     hostname: datanode
     environment:
       - CLUSTER_NAME=hudi_hadoop284_hive232_spark244
     env_file:
       - ./hadoop.env
+    volumes:
+      - ./data_node_data:/hadoop/dfs/data
     ports:
       - "50075:50075"
       - "50010:50010"

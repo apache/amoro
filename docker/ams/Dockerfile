@@ -7,7 +7,8 @@ WORKDIR /usr/local/ams
 RUN apt update \
     && apt-get install -y vim \
     && apt-get install -y net-tools \
-    && apt-get install -y telnet
+    && apt-get install -y telnet \
+    && apt-get clean
 
 ARG AMS_FILE
 WORKDIR /usr/local/ams

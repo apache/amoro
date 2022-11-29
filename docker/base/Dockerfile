@@ -14,6 +14,7 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 # limitations under the License.
+
 FROM openjdk:8u332-jdk
 MAINTAINER Arctic
 USER root
@@ -21,7 +22,7 @@ USER root
 # Default to UTF-8 file.encoding
 ENV LANG C.UTF-8
 
-ARG HADOOP_VERSION=2.8.4
+ARG HADOOP_VERSION=2.8.4 
 ARG HADOOP_URL=https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
 ENV HADOOP_VERSION ${HADOOP_VERSION}
 ENV HADOOP_URL ${HADOOP_URL}
@@ -36,8 +37,8 @@ RUN set -x \
     && rm /tmp/hadoop.tar.gz* \
     && ln -s /opt/hadoop-$HADOOP_VERSION/etc/hadoop /etc/hadoop \
     && cp /etc/hadoop/mapred-site.xml.template /etc/hadoop/mapred-site.xml \
-    && mkdir /needed_config \
-    && mkdir /hadoop-data
+    && mkdir /hadoop-data \
+    && apt-get clean
 
 ENV HADOOP_PREFIX=/opt/hadoop-$HADOOP_VERSION
 ENV HADOOP_CONF_DIR=/etc/hadoop
@@ -49,7 +50,7 @@ ENV PATH /usr/bin:/bin:$HADOOP_PREFIX/bin/:$PATH
 
 # Exposing a union of ports across hadoop versions
 # Well known ports including ssh
-EXPOSE 0-1024 4040 7000-10100 5000-5100 50000-50200 58188 58088 58042
+EXPOSE 0-1024 4040 7000-10100 5000-5100 50000-50200 58188 58088 58042 
 
 ADD entrypoint.sh /entrypoint.sh
 ADD export_container_ip.sh /usr/bin/
@@ -58,18 +59,3 @@ RUN chmod a+x /usr/bin/export_container_ip.sh \
 
 ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
-ARG HADOOP_VERSION=2.8.4 
-ARG HADOOP_WEBHDFS_PORT=50070
-
-ENV HADOOP_WEBHDFS_PORT ${HADOOP_WEBHDFS_PORT}
-
-ENV HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
-RUN mkdir -p /hadoop/dfs/name
-VOLUME /hadoop/dfs/name
-
-ADD run_nn.sh /run_nn.sh
-RUN chmod a+x /run_nn.sh
-RUN cp /opt/hadoop-$HADOOP_VERSION/etc/hadoop/core-site.xml /needed_config \
-    && cp /opt/hadoop-$HADOOP_VERSION/etc/hadoop/hdfs-site.xml /needed_config
-
-CMD ["/run_nn.sh"]

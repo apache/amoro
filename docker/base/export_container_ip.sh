@@ -15,17 +15,16 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG HADOOP_VERSION=2.8.4 
-ARG HADOOP_DN_PORT=50075
-FROM arctic163/arctic-hadoop_${HADOOP_VERSION}-base
+interfaces=( "en0" "eth0" )
 
-ENV HADOOP_DN_PORT ${HADOOP_DN_PORT}
+ipAddr=""
+for interface in "${interfaces[@]}"
+do
+  ipAddr=`ifconfig $interface | grep -Eo 'inet (addr:)?([0-9]+\.){3}[0-9]+' | grep -Eo '([0-9]+\.){3}[0-9]+' | grep -v '127.0.0.1' | head`
+  if [ -n "$ipAddr" ]; then
+    break
+  fi 
+done
 
-ENV HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
-RUN mkdir -p /hadoop/dfs/data
-VOLUME /hadoop/dfs/data
-
-ADD run_dn.sh /run_dn.sh
-RUN chmod a+x /run_dn.sh
-
-CMD ["/run_dn.sh"]
+echo "Container IP is set to : $ipAddr"
+export MY_CONTAINER_IP=$ipAddr
