@@ -1,5 +1,50 @@
 version: "3"
 services:
+  namenode:
+    image: arctic163/arctic-hadoop_2.8.4-namenode:latest
+    hostname: namenode
+    container_name: namenode
+    environment:
+      - CLUSTER_NAME=hudi_hadoop284_hive232_spark244
+    ports:
+      - "50070:50070"
+      - "8020:8020"
+      # JVM debugging port (will be mapped to a random port on host)
+      - "5005"
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - ./config/core-site.xml:/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
+      - ./name_node_name:/hadoop/dfs/name
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://namenode:50070"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  datanode1:
+    image: arctic163/arctic-hadoop_2.8.4-datanode:0.4.0-SNAPSHOT
+    container_name: datanode
+    hostname: datanode
+    environment:
+      - CLUSTER_NAME=hudi_hadoop284_hive232_spark244
+    env_file:
+      - ./hadoop.env
+    volumes:
+      - ./data_node_data:/hadoop/dfs/data
+    ports:
+      - "50075:50075"
+      - "50010:50010"
+      # JVM debugging port (will be mapped to a random port on host)
+      - "5005"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://datanode1:50075"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - namenode
   ams:
     image: arctic163/ams
     container_name: ams

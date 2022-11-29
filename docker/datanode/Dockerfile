@@ -17,7 +17,7 @@
 
 ARG HADOOP_VERSION=2.8.4 
 ARG HADOOP_DN_PORT=50075
-FROM apachehudi/hudi-hadoop_${HADOOP_VERSION}-base:linux-arm64-0.10.1
+FROM arctic163/arctic-hadoop_${HADOOP_VERSION}-base
 
 ENV HADOOP_DN_PORT ${HADOOP_DN_PORT}
 
