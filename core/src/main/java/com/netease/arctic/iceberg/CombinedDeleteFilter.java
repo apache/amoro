@@ -100,7 +100,7 @@ public abstract class CombinedDeleteFilter<T> {
           if (deleteIds.isEmpty()) {
             deleteIds = ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds());
           } else {
-            Preconditions.checkArgument(deleteIds.equals(delete.asDeleteFile().equalityFieldIds()),
+            Preconditions.checkArgument(deleteIds.equals(ImmutableSet.copyOf(delete.asDeleteFile().equalityFieldIds())),
                 "Equality delete files have different delete fields");
           }
           eqDeleteBuilder.add(delete);
