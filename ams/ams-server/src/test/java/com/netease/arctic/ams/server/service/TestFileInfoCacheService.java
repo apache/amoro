@@ -332,7 +332,7 @@ public class TestFileInfoCacheService extends TableTestBase {
         ".parquet");
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
         table.id().buildTableIdentifier(),
-        transactionsOfTables.get(2).getTransactionId()).get(0).getType(), FileContent.EQUALITY_DELETES.name());
+        transactionsOfTables.get(2).getTransactionId()).get(0).getType(), "eq-deletes");
     Assert.assertEquals(
         ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
             table.id().buildTableIdentifier(),
@@ -340,7 +340,7 @@ public class TestFileInfoCacheService extends TableTestBase {
         "/path/to/data-unpartitioned-pos-deletes.parquet");
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
         table.id().buildTableIdentifier(),
-        transactionsOfTables.get(2).getTransactionId()).get(1).getType(), FileContent.POSITION_DELETES.name());
+        transactionsOfTables.get(2).getTransactionId()).get(1).getType(), "pos-deletes");
   }
 
   private DataFile genDatafile() {
