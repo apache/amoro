@@ -19,6 +19,7 @@
 package com.netease.arctic.spark.reader;
 
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.scan.BaseArcticFileScanTask;
 import com.netease.arctic.spark.util.Stats;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.CombinedScanTask;
@@ -215,7 +216,7 @@ public class UnkeyedSparkBatchScan implements Scan, Batch, SupportsReportStatist
         } else if (scanTasks.hasNext()) {
           this.currentIterator.close();
           this.currentScanTask = scanTasks.next();
-          this.currentIterator = reader.readData(this.currentScanTask).iterator();
+          this.currentIterator = reader.readData(new BaseArcticFileScanTask(this.currentScanTask)).iterator();
         } else {
           this.currentIterator.close();
           return false;
