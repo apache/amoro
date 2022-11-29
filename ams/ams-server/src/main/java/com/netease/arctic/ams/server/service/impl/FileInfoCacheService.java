@@ -55,6 +55,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -571,7 +572,7 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "add"));
@@ -580,7 +581,7 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "remove"));
@@ -589,7 +590,7 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "add"));
@@ -598,12 +599,25 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "remove"));
     });
     return result;
+  }
+
+  private static String getIcebergFileType(FileContent fileContent) {
+    switch (fileContent) {
+      case DATA:
+        return "data";
+      case EQUALITY_DELETES:
+        return "eq-deletes";
+      case POSITION_DELETES:
+        return "pos-deletes";
+      default:
+        throw new UnsupportedOperationException("unknown fileContent " + fileContent);
+    }
   }
 
   public List<PartitionBaseInfo> getPartitionBaseInfoList(TableIdentifier tableIdentifier) {
