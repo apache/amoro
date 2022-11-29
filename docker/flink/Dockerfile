@@ -17,12 +17,14 @@
 
 FROM openjdk:8u332-jdk
 
-ARG ARCTIC_VERSION=0.3.2
 ARG FLINK_VERSION=1.12.7
-ARG SCALA_VERSION=2.12
-ARG HADOOP_VERSION=2.7.5-10.0
+ARG FLINK_HADOOP_VERSION=2.8.3-10.0
 ARG HIVE_VERSION=2.1.1
+ARG APACHE_ARCHIVE=https://archive.apache.org/dist
 ARG MAVEN_URL=https://repo.maven.apache.org/maven2
+ARG DEBIAN_MIRROR=http://deb.debian.org
+
+RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
 
 RUN apt update \
     && apt-get install -y netcat \
@@ -33,12 +35,12 @@ RUN apt update \
 
 RUN mkdir /usr/local/flink \
   && cd /usr/local/flink \
-  && wget https://archive.apache.org/dist/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz \
-  && tar -zxvf flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
+  && wget ${APACHE_ARCHIVE}/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
+  && tar -zxvf flink-${FLINK_VERSION}-bin-scala_2.12.tgz
 
 RUN cd /usr/local/flink/flink-${FLINK_VERSION}/lib \
     && cp ../examples/table/ChangelogSocketExample.jar . \
-    && wget ${MAVEN_URL}/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}.jar \
+    && wget ${MAVEN_URL}/org/apache/flink/flink-shaded-hadoop-2-uber/${FLINK_HADOOP_VERSION}/flink-shaded-hadoop-2-uber-${FLINK_HADOOP_VERSION}.jar \
     && wget ${MAVEN_URL}/org/apache/hive/hive-exec/${HIVE_VERSION}/hive-exec-${HIVE_VERSION}.jar
 
 ENV FLINK_HOME=/usr/local/flink/flink-${FLINK_VERSION} \

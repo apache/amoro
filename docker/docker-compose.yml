@@ -1,50 +1,35 @@
 version: "3"
 services:
   namenode:
-    image: arctic163/arctic-hadoop_2.8.4-namenode:latest
+    image: arctic163/namenode
     hostname: namenode
     container_name: namenode
-    environment:
-      - CLUSTER_NAME=hudi_hadoop284_hive232_spark244
+    networks:
+      - arctic_network
     ports:
-      - "50070:50070"
-      - "8020:8020"
-      # JVM debugging port (will be mapped to a random port on host)
-      - "5005"
+      - 50070:50070
+      - 8020:8020
     env_file:
       - ./hadoop.env
     volumes:
-      - ./config/core-site.xml:/etc/hadoop/core-site.xml
-      - ./config/hdfs-site.xml:/etc/hadoop/hdfs-site.xml
-      - ./name_node_name:/hadoop/dfs/name
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://namenode:50070"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - ./data/hadoop/config:/etc/hadoop
+      - ./data/hadoop/name:/hadoop/dfs/name
+
 
   datanode1:
-    image: arctic163/arctic-hadoop_2.8.4-datanode:0.4.0-SNAPSHOT
+    image: arctic163/datanode
     container_name: datanode
     hostname: datanode
-    environment:
-      - CLUSTER_NAME=hudi_hadoop284_hive232_spark244
-    env_file:
-      - ./hadoop.env
     volumes:
-      - ./data_node_data:/hadoop/dfs/data
+      - ./data/hadoop/node1:/hadoop/dfs/data
+    networks:
+      - arctic_network
     ports:
-      - "50075:50075"
-      - "50010:50010"
-      # JVM debugging port (will be mapped to a random port on host)
-      - "5005"
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://datanode1:50075"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - 50075:50075
+      - 50010:50010
     depends_on:
       - namenode
+
   ams:
     image: arctic163/ams
     container_name: ams
@@ -53,8 +38,10 @@ services:
       - 1260:1260
     networks:
       - arctic_network
-    tty: true
-    stdin_open: true
+    depends_on:
+      - namenode
+      - datanode
+
   flink:
     image: arctic163/flink
     container_name: arctic_flink
@@ -62,8 +49,8 @@ services:
       - 8081:8081
     networks:
       - arctic_network
-    tty: true
-    stdin_open: true
+    depends_on:
+      - ams
 
 networks:
   arctic_network:

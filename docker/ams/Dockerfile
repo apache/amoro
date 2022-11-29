@@ -19,8 +19,12 @@ FROM openjdk:8u332-jdk
 
 ARG ARCTIC_VERSION=0.4.0-SNAPSHOT
 ARG RELEASE=v0.3.2-rc1
+ARG DEBIAN_MIRROR=http://deb.debian.org
 
 WORKDIR /usr/local/ams
+
+RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
+
 RUN apt update \
     && apt-get install -y vim \
     && apt-get install -y net-tools \

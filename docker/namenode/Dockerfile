@@ -21,16 +21,21 @@ USER root
 # Default to UTF-8 file.encoding
 ENV LANG C.UTF-8
 
-ARG HADOOP_VERSION=2.8.4
-ARG HADOOP_URL=https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
-ENV HADOOP_VERSION ${HADOOP_VERSION}
-ENV HADOOP_URL ${HADOOP_URL}
+ARG HADOOP_VERSION=2.10.2
+ARG APACHE_ARCHIVE=https://archive.apache.org/dist
+ARG DEBIAN_MIRROR=http://deb.debian.org
+
+ENV HADOOP_VERSION=${HADOOP_VERSION}
+ENV HADOOP_URL=${APACHE_ARCHIVE}/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz
+ENV HADOOP_WEBHDFS_PORT=50070
+
+
+RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
 
 RUN set -x \
     && DEBIAN_FRONTEND=noninteractive apt-get -yq update && apt-get -yq install curl wget netcat procps \
     && echo "Fetch URL2 is : ${HADOOP_URL}" \
     && curl -fSL "${HADOOP_URL}" -o /tmp/hadoop.tar.gz \
-    && curl -fSL "${HADOOP_URL}.asc" -o /tmp/hadoop.tar.gz.asc \
     && mkdir -p /opt/hadoop-$HADOOP_VERSION/logs \
     && tar -xvf /tmp/hadoop.tar.gz -C /opt/ \
     && rm /tmp/hadoop.tar.gz* \
@@ -56,12 +61,7 @@ ADD export_container_ip.sh /usr/bin/
 RUN chmod a+x /usr/bin/export_container_ip.sh \
     && chmod a+x /entrypoint.sh
 
-ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
-ARG HADOOP_VERSION=2.8.4 
-ARG HADOOP_WEBHDFS_PORT=50070
-
-ENV HADOOP_WEBHDFS_PORT ${HADOOP_WEBHDFS_PORT}
 
 ENV HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
 RUN mkdir -p /hadoop/dfs/name

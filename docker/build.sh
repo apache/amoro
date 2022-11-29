@@ -23,7 +23,10 @@ export ARCTIC_HOME
 
 ARCTIC_VERSION=`cat $ARCTIC_HOME/pom.xml |grep 'arctic-parent' -C 3 |grep -oP '(?<=<version>).*(?=</version>)'`
 ARCTIC_BINARY_PACKAGE=${ARCTIC_HOME}/dist/target/arctic-${ARCTIC_VERSION}-bin.zip
-FLINK_PACKAGE_VERSION=1.14.6
+FLINK_VERSION=1.15.3
+HADOOP_VERSION=2.10.2
+DEBIAN_MIRROR=http://deb.debian.org
+APACHE_ARCHIVE=https://archive.apache.org/dist
 
 
 function usage() {
@@ -34,13 +37,15 @@ Build for arctic demo docker images.
 Images:
     ams                     Build arctic metastore services.
     flink                   Build a flink container with arctic flink connector and other jars for quick start demo
-    nn                      Build a hadoop namenode container for quick start demo
-    dn                      Build a hadoop datanode container for quick start demo
+    namenode                Build a hadoop namenode container for quick start demo
+    datanode                Build a hadoop datanode container for quick start demo
     all                     Build all of image above.
 
 Options:
-    --flink-version         Flink binary release version, default is 1.14.6, format must be x.y.z
-
+    --flink-version         Flink binary release version, default is 1.15.3, format must be x.y.z
+    --hadoop-version        Hadoop binary release version, default is 2.10.2, format must be x.y.z
+    --apache-archive        Apache Archive url, default is https://archive.apache.org/dist
+    --debian-mirror         Mirror url of debian, default is http://deb.debian.org
 EOF
 }
 
@@ -64,10 +69,32 @@ while [ $i -le $j ]; do
 
     '--flink-version')
     shift 1
-    FLINK_PACKAGE_VERSION=$1
+    FLINK_VERSION=$1
     i=$((i+2))
     shift 1
     ;;
+
+    "--hadoop-version")
+    shift 1
+    HADOOP_VERSION=$1
+    i=$((i+2))
+    shift 1
+    ;;
+
+    "--apache-archive")
+    shift 1
+    APACHE_ARCHIVE=$1
+    i=$((i+2))
+    shift 1
+    ;;
+
+    "--debian-mirror")
+    shift 1
+    DEBIAN_MIRROR=$1
+    i=$((i+2))
+    shift 1
+    ;;
+
 
     *)
       echo "Unknown args of $1"
@@ -77,39 +104,63 @@ while [ $i -le $j ]; do
   esac
 done
 
+function print_env() {
+  echo "SET FLINK_VERSION=${FLINK_VERSION}"
+  echo "SET HADOOP_VERSION=${HADOOP_VERSION}"
+  echo "SET APACHE_ARCHIVE=${APACHE_ARCHIVE}"
+  echo "SET DEBIAN_MIRROR=${DEBIAN_MIRROR}"
+  echo "SET ARCTIC_VERSION=${ARCTIC_VERSION}"
+}
+
 
 function build_ams() {
-  echo "Start Build Arctic/AMS Image, Arctic Version: ${ARCTIC_VERSION}"
+  echo "Start Build arctic163/ams Image, Arctic Version: ${ARCTIC_VERSION}"
 
   if [ ! -f "${ARCTIC_BINARY_PACKAGE}" ]; then
       echo "Arctic Binary Release ${ARCTIC_BINARY_PACKAGE} is not exists, run 'mvn clean package -pl !trino' first. "
       exit 1
   fi
 
+  set -x
   AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/ams/arctic-${ARCTIC_VERSION}-bin.zip
   cp ${ARCTIC_BINARY_PACKAGE} ${AMS_IMAGE_RELEASE_PACKAGE}
-  docker build -t arctic163/ams --build-arg ARCTIC_VERSION=${ARCTIC_VERSION} ams/.
+  docker build -t arctic163/ams --build-arg ARCTIC_VERSION=${ARCTIC_VERSION} \
+    --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
+    ams/.
 }
 
 
 function build_flink() {
-  FLINK_VERSION=`echo $FLINK_PACKAGE_VERSION| grep -oP '\d+.\d+'`
-  FLINK_CONNECTOR_BINARY=${ARCTIC_HOME}/flink/v${FLINK_VERSION}/flink-runtime/target/arctic-flink-runtime-${FLINK_VERSION}-${ARCTIC_VERSION}.jar
+  FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oP '\d+.\d+'`
+  FLINK_CONNECTOR_BINARY=${ARCTIC_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/arctic-flink-runtime-${FLINK_MAJOR_VERSION}-${ARCTIC_VERSION}.jar
 
-  echo "Start Build Arctic/Flink Image, Flink Version: ${FLINK_VERSION}, FLINK_PACKAGE_VERSION: ${FLINK_PACKAGE_VERSION}"
+  echo "Start Build arctic163/flink Image, Flink Version: ${FLINK_VERSION}"
   if [ ! -f ${FLINK_CONNECTOR_BINARY} ]; then
       echo "arctic-flink-connector not exists in ${FLINK_CONNECTOR_BINARY}, run 'mvn clean package -pl !trino' first. "
       exit  1
   fi
 
+  set -x
   FLINK_IMAGE_BINARY=${CURRENT_DIR}/flink/arctic-flink-runtime-${FLINK_VERSION}-${ARCTIC_VERSION}.jar
   cp ${FLINK_CONNECTOR_BINARY}  ${FLINK_IMAGE_BINARY}
-  docker build -t arctic163/flink --build-arg ARCTIC_VERSION=${ARCTIC_VERSION} \
-    --build-arg FLINK_VERSION=${FLINK_PACKAGE_VERSION} \
+  docker build -t arctic163/flink \
+    --build-arg FLINK_VERSION=${FLINK_VERSION} \
+    --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
+    --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
     flink/.
 }
 
 
+function build_namenode() {
+  echo "Start Build arctic163/namenode Image"
+
+  set -x
+  docker build -t arctic163/namenode \
+    --build-arg HADOOP_VERSION=${HADOOP_VERSION} \
+    --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
+    --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
+    namenode/.
+}
 
 
 
@@ -119,18 +170,24 @@ function build_flink() {
 
 case "$ACTION" in
   ams)
+    print_env
     build_ams
     ;;
   flink)
+    print_env
     build_flink
     ;;
   namenode)
+    print_env
+    build_namenode
     ;;
   datanode)
     ;;
   all)
+    print_env
     build_ams
     build_flink
+    build_namenode
     ;;
   *)
     echo "Unknown image type: $ACTION"
