@@ -1,11 +1,28 @@
 
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+# limitations under the License.
+
 FROM openjdk:8u332-jdk
 
 ARG ARCTIC_VERSION=0.3.2
-ARG RELEASE=v0.3.2-rc1
 ARG FLINK_VERSION=1.12.7
 ARG SCALA_VERSION=2.12
-ARG HADOOP_VERSION=2.7.5
+ARG HADOOP_VERSION=2.7.5-10.0
+ARG HIVE_VERSION=2.1.1
+ARG MAVEN_URL=https://repo.maven.apache.org/maven2
 
 RUN apt update \
     && apt-get install -y netcat \
@@ -13,24 +30,27 @@ RUN apt update \
     && apt-get install -y net-tools \
     && apt-get install -y telnet
 
-WORKDIR /usr/local/arctic_flink
-#You need to download flink-1.12.2-bin-scala_2.11.tgz by yourself and put it in the same directory as Dockerfile
-COPY flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz /usr/local/arctic_flink
-RUN tar -zxvf flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz \
-    && wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar \
-    && wget https://github.com/NetEase/arctic/releases/download/${RELEASE}/arctic-flink-runtime-1.12-${ARCTIC_VERSION}.jar \
-    && cd flink-${FLINK_VERSION} \
-    && cp examples/table/ChangelogSocketExample.jar lib \
-    && cp ../arctic-flink-runtime-1.12-${ARCTIC_VERSION}.jar lib \
-    && cp ../flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar lib
-#You need to download hive-exec-2.1.1.jar by yourself and put it in the same directory as Dockerfile
-COPY hive-exec-2.1.1.jar /usr/local/arctic_flink/flink-${FLINK_VERSION}/lib
 
-ENV FLINK_HOME=/usr/local/arctic_flink/flink-${FLINK_VERSION} \
+RUN mkdir /usr/local/flink \
+  && cd /usr/local/flink \
+  && wget https://archive.apache.org/dist/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz \
+  && tar -zxvf flink-${FLINK_VERSION}-bin-scala_${SCALA_VERSION}.tgz
+
+RUN cd /usr/local/flink/flink-${FLINK_VERSION}/lib \
+    && cp ../examples/table/ChangelogSocketExample.jar . \
+    && wget ${MAVEN_URL}/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}.jar \
+    && wget ${MAVEN_URL}/org/apache/hive/hive-exec/${HIVE_VERSION}/hive-exec-${HIVE_VERSION}.jar
+
+ENV FLINK_HOME=/usr/local/flink/flink-${FLINK_VERSION} \
     PATH=${PATH}:${FLINK_HOME}/bin
+
 WORKDIR ${FLINK_HOME}
+
+EXPOSE 8081/tcp
+
+ADD arctic-flink-runtime-*.jar /usr/local/flink/flink-${FLINK_VERSION}/lib/
 COPY flink-conf.yaml ${FLINK_HOME}/conf/flink-conf.yaml
 
-CMD ["/bin/bash"]
+CMD ["/bin/bash", "-c", "./bin/start-cluster.sh && tail -f ./log/`ls log | grep flink--standalonesession | grep log`"]
 
 
