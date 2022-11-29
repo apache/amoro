@@ -18,8 +18,6 @@
 
 package com.netease.arctic.optimizer.operator;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.JobId;
 import com.netease.arctic.ams.api.JobType;
@@ -46,7 +44,6 @@ import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +53,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -64,11 +60,6 @@ import java.util.stream.Collectors;
  */
 public class BaseTaskExecutor implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(BaseTaskExecutor.class);
-
-  private static final LoadingCache<TableIdentificationInfo, ArcticTable> ARCTIC_TABLE_CACHE = Caffeine.newBuilder()
-      .expireAfterWrite(15, TimeUnit.MINUTES)
-      .maximumSize(100)
-      .build(BaseTaskExecutor::buildArcticTable);
 
   private final OptimizerConfig config;
 
@@ -115,7 +106,7 @@ public class BaseTaskExecutor implements Serializable {
     onTaskStart(task.files());
     try {
       String amsUrl = config.getAmsUrl();
-      table = getArcticTable(new TableIdentificationInfo(amsUrl, task.getTableIdentifier()));
+      table = buildTable(new TableIdentificationInfo(amsUrl, task.getTableIdentifier()));
       setPartition(task);
     } catch (Exception e) {
       LOG.error("failed to set partition info {}", task.getTaskId(), e);
@@ -162,22 +153,6 @@ public class BaseTaskExecutor implements Serializable {
     }
   }
 
-  private static ArcticTable getArcticTable(TableIdentificationInfo tableIdentificationInfo) {
-    Preconditions.checkNotNull(tableIdentificationInfo);
-    return ARCTIC_TABLE_CACHE.get(tableIdentificationInfo);
-  }
-
-  private static ArcticTable buildArcticTable(TableIdentificationInfo tableIdentifierInfo) {
-    LOG.info("loading a new table : {}", tableIdentifierInfo);
-    try {
-      ArcticTable arcticTable = buildTable(tableIdentifierInfo);
-      LOG.info("loaded a new table : {}", tableIdentifierInfo);
-      return arcticTable;
-    } catch (Exception e) {
-      LOG.error("failed to load arctic table " + tableIdentifierInfo + ", retry", e);
-      return buildTable(tableIdentifierInfo);
-    }
-  }
 
   private static ArcticTable buildTable(TableIdentificationInfo tableIdentifierInfo) {
     String amsUrl = tableIdentifierInfo.getAmsUrl();
