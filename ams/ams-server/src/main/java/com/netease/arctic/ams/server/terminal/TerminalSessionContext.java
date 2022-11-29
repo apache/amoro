@@ -233,7 +233,9 @@ public class TerminalSessionContext {
           statementBuilder.append(line);
           no = lineNumber(reader, no);
 
-          boolean success = executeStatement(session, statementBuilder.toString(), no);
+          // drop the semicolon(;) character
+          String statement = statementBuilder.substring(0, statementBuilder.length() - 1);
+          boolean success = executeStatement(session, statement, no);
           if (!success) {
             if (stopOnError) {
               executionResult.appendLog("execution stopped for error happened and stop-when-error config.");
