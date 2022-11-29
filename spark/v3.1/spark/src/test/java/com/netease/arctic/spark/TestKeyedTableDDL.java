@@ -22,6 +22,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +40,11 @@ public class TestKeyedTableDDL extends SparkTestBase {
   public void prepare() {
     sql("use " + catalogNameArctic);
     sql("create database if not exists " + database);
+  }
+
+  @After
+  public void cleanUp() {
+    sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `false`");
   }
 
   @Test
@@ -123,6 +129,35 @@ public class TestKeyedTableDDL extends SparkTestBase {
         Types.NestedField.optional(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()),
         Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, loadTable(identifier).schema().asStruct());
+
+    sql("drop table {0}.{1}", database, targetTable);
+
+    sql("drop table {0}.{1}", database, table);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateTimestampWithZone() {
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, targetTable);
+    sql("set `spark.sql.arctic.use-timestamp-without-timezone-in-new-tables` = `true`");
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp " +
+        ") using arctic \n" +
+        " partitioned by ( days(ts) ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table);
+
+    sql("create table {0}.{1} like {2}.{3} using arctic", database, targetTable, database, table);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.optional(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, loadTable(identifier).schema().asStruct());
 
