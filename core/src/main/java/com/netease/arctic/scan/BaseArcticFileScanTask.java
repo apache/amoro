@@ -87,7 +87,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
 
   @Override
   public long start() {
-    if(fileScanTask != null) {
+    if (fileScanTask != null) {
       return fileScanTask.start();
     }
     return 0;
@@ -95,7 +95,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
 
   @Override
   public long length() {
-    if(fileScanTask != null) {
+    if (fileScanTask != null) {
       return fileScanTask.length();
     }
     return baseFile.fileSizeInBytes();
