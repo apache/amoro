@@ -54,8 +54,7 @@
         <version>${dockerfile.maven.version}</version>
         <executions>
           <execution>
-            <id>tag-latest</id>
-            <phase>pre-integration-test</phase>
+            <id>default</id>
             <goals>
               <goal>build</goal>
               <goal>tag</goal>
@@ -64,10 +63,7 @@
             <configuration>
               <username>arctic163</username>
               <password>arctic163</password>
-              <skip>${docker.build.skip}</skip>
-              <pullNewerImage>false</pullNewerImage>
               <repository>arctic163/arctic-hadoop_${docker.hadoop.version}-namenode</repository>
-              <force>true</force>
               <tag>latest</tag>
             </configuration>
           </execution>

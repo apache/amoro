@@ -72,20 +72,16 @@
             </configuration>
           </execution>
           <execution>
-            <id>tag-version</id>
-            <phase>pre-integration-test</phase>
+            <id>default</id>
             <goals>
               <goal>build</goal>
               <goal>tag</goal>
               <!-- <goal>push</goal> -->
             </goals>
             <configuration>
-              <skip>${docker.build.skip}</skip>
               <username>arctic163</username>
               <password>arctic163</password>
-              <pullNewerImage>false</pullNewerImage>
               <repository>arctic163/arctic-hadoop_${docker.hadoop.version}-datanode</repository>
-              <force>true</force>
               <tag>${project.version}</tag>
             </configuration>
           </execution>
