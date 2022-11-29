@@ -1,7 +1,7 @@
 version: "3"
 services:
   namenode:
-    image: arctic163/arctic-hadoop_2.8.4-namenode:latest
+    image: arctic163/arctic-hadoop_2.8.4-namenode
     hostname: namenode
     container_name: namenode
     environment:
@@ -24,7 +24,7 @@ services:
       retries: 3
 
   datanode1:
-    image: arctic163/arctic-hadoop_2.8.4-datanode:0.4.0-SNAPSHOT
+    image: arctic163/arctic-hadoop_2.8.4-datanode
     container_name: datanode
     hostname: datanode
     environment:
