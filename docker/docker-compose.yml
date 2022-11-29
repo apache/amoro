@@ -4,10 +4,12 @@ services:
     image: arctic163/namenode
     hostname: namenode
     container_name: namenode
+    environment:
+      - CLUSTER_NAME=demo-cluster
     networks:
       - arctic_network
     ports:
-      - 50070:50070
+      - 10070:50070
       - 8020:8020
     env_file:
       - ./hadoop.env
@@ -16,41 +18,42 @@ services:
       - ./data/hadoop/name:/hadoop/dfs/name
 
 
-  datanode1:
+  datanode:
     image: arctic163/datanode
     container_name: datanode
+    environment:
+      - CLUSTER_NAME=demo-cluster
     hostname: datanode
     volumes:
-      - ./data/hadoop/node1:/hadoop/dfs/data
+      - ./data/hadoop/config:/etc/hadoop
+      - ./data/hadoop/node:/hadoop/dfs/data
     networks:
       - arctic_network
     ports:
-      - 50075:50075
-      - 50010:50010
+      - 10075:50075
+      - 10010:50010
     depends_on:
       - namenode
 
-  ams:
-    image: arctic163/ams
-    container_name: ams
-    ports:
-      - 1630:1630
-      - 1260:1260
-    networks:
-      - arctic_network
-    depends_on:
-      - namenode
-      - datanode
-
-  flink:
-    image: arctic163/flink
-    container_name: arctic_flink
-    ports:
-      - 8081:8081
-    networks:
-      - arctic_network
-    depends_on:
-      - ams
+#  ams:
+#    image: arctic163/ams
+#    container_name: ams
+#    ports:
+#      - 1630:1630
+#      - 1260:1260
+#    networks:
+#      - arctic_network
+#
+#
+#  flink:
+#    image: arctic163/flink
+#    container_name: flink
+#    ports:
+#      - 8081:8081
+#    networks:
+#      - arctic_network
+#    depends_on:
+#      - ams
 
 networks:
   arctic_network:

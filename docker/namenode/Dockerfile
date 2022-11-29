@@ -33,15 +33,17 @@ ENV HADOOP_WEBHDFS_PORT=50070
 RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
 
 RUN set -x \
-    && DEBIAN_FRONTEND=noninteractive apt-get -yq update && apt-get -yq install curl wget netcat procps \
+    && DEBIAN_FRONTEND=noninteractive apt-get -yq update && apt-get -yq install curl wget netcat procps dos2unix net-tools \
+    && apt-get clean
+
+RUN set -x \
     && echo "Fetch URL2 is : ${HADOOP_URL}" \
     && curl -fSL "${HADOOP_URL}" -o /tmp/hadoop.tar.gz \
     && mkdir -p /opt/hadoop-$HADOOP_VERSION/logs \
     && tar -xvf /tmp/hadoop.tar.gz -C /opt/ \
     && rm /tmp/hadoop.tar.gz* \
-    && ln -s /opt/hadoop-$HADOOP_VERSION/etc/hadoop /etc/hadoop \
-    && cp /etc/hadoop/mapred-site.xml.template /etc/hadoop/mapred-site.xml \
-    && mkdir /needed_config \
+    && mkdir /etc/hadoop \
+    && cp /opt/hadoop-$HADOOP_VERSION/etc/hadoop/mapred-site.xml.template /opt/hadoop-$HADOOP_VERSION/etc/hadoop/mapred-site.xml \
     && mkdir /hadoop-data
 
 ENV HADOOP_PREFIX=/opt/hadoop-$HADOOP_VERSION
@@ -59,8 +61,9 @@ EXPOSE 0-1024 4040 7000-10100 5000-5100 50000-50200 58188 58088 58042
 ADD entrypoint.sh /entrypoint.sh
 ADD export_container_ip.sh /usr/bin/
 RUN chmod a+x /usr/bin/export_container_ip.sh \
-    && chmod a+x /entrypoint.sh
-
+    && chmod a+x /entrypoint.sh \
+    && dos2unix /usr/bin/export_container_ip.sh \
+    && dos2unix /entrypoint.sh
 
 
 ENV HDFS_CONF_dfs_namenode_name_dir=file:///hadoop/dfs/name
@@ -68,8 +71,6 @@ RUN mkdir -p /hadoop/dfs/name
 VOLUME /hadoop/dfs/name
 
 ADD run_nn.sh /run_nn.sh
-RUN chmod a+x /run_nn.sh
-RUN cp /opt/hadoop-$HADOOP_VERSION/etc/hadoop/core-site.xml /needed_config \
-    && cp /opt/hadoop-$HADOOP_VERSION/etc/hadoop/hdfs-site.xml /needed_config
+RUN chmod a+x /run_nn.sh && dos2unix /run_nn.sh
 
-CMD ["/run_nn.sh"]
+CMD ["/bin/bash", "/entrypoint.sh"]

@@ -155,6 +155,8 @@ function build_namenode() {
   echo "Start Build arctic163/namenode Image"
 
   set -x
+
+  find ./namenode -name "*.sh" | dos2unix
   docker build -t arctic163/namenode \
     --build-arg HADOOP_VERSION=${HADOOP_VERSION} \
     --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
@@ -162,7 +164,18 @@ function build_namenode() {
     namenode/.
 }
 
+function build_datanode() {
+  echo "Start Build arctic163/datanode Image"
 
+  set -x
+
+  find ./datanode -name "*.sh" | dos2unix
+  docker build -t arctic163/datanode \
+    --build-arg HADOOP_VERSION=${HADOOP_VERSION} \
+    --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
+    --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
+    datanode/.
+}
 
 
 
@@ -182,12 +195,15 @@ case "$ACTION" in
     build_namenode
     ;;
   datanode)
+    print_env
+    build_datanode
     ;;
   all)
     print_env
     build_ams
     build_flink
     build_namenode
+    build_datanode
     ;;
   *)
     echo "Unknown image type: $ACTION"
