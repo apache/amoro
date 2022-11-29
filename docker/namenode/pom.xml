@@ -33,17 +33,6 @@
     <main.basedir>${project.parent.parent.basedir}</main.basedir>
   </properties>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.netease.arctic</groupId>
-        <artifactId>arctic-hadoop-base-docker</artifactId>
-        <version>${project.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
 
   <build>
     <plugins>
@@ -64,7 +53,7 @@
               <username>arctic163</username>
               <password>arctic163</password>
               <repository>arctic163/arctic-hadoop_${docker.hadoop.version}-namenode</repository>
-              <tag>latest</tag>
+              <tag>${project.version}</tag>
             </configuration>
           </execution>
         </executions>
