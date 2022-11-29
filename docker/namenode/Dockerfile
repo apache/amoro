@@ -26,6 +26,11 @@ ARG HADOOP_URL=https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VER
 ENV HADOOP_VERSION ${HADOOP_VERSION}
 ENV HADOOP_URL ${HADOOP_URL}
 
+RUN apt update \
+    && apt-get install -y vim \
+    && apt-get install -y net-tools \
+    && apt-get install -y telnet
+
 RUN set -x \
     && DEBIAN_FRONTEND=noninteractive apt-get -yq update && apt-get -yq install curl wget netcat procps \
     && echo "Fetch URL2 is : ${HADOOP_URL}" \
@@ -59,7 +64,6 @@ ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
 
 ARG HADOOP_VERSION=2.8.4 
 ARG HADOOP_WEBHDFS_PORT=50070
-FROM apachehudi/hudi-hadoop_${HADOOP_VERSION}-base:latest
 
 ENV HADOOP_WEBHDFS_PORT ${HADOOP_WEBHDFS_PORT}
 
