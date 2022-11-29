@@ -108,6 +108,7 @@ public class TestKeyedTableDML extends SparkTestBase {
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(4)),
         newRecord(keyedTable, 5, "eee", quickDateWithZone(4))
     ));
+    writeBase(identifier,  baseFiles);
     rows = sql("select * from {0}.{1}.change", database, table);
     Assert.assertEquals(2, rows.size());
     // check column number
