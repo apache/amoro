@@ -45,3 +45,26 @@ services:
       retries: 3
     depends_on:
       - namenode
+  ams:
+    image: arctic163/ams
+    container_name: ams
+    ports:
+      - 1630:1630
+      - 1260:1260
+    networks:
+      - arctic_network
+    tty: true
+    stdin_open: true
+  flink:
+    image: arctic163/flink
+    container_name: arctic_flink
+    ports:
+      - 8081:8081
+    networks:
+      - arctic_network
+    tty: true
+    stdin_open: true
+
+networks:
+  arctic_network:
+    driver: bridge
