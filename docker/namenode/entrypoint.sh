@@ -61,6 +61,12 @@ function configure() {
 
 set +x
 
+test -f /etc/hadoop/core-site.xml && rm /etc/hadoop/core-site.xml
+test -f /etc/hadoop/hdfs-site.xml && rm /etc/hadoop/hdfs-site.xml
+test -f /etc/hadoop/yarn-site.xml && rm /etc/hadoop/yarn-site.xml
+test -f /etc/hadoop/httpfs-site.xml && rm /etc/hadoop/httpfs-site.xml
+test -f /etc/hadoop/kms-site.xml && rm /etc/hadoop/kms-site.xml
+
 configure /etc/hadoop/core-site.xml core CORE_CONF
 configure /etc/hadoop/hdfs-site.xml hdfs HDFS_CONF
 configure /etc/hadoop/yarn-site.xml yarn YARN_CONF

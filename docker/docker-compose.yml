@@ -35,25 +35,25 @@ services:
     depends_on:
       - namenode
 
-#  ams:
-#    image: arctic163/ams
-#    container_name: ams
-#    ports:
-#      - 1630:1630
-#      - 1260:1260
-#    networks:
-#      - arctic_network
-#
-#
-#  flink:
-#    image: arctic163/flink
-#    container_name: flink
-#    ports:
-#      - 8081:8081
-#    networks:
-#      - arctic_network
-#    depends_on:
-#      - ams
+  ams:
+    image: arctic163/ams
+    container_name: ams
+    ports:
+      - 1630:1630
+      - 1260:1260
+    networks:
+      - arctic_network
+
+
+  flink:
+    image: arctic163/flink
+    container_name: flink
+    ports:
+      - 8081:8081
+    networks:
+      - arctic_network
+    depends_on:
+      - ams
 
 networks:
   arctic_network:
