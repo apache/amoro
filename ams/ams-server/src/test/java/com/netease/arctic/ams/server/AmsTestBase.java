@@ -33,8 +33,8 @@ import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.optimize.SupportHiveTestGroup;
 import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
-import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizeCommit;
-import com.netease.arctic.ams.server.optimize.TestIcebergMajorOptimizePlan;
+import com.netease.arctic.ams.server.optimize.TestIcebergFullOptimizeCommit;
+import com.netease.arctic.ams.server.optimize.TestIcebergFullOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizeCommit;
 import com.netease.arctic.ams.server.optimize.TestIcebergMinorOptimizePlan;
 import com.netease.arctic.ams.server.optimize.TestMajorOptimizeCommit;
@@ -112,9 +112,9 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMajorOptimizePlan.class,
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
-    TestIcebergMajorOptimizePlan.class,
+    TestIcebergFullOptimizePlan.class,
     TestIcebergMinorOptimizePlan.class,
-    TestIcebergMajorOptimizeCommit.class,
+    TestIcebergFullOptimizeCommit.class,
     TestIcebergMinorOptimizeCommit.class,
     TestExpireFileCleanSupportIceberg.class,
     TestOrphanFileCleanSupportIceberg.class,
@@ -198,13 +198,14 @@ public class AmsTestBase {
     when(ServiceContainer.getDdlTracerService()).thenReturn(ddlTracerService);
     CatalogMetadataService catalogMetadataService = new CatalogMetadataService();
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
+    AdaptHiveService adaptHiveService = new AdaptHiveService();
+    when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
     MetricsStatisticService metricsStatisticService = new MetricsStatisticService();
     when(ServiceContainer.getMetricsStatisticService()).thenReturn(metricsStatisticService);
     JDBCMetaService metaService = new JDBCMetaService();
     when(ServiceContainer.getMetaService()).thenReturn(metaService);
     PlatformFileInfoService platformFileInfoService = new PlatformFileInfoService();
     when(ServiceContainer.getPlatformFileInfoService()).thenReturn(platformFileInfoService);
-
 
     //mock handler
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());

@@ -2,12 +2,13 @@
   <div class="setting-wrap">
     <div class="system-setting">
       <h1 class="g-mb-12">{{$t('systemSetting')}}</h1>
-      <ul class="content">
-        <li v-for="item in systemSettingArray" :key="item.key" class="item">
-          <span class="left">{{item.key}}</span>
-          <span class="right">{{item.value}}</span>
-        </li>
-      </ul>
+      <a-table
+        rowKey="key"
+        :columns="basicColumns"
+        v-if="systemSettingArray.length"
+        :data-source="systemSettingArray"
+        :pagination="false"
+      />
     </div>
     <div class="container-setting">
       <h1 class="g-mb-12">{{$t('containerSetting')}}</h1>
@@ -24,12 +25,13 @@
             </li>
           </ul>
           <h3 class="g-mb-12 g-mt-12">{{$t('properties')}}</h3>
-          <ul class="content">
-            <li v-for="item in container.propertiesArray" :key="item.key" class="item">
-              <span class="left">{{item.key}}</span>
-              <span class="right">{{item.value}}</span>
-            </li>
-          </ul>
+          <a-table
+            rowKey="key"
+            v-if="container.propertiesArray.length"
+            :columns="basicColumns"
+            :data-source="container.propertiesArray"
+            :pagination="false"
+          />
           <h3 class="g-mb-12 g-mt-12">{{$t('optimzeGroup')}}</h3>
           <a-table
             rowKey="name"
@@ -63,16 +65,20 @@ const containerSetting = reactive<IContainerSetting[]>([
   }
 ])
 const optimzeGroupColumns: IColumns[] = reactive([
-  { title: t('name'), dataIndex: 'name', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', ellipsis: true },
-  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', ellipsis: true }
+  { title: t('name'), dataIndex: 'name', width: 340, ellipsis: true },
+  { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', width: '50%', ellipsis: true },
+  { title: t('propertiesMemory', { type: 'jobmanager' }), dataIndex: 'jmMemory', width: '50%', ellipsis: true }
+])
+
+const basicColumns: IColumns[] = reactive([
+  { title: t('key'), dataIndex: 'key', width: 340, ellipsis: true },
+  { title: t('value'), dataIndex: 'value' }
 ])
 const activeKey = ref<string[]>([])
 
 async function getSystemSettingInfo() {
   const res = await getSystemSetting()
   if (!res) { return }
-  systemSettingArray.length = 0
   Object.keys(res).forEach(key => {
     systemSettingArray.push({
       key: key,
@@ -82,7 +88,6 @@ async function getSystemSettingInfo() {
 }
 async function getContainersSettingInfo() {
   const res = await getContainersSetting()
-  containerSetting.length = 0
   activeKey.value = [];
   (res || []).forEach((ele, index) => {
     ele.propertiesArray = []
@@ -111,14 +116,12 @@ onMounted(async() => {
 .setting-wrap {
   height: 100%;
   overflow: auto;
+  padding: 16px 24px;
   h1,h2,h3 {
     font-weight: 500;
   }
   h1 {
-    font-size: 22px;
-  }
-  h2 {
-    font-size: 18px;
+    font-size: 16px;
   }
   h3 {
     font-size: 14px;

@@ -338,7 +338,6 @@ export default defineComponent({
     }
     .label {
       font-size: 16px;
-      font-weight: 600;
     }
   }
 

@@ -32,6 +32,7 @@ import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang.StringUtils;
@@ -357,6 +358,7 @@ public class CatalogController extends RestBaseController {
     try {
       CatalogMeta catalogMeta = constructCatalogMeta(info, oldCatalogMeta);
       catalogMetadataService.updateCatalog(catalogMeta);
+      CatalogUtil.removeCatalogCache(catalogMeta.getCatalogName());
     } catch (Exception e) {
       LOG.error("Failed to update catalog!", e);
       ctx.json(new ErrorResponse(e.getMessage()));
@@ -396,6 +398,7 @@ public class CatalogController extends RestBaseController {
     Integer tblCount = iMetaService.getTableCountInCatalog(catalogName);
     if (tblCount == 0) {
       catalogMetadataService.deleteCatalog(catalogName);
+      CatalogUtil.removeCatalogCache(catalogName);
       ctx.json(OkResponse.of("OK"));
       return;
     } else {

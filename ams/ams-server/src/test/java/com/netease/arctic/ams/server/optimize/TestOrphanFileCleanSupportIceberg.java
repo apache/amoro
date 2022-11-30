@@ -12,23 +12,23 @@ import static com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService
 public class TestOrphanFileCleanSupportIceberg extends TestIcebergBase {
   @Test
   public void orphanDataFileClean() {
-    String orphanFilePath = icebergTable.asUnkeyedTable().location() +
+    String orphanFilePath = icebergNoPartitionTable.asUnkeyedTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
-    OutputFile baseOrphanDataFile = icebergTable.io().newOutputFile(orphanFilePath);
+    OutputFile baseOrphanDataFile = icebergNoPartitionTable.io().newOutputFile(orphanFilePath);
     baseOrphanDataFile.createOrOverwrite();
-    Assert.assertTrue(icebergTable.io().exists(orphanFilePath));
-    OrphanFilesCleanService.clean(icebergTable, System.currentTimeMillis(), true, "all", false);
-    Assert.assertFalse(icebergTable.io().exists(orphanFilePath));
+    Assert.assertTrue(icebergNoPartitionTable.io().exists(orphanFilePath));
+    OrphanFilesCleanService.clean(icebergNoPartitionTable, System.currentTimeMillis(), true, "all", false);
+    Assert.assertFalse(icebergNoPartitionTable.io().exists(orphanFilePath));
   }
 
   @Test
   public void orphanMetadataFileClean() {
-    String orphanFilePath = icebergTable.asUnkeyedTable().location() + File.separator + "metadata" +
+    String orphanFilePath = icebergNoPartitionTable.asUnkeyedTable().location() + File.separator + "metadata" +
         File.separator + "orphan.avro";
-    OutputFile baseOrphanDataFile = icebergTable.io().newOutputFile(orphanFilePath);
+    OutputFile baseOrphanDataFile = icebergNoPartitionTable.io().newOutputFile(orphanFilePath);
     baseOrphanDataFile.createOrOverwrite();
-    Assert.assertTrue(icebergTable.io().exists(orphanFilePath));
-    OrphanFilesCleanService.clean(icebergTable, System.currentTimeMillis(), true, "all", true);
-    Assert.assertFalse(icebergTable.io().exists(orphanFilePath));
+    Assert.assertTrue(icebergNoPartitionTable.io().exists(orphanFilePath));
+    OrphanFilesCleanService.clean(icebergNoPartitionTable, System.currentTimeMillis(), true, "all", true);
+    Assert.assertFalse(icebergNoPartitionTable.io().exists(orphanFilePath));
   }
 }

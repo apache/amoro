@@ -1,7 +1,7 @@
 CREATE TABLE `platform_file_info` (
   `id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'file id',
   `file_name` varchar(100) NOT NULL COMMENT 'file name',
-  `file_content_b64` text NOT NULL COMMENT 'file content encoded with base64',
+  `file_content_b64` mediumtext NOT NULL COMMENT 'file content encoded with base64',
   `file_path` varchar(100) DEFAULT NULL COMMENT 'may be hdfs path , not be used now',
   `add_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT 'add timestamp',
   PRIMARY KEY (`id`)
@@ -15,11 +15,7 @@ ALTER TABLE file_info_cache ADD COLUMN `add_snapshot_sequence` bigint(20) NOT NU
 after `delete_snapshot_id`;
 ALTER TABLE snapshot_info_cache ADD COLUMN `snapshot_sequence` bigint(20) NOT NULL DEFAULT -1 COMMENT 'snapshot sequence' after `snapshot_id`;
 ALTER TABLE file_info_cache DROP COLUMN `watermark`;
-ALTER TABLE `optimize_task` ADD COLUMN `eq_delete_files` int(11) DEFAULT NULL COMMENT 'Eq-Delete file cnt';
-ALTER TABLE `optimize_task` ADD COLUMN `eq_delete_file_size` bigint(20) DEFAULT NULL COMMENT 'Eq-Delete file size in bytes';
-ALTER TABLE `optimize_history` ADD COLUMN `eq_delete_file_cnt_before` int(11) NOT NULL COMMENT 'Eq-Delete file cnt before optimizing';
-ALTER TABLE `optimize_history` ADD COLUMN `eq_delete_file_size_before` bigint(20) NOT NULL COMMENT 'Eq-Delete file size in bytes before optimizing';
-ALTER TABLE `optimize_file` CHANGE `file_type` `content_type` varchar(32) NOT NULL COMMENT 'File type: BASE_FILE, INSERT_FILE, EQ_DELETE_FILE, POS_DELETE_FILE, FILE_SCAN_TASK';
+ALTER TABLE `optimize_file` CHANGE `file_type` `content_type` varchar(32) NOT NULL COMMENT 'File type: BASE_FILE, INSERT_FILE, EQ_DELETE_FILE, POS_DELETE_FILE';
 ALTER TABLE `optimize_file` MODIFY COLUMN file_content MEDIUMBLOB NULL COMMENT 'File bytes after serialization';
 
 ALTER TABLE `database_metadata` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'database name';

@@ -139,7 +139,7 @@ public class TableMetaStore implements Serializable {
     this.metaStoreSite = metaStoreSite == null ? new byte[0] : metaStoreSite;
     this.hdfsSite = hdfsSite == null ? new byte[0] : hdfsSite;
     this.coreSite = coreSite == null ? new byte[0] : coreSite;
-    this.authMethod = authMethod == null ? AUTH_METHOD_SIMPLE : authMethod;
+    this.authMethod = authMethod == null ? AUTH_METHOD_SIMPLE : authMethod.toUpperCase();
     this.hadoopUsername = hadoopUsername == null ? System.getProperty("user.name") : hadoopUsername;
     this.krbKeyTab = krbKeyTab == null ? new byte[0] : krbKeyTab;
     this.krbConf = krbConf == null ? new byte[0] : krbConf;
@@ -542,7 +542,7 @@ public class TableMetaStore implements Serializable {
         String authMethod, String hadoopUsername, byte[] krbKeyTabBytes, byte[] krbConfBytes,
         String krbPrincipal) {
       this.disableAuth = false;
-      this.authMethod = authMethod;
+      this.authMethod = authMethod == null ? null : authMethod.toUpperCase();
       this.hadoopUsername = hadoopUsername;
       this.krbKeyTab = krbKeyTabBytes;
       this.krbConf = krbConfBytes;
@@ -606,7 +606,7 @@ public class TableMetaStore implements Serializable {
         }
       }
       if (properties.containsKey(AUTH_METHOD)) {
-        String authMethod = properties.get(AUTH_METHOD);
+        String authMethod = properties.get(AUTH_METHOD).toUpperCase();
         if (AUTH_METHOD_SIMPLE.equals(authMethod) && properties.containsKey(SIMPLE_USER_NAME)) {
           withSimpleAuth(properties.get(SIMPLE_USER_NAME));
         } else if (AUTH_METHOD_KERBEROS.equals(authMethod) && properties.containsKey(KEYTAB_LOGIN_USER) &&

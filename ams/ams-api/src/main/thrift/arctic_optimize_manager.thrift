@@ -21,8 +21,7 @@ struct OptimizeTask {
     5:optional list<binary> baseFiles;
     6:optional list<binary> posDeleteFiles;
     7:optional list<TreeNode> sourceNodes;
-    8:optional list<binary> icebergFileScanTasks;
-    9:optional map<string, string> properties;
+    8:optional map<string, string> properties;
 }
 
 

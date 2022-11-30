@@ -122,7 +122,6 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     optimizeTask.setInsertFiles(insertFileBytesList);
     optimizeTask.setDeleteFiles(deleteFileBytesList);
     optimizeTask.setPosDeleteFiles(posDeleteFileBytesList);
-    optimizeTask.setIcebergFileScanTasks(Collections.emptyList());
 
     FilesStatisticsBuilder baseFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder insertFb = new FilesStatisticsBuilder();

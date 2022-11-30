@@ -50,8 +50,8 @@ export default defineComponent({
     transition: width 0.3s;
     overflow: auto;
     .content {
-      padding: 16px 24px;
-      height: calc(100% - 64px);
+      // padding: 16px 24px;
+      height: calc(100% - 48px);
       overflow: auto;
     }
   }

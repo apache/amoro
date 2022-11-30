@@ -167,7 +167,7 @@
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark_3.1</artifactId>
+            <artifactId>arctic-spark-3.1</artifactId>
             <version>${project.version}</version>
         </dependency>
 

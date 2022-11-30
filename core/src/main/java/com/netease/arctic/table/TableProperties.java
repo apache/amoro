@@ -24,6 +24,7 @@ import java.util.Set;
 import static com.netease.arctic.table.WatermarkGenerator.EVENT_TIME_TIMESTAMP_MS;
 import static com.netease.arctic.table.WatermarkGenerator.INGEST_TIME;
 import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
+import static org.apache.iceberg.TableProperties.FORMAT_VERSION;
 
 /**
  * Reserved Arctic table properties list.
@@ -31,19 +32,6 @@ import static org.apache.iceberg.TableProperties.DEFAULT_NAME_MAPPING;
 public class TableProperties {
 
   private TableProperties() {
-  }
-
-  /**
-   * Protected properties which should not be exposed to user.
-   */
-  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
-
-  static {
-    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
-    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
-    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
   }
 
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
@@ -113,23 +101,22 @@ public class TableProperties {
   public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.minor.trigger.max-interval";
   public static final long MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 3600_000; // 1h
 
-  public static final String FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
-      "optimize.full.trigger.delete-file-size-bytes";
-  public static final long FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT = 67108864; // 64 MB
-
   public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
   public static final int MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT = 12; // 12
+
+  public static final String MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.minor.trigger.small-file-count";
+  public static final int MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
 
   public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
   public static final int MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
 
-  public static final String MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD =
-      "optimize.major.trigger.duplicate-size-bytes-threshold";
-  public static final int MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT = 67108864; // 64 MB
+  public static final String FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD =
+      "optimize.full.trigger.duplicate-size-bytes-threshold";
+  public static final int FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT = 67108864; // 64 MB
 
-  public static final String MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD =
-      "optimize.major.trigger.duplicate-ratio-threshold";
-  public static final double MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT = 0.5;
+  public static final String FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD =
+      "optimize.full.trigger.duplicate-ratio-threshold";
+  public static final double FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT = 0.5;
 
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
   public static final double OPTIMIZE_QUOTA_DEFAULT = 0.1;
@@ -242,4 +229,19 @@ public class TableProperties {
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
 
   public static final String OWNER = "owner";
+
+  /**
+   * Protected properties which should not be exposed to user.
+   */
+  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
+
+  static {
+    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
+    PROTECTED_PROPERTIES.add(FORMAT_VERSION);
+    PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
+  }
 }

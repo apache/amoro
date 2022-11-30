@@ -53,7 +53,9 @@ import com.netease.arctic.utils.SnapshotFileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -65,6 +67,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -180,8 +183,10 @@ public class FileInfoCacheService extends IJDBCService {
           }
         }
       } catch (Exception e) {
-        LOG.warn("load table error when sync file info cache:" + identifier.getCatalog() + identifier.getDatabase() +
-            identifier.getTableName(), e);
+        LOG.warn(
+            String.format("load table error when sync file info cache:%s.%s.%s",
+            identifier.getCatalog(), identifier.getDatabase(), identifier.getTableName()),
+            e);
       }
 
       // get snapshot info
@@ -514,6 +519,9 @@ public class FileInfoCacheService extends IJDBCService {
       ArcticTable arcticTable = catalog.loadTable(com.netease.arctic.table.TableIdentifier.of(identifier.getCatalog(),
           identifier.getDatabase(), identifier.getTableName()));
       arcticTable.asUnkeyedTable().snapshots().forEach(snapshot -> {
+        if (snapshot.operation().equals(DataOperations.REPLACE)) {
+          return;
+        }
         TransactionsOfTable transactionsOfTable = new TransactionsOfTable();
         transactionsOfTable.setTransactionId(snapshot.snapshotId());
         int fileCount = PropertyUtil
@@ -532,6 +540,7 @@ public class FileInfoCacheService extends IJDBCService {
         transactionsOfTable.setCommitTime(snapshot.timestampMillis());
         result.add(transactionsOfTable);
       });
+      Collections.reverse(result);
       return result;
     }
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -563,7 +572,7 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "add"));
@@ -572,7 +581,7 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "remove"));
@@ -581,7 +590,7 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "add"));
@@ -590,12 +599,25 @@ public class FileInfoCacheService extends IJDBCService {
       result.add(new AMSDataFileInfo(
           f.path().toString(),
           partitionToPath(ConvertStructUtil.partitionFields(arcticTable.spec(), f.partition())),
-          f.content().name(),
+          getIcebergFileType(f.content()),
           f.fileSizeInBytes(),
           snapshot.timestampMillis(),
           "remove"));
     });
     return result;
+  }
+
+  private static String getIcebergFileType(FileContent fileContent) {
+    switch (fileContent) {
+      case DATA:
+        return "data";
+      case EQUALITY_DELETES:
+        return "eq-deletes";
+      case POSITION_DELETES:
+        return "pos-deletes";
+      default:
+        throw new UnsupportedOperationException("unknown fileContent " + fileContent);
+    }
   }
 
   public List<PartitionBaseInfo> getPartitionBaseInfoList(TableIdentifier tableIdentifier) {
@@ -675,8 +697,9 @@ public class FileInfoCacheService extends IJDBCService {
           }
         } catch (Exception e) {
           LOG.error(
-              "SyncAndExpireFileCacheTask sync cache error " + tableIdentifier.catalog + tableIdentifier.database +
-                  tableIdentifier.tableName, e);
+              String.format("SyncAndExpireFileCacheTask sync cache error %s.%s.%s",
+                  tableIdentifier.catalog, tableIdentifier.database, tableIdentifier.tableName),
+              e);
         }
       });
     }
