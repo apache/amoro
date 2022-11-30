@@ -63,6 +63,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAG
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.TABLE_FORMATS;
 
 public class CatalogController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(CatalogController.class);
@@ -295,7 +296,13 @@ public class CatalogController extends RestBaseController {
 
     if (catalogMetadataService.catalogExist(catalogName)) {
       info.setName(catalogMeta.getCatalogName());
-      info.setType(catalogMeta.getCatalogType());
+      // We create ams catalog with type hadoop in v0.3, we should be compatible with it.
+      if (CATALOG_TYPE_HADOOP.equals(catalogMeta.getCatalogType()) &&
+          !catalogMeta.getCatalogProperties().containsKey(TABLE_FORMATS)) {
+        info.setType(CATALOG_TYPE_AMS);
+      } else {
+        info.setType(catalogMeta.getCatalogType());
+      }
       info.setAuthConfig(authConvertFromMetaToServer(catalogName, catalogMeta.getAuthConfigs()));
       Map<String, Object> storageConfig = storageConvertFromMetaToServer(catalogName, catalogMeta.getStorageConfigs());
       info.setStorageConfig(storageConfig);
