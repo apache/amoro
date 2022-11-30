@@ -42,6 +42,7 @@ import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyMetricsSummaryMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyPlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizerMetricsStatisticMapper;
@@ -143,6 +144,7 @@ public class DerbyTestUtil extends IJDBCService {
           configuration.addMapper(TableMetricsStatisticMapper.class);
           configuration.addMapper(DerbyTableMetricsStatisticMapper.class);
           configuration.addMapper(MetricsSummaryMapper.class);
+          configuration.addMapper(DerbyMetricsSummaryMapper.class);
           configuration.addMapper(OptimizerMetricsStatisticMapper.class);
           configuration.addMapper(DerbyOptimizerMetricsStatisticMapper.class);
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);

@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.CatalogControllerTest;
 import com.netease.arctic.ams.server.controller.LoginControllerTest;
 import com.netease.arctic.ams.server.controller.OptimizerControllerTest;
+import com.netease.arctic.ams.server.controller.OverviewControllerTest;
 import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
@@ -50,7 +51,6 @@ import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestMetricsStatisticService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
-import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
@@ -100,28 +100,29 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @RunWith(PowerMockRunner.class)
 @PowerMockRunnerDelegate(Suite.class)
 @Suite.SuiteClasses({
-    // CatalogControllerTest.class,
-    // OptimizerControllerTest.class,
-    // TableControllerTest.class,
-    // TerminalControllerTest.class,
-    // TestDDLTracerService.class,
-    // LoginControllerTest.class,
-    // TestExpiredFileClean.class,
-    // TestMajorOptimizeCommit.class,
-    // TestMajorOptimizePlan.class,
-    // TestMinorOptimizeCommit.class,
-    // TestMinorOptimizePlan.class,
-    // TestIcebergMajorOptimizePlan.class,
-    // TestIcebergMinorOptimizePlan.class,
-    // TestIcebergMajorOptimizeCommit.class,
-    // TestIcebergMinorOptimizeCommit.class,
-    // TestExpireFileCleanSupportIceberg.class,
-    // TestOrphanFileCleanSupportIceberg.class,
-    // TestOrphanFileClean.class,
-    // TestFileInfoCacheService.class,
-    // SupportHiveTestGroup.class,
-    // TestArcticTransactionService.class,
-    // TestOptimizerService.class,
+    CatalogControllerTest.class,
+    OptimizerControllerTest.class,
+    TableControllerTest.class,
+    TerminalControllerTest.class,
+    OverviewControllerTest.class,
+    TestDDLTracerService.class,
+    LoginControllerTest.class,
+    TestExpiredFileClean.class,
+    TestMajorOptimizeCommit.class,
+    TestMajorOptimizePlan.class,
+    TestMinorOptimizeCommit.class,
+    TestMinorOptimizePlan.class,
+    TestIcebergMajorOptimizePlan.class,
+    TestIcebergMinorOptimizePlan.class,
+    TestIcebergMajorOptimizeCommit.class,
+    TestIcebergMinorOptimizeCommit.class,
+    TestExpireFileCleanSupportIceberg.class,
+    TestOrphanFileCleanSupportIceberg.class,
+    TestOrphanFileClean.class,
+    TestFileInfoCacheService.class,
+    SupportHiveTestGroup.class,
+    TestArcticTransactionService.class,
+    TestOptimizerService.class,
     TestMetricsStatisticService.class
 })
 @PrepareForTest({
@@ -146,7 +147,6 @@ public class AmsTestBase {
   private static final File testTableBaseDir = new File("/tmp");
   private static final File testBaseDir = new File("unit_test_base_tmp");
   public static ArcticTableMetastoreHandler amsHandler;
-  protected static HMSMockServer hms;
   public static ArcticCatalog catalog;
   public static ArcticCatalog icebergCatalog;
   public static final String AMS_TEST_CATALOG_NAME = "ams_test_catalog";

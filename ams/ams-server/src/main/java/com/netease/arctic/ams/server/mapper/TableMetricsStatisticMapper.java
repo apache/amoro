@@ -18,10 +18,10 @@
 
 package com.netease.arctic.ams.server.mapper;
 
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter;
-import com.netease.arctic.table.TableIdentifier;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -30,6 +30,7 @@ import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface TableMetricsStatisticMapper {
@@ -60,7 +61,43 @@ public interface TableMetricsStatisticMapper {
       @Result(column = "commit_time", property = "commitTime",
           typeHandler = Long2TsConvertor.class)
   })
-  List<TableMetricsStatistic> getMetricsStatistic(@Param("metricsStatistic") TableMetricsStatistic metricsStatistic);
+  List<TableMetricsStatistic> getInnerTableMetricsStatistic(
+      @Param("metricsStatistic") TableMetricsStatistic metricsStatistic);
+
+  @Select("select table_identifier, inner_table, metric_name, metric_value, commit_time from " + TABLE_NAME + "  " +
+      "where metric_name = #{metricsStatistic.metricName} and table_identifier = #{metricsStatistic.tableIdentifier," +
+      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
+      "#{metricsStatistic.innerTable}")
+  @Results({
+      @Result(column = "table_identifier", property = "tableIdentifier",
+          typeHandler = TableIdentifier2StringConverter.class),
+      @Result(column = "inner_table", property = "innerTable"),
+      @Result(column = "metric_name", property = "metricName"),
+      @Result(column = "metric_value", property = "metricValue"),
+      @Result(column = "commit_time", property = "commitTime",
+          typeHandler = Long2TsConvertor.class)
+  })
+  TableMetricsStatistic getMetricsStatistic(
+      @Param("tableIdentifier") TableIdentifier tableIdentifier,
+      @Param("metricName") String metricName);
+
+  @Select("select table_identifier, metric_name, sum(metric_value) as sum_metric from " + TABLE_NAME +
+      " where metric_name = #{metricName} group by table_identifier, metric_name order by sum_metric" +
+      " #{orderExpression} limit #{limit}")
+  @Results({
+      @Result(column = "table_identifier", property = "tableIdentifier",
+          typeHandler = TableIdentifier2StringConverter.class),
+      @Result(column = "metric_name", property = "metricName"),
+      @Result(column = "sum_metric", property = "metricValue")
+  })
+  List<TableMetricsStatistic> getTableMetricsOrdered(
+      @Param("orderExpression") String orderExpression,
+      @Param("metricName") String metricName,
+      @Param("limit") Integer limit);
+
+  @Select("select max(commit_time) from " + TABLE_NAME + " where  table_identifier = #{tableIdentifier, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
+  Timestamp getMaxCommitTime(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
   @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select metric_name, sum(CAST" +
       "(metric_value AS SIGNED)), #{commitTime, typeHandler=com.netease.arctic.ams" +
@@ -72,5 +109,5 @@ public interface TableMetricsStatisticMapper {
   @Delete("delete from " + TABLE_NAME +
       " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic.ams.server" +
       ".mybatis.TableIdentifier2StringConverter}")
-  void deleteTableMetrics(@Param("tableIdentifier") com.netease.arctic.ams.api.TableIdentifier tableIdentifier);
+  void deleteTableMetrics(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 }

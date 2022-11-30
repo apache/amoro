@@ -27,10 +27,9 @@ import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
 import com.netease.arctic.ams.server.model.MetricsSummary;
 import com.netease.arctic.ams.server.model.OptimizerMetricsStatistic;
 import com.netease.arctic.ams.server.model.TableMetricsStatistic;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.utils.CatalogUtil;
-import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.ibatis.session.SqlSession;
@@ -40,6 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -65,6 +65,15 @@ public class MetricsStatisticService extends IJDBCService {
     }
   }
 
+  public TableMetricsStatistic getTableMetrics(
+      com.netease.arctic.ams.api.TableIdentifier tableIdentifier,
+      String metricName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
+      return mapper.getMetricsStatistic(tableIdentifier, metricName);
+    }
+  }
+
   public List<TableMetricsStatistic> getTableMetrics(
       TableIdentifier tableIdentifier, String innerTable,
       String metricName) {
@@ -74,7 +83,22 @@ public class MetricsStatisticService extends IJDBCService {
       statistic.setTableIdentifier(tableIdentifier.buildTableIdentifier());
       statistic.setInnerTable(innerTable);
       statistic.setMetricName(metricName);
-      return mapper.getMetricsStatistic(statistic);
+      return mapper.getInnerTableMetricsStatistic(statistic);
+    }
+  }
+
+  public List<TableMetricsStatistic> getTableMetricsOrdered(String orderExpression, String metricName, Integer limit) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
+      return mapper.getTableMetricsOrdered(orderExpression, metricName, limit);
+    }
+  }
+
+  public Long getMaxCommitTime(com.netease.arctic.ams.api.TableIdentifier identifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetricsStatisticMapper mapper = sqlSession.getMapper(TableMetricsStatisticMapper.class);
+      Timestamp timestamp = mapper.getMaxCommitTime(identifier);
+      return timestamp == null ? 0 : timestamp.getTime();
     }
   }
 
@@ -89,6 +113,13 @@ public class MetricsStatisticService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       MetricsSummaryMapper mapper = sqlSession.getMapper(MetricsSummaryMapper.class);
       return mapper.getMetricsSummary(metricName);
+    }
+  }
+
+  public MetricsSummary getCurrentSummary(String metricName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      MetricsSummaryMapper mapper = sqlSession.getMapper(MetricsSummaryMapper.class);
+      return mapper.getCurrentSummary(metricName);
     }
   }
 
@@ -143,6 +174,9 @@ public class MetricsStatisticService extends IJDBCService {
       return;
     }
     List<TableMetricsStatistic> tableMetricsStatistics = new ArrayList<>();
+    if (getMaxCommitTime(arcticTable.id().buildTableIdentifier()) > System.currentTimeMillis() - 60000) {
+      return;
+    }
 
     if (arcticTable.isKeyedTable()) {
       TableMetricsStatistic changeFileSizeStatistic = statisticFileSize(arcticTable.asKeyedTable().changeTable(),
@@ -172,14 +206,13 @@ public class MetricsStatisticService extends IJDBCService {
   public void insertStatistic(TableMetricsStatistic fileSizeStatistic) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetricsStatisticMapper metricsStatisticMapper = getMapper(sqlSession, TableMetricsStatisticMapper.class);
-      if (metricsStatisticMapper.getMetricsStatistic(fileSizeStatistic).size() > 0) {
+      if (metricsStatisticMapper.getInnerTableMetricsStatistic(fileSizeStatistic).size() > 0) {
         metricsStatisticMapper.updateMetricsStatistic(fileSizeStatistic);
       } else {
         metricsStatisticMapper.insertMetricsStatistic(fileSizeStatistic);
       }
     } catch (Exception e) {
-      System.out.println("error when insert");
-      LOG.error("", e);
+      LOG.error("insert statistic error", e);
     }
   }
 
@@ -235,20 +268,15 @@ public class MetricsStatisticService extends IJDBCService {
     return tableMetricsStatistic;
   }
 
-  private TableMetricsStatistic mergeLongStatistic(TableMetricsStatistic base, TableMetricsStatistic merge) {
-    base.setMetricValue(base.getMetricValue().add(merge.getMetricValue()));
-    return base;
-  }
-
   public static class TableMetricsStatisticTask implements Runnable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TableMetricsStatisticTask.class);
 
     private final MetricsStatisticService metricsStatisticService;
 
     public TableMetricsStatisticTask() {
       this.metricsStatisticService = ServiceContainer.getMetricsStatisticService();
     }
-
-    private static final Logger LOG = LoggerFactory.getLogger(TableMetricsStatisticTask.class);
 
     public Thread doTask() {
       LOG.info("TableMetricsStatisticTask start");
@@ -261,19 +289,19 @@ public class MetricsStatisticService extends IJDBCService {
     public void run() {
       while (true) {
         try {
-          Thread.sleep(60000);
+          Thread.sleep(30000);
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        //TODO: just should statistic the table which is native iceberg table
         List<TableIdentifier> tableIdentifiers = ServiceContainer.getOptimizeService().listCachedTables(false);
         tableIdentifiers.forEach(tableIdentifier -> {
           try {
             if (tableIdentifier == null) {
               return;
             }
-            ArcticCatalog catalog = CatalogUtil.getArcticCatalog(tableIdentifier.getCatalog());
-            ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
+            TableOptimizeItem arcticTableItem =
+                ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
+            ArcticTable arcticTable = arcticTableItem.getArcticTable();
             metricsStatisticService.statisticTableFileMetrics(arcticTable);
           } catch (Exception e) {
             LOG.error("statistic table file metrics error", e);

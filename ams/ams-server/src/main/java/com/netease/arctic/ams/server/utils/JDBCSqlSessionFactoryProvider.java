@@ -45,6 +45,7 @@ import com.netease.arctic.ams.server.mapper.TaskHistoryMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyMetricsSummaryMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizerMetricsStatisticMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyPlatformFileInfoMapper;
@@ -131,6 +132,7 @@ public class JDBCSqlSessionFactoryProvider {
             configuration.addMapper(DerbyPlatformFileInfoMapper.class);
             configuration.addMapper(DerbyTableMetricsStatisticMapper.class);
             configuration.addMapper(DerbyOptimizerMetricsStatisticMapper.class);
+            configuration.addMapper(DerbyMetricsSummaryMapper.class);
           }
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }

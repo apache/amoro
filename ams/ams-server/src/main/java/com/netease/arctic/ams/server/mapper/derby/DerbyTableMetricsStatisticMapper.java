@@ -19,8 +19,15 @@
 package com.netease.arctic.ams.server.mapper.derby;
 
 import com.netease.arctic.ams.server.mapper.TableMetricsStatisticMapper;
+import com.netease.arctic.ams.server.model.TableMetricsStatistic;
+import com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.Results;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
 
 public interface DerbyTableMetricsStatisticMapper extends TableMetricsStatisticMapper {
   @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select #{metricName}, " +
@@ -29,4 +36,17 @@ public interface DerbyTableMetricsStatisticMapper extends TableMetricsStatisticM
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);
+
+  @Select("select table_identifier, metric_name, sum(metric_value) as sum_metric from " + TABLE_NAME +
+      " where metric_name = #{metricName} group by table_identifier, metric_name order by sum_metric" +
+      " #{orderExpression} first #{limit} rows only")
+  @Results({
+      @Result(column = "table_identifier", property = "tableIdentifier",
+          typeHandler = TableIdentifier2StringConverter.class),
+      @Result(column = "metric_name", property = "metricName"),
+      @Result(column = "sum_metric", property = "metricValue")
+  })
+  List<TableMetricsStatistic> getTableMetricsOrdered(@Param("orderExpression") String orderExpression,
+      @Param("metricName") String metricName,
+      @Param("limit") Integer limit);
 }

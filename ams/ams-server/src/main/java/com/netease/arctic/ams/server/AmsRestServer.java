@@ -24,6 +24,7 @@ import com.netease.arctic.ams.server.controller.HealthCheckController;
 import com.netease.arctic.ams.server.controller.LoginController;
 import com.netease.arctic.ams.server.controller.OptimizeContainerController;
 import com.netease.arctic.ams.server.controller.OptimizerController;
+import com.netease.arctic.ams.server.controller.OverviewController;
 import com.netease.arctic.ams.server.controller.PlatformFileInfoController;
 import com.netease.arctic.ams.server.controller.SettingController;
 import com.netease.arctic.ams.server.controller.TableController;
@@ -177,6 +178,10 @@ public class AmsRestServer {
         get("/files/{fileId}", PlatformFileInfoController::downloadFile);
 
         /** overview controller **/
+        get("/overview/summary", OverviewController::summary);
+        get("/overview/metric/optimize/resource", OverviewController::quota);
+        get("/overview/metric/datasize", OverviewController::dataSize);
+        get("/overview/top/tables", OverviewController::tableInfo);
 
         /** setting controller **/
         get("/settings/containers", OptimizeContainerController::getContainerSetting);
