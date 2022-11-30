@@ -50,8 +50,8 @@ const STATUS_CONFIG = shallowReactive({
   pending: { title: 'pending', color: '#ffcc00' },
   idle: { title: 'idle', color: '#c9cdd4' },
   minor: { title: 'minor', color: '#0ad787' },
-  major: { title: 'major', color: '#e02020' },
-  full: { title: 'full', color: '#e02020' }
+  major: { title: 'major', color: '#0ad787' },
+  full: { title: 'full', color: '#0ad787' }
 })
 
 const loading = ref<boolean>(false)
