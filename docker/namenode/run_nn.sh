@@ -1,3 +1,4 @@
+#!/bin/bash
 
 #  Licensed to the Apache Software Foundation (ASF) under one
 #  or more contributor license agreements.  See the NOTICE file
@@ -15,34 +16,22 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8u332-jdk
+set +x
 
-ARG ARCTIC_VERSION=0.4.0-SNAPSHOT
-ARG RELEASE=v0.3.2-rc1
-ARG DEBIAN_MIRROR=http://deb.debian.org
+namedir=`echo $HDFS_CONF_dfs_namenode_name_dir | perl -pe 's#file://##'`
+if [ ! -d $namedir ]; then
+  echo "Namenode name directory not found: $namedir"
+  exit 2
+fi
 
-WORKDIR /usr/local/ams
+if [ -z "$CLUSTER_NAME" ]; then
+  echo "Cluster name not specified"
+  exit 2
+fi
 
-RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
+if [ "`ls -A $namedir`" == "" ]; then
+  echo "Formatting namenode name directory: $namedir"
+  $HADOOP_PREFIX/bin/hdfs --config $HADOOP_CONF_DIR namenode -format $CLUSTER_NAME 
+fi
 
-RUN apt update \
-    && apt-get install -y vim \
-    && apt-get install -y net-tools \
-    && apt-get install -y telnet \
-    && apt-get clean
-
-ARG AMS_FILE
-WORKDIR /usr/local/ams
-
-ADD arctic-${ARCTIC_VERSION}-bin.zip /usr/local/ams/arctic-${ARCTIC_VERSION}-bin.zip
-RUN unzip arctic-${ARCTIC_VERSION}-bin.zip \
-  && sed -i '/local_catalog/d' /usr/local/ams/arctic-${ARCTIC_VERSION}/conf/derby/ams-init.sql
-
-WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
-
-EXPOSE 1630/tcp
-EXPOSE 1260/tcp
-
-CMD ["bash","-c","./bin/ams.sh start && tail -f ./logs/ams-info.log"]
-
-
+$HADOOP_PREFIX/bin/hdfs --config $HADOOP_CONF_DIR namenode
