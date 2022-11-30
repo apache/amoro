@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.optimize;
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.table.SupportHive;

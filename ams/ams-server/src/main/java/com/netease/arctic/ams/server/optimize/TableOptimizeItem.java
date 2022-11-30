@@ -340,18 +340,18 @@ public class TableOptimizeItem extends IJDBCService {
     double realCoreCount = tableResourceInfo.getRealCoreCount();
     TableOptimizeInfo tableOptimizeInfo = new TableOptimizeInfo(tableIdentifier);
     TableOptimizeRuntime tableOptimizeRuntime = getTableOptimizeRuntime();
-    tableOptimizeInfo.setOptimizeStatus(tableOptimizeRuntime.getOptimizeStatus());
+    tableOptimizeInfo.setOptimizeStatus(tableOptimizeRuntime.getOptimizeStatus().displayValue());
     tableOptimizeInfo.setDuration(System.currentTimeMillis() - tableOptimizeRuntime.getOptimizeStatusStartTime());
     tableOptimizeInfo.setQuota(needCoreCount);
     double value = realCoreCount / needCoreCount;
     tableOptimizeInfo.setQuotaOccupation(new BigDecimal(value).setScale(4, RoundingMode.HALF_UP).doubleValue());
-    if (tableOptimizeRuntime.getOptimizeStatus() == TableOptimizeInfo.OptimizeStatus.MajorOptimizing) {
+    if (tableOptimizeRuntime.getOptimizeStatus() == TableOptimizeRuntime.OptimizeStatus.MajorOptimizing) {
       List<BaseOptimizeTask> optimizeTasks =
           this.optimizeTasks.values().stream().map(OptimizeTaskItem::getOptimizeTask).collect(
               Collectors.toList());
       this.optimizeFileInfo = collectOptimizeFileInfo(optimizeTasks,
           new HashSet<>(Arrays.asList(OptimizeType.Major, OptimizeType.FullMajor)));
-    } else if (tableOptimizeRuntime.getOptimizeStatus() == TableOptimizeInfo.OptimizeStatus.MinorOptimizing) {
+    } else if (tableOptimizeRuntime.getOptimizeStatus() == TableOptimizeRuntime.OptimizeStatus.MinorOptimizing) {
       List<BaseOptimizeTask> optimizeTasks =
           this.optimizeTasks.values().stream().map(OptimizeTaskItem::getOptimizeTask).collect(
               Collectors.toList());
@@ -376,11 +376,17 @@ public class TableOptimizeItem extends IJDBCService {
           List<BaseOptimizeTask> optimizeTasks =
               this.optimizeTasks.values().stream().map(OptimizeTaskItem::getOptimizeTask).collect(
                   Collectors.toList());
-          if (hasMajorOptimizeTask()) {
-            tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.MajorOptimizing, optimizeTasks,
-                new HashSet<>(Arrays.asList(OptimizeType.Major, OptimizeType.FullMajor)));
+          if (hasFullOptimizeTask()) {
+            tryUpdateOptimizeInfo(
+                TableOptimizeRuntime.OptimizeStatus.FullOptimizing, optimizeTasks,
+                new HashSet<>(Arrays.asList(OptimizeType.FullMajor)));
+          } else if (hasMajorOptimizeTask()) {
+            tryUpdateOptimizeInfo(
+                TableOptimizeRuntime.OptimizeStatus.MajorOptimizing, optimizeTasks,
+                new HashSet<>(Collections.singletonList(OptimizeType.Major)));
           } else {
-            tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.MinorOptimizing, optimizeTasks,
+            tryUpdateOptimizeInfo(
+                TableOptimizeRuntime.OptimizeStatus.MinorOptimizing, optimizeTasks,
                 new HashSet<>(Collections.singletonList(OptimizeType.Minor)));
           }
           return;
@@ -393,7 +399,7 @@ public class TableOptimizeItem extends IJDBCService {
     if (!(Boolean.parseBoolean(PropertyUtil
         .propertyAsString(getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
             TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
-      tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+      tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else {
       FullOptimizePlan fullPlan = getFullPlan(-1, System.currentTimeMillis());
       List<BaseOptimizeTask> fullTasks = fullPlan.plan();
@@ -405,18 +411,21 @@ public class TableOptimizeItem extends IJDBCService {
             MinorOptimizePlan minorPlan = getMinorPlan(-1, System.currentTimeMillis());
             List<BaseOptimizeTask> minorTasks = minorPlan.plan();
             if (!CollectionUtils.isEmpty(minorTasks)) {
-              tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, minorTasks,
+              tryUpdateOptimizeInfo(
+                  TableOptimizeRuntime.OptimizeStatus.Pending, minorTasks,
                   new HashSet<>(Collections.singletonList(OptimizeType.Minor)));
               return;
             }
           }
-          tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Idle, Collections.emptyList(), null);
+          tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
         } else {
-          tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, majorTasks,
+          tryUpdateOptimizeInfo(
+              TableOptimizeRuntime.OptimizeStatus.Pending, majorTasks,
               new HashSet<>(Arrays.asList(OptimizeType.Major, OptimizeType.FullMajor)));
         }
       } else {
-        tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus.Pending, fullTasks,
+        tryUpdateOptimizeInfo(
+            TableOptimizeRuntime.OptimizeStatus.Pending, fullTasks,
             new HashSet<>(Arrays.asList(OptimizeType.Major, OptimizeType.FullMajor)));
       }
     }
@@ -425,7 +434,17 @@ public class TableOptimizeItem extends IJDBCService {
   private boolean hasMajorOptimizeTask() {
     for (Map.Entry<OptimizeTaskId, OptimizeTaskItem> entry : optimizeTasks.entrySet()) {
       OptimizeTaskId key = entry.getKey();
-      if (key.getType() == OptimizeType.Major || key.getType() == OptimizeType.FullMajor) {
+      if (key.getType() == OptimizeType.Major) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasFullOptimizeTask() {
+    for (Map.Entry<OptimizeTaskId, OptimizeTaskItem> entry : optimizeTasks.entrySet()) {
+      OptimizeTaskId key = entry.getKey();
+      if (key.getType() == OptimizeType.FullMajor) {
         return true;
       }
     }
@@ -445,7 +464,8 @@ public class TableOptimizeItem extends IJDBCService {
     return builder.build();
   }
 
-  private void tryUpdateOptimizeInfo(TableOptimizeInfo.OptimizeStatus optimizeStatus,
+  private void tryUpdateOptimizeInfo(
+      TableOptimizeRuntime.OptimizeStatus optimizeStatus,
                                      Collection<BaseOptimizeTask> optimizeTasks,
                                      Set<OptimizeType> types) {
     if (tableOptimizeRuntime.getOptimizeStatus() != optimizeStatus) {
