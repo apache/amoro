@@ -277,8 +277,8 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
       fillTableProperties(meta);
       String hiveLocation = meta.getProperties().get(HiveTableProperties.BASE_HIVE_LOCATION_ROOT);
       // default 1 day
-      if (!meta.properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL)) {
-        meta.putToProperties(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000");
+      if (!meta.properties.containsKey(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL)) {
+        meta.putToProperties(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000");
       }
 
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);

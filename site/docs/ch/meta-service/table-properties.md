@@ -28,34 +28,33 @@
 
 ### 结构优化配置
 
-| 配置名称                                                 | 默认值           | 描述                                     |
-|---------------------------------------------------------|-----------------|-----------------------------------------|
-| optimize.enable                                         | true            | 是否开启结构优化                           |
-| optimize.group                                          | default         | 结构优化所属的组                           |
-| optimize.quota                                          | 0.1             | 表所能占用的结构优化资源量                   |
-| optimize.num-retries                                    | 5               | 结构优化失败时的重试次数                    |
-| optimize.execute.timeout                                | 1800000（30分钟  | 结构优化执行超时时间                        |
-| optimize.max-file-count                                 | 100000          | 一次结构优化最多处理的文件个数                |
-| optimize.small-file-size-bytes-threshold                | 16777216（16MB） | 结构优化时判断是否为小文件的阈值              |
-| optimize.minor.trigger.max-interval                     | 3600000（1小时） | 触发 minor optimize 的时间间隔              |
-| optimize.minor.trigger.delete-file-count                | 12              | 触发 minor optimize 的 delete 文件个数阈值  |
-| optimize.minor.trigger.small-file-count                 | 12              | 触发 minor optimize 的小文件数数量          |
-| optimize.major.trigger.max-interval                     | 86400000（1天）  | 触发 major optimize 的时间间隔             |
-| optimize.major.trigger.small-file-count                 | 12              | 触发 major optimize 的小文件数数量          |
-| optimize.major.max-task-file-size-bytes                 | 1073741824（1GB）| major optimize 最大的任务大小              |
-| optimize.full.trigger.duplicate-size-bytes-threshold    | 67108864（64MB） | 触发 full optimize 的 delete 文件大小阈值   |
-| optimize.full.trigger.duplicate-ratio-threshold         | 0.5             | 触发 full optimize 的 delete 文件占比阈值   |
-| optimize.full.trigger.max-interval                      | -1（关闭）        | 触发 full optimize 的时间间隔              |
+| 配置名称                                             | 默认值            | 描述                                               |
+|-----------------------------------------------------|------------------|---------------------------------------------------|
+| self-optimizing.enabled                             | true             | 是否开启结构优化                                     |
+| self-optimizing.group                               | default          | 结构优化所属的组                                     |
+| self-optimizing.quota                               | 0.1              | 表所能占用的结构优化资源量                             |
+| self-optimizing.num-retries                         | 5                | 结构优化失败时的重试次数                               |
+| self-optimizing.execute.timeout                     | 1800000（30分钟） | 结构优化执行超时时间                                  |
+| self-optimizing.target-size                         | 134217728（128MB）| 结构优化的目标文件大小                                |
+| self-optimizing.max-file-count                      | 100000           | 一次结构优化最多处理的文件个数                           |
+| self-optimizing.max-task-file-size                  | 1073741824（1GB） | 一次结构优化最大的任务大小                          |
+| self-optimizing.fragment-ratio                      | 8                | 处理的 fragment 文件阈值                             |
+| self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimize 的 fragment 文件数量             |
+| self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimize 的时间间隔                        |
+| self-optimizing.major.trigger.file-count            | 12               | 触发 major optimize 的文件数量                      |
+| self-optimizing.major.trigger.duplicate-ratio       | 0.5              | 触发 major optimize 的 delete 文件与目标文件大小的比值  |
+| self-optimizing.major.trigger.interval              | 86400000（1天）   | 触发 major optimize 的时间间隔                        |
+| self-optimizing.full.trigger.interval               | -1（关闭）         | 触发 full optimize 的时间间隔                        |
 
 ### 数据清理相关参数
 
 | 配置名称                                        | 默认值       | 描述                                 |
 |---------------------------------------------|-----------|------------------------------------|
-| table-expire.enable                         | true      | 是否开启的表过期数据自动清理                     |
+| table-expire.enabled                        | true      | 是否开启的表过期数据自动清理                     |
 | change.data.ttl.minutes                     | 10080（7天） | Changestore 数据的过期时间                |
 | snapshot.change.keep.minutes                | 10080（7天） | Changestore 历史快照的保留时间              |
 | snapshot.base.keep.minutes                  | 720（12小时） | Basestore 历史快照的保留时间                |
-| clean-orphan-file.enable                    | false     | 是否开启游离文件自动清理                       |
+| clean-orphan-file.enabled                   | false     | 是否开启游离文件自动清理                       |
 | clean-orphan-file.min-existing-time-minutes | 2880（2天）  | 清理游离文件时为了防止错误清理正在写入的文件，判断文件最低的存在时间 |
 
 ### Logstore 相关配置

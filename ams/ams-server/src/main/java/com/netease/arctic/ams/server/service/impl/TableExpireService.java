@@ -38,6 +38,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -46,8 +47,6 @@ import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.relocated.com.google.common.collect.Streams;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,9 +99,9 @@ public class TableExpireService implements ITableExpireService {
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
-        boolean needClean = Boolean.parseBoolean(arcticTable.properties()
-            .getOrDefault(TableProperties.ENABLE_TABLE_EXPIRE,
-                TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT));
+        boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+            TableProperties.ENABLE_TABLE_EXPIRE,
+            TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT);
         if (!needClean) {
           return;
         }

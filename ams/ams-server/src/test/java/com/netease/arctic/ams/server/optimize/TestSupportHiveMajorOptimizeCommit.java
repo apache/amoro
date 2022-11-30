@@ -27,13 +27,11 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.ContentFile;
@@ -209,7 +207,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testKeyedTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     List<DataFile> baseDataFiles = insertBaseResult.second();
@@ -360,7 +358,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testUnKeyedTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
     List<DataFile> baseDataFiles = insertBaseResult.second();
@@ -500,7 +498,7 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testUnPartitionTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testUnPartitionKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
     List<DataFile> baseDataFiles = insertBaseResult.second();
