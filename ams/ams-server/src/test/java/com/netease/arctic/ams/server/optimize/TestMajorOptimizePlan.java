@@ -112,7 +112,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .collect(Collectors.toList()));
 
     testKeyedTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
@@ -254,7 +254,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .collect(Collectors.toList()));
 
     testNoPartitionTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES, "0")
+        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,

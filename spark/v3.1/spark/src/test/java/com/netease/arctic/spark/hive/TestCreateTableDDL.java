@@ -155,7 +155,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()),
-        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone())
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone())
         );
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTable.schema().asStruct());
@@ -467,7 +467,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.optional(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()),
-        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, loadTable(identifier).schema().asStruct());
 

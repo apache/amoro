@@ -398,6 +398,7 @@ public class CatalogController extends RestBaseController {
     Integer tblCount = iMetaService.getTableCountInCatalog(catalogName);
     if (tblCount == 0) {
       catalogMetadataService.deleteCatalog(catalogName);
+      CatalogUtil.removeCatalogCache(catalogName);
       ctx.json(OkResponse.of("OK"));
       return;
     } else {

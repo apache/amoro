@@ -51,6 +51,7 @@
             <directory>src/main/arctic-bin/bin</directory>
             <outputDirectory>bin</outputDirectory>
             <fileMode>0755</fileMode>
+            <lineEnding>unix</lineEnding>
         </fileSet>
         <fileSet>
             <directory>src/main/arctic-bin/conf</directory>

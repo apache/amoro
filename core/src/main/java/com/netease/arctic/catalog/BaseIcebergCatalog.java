@@ -20,6 +20,7 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ArcticTable;
@@ -37,6 +38,7 @@ import org.apache.iceberg.catalog.SupportsNamespaces;
 
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -45,6 +47,7 @@ import java.util.stream.Collectors;
 public class BaseIcebergCatalog implements ArcticCatalog {
 
   private CatalogMeta meta;
+  private Pattern databaseFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
 
@@ -66,18 +69,32 @@ public class BaseIcebergCatalog implements ArcticCatalog {
     }
     icebergCatalog = tableMetaStore.doAs(() -> org.apache.iceberg.CatalogUtil.buildIcebergCatalog(name(),
         meta.getCatalogProperties(), tableMetaStore.getConfiguration()));
+    if (meta.getCatalogProperties().containsKey(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION)) {
+      String databaseFilter =
+          meta.getCatalogProperties().get(CatalogMetaProperties.KEY_DATABASE_FILTER_REGULAR_EXPRESSION);
+      databaseFilterPattern = Pattern.compile(databaseFilter);
+    }
   }
 
   @Override
   public List<String> listDatabases() {
-    if (icebergCatalog instanceof SupportsNamespaces) {
-      return tableMetaStore.doAs(() -> ((SupportsNamespaces) icebergCatalog).listNamespaces(Namespace.empty()).stream()
-          .map(namespace -> namespace.level(0)).distinct().collect(Collectors.toList()));
-    } else {
+    if (!(icebergCatalog instanceof SupportsNamespaces)) {
       throw new UnsupportedOperationException(String.format(
           "Iceberg catalog: %s doesn't implement SupportsNamespaces",
           icebergCatalog.getClass().getName()));
     }
+
+    List<String> databases =
+        tableMetaStore.doAs(() ->
+            ((SupportsNamespaces) icebergCatalog).listNamespaces(Namespace.empty())
+                .stream()
+                .map(namespace -> namespace.level(0))
+                .distinct()
+                .collect(Collectors.toList())
+        );
+    return databases.stream()
+        .filter(database -> databaseFilterPattern == null || databaseFilterPattern.matcher(database).matches())
+        .collect(Collectors.toList());
   }
 
   @Override

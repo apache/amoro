@@ -31,8 +31,8 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Transaction;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,43 +116,6 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     }
   }
 
-  protected boolean checkFileCount(OptimizeTaskItem task) {
-    List<FileScanTask> fileScanTasks = task.getOptimizeTask().getIcebergFileScanTasks()
-        .stream().map(SerializationUtil::toIcebergFileScanTask).collect(Collectors.toList());
-    int dataFileCount = fileScanTasks.size();
-    int eqDeleteFileCount = 0;
-    int posDeleteFileCount = 0;
-    Set<String> deleteFiles = new HashSet<>();
-    for (FileScanTask fileScanTask : fileScanTasks) {
-      for (DeleteFile delete : fileScanTask.deletes()) {
-        if (!deleteFiles.contains(delete.path().toString())) {
-          if (delete.content() == FileContent.POSITION_DELETES) {
-            posDeleteFileCount++;
-          } else {
-            eqDeleteFileCount++;
-          }
-          deleteFiles.add(delete.path().toString());
-        }
-      }
-    }
-    int targetFileCount = new HashSet<>(task.getOptimizeRuntime().getTargetFiles()).size();
-
-    boolean result = dataFileCount == task.getOptimizeTask().getBaseFileCnt() &&
-        eqDeleteFileCount == task.getOptimizeTask().getEqDeleteFileCnt() &&
-        posDeleteFileCount == task.getOptimizeTask().getPosDeleteFileCnt() &&
-        targetFileCount == task.getOptimizeRuntime().getNewFileCnt();
-    if (!result) {
-      LOG.error("file count check failed. dataFileCount/dataFileCnt is {}/{}, " +
-              "eqDeleteFileCount/eqDeleteFileCount is {}/{}, " +
-              "posDeleteFileCount/posDeleteFileCnt is {}/{}, targetFileCount/newFileCnt is {}/{}",
-          dataFileCount, task.getOptimizeTask().getBaseFileCnt(),
-          eqDeleteFileCount, task.getOptimizeTask().getEqDeleteFileCnt(),
-          posDeleteFileCount, task.getOptimizeTask().getPosDeleteFileCnt(),
-          targetFileCount, task.getOptimizeRuntime().getNewFileCnt());
-    }
-    return !result;
-  }
-
   public Map<String, OptimizeType> getPartitionOptimizeType() {
     return partitionOptimizeType;
   }
@@ -165,34 +128,54 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
 
     if (CollectionUtils.isNotEmpty(minorAddFiles) || CollectionUtils.isNotEmpty(minorDeleteFiles)) {
       LOG.info("{} use RewriteFiles to commit.", arcticTable.id());
-      RewriteFiles rewriteFiles = baseArcticTable.newRewrite();
       Set<DataFile> addDataFiles = new HashSet<>();
       Set<DataFile> deleteDataFiles = new HashSet<>();
+      Set<DeleteFile> addDeleteFiles = new HashSet<>();
+      Set<DeleteFile> deletedDeleteFiles = new HashSet<>();
       minorAddFiles.forEach(contentFile -> {
-        // only add DataFile
         if (contentFile.content() == FileContent.DATA) {
           addDataFiles.add((DataFile) contentFile);
+        } else {
+          addDeleteFiles.add((DeleteFile) contentFile);
         }
       });
       minorDeleteFiles.forEach(contentFile -> {
-        // only add DataFile
         if (contentFile.content() == FileContent.DATA) {
           deleteDataFiles.add((DataFile) contentFile);
+        } else {
+          deletedDeleteFiles.add((DeleteFile) contentFile);
         }
       });
 
-      if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
-        rewriteFiles.validateFromSnapshot(baseSnapshotId);
-        long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
-        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
-      } else {
-        rewriteFiles.rewriteFiles(deleteDataFiles, addDataFiles);
-      }
-      rewriteFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
-      rewriteFiles.commit();
 
-      LOG.info("{} iceberg minor optimize committed, delete {} data files, " +
-          "add {} new data files", arcticTable.id(), deleteDataFiles.size(), addDataFiles.size());
+      Transaction minorTransaction = baseArcticTable.newTransaction();
+
+      if (CollectionUtils.isNotEmpty(deleteDataFiles) || CollectionUtils.isNotEmpty(addDataFiles)) {
+        RewriteFiles dataFileRewrite = minorTransaction.newRewrite();
+        if (baseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+          dataFileRewrite.validateFromSnapshot(baseSnapshotId);
+          long sequenceNumber = arcticTable.asUnkeyedTable().snapshot(baseSnapshotId).sequenceNumber();
+          dataFileRewrite.rewriteFiles(deleteDataFiles, addDataFiles, sequenceNumber);
+        } else {
+          dataFileRewrite.rewriteFiles(deleteDataFiles, addDataFiles);
+        }
+        dataFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        dataFileRewrite.commit();
+      }
+
+      if (CollectionUtils.isNotEmpty(deletedDeleteFiles) || CollectionUtils.isNotEmpty(addDeleteFiles)) {
+        RewriteFiles deleteFileRewrite = minorTransaction.newRewrite();
+        deleteFileRewrite.rewriteFiles(Collections.emptySet(),
+            deletedDeleteFiles, Collections.emptySet(), addDeleteFiles);
+        deleteFileRewrite.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
+        deleteFileRewrite.commit();
+      }
+
+      minorTransaction.commitTransaction();
+
+      LOG.info("{} iceberg minor optimize committed, delete {} data files and {} delete files, " +
+          "add {} new data files and {} new delete files",
+          arcticTable.id(), deleteDataFiles.size(), deletedDeleteFiles, addDataFiles.size(), addDeleteFiles);
     } else {
       LOG.info("{} skip iceberg minor optimize commit", arcticTable.id());
     }
@@ -248,7 +231,7 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
   private static Set<ContentFile<?>> selectDeletedFiles(OptimizeTaskItem taskItem) {
     BaseOptimizeTask optimizeTask = taskItem.getOptimizeTask();
     switch (optimizeTask.getTaskId().getType()) {
-      case Major:
+      case FullMajor:
         return selectMajorOptimizeDeletedFiles(optimizeTask);
       case Minor:
         return selectMinorOptimizeDeletedFiles(optimizeTask);
@@ -258,11 +241,21 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
   }
 
   private static Set<ContentFile<?>> selectMinorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
-    // only delete old data files
     Set<ContentFile<?>> deletedFiles = new HashSet<>();
-    for (ByteBuffer icebergFileScanTask : optimizeTask.getIcebergFileScanTasks()) {
-      FileScanTask fileScanTask = SerializationUtil.toIcebergFileScanTask(icebergFileScanTask);
-      deletedFiles.add(fileScanTask.file());
+
+    if (CollectionUtils.isNotEmpty(optimizeTask.getInsertFiles())) {
+      // small data files
+      for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
+        deletedFiles.add(SerializationUtil.toIcebergContentFile(insertFile).asDataFile());
+      }
+    } else {
+      // delete files
+      for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {
+        deletedFiles.add(SerializationUtil.toIcebergContentFile(eqDeleteFile).asDeleteFile());
+      }
+      for (ByteBuffer posDeleteFile : optimizeTask.getPosDeleteFiles()) {
+        deletedFiles.add(SerializationUtil.toIcebergContentFile(posDeleteFile).asDeleteFile());
+      }
     }
 
     return deletedFiles;
@@ -270,10 +263,20 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
 
   private static Set<ContentFile<?>> selectMajorOptimizeDeletedFiles(BaseOptimizeTask optimizeTask) {
     Set<ContentFile<?>> deletedFiles = new HashSet<>();
-    for (ByteBuffer icebergFileScanTask : optimizeTask.getIcebergFileScanTasks()) {
-      FileScanTask fileScanTask = SerializationUtil.toIcebergFileScanTask(icebergFileScanTask);
-      deletedFiles.add(fileScanTask.file());
-      deletedFiles.addAll(fileScanTask.deletes());
+    // data files
+    for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
+      deletedFiles.add(SerializationUtil.toIcebergContentFile(insertFile).asDataFile());
+    }
+    for (ByteBuffer baseFile : optimizeTask.getBaseFiles()) {
+      deletedFiles.add(SerializationUtil.toIcebergContentFile(baseFile).asDataFile());
+    }
+
+    // delete files
+    for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {
+      deletedFiles.add(SerializationUtil.toIcebergContentFile(eqDeleteFile).asDeleteFile());
+    }
+    for (ByteBuffer posDeleteFile : optimizeTask.getPosDeleteFiles()) {
+      deletedFiles.add(SerializationUtil.toIcebergContentFile(posDeleteFile).asDeleteFile());
     }
 
     return deletedFiles;
