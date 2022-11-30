@@ -30,15 +30,15 @@ spark.sql.catalog.spark_catalog=com.netease.arctic.spark.ArcticSparkSessionCatal
 ```
 您可以把 Spark 内置的 Catalog：`spark_catalog`配置为您想要的 Catalog 类型来实现访问不同的表。  
 
-Arctic Spark 提供一个参数来控制 session catalog 的行为：`spark.arctic.sql.delegate.enable`，该参数默认为 `true`。  
+Arctic Spark 提供一个参数来控制 session catalog 的行为：`spark.arctic.sql.delegate.enabled`，该参数默认为 `true`。  
 
-您可以在 Spark 的配置文件中修改该配置，也可以在启动 Spark 时通过命令行参数 `--conf spark.arctic.sql.delegate.enable=${OPTION}` 来设置该参数。
+您可以在 Spark 的配置文件中修改该配置，也可以在启动 Spark 时通过命令行参数 `--conf spark.arctic.sql.delegate.enabled=${OPTION}` 来设置该参数。
 
 将该参数设置为 `true` 表示ArcticSessionCatalog 会代理 Hive 表为 Arctic 表。
 ```
-spark.arctic.sql.delegate.enable=true
+spark.arctic.sql.delegate.enabled=true
 ```
 将该参数设置为 `false` 表示不进入代理模式，将使用 Spark 默认的 Catalog：
 ```
-spark.arctic.sql.delegate.enable=false
+spark.arctic.sql.delegate.enabled=false
 ```

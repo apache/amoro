@@ -126,8 +126,8 @@ public abstract class BaseOptimizePlan {
   }
 
   public long getSmallFileSize(Map<String, String> properties) {
-    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO)
-        && properties.containsKey(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD)) {
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO) &&
+        properties.containsKey(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD)) {
       return Long.parseLong(properties.get(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD));
     } else {
       long targetSize = PropertyUtil.propertyAsLong(properties, TableProperties.SELF_OPTIMIZING_TARGET_SIZE,

@@ -52,11 +52,11 @@ public class KyuubiTerminalSessionFactory implements TerminalSessionFactory {
 
   private static final Logger LOG = LoggerFactory.getLogger(KyuubiTerminalSessionFactory.class);
 
-  public static ConfigOption<Boolean> KERBEROS_ENABLE = ConfigOptions.key("kerberos.enable")
+  public static ConfigOption<Boolean> KERBEROS_ENABLE = ConfigOptions.key("kerberos.enabled")
       .booleanType()
       .defaultValue(false);
 
-  public static ConfigOption<Boolean> KERBEROS_PROXY_ENABLE = ConfigOptions.key("kerberos.proxy.enable")
+  public static ConfigOption<Boolean> KERBEROS_PROXY_ENABLE = ConfigOptions.key("kerberos.proxy.enabled")
       .booleanType()
       .defaultValue(true)
       .withDescription("proxy principal to kyuubi server instead of auth by client");

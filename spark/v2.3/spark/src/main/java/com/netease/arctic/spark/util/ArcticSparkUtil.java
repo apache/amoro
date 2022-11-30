@@ -62,7 +62,7 @@ import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_MODE_D
 public class ArcticSparkUtil {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkUtil.class);
   public static final String CATALOG_URL = "spark.sql.arctic.catalog.url";
-  public static final String SQL_DELEGATE_HIVE_TABLE = "spark.arctic.sql.delegate.enable";
+  public static final String SQL_DELEGATE_HIVE_TABLE = "spark.arctic.sql.delegate.enabled";
 
   public static String catalogUrl(RuntimeConfig conf) {
     String catalogUrl = conf.get(CATALOG_URL, "");

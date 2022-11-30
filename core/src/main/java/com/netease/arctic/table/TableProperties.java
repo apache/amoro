@@ -254,8 +254,10 @@ public class TableProperties {
   /**
    * log store related properties
    */
-  public static final String ENABLE_LOG_STORE = "log-store.enable";
+  public static final String ENABLE_LOG_STORE = "log-store.enabled";
   public static final boolean ENABLE_LOG_STORE_DEFAULT = false;
+  @Deprecated
+  public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
   public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = "kafka";

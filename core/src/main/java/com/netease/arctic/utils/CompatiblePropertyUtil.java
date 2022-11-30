@@ -88,8 +88,6 @@ public class CompatiblePropertyUtil {
         return TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT;
       case TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL:
         return TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL;
-      case TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO:
-        return TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD;
       case TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT:
         return TableProperties.MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT;
       case TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL:
@@ -100,6 +98,8 @@ public class CompatiblePropertyUtil {
         return TableProperties.ENABLE_TABLE_EXPIRE_LEGACY;
       case TableProperties.ENABLE_ORPHAN_CLEAN:
         return TableProperties.ENABLE_ORPHAN_CLEAN_LEGACY;
+      case TableProperties.ENABLE_LOG_STORE:
+        return TableProperties.ENABLE_LOG_STORE_LEGACY;
       default:
         return null;
     }

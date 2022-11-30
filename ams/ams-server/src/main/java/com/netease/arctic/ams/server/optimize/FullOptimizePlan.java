@@ -127,8 +127,8 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
     long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
         0 : partitionPosDeleteFiles.get(partitionToPath).stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
     Map<String, String> properties = arcticTable.properties();
-    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO)
-        && properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES)) {
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO) &&
+        properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES)) {
       return posDeleteSize >=
           Long.parseLong(properties.get(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES));
     } else {
