@@ -124,6 +124,14 @@
             <artifactId>slf4j-log4j12</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-core</artifactId>
+            <version>1.12.7</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
 </project>

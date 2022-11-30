@@ -20,6 +20,7 @@ package com.netease.arctic.log;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.utils.IdGenerator;
+import org.apache.flink.util.InstantiationUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -102,6 +103,15 @@ public class LogDataJsonSerializationTest extends BaseFormatTest {
     LogData<UserPojo> result = logDataJsonDeserialization.deserialize(bytes);
     Assert.assertNotNull(result);
     check(logData, result);
+  }
+
+  @Test
+  public void testLogDataJsonSerializationClassSerialize() throws IOException, ClassNotFoundException {
+    LogDataJsonSerialization<UserPojo> actual =
+      new LogDataJsonSerialization<>(userSchema, fieldGetterFactory);
+    byte[] bytes = InstantiationUtil.serializeObject(actual);
+    LogDataJsonSerialization<UserPojo> result = InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());
+    Assert.assertNotNull(result);
   }
 
   private void check(LogData<UserPojo> expected, LogData<UserPojo> actual) {
