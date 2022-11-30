@@ -48,6 +48,7 @@ import com.netease.arctic.ams.server.service.TestArcticTransactionService;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
+import com.netease.arctic.ams.server.service.TestRefreshCatalog;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
@@ -118,7 +119,8 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestFileInfoCacheService.class,
     SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
-    TestOptimizerService.class
+    TestOptimizerService.class,
+    TestRefreshCatalog.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,

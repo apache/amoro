@@ -63,4 +63,8 @@ public class CatalogMetaProperties {
 
     // properties in table level set by catalog
     public static final String TABLE_PROPERTIES_PREFIX = "table.";
+
+    public static final String FORCE_REFRESH = "force.refresh";
+
+    public static final String FORCE_REFRESH_DEFAULT = "false";
 }

@@ -20,6 +20,8 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.PooledAmsClient;
+import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.CatalogUtil;
@@ -60,6 +62,7 @@ import org.apache.spark.sql.connector.catalog.TableChange.SetProperty;
 import org.apache.spark.sql.connector.expressions.Transform;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
+import org.apache.thrift.TException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -78,6 +81,8 @@ import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHO
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
+
+  private AmsClient client;
   private ArcticCatalog catalog;
 
   /**
@@ -127,6 +132,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
+    checkAndRefreshCatalogMeta(catalog);
     TableIdentifier identifier;
     ArcticTable table;
     try {
@@ -169,6 +175,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public Table createTable(
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
+    checkAndRefreshCatalogMeta(catalog);
     properties = Maps.newHashMap(properties);
     Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
@@ -195,6 +202,18 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       return ArcticSparkTable.ofArcticTable(table);
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException(ident);
+    }
+  }
+
+  private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
+    try {
+      CatalogMeta catalogMeta = client.getCatalog(catalogName);
+      if (Boolean.parseBoolean(catalogMeta.getCatalogProperties().
+          getOrDefault(CatalogMetaProperties.FORCE_REFRESH, CatalogMetaProperties.FORCE_REFRESH_DEFAULT))) {
+        catalog.refresh();
+      }
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load catalog %s.", catalogName), e);
     }
   }
 
@@ -407,6 +426,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public final void initialize(String name, CaseInsensitiveStringMap options) {
     this.catalogName = name;
     String catalogUrl = options.get("url");
+    AmsClient client = new PooledAmsClient(catalogUrl);
+    this.client = client;
     if (StringUtils.isBlank(catalogUrl)) {
       throw new IllegalArgumentException("lack required properties: url");
     }
