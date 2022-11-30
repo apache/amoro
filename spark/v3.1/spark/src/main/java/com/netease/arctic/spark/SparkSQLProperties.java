@@ -27,4 +27,8 @@ public class SparkSQLProperties {
 
   public static final String USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT =
           "false";
+
+  public static final String FORCE_REFRESH = "force.refresh";
+
+  public static final String FORCE_REFRESH_DEFAULT = "false";
 }

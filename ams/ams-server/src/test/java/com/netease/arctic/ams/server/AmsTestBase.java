@@ -48,7 +48,7 @@ import com.netease.arctic.ams.server.service.TestArcticTransactionService;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
-import com.netease.arctic.ams.server.service.TestRefreshCatalog;
+import com.netease.arctic.catalog.TestRefreshCatalog;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
