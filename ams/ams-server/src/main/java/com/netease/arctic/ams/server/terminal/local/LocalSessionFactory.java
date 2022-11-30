@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.netease.arctic.spark.SparkSQLProperties.FORCE_REFRESH;
+import static com.netease.arctic.spark.SparkSQLProperties.SPARK_SQL_ARCTIC_REFRESH_CATALOG_BEFORE_USAGE;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
 
@@ -69,7 +69,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       updateSessionConf(session, initializeLogs, key, sparkConf.get(key));
       finallyConf.put(key, sparkConf.get(key));
     }
-    finallyConf.put(FORCE_REFRESH, "true");
+    finallyConf.put(SPARK_SQL_ARCTIC_REFRESH_CATALOG_BEFORE_USAGE, "true");
 
     return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
   }

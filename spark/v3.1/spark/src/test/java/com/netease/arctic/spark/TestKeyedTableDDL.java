@@ -176,7 +176,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
   @Test
   public void testCreateTableRefreshed() throws TException {
     File testArcticDir = new File(testBaseDir, "arctic2");
-    sql("set force.refresh = {0}", "true");
+    sql("set `spark.sql.arctic.refresh-catalog-before-usage` = {0}", "true");
     CatalogMeta catalog = ams.handler().getCatalog(catalogNameArctic);
     ams.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE_DIR, testArcticDir.getPath());
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);

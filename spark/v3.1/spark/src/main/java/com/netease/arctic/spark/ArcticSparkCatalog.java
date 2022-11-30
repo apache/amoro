@@ -69,8 +69,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.spark.SparkSQLProperties.FORCE_REFRESH;
-import static com.netease.arctic.spark.SparkSQLProperties.FORCE_REFRESH_DEFAULT;
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
@@ -203,7 +203,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
     SparkSession sparkSession = SparkSession.active();
-    if (Boolean.parseBoolean(sparkSession.conf().get(FORCE_REFRESH, FORCE_REFRESH_DEFAULT))) {
+    if (Boolean.parseBoolean(sparkSession.conf().get(REFRESH_CATALOG_BEFORE_USAGE,
+        REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
       catalog.refresh();
     }
   }
