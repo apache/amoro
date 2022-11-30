@@ -18,37 +18,19 @@
 
 package com.netease.arctic.scan;
 
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.ManifestEntryFields;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
-import org.apache.iceberg.DataTask;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.MetadataTableType;
-import org.apache.iceberg.Metrics;
-import org.apache.iceberg.Schema;
+import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.expressions.InclusiveMetricsEvaluator;
-import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.CloseableIterable;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
-
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalScan {
 
@@ -56,11 +38,6 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
   private StructLikeMap<Long> fromPartitionTransactionId;
   private StructLikeMap<Long> fromPartitionLegacyTransactionId;
   private Expression dataFilter;
-
-  private Schema entriesTableSchema;
-  private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
-  private Map<String, Integer> lazyIndexOfDataFileType;
-  private Map<String, Integer> lazyIndexOfEntryType;
 
   public BaseChangeTableIncrementalScan(ChangeTable table) {
     this.table = table;
@@ -93,68 +70,31 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
     return planTasks(this::shouldKeepFile, this::shouldKeepFileWithLegacyTxId);
   }
 
-  public CloseableIterable<ArcticFileScanTask> planTasks(PartitionDataFilter shouldKeepFile, 
+  public CloseableIterable<ArcticFileScanTask> planTasks(PartitionDataFilter shouldKeepFile,
                                                          PartitionDataFilter shouldKeepFileWithLegacyTxId) {
     Snapshot currentSnapshot = table.currentSnapshot();
     if (currentSnapshot == null) {
       // return no files for table without snapshot
       return CloseableIterable.empty();
     }
-    Configuration hadoopConf = new Configuration();
-    if (table.io() instanceof ArcticHadoopFileIO) {
-      ArcticHadoopFileIO io = (ArcticHadoopFileIO) table.io();
-      hadoopConf = io.conf();
-    }
-    HadoopTables tables = new HadoopTables(hadoopConf);
-    Table entriesTable = tables.load(table.location() + "#" + MetadataTableType.ENTRIES);
-    this.entriesTableSchema = entriesTable.schema();
-    CloseableIterable<FileScanTask> manifestFileScanTasks = entriesTable.newScan().planFiles();
-
-    CloseableIterable<StructLike> entries = CloseableIterable.concat(entriesOfManifest(manifestFileScanTasks));
-
-    CloseableIterable<ArcticFileScanTask> allFileTasks =
-        CloseableIterable.transform(entries, (entry -> {
-          int status = entry.get(entryFieldIndex(ManifestEntryFields.STATUS.name()), Integer.class);
-          long sequence = entry.get(entryFieldIndex(ManifestEntryFields.SEQUENCE_NUMBER.name()), Long.class);
-          StructLike dataFileRecord =
-              entry.get(entryFieldIndex(ManifestEntryFields.DATA_FILE_FIELD_NAME), StructLike.class);
-          Integer contentId = dataFileRecord.get(dataFileFieldIndex(DataFile.CONTENT.name()), Integer.class);
-          String filePath = dataFileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
-          StructLike partition;
-          if (table.spec().isUnpartitioned()) {
-            partition = null;
-          } else {
-            partition = dataFileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
-          }
-          if ((status == 0 || status == 1) && contentId != null && contentId == 0) {
-            Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequence);
-            if (shouldKeep == null) {
-              // if not sure should keep, use legacy transactionId to check
-              if (shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileUtil.parseFileTidFromFileName(filePath))) {
-                DataFile dataFile = buildDataFile(dataFileRecord, filePath, partition);
-                if (metricsEvaluator().eval(dataFile)) {
-                  return new BaseArcticFileScanTask(new DefaultKeyedFile(dataFile), null, table.spec(), null);
-                }
-              }
-            } else {
-              if (shouldKeep) {
-                DataFile dataFile = buildDataFile(dataFileRecord, filePath, partition);
-                if (metricsEvaluator().eval(dataFile)) {
-                  return new BaseArcticFileScanTask(new DefaultKeyedFile(dataFile), null, table.spec(), null);
-                }
-              }
-            }
-          }
-          return null;
-        }));
-    return CloseableIterable.filter(allFileTasks, Objects::nonNull);
-  }
-
-  private Iterable<CloseableIterable<StructLike>> entriesOfManifest(CloseableIterable<FileScanTask> fileScanTasks) {
-    return Iterables.transform(fileScanTasks, task -> {
-      assert task != null;
-      return ((DataTask) task).rows();
+    TableEntriesScan manifestReader = TableEntriesScan.builder(table)
+        .withAliveEntry(true)
+        .withDataFilter(dataFilter)
+        .includeFileContent(FileContent.DATA)
+        .build();
+    CloseableIterable<IcebergFileEntry> filteredEntry = CloseableIterable.filter(manifestReader.entries(), entry -> {
+      StructLike partition = entry.getFile().partition();
+      long sequenceNumber = entry.getSequenceNumber();
+      Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequenceNumber);
+      if (shouldKeep == null) {
+        String filePath = entry.getFile().path().toString();
+        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileUtil.parseFileTidFromFileName(filePath));
+      } else {
+        return shouldKeep;
+      }
     });
+    return CloseableIterable.transform(filteredEntry, e ->
+        new BaseArcticFileScanTask(new DefaultKeyedFile((DataFile) e.getFile()), null, table.spec(), null));
   }
 
   private Boolean shouldKeepFile(StructLike partition, long txId) {
@@ -190,81 +130,8 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       return legacyTxId > partitionTransactionId;
     }
   }
-  
+
   interface PartitionDataFilter {
     Boolean shouldKeep(StructLike partition, long transactionId);
   }
-
-  private DataFile buildDataFile(StructLike dataFile, String filePath, StructLike partition) {
-    Long fileSize = dataFile.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
-    Long recordCount = dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    DataFile file;
-    if (table.spec().isUnpartitioned()) {
-      file = DataFiles.builder(table.spec())
-          .withPath(filePath)
-          .withFileSizeInBytes(fileSize)
-          .withRecordCount(recordCount)
-          .withMetrics(buildMetrics(dataFile))
-          .build();
-    } else {
-      file = DataFiles.builder(table.spec())
-          .withPath(filePath)
-          .withFileSizeInBytes(fileSize)
-          .withRecordCount(recordCount)
-          .withPartition(partition)
-          .withMetrics(buildMetrics(dataFile))
-          .build();
-    }
-    return file;
-  }
-
-  @SuppressWarnings("unchecked")
-  public Metrics buildMetrics(StructLike dataFile) {
-    return new Metrics(dataFile.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.COLUMN_SIZES.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NULL_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, Long>) dataFile.get(dataFileFieldIndex(DataFile.NAN_VALUE_COUNTS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.LOWER_BOUNDS.name()), Map.class),
-        (Map<Integer, ByteBuffer>) dataFile.get(dataFileFieldIndex(DataFile.UPPER_BOUNDS.name()), Map.class));
-  }
-
-  private int entryFieldIndex(String fieldName) {
-    if (lazyIndexOfEntryType == null) {
-      List<Types.NestedField> fields = entriesTableSchema.columns();
-      Map<String, Integer> map = Maps.newHashMap();
-      for (int i = 0; i < fields.size(); i++) {
-        map.put(fields.get(i).name(), i);
-      }
-      lazyIndexOfEntryType = map;
-    }
-    return lazyIndexOfEntryType.get(fieldName);
-  }
-
-  private int dataFileFieldIndex(String fieldName) {
-    if (lazyIndexOfDataFileType == null) {
-      List<Types.NestedField> fields =
-          entriesTableSchema.findType(ManifestEntryFields.DATA_FILE_FIELD_NAME).asStructType().fields();
-      Map<String, Integer> map = Maps.newHashMap();
-      for (int i = 0; i < fields.size(); i++) {
-        map.put(fields.get(i).name(), i);
-      }
-      lazyIndexOfDataFileType = map;
-    }
-    return lazyIndexOfDataFileType.get(fieldName);
-  }
-
-  private InclusiveMetricsEvaluator metricsEvaluator() {
-    if (lazyMetricsEvaluator == null) {
-      if (dataFilter != null) {
-        this.lazyMetricsEvaluator =
-            new InclusiveMetricsEvaluator(table.spec().schema(), dataFilter, true);
-      } else {
-        this.lazyMetricsEvaluator =
-            new InclusiveMetricsEvaluator(table.spec().schema(), Expressions.alwaysTrue(), true);
-      }
-    }
-    return lazyMetricsEvaluator;
-  }
-
 }

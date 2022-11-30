@@ -28,12 +28,10 @@ import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.optimize.IOptimizeService;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
-import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang.StringUtils;
@@ -43,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +55,6 @@ import java.util.stream.Collectors;
  */
 public class OptimizerController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerController.class);
-  private static final IMetaService iMetaService = ServiceContainer.getMetaService();
   private static final IOptimizeService iOptimizeService = ServiceContainer.getOptimizeService();
 
   /**
@@ -73,29 +69,28 @@ public class OptimizerController extends RestBaseController {
     List<String> statusList = new ArrayList<>();
     if (StringUtils.isNotEmpty(statusFilter)) {
       statusList = Arrays.stream(statusFilter.split(","))
-              .map(item -> item.trim().toLowerCase()).collect(Collectors.toList());
+          .map(item -> item.trim().toLowerCase()).collect(Collectors.toList());
     }
     int offset = (page - 1) * pageSize;
 
     try {
       List<TableOptimizeItem> arcticTableItemList = new ArrayList<>();
-      List<TableIdentifier> tables = ServiceContainer.getOptimizeService().listCachedTables(false);
+      List<TableIdentifier> tables = ServiceContainer.getOptimizeService().listCachedTables();
 
       for (TableIdentifier tableIdentifier : tables) {
         TableOptimizeItem arcticTableItem = iOptimizeService.getTableOptimizeItem(tableIdentifier);
         // if status is specified, we filter item by status
         if (statusList.size() > 0 &&
-                !statusList.contains(
-                        arcticTableItem.getTableOptimizeRuntime().getOptimizeStatus().toString().toLowerCase())) {
+            !statusList.contains(
+                arcticTableItem.getTableOptimizeRuntime().getOptimizeStatus().toString().toLowerCase())) {
           continue;
         }
 
         if ("all".equals(optimizerGroup)) {
           arcticTableItemList.add(arcticTableItem);
         } else {
-          String groupName = arcticTableItem.getArcticTable().properties()
-              .getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
-          if (null != groupName) {
+          String groupName = arcticTableItem.getGroupNameCache();
+          if (StringUtils.isNotEmpty(groupName)) {
             if (optimizerGroup.equals(groupName)) {
               arcticTableItemList.add(arcticTableItem);
             }

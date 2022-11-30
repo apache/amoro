@@ -13,24 +13,24 @@ import java.util.List;
 public class TestExpireFileCleanSupportIceberg extends TestIcebergBase {
   @Test
   public void testExpireTableFiles() throws Exception {
-    List<DataFile> dataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 1);
+    List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 1);
 
-    DeleteFiles deleteFiles = icebergTable.asUnkeyedTable().newDelete();
+    DeleteFiles deleteFiles = icebergNoPartitionTable.asUnkeyedTable().newDelete();
     for (DataFile dataFile : dataFiles) {
-      Assert.assertTrue(icebergTable.io().exists(dataFile.path().toString()));
+      Assert.assertTrue(icebergNoPartitionTable.io().exists(dataFile.path().toString()));
       deleteFiles.deleteFile(dataFile);
     }
     deleteFiles.commit();
 
-    List<DataFile> newDataFiles = insertDataFiles(icebergTable.asUnkeyedTable(), 1);
-    TableExpireService.expireSnapshots(icebergTable.asUnkeyedTable(), System.currentTimeMillis(), new HashSet<>());
-    Assert.assertEquals(1, Iterables.size(icebergTable.asUnkeyedTable().snapshots()));
+    List<DataFile> newDataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 1);
+    TableExpireService.expireSnapshots(icebergNoPartitionTable.asUnkeyedTable(), System.currentTimeMillis(), new HashSet<>());
+    Assert.assertEquals(1, Iterables.size(icebergNoPartitionTable.asUnkeyedTable().snapshots()));
 
     for (DataFile dataFile : dataFiles) {
-      Assert.assertFalse(icebergTable.io().exists(dataFile.path().toString()));
+      Assert.assertFalse(icebergNoPartitionTable.io().exists(dataFile.path().toString()));
     }
     for (DataFile dataFile : newDataFiles) {
-      Assert.assertTrue(icebergTable.io().exists(dataFile.path().toString()));
+      Assert.assertTrue(icebergNoPartitionTable.io().exists(dataFile.path().toString()));
     }
   }
 }
