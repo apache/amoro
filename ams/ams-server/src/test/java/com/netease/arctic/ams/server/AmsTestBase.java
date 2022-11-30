@@ -119,8 +119,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestFileInfoCacheService.class,
     SupportHiveTestGroup.class,
     TestArcticTransactionService.class,
-    TestOptimizerService.class,
-    TestRefreshCatalog.class
+    TestOptimizerService.class
 })
 @PrepareForTest({
     JDBCSqlSessionFactoryProvider.class,
