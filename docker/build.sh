@@ -114,6 +114,9 @@ function print_env() {
 
 
 function build_ams() {
+  echo "=============================================="
+  echo "               arctic163/ams                "
+  echo "=============================================="
   echo "Start Build arctic163/ams Image, Arctic Version: ${ARCTIC_VERSION}"
 
   if [ ! -f "${ARCTIC_BINARY_PACKAGE}" ]; then
@@ -127,10 +130,18 @@ function build_ams() {
   docker build -t arctic163/ams --build-arg ARCTIC_VERSION=${ARCTIC_VERSION} \
     --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
     ams/.
+  
+  if [ $? == 0 ]; then
+      IMAGE_ID=`docker images |grep 'arctic163/ams' |grep 'latest' |awk '{print $3}' `
+      docker tag ${IMAGE_ID} arctic163/ams:${ARCTIC_VERSION}
+  fi
 }
 
 
 function build_flink() {
+  echo "=============================================="
+  echo "               arctic163/flink                 "
+  echo "=============================================="
   FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oP '\d+.\d+'`
   FLINK_CONNECTOR_BINARY=${ARCTIC_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/arctic-flink-runtime-${FLINK_MAJOR_VERSION}-${ARCTIC_VERSION}.jar
 
@@ -148,10 +159,18 @@ function build_flink() {
     --build-arg APACHE_ARCHIVE=${APACHE_ARCHIVE} \
     --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
     flink/.
+
+  if [ $? == 0 ]; then
+        IMAGE_ID=`docker images |grep 'arctic163/flink' |grep 'latest' |awk '{print $3}' `
+        docker tag ${IMAGE_ID} arctic163/flink:${ARCTIC_VERSION}
+    fi
 }
 
 
 function build_namenode() {
+  echo "=============================================="
+  echo "               arctic163/namenode     "
+  echo "=============================================="
   echo "Start Build arctic163/namenode Image"
 
   set -x
@@ -165,6 +184,9 @@ function build_namenode() {
 }
 
 function build_datanode() {
+  echo "=============================================="
+  echo "               arctic163/datanode     "
+  echo "=============================================="
   echo "Start Build arctic163/datanode Image"
 
   set -x

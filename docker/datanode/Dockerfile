@@ -57,12 +57,6 @@ ENV PATH /usr/bin:/bin:$HADOOP_PREFIX/bin/:$PATH
 # Well known ports including ssh
 EXPOSE 0-1024 4040 7000-10100 5000-5100 50000-50200 58188 58088 58042
 
-ADD entrypoint.sh /entrypoint.sh
-ADD export_container_ip.sh /usr/bin/
-RUN chmod a+x /usr/bin/export_container_ip.sh \
-    && chmod a+x /entrypoint.sh \
-    && dos2unix /usr/bin/export_container_ip.sh \
-    && dos2unix /entrypoint.sh
 
 
 ENV HDFS_CONF_dfs_datanode_data_dir=file:///hadoop/dfs/data
