@@ -126,13 +126,20 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
   protected boolean checkPosDeleteTotalSize(String partitionToPath) {
     long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
         0 : partitionPosDeleteFiles.get(partitionToPath).stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
-    long targetSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
-    double duplicateRatio = CompatiblePropertyUtil.propertyAsDouble(arcticTable.properties(),
-        TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
-        TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
-    return posDeleteSize >= targetSize * duplicateRatio;
+    Map<String, String> properties = arcticTable.properties();
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO)
+        && properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES)) {
+      return posDeleteSize >=
+          Long.parseLong(properties.get(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES));
+    } else {
+      long targetSize = PropertyUtil.propertyAsLong(properties,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+      double duplicateRatio = CompatiblePropertyUtil.propertyAsDouble(properties,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
+      return posDeleteSize >= targetSize * duplicateRatio;
+    }
   }
 
   protected boolean checkFullOptimizeInterval(long current, String partitionToPath) {

@@ -123,6 +123,9 @@ public class TableProperties {
   public static final String ENABLE_OPTIMIZE = "optimize.enable";
 
   @Deprecated
+  public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
+
+  @Deprecated
   public static final String OPTIMIZE_GROUP = "optimize.group";
 
   @Deprecated
@@ -150,8 +153,8 @@ public class TableProperties {
   public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
 
   @Deprecated
-  public static final String FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD =
-      "optimize.full.trigger.duplicate-ratio-threshold";
+  public static final String FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
+      "optimize.full.trigger.delete-file-size-bytes";
 
   @Deprecated
   public static final String OPTIMIZE_QUOTA = "optimize.quota";

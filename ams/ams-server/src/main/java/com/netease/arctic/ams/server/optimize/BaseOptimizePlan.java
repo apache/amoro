@@ -126,11 +126,16 @@ public abstract class BaseOptimizePlan {
   }
 
   public long getSmallFileSize(Map<String, String> properties) {
-    long targetSize = PropertyUtil.propertyAsLong(properties, TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
-        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
-    int fragmentRatio = PropertyUtil.propertyAsInt(properties, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
-        TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
-    return targetSize / fragmentRatio;
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO)
+        && properties.containsKey(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD)) {
+      return Long.parseLong(properties.get(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD));
+    } else {
+      long targetSize = PropertyUtil.propertyAsLong(properties, TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+      int fragmentRatio = PropertyUtil.propertyAsInt(properties, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+          TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+      return targetSize / fragmentRatio;
+    }
   }
 
   public abstract long getCurrentSnapshotId();
