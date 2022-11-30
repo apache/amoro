@@ -32,6 +32,7 @@ import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalP
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
+import org.apache.flink.util.InstantiationUtil;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -180,6 +181,15 @@ public class HiddenKafkaProducerTest extends BaseLogTest {
 
     LogDataJsonDeserialization<RowData> logDataDeserialization = createLogDataDeserialization();
     LogData<RowData> result = logDataDeserialization.deserialize(bytes);
+    Assert.assertNotNull(result);
+  }
+
+  @Test
+  public void testLogDataJsonSerializationClassSerialize() throws IOException, ClassNotFoundException {
+    LogDataJsonSerialization<RowData> actual =
+      new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+    byte[] bytes = InstantiationUtil.serializeObject(actual);
+    LogDataJsonSerialization<RowData> result = InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());
     Assert.assertNotNull(result);
   }
 }
