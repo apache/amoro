@@ -136,7 +136,8 @@ public class IcebergExecutor extends BaseExecutor {
 
     String formatAsString = table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
     long targetSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
 
 
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table.asUnkeyedTable(), table.spec().specId(),
