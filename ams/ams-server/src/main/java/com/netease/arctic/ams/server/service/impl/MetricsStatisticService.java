@@ -293,7 +293,7 @@ public class MetricsStatisticService extends IJDBCService {
         } catch (InterruptedException e) {
           throw new RuntimeException(e);
         }
-        List<TableIdentifier> tableIdentifiers = ServiceContainer.getOptimizeService().listCachedTables(false);
+        List<TableIdentifier> tableIdentifiers = ServiceContainer.getOptimizeService().listCachedTables();
         tableIdentifiers.forEach(tableIdentifier -> {
           try {
             if (tableIdentifier == null) {

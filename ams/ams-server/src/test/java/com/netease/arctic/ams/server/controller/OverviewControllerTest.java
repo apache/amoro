@@ -89,7 +89,7 @@ public class OverviewControllerTest {
     when(catalogMetadataService.getCatalogs()).thenReturn(catalogMetaList);
     List<com.netease.arctic.table.TableIdentifier> tables = new ArrayList<>();
     tables.add(new com.netease.arctic.table.TableIdentifier());
-    when(optimizeService.listCachedTables(false)).thenReturn(tables);
+    when(optimizeService.listCachedTables()).thenReturn(tables);
     when(metricsStatisticService.getCurrentSummary(SnapshotSummary.TOTAL_FILE_SIZE_PROP)).thenReturn(summary);
     OptimizerResourceInfo optimizerResourceInfo = new OptimizerResourceInfo();
     optimizerResourceInfo.setOccupationCore(20);
