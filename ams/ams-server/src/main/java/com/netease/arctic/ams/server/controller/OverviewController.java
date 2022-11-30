@@ -52,7 +52,7 @@ public class OverviewController extends RestBaseController {
   public static void summary(Context ctx) {
     try {
       int catalogCnt = catalogMetadataService.getCatalogs().size();
-      int tableCnt = optimizeService.listCachedTables(false).size();
+      int tableCnt = optimizeService.listCachedTables().size();
       long tableTotalSize =
           metricsStatisticService
               .getCurrentSummary(SnapshotSummary.TOTAL_FILE_SIZE_PROP)
