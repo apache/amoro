@@ -62,11 +62,11 @@ public class LogDataJsonSerialization<T> implements Serializable {
     MessageBytes messageBytes = new MessageBytes();
 
     messageBytes
-      .append(element.getVersionBytes())
-      .append(element.getUpstreamIdBytes())
-      .append(element.getEpicNoBytes())
-      .append(element.getFlipByte())
-      .append(element.getChangeActionByte());
+        .append(element.getVersionBytes())
+        .append(element.getUpstreamIdBytes())
+        .append(element.getEpicNoBytes())
+        .append(element.getFlipByte())
+        .append(element.getChangeActionByte());
 
     if (element.getFlip()) {
       // would ignore serializing actual value if flip is true.
