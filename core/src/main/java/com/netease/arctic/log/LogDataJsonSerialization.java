@@ -51,10 +51,6 @@ public class LogDataJsonSerialization<T> implements Serializable {
     this.fieldGetterFactory = fieldGetterFactory;
   }
 
-  public void init() {
-    this.logDataToJsonConverter = LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
-  }
-
   public byte[] serialize(LogData<T> element) {
     // 4 bytes version + 4 bytes upstreamId + 8 bytes EpicNo + 1 byte flip + 1 byte rowKind + n bytes object data
     MessageBytes messageBytes = new MessageBytes();
@@ -91,6 +87,9 @@ public class LogDataJsonSerialization<T> implements Serializable {
   }
 
   void convertRow(LogData<T> element) {
+    if (this.logDataToJsonConverter == null) {
+      this.logDataToJsonConverter = LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
+    }
     logDataToJsonConverter.convert(element.getActualValue(), converterContext);
   }
 }

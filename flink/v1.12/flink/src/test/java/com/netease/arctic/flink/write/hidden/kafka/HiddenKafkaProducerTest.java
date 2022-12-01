@@ -140,7 +140,6 @@ public class HiddenKafkaProducerTest extends BaseLogTest {
 
     LogDataJsonSerialization<RowData> logDataJsonSerialization =
       new LogDataJsonSerialization<>(userSchemaWithAllDataType, LogRecordV1.fieldGetterFactory);
-    logDataJsonSerialization.init();
 
     GenericRowData rowData = new GenericRowData(17);
     rowData.setRowKind(RowKind.INSERT);
