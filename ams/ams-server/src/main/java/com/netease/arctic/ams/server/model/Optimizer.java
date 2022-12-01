@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.ams.api.OptimizerDescriptor;
+
 import java.sql.Timestamp;
 import java.util.Map;
 

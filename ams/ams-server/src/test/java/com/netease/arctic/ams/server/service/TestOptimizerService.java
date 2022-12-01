@@ -27,10 +27,8 @@ import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.model.OptimizeQueueMeta;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
-import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
-import java.util.List;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -38,8 +36,6 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.Map;
-
-import static org.powermock.api.mockito.PowerMockito.when;
 
 @PowerMockIgnore({"javax.management.*"})
 @PrepareForTest({

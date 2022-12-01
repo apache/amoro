@@ -38,7 +38,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.FileContent;
@@ -51,7 +50,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class OptimizeTaskItem extends IJDBCService {

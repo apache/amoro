@@ -34,7 +34,7 @@ public class TableOptimizeRuntime implements Cloneable {
   private long currentSnapshotId = INVALID_SNAPSHOT_ID;
   // for change table
   private long currentChangeSnapshotId = INVALID_SNAPSHOT_ID;
-  private TableOptimizeInfo.OptimizeStatus optimizeStatus = TableOptimizeInfo.OptimizeStatus.Idle;
+  private OptimizeStatus optimizeStatus = OptimizeStatus.Idle;
   private long optimizeStatusStartTime = -1;
 
   private final Map<String, Long> latestMajorOptimizeTime = new HashMap<>();
@@ -121,12 +121,12 @@ public class TableOptimizeRuntime implements Cloneable {
     }
   }
 
-  public TableOptimizeInfo.OptimizeStatus getOptimizeStatus() {
+  public OptimizeStatus getOptimizeStatus() {
     return optimizeStatus;
   }
 
   public void setOptimizeStatus(
-      TableOptimizeInfo.OptimizeStatus optimizeStatus) {
+      OptimizeStatus optimizeStatus) {
     this.optimizeStatus = optimizeStatus;
   }
 
@@ -215,5 +215,23 @@ public class TableOptimizeRuntime implements Cloneable {
         ", latestTaskPlanGroup='" + latestTaskPlanGroup + '\'' +
         ", isRunning=" + isRunning +
         '}';
+  }
+
+  public enum OptimizeStatus {
+    FullOptimizing("full"),
+    MajorOptimizing("major"),
+    MinorOptimizing("minor"),
+    Pending("pending"),
+    Idle("idle");
+
+    private String displayValue;
+
+    OptimizeStatus(String displayValue) {
+      this.displayValue = displayValue;
+    }
+
+    public String displayValue() {
+      return displayValue;
+    }
   }
 }
