@@ -30,13 +30,11 @@ public class BaseOptimizeTask extends OptimizeTask {
   protected long baseFileSize;
   protected long insertFileSize;
   protected long deleteFileSize;
-  protected long eqDeleteFileSize;
   protected long posDeleteFileSize;
 
   protected int baseFileCnt;
   protected int insertFileCnt;
   protected int deleteFileCnt;
-  protected int eqDeleteFileCnt;
   protected int posDeleteFileCnt;
 
   protected int queueId = -1;
@@ -151,28 +149,12 @@ public class BaseOptimizeTask extends OptimizeTask {
     this.posDeleteFileSize = posDeleteFileSize;
   }
 
-  public long getEqDeleteFileSize() {
-    return eqDeleteFileSize;
-  }
-
-  public void setEqDeleteFileSize(long eqDeleteFileSize) {
-    this.eqDeleteFileSize = eqDeleteFileSize;
-  }
-
   public int getPosDeleteFileCnt() {
     return posDeleteFileCnt;
   }
 
   public void setPosDeleteFileCnt(int posDeleteFileCnt) {
     this.posDeleteFileCnt = posDeleteFileCnt;
-  }
-
-  public int getEqDeleteFileCnt() {
-    return eqDeleteFileCnt;
-  }
-
-  public void setEqDeleteFileCnt(int eqDeleteFileCnt) {
-    this.eqDeleteFileCnt = eqDeleteFileCnt;
   }
 
   @Override
@@ -184,12 +166,10 @@ public class BaseOptimizeTask extends OptimizeTask {
         ", baseFileSize=" + baseFileSize +
         ", insertFileSize=" + insertFileSize +
         ", deleteFileSize=" + deleteFileSize +
-        ", eqDeleteFileSize=" + eqDeleteFileSize +
         ", posDeleteFileSize=" + posDeleteFileSize +
         ", baseFileCnt=" + baseFileCnt +
         ", insertFileCnt=" + insertFileCnt +
         ", deleteFileCnt=" + deleteFileCnt +
-        ", eqDeleteFileCnt=" + eqDeleteFileCnt +
         ", posDeleteFileCnt=" + posDeleteFileCnt +
         ", queueId=" + queueId +
         ", createTime=" + createTime +
