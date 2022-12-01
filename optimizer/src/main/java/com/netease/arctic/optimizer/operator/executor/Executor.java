@@ -18,10 +18,8 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
-import org.apache.iceberg.ContentFile;
-
-public interface Executor<F extends ContentFile<F>> {
-  OptimizeTaskResult<F> execute() throws Exception;
+public interface Executor {
+  OptimizeTaskResult execute() throws Exception;
 
   void close();
 }

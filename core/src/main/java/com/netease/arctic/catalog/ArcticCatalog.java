@@ -135,4 +135,9 @@ public interface ArcticCatalog {
    * @return the builder to build a table
    */
   TableBuilder newTableBuilder(TableIdentifier identifier, Schema schema);
+
+  /**
+   * Refresh catalog meta
+   */
+  void refresh();
 }

@@ -24,7 +24,6 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileMetadata;
 import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.io.FileIO;
 
 public class ContentFileUtil {
 

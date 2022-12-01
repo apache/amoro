@@ -70,6 +70,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
@@ -77,6 +79,7 @@ import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHO
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
+
   private ArcticCatalog catalog;
 
   /**
@@ -126,6 +129,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
+    checkAndRefreshCatalogMeta(catalog);
     TableIdentifier identifier;
     ArcticTable table;
     try {
@@ -169,6 +173,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public Table createTable(
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
+    checkAndRefreshCatalogMeta(catalog);
     properties = Maps.newHashMap(properties);
     Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
@@ -195,6 +200,14 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       return ArcticSparkTable.ofArcticTable(table);
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException(ident);
+    }
+  }
+
+  private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
+    SparkSession sparkSession = SparkSession.active();
+    if (Boolean.parseBoolean(sparkSession.conf().get(REFRESH_CATALOG_BEFORE_USAGE,
+        REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
+      catalog.refresh();
     }
   }
 

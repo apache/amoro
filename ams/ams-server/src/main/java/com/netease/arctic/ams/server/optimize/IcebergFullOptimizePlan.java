@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TaskConfig;
+import com.netease.arctic.ams.server.utils.SequenceNumberFetcher;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import org.apache.commons.collections.CollectionUtils;
@@ -33,20 +34,43 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
-public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
-  private static final Logger LOG = LoggerFactory.getLogger(IcebergMajorOptimizePlan.class);
+public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
+  private static final Logger LOG = LoggerFactory.getLogger(IcebergFullOptimizePlan.class);
 
-  public IcebergMajorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                  List<FileScanTask> fileScanTasks,
-                                  Map<String, Boolean> partitionTaskRunning,
-                                  int queueId, long currentTime) {
+  protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
+
+  public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
+                                 Iterable<FileScanTask> fileScanTasks,
+                                 Map<String, Boolean> partitionTaskRunning,
+                                 int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
+  }
+
+  protected void addOptimizeFiles() {
+    LOG.debug("{} start plan iceberg table files", tableId());
+    AtomicInteger addCnt = new AtomicInteger();
+    for (FileScanTask fileScanTask : fileScanTasks) {
+      DataFile dataFile = fileScanTask.file();
+      String partitionPath = arcticTable.spec().partitionToPath(dataFile.partition());
+      currentPartitions.add(partitionPath);
+      if (!anyTaskRunning(partitionPath)) {
+        List<FileScanTask> fileScanTasks = partitionFileList.computeIfAbsent(partitionPath, p -> new ArrayList<>());
+        fileScanTasks.add(fileScanTask);
+        addCnt.getAndIncrement();
+      }
+    }
+
+    LOG.debug("{} ==== {} add {} data files" + " After added, partition cnt of tree: {}",
+        tableId(), getOptimizeType(), addCnt, partitionFileList.size());
   }
 
   @Override
@@ -69,15 +93,15 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
     double dataFilesTotalSize = partitionDataFiles.stream().mapToLong(DataFile::fileSizeInBytes).sum();
 
     long duplicateSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD,
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT);
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD,
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT);
     double duplicateRatio = PropertyUtil.propertyAsDouble(arcticTable.properties(),
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD,
-        TableProperties.MAJOR_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT);
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD,
+        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT);
     // delete files total size reach target or delete files rate reach target
     if (deleteFilesTotalSize > duplicateSize || deleteFilesTotalSize / dataFilesTotalSize >= duplicateRatio) {
-      partitionOptimizeType.put(partitionToPath, OptimizeType.Major);
-      LOG.debug("{} ==== need native Major optimize plan, partition is {}, " +
+      partitionOptimizeType.put(partitionToPath, getOptimizeType());
+      LOG.debug("{} ==== need native Full optimize plan, partition is {}, " +
               "delete files totalSize is {}, data files totalSize is {}",
           tableId(), partitionToPath, deleteFilesTotalSize, dataFilesTotalSize);
       return true;
@@ -91,7 +115,11 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
 
   @Override
   protected OptimizeType getOptimizeType() {
-    return OptimizeType.Major;
+    return OptimizeType.FullMajor;
+  }
+
+  public boolean hasFileToOptimize() {
+    return !partitionFileList.isEmpty();
   }
 
   @Override
@@ -101,15 +129,27 @@ public class IcebergMajorOptimizePlan extends BaseIcebergOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
-        commitGroup, planGroup, OptimizeType.Major, createTime, "");
+        commitGroup, planGroup, getOptimizeType(), createTime, "");
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
 
+    fileScanTasks = filterRepeatFileScanTask(fileScanTasks);
+
     List<List<FileScanTask>> binPackFileScanTasks = binPackFileScanTask(fileScanTasks);
-    for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
-      if (CollectionUtils.isNotEmpty(fileScanTask)) {
-        collector.add(buildOptimizeTask(fileScanTask, taskPartitionConfig));
+
+    if (CollectionUtils.isNotEmpty(binPackFileScanTasks)) {
+      SequenceNumberFetcher sequenceNumberFetcher = new SequenceNumberFetcher(
+          arcticTable.asUnkeyedTable(), currentSnapshotId);
+      for (List<FileScanTask> fileScanTask : binPackFileScanTasks) {
+        List<DataFile> dataFiles = new ArrayList<>();
+        List<DeleteFile> eqDeleteFiles = new ArrayList<>();
+        List<DeleteFile> posDeleteFiles = new ArrayList<>();
+        getOptimizeFile(fileScanTask, dataFiles, eqDeleteFiles, posDeleteFiles);
+
+        collector.add(buildOptimizeTask(Collections.emptyList(), dataFiles,
+            eqDeleteFiles, posDeleteFiles, sequenceNumberFetcher, taskPartitionConfig));
       }
     }
+
 
     return collector;
   }
