@@ -33,7 +33,6 @@ import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-import java.sql.Timestamp;
 import java.util.List;
 
 public interface FileInfoCacheMapper {

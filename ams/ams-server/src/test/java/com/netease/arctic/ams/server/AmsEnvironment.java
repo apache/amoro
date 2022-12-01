@@ -7,7 +7,6 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
-import com.netease.arctic.utils.FileUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.transport.TTransportException;

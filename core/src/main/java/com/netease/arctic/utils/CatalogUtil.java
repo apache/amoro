@@ -67,11 +67,12 @@ public class CatalogUtil {
       // Generate table format from catalog type for compatibility with older versions
       switch (meta.getCatalogType()) {
         case CATALOG_TYPE_AMS:
+          return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
         case CATALOG_TYPE_CUSTOM:
         case CATALOG_TYPE_HADOOP:
           return Sets.newHashSet(TableFormat.ICEBERG);
         case CATALOG_TYPE_HIVE:
-          return Sets.newHashSet(TableFormat.HIVE);
+          return Sets.newHashSet(TableFormat.MIXED_HIVE);
         default:
           throw new IllegalArgumentException("Unsupported catalog type:" +  meta.getCatalogType());
       }
