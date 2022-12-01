@@ -199,14 +199,15 @@ public class CatalogUtil {
               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    String optimizationEnabled = tableProperties.getOrDefault(TableProperties.ENABLE_OPTIMIZE,
-            mergedProperties.getOrDefault(TableProperties.ENABLE_OPTIMIZE, TableProperties.ENABLE_OPTIMIZE_DEFAULT));
+    String optimizationEnabled = tableProperties.getOrDefault(TableProperties.ENABLE_SELF_OPTIMIZING,
+            mergedProperties.getOrDefault(TableProperties.ENABLE_SELF_OPTIMIZING,
+                String.valueOf(TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)));
     if (!Boolean.parseBoolean(optimizationEnabled)) {
       mergedProperties = mergedProperties.entrySet().stream()
               .filter(e -> !e.getKey().startsWith(CatalogMetaProperties.OPTIMIZE_PROPERTIES_PREFIX))
               .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
       // maintain 'optimize.enable' flag as false in table properties
-      mergedProperties.put(TableProperties.ENABLE_OPTIMIZE, optimizationEnabled);
+      mergedProperties.put(TableProperties.ENABLE_SELF_OPTIMIZING, optimizationEnabled);
     }
     mergedProperties.putAll(tableProperties);
 
