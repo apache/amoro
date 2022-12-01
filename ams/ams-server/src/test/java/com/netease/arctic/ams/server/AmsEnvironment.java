@@ -179,7 +179,7 @@ public class AmsEnvironment {
       LOG.error("failed to create iceberg warehouse dir {}", warehouseDir, e);
       throw new RuntimeException(e);
     }
-    properties.put("warehouse.dir", warehouseDir);
+    properties.put("warehouse", warehouseDir);
     properties.put("table-formats", "ICEBERG");
     localCatalog.setCatalogProperties(properties);
     ServiceContainer.getCatalogMetadataService().addCatalog(localCatalog);

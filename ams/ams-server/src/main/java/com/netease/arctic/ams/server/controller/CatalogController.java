@@ -19,6 +19,8 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
@@ -36,6 +38,7 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang.StringUtils;
+import org.apache.iceberg.CatalogProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,6 +61,7 @@ import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALO
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_CUSTOM;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.KEY_WAREHOUSE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE;
@@ -75,6 +79,15 @@ public class CatalogController extends RestBaseController {
   private static final String CONFIG_TYPE_AUTH = "auth-config";
   // <configuration></configuration>  encoded with base64
   private static final String EMPTY_XML_BASE64 = "PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==";
+
+  private static final Map<String, List<String>> CATALOG_REQUIRED_PROPERTIES;
+
+  static {
+    CATALOG_REQUIRED_PROPERTIES = Maps.newHashMap();
+    CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_AMS, Lists.newArrayList(KEY_WAREHOUSE));
+    CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_HADOOP, Lists.newArrayList(CatalogProperties.WAREHOUSE_LOCATION));
+    CATALOG_REQUIRED_PROPERTIES.put(CATALOG_TYPE_CUSTOM, Lists.newArrayList(CatalogProperties.CATALOG_IMPL));
+  }
 
   /**
    * Get catalog Type list
@@ -207,10 +220,13 @@ public class CatalogController extends RestBaseController {
     } catch (Exception e) {
       throw new RuntimeException("Invalid table format list, " + String.join(",", info.getTableFormatList()));
     }
-    if (CATALOG_TYPE_CUSTOM.equals(info.getType())) {
-      // check properties contains key 'catalog-impl'
-      if (info.getProperties().containsKey("catalog-impl")) {
-        throw new RuntimeException("You must config catalog-impl in properties when catalog type is custom!");
+    List<String> requiredProperties = CATALOG_REQUIRED_PROPERTIES.get(info.getType());
+    if (requiredProperties != null && !requiredProperties.isEmpty()) {
+      for (String propertyName : requiredProperties) {
+        if (info.getProperties().containsKey(propertyName)) {
+          throw new RuntimeException(
+              String.format("Catalog type:%s require property:%s.", info.getType(), propertyName));
+        }
       }
     }
     catalogMeta.getCatalogProperties().put(CatalogMetaProperties.TABLE_FORMATS, tableFormats.toString());
