@@ -134,7 +134,7 @@ public class BaseOptimizeCommit {
       String foundNewDeleteMessage = "found new delete for replaced data file";
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage)) {
-        LOG.warn("Optimize commit table {} failed, give up commit and clear files in hive location. ", arcticTable.id(), e);
+        LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
         for (ContentFile<?> majorAddFile : majorAddFiles) {
           arcticTable.io().deleteFile(majorAddFile.path().toString());
           LOG.warn("Delete orphan file {} when optimize commit failed", majorAddFile.path().toString());
