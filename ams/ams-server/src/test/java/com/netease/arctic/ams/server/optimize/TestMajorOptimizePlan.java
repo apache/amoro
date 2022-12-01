@@ -112,7 +112,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .collect(Collectors.toList()));
 
     testKeyedTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "0")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
@@ -148,7 +148,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testUnKeyedTableFullOptimize() {
     testTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     insertUnKeyedTableDataFiles(testTable);
 
@@ -185,7 +185,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
   @Test
   public void testUnKeyedTableFullOptimizeWithPosDelete() throws Exception {
     testTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     insertUnKeyedTablePosDeleteFiles(testTable);
 
@@ -254,7 +254,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .collect(Collectors.toList()));
 
     testNoPartitionTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "0")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,

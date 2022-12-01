@@ -36,6 +36,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -96,9 +97,9 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
 
-        boolean needOrphanClean = Boolean.parseBoolean(arcticTable.properties()
-            .getOrDefault(TableProperties.ENABLE_ORPHAN_CLEAN,
-                TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT));
+        boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+            TableProperties.ENABLE_ORPHAN_CLEAN,
+            TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT);
 
         if (!needOrphanClean) {
           return;

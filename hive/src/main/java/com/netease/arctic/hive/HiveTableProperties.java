@@ -30,7 +30,9 @@ public class HiveTableProperties {
     EXPOSED.add(HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE);
   }
 
-  public static final String ARCTIC_TABLE_FLAG = "arctic.enable";
+  public static final String ARCTIC_TABLE_FLAG = "arctic.enabled";
+  @Deprecated
+  public static final String ARCTIC_TABLE_FLAG_LEGACY = "arctic.enable";
 
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
 

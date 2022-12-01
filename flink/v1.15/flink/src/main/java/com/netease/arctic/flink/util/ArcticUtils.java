@@ -30,6 +30,7 @@ import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
@@ -38,7 +39,6 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,7 +98,7 @@ public class ArcticUtils {
   }
 
   public static boolean arcticWALWriterEnable(Map<String, String> properties, String arcticEmitMode) {
-    boolean streamEnable = PropertyUtil.propertyAsBoolean(properties, ENABLE_LOG_STORE,
+    boolean streamEnable = CompatiblePropertyUtil.propertyAsBoolean(properties, ENABLE_LOG_STORE,
         TableProperties.ENABLE_LOG_STORE_DEFAULT);
 
     if (arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_LOG)) {

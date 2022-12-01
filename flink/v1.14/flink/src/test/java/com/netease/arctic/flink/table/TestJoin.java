@@ -113,7 +113,7 @@ public class TestJoin extends FlinkTestBase {
     sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
 
     TableResult result = exec("select u.name, u.id, dim.info, dim.name dname from `user` as u left join d " +
-        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.op_time as dim" +
+        "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim" +
         " on u.id = dim.id");
 
     CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING),
@@ -197,7 +197,7 @@ public class TestJoin extends FlinkTestBase {
     sql("create table d (op_time timestamp(3), watermark for op_time as op_time) like %s", table);
 
     TableResult result = exec("select u.name, u.id, dim.info, dim.name dname from `user` as u left join d " +
-        "/*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/ for system_time as of u.op_time as dim" +
+        "/*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/ for system_time as of u.op_time as dim" +
         " on u.id = dim.id");
 
     CommonTestUtils.waitForJobStatus(result.getJobClient().get(), Lists.newArrayList(JobStatus.RUNNING),

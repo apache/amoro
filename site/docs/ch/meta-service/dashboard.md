@@ -152,7 +152,7 @@ Arctic 中 catalog 为一组表的命名空间，在 catalog 之下会再分到�
 **2.新增配置**
 
 ```yaml
-  arctic.ams.ha.enable: true                        #是否开启高可用
+  arctic.ams.ha.enabled: true                        #是否开启高可用
   arctic.ams.cluster.name: default                  #ams集群名称，一个集群内会保持一主多备
   arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183   #zookeeper server地址
 ```

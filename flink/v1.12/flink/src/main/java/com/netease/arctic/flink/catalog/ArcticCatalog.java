@@ -29,6 +29,7 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.streaming.connectors.kafka.table.KafkaOptions;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.catalog.AbstractCatalog;
@@ -61,7 +62,6 @@ import org.apache.iceberg.flink.util.FlinkCompatibilityUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
-import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -233,7 +233,7 @@ public class ArcticCatalog extends AbstractCatalog {
   }
 
   private void fillTableProperties(Map<String, String> tableProperties) {
-    boolean enableStream = PropertyUtil.propertyAsBoolean(tableProperties,
+    boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(tableProperties,
         TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
     if (enableStream) {
       tableProperties.putIfAbsent(FactoryUtil.FORMAT.key(), tableProperties.getOrDefault(

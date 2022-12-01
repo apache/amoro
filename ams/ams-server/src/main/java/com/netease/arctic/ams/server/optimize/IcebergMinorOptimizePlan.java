@@ -25,13 +25,13 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.SequenceNumberFetcher;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +65,7 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
 
   @Override
   protected void addOptimizeFiles() {
-    long smallFileSize = getSmallFileSize();
+    long smallFileSize = getSmallFileSize(arcticTable.properties());
     for (FileScanTask fileScanTask : fileScanTasks) {
       StructLike partition = fileScanTask.file().partition();
       String partitionPath = arcticTable.asUnkeyedTable().spec().partitionToPath(partition);
@@ -108,14 +108,15 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     List<FileScanTask> smallDataFileTask = partitionSmallDataFilesTask.getOrDefault(partitionToPath, new ArrayList<>());
 
     Set<DeleteFile> smallDeleteFile = partitionDeleteFiles.getOrDefault(partitionToPath, new HashSet<>()).stream()
-        .filter(deleteFile -> deleteFile.fileSizeInBytes() <= getSmallFileSize()).collect(Collectors.toSet());
+        .filter(deleteFile -> deleteFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties()))
+        .collect(Collectors.toSet());
     for (FileScanTask task : smallDataFileTask) {
       smallDeleteFile.addAll(task.deletes());
     }
 
-    long smallFileCountThreshold = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT,
-        TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT);
+    long smallFileCountThreshold = CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
+        TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT);
     // partition has greater than 12 small files to optimize(include data files and delete files)
     long smallFileCount = smallDataFileTask.size() + smallDeleteFile.size();
     if (smallFileCount >= smallFileCountThreshold) {
@@ -219,11 +220,5 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
     }
 
     return collector;
-  }
-
-  private long getSmallFileSize() {
-    return PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
   }
 }

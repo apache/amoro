@@ -56,9 +56,9 @@ public class TestKeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
         "(2, ''bbb'',  ''2021-1-2''), \n " +
         "(3, ''ccc'',  ''2021-1-3'') \n ", database, table);
 
-    sql("set spark.arctic.sql.delegate.enable = false");
+    sql("set spark.arctic.sql.delegate.enabled = false");
     sql("select * from {0}.{1} order by id", database, table);
-    sql("set spark.arctic.sql.delegate.enable = true");
+    sql("set spark.arctic.sql.delegate.enabled = true");
 
   }
 
@@ -77,7 +77,7 @@ public class TestKeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
         "(5, ''bbb'',  ''2021-1-2''), \n " +
         "(6, ''ccc'',  ''2021-1-2'') \n ", database, table);
 
-    sql("set spark.arctic.sql.delegate.enable = false");
+    sql("set spark.arctic.sql.delegate.enabled = false");
     rows = sql("select * from {0}.{1}", database, table);
     Assert.assertEquals(3, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6);
@@ -87,7 +87,7 @@ public class TestKeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
         table,
         (short) -1);
     Assert.assertEquals(2, partitions.size());
-    sql("set spark.arctic.sql.delegate.enable = true");
+    sql("set spark.arctic.sql.delegate.enabled = true");
 
   }
 
@@ -99,7 +99,7 @@ public class TestKeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
         "(5, ''bbb''), \n " +
         "(6, ''ccc'') \n ", database, table);
 
-    sql("set spark.arctic.sql.delegate.enable = false");
+    sql("set spark.arctic.sql.delegate.enabled = false");
     rows = sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(5, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6, 2, 3);
@@ -109,6 +109,6 @@ public class TestKeyedHiveTableInsertOverwriteStatic extends SparkTestBase {
         table,
         (short) -1);
     Assert.assertEquals(3, partitions.size());
-    sql("set spark.arctic.sql.delegate.enable = true");
+    sql("set spark.arctic.sql.delegate.enabled = true");
   }
 }

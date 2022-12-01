@@ -83,33 +83,30 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
     }
 
     Set<DeleteFile> partitionDeleteFiles = new HashSet<>();
-    Set<DataFile> partitionDataFiles = new HashSet<>();
     for (FileScanTask partitionFileScanTask : partitionFileScanTasks) {
-      partitionDataFiles.add(partitionFileScanTask.file());
       partitionDeleteFiles.addAll(partitionFileScanTask.deletes());
     }
 
     double deleteFilesTotalSize = partitionDeleteFiles.stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
-    double dataFilesTotalSize = partitionDataFiles.stream().mapToLong(DataFile::fileSizeInBytes).sum();
 
-    long duplicateSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD,
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    long targetSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
     double duplicateRatio = PropertyUtil.propertyAsDouble(arcticTable.properties(),
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD,
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT);
-    // delete files total size reach target or delete files rate reach target
-    if (deleteFilesTotalSize > duplicateSize || deleteFilesTotalSize / dataFilesTotalSize >= duplicateRatio) {
+        TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
+        TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
+    // delete files total size reach target_size * duplicate_ratio
+    if (deleteFilesTotalSize > targetSize * duplicateRatio) {
       partitionOptimizeType.put(partitionToPath, getOptimizeType());
       LOG.debug("{} ==== need native Full optimize plan, partition is {}, " +
-              "delete files totalSize is {}, data files totalSize is {}",
-          tableId(), partitionToPath, deleteFilesTotalSize, dataFilesTotalSize);
+              "delete files totalSize is {}, target size is {}",
+          tableId(), partitionToPath, deleteFilesTotalSize, targetSize);
       return true;
     }
 
     LOG.debug("{} ==== don't need {} optimize plan, skip partition {}, " +
-            "delete files totalSize is {}, data files totalSize is {}",
-        tableId(), getOptimizeType(), partitionToPath, deleteFilesTotalSize, dataFilesTotalSize);
+            "delete files totalSize is {}, target size is {}",
+        tableId(), getOptimizeType(), partitionToPath, deleteFilesTotalSize, targetSize);
     return false;
   }
 

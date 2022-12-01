@@ -26,6 +26,7 @@ import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -193,11 +194,11 @@ public class FlinkSink {
           shufflePolicy == null ? DistributionMode.NONE : distributionMode.getDesc());
 
       String arcticEmitMode = table.properties().getOrDefault(ARCTIC_EMIT_MODE.key(), ARCTIC_EMIT_MODE.defaultValue());
-      final boolean metricsEventLatency = PropertyUtil
+      final boolean metricsEventLatency = CompatibleFlinkPropertyUtil
           .propertyAsBoolean(table.properties(), ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE,
               ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE_DEFAULT);
 
-      final boolean metricsEnable = PropertyUtil
+      final boolean metricsEnable = CompatibleFlinkPropertyUtil
           .propertyAsBoolean(table.properties(), ARCTIC_THROUGHPUT_METRIC_ENABLE,
               ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT);
 
