@@ -10,14 +10,7 @@
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
             <span v-else class="config-value">{{formState.catalog.name}}</span>
           </a-form-item>
-          <a-form-item :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
-            <template #label>
-              {{$t('metastore')}}
-              <a-tooltip>
-                <template #title>{{$t('metastoreTooltip')}}</template>
-                <question-circle-outlined class="question-icon" />
-              </a-tooltip>
-            </template>
+          <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
             <a-select
               v-if="isEdit && isNewCatalog"
               v-model:value="formState.catalog.type"
@@ -29,8 +22,9 @@
           </a-form-item>
           <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
             <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
-              <a-radio v-if="isHiveMetastore" :value="tableFormatMap.HIVE">Hive</a-radio>
-              <a-radio :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
+              <a-radio v-if="isHiveMetastore" :value="tableFormatMap.MIXED_HIVE">Mixed Hive</a-radio>
+              <a-radio v-if="!isArcticMetastore" :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
+              <a-radio v-if="isArcticMetastore" :value="tableFormatMap.MIXED_ICEBERG">Mixed Iceberg</a-radio>
             </a-radio-group>
           </a-form-item>
           <a-form-item>
@@ -119,7 +113,6 @@
 
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { QuestionCircleOutlined } from '@ant-design/icons-vue'
 import { getCatalogsTypes, getCatalogsSetting, saveCatalogsSetting, checkCatalogStatus, delCatalog } from '@/services/setting.services'
 import { ILableAndValue, ICatalogItem, IMap } from '@/types/common.type'
 import { Modal, message, UploadChangeParam } from 'ant-design-vue'
@@ -170,15 +163,23 @@ const isNewCatalog = computed(() => {
   const catalog = (route.query?.catalogname || '').toString()
   return decodeURIComponent(catalog) === 'new catalog'
 })
+// Arctic Metastore supports Mixed Iceberg format only.
+// Hive Metastore supports Iceberg and Mixed Hive format only.
+// Hadoop and Custom support Iceberg format only.
 const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
+})
+const isArcticMetastore = computed(() => {
+  return formState.catalog.type === 'ams'
 })
 const loading = ref<boolean>(false)
 const formRef = ref()
 const propertiesRef = ref()
+// ICEBERG  MIXED_HIVE  MIXED_ICEBERG
 const tableFormatMap = {
-  HIVE: 'HIVE',
-  ICEBERG: 'ICEBERG'
+  MIXED_HIVE: 'MIXED_HIVE',
+  ICEBERG: 'ICEBERG',
+  MIXED_ICEBERG: 'MIXED_ICEBERG'
 }
 const storageConfigFileNameMap = {
   'hadoop.core.site': 'core-site.xml',
@@ -234,7 +235,6 @@ watch(() => route.query,
   }
 )
 const catalogTypeOps = reactive<ILableAndValue[]>([])
-
 function initData() {
   getConfigInfo()
 }
@@ -259,7 +259,7 @@ async function getConfigInfo() {
     if (isNewCatalog.value) {
       formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
-      formState.tableFormat = tableFormatMap.ICEBERG
+      formState.tableFormat = tableFormatMap.MIXED_ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
       formState.properties = {}
@@ -323,7 +323,7 @@ async function getConfigInfo() {
 }
 
 function changeMetastore() {
-  formState.tableFormat = isHiveMetastore.value ? tableFormatMap.HIVE : tableFormatMap.ICEBERG
+  formState.tableFormat = isHiveMetastore.value ? tableFormatMap.MIXED_HIVE : isArcticMetastore.value ? tableFormatMap.MIXED_ICEBERG : tableFormatMap.ICEBERG
   if (!isNewCatalog.value) { return }
   const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
   if (isHiveMetastore.value) {
@@ -535,9 +535,6 @@ onMounted(() => {
         color: #fff;
       }
     }
-  }
-  .question-icon {
-    color: #79809a;
   }
 }
 </style>

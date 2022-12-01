@@ -630,7 +630,7 @@ public class OptimizeQueueService extends IJDBCService {
             Iterable<FileScanTask> fileScanTasks =
                 tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles();
 
-            optimizePlan = tableItem.getIcebergMajorPlan(fileScanTasks, queueId, currentTime);
+            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
             // if no major tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {

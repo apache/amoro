@@ -20,7 +20,6 @@ package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;

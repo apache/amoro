@@ -57,9 +57,10 @@ taskmanager.memory.process.size: 1728m
 
 # The number of task slots that each TaskManager offers. Each slot runs one parallel pipeline.
 
-# 需要同时运行两个流任务，增加 slot
+# there will be 2 task in arctic quick start, so set slot to 4
 taskmanager.numberOfTaskSlots: 4
-# 开启 Checkpoint。只有开启 Checkpoint，写入 file 的数据才可见
+
+# enable checkpoints to commit arctic table
 execution.checkpointing.interval: 10s
 
 # The parallelism used for programs that did not specify and other parallelism.
