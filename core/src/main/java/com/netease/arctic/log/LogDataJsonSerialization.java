@@ -51,16 +51,22 @@ public class LogDataJsonSerialization<T> implements Serializable {
     this.fieldGetterFactory = fieldGetterFactory;
   }
 
+  public void init() {
+    if (this.logDataToJsonConverter == null) {
+      this.logDataToJsonConverter = LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
+    }
+  }
+
   public byte[] serialize(LogData<T> element) {
     // 4 bytes version + 4 bytes upstreamId + 8 bytes EpicNo + 1 byte flip + 1 byte rowKind + n bytes object data
     MessageBytes messageBytes = new MessageBytes();
 
     messageBytes
-        .append(element.getVersionBytes())
-        .append(element.getUpstreamIdBytes())
-        .append(element.getEpicNoBytes())
-        .append(element.getFlipByte())
-        .append(element.getChangeActionByte());
+      .append(element.getVersionBytes())
+      .append(element.getUpstreamIdBytes())
+      .append(element.getEpicNoBytes())
+      .append(element.getFlipByte())
+      .append(element.getChangeActionByte());
 
     if (element.getFlip()) {
       // would ignore serializing actual value if flip is true.
@@ -71,9 +77,9 @@ public class LogDataJsonSerialization<T> implements Serializable {
     if (node == null) {
       node = mapper.createObjectNode();
       converterContext =
-          new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(
-              mapper, node
-          );
+        new LogDataToJsonConverters.LogDataToJsonConverter.FormatConverterContext(
+          mapper, node
+        );
     }
 
     try {
@@ -87,9 +93,7 @@ public class LogDataJsonSerialization<T> implements Serializable {
   }
 
   void convertRow(LogData<T> element) {
-    if (this.logDataToJsonConverter == null) {
-      this.logDataToJsonConverter = LogDataToJsonConverters.createConverter(schema.asStruct(), fieldGetterFactory);
-    }
+    init();
     logDataToJsonConverter.convert(element.getActualValue(), converterContext);
   }
 }
