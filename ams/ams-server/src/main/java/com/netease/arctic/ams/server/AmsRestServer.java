@@ -133,7 +133,8 @@ public class AmsRestServer {
         //  /docs/latest can't be locationed to the index.html, so we add rule to redict to it.
         get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
         // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
-        get("/{aaa}", ctx -> ctx.html(getFileContent()));
+        get("/{page}", ctx -> ctx.html(getFileContent()));
+        get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
       });
       path("/ams/v1", () -> {
         /** login controller**/
