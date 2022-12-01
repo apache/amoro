@@ -40,6 +40,7 @@ import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -94,7 +95,8 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   private String table3 = "test3";
   private String table_D = "test4";
   private String table_D2 = "test5";
-  
+
+  @Ignore
   @Test
   public void testHiveDelegate() throws TException {
     System.out.println("spark.arctic.sql.delegate.enable = " + spark.conf().get("spark.arctic.sql.delegate.enable"));
@@ -121,6 +123,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
   }
 
+  @Ignore
   @Test
   public void testCatalogEnable() throws TException {
     sql("set spark.arctic.sql.delegate.enable=false");
