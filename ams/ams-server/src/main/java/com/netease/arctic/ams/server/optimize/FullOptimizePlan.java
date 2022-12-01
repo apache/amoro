@@ -135,7 +135,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
       long targetSize = PropertyUtil.propertyAsLong(properties,
           TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
           TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
-      double duplicateRatio = CompatiblePropertyUtil.propertyAsDouble(properties,
+      double duplicateRatio = PropertyUtil.propertyAsDouble(properties,
           TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
           TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
       return posDeleteSize >= targetSize * duplicateRatio;

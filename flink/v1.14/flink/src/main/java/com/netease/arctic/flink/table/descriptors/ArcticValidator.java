@@ -56,8 +56,14 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
 
   public static final String ARCTIC_LATENCY_METRIC_ENABLE = "metrics.event-latency.enabled";
   public static final boolean ARCTIC_LATENCY_METRIC_ENABLE_DEFAULT = false;
+  @Deprecated
+  public static final String ARCTIC_LATENCY_METRIC_ENABLE_LEGACY = "metrics.event-latency.enable";
+
   public static final String ARCTIC_THROUGHPUT_METRIC_ENABLE = "metrics.enabled";
   public static final boolean ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT = false;
+  @Deprecated
+  public static final String ARCTIC_THROUGHPUT_METRIC_ENABLE_LEGACY = "metrics.enable";
+
   public static final String BASE_WRITE_LOCATION = "base.write.location";
   public static final String BASE_WRITE_LOCATION_SUFFIX = "/init";
 

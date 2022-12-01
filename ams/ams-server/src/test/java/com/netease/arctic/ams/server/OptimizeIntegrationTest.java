@@ -277,7 +277,7 @@ public class OptimizeIntegrationTest {
     int size = assertContainIdSet(readRecords(table), 0, 4);
     Assert.assertEquals(1, size);
 
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.00000001");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 8, 1);
@@ -355,7 +355,7 @@ public class OptimizeIntegrationTest {
     ), Lists.newArrayList(
         newRecord(4, "aaa", quickDateWithZone(3))
     ), partitionData);
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.00000001");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset);
@@ -476,7 +476,7 @@ public class OptimizeIntegrationTest {
     ), Lists.newArrayList(
         newRecord(4, "aaa", quickDateWithZone(3))
     ), partitionData);
-    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.00000001");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset);

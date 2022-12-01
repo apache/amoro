@@ -25,7 +25,6 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.SequenceNumberFetcher;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -93,7 +92,7 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
     long targetSize = PropertyUtil.propertyAsLong(arcticTable.properties(),
         TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
         TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
-    double duplicateRatio = CompatiblePropertyUtil.propertyAsDouble(arcticTable.properties(),
+    double duplicateRatio = PropertyUtil.propertyAsDouble(arcticTable.properties(),
         TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
         TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
     // delete files total size reach target_size * duplicate_ratio

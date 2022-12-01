@@ -112,7 +112,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .collect(Collectors.toList()));
 
     testKeyedTable.updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.00000001")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testKeyedTable,
@@ -254,7 +254,7 @@ public class TestMajorOptimizePlan extends TestBaseOptimizeBase {
         .collect(Collectors.toList()));
 
     testNoPartitionTable.updateProperties()
-        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.00000001")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
 
     FullOptimizePlan fullOptimizePlan = new FullOptimizePlan(testNoPartitionTable,

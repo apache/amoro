@@ -16,7 +16,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
-        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.0000001")
+        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
@@ -34,7 +34,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     icebergPartitionTable.asUnkeyedTable().updateProperties()
         .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
-        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.0000001")
+        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
@@ -53,7 +53,7 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     int fragmentRatio = 3;
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO, fragmentRatio + "")
-        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.0000001")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .set(TableProperties.SELF_OPTIMIZING_TARGET_SIZE, "3000")
         .commit();
     // write 50 data files with size =~ 1000

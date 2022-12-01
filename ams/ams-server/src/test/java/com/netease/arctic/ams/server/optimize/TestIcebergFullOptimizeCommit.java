@@ -33,7 +33,7 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
-        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.0000001")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
@@ -94,7 +94,7 @@ public class TestIcebergFullOptimizeCommit extends TestIcebergBase {
     icebergPartitionTable.asUnkeyedTable().updateProperties()
         .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
             TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
-        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0.0000001")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
