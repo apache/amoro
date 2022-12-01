@@ -64,7 +64,7 @@ public class TableProperties {
 
   public static final String WATERMARK_TABLE = "watermark.table";
 
-  public static final String WATERMARK_BASE_STORE = "watermark.base-store";
+  public static final String WATERMARK_BASE_STORE = "watermark.base";
 
   /**
    * table optimize related properties
@@ -242,6 +242,5 @@ public class TableProperties {
     PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
     PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
     PROTECTED_PROPERTIES.add(FORMAT_VERSION);
-    PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
   }
 }
