@@ -23,7 +23,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;

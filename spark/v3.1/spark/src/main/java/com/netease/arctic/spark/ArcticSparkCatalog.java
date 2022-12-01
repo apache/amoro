@@ -18,8 +18,6 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.AmsClient;
-import com.netease.arctic.PooledAmsClient;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.utils.CatalogUtil;
@@ -27,6 +25,7 @@ import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseKeyedTable;
+import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -71,6 +70,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
@@ -78,6 +79,7 @@ import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHO
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
+
   private ArcticCatalog catalog;
 
   /**
@@ -127,6 +129,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
+    checkAndRefreshCatalogMeta(catalog);
     TableIdentifier identifier;
     ArcticTable table;
     try {
@@ -149,7 +152,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BaseKeyedTable)table, false);
+          return new ArcticSparkChangeTable((BaseUnkeyedTable)table.asKeyedTable().changeTable(),
+              false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
       }
@@ -169,6 +173,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public Table createTable(
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
+    checkAndRefreshCatalogMeta(catalog);
     properties = Maps.newHashMap(properties);
     Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
@@ -195,6 +200,14 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       return ArcticSparkTable.ofArcticTable(table);
     } catch (AlreadyExistsException e) {
       throw new TableAlreadyExistsException(ident);
+    }
+  }
+
+  private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
+    SparkSession sparkSession = SparkSession.active();
+    if (Boolean.parseBoolean(sparkSession.conf().get(REFRESH_CATALOG_BEFORE_USAGE,
+        REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
+      catalog.refresh();
     }
   }
 

@@ -73,6 +73,7 @@ export default {
   snapshotId: 'Snapshot ID',
   transactionId: 'Transaction ID',
   fileType: 'File Type',
+  fileContent: 'File Content',
   startTime: 'StartTime',
   duration: 'Duration',
   optimizeType: 'Optimize Type',
@@ -88,6 +89,7 @@ export default {
   optimizers: 'Optimizers',
   container: 'Container',
   status: 'Status',
+  optimizingStatus: 'Optimizing Status',
   optimzerGroup: 'Optimizer Group',
   allGroups: 'All Groups',
   resourceOccupation: 'Resource Occupation',
@@ -161,6 +163,5 @@ export default {
   leavePageModalTitle: 'Leave this page？',
   leavePageModalContent: 'Changes you made may not be saved.',
   leave: 'Leave',
-  invalidInput: 'Invalid input',
-  metastoreTooltip: 'We can create arctic tables using iceberg format under an arctic metastore, or upgrade hive tables to arctic tables in-place under a hive metastore'
+  invalidInput: 'Invalid input'
 }

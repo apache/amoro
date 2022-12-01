@@ -25,20 +25,16 @@ import com.netease.arctic.ams.server.model.CatalogSettingInfo;
 import io.javalin.testtools.HttpClient;
 import io.javalin.testtools.JavalinTest;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 public class CatalogControllerTest {
-  private final Logger LOG = LoggerFactory.getLogger("CatalogControllerTest");
-
   @Test
   public void testGetCatalogTypeList() {
     JavalinTest.test((app, client) -> {
-      app.get("/", ctx -> CatalogController.getCatalogTypeList(ctx));
+      app.get("/", CatalogController::getCatalogTypeList);
       final okhttp3.Response resp = client.get("/", x -> {
       });
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
@@ -63,17 +59,17 @@ public class CatalogControllerTest {
     String newAuthUser = "UnitTest";
     JavalinTest.test((app, client) -> {
       // add one catalog
-      app.post("/", ctx -> CatalogController.createCatalog(ctx));
-      app.get("/{catalogName}", ctx->CatalogController.getCatalogDetail(ctx));
-      app.put("/{catalogName}", ctx->CatalogController.updateCatalog(ctx));
-      app.delete("/{catalogName}", ctx -> CatalogController.deleteCatalog(ctx));
+      app.post("/", CatalogController::createCatalog);
+      app.get("/{catalogName}", CatalogController::getCatalogDetail);
+      app.put("/{catalogName}", CatalogController::updateCatalog);
+      app.delete("/{catalogName}", CatalogController::deleteCatalog);
       String paramString = "{\"name\":\"unittest\",\"type\":\"hadoop\","
               + "\"storageConfig\":{"
               + "\"hadoop.core.site\":\"1\","
               + "\"hadoop.hdfs.site\":\"2\","
               + "\"hive.site\":\"3\"},"
               + "\"authConfig\":{\"auth.type\":\"SIMPLE\",\"auth.simple.hadoop_username\":\"arctic\"},"
-              + "\"properties\":{},\"tableFormatList\":[\"HIVE\"]}";
+              + "\"properties\":{},\"tableFormatList\":[\"MIXED_HIVE\"]}";
       JSONObject param = JSONObject.parseObject(paramString);
       final okhttp3.Response resp = client.post("/", param);
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);

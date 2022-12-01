@@ -25,11 +25,6 @@ import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CountDownLatch;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
@@ -37,6 +32,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_DB_NAME;
