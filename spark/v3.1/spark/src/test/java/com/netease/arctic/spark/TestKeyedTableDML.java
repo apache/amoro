@@ -104,12 +104,17 @@ public class TestKeyedTableDML extends SparkTestBase {
   @Test
   public void testSelectChangeFiles() {
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
+    writeBase(identifier,  baseFiles);
     writeChange(identifier,  ChangeAction.INSERT, Lists.newArrayList(
         newRecord(keyedTable, 4, "ddd", quickDateWithZone(4)),
         newRecord(keyedTable, 5, "eee", quickDateWithZone(4))
     ));
+    writeChange(identifier,  ChangeAction.DELETE, Lists.newArrayList(
+        newRecord(keyedTable, 1, "aaa", ofDateWithZone(2022, 1, 1, 0)),
+        newRecord(keyedTable, 2, "bbb", ofDateWithZone(2022, 1, 2, 0))
+    ));
     rows = sql("select * from {0}.{1}.change", database, table);
-    Assert.assertEquals(2, rows.size());
+    Assert.assertEquals(4, rows.size());
     // check column number
     Assert.assertEquals(6, rows.get(0).length);
   }
