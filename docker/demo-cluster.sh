@@ -92,6 +92,12 @@ services:
     container_name: namenode
     environment:
       - CLUSTER_NAME=demo-cluster
+      - CORE_CONF_hadoop_http_staticuser_user=root
+      - CORE_CONF_hadoop_proxyuser_arctic_hosts=*
+      - CORE_CONF_hadoop_proxyuser_arctic_groups=*
+      - HDFS_CONF_dfs_replication=1
+      - HDFS_CONF_dfs_permissions_enabled=false
+      - HDFS_CONF_dfs_webhdfs_enabled=true
     networks:
       - arctic_network
     ports:
@@ -120,8 +126,12 @@ services:
     ports:
       - 1630:1630
       - 1260:1260
+    environment:
+      - XMS_CONFIG=128
     networks:
       - arctic_network
+    tty: true
+    stdin_open: true
   flink:
     image: arctic163/flink:${PROJECT_VERSION}
     container_name: flink
