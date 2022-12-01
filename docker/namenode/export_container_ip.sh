@@ -15,34 +15,16 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM openjdk:8u332-jdk
+interfaces=( "en0" "eth0" )
 
-ARG ARCTIC_VERSION=0.4.0-SNAPSHOT
-ARG RELEASE=v0.3.2-rc1
-ARG DEBIAN_MIRROR=http://deb.debian.org
+ipAddr=""
+for interface in "${interfaces[@]}"
+do
+  ipAddr=`ifconfig $interface | grep -Eo 'inet (addr:)?([0-9]+\.){3}[0-9]+' | grep -Eo '([0-9]+\.){3}[0-9]+' | grep -v '127.0.0.1' | head`
+  if [ -n "$ipAddr" ]; then
+    break
+  fi 
+done
 
-WORKDIR /usr/local/ams
-
-RUN sed -i "s#http://deb.debian.org#${DEBIAN_MIRROR}#g" /etc/apt/sources.list
-
-RUN apt update \
-    && apt-get install -y vim \
-    && apt-get install -y net-tools \
-    && apt-get install -y telnet \
-    && apt-get clean
-
-ARG AMS_FILE
-WORKDIR /usr/local/ams
-
-ADD arctic-${ARCTIC_VERSION}-bin.zip /usr/local/ams/arctic-${ARCTIC_VERSION}-bin.zip
-RUN unzip arctic-${ARCTIC_VERSION}-bin.zip \
-  && sed -i '/local_catalog/d' /usr/local/ams/arctic-${ARCTIC_VERSION}/conf/derby/ams-init.sql
-
-WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
-
-EXPOSE 1630/tcp
-EXPOSE 1260/tcp
-
-CMD ["bash","-c","./bin/ams.sh start && tail -f ./logs/ams-info.log"]
-
-
+echo "Container IP is set to : $ipAddr"
+export MY_CONTAINER_IP=$ipAddr
