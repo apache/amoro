@@ -432,7 +432,7 @@ public class TableOptimizeItem extends IJDBCService {
           MajorOptimizePlan majorPlan = getMajorPlan(-1, System.currentTimeMillis());
           List<BaseOptimizeTask> majorTasks = majorPlan.plan();
           // pending for major optimize
-          if (CollectionUtils.isEmpty(majorTasks)) {
+          if (CollectionUtils.isNotEmpty(majorTasks)) {
             tryUpdateOptimizeInfo(
                 TableOptimizeRuntime.OptimizeStatus.Pending, majorTasks, OptimizeType.Major);
           } else {
