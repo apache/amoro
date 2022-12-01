@@ -84,7 +84,7 @@ function create_docker_compose() {
   fi
 
   cat <<EOT >> docker-compose.yml
-version: "2"
+version: "3"
 services:
   namenode:
     image: arctic163/namenode
@@ -105,7 +105,6 @@ services:
       - 8020:8020
     volumes:
       - ./hadoop-config:/etc/hadoop
-    mem_limit: 1024M
 
   datanode:
     image: arctic163/datanode
@@ -121,8 +120,7 @@ services:
       - 10075:50075
       - 10010:50010
     depends_on:
-      - namenode
-    mem_limit: 1024M
+      - namenode 
 
   ams:
     image: arctic163/ams:${PROJECT_VERSION}
@@ -135,8 +133,7 @@ services:
     networks:
       - arctic_network
     tty: true
-    stdin_open: true
-    mem_limit: 1024M
+    stdin_open: true 
 
   flink:
     image: arctic163/flink:${PROJECT_VERSION}
@@ -146,8 +143,7 @@ services:
     networks:
       - arctic_network
     depends_on:
-      - ams
-    mem_limit: 2048M
+      - ams 
 
   mysql:
     container_name: mysql
@@ -161,8 +157,7 @@ services:
     networks:
       - arctic_network
     ports:
-      - "3306:3306"
-    mem_limit: 1024M
+      - "3306:3306" 
 
   lakehouse-benchmark:
     image: arctic163/lakehouse-benchmark:latest
@@ -173,13 +168,12 @@ services:
     networks:
       - arctic_network
     tty: true
-    stdin_open: true
-    mem_limit: 1024M
+    stdin_open: true 
 
   lakehouse-benchmark-ingestion:
     image: arctic163/lakehouse-benchmark-ingestion:${PROJECT_VERSION}
-    container_name: lakehouse-benchmark-ingestion:
-    hostname: lakehouse-benchmark-ingestion:
+    container_name: lakehouse-benchmark-ingestion
+    hostname: lakehouse-benchmark-ingestion
     privileged: true
     networks:
       - arctic_network
@@ -191,8 +185,7 @@ services:
     ports:
       - 8082:8081
     tty: true
-    stdin_open: true
-    mem_limit: 1024M
+    stdin_open: true 
 
 networks:
   arctic_network:
