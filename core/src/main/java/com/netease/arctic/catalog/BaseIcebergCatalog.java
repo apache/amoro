@@ -35,6 +35,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.Namespace;
 import org.apache.iceberg.catalog.SupportsNamespaces;
+import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import java.util.stream.Collectors;
 public class BaseIcebergCatalog implements ArcticCatalog {
 
   private CatalogMeta meta;
+  private AmsClient client;
   private Pattern databaseFilterPattern;
   private transient TableMetaStore tableMetaStore;
   private transient Catalog icebergCatalog;
@@ -59,6 +61,7 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   @Override
   public void initialize(
       AmsClient client, CatalogMeta meta, Map<String, String> properties) {
+    this.client = client;
     this.meta = meta;
     meta.putToCatalogProperties(
         org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE,
@@ -164,6 +167,15 @@ public class BaseIcebergCatalog implements ArcticCatalog {
   public TableBuilder newTableBuilder(
       TableIdentifier identifier, Schema schema) {
     throw new UnsupportedOperationException("unsupported new iceberg table for now.");
+  }
+
+  @Override
+  public void refresh() {
+    try {
+      this.meta = client.getCatalog(meta.getCatalogName());
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load catalog %s.", meta.getCatalogName()), e);
+    }
   }
 
   private org.apache.iceberg.catalog.TableIdentifier toIcebergTableIdentifier(TableIdentifier tableIdentifier) {
