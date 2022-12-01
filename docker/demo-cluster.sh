@@ -84,7 +84,7 @@ function create_docker_compose() {
   fi
 
   cat <<EOT >> docker-compose.yml
-version: "3"
+version: "2"
 services:
   namenode:
     image: arctic163/namenode
@@ -105,6 +105,8 @@ services:
       - 8020:8020
     volumes:
       - ./hadoop-config:/etc/hadoop
+    mem_limit: 1024M
+
   datanode:
     image: arctic163/datanode
     container_name: datanode
@@ -120,6 +122,8 @@ services:
       - 10010:50010
     depends_on:
       - namenode
+    mem_limit: 1024M
+
   ams:
     image: arctic163/ams:${PROJECT_VERSION}
     container_name: ams
@@ -132,6 +136,8 @@ services:
       - arctic_network
     tty: true
     stdin_open: true
+    mem_limit: 1024M
+
   flink:
     image: arctic163/flink:${PROJECT_VERSION}
     container_name: flink
@@ -141,6 +147,7 @@ services:
       - arctic_network
     depends_on:
       - ams
+    mem_limit: 2048M
 
   mysql:
     container_name: mysql
@@ -155,6 +162,7 @@ services:
       - arctic_network
     ports:
       - "3306:3306"
+    mem_limit: 1024M
 
   lakehouse-benchmark:
     image: arctic163/lakehouse-benchmark:latest
@@ -166,6 +174,7 @@ services:
       - arctic_network
     tty: true
     stdin_open: true
+    mem_limit: 1024M
 
   lakehouse-benchmark-ingestion:
     image: arctic163/lakehouse-benchmark-ingestion:${PROJECT_VERSION}
@@ -183,6 +192,7 @@ services:
       - 8082:8081
     tty: true
     stdin_open: true
+    mem_limit: 1024M
 
 networks:
   arctic_network:
