@@ -300,30 +300,33 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
               fieldGetter = RowData::getBinary;
               break;
             case DECIMAL:
-              return (row, fieldPos) -> {
+              fieldGetter = ((row, fieldPos) -> {
                 Types.DecimalType decimalType = (Types.DecimalType) type;
                 int precision = decimalType.precision();
                 int scale = decimalType.scale();
                 DecimalData decimalData = row.getDecimal(fieldPos, precision, scale);
                 return decimalData == null ? null : decimalData.toBigDecimal();
-              };
+              });
+              break;
             case LIST:
-              return (row, fieldPos) -> {
+              fieldGetter = ((row, fieldPos) -> {
                 ArrayData arrayData = row.getArray(fieldPos);
                 // check arrayData is null or not. arrayData could be nullable.
                 if (arrayData == null) {
                   return null;
                 }
                 return new LogFlinkArrayData(arrayData);
-              };
+              });
+              break;
             case MAP:
-              return (row, fieldPos) -> {
+              fieldGetter = ((row, fieldPos) -> {
                 MapData mapData = row.getMap(pos);
                 if (mapData == null) {
                   return null;
                 }
                 return new LogFlinkMapData(mapData);
-              };
+              });
+              break;
             case STRUCT:
               fieldGetter = ((row, fieldPos) -> row.getRow(fieldPos, 0));
               break;

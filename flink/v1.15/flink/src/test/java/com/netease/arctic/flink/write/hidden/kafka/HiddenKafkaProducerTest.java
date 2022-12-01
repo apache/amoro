@@ -18,21 +18,31 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
+import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
+import com.netease.arctic.log.Bytes;
+import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
+import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.log.LogDataJsonSerialization;
+import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
+import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.types.RowKind;
+import org.apache.flink.util.InstantiationUtil;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Properties;
 import java.util.UUID;
@@ -42,6 +52,7 @@ import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPr
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class HiddenKafkaProducerTest extends BaseLogTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenKafkaProducerTest.class);
@@ -122,5 +133,62 @@ public class HiddenKafkaProducerTest extends BaseLogTest {
 
     int count = kafkaTestBase.countAllRecords(topic);
     assertThat(count).isEqualTo(numPartitions * recoverNum);
+  }
+
+  @Test
+  public void testLogDataNullValueSerialize() throws IOException {
+
+    LogDataJsonSerialization<RowData> logDataJsonSerialization =
+      new LogDataJsonSerialization<>(userSchemaWithAllDataType, LogRecordV1.fieldGetterFactory);
+
+    GenericRowData rowData = new GenericRowData(17);
+    rowData.setRowKind(RowKind.INSERT);
+    rowData.setField(0, null);
+    rowData.setField(1, null);
+    rowData.setField(2, null);
+    rowData.setField(3, null);
+    rowData.setField(4, null);
+    rowData.setField(5, null);
+    rowData.setField(6, null);
+    rowData.setField(7, null);
+    rowData.setField(8, null);
+    rowData.setField(9, null);
+    rowData.setField(10, null);
+    rowData.setField(11, null);
+    rowData.setField(12, null);
+    rowData.setField(13, null);
+    rowData.setField(14, null);
+    rowData.setField(15, null);
+    rowData.setField(16, null);
+
+    LogData<RowData> logData = new LogRecordV1(
+      FormatVersion.FORMAT_VERSION_V1,
+      IdGenerator.generateUpstreamId(),
+      1L,
+      false,
+      ChangeAction.INSERT,
+      rowData
+    );
+
+    byte[] bytes = logDataJsonSerialization.serialize(logData);
+
+    Assert.assertNotNull(bytes);
+    String actualJson = new String(Bytes.subByte(bytes, 18, bytes.length - 18));
+
+    String expected = "{\"f_boolean\":null,\"f_int\":null,\"f_date\":null,\"f_long\":null,\"f_time\":null,\"f_float\":null,\"f_double\":null,\"f_timestamp_local\":null,\"f_timestamp_tz\":null,\"f_string\":null,\"f_uuid\":null,\"f_fixed\":null,\"f_binary\":null,\"f_decimal\":null,\"f_list\":null,\"f_map\":null,\"f_struct\":null}";
+    assertEquals(expected, actualJson);
+
+    LogDataJsonDeserialization<RowData> logDataDeserialization = createLogDataDeserialization();
+    LogData<RowData> result = logDataDeserialization.deserialize(bytes);
+    Assert.assertNotNull(result);
+  }
+
+  @Test
+  public void testLogDataJsonSerializationClassSerialize() throws IOException, ClassNotFoundException {
+    LogDataJsonSerialization<RowData> actual =
+      new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
+    byte[] bytes = InstantiationUtil.serializeObject(actual);
+    LogDataJsonSerialization<RowData> result = InstantiationUtil.deserializeObject(bytes, actual.getClass().getClassLoader());
+    Assert.assertNotNull(result);
   }
 }
