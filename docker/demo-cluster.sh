@@ -178,8 +178,8 @@ services:
 
   lakehouse-benchmark-ingestion:
     image: arctic163/lakehouse-benchmark-ingestion:${PROJECT_VERSION}
-    container_name: benchmark-lakehouse-ingestion
-    hostname: benchmark-lakehouse-ingestion
+    container_name: lakehouse-benchmark-ingestion:
+    hostname: lakehouse-benchmark-ingestion:
     privileged: true
     networks:
       - arctic_network
