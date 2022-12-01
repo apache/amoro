@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+
 public class LocalSessionFactory implements TerminalSessionFactory {
 
   static final Set<String> STATIC_SPARK_CONF = Collections.unmodifiableSet(
@@ -67,6 +69,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       updateSessionConf(session, initializeLogs, key, sparkConf.get(key));
       finallyConf.put(key, sparkConf.get(key));
     }
+    finallyConf.put(REFRESH_CATALOG_BEFORE_USAGE, "true");
 
     return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
   }

@@ -19,27 +19,15 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.ams.api.client.AmsClientPools;
-import com.netease.arctic.CatalogMetaTestUtil;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
 import io.javalin.testtools.JavalinTest;
-import org.apache.commons.io.FileUtils;
-import org.codehaus.janino.Java;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class TerminalControllerTest {
   private final Logger LOG = LoggerFactory.getLogger("TerminalControllerTest");

@@ -327,6 +327,10 @@ public class MockArcticMetastoreServer implements Runnable {
         }
       }
     }
+
+     public void updateMeta(CatalogMeta meta, String key, String value) {
+      meta.getCatalogProperties().replace(key, value);
+     }
   }
 
   public class OptimizeManagerHandler implements OptimizeManager.Iface {

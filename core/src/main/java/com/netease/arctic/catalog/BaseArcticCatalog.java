@@ -283,6 +283,15 @@ public class BaseArcticCatalog implements ArcticCatalog {
     return new BaseArcticTableBuilder(identifier, schema);
   }
 
+  @Override
+  public void refresh() {
+    try {
+      this.catalogMeta = client.getCatalog(catalogName);
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load catalog %s.", catalogName), e);
+    }
+  }
+
   public TableMetaStore getTableMetaStore() {
     return tableMetaStore;
   }

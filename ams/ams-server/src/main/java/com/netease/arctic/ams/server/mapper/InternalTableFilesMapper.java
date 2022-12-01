@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.api.OptimizeTaskId;
-import com.netease.arctic.data.DataFileType;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
