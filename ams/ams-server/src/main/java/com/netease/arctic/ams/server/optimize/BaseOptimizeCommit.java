@@ -136,12 +136,16 @@ public class BaseOptimizeCommit {
           e.getMessage().contains(foundNewDeleteMessage)) {
         LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
         for (ContentFile<?> majorAddFile : majorAddFiles) {
-          arcticTable.io().deleteFile(majorAddFile.path().toString());
-          LOG.warn("Delete orphan file {} when optimize commit failed", majorAddFile.path().toString());
+          if (arcticTable.io().exists(majorAddFile.path().toString())) {
+            arcticTable.io().deleteFile(majorAddFile.path().toString());
+            LOG.warn("Delete orphan file {} when optimize commit failed", majorAddFile.path().toString());
+          }
         }
         for (ContentFile<?> minorAddFile : minorAddFiles) {
-          arcticTable.io().deleteFile(minorAddFile.path().toString());
-          LOG.warn("Delete orphan file {} when optimize commit failed", minorAddFile.path().toString());
+          if (arcticTable.io().exists(minorAddFile.path().toString())) {
+            arcticTable.io().deleteFile(minorAddFile.path().toString());
+            LOG.warn("Delete orphan file {} when optimize commit failed", minorAddFile.path().toString());
+          }
         }
         return false;
       } else {
