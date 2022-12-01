@@ -45,6 +45,7 @@ import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.PartitionSpec;
@@ -434,8 +435,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
     @Override
     public ArcticTable create() {
-      doCreateCheck();
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      doCreateCheck();
       TableMeta meta = builder.build();
       ArcticTable table = doCreateTable(meta);
       createTableMeta(meta);
@@ -557,6 +558,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
       ConvertStructUtil.TableMetaBuilder builder = ConvertStructUtil.newTableMetaBuilder(
           this.identifier, this.schema);
       String tableLocation = getTableLocationForCreate();
+
+      // default properties would not override user-defined properties
+      this.properties = CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogMeta.getCatalogProperties());
+
       builder.withTableLocation(tableLocation)
           .withProperties(this.properties)
           .withPrimaryKeySpec(this.primaryKeySpec);
