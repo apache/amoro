@@ -257,18 +257,18 @@ public class AmsRestServer {
     app.exception(Exception.class, (e, ctx) -> {
       if (e instanceof ForbiddenException) {
         try {
-          // return html
+          // request doesn't start with /ams is  page request. we return index.html
           if (!ctx.req.getRequestURI().startsWith("/ams")) {
             ctx.html(getFileContent());
           } else {
-            ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login! before request", ""));
+            ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
           }
         } catch (Exception fe) {
-          LOG.error("Failed to get html {}",fe.getMessage(), fe);
+          LOG.error("Failed to get index.html {}",fe.getMessage(), fe);
         }
         return;
       } else if (e instanceof SignatureCheckException) {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "SignatureExceptoin! before request", ""));
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
       } else {
         LOG.error("Failed to handle request", e);
         ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));
