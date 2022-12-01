@@ -389,10 +389,16 @@ public class OptimizeQueueService extends IJDBCService {
               ArcticTable arcticTable = ServiceContainer.getOptimizeService()
                   .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();
 
-              String location =
-                  HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                      arcticTable.spec(), DataFiles.data(arcticTable.spec(), task.getOptimizeTask().getPartition()),
-                      subDirectory);
+              String location;
+              if (arcticTable.spec().isUnpartitioned()) {
+                location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), null, subDirectory);
+              } else {
+                location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), DataFiles.data(arcticTable.spec(), task.getOptimizeTask().getPartition()),
+                    subDirectory);
+              }
+
               if (arcticTable.io().exists(location)) {
                 for (FileStatus fileStatus : arcticTable.io().list(location)) {
                   String fileLocation = fileStatus.getPath().toUri().getPath();
