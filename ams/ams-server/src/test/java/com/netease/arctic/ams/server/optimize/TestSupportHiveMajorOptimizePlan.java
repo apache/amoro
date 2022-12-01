@@ -61,7 +61,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
   @Test
   public void testKeyedTableFullMajorOptimizeSupportHive() throws IOException {
     testKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     List<DataFile> baseDataFiles = insertBaseResult.second();
@@ -95,7 +95,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
   @Test
   public void testKeyedTableFullMajorOptimizeSupportHiveNotAllHavePosDelete() throws IOException {
     testKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
     List<DataFile> baseDataFiles = insertBaseResult.second();
@@ -150,7 +150,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
   @Test
   public void testUnKeyedTableFullMajorOptimizeSupportHive() throws IOException {
     testHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
     List<DataFile> baseDataFiles = insertBaseResult.second();
@@ -194,7 +194,7 @@ public class TestSupportHiveMajorOptimizePlan extends TestSupportHiveBase {
   @Test
   public void testNoPartitionTableFullMajorOptimizeSupportHive() throws IOException {
     testUnPartitionKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
     Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
     List<DataFile> baseDataFiles = insertBaseResult.second();

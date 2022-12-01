@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -234,8 +235,8 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
                                                Map<String, Partition> hivePartitionMap) {
       inHiveNotInIceberg.forEach(partition -> {
         Partition hivePartition = hivePartitionMap.get(partition);
-        boolean isArctic = hivePartition.getParameters()
-            .getOrDefault(HiveTableProperties.ARCTIC_TABLE_FLAG, "false").equals("true");
+        boolean isArctic = CompatibleHivePropertyUtil.propertyAsBoolean(hivePartition.getParameters(),
+            HiveTableProperties.ARCTIC_TABLE_FLAG, false);
         if (isArctic) {
           HivePartitionUtil.dropPartition(((SupportHive) arcticTable).getHMSClient(), arcticTable, hivePartition);
         }

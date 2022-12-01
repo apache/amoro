@@ -44,7 +44,7 @@ CREATE TABLE user_dim (
 -- 开启 Arctic 表流读和维表的配置
 SELECT order_id, price, user_id, name, age 
 FROM orders
-LEFT JOIN user_dim /*+OPTIONS('streaming'='true', 'dim-table.enable'='true')*/
+LEFT JOIN user_dim /*+OPTIONS('streaming'='true', 'dim-table.enabled'='true')*/
     FOR SYSTEM_TIME AS OF orders.order_time
 ON orders.user_id = user_dim.id
 
@@ -52,7 +52,7 @@ ON orders.user_id = user_dim.id
 
 |Key|默认值|类型|是否必填|描述|
 |--- |--- |--- |--- |--- |
-|dim-table.enable|false|Boolean|否|是否将 Arctic 表作为维表使用，默认false。作为维表时需要设置为 true|
+|dim-table.enabled|false|Boolean|否|是否将 Arctic 表作为维表使用，默认false。作为维表时需要设置为 true|
 
 - 当 Arctic 作为维表（user 表）数据量很大时，需要一定的存量数据加载时间。在此期间，左表（orders）的数据会缓存在 Join 算子中，直到维表存量数据加载完，
 才会触发 Join 算子的关联操作并向下游输出数据。

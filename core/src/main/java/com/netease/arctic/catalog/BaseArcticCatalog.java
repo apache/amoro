@@ -43,6 +43,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
@@ -492,13 +493,13 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
 
     protected void checkProperties() {
-      boolean enableStream = PropertyUtil.propertyAsBoolean(properties,
+      boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(properties,
           TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
       if (enableStream) {
         Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
-            "log-store.topic must not be null when log-store.enable is true.");
+            "log-store.topic must not be null when log-store.enabled is true.");
         Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_ADDRESS),
-            "log-store.address must not be null when log-store.enable is true.");
+            "log-store.address must not be null when log-store.enabled is true.");
         String logStoreType = properties.get(TableProperties.LOG_STORE_TYPE);
         Preconditions.checkArgument(logStoreType == null ||
                 logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT),
