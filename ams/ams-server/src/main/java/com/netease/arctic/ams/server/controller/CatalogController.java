@@ -223,7 +223,7 @@ public class CatalogController extends RestBaseController {
     List<String> requiredProperties = CATALOG_REQUIRED_PROPERTIES.get(info.getType());
     if (requiredProperties != null && !requiredProperties.isEmpty()) {
       for (String propertyName : requiredProperties) {
-        if (info.getProperties().containsKey(propertyName)) {
+        if (!info.getProperties().containsKey(propertyName)) {
           throw new RuntimeException(
               String.format("Catalog type:%s require property:%s.", info.getType(), propertyName));
         }
