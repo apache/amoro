@@ -17,9 +17,28 @@
 # limitations under the License.
 #
 
-XMX_CONFIG="8196"
-XMS_CONFIG="8196"
-MAX_PERM_CONFIG="128"
-JMX_REMOTE_PORT_CONFIG=""
-JVM_EXTRA_CONFIG="-XX:NewRatio=1 -XX:SurvivorRatio=3"
-LANG_CONFIG="en_US.UTF-8"
+
+
+if [ -z "$XMX_CONFIG" ]; then
+    XMX_CONFIG="8196"
+fi
+
+if [ -z "$XMS_CONFIG" ]; then
+    XMS_CONFIG="1024"
+fi
+
+if [ -z "$MAX_PERM_CONFIG" ]; then
+    MAX_PERM_CONFIG="128"
+fi
+
+if [ -z "$JMX_REMOTE_PORT_CONFIG" ]; then
+    JMX_REMOTE_PORT_CONFIG=""
+fi
+
+if [ -z "$JVM_EXTRA_CONFIG" ]; then
+    JVM_EXTRA_CONFIG="-XX:NewRatio=1 -XX:SurvivorRatio=3"
+fi
+
+if [ -z "$LANG_CONFIG" ]; then
+    LANG_CONFIG="en_US.UTF-8"
+fi
