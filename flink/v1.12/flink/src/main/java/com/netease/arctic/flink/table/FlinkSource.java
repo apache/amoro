@@ -23,6 +23,7 @@ import com.netease.arctic.flink.read.ArcticSource;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -46,8 +47,6 @@ import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.types.TypeUtil;
-import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.HashMap;
 import java.util.List;
@@ -159,7 +158,7 @@ public class FlinkSource {
           arcticTable.io()
       );
 
-      boolean dimTable = PropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
           DIM_TABLE_ENABLE.defaultValue());
       RowType rowType;
       if (projectedSchema != null) {

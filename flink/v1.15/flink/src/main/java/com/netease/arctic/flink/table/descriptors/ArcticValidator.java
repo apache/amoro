@@ -85,6 +85,13 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .defaultValue(false)
           .withDescription("Flag hidden kafka read retraction enable or not.");
 
+  @Deprecated
+  public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY =
+      ConfigOptions.key("log-store.consistency-guarantee.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("Flag hidden kafka read retraction enable or not.");
+
   public static final ConfigOption<String> ARCTIC_LOG_CONSUMER_CHANGELOG_MODE =
       ConfigOptions.key("log.consumer.changelog.modes")
           .stringType()
@@ -159,6 +166,12 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .defaultValue(false)
           .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
+  @Deprecated
+  public static final ConfigOption<Boolean> DIM_TABLE_ENABLE_LEGACY =
+      ConfigOptions.key("dim-table.enable")
+          .booleanType()
+          .defaultValue(false)
+          .withDescription("If it is true, Arctic source will generate watermark after stock data being read");
 
   public static final ConfigOption<String> ARCTIC_EMIT_MODE =
       ConfigOptions.key("arctic.emit.mode")
