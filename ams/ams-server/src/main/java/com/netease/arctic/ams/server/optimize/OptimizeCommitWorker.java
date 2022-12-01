@@ -21,7 +21,6 @@ package com.netease.arctic.ams.server.optimize;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.table.TableIdentifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

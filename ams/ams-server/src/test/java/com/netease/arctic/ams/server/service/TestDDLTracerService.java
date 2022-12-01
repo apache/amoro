@@ -18,10 +18,6 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.google.common.collect.Maps;
-import com.netease.arctic.TableTestBase;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.ArcticMetaStore;
@@ -31,40 +27,27 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.util.TableUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
-import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.HistoryEntry;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.TableMetadataParser;
-import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_DB_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_CATALOG_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_DB_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.icebergCatalog;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
-import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 @PowerMockIgnore({"javax.management.*"})
 @PrepareForTest({

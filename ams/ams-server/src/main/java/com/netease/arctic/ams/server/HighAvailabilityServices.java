@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.properties.AmsHAProperties;
 import com.netease.arctic.ams.server.utils.ZookeeperUtils;
 import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
