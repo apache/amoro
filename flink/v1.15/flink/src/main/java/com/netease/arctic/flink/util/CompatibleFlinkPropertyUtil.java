@@ -38,6 +38,16 @@ public class CompatibleFlinkPropertyUtil {
     return PropertyUtil.propertyAsBoolean(properties, getCompatibleProperty(properties, property), defaultValue);
   }
 
+  public static boolean propertyAsBoolean(ReadableConfig config, ConfigOption<Boolean> configOption) {
+    ConfigOption<Boolean> legacyProperty = getLegacyProperty(configOption);
+    if (legacyProperty != null && config.getOptional(legacyProperty).isPresent() &&
+        !config.getOptional(configOption).isPresent()) {
+      return config.get(legacyProperty);
+    } else {
+      return config.get(configOption);
+    }
+  }
+
   public static double propertyAsDouble(Map<String, String> properties,
                                         String property, double defaultValue) {
     return PropertyUtil.propertyAsDouble(properties, getCompatibleProperty(properties, property), defaultValue);
@@ -56,16 +66,6 @@ public class CompatibleFlinkPropertyUtil {
   public static String propertyAsString(Map<String, String> properties,
                                         String property, String defaultValue) {
     return PropertyUtil.propertyAsString(properties, getCompatibleProperty(properties, property), defaultValue);
-  }
-
-  public static boolean propertyAsBoolean(ReadableConfig config, ConfigOption<Boolean> configOption) {
-    ConfigOption<Boolean> legacyProperty = getLegacyProperty(configOption);
-    if (legacyProperty != null && config.getOptional(legacyProperty).isPresent() &&
-        !config.getOptional(configOption).isPresent()) {
-      return config.get(legacyProperty);
-    } else {
-      return config.get(configOption);
-    }
   }
 
   private static String getCompatibleProperty(Map<String, String> properties, String property) {
