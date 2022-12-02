@@ -76,7 +76,7 @@ public class MockArcticMetastoreServer implements Runnable {
           System.getProperty("user.name"));
 
       Map<String, String> catalogProperties = new HashMap<>();
-      catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/tmp");
+      catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
 
       CatalogMeta catalogMeta = new CatalogMeta(TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
           storageConfig, authConfig, catalogProperties);

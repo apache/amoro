@@ -68,12 +68,12 @@ public class BaseCatalogTest extends TableTestBase {
   @Test
   public void refreshCatalog() throws TException {
     CatalogMeta catalog = AMS.handler().getCatalog(TEST_CATALOG_NAME);
-    AMS.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/test");
+    AMS.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE, "/test");
     testCatalog = CatalogLoader.load(AMS.getUrl());
     testCatalog.refresh();
     Assert.assertEquals("/test",
         AMS.handler().getCatalog(TEST_CATALOG_NAME).
-            getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE_DIR));
+            getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE));
   }
 
 }
