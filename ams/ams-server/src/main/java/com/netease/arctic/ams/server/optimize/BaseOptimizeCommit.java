@@ -202,8 +202,6 @@ public class BaseOptimizeCommit {
       baseArcticTable = arcticTable.asUnkeyedTable();
     }
 
-    StructLikeMap<Long> oldPartitionMaxIds =
-        TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
     if (CollectionUtils.isNotEmpty(minorAddFiles) || CollectionUtils.isNotEmpty(minorDeleteFiles)) {
       OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(arcticTable.asKeyedTable());
       overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
@@ -212,6 +210,8 @@ public class BaseOptimizeCommit {
       minorAddFiles.forEach(contentFile -> {
         // if partition min transactionId isn't bigger than max transactionId in partitionProperty,
         // the partition files is expired
+        StructLikeMap<Long> oldPartitionMaxIds =
+            TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
         Long oldTransactionId = oldPartitionMaxIds.getOrDefault(contentFile.partition(), -1L);
         Long newMinTransactionId = minTransactionIds.getOrDefault(contentFile.partition(), Long.MAX_VALUE);
         if (oldTransactionId >= newMinTransactionId) {
@@ -264,6 +264,8 @@ public class BaseOptimizeCommit {
           addedPosDeleteFile.get());
     } else {
       if (MapUtils.isNotEmpty(maxTransactionIds)) {
+        StructLikeMap<Long> oldPartitionMaxIds =
+            TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
         UpdatePartitionProperties updatePartitionProperties =
             baseArcticTable.updatePartitionProperties(null);
         maxTransactionIds.forEach((partition, txId) -> {
