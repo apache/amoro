@@ -13,6 +13,8 @@
             <p>{{$t('file')}}:  <span class="text-color">{{baseInfo.file}}</span></p>
             <a-divider type="vertical" />
             <p>{{$t('averageFileSize')}}: <span class="text-color">{{baseInfo.averageFile}}</span></p>
+            <a-divider type="vertical" />
+            <p>{{$t('tableFormat')}}: <span class="text-color">{{baseInfo.tableFormat}}</span></p>
           </div>
         </div>
         <!-- <div class="table-edit">
@@ -85,6 +87,7 @@ export default defineComponent({
         size: '',
         file: '',
         averageFile: '',
+        tableFormat: '',
         hasPartition: false
       } as IBaseDetailInfo,
       detailLoaded: false
