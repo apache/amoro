@@ -287,5 +287,6 @@ public class TableProperties {
     PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
     PROTECTED_PROPERTIES.add(FORMAT_VERSION);
     PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
+    PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
   }
 }
