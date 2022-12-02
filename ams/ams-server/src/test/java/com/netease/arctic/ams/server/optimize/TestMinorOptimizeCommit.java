@@ -232,6 +232,94 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
   }
 
+  @Test
+  public void testOnlyEqDeleteInChangeCommit() throws Exception {
+    List<DataFile> changeEqDeletes = insertChangeDeleteFiles(testKeyedTable, 3);
+
+    List<DataFileInfo> changeTableFilesInfo = new ArrayList<>(changeInsertFilesInfo);
+    changeTableFilesInfo.addAll(changeDeleteFilesInfo);
+    TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testKeyedTable.id());
+    MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testKeyedTable,
+        tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+
+    Set<StructLike> partitionData = changeEqDeletes.stream().map(ContentFile::partition).collect(Collectors.toSet());
+
+    List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
+      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      optimizeRuntime.setPreparedTime(System.currentTimeMillis());
+      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
+      optimizeRuntime.setReportTime(System.currentTimeMillis());
+      optimizeRuntime.setNewFileSize(0);
+      optimizeRuntime.setTargetFiles(new ArrayList<>());
+      List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
+      finalTargetFiles.addAll(task.getInsertFiles());
+      optimizeRuntime.setTargetFiles(finalTargetFiles);
+      optimizeRuntime.setNewFileCnt(finalTargetFiles.size());
+      // 1min
+      optimizeRuntime.setCostTime(60 * 1000);
+      return new OptimizeTaskItem(task, optimizeRuntime);
+    }).collect(Collectors.toList());
+    Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
+        .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
+
+    StructLikeMap<Long> oldMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
+    for (StructLike partitionDatum : partitionData) {
+      Assert.assertNull(oldMaxTxId.get(partitionDatum));
+    }
+
+    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+
+    StructLikeMap<Long> newMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
+    for (StructLike partitionDatum : partitionData) {
+      Assert.assertEquals(testKeyedTable.changeTable().currentSnapshot().sequenceNumber(),
+          (long) newMaxTxId.get(partitionDatum));
+    }
+  }
+
+  @Test
+  public void testNoPartitionOnlyEqDeleteInChangeCommit() throws Exception {
+    insertChangeDeleteFiles(testNoPartitionTable, 3);
+
+    List<DataFileInfo> changeTableFilesInfo = new ArrayList<>(changeInsertFilesInfo);
+    changeTableFilesInfo.addAll(changeDeleteFilesInfo);
+    TableOptimizeRuntime tableOptimizeRuntime =  new TableOptimizeRuntime(testNoPartitionTable.id());
+    MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
+        tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
+
+    List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
+      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      optimizeRuntime.setPreparedTime(System.currentTimeMillis());
+      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
+      optimizeRuntime.setReportTime(System.currentTimeMillis());
+      optimizeRuntime.setNewFileSize(0);
+      optimizeRuntime.setTargetFiles(new ArrayList<>());
+      List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
+      finalTargetFiles.addAll(task.getInsertFiles());
+      optimizeRuntime.setTargetFiles(finalTargetFiles);
+      optimizeRuntime.setNewFileCnt(finalTargetFiles.size());
+      // 1min
+      optimizeRuntime.setCostTime(60 * 1000);
+      return new OptimizeTaskItem(task, optimizeRuntime);
+    }).collect(Collectors.toList());
+    Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
+        .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
+
+    StructLikeMap<Long> oldMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
+    Assert.assertNull(oldMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
+
+    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testNoPartitionTable, partitionTasks);
+    optimizeCommit.commit(TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
+
+    Snapshot snapshot = testNoPartitionTable.changeTable().currentSnapshot();
+    StructLikeMap<Long> newMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testNoPartitionTable);
+    Assert.assertEquals(snapshot.sequenceNumber(), (long) newMaxTxId.get(TablePropertyUtil.EMPTY_STRUCT));
+  }
+
   private Map<TreeNode, List<DeleteFile>> generateTargetFiles(List<DataFile> dataFiles) throws Exception {
     List<DeleteFile> deleteFiles = insertOptimizeTargetDeleteFiles(testKeyedTable, dataFiles, 5);
     return deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->  {
