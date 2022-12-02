@@ -33,8 +33,15 @@ import java.util.List;
 public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
   private final String database = "db";
   private final String table = "testA";
+  private final String insertTable = "testInsert";
 
   private String contextOverwriteMode;
+
+  protected String createTableInsert = "create table {0}.{1}( \n" +
+      " id int, \n" +
+      " data string, \n" +
+      " dt string, primary key(id)) \n" +
+      " using arctic ";
 
   @Before
   public void before() throws IOException {
@@ -113,5 +120,45 @@ public class TestKeyedHiveInsertOverwriteStatic extends SparkTestBase {
     rows = sql("select * from {0}.{1} order by id", database, table);
     Assert.assertEquals(5, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6, 2, 3);
+  }
+
+  @Test
+  public void testInsertOverwriteDuplicateData() {
+    sql("create table {0}.{1}( \n" +
+        " id int, \n" +
+        " name string, \n" +
+        " data string, primary key(id, name))\n" +
+        " using arctic partitioned by (data) " , database, "testPks");
+
+    // insert overwrite values
+    Assert.assertThrows(UnsupportedOperationException.class,
+        () -> sql("insert overwrite " + database + "." + "testPks" +
+            " values (1, 1.1, 'abcd' ) , " +
+            "(1, 1.1, 'bbcd'), " +
+            "(3, 1.3, 'cbcd') "));
+
+    sql(createTableInsert, database, insertTable);
+    sql("insert into " + database + "." + table +
+        " values (1, 'aaa',  '2021-1-1' ) , " +
+        "(2, 'bbb',  '2021-1-2'), " +
+        "(3, 'ccc',  '2021-1-3') ");
+
+    // insert overwrite select + group by has no duplicated data
+    sql("insert overwrite " + database + "." + insertTable + " select * from {0}.{1} group by id, data, dt",
+        database, table);
+    rows = sql("select * from " + database + "." + insertTable);
+    Assert.assertEquals(3, rows.size());
+
+    // insert overwrite select + group by has duplicated data
+    sql("insert into " + database + "." + table +
+        " values (1, 'aaaa', 'abcd' )");
+
+    Assert.assertThrows(UnsupportedOperationException.class,
+        () -> sql("insert overwrite " + database + "." + insertTable +
+                " select * from {0}.{1} group by id, data, dt",
+            database, table));
+
+    sql("drop table " + database + "." + "testPks");
+    sql("drop table " + database + "." + insertTable);
   }
 }

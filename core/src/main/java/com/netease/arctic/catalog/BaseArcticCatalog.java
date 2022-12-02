@@ -42,9 +42,11 @@ import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.CreateTableTransaction;
+import com.netease.arctic.utils.CatalogUtil;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -56,7 +58,6 @@ import org.apache.iceberg.Tables;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.Transactions;
 import org.apache.iceberg.exceptions.NoSuchTableException;
-import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -66,11 +67,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -109,8 +108,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       }
     }
 
-    TableMetaStore.Builder builder = getMetaStoreBuilder();
-    tableMetaStore = builder.build();
+    tableMetaStore = CatalogUtil.buildMetaStore(meta);
     tables = new HadoopTables(tableMetaStore.getConfiguration());
   }
 
@@ -190,12 +188,13 @@ public class BaseArcticCatalog implements ArcticCatalog {
     ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
     Table baseIcebergTable = tableMetaStore.doAs(() -> tables.load(baseLocation));
     BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
-        useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
         fileIO, client);
 
     Table changeIcebergTable = tableMetaStore.doAs(() -> tables.load(changeLocation));
     ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-        useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+        CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+            tableMetaStore.getConfiguration()),
         fileIO, client);
     return new BaseKeyedTable(tableMeta, tableLocation,
         buildPrimaryKeySpec(baseTable.schema(), tableMeta), client, baseTable, changeTable);
@@ -218,7 +217,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
     String baseLocation = checkLocation(tableMeta, MetaTableProperties.LOCATION_KEY_BASE);
     Table table = tableMetaStore.doAs(() -> tables.load(baseLocation));
     ArcticFileIO arcticFileIO = new ArcticHadoopFileIO(tableMetaStore);
-    return new BaseUnkeyedTable(tableIdentifier, useArcticTableOperations(table, baseLocation,
+    return new BaseUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation,
         arcticFileIO, tableMetaStore.getConfiguration()), arcticFileIO, client);
   }
 
@@ -228,18 +227,6 @@ public class BaseArcticCatalog implements ArcticCatalog {
     return location;
   }
 
-  protected Table useArcticTableOperations(
-      Table table, String tableLocation,
-      ArcticFileIO arcticFileIO, Configuration configuration) {
-    if (table instanceof org.apache.iceberg.BaseTable) {
-      org.apache.iceberg.BaseTable baseTable = (org.apache.iceberg.BaseTable) table;
-      if (baseTable.operations() instanceof HadoopTableOperations) {
-        return new org.apache.iceberg.BaseTable(new ArcticHadoopTableOperations(new Path(tableLocation),
-            arcticFileIO, configuration), table.name());
-      }
-    }
-    return table;
-  }
 
   @Override
   public void renameTable(TableIdentifier from, String newTableName) {
@@ -280,6 +267,17 @@ public class BaseArcticCatalog implements ArcticCatalog {
     } catch (Exception e) {
       LOG.warn("drop base/change iceberg table fail ", e);
     }
+
+    try {
+      ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
+      String tableLocation = meta.getLocations().get(MetaTableProperties.LOCATION_KEY_TABLE);
+      if (fileIO.exists(tableLocation) && purge) {
+        LOG.info("try to delete table directory location is " + tableLocation);
+        fileIO.deleteFileWithResult(tableLocation, true);
+      }
+    } catch (Exception e) {
+      LOG.warn("drop table directory fail ", e);
+    }
   }
 
   @Override
@@ -287,11 +285,20 @@ public class BaseArcticCatalog implements ArcticCatalog {
     return new BaseArcticTableBuilder(identifier, schema);
   }
 
+  @Override
+  public void refresh() {
+    try {
+      this.catalogMeta = client.getCatalog(catalogName);
+    } catch (TException e) {
+      throw new IllegalStateException(String.format("failed load catalog %s.", catalogName), e);
+    }
+  }
+
   public TableMetaStore getTableMetaStore() {
     return tableMetaStore;
   }
 
-  private TableMeta getArcticTableMeta(TableIdentifier identifier) {
+  protected TableMeta getArcticTableMeta(TableIdentifier identifier) {
     TableMeta meta;
     try {
       meta = client.getTable(identifier.buildTableIdentifier());
@@ -303,7 +310,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
   }
 
-  protected TableMetaStore.Builder getMetaStoreBuilder() {
+  protected TableMetaStore.Builder getMetaStoreBuilder(Map<String, String> properties) {
+    // load storage configs
     TableMetaStore.Builder builder = TableMetaStore.builder();
     if (this.catalogMeta.getStorageConfigs() != null) {
       Map<String, String> storageConfigs = this.catalogMeta.getStorageConfigs();
@@ -318,20 +326,55 @@ public class BaseArcticCatalog implements ArcticCatalog {
             .withBase64HdfsSite(hdfsSite);
       }
     }
-    if (this.catalogMeta.getAuthConfigs() != null) {
-      Map<String, String> authConfigs = this.catalogMeta.getAuthConfigs();
-      String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+
+    boolean loadAuthFromAMS = PropertyUtil.propertyAsBoolean(properties,
+        CatalogMetaProperties.LOAD_AUTH_FROM_AMS, CatalogMetaProperties.LOAD_AUTH_FROM_AMS_DEFAULT);
+    // load auth configs from ams
+    if (loadAuthFromAMS) {
+      if (this.catalogMeta.getAuthConfigs() != null) {
+        Map<String, String> authConfigs = this.catalogMeta.getAuthConfigs();
+        String authType = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+        LOG.info("TableMetaStore use auth config in catalog meta, authType is {}", authType);
+        if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
+          String hadoopUsername = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+          builder.withSimpleAuth(hadoopUsername);
+        } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
+          String krb5 = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+          String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+          String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+          builder.withBase64KrbAuth(keytab, krb5, principal);
+        }
+      }
+    }
+
+    // cover auth configs from ams with auth configs in properties
+    String authType = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE);
+    if (StringUtils.isNotEmpty(authType)) {
+      LOG.info("TableMetaStore use auth config in properties, authType is {}", authType);
       if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE.equalsIgnoreCase(authType)) {
-        String hadoopUsername = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
+        String hadoopUsername = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME);
         builder.withSimpleAuth(hadoopUsername);
       } else if (CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_KERBEROS.equalsIgnoreCase(authType)) {
-        String krb5 = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
-        String keytab = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
-        String principal = authConfigs.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
+        String krb5 = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KRB5);
+        String keytab = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_KEYTAB);
+        String principal = properties.get(CatalogMetaProperties.AUTH_CONFIGS_KEY_PRINCIPAL);
         builder.withBase64KrbAuth(keytab, krb5, principal);
       }
     }
+
     return builder;
+  }
+
+  private Map<String, String> mergeMetaProperties(CatalogMeta meta, Map<String, String> properties) {
+    Map<String, String> mergedProperties = new HashMap<>();
+    if (meta.getCatalogProperties() != null) {
+      mergedProperties.putAll(meta.getCatalogProperties());
+    }
+    if (properties != null) {
+      mergedProperties.putAll(properties);
+    }
+
+    return mergedProperties;
   }
 
   private void dropInternalTable(TableMetaStore tableMetaStore, String internalTableLocation, boolean purge) {
@@ -392,8 +435,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
     @Override
     public ArcticTable create() {
-      doCreateCheck();
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      doCreateCheck();
       TableMeta meta = builder.build();
       ArcticTable table = doCreateTable(meta);
       createTableMeta(meta);
@@ -451,13 +494,13 @@ public class BaseArcticCatalog implements ArcticCatalog {
     }
 
     protected void checkProperties() {
-      boolean enableStream = PropertyUtil.propertyAsBoolean(properties,
+      boolean enableStream = CompatiblePropertyUtil.propertyAsBoolean(properties,
           TableProperties.ENABLE_LOG_STORE, TableProperties.ENABLE_LOG_STORE_DEFAULT);
       if (enableStream) {
         Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_MESSAGE_TOPIC),
-            "log-store.topic must not be null when log-store.enable is true.");
+            "log-store.topic must not be null when log-store.enabled is true.");
         Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_ADDRESS),
-            "log-store.address must not be null when log-store.enable is true.");
+            "log-store.address must not be null when log-store.enabled is true.");
         String logStoreType = properties.get(TableProperties.LOG_STORE_TYPE);
         Preconditions.checkArgument(logStoreType == null ||
                 logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT),
@@ -515,6 +558,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
       ConvertStructUtil.TableMetaBuilder builder = ConvertStructUtil.newTableMetaBuilder(
           this.identifier, this.schema);
       String tableLocation = getTableLocationForCreate();
+
+      // default properties would not override user-defined properties
+      this.properties = CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogMeta.getCatalogProperties());
+
       builder.withTableLocation(tableLocation)
           .withProperties(this.properties)
           .withPrimaryKeySpec(this.primaryKeySpec);
@@ -535,10 +582,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
       String changeLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_CHANGE);
 
-      //Map<String, String> tableProperties = meta.getProperties();
-      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-
+      fillTableProperties(meta);
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
       Table baseIcebergTable = tableMetaStore.doAs(() -> {
         try {
@@ -549,7 +593,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
       });
 
       BaseTable baseTable = new BaseKeyedTable.BaseInternalTable(tableIdentifier,
-          useArcticTableOperations(baseIcebergTable, baseLocation, fileIO, tableMetaStore.getConfiguration()),
+          CatalogUtil.useArcticTableOperations(baseIcebergTable, baseLocation, fileIO,
+              tableMetaStore.getConfiguration()),
           fileIO, client);
 
       Table changeIcebergTable = tableMetaStore.doAs(() -> {
@@ -560,7 +605,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
         }
       });
       ChangeTable changeTable = new BaseKeyedTable.ChangeInternalTable(tableIdentifier,
-          useArcticTableOperations(changeIcebergTable, changeLocation, fileIO, tableMetaStore.getConfiguration()),
+          CatalogUtil.useArcticTableOperations(changeIcebergTable, changeLocation, fileIO,
+              tableMetaStore.getConfiguration()),
           fileIO, client);
       return new BaseKeyedTable(meta, tableLocation,
           primaryKeySpec, client, baseTable, changeTable);
@@ -571,8 +617,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       TableIdentifier tableIdentifier = TableIdentifier.of(meta.getTableIdentifier());
       String baseLocation = checkLocation(meta, MetaTableProperties.LOCATION_KEY_BASE);
 
-      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
-      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      fillTableProperties(meta);
       Table table = tableMetaStore.doAs(() -> {
         try {
           return tables.create(schema, partitionSpec, meta.getProperties(), baseLocation);
@@ -581,7 +626,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
         }
       });
       ArcticFileIO fileIO = new ArcticHadoopFileIO(tableMetaStore);
-      return new BaseUnkeyedTable(tableIdentifier, useArcticTableOperations(table, baseLocation, fileIO,
+      return new BaseUnkeyedTable(tableIdentifier, CatalogUtil.useArcticTableOperations(table, baseLocation, fileIO,
           tableMetaStore.getConfiguration()), fileIO, client);
     }
 
@@ -608,22 +653,33 @@ public class BaseArcticCatalog implements ArcticCatalog {
       } else {
         throw new IllegalStateException(
             "either `location` in table properties or " +
-                "`warehouse.dir` in catalog properties is specified");
+                "`warehouse` in catalog properties is specified");
       }
+    }
+
+    protected void fillTableProperties(TableMeta meta) {
+      meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
+      meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+      meta.putToProperties(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
     }
 
     protected String getDatabaseLocation() {
       if (catalogMeta.getCatalogProperties() != null) {
-        String catalogWarehouseDir = catalogMeta.getCatalogProperties().getOrDefault(
-            CatalogMetaProperties.KEY_WAREHOUSE_DIR,
-            null
-        );
-        if (!Objects.equals("/", catalogWarehouseDir) && catalogWarehouseDir.endsWith("/")) {
-          catalogWarehouseDir = catalogWarehouseDir.substring(
-              0, catalogWarehouseDir.length() - 1);
+        String catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
+            CatalogMetaProperties.KEY_WAREHOUSE,null);
+        if (catalogWarehouse == null) {
+          catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
+              CatalogMetaProperties.KEY_WAREHOUSE_DIR,null);
         }
-        if (StringUtils.isNotBlank(catalogWarehouseDir)) {
-          return catalogWarehouseDir + '/' + identifier.getDatabase();
+        if (catalogWarehouse == null) {
+          throw new NullPointerException("Catalog warehouse is null.");
+        }
+        if (!Objects.equals("/", catalogWarehouse) && catalogWarehouse.endsWith("/")) {
+          catalogWarehouse = catalogWarehouse.substring(
+              0, catalogWarehouse.length() - 1);
+        }
+        if (StringUtils.isNotBlank(catalogWarehouse)) {
+          return catalogWarehouse + '/' + identifier.getDatabase();
         }
       }
       return null;

@@ -16,6 +16,12 @@ CREATE CATALOG <catalog_name> WITH (
 |metastore.url|(none)|String|是|Arctic Metastore 的 URL，thrift://`<ip>`:`<port>`/`<catalog_name_in_metastore>`|
 |default-database<img width=100/>|default|String|否|默认使用的数据库|
 |property-version|1|Integer|否|Catalog properties 版本，此选项是为了将来的向后兼容性|
+| properties.auth.load-from-ams | True | BOOLEAN | 否 |是否从 AMS 加载安全校验的配置。 true:从AMS加载；false:不使用AMS的配置。注意：不管该参数是否配置，只要用户配置了下述 auth.*** 相关参数，就会使用该配置进行访问|
+| properties.auth.type | (none) | String | 否 | 表安全校验类型，有效值：simple、kerberos 或不配置。默认不配置，无需权限检验。simple：使用 hadoop 用户名，搭配参数'properties.auth.simple.hadoop_username'使用； kerberos：配置 kerberos 权限校验，搭配参数'properties.auth.kerberos.principal','properties.auth.kerberos.keytab','properties.auth.kerberos.krb'使用 |
+| properties.auth.simple.hadoop_username | (none) | String | 否 | 使用该 hadoop username 访问，'properties.auth.type'='simple'时必填。|
+| properties.auth.kerberos.principal | (none) | String | 否 | kerberos 的 principal 配置，'properties.auth.type'='kerberos'时必填。|
+| properties.auth.kerberos.krb.path | (none) | String | 否 | kerberos 的 krb5.conf 配置文件的绝对路径（Flink SQL提交机器的本地文件路径，如用 Flink SQL Client提交SQL任务，该路径为同节点的本地路径，如 /XXX/XXX/krb5.conf）。'properties.auth.type'='kerberos'时必填。|
+| properties.auth.kerberos.keytab.path | (none) | String | 否 | kerberos 的 XXX.keytab 配置文件的绝对路径（Flink SQL提交机器的本地文件路径，如用 Flink SQL Client提交SQL任务，该路径为同节点的本地路径，如 /XXX/XXX/XXX.keytab）。'properties.auth.type'='kerberos'时必填。|
 
 ### 通过 YAML 配置
 参考 Flink Sql Client [官方配置](https://nightlies.apache.org/flink/flink-docs-release-1.12/dev/table/sqlClient.html#environment-files)。

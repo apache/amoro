@@ -20,9 +20,9 @@ package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.ITableExpireService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.ChangeFilesUtil;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
@@ -38,6 +38,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -73,14 +74,13 @@ public class TableExpireService implements ITableExpireService {
     if (cleanTasks == null) {
       cleanTasks = new ScheduledTasks<>(ThreadPool.Type.EXPIRE);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids =
-        tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
+
+    Set<TableIdentifier> tableIds = CatalogUtil.loadTablesFromCatalog();
+    cleanTasks.checkRunningTask(tableIds,
         tableId -> EXPIRE_INTERVAL,
         TableExpireTask::new,
         false);
-    LOG.info("Schedule Expired Cleaner finished with {} valid ids", ids.size());
+    LOG.info("Schedule Expired Cleaner finished with {} valid ids", tableIds.size());
   }
 
   public static class TableExpireTask implements ScheduledTasks.Task {
@@ -99,9 +99,9 @@ public class TableExpireService implements ITableExpireService {
         ArcticCatalog catalog =
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
-        boolean needClean = Boolean.parseBoolean(arcticTable.properties()
-            .getOrDefault(TableProperties.ENABLE_TABLE_EXPIRE,
-                TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT));
+        boolean needClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+            TableProperties.ENABLE_TABLE_EXPIRE,
+            TableProperties.ENABLE_TABLE_EXPIRE_DEFAULT);
         if (!needClean) {
           return;
         }
@@ -169,6 +169,10 @@ public class TableExpireService implements ITableExpireService {
   }
 
   public static void deleteChangeFile(KeyedTable keyedTable, List<DataFileInfo> changeDataFiles) {
+    if (CollectionUtils.isEmpty(changeDataFiles)) {
+      return;
+    }
+
     StructLikeMap<Long> baseMaxTransactionId = TablePropertyUtil.getPartitionMaxTransactionId(keyedTable);
     if (MapUtils.isEmpty(baseMaxTransactionId)) {
       LOG.info("table {} not contains max transaction id", keyedTable.id());
@@ -185,13 +189,12 @@ public class TableExpireService implements ITableExpireService {
     List<DataFileInfo> deleteFiles = new ArrayList<>();
     if (keyedTable.baseTable().spec().isUnpartitioned()) {
       List<DataFileInfo> partitionDataFiles =
-          partitionDataFileMap.get(null);
+          partitionDataFileMap.get(changeDataFiles.get(0).getPartition());
 
       Long maxTransactionId = baseMaxTransactionId.get(TablePropertyUtil.EMPTY_STRUCT);
       if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
         deleteFiles.addAll(partitionDataFiles.stream()
-            .filter(dataFileInfo ->
-                FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= maxTransactionId)
+            .filter(dataFileInfo -> dataFileInfo.getSequence() <= maxTransactionId)
             .collect(Collectors.toList()));
       }
     } else {
@@ -201,14 +204,14 @@ public class TableExpireService implements ITableExpireService {
 
         if (CollectionUtils.isNotEmpty(partitionDataFiles)) {
           deleteFiles.addAll(partitionDataFiles.stream()
-              .filter(dataFileInfo ->
-                  FileUtil.parseFileTidFromFileName(dataFileInfo.getPath()) <= value)
+              .filter(dataFileInfo -> dataFileInfo.getSequence() <= value)
               .collect(Collectors.toList()));
         }
       });
     }
 
-
+    String fileFormat = keyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     List<PrimaryKeyedFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedTable.changeTable().specs().get((int) dataFileInfo.getSpecId());
 
@@ -216,7 +219,7 @@ public class TableExpireService implements ITableExpireService {
         LOG.error("{} can not find partitionSpec id: {}", dataFileInfo.getPath(), dataFileInfo.specId);
         return null;
       }
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       return new DefaultKeyedFile((DataFile) contentFile);
     }).filter(Objects::nonNull).collect(Collectors.toList());
 

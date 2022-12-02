@@ -47,6 +47,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.types.Row;
 import org.apache.flink.types.RowKind;
 import org.apache.flink.util.CloseableIterator;
@@ -65,6 +66,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.After;
+import org.junit.ClassRule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +85,10 @@ import static org.apache.flink.table.api.config.TableConfigOptions.TABLE_DYNAMIC
 
 public class FlinkTestBase extends TableTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(FlinkTestBase.class);
+  
+  @ClassRule
+  public static final MiniClusterWithClientResource MINI_CLUSTER_RESOURCE =
+      MiniClusterResource.createWithClassloaderCheckDisabled();
 
   public static boolean IS_LOCAL = true;
   public static String METASTORE_URL = "thrift://127.0.0.1:" + AMS.port();
@@ -98,7 +104,7 @@ public class FlinkTestBase extends TableTestBase {
   public static final TableSchema FLINK_SCHEMA = TableSchema.builder()
       .field("id", DataTypes.INT())
       .field("name", DataTypes.STRING())
-      .field("op_time", DataTypes.TIMESTAMP_WITH_LOCAL_TIME_ZONE())
+      .field("op_time", DataTypes.TIMESTAMP())
       .build();
   public static final RowType FLINK_ROW_TYPE = (RowType) FLINK_SCHEMA.toRowDataType().getLogicalType();
 
@@ -282,6 +288,12 @@ public class FlinkTestBase extends TableTestBase {
   protected static RowData createRowData(Integer id, String name, String dateTime, RowKind rowKind) {
     return GenericRowData.ofKind(rowKind,
         id, StringData.fromString(name), TimestampData.fromLocalDateTime(LocalDateTime.parse(dateTime)));
+  }
+
+  protected static RowData createRowData(RowKind rowKind, Object... objects) {
+    return GenericRowData.ofKind(
+        rowKind, objects[0], StringData.fromString((String) objects[1]),
+        TimestampData.fromLocalDateTime((LocalDateTime) objects[2]));
   }
 
   protected static RowData createRowData(Integer id, String name, String dateTime) {

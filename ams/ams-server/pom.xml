@@ -25,7 +25,7 @@
     <parent>
         <groupId>com.netease.arctic</groupId>
         <artifactId>arctic-ams</artifactId>
-        <version>0.3.1</version>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>arctic-ams-server</artifactId>
@@ -167,7 +167,7 @@
 
         <dependency>
             <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-spark_3.1</artifactId>
+            <artifactId>arctic-spark-3.1</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -292,6 +292,10 @@
             <artifactId>flink-yarn_${scala.binary.version}</artifactId>
             <version>${flink.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-log4j12</artifactId>
@@ -472,7 +476,7 @@
         <dependency>
             <groupId>org.apache.parquet</groupId>
             <artifactId>parquet-hadoop</artifactId>
-            <version>${parquet.version}</version>
+            <version>${parquet-hadoop.version}</version>
         </dependency>
 
         <dependency>
@@ -517,6 +521,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.kyuubi</groupId>
+            <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
+            <version>1.6.0-incubating</version>
+        </dependency>
+
+
     </dependencies>
 
     <build>
@@ -560,8 +572,6 @@
                             <outputDirectory>
                                 ${project.build.directory}/arctic-ams-server-dependency/lib
                             </outputDirectory>
-                            <includeScope>compile</includeScope>
-                            <includeScope>runtime</includeScope>
                         </configuration>
                     </execution>
                 </executions>

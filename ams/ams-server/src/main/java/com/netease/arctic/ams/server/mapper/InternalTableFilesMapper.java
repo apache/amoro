@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.mapper;
 
 import com.netease.arctic.ams.api.OptimizeTaskId;
-import com.netease.arctic.data.DataFileType;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Param;
@@ -29,22 +28,23 @@ import java.util.List;
 
 public interface InternalTableFilesMapper {
   String TABLE_NAME = "optimize_file";
+  public static String FILE_SCAN_TASK_FILE_TYPE = "FILE_SCAN_TASK";
 
   @Select("select file_content from " + TABLE_NAME + " where" +
       " optimize_type = #{optimizeTaskId.type} and " +
       " trace_id = #{optimizeTaskId.traceId} and " +
-      " file_type = #{fileType} and " +
+      " content_type = #{contentType} and " +
       " is_target = #{isTarget}"
   )
   List<byte[]> selectOptimizeTaskFiles(@Param("optimizeTaskId") OptimizeTaskId optimizeTaskId,
-                                       @Param("fileType") DataFileType fileType,
+                                       @Param("contentType") String contentType,
                                        @Param("isTarget") int isTarget);
 
-  @Insert("insert into " + TABLE_NAME + " (optimize_type, trace_id, file_type, is_target," +
+  @Insert("insert into " + TABLE_NAME + " (optimize_type, trace_id, content_type, is_target," +
       " file_content) values(" +
-      " #{optimizeTaskId.type}, #{optimizeTaskId.traceId}, #{fileType}, #{isTarget}, #{content})")
+      " #{optimizeTaskId.type}, #{optimizeTaskId.traceId}, #{contentType}, #{isTarget}, #{content})")
   void insertOptimizeTaskFile(@Param("optimizeTaskId") OptimizeTaskId optimizeTaskId,
-                              @Param("fileType") DataFileType fileType,
+                              @Param("contentType") String contentType,
                               @Param("isTarget") int isTarget,
                               @Param("content") byte[] content);
 

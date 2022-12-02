@@ -23,9 +23,19 @@ import io.javalin.http.HttpCode;
 public class ErrorResponse extends Response {
   private String requestId;
 
+  public ErrorResponse(int code, String message, String requestId) {
+    super(code, message);
+    this.requestId = requestId;
+  }
+
   public ErrorResponse(HttpCode httpStatus, String message, String requestId) {
     super(httpStatus.getStatus(), message);
     this.requestId = requestId;
+  }
+
+  public ErrorResponse(String message) {
+    super(HttpCode.BAD_REQUEST.getStatus(), message);
+    this.requestId = null;
   }
 
   public String getRequestId() {
@@ -35,6 +45,7 @@ public class ErrorResponse extends Response {
   public void setRequestId(String requestId) {
     this.requestId = requestId;
   }
+
 
   @Override
   public String toString() {

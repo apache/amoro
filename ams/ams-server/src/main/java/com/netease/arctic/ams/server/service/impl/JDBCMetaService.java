@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.service.impl;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.model.OptimizeQueueItem;
@@ -30,6 +31,7 @@ import com.netease.arctic.ams.server.service.IInternalTableService;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.PropertiesUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.ArcticHadoopFileIO;
 import com.netease.arctic.table.BaseUnkeyedTable;
@@ -37,6 +39,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Table;
@@ -45,6 +48,7 @@ import org.apache.iceberg.hadoop.HadoopTables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -57,15 +61,18 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   private final ArcticTransactionService transactionService;
   private final DDLTracerService ddlTracerService;
 
+  private final AdaptHiveService adaptHiveService;
+
   public JDBCMetaService() {
     super();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.transactionService = ServiceContainer.getArcticTransactionService();
     this.ddlTracerService = ServiceContainer.getDdlTracerService();
+    this.adaptHiveService = ServiceContainer.getAdaptHiveService();
   }
 
   @Override
-  public void createTable(TableMetadata tableMetadata) throws MetaException {
+  public void createTable(TableMetadata tableMetadata) {
     try (SqlSession sqlSession = getSqlSession(false)) {
       try {
         TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
@@ -82,7 +89,9 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
     TABLE_META_STORE_CACHE.put(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()),
         tableMetadata.getMetaStore());
     try {
-      ServiceContainer.getOptimizeService().listCachedTables(true);
+      List<TableIdentifier> toAddTables = new ArrayList<>();
+      toAddTables.add(tableMetadata.getTableIdentifier());
+      ServiceContainer.getOptimizeService().addNewTables(toAddTables);
     } catch (Exception e) {
       LOG.warn("createTable success but failed to refresh optimize table cache", e);
     }
@@ -112,9 +121,10 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public void dropTableMetadata(TableIdentifier tableIdentifier,
                                 IInternalTableService internalTableService,
                                 boolean deleteData) throws MetaException {
+    TableMetadata tableMetadata;
     try (SqlSession sqlSession = getSqlSession(false)) {
       TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      TableMetadata tableMetadata = tableMetadataMapper.loadTableMeta(tableIdentifier);
+      tableMetadata = tableMetadataMapper.loadTableMeta(tableIdentifier);
       try {
         tableMetadataMapper.deleteTableMeta(tableIdentifier);
 
@@ -132,6 +142,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         fileInfoCacheService.deleteTableCache(tableIdentifier);
         transactionService.delete(tableIdentifier.buildTableIdentifier());
         ddlTracerService.dropTableData(tableIdentifier.buildTableIdentifier());
+        adaptHiveService.removeTableCache(tableIdentifier);
       } catch (Exception e) {
         LOG.error("The internal table service drop table failed.");
         sqlSession.rollback(true);
@@ -139,29 +150,31 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       }
       sqlSession.commit(true);
     }
+
+    TABLE_META_STORE_CACHE.remove(new Key(tableMetadata.getTableIdentifier(), tableMetadata.getMetaStore()));
+    try {
+      List<TableIdentifier> toRemoveTables = new ArrayList<>();
+      toRemoveTables.add(tableMetadata.getTableIdentifier());
+      ServiceContainer.getOptimizeService().clearRemovedTables(toRemoveTables);
+    } catch (Exception e) {
+      LOG.warn("dropTable success but failed to refresh optimize table cache", e);
+    }
   }
 
   @Override
   public void updateTableProperties(TableIdentifier tableIdentifier, Map<String, String> properties) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      properties.remove("meta_store_site");
-      properties.remove("hdfs_site");
-      properties.remove("core_site");
-      properties.remove("auth_method");
-      properties.remove("hadoop_username");
-      properties.remove("krb_keytab");
-      properties.remove("krb_conf");
-      properties.remove("krb_principal");
+      PropertiesUtil.removeHiddenProperties(properties, ServerTableProperties.HIDDEN_INTERNAL);
       TableMetadata oldTableMetaData = loadTableMetadata(tableIdentifier);
       ServiceContainer.getDdlTracerService().commitProperties(tableIdentifier.buildTableIdentifier(),
           oldTableMetaData.getProperties(),
           properties);
       tableMetadataMapper.updateTableProperties(tableIdentifier, properties);
-      String oldQueueName = oldTableMetaData.getProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
-          TableProperties.OPTIMIZE_GROUP_DEFAULT);
-      String newQueueName =
-          properties.getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+      String oldQueueName = CompatiblePropertyUtil.propertyAsString(oldTableMetaData.getProperties(),
+          TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
+      String newQueueName = CompatiblePropertyUtil.propertyAsString(properties,
+          TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
       if (StringUtils.isNotBlank(oldQueueName) && StringUtils.isNotBlank(newQueueName) && !oldQueueName.equals(
           newQueueName)) {
         OptimizeQueueItem newOptimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(newQueueName);
@@ -177,14 +190,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       }
     } catch (InvalidObjectException | NoSuchObjectException e) {
       LOG.error("get tables failed " + tableIdentifier, e);
-    }
-  }
-
-  @Override
-  public void updateTableTxId(TableIdentifier tableIdentifier, long txId) {
-    try (SqlSession sqlSession = getSqlSession(true)) {
-      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
-      tableMetadataMapper.updateTableTxId(tableIdentifier, txId);
     }
   }
 
@@ -227,6 +232,16 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       return tableMetadataMapper.getTableMetas(catalogName, database);
     }
   }
+
+  @Override
+  public Integer getTableCountInCatalog(String catalogName) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableMetadataMapper tableMetadataMapper = getMapper(sqlSession, TableMetadataMapper.class);
+      return tableMetadataMapper.getTableCountInCatalog(catalogName);
+    }
+  }
+
+
 
   @Override
   public boolean isExist(TableIdentifier tableIdentifier) {

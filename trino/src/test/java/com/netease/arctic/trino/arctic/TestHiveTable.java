@@ -19,20 +19,23 @@
 package com.netease.arctic.trino.arctic;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Lists;
 import com.netease.arctic.data.ChangeAction;
-import com.netease.arctic.hive.io.HiveTestRecords;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseLocationKind;
 import com.netease.arctic.table.ChangeLocationKind;
 import com.netease.arctic.table.LocationKind;
+import io.trino.sql.query.QueryAssertions;
 import io.trino.testing.QueryRunner;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.OverwriteFiles;
@@ -43,8 +46,11 @@ import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class TestHiveTable extends TestHiveTableBaseForTrino{
 
@@ -100,61 +106,49 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   }
 
   @Test
-  public void testHiveTableMOR() {
-    //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_HIVE_TABLE_FULL_NAME, "VALUES" +
-        "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
-        "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
-        "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
-        "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)");
+  public void testHiveTableMOR() throws InterruptedException {
+    assertCommon("select id, name, op_time, \"d$d\", map_name, array_name, struct_name from "
+        + TEST_HIVE_TABLE_FULL_NAME, ImmutableList.of(v1, v2, v3, v4));
   }
 
   @Test
   public void testKeyedHiveTableMOR() {
-    //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_HIVE_PK_TABLE_FULL_NAME, "VALUES" +
-        "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
-        "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)," +
-        "(6, 'mack', TIMESTAMP'2022-01-01 12:00:00.000000', 105)");
+    assertCommon("select id, name, op_time, \"d$d\", map_name, array_name, struct_name from " + TEST_HIVE_PK_TABLE_FULL_NAME,
+        ImmutableList.of(v2, v4, v6));
   }
 
   @Test
   public void testKeyedHiveTableBase() {
-    //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_HIVE_PK_TABLE_FULL_NAME_BASE, "VALUES" +
-        "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
-        "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
-        "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
-        "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)");
+    assertCommon("select id, name, op_time, \"d$d\", map_name, array_name, struct_name from "
+        + TEST_HIVE_PK_TABLE_FULL_NAME_BASE, ImmutableList.of(v1, v2, v3, v4));
   }
 
   @Test
   public void testNoPartitionHiveTableMOR() {
-    //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_UN_PARTITION_HIVE_TABLE_FULL_NAME, "VALUES" +
-        "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
-        "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
-        "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
-        "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)");
+    assertCommon("select id, name, op_time, \"d$d\", map_name, array_name, struct_name from "
+        + TEST_HIVE_PK_TABLE_FULL_NAME_BASE, ImmutableList.of(v1, v2, v3, v4));
   }
 
   @Test
   public void testNoPartitionKeyedHiveTableMOR() {
-    //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME, "VALUES" +
-        "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
-        "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)," +
-        "(6, 'mack', TIMESTAMP'2022-01-01 12:00:00.000000', 105)");
+    assertCommon("select id, name, op_time, \"d$d\", map_name, array_name, struct_name from "
+        + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME, ImmutableList.of(v2, v4, v6));
   }
 
   @Test
   public void testNoPartitionKeyedHiveTableBase() {
-    //H2 unsupported timestamp with time zone, timestamp with time zone need test manually
-    assertQuery("select id, name, op_time, d from " + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE, "VALUES" +
-        "(1, 'john', TIMESTAMP'2022-01-01 12:00:00.000000', 100)," +
-        "(2, 'lily', TIMESTAMP'2022-01-02 12:00:00.000000', 101)," +
-        "(3, 'jake', TIMESTAMP'2022-01-03 12:00:00.000000', 102)," +
-        "(4, 'sam', TIMESTAMP'2022-01-04 12:00:00.000000', 103)");
+    assertCommon("select id, name, op_time, \"d$d\", map_name, array_name, struct_name from "
+        + TEST_UN_PARTITION_HIVE_PK_TABLE_FULL_NAME_BASE, ImmutableList.of(v1, v2, v3, v4));
+  }
+
+
+  private void assertCommon(String query, List<List<String>> values) {
+    QueryAssertions.QueryAssert queryAssert = assertThat(query(query));
+    StringJoiner stringJoiner = new StringJoiner(",", "VALUES", "");
+    for (List<String> value: values) {
+      stringJoiner.add(value.stream().collect(Collectors.joining(",", "(", ")")));
+    }
+    queryAssert.skippingTypesCheck().matches(stringJoiner.toString());
   }
 
   @AfterClass
@@ -211,4 +205,59 @@ public class TestHiveTable extends TestHiveTableBaseForTrino{
   private String base(String table) {
     return "\"" + table + "#base\"";
   }
+
+  List<String> v1 = ImmutableList.of(
+      "1",
+      "varchar 'john'",
+      "TIMESTAMP'2022-01-01 12:00:00.000000'",
+      "CAST(100 AS decimal(10,0))",
+      "map(ARRAY[varchar 'map_key'],ARRAY[varchar 'map_value'])",
+      "ARRAY[varchar 'array_element']",
+      "CAST(ROW(varchar 'struct_sub1', varchar 'struct_sub2') " +
+          "AS ROW(struct_name_sub_1 varchar, struct_name_sub_2 varchar))"
+  );
+
+  List<String> v2 = ImmutableList.of(
+      "2",
+      "varchar 'lily'",
+      "TIMESTAMP'2022-01-02 12:00:00.000000'",
+      "CAST(101 AS decimal(10,0))",
+      "map(ARRAY[varchar 'map_key'],ARRAY[varchar 'map_value'])",
+      "ARRAY[varchar 'array_element']",
+      "CAST(ROW(varchar 'struct_sub1', varchar 'struct_sub2') " +
+          "AS ROW(struct_name_sub_1 varchar, struct_name_sub_2 varchar))"
+  );
+
+  List<String> v3 = ImmutableList.of(
+      "3",
+      "varchar 'jake'",
+      "TIMESTAMP'2022-01-03 12:00:00.000000'",
+      "CAST(102 AS decimal(10,0))",
+      "map(ARRAY[varchar 'map_key'],ARRAY[varchar 'map_value'])",
+      "ARRAY[varchar 'array_element']",
+      "CAST(ROW(varchar 'struct_sub1', varchar 'struct_sub2') " +
+          "AS ROW(struct_name_sub_1 varchar, struct_name_sub_2 varchar))"
+  );
+
+  List<String> v4 = ImmutableList.of(
+      "4",
+      "varchar 'sam'",
+      "TIMESTAMP'2022-01-04 12:00:00.000000'",
+      "CAST(103 AS decimal(10,0))",
+      "map(ARRAY[varchar 'map_key'],ARRAY[varchar 'map_value'])",
+      "ARRAY[varchar 'array_element']",
+      "CAST(ROW(varchar 'struct_sub1', varchar 'struct_sub2') " +
+          "AS ROW(struct_name_sub_1 varchar, struct_name_sub_2 varchar))"
+  );
+
+  List<String> v6 = ImmutableList.of(
+      "6",
+      "varchar 'mack'",
+      "TIMESTAMP'2022-01-01 12:00:00.000000'",
+      "CAST(105 AS decimal(10,0))",
+      "map(ARRAY[varchar 'map_key'],ARRAY[varchar 'map_value'])",
+      "ARRAY[varchar 'array_element']",
+      "CAST(ROW(varchar 'struct_sub1', varchar 'struct_sub2') " +
+          "AS ROW(struct_name_sub_1 varchar, struct_name_sub_2 varchar))"
+  );
 }

@@ -26,6 +26,7 @@ import com.netease.arctic.flink.shuffle.ShuffleRulePolicy;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.util.IcebergClassUtil;
 import com.netease.arctic.flink.util.ProxyUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -33,6 +34,7 @@ import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.api.common.typeinfo.Types;
 import org.apache.flink.api.java.typeutils.TypeExtractor;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamSink;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -49,17 +51,20 @@ import org.apache.iceberg.flink.sink.TaskWriterFactory;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
+import java.time.Duration;
 import java.util.Properties;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_FILE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_EMIT_MODE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_WRITE_MAX_OPEN_FILE_SIZE_DEFAULT;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.AUTO_EMIT_LOGSTORE_WATERMARK_GAP;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SUBMIT_EMPTY_SNAPSHOTS;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE;
 import static com.netease.arctic.table.TableProperties.WRITE_DISTRIBUTION_HASH_MODE_DEFAULT;
@@ -87,7 +92,7 @@ public class FlinkSink {
     private Properties producerConfig;
     private String topic;
     private boolean overwrite = false;
-    private DistributionHashMode distributionMode = DistributionHashMode.NONE;
+    private DistributionHashMode distributionMode = null;
 
     private Builder() {
     }
@@ -161,6 +166,9 @@ public class FlinkSink {
       Preconditions.checkNotNull(tableLoader, "table loader can not be null");
       initTableIfNeeded();
 
+      Configuration config = new Configuration();
+      table.properties().forEach(config::setString);
+
       RowType flinkSchemaRowType = (RowType) flinkSchema.toRowDataType().getLogicalType();
       Schema writeSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(flinkSchema), table.schema());
 
@@ -176,20 +184,22 @@ public class FlinkSink {
       LOG.info("shuffle policy config={}, actual={}", distributionMode,
           shufflePolicy == null ? DistributionMode.NONE : distributionMode.getDesc());
 
-      String arcticEmitMode = table.properties().getOrDefault(ArcticValidator.ARCTIC_EMIT_MODE, ARCTIC_EMIT_FILE);
-      final boolean metricsEventLatency = PropertyUtil
+      String arcticEmitMode = table.properties().getOrDefault(ARCTIC_EMIT_MODE.key(), ARCTIC_EMIT_MODE.defaultValue());
+      final boolean metricsEventLatency = CompatibleFlinkPropertyUtil
           .propertyAsBoolean(table.properties(), ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE,
               ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE_DEFAULT);
 
-      final boolean metricsEnable = PropertyUtil
+      final boolean metricsEnable = CompatibleFlinkPropertyUtil
           .propertyAsBoolean(table.properties(), ARCTIC_THROUGHPUT_METRIC_ENABLE,
               ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT);
+
+      final Duration watermarkWriteGap = config.get(AUTO_EMIT_LOGSTORE_WATERMARK_GAP);
 
       ArcticFileWriter fileWriter = createFileWriter(table, shufflePolicy, overwrite, flinkSchemaRowType,
           arcticEmitMode, tableLoader);
 
       ArcticLogWriter logWriter = ArcticUtils.buildArcticLogWriter(table.properties(),
-          producerConfig, topic, flinkSchema, arcticEmitMode, helper);
+          producerConfig, topic, flinkSchema, arcticEmitMode, helper, tableLoader, watermarkWriteGap);
 
       MetricsGenerator metricsGenerator = ArcticUtils.getMetricsGenerator(metricsEventLatency,
           metricsEnable, table, flinkSchemaRowType, writeSchema);

@@ -91,18 +91,19 @@ const metricsMap: IMap<string | number> = {
   averageFile: 'Average File Size',
   file: 'File',
   lastCommitTime: 'Last Commit Time',
-  size: 'Size',
-  maxEventTime: 'Max Event Time'
+  size: 'Size'
 }
 
 const state = reactive({
   detailLoading: false,
   baseDetailInfo: {
+    tableType: '',
     tableName: '',
     createTime: '',
     size: '',
     file: '',
     averageFile: '',
+    tableFormat: '',
     hasPartition: false // Whether there is a partition, if there is no partition, the file list will be displayed
   } as IBaseDetailInfo,
   pkList: [] as DetailColumnItem[],
@@ -123,9 +124,10 @@ const getTableDetails = async() => {
     const result = await getTableDetail({
       ...params.value
     })
-    const { pkList = [], partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics } = result
+    const { pkList = [], tableType, partitionColumnList = [], properties, changeMetrics, schema, createTime, tableIdentifier, baseMetrics, tableSummary } = result
     state.baseDetailInfo = {
-      ...baseMetrics,
+      ...tableSummary,
+      tableType,
       tableName: tableIdentifier?.tableName || '',
       createTime: createTime ? dateFormat(createTime) : '',
       hasPartition: !!(partitionColumnList?.length)
@@ -148,7 +150,6 @@ const getTableDetails = async() => {
         value: key === 'lastCommitTime' ? ((baseMetrics || {})[key] ? dateFormat((baseMetrics || {})[key]) : '') : (baseMetrics || {})[key]
       }
     })
-
     state.properties = Object.keys(properties || {}).map(key => {
       return {
         key: key,
@@ -209,7 +210,7 @@ const propertiesColumns: IColumns[] = shallowReactive([
     margin-top: 16px;
   }
   .attr-title {
-    font-size: 20px;
+    font-size: 16px;
     line-height: 24px;
     font-weight: bold;
     color: #102048;

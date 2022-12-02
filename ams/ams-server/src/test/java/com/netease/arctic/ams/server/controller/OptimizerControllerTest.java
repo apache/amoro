@@ -20,9 +20,7 @@ package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
-import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.ArcticMetaStore;
-import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.Response;
 import com.netease.arctic.ams.server.model.Container;
@@ -34,13 +32,9 @@ import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import io.javalin.testtools.JavalinTest;
-import org.apache.ibatis.session.SqlSessionFactory;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.stubbing.Answer;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -48,9 +42,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 
 /**
  * @Description: OptimizerController Test
@@ -182,24 +173,13 @@ public class OptimizerControllerTest {
             2, 1024, 1, "test2");
     JavalinTest.test((app, client) -> {
       List<Optimizer> optimizers = optimizerService.getOptimizers();
-      long jobId = optimizers.get(0).getJobId();
-      ServiceContainer.getOptimizeExecuteService().startOptimizer(jobId);
+      long optimizerId = optimizers.get(0).getJobId();
+      ServiceContainer.getOptimizeExecuteService().startOptimizer(optimizerId);
       app.post("/{jobId}", OptimizerController::releaseOptimizer);
-      final okhttp3.Response resp = client.post("/" + jobId);
+      final okhttp3.Response resp = client.post("/" + optimizerId);
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
       assert result.getCode() == 200;
     });
-  }
-
-  public static void mockDerby() throws Exception {
-    mockStatic(JDBCSqlSessionFactoryProvider.class);
-    when(JDBCSqlSessionFactoryProvider.get()).thenAnswer((Answer<SqlSessionFactory>) invocation -> DerbyTestUtil.get());
-    DerbyTestUtil derbyService = new DerbyTestUtil();
-    derbyService.createTestTable();
-    mockStatic(ArcticMetaStore.class);
-    com.netease.arctic.ams.server.config.Configuration configuration = new com.netease.arctic.ams.server.config.Configuration();
-    configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
-    ArcticMetaStore.conf = configuration;
   }
 
   public static void deleteDerby() throws IOException {

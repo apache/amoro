@@ -19,46 +19,17 @@ ams:
   #arctic.ams.database.type: mysql
 
   #HA config
-  #arctic.ams.ha.enable: true
+  #arctic.ams.ha.enabled: true
   #arctic.ams.cluster.name: default
   #arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
-# extension properties for like system
+  # kyuubi config
+  #arctic.ams.terminal.backend: kyuubi
+  #arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/;
+
+# extension properties for like syste
 extension_properties:
 #test.properties: test
-
-catalogs:
-# arctic catalog config. now can't delete catalog by config file
-  - name: local_catalog
-    # arctic catalog type, now just support hadoop
-    type: hadoop
-    # file system config.sh
-    storage_config:
-      storage.type: hdfs
-      core-site:
-      hdfs-site:
-      hive-site:
-    # auth config.sh now support SIMPLE and KERBEROS
-    auth_config:
-      type: SIMPLE
-      hadoop_username: root
-    properties:
-      warehouse.dir: /tmp/arctic/warehouse
-#  - name: ...
-#    type: hadoop
-#    storage_config:
-#      storage.type: hdfs
-#      core-site: /etc/hadoop/conf/core-site.xml
-#      hdfs-site: /etc/hadoop/conf/hdfs-site.xml
-#      hive-site: /etc/hadoop/conf/hive-site.xml
-#    auth_config:
-#      type: KERBEROS
-#      principal: user/admin@EXAMPLE.COM
-#      keytab: /etc/user.keytab
-#      krb5: /etc/user.conf
-#    properties:
-#      warehouse.dir: hdfs://default/default/warehouse
-
 containers:
   # arctic optimizer container config.sh
   - name: localContainer

@@ -23,7 +23,10 @@ import com.netease.arctic.spark.reader.ArcticUnkeyedTableScan;
 import com.netease.arctic.spark.writer.ArcticKeyedSparkOverwriteWriter;
 import com.netease.arctic.spark.writer.ArcticUnkeyedSparkOverwriteWriter;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.SparkSchemaUtil;
 import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.SparkSession;
@@ -33,15 +36,19 @@ import org.apache.spark.sql.sources.v2.reader.DataSourceReader;
 import org.apache.spark.sql.sources.v2.writer.DataSourceWriter;
 import org.apache.spark.sql.types.StructType;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class ArcticSparkTable implements DataSourceTable {
+
+  private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private final TableIdentifier identifier;
   private final ArcticTable arcticTable;
   private final StructType requestedSchema;
   private final boolean refreshEagerly;
   private StructType lazyTableSchema = null;
-  private SparkSession lazySpark = null;
+  private static SparkSession lazySpark = null;
 
   public static ArcticSparkTable ofArcticTable(TableIdentifier identifier, ArcticTable table) {
     return new ArcticSparkTable(table, identifier, null, false);
@@ -88,28 +95,60 @@ public class ArcticSparkTable implements DataSourceTable {
     return lazyTableSchema;
   }
 
+  public ArcticTable table() {
+    return arcticTable;
+  }
+
+  public Map<String, String> properties() {
+    ImmutableMap.Builder<String, String> propsBuilder = ImmutableMap.builder();
+
+    String baseFileFormat = arcticTable.properties()
+        .getOrDefault(TableProperties.BASE_FILE_FORMAT, TableProperties.BASE_FILE_FORMAT_DEFAULT);
+    String deltaFileFormat = arcticTable.properties()
+        .getOrDefault(TableProperties.CHANGE_FILE_FORMAT, TableProperties.CHANGE_FILE_FORMAT_DEFAULT);
+    propsBuilder.put("base.write.format", baseFileFormat);
+    propsBuilder.put("delta.write.format", deltaFileFormat);
+    propsBuilder.put("provider", "arctic");
+
+    arcticTable.properties().entrySet().stream()
+        .filter(entry -> !RESERVED_PROPERTIES.contains(entry.getKey()))
+        .forEach(propsBuilder::put);
+
+    return propsBuilder.build();
+  }
+
   @Override
   public DataSourceReader createReader(DataSourceOptions options) {
-    if (arcticTable.isKeyedTable()) {
-      return new ArcticKeyedTableScan(sparkSession(), arcticTable.asKeyedTable());
-    } else {
-      return new ArcticUnkeyedTableScan(sparkSession(), arcticTable.asUnkeyedTable());
-    }
+    return createReaderWithTable(arcticTable, options, sparkSession());
   }
 
   @Override
   public Optional<DataSourceWriter> createWriter(String jobId, StructType schema,
                                                  SaveMode mode, DataSourceOptions options) {
-    if (arcticTable.isKeyedTable()) {
+    return createWriterWithTable(arcticTable, jobId, schema, mode, options);
+  }
+
+  public static DataSourceReader createReaderWithTable(ArcticTable table, DataSourceOptions options,
+                                                       SparkSession spark) {
+    if (table.isKeyedTable()) {
+      return new ArcticKeyedTableScan(spark, table.asKeyedTable());
+    } else {
+      return new ArcticUnkeyedTableScan(spark, table.asUnkeyedTable());
+    }
+  }
+
+  public static Optional<DataSourceWriter> createWriterWithTable(ArcticTable table, String jobId, StructType schema,
+                                                                 SaveMode mode, DataSourceOptions options) {
+    if (table.isKeyedTable()) {
       if (mode == SaveMode.Overwrite) {
-        return Optional.of(new ArcticKeyedSparkOverwriteWriter(arcticTable.asKeyedTable(), schema));
+        return Optional.of(new ArcticKeyedSparkOverwriteWriter(table.asKeyedTable(), schema, options));
       } else if (mode == SaveMode.Append) {
         // TODO: support keyed append
         throw new UnsupportedOperationException("Not support now!");
       }
-    } else if (arcticTable.isUnkeyedTable()) {
+    } else if (table.isUnkeyedTable()) {
       if (mode == SaveMode.Overwrite) {
-        return Optional.of(new ArcticUnkeyedSparkOverwriteWriter(arcticTable.asUnkeyedTable(), schema));
+        return Optional.of(new ArcticUnkeyedSparkOverwriteWriter(table.asUnkeyedTable(), schema, options));
       } else if (mode == SaveMode.Append) {
         // TODO: support unkeyed append
         throw new UnsupportedOperationException("Not support now!");

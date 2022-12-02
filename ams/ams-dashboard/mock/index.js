@@ -638,5 +638,186 @@ module.exports = {
         ]
       }
     })
+  },
+  'GET /mock/ams/v1/overview/summary': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "catalogCnt": 2,
+        "tableCnt": 37944,
+        "tableTotalSize": 10585900,
+        "totalCpu": "6",
+        "totalMemory": 62464
+      }
+    })
+  },
+  'GET /mock/ams/v1/overview/top/tables': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          "tableName": "trino_online_env_hive.spark_test.ctpri",
+          "size": 12938982,
+          "fileCnt": 57889
+        },
+        {
+          "tableName": "trino_online_env_hive.spark_test.ctpp_col",
+          "size": 329043290,
+          "fileCnt": 79910
+        }
+      ]
+    })
+  },
+  'GET /mock/ams/v1/overview/metric/optimize/resource': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        "timeLine": [
+          "10-09 14:48"
+        ],
+        "usedCpu": [
+          "83.24"
+        ],
+        "usedCpuDivision": [
+          "1828核/2196核"
+        ],
+        "usedCpuPercent": [
+          "83.24%"
+        ],
+        "usedMem": [
+          "83.24"
+        ],
+        "usedMemDivision": [
+          "1828核/2196核10364G"
+        ],
+        "usedMemPercent": [
+          "83.24%"
+        ]
+      }
+    })
+  },
+  'GET /mock/ams/v1/catalogs/types': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        'hadoop',
+        'hive'
+      ]
+    })
+  },
+  'GET /mock/ams/v1/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        name: 'bdms_test_catalog_hive',
+        type: 'hive',
+        storageConfig: {
+          "storage_config.storage.type": "hdfs",
+          "storage_config.core-site": {
+            "fileName": "fileName1",
+		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          },
+          "storage_config.hdfs-site": {
+            "fileName": "fileName2",
+		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          },
+          "storage_config.hive-site": {
+            "fileName": "fileName3",
+		        "filrUrl": "http://afk.qqzdvuzccctprn.bkfj"
+          }
+        },
+        authConfig: {
+          "auth_config.type": "simpel",
+          "auth_config.hadoop_username": "omPRZh6bc8",
+          "auth_config.principal": "L2TeTS0OzC",
+          "auth_config.keytab":  {
+            "fileName": "fileNamekeytab",
+            "fileUrl": "http://bfu.qynoircxcut.civkj"
+          },
+          "auth_config.krb5": {
+            "fileName": "fileNamekrb5",
+            "fileUrl": "http://bfu.qynoircxcut.civkj"
+          }
+        },
+        properties: {
+          'key1': 'value1'
+        }
+      }
+    })
+  },
+  'DELETE /mock/ams/v1/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
+  'PUT /mock/ams/v1/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
+  'GET /mock/ams/v1/check/catalogs/bdms_test_catalog_hive': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {}
+    })
+  },
+  'GET /mock/ams/v1/settings/system': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: {
+        'arctic.ams.server-host.prefix': '127.0.0.1',
+        'arctic.ams.thrift.port': '18112'
+      }
+    })
+  },
+  'GET /mock/ams/v1/settings/containers': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: [
+        {
+          name: 'flinkcontainer',
+          type: 'flink',
+          properties: {
+            'properties.FLINK_HOME': '/home/arctic/flink-1.12.7/'
+          },
+          optimizeGroup: [{
+            name: 'flinkOp',
+            tmMemory: '1024',
+            jmMemory: 'sdsa'
+          }]
+        },
+        {
+          name: 'flinkcontainer2',
+          type: 'flink',
+          properties: {
+            'properties.FLINK_HOME': '/home/arctic/flink-1.12.7/'
+          },
+          optimizeGroup: [{
+            name: 'flinkOp',
+            tmMemory: '1024',
+            jmMemory: 'sdsa2'
+          }]
+        },
+      ]
+    })
+  },
+  'GET /mock/ams/v1/catalogs/bdms_test_catalog_hive/delete/check': (req, res) => {
+    res.json({
+      code: 200,
+      msg: 'success',
+      result: true
+    })
   }
 }

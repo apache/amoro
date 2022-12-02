@@ -143,22 +143,6 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
   }
 
   @Override
-  public void notifyCheckpointComplete(long checkpointId) throws Exception {
-    super.notifyCheckpointComplete(checkpointId);
-    if (logWriter != null) {
-      logWriter.notifyCheckpointComplete(checkpointId);
-    }
-  }
-
-  @Override
-  public void notifyCheckpointAborted(long checkpointId) throws Exception {
-    super.notifyCheckpointAborted(checkpointId);
-    if (logWriter != null) {
-      logWriter.notifyCheckpointAborted(checkpointId);
-    }
-  }
-
-  @Override
   public void endInput() throws Exception {
     if (logWriter != null) {
       logWriter.endInput();
@@ -180,6 +164,17 @@ public class ArcticWriter<OUT> extends AbstractStreamOperator<OUT>
       ((Input) fileWriter).processElement(element);
     }
     metricsGenerator.recordLatency(element);
+  }
+
+  @Override
+  public void processWatermark(Watermark mark) throws Exception {
+    if (logWriter != null) {
+      logWriter.processWatermark(mark);
+    }
+    if (fileWriter instanceof Input) {
+      ((Input) fileWriter).processWatermark(mark);
+    }
+    super.processWatermark(mark);
   }
 
   @Override

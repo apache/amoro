@@ -36,20 +36,32 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.Table;
+import org.apache.iceberg.data.GenericAppenderFactory;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.deletes.EqualityDeleteWriter;
+import org.apache.iceberg.deletes.PositionDelete;
+import org.apache.iceberg.deletes.PositionDeleteWriter;
+import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
+import org.apache.iceberg.io.DataWriter;
+import org.apache.iceberg.io.OutputFileFactory;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Multimap;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.ArrayUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -61,7 +73,9 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
@@ -83,37 +97,38 @@ public class TableTestBase {
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
   );
+  public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
+      .day("op_time").build();
+
   protected static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);
   protected static final Schema POS_DELETE_SCHEMA = new Schema(
       MetadataColumns.DELETE_FILE_PATH,
       MetadataColumns.DELETE_FILE_POS
   );
-  protected static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
-      .day("op_time").build();
   protected static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
       .addColumn("id").build();
   protected static final DataFile FILE_A = DataFiles.builder(SPEC)
       .withPath("/path/to/data-a.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
   protected static final DataFile FILE_B = DataFiles.builder(SPEC)
       .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
   protected static final DataFile FILE_C = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(0)
+      .withPath("/path/to/data-c.parquet")
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
 
   protected static final DataFile FILE_D = DataFiles.builder(SPEC)
       .withPath("/path/to/data-d.parquet")
-      .withFileSizeInBytes(0)
+      .withFileSizeInBytes(10)
       .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
       .withRecordCount(2) // needs at least one record or else metrics will filter it out
       .build();
@@ -274,7 +289,7 @@ public class TableTestBase {
     return LocalDateTime.of(2020, 1, day, 0, 0);
   }
 
-  public StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
+  public static StructLike partitionData(Schema tableSchema, PartitionSpec spec, Object... partitionValues) {
     GenericRecord record = GenericRecord.create(tableSchema);
     int index = 0;
     Set<Integer> partitionField = Sets.newHashSet();
@@ -315,6 +330,68 @@ public class TableTestBase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  public static DataFile writeNewDataFile(Table table, List<Record> records, StructLike partitionData) throws IOException {
+    GenericAppenderFactory appenderFactory = new GenericAppenderFactory(table.schema(), table.spec());
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+
+    DataWriter<Record> writer = appenderFactory
+        .newDataWriter(outputFile, FileFormat.PARQUET, partitionData);
+
+    for (Record record : records) {
+      writer.write(record);
+    }
+    writer.close();
+    return writer.toDataFile();
+  }
+
+  public static DeleteFile writeEqDeleteFile(Table table, List<Record> records, StructLike partitionData) throws IOException {
+    List<Integer> equalityFieldIds = Lists.newArrayList(table.schema().findField("id").fieldId());
+    Schema eqDeleteRowSchema = table.schema().select("id");
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(table.schema(), table.spec(),
+            ArrayUtil.toIntArray(equalityFieldIds), eqDeleteRowSchema, null);
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(table.spec(), partitionData);
+
+    EqualityDeleteWriter<Record> writer = appenderFactory
+        .newEqDeleteWriter(outputFile, FileFormat.PARQUET, partitionData);
+
+    for (Record record : records) {
+      writer.write(record);
+    }
+    writer.close();
+    return writer.toDeleteFile();
+  }
+
+  public static DeleteFile writePosDeleteFile(Table table, Multimap<String, Long> file2Positions,
+                                               StructLike partitionData) throws IOException {
+    GenericAppenderFactory appenderFactory =
+        new GenericAppenderFactory(table.schema(), table.spec());
+    OutputFileFactory outputFileFactory =
+        OutputFileFactory.builderFor(table, table.spec().specId(), 1)
+            .build();
+    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(table.spec(), partitionData);
+
+    PositionDeleteWriter<Record> writer = appenderFactory
+        .newPosDeleteWriter(outputFile, FileFormat.PARQUET, partitionData);
+    for (Map.Entry<String, Collection<Long>> entry : file2Positions.asMap().entrySet()) {
+      String filePath = entry.getKey();
+      Collection<Long> positions = entry.getValue();
+      for (Long position : positions) {
+        PositionDelete<Record> positionDelete = PositionDelete.create();
+        positionDelete.set(filePath, position, null);
+        writer.write(positionDelete);
+      }
+    }
+    writer.close();
+    return writer.toDeleteFile();
   }
 
 }

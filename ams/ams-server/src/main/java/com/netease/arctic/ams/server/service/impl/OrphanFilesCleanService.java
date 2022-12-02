@@ -20,9 +20,9 @@ package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IOrphanFilesCleanService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
+import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.HiveLocationUtils;
 import com.netease.arctic.ams.server.utils.ScheduledTasks;
 import com.netease.arctic.ams.server.utils.ThreadPool;
@@ -36,6 +36,7 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
@@ -72,13 +73,13 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     if (cleanTasks == null) {
       cleanTasks = new ScheduledTasks<>(ThreadPool.Type.ORPHAN);
     }
-    List<TableMetadata> tables = ServiceContainer.getMetaService().listTables();
-    Set<TableIdentifier> ids = tables.stream().map(TableMetadata::getTableIdentifier).collect(Collectors.toSet());
-    cleanTasks.checkRunningTask(ids,
+
+    Set<TableIdentifier> tableIds = CatalogUtil.loadTablesFromCatalog();
+    cleanTasks.checkRunningTask(tableIds,
         t -> CHECK_INTERVAL,
         TableOrphanFileClean::new,
         true);
-    LOG.info("Schedule Orphan Cleaner finished with {} tasks", ids.size());
+    LOG.info("Schedule Orphan Cleaner finished with {} tasks", tableIds.size());
   }
 
   public static class TableOrphanFileClean implements ScheduledTasks.Task {
@@ -96,9 +97,9 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
             CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
         ArcticTable arcticTable = catalog.loadTable(tableIdentifier);
 
-        boolean needOrphanClean = Boolean.parseBoolean(arcticTable.properties()
-            .getOrDefault(TableProperties.ENABLE_ORPHAN_CLEAN,
-                TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT));
+        boolean needOrphanClean = CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
+            TableProperties.ENABLE_ORPHAN_CLEAN,
+            TableProperties.ENABLE_ORPHAN_CLEAN_DEFAULT);
 
         if (!needOrphanClean) {
           return;

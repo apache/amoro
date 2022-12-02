@@ -23,13 +23,14 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
+import org.apache.iceberg.util.LockManagers;
 
 public class ArcticHadoopTableOperations extends HadoopTableOperations {
 
   private final ArcticFileIO arcticFileIO;
 
   public ArcticHadoopTableOperations(Path location, ArcticFileIO fileIO, Configuration conf) {
-    super(location, fileIO, conf);
+    super(location, fileIO, conf, LockManagers.defaultLockManager());
     this.arcticFileIO = fileIO;
   }
 

@@ -28,23 +28,18 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.util.BinPacking;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +55,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class MajorOptimizePlan extends BaseOptimizePlan {
+public class MajorOptimizePlan extends BaseArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(MajorOptimizePlan.class);
 
   // partition -> need major optimize files
@@ -77,7 +72,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   }
 
   @Override
-  public void addOptimizeFilesTree() {
+  public void addOptimizeFiles() {
     addBaseFileIntoFileTree();
   }
 
@@ -132,8 +127,9 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   protected boolean checkMajorOptimizeInterval(long current, String partitionToPath) {
     if (current - tableOptimizeRuntime.getLatestMajorOptimizeTime(partitionToPath) >=
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
-            TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT)) {
+        CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+            TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL,
+            TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT)) {
       long fileCount = partitionNeedMajorOptimizeFiles.get(partitionToPath) == null ?
           0 : partitionNeedMajorOptimizeFiles.get(partitionToPath).size();
 
@@ -147,9 +143,9 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   protected boolean checkSmallFileCount(List<DataFile> dataFileList) {
     if (CollectionUtils.isNotEmpty(dataFileList)) {
       // file count
-      return dataFileList.size() >= PropertyUtil.propertyAsInt(arcticTable.properties(),
-          TableProperties.MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT,
-          TableProperties.MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT);
+      return dataFileList.size() >= CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT_DEFAULT);
     }
 
     return false;
@@ -158,9 +154,7 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
   protected void fillPartitionNeedOptimizeFiles(String partition, ContentFile<?> contentFile) {
     // fill partition need optimize file map
     // add small files in iceberg base store and not in hive store
-    boolean isSmallFile = contentFile.fileSizeInBytes() < PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-        TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    boolean isSmallFile = contentFile.fileSizeInBytes() < getSmallFileSize(arcticTable.properties());
     if (isSmallFile) {
       List<DataFile> files = partitionNeedMajorOptimizeFiles.computeIfAbsent(partition, e -> new ArrayList<>());
       files.add((DataFile) contentFile);
@@ -191,9 +185,8 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());
@@ -224,16 +217,16 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectUnKeyedTableTasks(String partition, List<DataFile> fileList) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
+        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
-      long taskSize =
-          PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
-              TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
+      long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
       Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
       int taskCnt = (int) (sum / taskSize) + 1;
       List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
@@ -251,10 +244,10 @@ public class MajorOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime, "");
+        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
     // split tasks

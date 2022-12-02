@@ -27,13 +27,18 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
+import org.apache.hadoop.hive.metastore.api.Partition;
+import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -48,18 +53,21 @@ import java.util.stream.Collectors;
 public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveHasPosDeleteCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedHiveTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testKeyedHiveTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -96,7 +104,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {});
+    ((SupportHive) testKeyedHiveTable.baseTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testKeyedHiveTable.id().getDatabase(),
+          testKeyedHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(0, partitions.size());
+      return null;
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testKeyedHiveTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -111,13 +127,21 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
+
+    ((SupportHive) testKeyedHiveTable.baseTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testKeyedHiveTable.id().getDatabase(),
+          testKeyedHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(0, partitions.size());
+      return null;
+    });
   }
 
   @Test
   public void testKeyedTableMajorOptimizeSupportHiveNoPosDeleteCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 2L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 2L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -150,7 +174,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {});
+    ((SupportHive) testKeyedHiveTable.baseTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testKeyedHiveTable.id().getDatabase(),
+          testKeyedHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(0, partitions.size());
+      return null;
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testKeyedHiveTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -160,25 +192,38 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       Assert.assertTrue(newFilePath.contains(testKeyedHiveTable.hiveLocation()));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+
+    ((SupportHive) testKeyedHiveTable.baseTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testKeyedHiveTable.id().getDatabase(),
+          testKeyedHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(1, partitions.size());
+      for (String newFilePath : newDataFilesPath) {
+        Assert.assertTrue(newFilePath.contains(partitions.get(0).getSd().getLocation()));
+      }
+      return null;
+    });
   }
 
   @Test
   public void testKeyedTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedHiveTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testKeyedHiveTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(), testKeyedHiveTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -211,7 +256,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {});
+    ((SupportHive) testKeyedHiveTable.baseTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testKeyedHiveTable.id().getDatabase(),
+          testKeyedHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(0, partitions.size());
+      return null;
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testKeyedHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testKeyedHiveTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -221,13 +274,24 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       Assert.assertTrue(newFilePath.contains(testKeyedHiveTable.hiveLocation()));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+
+    ((SupportHive) testKeyedHiveTable.baseTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testKeyedHiveTable.id().getDatabase(),
+          testKeyedHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(1, partitions.size());
+      for (String newFilePath : newDataFilesPath) {
+        Assert.assertTrue(newFilePath.contains(partitions.get(0).getSd().getLocation()));
+      }
+      return null;
+    });
   }
 
   @Test
   public void testUnKeyedTableMajorOptimizeSupportHiveCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -261,7 +325,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, taskItem -> {});
+    ((SupportHive) testHiveTable.asUnkeyedTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testHiveTable.id().getDatabase(),
+          testHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(0, partitions.size());
+      return null;
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testHiveTable.asUnkeyedTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -271,16 +343,27 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       Assert.assertTrue(newFilePath.contains(testHiveTable.hiveLocation()));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+
+    ((SupportHive) testHiveTable.asUnkeyedTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testHiveTable.id().getDatabase(),
+          testHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(1, partitions.size());
+      for (String newFilePath : newDataFilesPath) {
+        Assert.assertTrue(newFilePath.contains(partitions.get(0).getSd().getLocation()));
+      }
+      return null;
+    });
   }
 
   @Test
   public void testUnKeyedTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testHiveTable, null);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testHiveTable, null);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testHiveTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -314,7 +397,15 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, taskItem -> {});
+    ((SupportHive) testHiveTable.asUnkeyedTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testHiveTable.id().getDatabase(),
+          testHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(0, partitions.size());
+      return null;
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testHiveTable.asUnkeyedTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -324,15 +415,25 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       Assert.assertTrue(newFilePath.contains(testHiveTable.hiveLocation()));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
-  }
 
+    ((SupportHive) testHiveTable.asUnkeyedTable()).getHMSClient().run(client -> {
+      List<Partition> partitions = client.listPartitions(testHiveTable.id().getDatabase(),
+          testHiveTable.id().getTableName(), Short.MAX_VALUE);
+      Assert.assertEquals(1, partitions.size());
+      for (String newFilePath : newDataFilesPath) {
+        Assert.assertTrue(newFilePath.contains(partitions.get(0).getSd().getLocation()));
+      }
+      return null;
+    });
+  }
 
   @Test
   public void testUnPartitionTableMajorOptimizeSupportHiveCommit() throws Exception {
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 2L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -365,7 +466,14 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, taskItem -> {});
+    String oldHiveLocation = ((SupportHive) testHiveTable.asUnkeyedTable()).getHMSClient().run(client -> {
+      Table table = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
+          testUnPartitionKeyedHiveTable.id().getTableName());
+      return table.getSd().getLocation();
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testUnPartitionKeyedHiveTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -375,26 +483,39 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       Assert.assertTrue(newFilePath.contains(testUnPartitionKeyedHiveTable.hiveLocation()));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+
+    ((SupportHive) testUnPartitionKeyedHiveTable.asKeyedTable().baseTable()).getHMSClient().run(client -> {
+      Table table = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
+          testUnPartitionKeyedHiveTable.id().getTableName());
+      Assert.assertEquals(oldHiveLocation, table.getSd().getLocation());
+      for (String newFilePath : newDataFilesPath) {
+        Assert.assertTrue(newFilePath.contains(table.getSd().getLocation()));
+      }
+      return null;
+    });
   }
 
   @Test
   public void testUnPartitionTableFullMajorOptimizeSupportHiveCommit() throws Exception {
     testUnPartitionKeyedHiveTable.updateProperties()
-        .set(TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL, "86400000")
+        .set(TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL, "86400000")
         .commit();
-    List<DataFile> baseDataFiles = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testUnPartitionKeyedHiveTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testUnPartitionKeyedHiveTable))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
-    List<DeleteFile> deleteFiles = insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2L, baseDataFiles,
-        targetNodes);
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testUnPartitionKeyedHiveTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
     posDeleteFilesInfo.addAll(deleteFiles.stream()
         .map(deleteFile ->
-            DataFileInfoUtils.convertToDatafileInfo(deleteFile, System.currentTimeMillis(), testUnPartitionKeyedHiveTable.asKeyedTable()))
+            DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
+                testUnPartitionKeyedHiveTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
     Set<String> oldDataFilesPath = new HashSet<>();
@@ -427,7 +548,14 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
     Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
         .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
 
-    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, taskItem -> {});
+    String oldHiveLocation = ((SupportHive) testHiveTable.asUnkeyedTable()).getHMSClient().run(client -> {
+      Table table = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
+          testUnPartitionKeyedHiveTable.id().getTableName());
+      return table.getSd().getLocation();
+    });
+
+    SupportHiveCommit optimizeCommit = new SupportHiveCommit(testUnPartitionKeyedHiveTable, partitionTasks, taskItem -> {
+    });
     optimizeCommit.commit(testUnPartitionKeyedHiveTable.baseTable().currentSnapshot().snapshotId());
 
     Set<String> newDataFilesPath = new HashSet<>();
@@ -437,12 +565,22 @@ public class TestSupportHiveMajorOptimizeCommit extends TestSupportHiveBase {
       Assert.assertTrue(newFilePath.contains(testUnPartitionKeyedHiveTable.hiveLocation()));
     }
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+
+    ((SupportHive) testUnPartitionKeyedHiveTable.asKeyedTable().baseTable()).getHMSClient().run(client -> {
+      Table table = client.getTable(testUnPartitionKeyedHiveTable.id().getDatabase(),
+          testUnPartitionKeyedHiveTable.id().getTableName());
+      Assert.assertNotEquals(oldHiveLocation, table.getSd().getLocation());
+      for (String newFilePath : newDataFilesPath) {
+        Assert.assertTrue(newFilePath.contains(table.getSd().getLocation()));
+      }
+      return null;
+    });
   }
 
   private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable,
                                                             OptimizeType optimizeType) throws IOException {
-    List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, optimizeType,3);
-    return dataFiles.stream().collect(Collectors.groupingBy(dataFile ->  {
+    List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, optimizeType, 3);
+    return dataFiles.stream().collect(Collectors.groupingBy(dataFile -> {
       DefaultKeyedFile keyedFile = new DefaultKeyedFile(dataFile);
       return keyedFile.node().toAmsTreeNode();
     }));

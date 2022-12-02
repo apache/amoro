@@ -20,18 +20,27 @@ package com.netease.arctic.spark.delegate;
 
 import com.netease.arctic.spark.ArcticSparkSessionCatalog;
 import com.netease.arctic.spark.SparkTestContext;
+import com.netease.arctic.table.TableIdentifier;
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.Schema;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.spark.SparkSchemaUtil;
+import org.apache.iceberg.types.Types;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
 import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -52,7 +61,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
     configs.put("spark.sql.catalog.spark_catalog", ArcticSparkSessionCatalog.class.getName());
     configs.put("spark.sql.catalog.spark_catalog.url", amsUrl + "/" + catalogNameHive);
-    configs.put("spark.arctic.sql.delegate.enable", "true");
+    configs.put("spark.arctic.sql.delegate.enabled", "true");
 
     setUpSparkSession(configs);
   }
@@ -86,10 +95,11 @@ public class TestArcticSessionCatalog extends SparkTestContext {
   private String table3 = "test3";
   private String table_D = "test4";
   private String table_D2 = "test5";
-  
+
+  @Ignore
   @Test
   public void testHiveDelegate() throws TException {
-    System.out.println("spark.arctic.sql.delegate.enable = " + spark.conf().get("spark.arctic.sql.delegate.enable"));
+    System.out.println("spark.arctic.sql.delegate.enabled = " + spark.conf().get("spark.arctic.sql.delegate.enabled"));
     sql("use spark_catalog");
     sql("create table {0}.{1} ( id int, data string) using arctic", database, table_D);
     sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table_D2);
@@ -113,11 +123,12 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
   }
 
+  @Ignore
   @Test
   public void testCatalogEnable() throws TException {
-    sql("set spark.arctic.sql.delegate.enable=false");
+    sql("set spark.arctic.sql.delegate.enabled=false");
     sql("use spark_catalog");
-    System.out.println("spark.arctic.sql.delegate.enable = " + spark.conf().get("spark.arctic.sql.delegate.enable"));
+    System.out.println("spark.arctic.sql.delegate.enabled = " + spark.conf().get("spark.arctic.sql.delegate.enabled"));
     sql("create table {0}.{1} ( id int, data string) STORED AS parquet", database, table2);
     sql("insert overwrite {0}.{1} values \n" +
         "(1, ''aaa''), \n " +
@@ -142,7 +153,7 @@ public class TestArcticSessionCatalog extends SparkTestContext {
 
   @Test
   public void testCreateTableLikeUsingSparkCatalog() {
-    sql("set spark.arctic.sql.delegate.enable=true");
+    sql("set spark.arctic.sql.delegate.enabled=true");
     sql("use spark_catalog");
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
@@ -165,6 +176,35 @@ public class TestArcticSessionCatalog extends SparkTestContext {
     sql("drop table {0}.{1}", database, table2);
 
     sql("drop table {0}.{1}", database, table3);
+  }
+
+
+  @Test
+  public void testCreateTableAsSelect() {
+    sql("set spark.arctic.sql.delegate.enabled=true");
+    String table = "test_create_table_as_select";
+    List<Row> tempRows = com.google.common.collect.Lists.newArrayList(
+        RowFactory.create(1L, "a", "2020-01-01"),
+        RowFactory.create(2L, "b", "2021-01-01"),
+        RowFactory.create(3L, "c", "2022-01-01")
+    );
+    Schema schema = new Schema(
+        com.google.common.collect.Lists.newArrayList(
+            Types.NestedField.of(1, false, "id", Types.LongType.get(), ""),
+            Types.NestedField.of(2, false, "name", Types.StringType.get(), ""),
+            Types.NestedField.of(3, false, "pt", Types.StringType.get(), "")
+        )
+    );
+    TableIdentifier arcticTableId = TableIdentifier.of(catalogNameHive, database, table);
+    Dataset<Row> df = spark.createDataFrame(tempRows, SparkSchemaUtil.convert(schema));
+    df.registerTempTable("tmp");
+
+    sql("create table {0}.{1} primary key (id) using arctic as select * from tmp", database, table);
+    rows = sql("select id, name, pt from {0}.{1}", database, table);
+    assertContainIdSet(rows,0, 1L, 2L, 3L);
+    assertTableExist(arcticTableId);
+
+    sql("drop table {0}.{1}", database, table);
   }
 
 }

@@ -37,7 +37,7 @@ public interface OptimizeHistoryMapper {
       "visible_time, commit_time, plan_time, duration, total_file_cnt_before, " +
       "total_file_size_before, insert_file_cnt_before, insert_file_size_before, " +
       "delete_file_cnt_before, delete_file_size_before, base_file_cnt_before, " +
-      "base_file_size_before, delete_file_cnt_before, pos_delete_file_size_before, " +
+      "base_file_size_before, pos_delete_file_cnt_before, pos_delete_file_size_before, " +
       "total_file_cnt_after,total_file_size_after,snapshot_id, total_size, " +
       "added_files, removed_files, added_records, removed_records, added_files_size, " +
       "removed_files_size, total_files, total_records, partition_cnt, partitions, " +
@@ -96,8 +96,8 @@ public interface OptimizeHistoryMapper {
           "visible_time, commit_time, plan_time, duration, total_file_cnt_before, " +
           "total_file_size_before, insert_file_cnt_before, insert_file_size_before, " +
           "delete_file_cnt_before, delete_file_size_before, base_file_cnt_before, " +
-          "base_file_size_before, pos_delete_file_cnt_before, pos_delete_file_size_before, total_file_cnt_after," +
-          "total_file_size_after,snapshot_id, total_size," +
+          "base_file_size_before, pos_delete_file_cnt_before, pos_delete_file_size_before, " +
+          "total_file_cnt_after, total_file_size_after,snapshot_id, total_size," +
           "added_files, removed_files, added_records, removed_records, added_files_size, " +
           "removed_files_size, total_files, total_records, partition_cnt, partitions, " +
           "max_change_transaction_id) values (" +
@@ -140,4 +140,11 @@ public interface OptimizeHistoryMapper {
 
   @Select("select max(history_id) from " + TABLE_NAME)
   Long maxOptimizeHistoryId();
+
+  @Delete("delete from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName} " +
+      "and commit_time < #{expireTime, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  void expireOptimizeHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier,
+                             @Param("expireTime") long expireTime);
 }

@@ -22,6 +22,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientImpl;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -173,11 +175,11 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     for (String partitionValue : partitionValues) {
-      builder.add(record.copy(ImmutableMap.of("id", 1, "name", partitionValue,
-          "op_time", LocalDateTime.of(2022, 1, 1, 12, 0, 0),
-          "op_time_with_zone", OffsetDateTime.of(
+      builder.add(record.copy(ImmutableMap.of(COLUMN_NAME_ID, 1, COLUMN_NAME_NAME, partitionValue,
+          COLUMN_NAME_OP_TIME, LocalDateTime.of(2022, 1, 1, 12, 0, 0),
+          COLUMN_NAME_OP_TIME_WITH_ZONE, OffsetDateTime.of(
               LocalDateTime.of(2022, 1, 1, 12, 0, 0), ZoneOffset.UTC),
-          "d", new BigDecimal("100"))));
+          COLUMN_NAME_D, new BigDecimal("100"))));
     }
     return builder.build();
   }
@@ -196,11 +198,16 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     return Lists.newArrayList(complete.dataFiles());
   }
 
-  private static class TestHMSClient implements HMSClient {
+  private static class TestHMSClient implements HMSClientPool {
 
     @Override
-    public <R> R run(Action<R, HiveMetaStoreClient, TException> action) throws TException, InterruptedException {
-      return action.run(hms.getClient());
+    public <R> R run(Action<R, HMSClient, TException> action) throws TException, InterruptedException {
+      return action.run(new HMSClientImpl(hms.getClient()));
+    }
+
+    @Override
+    public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
+      return action.run(new HMSClientImpl(hms.getClient()));
     }
   }
 }

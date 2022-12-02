@@ -47,6 +47,7 @@ import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 import org.apache.iceberg.flink.source.FlinkInputFormat;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.types.TypeUtil;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.HashMap;
@@ -152,7 +153,7 @@ public class FlinkSource {
       RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
           flinkConf,
           arcticTable.schema(),
-          arcticTable.schema(),
+          scanContext.project(),
           arcticTable.asKeyedTable().primaryKeySpec(),
           scanContext.nameMapping(),
           scanContext.caseSensitive(),
@@ -210,11 +211,11 @@ public class FlinkSource {
       if (origin instanceof OneInputTransformation) {
         OneInputTransformation<RowData, RowData> tf = (OneInputTransformation<RowData, RowData>) ds.getTransformation();
         OneInputStreamOperatorFactory op = (OneInputStreamOperatorFactory) tf.getOperatorFactory();
-        ProxyFactory<FlinkInputFormat> inputFormatProxyFacroty
-            = IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io());
+        ProxyFactory<FlinkInputFormat> inputFormatProxyFactory
+            = IcebergClassUtil.getInputFormatProxyFactory(op, arcticTable.io(), arcticTable.schema());
 
         if (tf.getInputs().isEmpty()) {
-          return env.addSource(new UnkeyedInputFormatSourceFunction(inputFormatProxyFacroty, tf.getOutputType()))
+          return env.addSource(new UnkeyedInputFormatSourceFunction(inputFormatProxyFactory, tf.getOutputType()))
               .setParallelism(tf.getParallelism());
         }
 
@@ -225,7 +226,7 @@ public class FlinkSource {
         SourceFunction functionProxy = (SourceFunction) ProxyUtil.getProxy(function, arcticTable.io());
         return env.addSource(functionProxy, tfSource.getName(), tfSource.getOutputType())
             .transform(tf.getName(), tf.getOutputType(),
-                new UnkeyedInputFormatOperatorFactory(inputFormatProxyFacroty));
+                new UnkeyedInputFormatOperatorFactory(inputFormatProxyFactory));
       }
 
       LegacySourceTransformation tfSource = (LegacySourceTransformation) origin;

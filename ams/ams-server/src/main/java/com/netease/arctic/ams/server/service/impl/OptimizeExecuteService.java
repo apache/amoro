@@ -116,8 +116,9 @@ public class OptimizeExecuteService {
       List<com.netease.arctic.ams.server.model.Optimizer> optimizers =
           ServiceContainer.getOptimizerService().getOptimizers();
       optimizers.forEach(optimizer -> {
-        if ((optimizer.getUpdateTime().getTime() - currentTime) > OPTIMIZER_JOB_TIMEOUT) {
-          ServiceContainer.getOptimizerService().updateOptimizerStatus(optimizer.getJobId(), TableTaskStatus.FAILED);
+        if ((currentTime - optimizer.getUpdateTime().getTime()) > OPTIMIZER_JOB_TIMEOUT) {
+          ServiceContainer.getOptimizerService()
+              .updateOptimizerStatus(optimizer.getJobId(), TableTaskStatus.FAILED);
         }
       });
     }

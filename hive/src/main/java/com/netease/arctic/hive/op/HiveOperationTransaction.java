@@ -20,6 +20,7 @@ package com.netease.arctic.hive.op;
 
 import com.google.common.collect.Lists;
 import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.iceberg.AppendFiles;
@@ -57,7 +58,7 @@ public class HiveOperationTransaction implements Transaction {
 
   private final UnkeyedHiveTable unkeyedHiveTable;
   private final Transaction wrapped;
-  private final HMSClient client;
+  private final HMSClientPool client;
   private final TransactionalHMSClient transactionalClient;
 
   private final TransactionalTable transactionalTable;
@@ -65,7 +66,7 @@ public class HiveOperationTransaction implements Transaction {
   public HiveOperationTransaction(
       UnkeyedHiveTable unkeyedHiveTable,
       Transaction wrapped,
-      HMSClient client) {
+      HMSClientPool client) {
     this.unkeyedHiveTable = unkeyedHiveTable;
     this.wrapped = wrapped;
     this.client = client;
@@ -115,7 +116,7 @@ public class HiveOperationTransaction implements Transaction {
 
   @Override
   public RewriteFiles newRewrite() {
-    return wrapped.newRewrite();
+    return new RewriteHiveFiles(wrapped, true, unkeyedHiveTable, client, transactionalClient);
   }
 
   @Override
@@ -154,17 +155,23 @@ public class HiveOperationTransaction implements Transaction {
     transactionalClient.commit();
   }
 
-  private class TransactionalHMSClient implements HMSClient {
-    List<Action<?, HiveMetaStoreClient, TException>> pendingActions = Lists.newArrayList();
+  private class TransactionalHMSClient implements HMSClientPool {
+    List<Action<?, HMSClient, TException>> pendingActions = Lists.newArrayList();
 
     @Override
-    public <R> R run(Action<R, HiveMetaStoreClient, TException> action) {
+    public <R> R run(Action<R, HMSClient, TException> action) {
+      pendingActions.add(action);
+      return null;
+    }
+
+    @Override
+    public <R> R run(Action<R, HMSClient, TException> action, boolean retry) throws TException, InterruptedException {
       pendingActions.add(action);
       return null;
     }
 
     public void commit() {
-      for (Action<?, HiveMetaStoreClient, TException> action : pendingActions) {
+      for (Action<?, HMSClient, TException> action : pendingActions) {
         try {
           client.run(action);
         } catch (TException | InterruptedException e) {

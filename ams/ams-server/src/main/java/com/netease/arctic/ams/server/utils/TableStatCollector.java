@@ -128,8 +128,9 @@ public class TableStatCollector {
         .propertyAsLong(snapshot.summary(), SnapshotSummary.ADDED_RECORDS_PROP, 0));
     info.setRemovedFilesSize(PropertyUtil
         .propertyAsLong(snapshot.summary(), SnapshotSummary.REMOVED_FILE_SIZE_PROP, 0));
-    info.setRemovedFiles(
-        PropertyUtil.propertyAsInt(snapshot.summary(), SnapshotSummary.DELETED_FILES_PROP, 0));
+    int removedFiles = PropertyUtil.propertyAsInt(snapshot.summary(), SnapshotSummary.DELETED_FILES_PROP, 0) +
+        PropertyUtil.propertyAsInt(snapshot.summary(), SnapshotSummary.REMOVED_DELETE_FILES_PROP, 0);
+    info.setRemovedFiles(removedFiles);
     info.setRemovedRecords(
         PropertyUtil.propertyAsLong(snapshot.summary(), SnapshotSummary.DELETED_RECORDS_PROP, 0));
     info.setTotalSize(
@@ -193,7 +194,8 @@ public class TableStatCollector {
           PropertyUtil
               .propertyAsLong(currentSnapshot.summary(), SnapshotSummary.TOTAL_FILE_SIZE_PROP, 0);
       int addedFilesCnt =
-          PropertyUtil.propertyAsInt(currentSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0);
+          PropertyUtil.propertyAsInt(currentSnapshot.summary(), SnapshotSummary.TOTAL_DATA_FILES_PROP, 0) + PropertyUtil
+              .propertyAsInt(currentSnapshot.summary(), org.apache.iceberg.SnapshotSummary.TOTAL_DELETE_FILES_PROP, 0);
       totalFileStatBuilder.addFiles(addedFilesSize, addedFilesCnt);
     }
 

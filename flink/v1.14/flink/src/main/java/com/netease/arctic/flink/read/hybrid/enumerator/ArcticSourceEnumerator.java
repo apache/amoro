@@ -32,10 +32,10 @@ import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.iceberg.Snapshot;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -43,8 +43,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.IntStream;
 
 import static com.netease.arctic.flink.read.hybrid.enumerator.ArcticEnumeratorOffset.EARLIEST_SNAPSHOT_ID;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.FILE_SCAN_STARTUP_MODE_LATEST;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.util.ArcticUtils.loadArcticTable;
 
 /**
@@ -111,13 +111,13 @@ public class ArcticSourceEnumerator extends AbstractArcticEnumerator {
       keyedTable = loadArcticTable(loader).asKeyedTable();
     }
     if (enumeratorPosition.get() == null &&
-        FILE_SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanContext.scanStartupMode())) {
+        SCAN_STARTUP_MODE_LATEST.equalsIgnoreCase(scanContext.scanStartupMode())) {
       keyedTable.refresh();
       Snapshot snapshot = keyedTable.changeTable().currentSnapshot();
       long snapshotId = snapshot == null ? EARLIEST_SNAPSHOT_ID : snapshot.snapshotId();
       enumeratorPosition.set(ArcticEnumeratorOffset.of(snapshotId, null));
       LOG.info("{} is {}, the current snapshot id of the change table {}  is {}.",
-          FILE_SCAN_STARTUP_MODE.key(), FILE_SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshot.snapshotId());
+          SCAN_STARTUP_MODE.key(), SCAN_STARTUP_MODE_LATEST, keyedTable.id(), snapshotId);
     }
     if (snapshotDiscoveryIntervalMs > 0) {
       LOG.info(

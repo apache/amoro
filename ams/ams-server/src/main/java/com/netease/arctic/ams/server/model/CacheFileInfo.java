@@ -22,17 +22,13 @@ import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
-import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.trace.SnapshotSummary;
 import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.Table;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Objects;
 
 public class CacheFileInfo {
 
@@ -40,6 +36,7 @@ public class CacheFileInfo {
   private Long addSnapshotId;
   private Long parentSnapshotId;
   private Long deleteSnapshotId;
+  private Long addSnapshotSequence;
   private String innerTable;
   private String filePath;
   private String primaryKeyMd5;
@@ -53,7 +50,6 @@ public class CacheFileInfo {
   private Long commitTime;
   private Long recordCount;
   private String action;
-  private Long watermark;
 
   public CacheFileInfo() {
 
@@ -61,14 +57,15 @@ public class CacheFileInfo {
 
   public CacheFileInfo(
       String primaryKeyMd5, TableIdentifier tableIdentifier, Long addSnapshotId,
-      Long parentSnapshotId, Long deleteSnapshotId, String innerTable,
+      Long parentSnapshotId, Long deleteSnapshotId, Long addSnapshotSequence, String innerTable,
       String filePath, String fileType, Long fileSize, Long fileMask, Long fileIndex, Long specId,
-      String partitionName, Long commitTime, Long recordCount, String action, Long watermark, String producer) {
+      String partitionName, Long commitTime, Long recordCount, String action, String producer) {
     this.primaryKeyMd5 = primaryKeyMd5;
     this.tableIdentifier = tableIdentifier;
     this.addSnapshotId = addSnapshotId;
     this.parentSnapshotId = parentSnapshotId;
     this.deleteSnapshotId = deleteSnapshotId;
+    this.addSnapshotSequence = addSnapshotSequence;
     this.innerTable = innerTable;
     this.filePath = filePath;
     this.fileType = fileType;
@@ -80,22 +77,11 @@ public class CacheFileInfo {
     this.commitTime = commitTime;
     this.recordCount = recordCount;
     this.action = action;
-    this.watermark = watermark;
     this.producer = producer;
   }
 
-  public static CacheFileInfo convert(
-      Table table, DataFile amsFile, TableIdentifier identifier, String tableType, Snapshot snapshot) {
-    long watermark = 0L;
-    boolean isDataFile = Objects.equals(amsFile.fileType, DataFileType.INSERT_FILE.name()) ||
-        Objects.equals(amsFile.fileType, DataFileType.BASE_FILE.name());
-    if (isDataFile &&
-        table.properties() != null && table.properties().containsKey(TableProperties.TABLE_EVENT_TIME_FIELD)) {
-      watermark =
-          amsFile.getUpperBounds()
-              .get(table.properties().get(TableProperties.TABLE_EVENT_TIME_FIELD))
-              .getLong();
-    }
+  public static CacheFileInfo convert(DataFile amsFile, TableIdentifier identifier,
+      String tableType, Snapshot snapshot) {
     String partitionName = StringUtils.isEmpty(partitionToPath(amsFile.getPartition())) ?
         "" :
         partitionToPath(amsFile.getPartition());
@@ -108,10 +94,10 @@ public class CacheFileInfo {
     String producer =
         snapshot.summary().getOrDefault(SnapshotSummary.SNAPSHOT_PRODUCER, SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
     return new CacheFileInfo(primaryKeyMd5, identifier, snapshot.snapshotId(),
-        parentId, null,
+        parentId, null, snapshot.sequenceNumber(),
         tableType, amsFile.getPath(), amsFile.getFileType(), amsFile.getFileSize(), amsFile.getMask(),
         amsFile.getIndex(), amsFile.getSpecId(), partitionName, snapshot.timestampMillis(),
-        amsFile.getRecordCount(), snapshot.operation(), watermark, producer);
+        amsFile.getRecordCount(), snapshot.operation(), producer);
   }
 
   private static String partitionToPath(List<PartitionFieldData> partitionFieldDataList) {
@@ -262,12 +248,12 @@ public class CacheFileInfo {
     this.action = action;
   }
 
-  public Long getWatermark() {
-    return watermark;
+  public Long getAddSnapshotSequence() {
+    return addSnapshotSequence;
   }
 
-  public void setWatermark(Long watermark) {
-    this.watermark = watermark;
+  public void setAddSnapshotSequence(Long addSnapshotSequence) {
+    this.addSnapshotSequence = addSnapshotSequence;
   }
 
   @Override
@@ -275,10 +261,14 @@ public class CacheFileInfo {
     return "CacheFileInfo{" +
         "tableIdentifier=" + tableIdentifier +
         ", addSnapshotId=" + addSnapshotId +
+        ", parentSnapshotId=" + parentSnapshotId +
         ", deleteSnapshotId=" + deleteSnapshotId +
+        ", addSnapshotSequence=" + addSnapshotSequence +
         ", innerTable='" + innerTable + '\'' +
         ", filePath='" + filePath + '\'' +
+        ", primaryKeyMd5='" + primaryKeyMd5 + '\'' +
         ", fileType='" + fileType + '\'' +
+        ", producer='" + producer + '\'' +
         ", fileSize=" + fileSize +
         ", fileMask=" + fileMask +
         ", fileIndex=" + fileIndex +
@@ -287,7 +277,6 @@ public class CacheFileInfo {
         ", commitTime=" + commitTime +
         ", recordCount=" + recordCount +
         ", action='" + action + '\'' +
-        ", watermark=" + watermark +
         '}';
   }
 }

@@ -18,10 +18,6 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
-import com.netease.arctic.ams.api.JobId;
-import com.netease.arctic.ams.api.JobType;
-import com.netease.arctic.ams.api.OptimizeStatus;
-import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
@@ -36,8 +32,6 @@ import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -52,38 +46,30 @@ import org.apache.iceberg.types.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class MinorExecutor extends BaseExecutor<DeleteFile> {
+public class MinorExecutor extends BaseExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MinorExecutor.class);
 
-  private final NodeTask task;
-  private final ArcticTable table;
-  private final long startTime;
-  private final OptimizerConfig config;
-
   public MinorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
-    this.task = nodeTask;
-    this.table = table;
-    this.startTime = startTime;
-    this.config = config;
+    super(nodeTask, table, startTime, config);
   }
 
   @Override
-  public OptimizeTaskResult<DeleteFile> execute() throws Exception {
+  public OptimizeTaskResult execute() throws Exception {
     List<DeleteFile> targetFiles = new ArrayList<>();
-    LOG.info("start process minor optimize task: {}", task);
+    LOG.info("Start processing arctic table minor optimize task: {}", task);
 
     Map<DataTreeNode, List<DataFile>> dataFileMap = groupDataFilesByNode(task.dataFiles());
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     KeyedTable keyedTable = table.asKeyedTable();
 
-    long insertCount = 0;
+    AtomicLong insertCount = new AtomicLong();
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
     Types.StructType recordStruct = requiredSchema.asStruct();
     for (Map.Entry<DataTreeNode, List<DataFile>> nodeFileEntry : dataFileMap.entrySet()) {
@@ -91,73 +77,57 @@ public class MinorExecutor extends BaseExecutor<DeleteFile> {
       List<DataFile> dataFiles = nodeFileEntry.getValue();
       dataFiles.addAll(task.deleteFiles());
       List<DeleteFile> posDeleteList = deleteFileMap.get(treeNode);
-      CloseableIterator<Record> iterator =
-          openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
       SortedPosDeleteWriter<Record> posDeleteWriter = AdaptHiveGenericTaskWriterBuilder.builderFor(keyedTable)
           .withTransactionId(getMaxTransactionId(dataFiles))
           .withTaskId(task.getAttemptId())
           .buildBasePosDeleteWriter(treeNode.mask(), treeNode.index(), task.getPartition());
-      while (iterator.hasNext()) {
-        Record record = iterator.next();
-        String filePath = (String) record.get(recordStruct.fields()
-            .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
-        Long rowPosition = (Long) record.get(recordStruct.fields()
-            .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
-        posDeleteWriter.delete(filePath, rowPosition);
-        insertCount++;
-        if (insertCount == 1 || insertCount == 100000) {
-          LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-              task.getTaskId(), insertCount, "", 0);
+
+      table.io().doAs(() -> {
+        CloseableIterator<Record> iterator =
+            openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
+
+        while (iterator.hasNext()) {
+          checkIfTimeout(posDeleteWriter);
+
+          Record record = iterator.next();
+          String filePath = (String) record.get(recordStruct.fields()
+              .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
+          Long rowPosition = (Long) record.get(recordStruct.fields()
+              .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
+          posDeleteWriter.delete(filePath, rowPosition);
+          insertCount.incrementAndGet();
+          if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
+            LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
+                task.getTaskId(), insertCount.get(), filePath, rowPosition);
+          }
         }
-      }
+        return null;
+      });
 
       // rewrite pos-delete content
       if (CollectionUtils.isNotEmpty(posDeleteList)) {
         BaseIcebergPosDeleteReader posDeleteReader = new BaseIcebergPosDeleteReader(table.io(), posDeleteList);
-        CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
-        CloseableIterator<Record> posDeleteIterator = table.io().doAs(posDeleteIterable::iterator);
-        while (posDeleteIterator.hasNext()) {
-          Record record = posDeleteIterator.next();
-          String filePath = posDeleteReader.readPath(record);
-          Long rowPosition = posDeleteReader.readPos(record);
-          posDeleteWriter.delete(filePath, rowPosition);
-        }
+        table.io().doAs(() -> {
+          CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
+          CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator();
+          while (posDeleteIterator.hasNext()) {
+            checkIfTimeout(posDeleteWriter);
+
+            Record record = posDeleteIterator.next();
+            String filePath = posDeleteReader.readPath(record);
+            Long rowPosition = posDeleteReader.readPos(record);
+            posDeleteWriter.delete(filePath, rowPosition);
+          }
+          return null;
+        });
       }
 
       targetFiles.addAll(posDeleteWriter.complete());
     }
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
 
-    long totalFileSize = 0;
-    List<ByteBuffer> deleteFileBytesList = new ArrayList<>();
-    for (DeleteFile deleteFile : targetFiles) {
-      totalFileSize += deleteFile.fileSizeInBytes();
-      deleteFileBytesList.add(SerializationUtil.toByteBuffer(deleteFile));
-    }
-
-    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
-    BeanUtils.copyProperties(optimizeTaskStat, task);
-    JobId jobId = new JobId();
-    jobId.setId(config.getOptimizerId());
-    jobId.setType(JobType.Optimize);
-    optimizeTaskStat.setJobId(jobId);
-
-    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
-    optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
-    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
-
-    optimizeTaskStat.setNewFileSize(totalFileSize);
-    optimizeTaskStat.setReportTime(System.currentTimeMillis());
-    optimizeTaskStat.setFiles(deleteFileBytesList);
-    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
-    optimizeTaskStat.setTaskId(task.getTaskId());
-
-    OptimizeTaskResult<DeleteFile> result = new OptimizeTaskResult<>();
-    result.setTargetFiles(targetFiles);
-    result.setOptimizeTaskStat(optimizeTaskStat);
-
-    return result;
+    return buildOptimizeResult(targetFiles);
   }
 
   @Override

@@ -12,7 +12,7 @@
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and 
+ * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
@@ -23,7 +23,9 @@ import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.commons.compress.utils.Lists;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -44,12 +46,17 @@ public class NodeTask {
   private final List<DataFile> insertFiles = new ArrayList<>();
   private final List<DataFile> deleteFiles = new ArrayList<>();
   private final List<DeleteFile> posDeleteFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergDataFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergSmallDataFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergEqDeleteFiles = new ArrayList<>();
+  private final List<IcebergContentFile> icebergPosDeleteFiles = new ArrayList<>();
   private Set<DataTreeNode> sourceNodes;
   private StructLike partition;
   private OptimizeTaskId taskId;
   private TableIdentifier tableIdentifier;
   private int attemptId;
   private String customHiveSubdirectory;
+  private Long maxExecuteTime;
 
   public NodeTask() {
   }
@@ -87,6 +94,32 @@ public class NodeTask {
     }
   }
 
+  public void addFile(IcebergContentFile icebergContentFile, DataFileType fileType) {
+    if (fileType == null) {
+      LOG.warn("file type is null");
+      return;
+    }
+
+    switch (fileType) {
+      case BASE_FILE:
+        icebergDataFiles.add(icebergContentFile);
+        break;
+      case INSERT_FILE:
+        icebergSmallDataFiles.add(icebergContentFile);
+        break;
+      case ICEBERG_EQ_DELETE_FILE:
+      case EQ_DELETE_FILE:
+        icebergEqDeleteFiles.add(icebergContentFile);
+        break;
+      case POS_DELETE_FILE:
+        icebergPosDeleteFiles.add(icebergContentFile);
+        break;
+      default:
+        LOG.warn("file type is {}, not add in node", fileType);
+        // ignore the object
+    }
+  }
+
   public List<DataFile> dataFiles() {
     dataFiles.clear();
     Iterables.addAll(dataFiles, baseFiles);
@@ -100,6 +133,18 @@ public class NodeTask {
     Iterables.addAll(allFiles, insertFiles);
     Iterables.addAll(allFiles, deleteFiles);
     Iterables.addAll(allFiles, posDeleteFiles);
+    for (IcebergContentFile icebergDataFile : icebergDataFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
+    }
+    for (IcebergContentFile icebergDataFile : icebergSmallDataFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
+    }
+    for (IcebergContentFile icebergDataFile : icebergEqDeleteFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
+    }
+    for (IcebergContentFile icebergDataFile : icebergPosDeleteFiles) {
+      allFiles.add(icebergDataFile.getContentFile());
+    }
     return allFiles;
   }
 
@@ -117,6 +162,28 @@ public class NodeTask {
 
   public List<DeleteFile> posDeleteFiles() {
     return posDeleteFiles;
+  }
+
+  public List<IcebergContentFile> icebergDataFiles() {
+    return icebergDataFiles;
+  }
+
+  public List<IcebergContentFile> icebergSmallDataFiles() {
+    return icebergSmallDataFiles;
+  }
+
+  public List<IcebergContentFile> allIcebergDataFiles() {
+    List<IcebergContentFile> allIcebergDataFiles = Lists.newArrayList();
+    allIcebergDataFiles.addAll(icebergDataFiles);
+    allIcebergDataFiles.addAll(icebergSmallDataFiles);
+    return allIcebergDataFiles;
+  }
+
+  public List<IcebergContentFile> allIcebergDeleteFiles() {
+    List<IcebergContentFile> allIcebergDeleteFiles = Lists.newArrayList();
+    allIcebergDeleteFiles.addAll(icebergEqDeleteFiles);
+    allIcebergDeleteFiles.addAll(icebergPosDeleteFiles);
+    return allIcebergDeleteFiles;
   }
 
   public Set<DataTreeNode> getSourceNodes() {
@@ -159,9 +226,18 @@ public class NodeTask {
     this.customHiveSubdirectory = customHiveSubdirectory;
   }
 
+  public Long getMaxExecuteTime() {
+    return maxExecuteTime;
+  }
+
+  public void setMaxExecuteTime(Long maxExecuteTime) {
+    this.maxExecuteTime = maxExecuteTime;
+  }
+
   public OptimizeType getOptimizeType() {
     return taskId.getType();
   }
+
 
   @Override
   public String toString() {
@@ -173,7 +249,12 @@ public class NodeTask {
         .add("insertFiles", insertFiles.size())
         .add("deleteFiles", deleteFiles.size())
         .add("posDeleteFiles", posDeleteFiles.size())
+        .add("icebergDataFiles", icebergDataFiles.size())
+        .add("icebergSmallDataFiles", icebergSmallDataFiles.size())
+        .add("icebergEqDeleteFiles", icebergEqDeleteFiles.size())
+        .add("icebergPosDeleteFiles", icebergPosDeleteFiles.size())
         .add("customHiveSubdirectory", customHiveSubdirectory)
+        .add("maxExecuteTime", maxExecuteTime)
         .toString();
   }
 }

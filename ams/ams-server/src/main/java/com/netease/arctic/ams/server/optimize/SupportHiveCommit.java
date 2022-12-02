@@ -1,11 +1,28 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.ams.server.optimize;
 
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
-import com.netease.arctic.ams.server.utils.HiveLocationUtils;
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
@@ -15,6 +32,7 @@ import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.StructLike;
@@ -24,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +53,10 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
 
   protected Consumer<OptimizeTaskItem> updateTargetFiles;
 
-  public SupportHiveCommit(ArcticTable arcticTable,
-                           Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
-                           Consumer<OptimizeTaskItem> updateTargetFiles) {
+  public SupportHiveCommit(
+      ArcticTable arcticTable,
+      Map<String, List<OptimizeTaskItem>> optimizeTasksToCommit,
+      Consumer<OptimizeTaskItem> updateTargetFiles) {
     super(arcticTable, optimizeTasksToCommit);
     Preconditions.checkArgument(TableTypeUtil.isHive(arcticTable), "The table not support hive");
     this.updateTargetFiles = updateTargetFiles;
@@ -48,7 +66,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
   public boolean commit(long baseSnapshotId) throws Exception {
     LOG.info("{} get tasks to support hive commit for partitions {}", arcticTable.id(),
         optimizeTasksToCommit.keySet());
-    HMSClient hiveClient = ((SupportHive) arcticTable).getHMSClient();
+    HMSClientPool hiveClient = ((SupportHive) arcticTable).getHMSClient();
     Map<String, String> partitionPathMap = new HashMap<>();
     Types.StructType partitionSchema = arcticTable.isUnkeyedTable() ?
         arcticTable.asUnkeyedTable().spec().partitionType() :
@@ -86,14 +104,14 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               } else {
                 String hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(
                     arcticTable.isKeyedTable() ? maxTransactionId : IdGenerator.randomId());
-                partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
-                    arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
-                HivePartitionUtil
-                    .createPartitionIfAbsent(hiveClient, arcticTable, partitionValues, partitionPath,
-                        Collections.emptyList(), (int) (System.currentTimeMillis() / 1000));
 
-                partitionPath = HivePartitionUtil
-                    .getPartition(hiveClient, arcticTable, partitionValues).getSd().getLocation();
+                Partition p = HivePartitionUtil.getPartition(hiveClient, arcticTable, partitionValues);
+                if (p == null) {
+                  partitionPath = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                      arcticTable.spec(), targetFile.partition(), hiveSubdirectory);
+                } else {
+                  partitionPath = p.getSd().getLocation();
+                }
               }
               partitionPathMap.put(partition, partitionPath);
             }

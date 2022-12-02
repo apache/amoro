@@ -185,7 +185,7 @@ public class TestSupportHiveBase implements TestOptimizeBase {
           System.getProperty("user.name"));
 
       Map<String, String> hiveCatalogProperties = new HashMap<>();
-      hiveCatalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/hive_tmp");
+      hiveCatalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/hive_tmp");
       CatalogMeta hiveCatalogMeta = new CatalogMeta(AMS_TEST_HIVE_CATALOG_NAME, CATALOG_TYPE_HIVE,
           storageConfig, authConfig, hiveCatalogProperties);
       List<CatalogMeta> catalogMetas = Lists.newArrayList(hiveCatalogMeta);
@@ -198,6 +198,7 @@ public class TestSupportHiveBase implements TestOptimizeBase {
   private static void stopHMS() {
     int ref = testCount.decrementAndGet();
     if (ref == 0){
+      hiveCatalog.dropDatabase(AMS_TEST_HIVE_DB_NAME);
       hms.stop();
       hms = null;
       tempFolder.delete();

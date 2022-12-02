@@ -30,9 +30,10 @@ import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
 import org.junit.Assert;
@@ -61,7 +62,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DeleteFile> result = minorExecutor.execute();
+    OptimizeTaskResult result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(250, dataFile.recordCount());
@@ -80,7 +81,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DeleteFile> result = minorExecutor.execute();
+    OptimizeTaskResult result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(250, dataFile.recordCount());
@@ -98,24 +99,26 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
     nodeTask.setPartition(FILE_A.partition());
 
+    String fileFormat = testKeyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
     for (DataFileInfo fileInfo : baseDataFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.BASE_FILE);
     }
     for (DataFileInfo fileInfo : posDeleteFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.POS_DELETE_FILE);
     }
     for (DataFileInfo fileInfo : changeInsertFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.INSERT_FILE);
     }
     for (DataFileInfo fileInfo : changeDeleteFilesInfo) {
       nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), testKeyedTable.io()),
+          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
           DataFileType.EQ_DELETE_FILE);
     }
 
@@ -140,10 +143,10 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
     changeDeleteFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, commitTime, testKeyedTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable))
         .collect(Collectors.toList());
   }
 
@@ -165,10 +168,10 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     AppendFiles baseAppend = testKeyedTable.changeTable().newAppend();
     changeInsertFiles.forEach(baseAppend::appendFile);
     baseAppend.commit();
-    long commitTime = System.currentTimeMillis();
+    Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, commitTime, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable))
         .collect(Collectors.toList());
   }
 }

@@ -33,6 +33,7 @@ import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
+import com.netease.arctic.ams.server.mapper.PlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.SnapInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableOptimizeRuntimeMapper;
@@ -42,6 +43,7 @@ import com.netease.arctic.ams.server.mapper.derby.DerbyCatalogMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyContainerMetadataMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyFileInfoCacheMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyOptimizeTasksMapper;
+import com.netease.arctic.ams.server.mapper.derby.DerbyPlatformFileInfoMapper;
 import com.netease.arctic.ams.server.mapper.derby.DerbyTableMetadataMapper;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.apache.commons.pool2.impl.BaseObjectPoolConfig;
@@ -111,12 +113,14 @@ public class JDBCSqlSessionFactoryProvider {
           configuration.addMapper(OptimizerGroupMapper.class);
           configuration.addMapper(ApiTokensMapper.class);
           configuration.addMapper(DDLRecordMapper.class);
+          configuration.addMapper(PlatformFileInfoMapper.class);
           if (ArcticMetaStore.conf.getString(ArcticMetaStoreConf.DB_TYPE).equals("derby")) {
             configuration.addMapper(DerbyContainerMetadataMapper.class);
             configuration.addMapper(DerbyFileInfoCacheMapper.class);
             configuration.addMapper(DerbyCatalogMetadataMapper.class);
             configuration.addMapper(DerbyTableMetadataMapper.class);
             configuration.addMapper(DerbyOptimizeTasksMapper.class);
+            configuration.addMapper(DerbyPlatformFileInfoMapper.class);
           }
           sqlSessionFactory = SqlSessionFactoryUtil.getSqlSessionFactory(configuration);
         }

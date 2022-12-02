@@ -19,14 +19,10 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.MetaException;
-import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
 import com.netease.arctic.ams.server.model.TableStatistics;
-import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ITableInfoService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
@@ -45,21 +41,15 @@ import java.util.HashMap;
 public class TableBaseInfoService implements ITableInfoService {
   public static final Logger LOG = LoggerFactory.getLogger(TableBaseInfoService.class);
 
-  private final IMetaService metaService;
-
   private final AmsClient client;
 
-  public TableBaseInfoService(IMetaService metaService) {
-    this.metaService = metaService;
+  public TableBaseInfoService() {
     this.client = ServiceContainer.getTableMetastoreHandler();
   }
 
   @Override
-  public TableBasicInfo getTableBasicInfo(TableIdentifier tableIdentifier)
-          throws MetaException, NoSuchObjectException {
+  public TableBasicInfo getTableBasicInfo(TableIdentifier tableIdentifier) {
     try {
-
-      ArcticMetaValidator.nuSuchObjectValidator(metaService, tableIdentifier);
       TableBasicInfo tableBasicInfo = new TableBasicInfo();
       tableBasicInfo.setTableIdentifier(tableIdentifier);
       TableStatistics changeInfo = null;

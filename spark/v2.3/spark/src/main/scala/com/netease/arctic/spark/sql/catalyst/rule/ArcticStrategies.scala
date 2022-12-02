@@ -18,8 +18,9 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
-import com.netease.arctic.spark.source.{SupportsDynamicOverwrite}
-import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
+import com.netease.arctic.spark.source.SupportsDynamicOverwrite
+import com.netease.arctic.spark.sql.execution.CreateArcticTableAsSelectExec
+import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
 import org.apache.spark.sql.arctic.AnalysisException
 import org.apache.spark.sql.{SaveMode, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -39,6 +40,8 @@ case class ArcticStrategies() extends Strategy {
       }
       WriteToDataSourceV2Exec(writer, planLater(query)) :: Nil
 
+    case CreateArcticTableAsSelect(arctic, tableDesc, query) =>
+      CreateArcticTableAsSelectExec(arctic, tableDesc, planLater(query)) :: Nil
     case _ => Nil
   }
 

@@ -78,16 +78,37 @@ public abstract class TestHiveTableBaseForTrino extends TableTestBaseForTrino {
   protected static final TableIdentifier UN_PARTITION_HIVE_PK_TABLE_ID =
       TableIdentifier.of(HIVE_CATALOG_NAME, HIVE_DB_NAME, "un_partition_test_pk_hive_table");
 
+  public static final String COLUMN_NAME_ID = "id";
+  public static final String COLUMN_NAME_OP_TIME = "op_time";
+  public static final String COLUMN_NAME_OP_TIME_WITH_ZONE = "op_time_with_zone";
+  public static final String COLUMN_NAME_D = "d$d";
+  public static final String COLUMN_NAME_NAME = "name";
+  public static final String COLUMN_NAME_MAP = "map_name";
+  public static final String COLUMN_NAME_ARRAY = "array_name";
+  public static final String COLUMN_NAME_STRUCT = "struct_name";
+  public static final String COLUMN_NAME_STRUCT_SUB1 = "struct_name_sub_1";
+  public static final String COLUMN_NAME_STRUCT_SUB2 = "struct_name_sub_2";
+
+  public static final Schema STRUCT_SUB_SCHEMA = new Schema(
+      Types.NestedField.required(12, COLUMN_NAME_STRUCT_SUB1, Types.StringType.get()),
+      Types.NestedField.required(13, COLUMN_NAME_STRUCT_SUB2, Types.StringType.get())
+  );
+
+  private static int i = 0;
   public static final Schema HIVE_TABLE_SCHEMA = new Schema(
-      Types.NestedField.required(1, "id", Types.IntegerType.get()),
-      Types.NestedField.required(2, "op_time", Types.TimestampType.withoutZone()),
-      Types.NestedField.required(3, "op_time_with_zone", Types.TimestampType.withZone()),
-      Types.NestedField.required(4, "d", Types.DecimalType.of(3, 0)),
-      Types.NestedField.required(5, "name", Types.StringType.get())
+      Types.NestedField.required(++i, COLUMN_NAME_ID, Types.IntegerType.get()),
+      Types.NestedField.required(++i, COLUMN_NAME_OP_TIME, Types.TimestampType.withoutZone()),
+      Types.NestedField.required(++i, COLUMN_NAME_OP_TIME_WITH_ZONE, Types.TimestampType.withZone()),
+      Types.NestedField.required(++i, COLUMN_NAME_D, Types.DecimalType.of(10, 0)),
+      Types.NestedField.required(++i, COLUMN_NAME_MAP, Types.MapType.ofOptional(++i,++i, Types.StringType.get(),
+          Types.StringType.get())),
+      Types.NestedField.required(++i, COLUMN_NAME_ARRAY, Types.ListType.ofOptional(++i, Types.StringType.get())),
+      Types.NestedField.required(++i, COLUMN_NAME_STRUCT, Types.StructType.of(STRUCT_SUB_SCHEMA.columns())),
+      Types.NestedField.required(++i, COLUMN_NAME_NAME, Types.StringType.get())
   );
 
   protected static final PartitionSpec HIVE_SPEC =
-      PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity("name").build();
+      PartitionSpec.builderFor(HIVE_TABLE_SCHEMA).identity(COLUMN_NAME_NAME).build();
 
   protected ArcticHiveCatalog hiveCatalog;
   protected UnkeyedHiveTable testHiveTable;

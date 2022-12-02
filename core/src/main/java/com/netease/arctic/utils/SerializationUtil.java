@@ -18,6 +18,7 @@
 
 package com.netease.arctic.utils;
 
+import com.netease.arctic.data.IcebergContentFile;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.util.ByteBuffers;
 
@@ -77,5 +78,9 @@ public class SerializationUtil {
 
   public static ContentFile<?> toInternalTableFile(byte[] bytes) {
     return (ContentFile<?>) toObject(bytes);
+  }
+
+  public static IcebergContentFile toIcebergContentFile(ByteBuffer buffer) {
+    return (IcebergContentFile) toObject(buffer);
   }
 }

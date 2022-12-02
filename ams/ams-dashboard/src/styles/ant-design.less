@@ -45,7 +45,9 @@
 .ant-table-tbody > tr > td {
   padding: 8px 12px !important;
 }
-
+.ant-table-measure-row {
+  visibility: collapse;
+}
 
 .label {
   &-80 {
@@ -124,6 +126,9 @@
   }
 }
 
+.ant-form-item {
+  margin-bottom: 14px;
+}
 .ant-btn {
   padding: 0 16px;
   border-radius: 3px;
@@ -136,4 +141,7 @@
 }
 .ant-form-item-label {
   text-align: left;
+}
+.ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+  display: none;
 }

@@ -93,6 +93,45 @@ public class TestKeyedTableDMLInsertOverwriteDynamic extends SparkTestBase {
     Assert.assertEquals(6, rows.size());
 
     assertContainIdSet(rows, 0, 7, 8, 9, 3, 6, 1024);
+
+    writeChange(identifier, ChangeAction.INSERT, Lists.newArrayList(
+        newRecord(keyedTable, 1, "ddd", quickDateWithZone(1)),
+        newRecord(keyedTable, 3, "eee", quickDateWithZone(2)),
+        newRecord(keyedTable, 5, "666", quickDateWithZone(3)),
+        newRecord(keyedTable, 2004, "1024", quickDateWithZone(4))
+    ));
+
+    rows = sql("select id, data, ts from {0}.{1} order by id", database, table);
+    Assert.assertEquals(10, rows.size());
+
+    assertContainIdSet(rows, 0, 1, 3, 5, 7, 8, 9, 3, 6, 1024, 2004);
+  }
+
+  @Test
+  public void testInsertOverwriteHasPartitionFunc() {
+    sql("create table {0}.{1} ( \n" +
+            " id int , \n" +
+            " data string , \n " +
+            " ts timestamp , \n" +
+            " primary key (id) \n" +
+            ") using arctic \n" +
+            " partitioned by ( months(ts) ) \n", database, "table_months");
+    sql("insert overwrite {0}.{1} values \n" +
+            "(1, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
+            "(2, ''bbb'',  timestamp('' 2022-2-2 09:00:00 '')), \n " +
+            "(3, ''ccc'',  timestamp('' 2022-3-2 09:00:00 '')) \n ", database, "table_months");
+
+    sql("insert overwrite {0}.{1} values \n" +
+            "(4, ''aaa'',  timestamp('' 2022-1-1 09:00:00 '')), \n " +
+            "(5, ''bbb'',  timestamp('' 2022-2-2 09:00:00 '')), \n " +
+            "(6, ''ccc'',  timestamp('' 2022-3-2 09:00:00 '')) \n ", database, "table_months");
+
+    rows = sql("select id, data, ts from {0}.{1} order by id", database, "table_months");
+    Assert.assertEquals(3, rows.size());
+
+    assertContainIdSet(rows, 0, 4, 5, 6);
+
+    sql("drop table {0}.{1}", database, "table_months");
   }
 
   @Test

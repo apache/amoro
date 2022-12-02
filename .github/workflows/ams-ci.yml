@@ -9,6 +9,7 @@ on:
   push:
     branches:
       - "master"
+      - "0.**"
     paths:
       - "!core/**"
       - "!hive/**"
@@ -19,6 +20,7 @@ on:
   pull_request:
     branches:
       - "master"
+      - "0.**"
     paths:
       - "!core/**"
       - "!hive/**"

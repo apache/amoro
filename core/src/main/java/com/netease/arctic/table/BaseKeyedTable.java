@@ -26,13 +26,17 @@ import com.netease.arctic.op.KeyedSchemaUpdate;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.op.UpdateKeyedTableProperties;
+import com.netease.arctic.scan.BaseChangeTableIncrementalScan;
 import com.netease.arctic.scan.BaseKeyedTableScan;
+import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.thrift.TException;
 
 import java.util.Map;
@@ -98,7 +102,22 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public Map<String, String> properties() {
-    return baseTable.properties();
+    long changeWatermark = TablePropertyUtil.getTableWatermark(changeTable.properties());
+    long baseWatermark = TablePropertyUtil.getTableWatermark(baseTable.properties());
+
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
+    if (changeWatermark > baseWatermark) {
+      baseTable.properties().forEach((k, v) -> {
+        if (!TableProperties.WATERMARK_TABLE.equals(k)) {
+          builder.put(k, v);
+        }
+      });
+      builder.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
+    } else {
+      builder.putAll(baseTable.properties());
+    }
+    builder.put(TableProperties.WATERMARK_BASE_STORE, String.valueOf(baseWatermark));
+    return builder.build();
   }
 
   @Override
@@ -189,6 +208,11 @@ public class BaseKeyedTable implements KeyedTable {
         TableIdentifier tableIdentifier, Table changeIcebergTable, ArcticFileIO arcticFileIO,
         AmsClient client) {
       super(tableIdentifier, changeIcebergTable, arcticFileIO, client);
+    }
+
+    @Override
+    public ChangeTableIncrementalScan newChangeScan() {
+      return new BaseChangeTableIncrementalScan(this);
     }
   }
 }

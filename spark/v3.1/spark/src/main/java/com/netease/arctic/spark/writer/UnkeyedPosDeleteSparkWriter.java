@@ -75,7 +75,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
     partitionKey.partition(structLike);
     if (writerMap.get(partitionKey) == null) {
       SortedPosDeleteWriter<InternalRow> writer = new SortedPosDeleteWriter<>(appenderFactory,
-          fileFactory,
+          fileFactory, table.io(),
           format, partitionKey);
       writerMap.putIfAbsent(partitionKey, writer);
     }

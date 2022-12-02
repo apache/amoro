@@ -402,8 +402,8 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .console-wrap {
-  user-select: none;
   height: 100%;
+  padding: 16px 24px;
   .console-content {
     background-color: #fff;
     height: 100%;
@@ -426,6 +426,7 @@ export default defineComponent({
       }
     }
     .sql-wrap {
+      user-select: none;
       font-size: 0;
       border: 1px solid #e5e5e5;
       border-bottom: 0;
@@ -562,7 +563,7 @@ export default defineComponent({
     justify-content: space-between;
     height: 40px;
     line-height: 40px;
-    border-bottom: 1px solid @border-color-dev;
+    border-bottom: 1px solid #e5e5e5;
     padding: 0 20px 0 16px;
     .tab {
       display: flex;

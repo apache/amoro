@@ -25,25 +25,29 @@ import com.netease.arctic.ams.server.model.DDLInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
+import com.netease.arctic.ams.server.util.TableUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_DB_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_CATALOG_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_DB_NAME;
+import static com.netease.arctic.ams.server.AmsTestBase.icebergCatalog;
 
 @PowerMockIgnore({"javax.management.*"})
 @PrepareForTest({
@@ -66,6 +70,11 @@ public class TestDDLTracerService {
   private static String syncFullTableName = AMS_TEST_CATALOG_NAME + "." + AMS_TEST_DB_NAME + "." + syncTableName;
   private static ArcticTable testSyncTable;
   private static TableIdentifier testSyncIdentifier;
+
+  private static final String icebergTableName = "icebergTableDDl";
+  private static ArcticTable testIcebergTable;
+  private static TableIdentifier testIcebergIdentifier;
+
   private static DDLTracerService service = ServiceContainer.getDdlTracerService();
 
   private static Schema schema;
@@ -82,7 +91,7 @@ public class TestDDLTracerService {
         Types.NestedField.required(6, "firstCol", Types.IntegerType.get()),
         Types.NestedField.required(7, "id", Types.IntegerType.get())
     );
-   PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(schema)
+    PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(schema)
         .addColumn("id").build();
 
     testCommotIdentifier = new TableIdentifier();
@@ -100,6 +109,12 @@ public class TestDDLTracerService {
     testSyncTable = AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(testSyncIdentifier),
         schema).withPrimaryKeySpec(PRIMARY_KEY_SPEC).create();
+
+    testIcebergTable = TableUtil.createIcebergTable(icebergTableName, schema, null, PartitionSpec.unpartitioned());
+    testIcebergIdentifier = new TableIdentifier();
+    testIcebergIdentifier.catalog = AMS_TEST_ICEBERG_CATALOG_NAME;
+    testIcebergIdentifier.database = AMS_TEST_ICEBERG_DB_NAME;
+    testIcebergIdentifier.tableName = icebergTableName;
   }
 
   @Test
@@ -113,7 +128,8 @@ public class TestDDLTracerService {
     List<DDLInfo> ddlInfos = service.getDDL(testCommotIdentifier);
     Assert.assertEquals(commitSqls.size(), ddlInfos.size());
     for (DDLInfo d : ddlInfos) {
-      String sql = d.getDdl().replace(";\\n", "").trim();
+      String sql = d.getDdl().replace("\n", "").trim();
+      System.out.println(sql);
       Assert.assertTrue(commitSqls.contains(sql));
     }
   }
@@ -122,11 +138,13 @@ public class TestDDLTracerService {
   public void testSyncAddDDl() {
     service.dropTableData(testSyncIdentifier);
     Schema schema = testSyncTable.schema();
-    DDLTracerService.DDLSyncTask task = new DDLTracerService.DDLSyncTask();
     addColumn(testSyncTable, syncFullTableName, syncSqls);
     syncSqls.forEach(System.out::println);
-    Assert.assertTrue(syncSqls.contains(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    Assert.assertTrue(syncSqls.contains(DDLTracerService.compareSchema(
+            syncFullTableName,
+            schema,
+            testSyncTable.schema())
+        .replace("\n", "")
         .trim()));
   }
 
@@ -134,11 +152,13 @@ public class TestDDLTracerService {
   public void testSyncDropDDl() {
     service.dropTableData(testSyncIdentifier);
     Schema schema = testSyncTable.schema();
-    DDLTracerService.DDLSyncTask task = new DDLTracerService.DDLSyncTask();
     dropColumn(testSyncTable, syncFullTableName, syncSqls);
     syncSqls.forEach(System.out::println);
-    Assert.assertTrue(syncSqls.contains(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    Assert.assertTrue(syncSqls.contains(DDLTracerService.compareSchema(
+            syncFullTableName,
+            schema,
+            testSyncTable.schema())
+        .replace("\n", "")
         .trim()));
   }
 
@@ -146,11 +166,13 @@ public class TestDDLTracerService {
   public void testSyncAlterDDl() {
     service.dropTableData(testSyncIdentifier);
     Schema schema = testSyncTable.schema();
-    DDLTracerService.DDLSyncTask task = new DDLTracerService.DDLSyncTask();
     alterColumn(testSyncTable, syncFullTableName, syncSqls);
     syncSqls.forEach(System.out::println);
-    Assert.assertTrue(syncSqls.contains(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    Assert.assertTrue(syncSqls.contains(DDLTracerService.compareSchema(
+            syncFullTableName,
+            schema,
+            testSyncTable.schema())
+        .replace("\n", "")
         .trim()));
   }
 
@@ -158,11 +180,13 @@ public class TestDDLTracerService {
   public void testSyncRenameDDl() {
     service.dropTableData(testSyncIdentifier);
     Schema schema = testSyncTable.schema();
-    DDLTracerService.DDLSyncTask task = new DDLTracerService.DDLSyncTask();
     renameColumn(testSyncTable, syncFullTableName, syncSqls);
     syncSqls.forEach(System.out::println);
-    Assert.assertTrue(syncSqls.contains(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    Assert.assertTrue(syncSqls.contains(DDLTracerService.compareSchema(
+            syncFullTableName,
+            schema,
+            testSyncTable.schema())
+        .replace("\n", "")
         .trim()));
   }
 
@@ -170,14 +194,16 @@ public class TestDDLTracerService {
   public void testSyncMoveAfterDDl() {
     service.dropTableData(testSyncIdentifier);
     Schema schema = testSyncTable.schema();
-    DDLTracerService.DDLSyncTask task = new DDLTracerService.DDLSyncTask();
     moveAfterColumn(testSyncTable, syncFullTableName, syncSqls);
     syncSqls.forEach(System.out::println);
-    System.out.println(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    System.out.println(DDLTracerService.compareSchema(syncFullTableName, schema, testSyncTable.schema())
+        .replace("\n", "")
         .trim());
-    Assert.assertTrue(syncSqls.contains(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    Assert.assertTrue(syncSqls.contains(DDLTracerService.compareSchema(
+            syncFullTableName,
+            schema,
+            testSyncTable.schema())
+        .replace("\n", "")
         .trim()));
   }
 
@@ -185,14 +211,16 @@ public class TestDDLTracerService {
   public void testSyncMoveFirstDDl() {
     service.dropTableData(testSyncIdentifier);
     Schema schema = testSyncTable.schema();
-    DDLTracerService.DDLSyncTask task = new DDLTracerService.DDLSyncTask();
     moveFirstColumn(testSyncTable, syncFullTableName, syncSqls);
     syncSqls.forEach(System.out::println);
-    System.out.println(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    System.out.println(DDLTracerService.compareSchema(syncFullTableName, schema, testSyncTable.schema())
+        .replace("\n", "")
         .trim());
-    Assert.assertTrue(syncSqls.contains(task.compareSchema(syncFullTableName, schema, testSyncTable.schema())
-        .replace(";\\n", "")
+    Assert.assertTrue(syncSqls.contains(DDLTracerService.compareSchema(
+            syncFullTableName,
+            schema,
+            testSyncTable.schema())
+        .replace("\n", "")
         .trim()));
   }
 
@@ -204,7 +232,9 @@ public class TestDDLTracerService {
     TableMetadata tableMetadata = new TableMetadata();
     Map<String, String> properties = new HashMap<>();
     properties.put("key1", "val1");
+    properties.put("meta_store_site", "val3");
     testSyncTable.asKeyedTable().updateProperties().set("key1", "val1").commit();
+    testSyncTable.asKeyedTable().updateProperties().set("meta_store_site", "val3").commit();
     service.dropTableData(testSyncIdentifier);
     properties.putAll(testSyncTable.properties());
     tableMetadata.setProperties(properties);
@@ -215,8 +245,8 @@ public class TestDDLTracerService {
     //test commit
     List<DDLInfo> commitDdlInfos = ServiceContainer.getDdlTracerService().getDDL(testSyncIdentifier);
     List<String> sqls = new ArrayList<>();
-    sqls.add("ALTER TABLE " + syncFullTableName + "  SET TBLPROPERTIES ('key2'='val2')");
-    sqls.add("ALTER TABLE " + syncFullTableName + "  UNSET TBLPROPERTIES ('key1')");
+    sqls.add("ALTER TABLE " + syncFullTableName + " SET TBLPROPERTIES ('key2'='val2')");
+    sqls.add("ALTER TABLE " + syncFullTableName + " UNSET TBLPROPERTIES ('key1')");
     Assert.assertEquals(sqls.size(), commitDdlInfos.size());
     commitDdlInfos.stream()
         .filter(e -> e.getDdlType().equals(DDLTracerService.DDLType.UPDATE_PROPERTIES.name()))
@@ -233,33 +263,86 @@ public class TestDDLTracerService {
         .forEach(e -> Assert.assertTrue(sqls.contains(e.getDdl())));
   }
 
+  @Test
+  public void testIcebergDDl() {
+    //add
+    testIcebergTable.updateSchema().addColumn("addCol", Types.IntegerType.get(), "addCol doc").commit();
+    List<DDLInfo> addDdlInfos = service.getNativeIcebergDDL(icebergCatalog, testIcebergIdentifier);
+    String addSql = "ALTER TABLE " + testIcebergTable.id().toString() + " ADD COLUMN addCol int  COMMENT 'addCol " +
+        "doc';";
+    Assert.assertEquals(addSql, addDdlInfos.get(0).getDdl().replace("\n", "")
+        .trim());
+
+    //drop
+    testIcebergTable.updateSchema().deleteColumn("dropCol").commit();
+    List<DDLInfo> dropDdlInfos = service.getNativeIcebergDDL(icebergCatalog, testIcebergIdentifier);
+    String dropSql = "ALTER TABLE " + testIcebergTable.id().toString() + " DROP COLUMN dropCol;";
+    Assert.assertEquals(dropSql, dropDdlInfos.get(1).getDdl().replace("\n", "").trim());
+
+    //alter
+    testIcebergTable.updateSchema().updateColumn("alterCol", Types.DoubleType.get()).commit();
+    List<DDLInfo> alterDdlInfos = service.getNativeIcebergDDL(icebergCatalog, testIcebergIdentifier);
+    String alterSql = "ALTER TABLE " + testIcebergTable.id().toString() + " ALTER COLUMN alterCol TYPE double;";
+    Assert.assertEquals(alterSql, alterDdlInfos.get(2).getDdl().replace("\n", "").trim());
+
+    //rename
+    testIcebergTable.updateSchema().renameColumn("oldCol", "newCol").commit();
+    List<DDLInfo> renameDdlInfos = service.getNativeIcebergDDL(icebergCatalog, testIcebergIdentifier);
+    String renameSql = "ALTER TABLE " + testIcebergTable.id().toString() + " RENAME COLUMN oldCol TO newCol;";
+    Assert.assertEquals(renameSql, renameDdlInfos.get(3).getDdl().replace("\n", "").trim());
+
+    //moveAfter
+    testIcebergTable.updateSchema().moveAfter("afterCol", "beforeCol").commit();
+    List<DDLInfo> moveAfterDdlInfos = service.getNativeIcebergDDL(icebergCatalog, testIcebergIdentifier);
+    String moveAfterSql = "ALTER TABLE " + testIcebergTable.id().toString() + " ALTER COLUMN afterCol AFTER " +
+        "beforeCol;";
+    Assert.assertEquals(moveAfterSql, moveAfterDdlInfos.get(4).getDdl().replace("\n", "")
+        .trim());
+
+    //moveFirst
+    testIcebergTable.updateSchema().moveFirst("firstCol").commit();
+    List<DDLInfo> moveFirstDdlInfos = service.getNativeIcebergDDL(icebergCatalog, testIcebergIdentifier);
+    String moveFirstSql = "ALTER TABLE " + testIcebergTable.id().toString() + " ALTER COLUMN firstCol FIRST;";
+    Assert.assertEquals(moveFirstSql, moveFirstDdlInfos.get(5).getDdl().replace("\n", "")
+        .trim());
+
+    //set properties
+    testIcebergTable.updateProperties().set("key1", "val1").commit();
+    testIcebergTable.updateProperties().remove("key1").commit();
+    List<DDLInfo> proDdlInfos = ServiceContainer.getDdlTracerService().getDDL(testIcebergIdentifier);
+    String setPro = "ALTER TABLE " + testIcebergTable.id().toString() + " SET TBLPROPERTIES ('key1'='val1')";
+    String unsetPro = "ALTER TABLE " + testIcebergTable.id().toString() + " UNSET TBLPROPERTIES ('key1')";
+    Assert.assertEquals(setPro, proDdlInfos.get(6).getDdl());
+    Assert.assertEquals(unsetPro, proDdlInfos.get(7).getDdl());
+  }
+
   private void addColumn(ArcticTable table, String tableName, List<String> sqls) {
     table.asKeyedTable().updateSchema().addColumn("addCol", Types.IntegerType.get(), "addCol doc").commit();
-    sqls.add("ALTER TABLE " + tableName + "  ADD COLUMN addCol int  COMMENT 'addCol doc'");
+    sqls.add("ALTER TABLE " + tableName + " ADD COLUMN addCol int  COMMENT 'addCol doc';");
   }
 
   private void dropColumn(ArcticTable table, String tableName, List<String> sqls) {
     table.asKeyedTable().updateSchema().deleteColumn("dropCol").commit();
-    sqls.add("ALTER TABLE " + tableName + "  DROP COLUMN dropCol");
+    sqls.add("ALTER TABLE " + tableName + " DROP COLUMN dropCol;");
   }
 
   private void alterColumn(ArcticTable table, String tableName, List<String> sqls) {
     table.asKeyedTable().updateSchema().updateColumn("alterCol", Types.DoubleType.get()).commit();
-    sqls.add("ALTER TABLE " + tableName + "  ALTER COLUMN alterCol  TYPE double");
+    sqls.add("ALTER TABLE " + tableName + " ALTER COLUMN alterCol TYPE double;");
   }
 
   private void renameColumn(ArcticTable table, String tableName, List<String> sqls) {
     table.asKeyedTable().updateSchema().renameColumn("oldCol", "newCol").commit();
-    sqls.add("ALTER TABLE " + tableName + "  RENAME COLUMN oldCol TO newCol");
+    sqls.add("ALTER TABLE " + tableName + " RENAME COLUMN oldCol TO newCol;");
   }
 
   private void moveAfterColumn(ArcticTable table, String tableName, List<String> sqls) {
     table.asKeyedTable().updateSchema().moveAfter("afterCol", "beforeCol").commit();
-    sqls.add("ALTER TABLE " + tableName + "  ALTER COLUMN afterCol AFTER beforeCol");
+    sqls.add("ALTER TABLE " + tableName + " ALTER COLUMN afterCol AFTER beforeCol;");
   }
 
   private void moveFirstColumn(ArcticTable table, String tableName, List<String> sqls) {
     table.asKeyedTable().updateSchema().moveFirst("firstCol").commit();
-    sqls.add("ALTER TABLE " + tableName + "  ALTER COLUMN firstCol FIRST");
+    sqls.add("ALTER TABLE " + tableName + " ALTER COLUMN firstCol FIRST;");
   }
 }

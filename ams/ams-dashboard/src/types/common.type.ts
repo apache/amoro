@@ -59,11 +59,13 @@ export interface IKeyAndValue {
   value: string
 }
 export interface IBaseDetailInfo {
+  tableType: string
   tableName: string
   createTime: string
   size: string
   file: string
   averageFile: string
+  tableFormat: string
   hasPartition: boolean
 }
 
@@ -175,7 +177,8 @@ export interface IGroupItem {
 
 export interface IGroupItemInfo {
   occupationCore: number
-  occupationMemory: number
+  occupationMemory: number | string
+  unit: string
 }
 
 export interface ITableIdentifier {
@@ -196,6 +199,7 @@ export interface IOptimizeTableItem {
   durationDesc: string
   fileSizeDesc: string
   tableIdentifier: ITableIdentifier
+  tableNameOnly?: string
 }
 
 export interface IOptimizeResourceTableItem {
@@ -209,6 +213,56 @@ export interface IOptimizeResourceTableItem {
   jobType: string
   groupName: string
   resourceAllocation: string
+}
+
+export interface IOverviewSummary {
+  catalogCnt: number
+  tableCnt: number
+  tableTotalSize: number
+  totalCpu: string
+  totalMemory: number
+  displayTotalSize?: string
+  displayTotalMemory?: string
+  totalSizeUnit?: string
+  totalMemoryUnit?: string
+}
+export interface ITimeInfo {
+  yTitle: string;
+  colors: string[];
+  name: string[];
+}
+
+export interface IChartLineData {
+  timeLine: string[]
+  data1: number[] | string[]
+  data2: number[] | string[]
+}
+
+export interface ITopTableItem {
+  tableName: string
+  size: number
+  fileCnt: number
+  displaySize: string
+  tableNameOnly: string
+  index: number
+}
+
+export interface IContainerSetting {
+  name: string
+  type: string
+  properties: IMap<string>,
+  optimizeGroup: IMap<string>[],
+  propertiesArray?: []
+}
+
+export interface IResourceUsage {
+  timeLine: string[]
+  usedCpu: string[]
+  usedCpuDivision: string[]
+  usedCpuPercent: string[]
+  usedMem: string[]
+  usedMemDivision: string[]
+  usedMemPercent: string[]
 }
 
 export enum debugResultBgcMap {

@@ -75,6 +75,16 @@ public class ArcticCatalogFactory implements CatalogFactory {
     options.add(PROPERTY_VERSION);
     options.add(METASTORE_URL);
     options.add(DEFAULT_DATABASE);
+
+    // authorization config
+    options.add(ArcticCatalogFactoryOptions.AUTH_AMS_CONFIGS_DISABLE);
+    options.add(ArcticCatalogFactoryOptions.AUTH_METHOD);
+    options.add(ArcticCatalogFactoryOptions.SIMPLE_USER_NAME);
+    options.add(ArcticCatalogFactoryOptions.KEYTAB_LOGIN_USER);
+    options.add(ArcticCatalogFactoryOptions.KRB5_CONF_PATH);
+    options.add(ArcticCatalogFactoryOptions.KRB5_CONF_ENCODE);
+    options.add(ArcticCatalogFactoryOptions.KEYTAB_PATH);
+    options.add(ArcticCatalogFactoryOptions.KEYTAB_ENCODE);
     return options;
   }
 }

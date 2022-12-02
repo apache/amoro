@@ -30,7 +30,9 @@ public class HiveTableProperties {
     EXPOSED.add(HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE);
   }
 
-  public static final String ARCTIC_TABLE_FLAG = "arctic.enable";
+  public static final String ARCTIC_TABLE_FLAG = "arctic.enabled";
+  @Deprecated
+  public static final String ARCTIC_TABLE_FLAG_LEGACY = "arctic.enable";
 
   public static final String ARCTIC_TABLE_PRIMARY_KEYS = "arctic.table.primary-keys";
 
@@ -47,6 +49,8 @@ public class HiveTableProperties {
   public static final boolean AUTO_SYNC_HIVE_DATA_WRITE_DEFAULT = false;
 
   public static final String ALLOW_HIVE_TABLE_EXISTED = "allow-hive-table-existed";
+
+  public static final String WATERMARK_HIVE = "watermark.hive";
 
   public static final String PARQUET_INPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat";
   public static final String PARQUET_OUTPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat";

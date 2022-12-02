@@ -28,19 +28,18 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataTreeNode;
-import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.hive.HMSMockServer;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.op.OverwriteBaseFiles;
-import com.netease.arctic.spark.hive.ArcticCatalogMetaTestUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
@@ -130,7 +129,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalogImplementation", "hive");
     configs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
-    configs.put("spark.arctic.sql.delegate.enable", "true");
+    configs.put("spark.arctic.sql.delegate.enabled", "true");
     //hive.metastore.client.capability.check
     configs.put("hive.metastore.client.capability.check", "false");
 
@@ -146,9 +145,9 @@ public class SparkTestContext extends ExternalResource {
     catalogName = arctic_hive.getCatalogName();
     ams.handler().createCatalog(arctic_hive);
 
-    configs.put("arctic.catalog." + catalogName, ArcticCatalog.class.getName());
-    configs.put("arctic.catalog.type", "hive");
-    configs.put("arctic.catalog.url" , amsUrl + "/" + catalogName);
+    configs.put("spark.sql.arctic.catalog." + catalogName, ArcticCatalog.class.getName());
+    configs.put("spark.sql.arctic.catalog.type", "hive");
+    configs.put("spark.sql.arctic.catalog.url" , amsUrl + "/" + catalogName);
     return configs;
   }
 
@@ -375,13 +374,9 @@ public class SparkTestContext extends ExternalResource {
   }
 
   protected void assertTableExist(TableIdentifier ident) {
-    try {
-      TableMeta meta = ams.handler().getTable(
-          ident.buildTableIdentifier());
-      Assert.assertNotNull(meta);
-    } catch (TException e) {
-      throw new IllegalStateException(e);
-    }
+    ArcticCatalog catalog = catalog(ident.getCatalog());
+    boolean exists = catalog.tableExists(ident);
+    Assert.assertTrue("table should exist", exists);
   }
 
   protected void assertTableNotExist(TableIdentifier identifier) {
@@ -463,10 +458,11 @@ public class SparkTestContext extends ExternalResource {
     }
     DataFile[] dataFiles = changeWrite.complete().dataFiles();
     if (table.isKeyedTable()) {
+      table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.withTransactionId(keyedTable.beginTransaction(System.currentTimeMillis() + ""));
+      overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(keyedTable));
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();

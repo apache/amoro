@@ -24,29 +24,34 @@ import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.write.ArcticLogWriter;
+import com.netease.arctic.flink.write.AutomaticLogWriter;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
+import org.apache.flink.table.data.GenericRowData;
+import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.table.TableProperties.ENABLE_LOG_STORE;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION_DEFAULT;
 
@@ -55,7 +60,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_DATA_VERSION_DE
  */
 public class ArcticUtils {
 
-  public static final Logger LOGGER = LoggerFactory.getLogger(ArcticUtils.class);
+  public static final Logger LOG = LoggerFactory.getLogger(ArcticUtils.class);
 
   public static ArcticTable loadArcticTable(ArcticTableLoader tableLoader) {
     tableLoader.open();
@@ -92,8 +97,24 @@ public class ArcticUtils {
     return metricsGenerator;
   }
 
-  public static boolean arcticWALWriterEnable(String arcticEmitMode) {
-    return arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_LOG);
+  public static boolean arcticWALWriterEnable(Map<String, String> properties, String arcticEmitMode) {
+    boolean streamEnable = CompatiblePropertyUtil.propertyAsBoolean(properties, ENABLE_LOG_STORE,
+        TableProperties.ENABLE_LOG_STORE_DEFAULT);
+
+    if (arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_LOG)) {
+      if (!streamEnable) {
+        throw new ValidationException(
+            "emit to kafka was set, but no kafka config be found, please set kafka config first");
+      }
+      return true;
+    } else if (arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO)) {
+      LOG.info("arctic emit mode is auto, and the arctic table {} is {}",
+          ENABLE_LOG_STORE,
+          streamEnable);
+      return streamEnable;
+    }
+
+    return false;
   }
 
   /**
@@ -101,30 +122,44 @@ public class ArcticUtils {
    * and enable {@link TableProperties#ENABLE_LOG_STORE}
    * create logWriter according to {@link TableProperties#LOG_STORE_DATA_VERSION}
    *
-   * @param properties
+   * @param properties        arctic table properties
    * @param producerConfig
    * @param topic
    * @param tableSchema
-   * @return
+   * @param tableLoader       arctic table loader
+   * @param watermarkWriteGap watermark gap that triggers automatic writing to log storage
+   * @return ArcticLogWriter
    */
   public static ArcticLogWriter buildArcticLogWriter(Map<String, String> properties,
-                                                     Properties producerConfig, String topic, TableSchema tableSchema,
+                                                     Properties producerConfig,
+                                                     String topic,
+                                                     TableSchema tableSchema,
                                                      String arcticEmitMode,
-                                                     ShuffleHelper helper) {
-    if (!arcticWALWriterEnable(arcticEmitMode)) {
+                                                     ShuffleHelper helper,
+                                                     ArcticTableLoader tableLoader,
+                                                     Duration watermarkWriteGap) {
+    if (!arcticWALWriterEnable(properties, arcticEmitMode)) {
       return null;
-    }
-
-    boolean streamEnable = PropertyUtil.propertyAsBoolean(properties, TableProperties.ENABLE_LOG_STORE,
-        TableProperties.ENABLE_LOG_STORE_DEFAULT);
-    if (!streamEnable) {
-      throw new ValidationException(
-          "emit to kafka was set, but no kafka config be found, please set kafka config first");
     }
 
     String version = properties.getOrDefault(LOG_STORE_DATA_VERSION, LOG_STORE_DATA_VERSION_DEFAULT);
     if (LOG_STORE_DATA_VERSION_DEFAULT.equals(version)) {
-      LOGGER.info("build log writer: HiddenLogWriter(v1)");
+      if (arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO)) {
+        LOG.info("arctic emit mode is auto, and we will build automatic log writer: AutomaticLogWriter(v1)");
+        return new AutomaticLogWriter(
+            FlinkSchemaUtil.convert(tableSchema),
+            producerConfig,
+            topic,
+            new HiddenKafkaFactory<>(),
+            LogRecordV1.fieldGetterFactory,
+            IdGenerator.generateUpstreamId(),
+            helper,
+            tableLoader,
+            watermarkWriteGap
+        );
+      }
+
+      LOG.info("build log writer: HiddenLogWriter(v1)");
       return new HiddenLogWriter(
           FlinkSchemaUtil.convert(tableSchema),
           producerConfig,
@@ -139,13 +174,29 @@ public class ArcticUtils {
   }
 
   public static boolean arcticFileWriterEnable(String arcticEmitMode) {
-    return arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_FILE);
+    return arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_FILE) ||
+        arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO);
   }
 
   public static boolean isToBase(boolean overwrite) {
     boolean toBase = overwrite;
-    LOGGER.info("is write to base:{}", toBase);
+    LOG.info("is write to base:{}", toBase);
     return toBase;
+  }
+
+  public static RowData removeArcticMetaColumn(RowData rowData, int columnSize) {
+    GenericRowData newRowData = new GenericRowData(rowData.getRowKind(), columnSize);
+    if (rowData instanceof GenericRowData) {
+      GenericRowData before = (GenericRowData) rowData;
+      for (int i = 0; i < newRowData.getArity(); i++) {
+        newRowData.setField(i, before.getField(i));
+      }
+      return newRowData;
+    }
+    throw new UnsupportedOperationException(
+        String.format(
+            "Can't remove arctic meta column from this RowData %s",
+            rowData.getClass().getSimpleName()));
   }
 
 }

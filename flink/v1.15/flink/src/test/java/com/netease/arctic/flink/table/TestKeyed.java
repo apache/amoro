@@ -20,9 +20,10 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.FlinkTestBase;
 import com.netease.arctic.flink.util.DataUtil;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.table.TableProperties;
-import org.apache.flink.core.execution.JobClient;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.api.DataTypes;
@@ -37,6 +38,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -125,17 +127,17 @@ public class TestKeyed extends FlinkTestBase {
   public void testSinkSourceFile() throws IOException {
     List<Object[]> data = new LinkedList<>();
     data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
-                          LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+        LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     data.add(new Object[]{RowKind.DELETE, 1000015, "b", LocalDateTime.parse("2022-06-17T10:08:11.0"),
-                          LocalDateTime.parse("2022-06-17T10:08:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+        LocalDateTime.parse("2022-06-17T10:08:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     data.add(new Object[]{RowKind.DELETE, 1000011, "c", LocalDateTime.parse("2022-06-18T10:10:11.0"),
-                          LocalDateTime.parse("2022-06-18T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+        LocalDateTime.parse("2022-06-18T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     data.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
-                          LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     data.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
-                          LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
     data.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
-                          LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+        LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
     DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
         InternalTypeInfo.ofFields(
@@ -159,7 +161,7 @@ public class TestKeyed extends FlinkTestBase {
         ") PARTITIONED BY(op_time) " +
         " WITH (" +
         " 'connector' = 'arctic'," +
-        " 'location' = '" + tableDir.getAbsolutePath() + "'" +
+        " 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "'" +
         ")");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
@@ -168,23 +170,24 @@ public class TestKeyed extends FlinkTestBase {
         ")*/ select id, name, op_time_tz, op_time from input");
 
     List<Row> actual =
-        sql("select id, name, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
+        sql("select id, op_time, op_time_tz from arcticCatalog." + db + "." + TABLE +
             "/*+ OPTIONS(" +
             "'arctic.read.mode'='file'" +
+            ", 'streaming'='false'" +
             ")*/" +
             "");
 
     List<Object[]> expected = new LinkedList<>();
-    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0"),
-                              LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, "d", LocalDateTime.parse("2022-06-17T10:11:11.0"),
-                              LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, "e", LocalDateTime.parse("2022-06-17T10:11:11.0"),
-                              LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
-    expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0"),
-                              LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.INSERT, 1000004, LocalDateTime.parse("2022-06-17T10:10:11.0"),
+        LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.UPDATE_BEFORE, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
+        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.UPDATE_AFTER, 1000021, LocalDateTime.parse("2022-06-17T10:11:11.0"),
+        LocalDateTime.parse("2022-06-17T10:11:11.0").atZone(ZoneId.systemDefault()).toInstant()});
+    expected.add(new Object[]{RowKind.INSERT, 1000015, LocalDateTime.parse("2022-06-17T10:10:11.0"),
+        LocalDateTime.parse("2022-06-17T10:10:11.0").atZone(ZoneId.systemDefault()).toInstant()});
 
-    Assert.assertEquals(DataUtil.toRowSet(expected), new HashSet<>(actual));
+    Assert.assertTrue(CollectionUtils.isEqualCollection(DataUtil.toRowList(expected), actual));
   }
 
   @Test
@@ -216,7 +219,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -229,7 +232,7 @@ public class TestKeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
 
@@ -241,7 +244,7 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -272,7 +275,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, PRIMARY KEY (id) NOT ENFORCED) WITH %s", toWithClause(tableProperties));
 
@@ -282,10 +285,11 @@ public class TestKeyed extends FlinkTestBase {
         "select id, name from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE +
+            " /*+ OPTIONS('streaming'='false') */")));
 
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
       for (Object[] datum : data) {
@@ -293,7 +297,7 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -321,7 +325,7 @@ public class TestKeyed extends FlinkTestBase {
 
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
-        ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic', 'location' = '" + tableDir.getAbsolutePath() + "')");
+        ") PARTITIONED BY(op_time) WITH ('connector' = 'arctic', 'location' = '" + tableDir.getAbsolutePath() + "/" + TABLE + "')");
 
     sql("insert into arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
@@ -329,7 +333,9 @@ public class TestKeyed extends FlinkTestBase {
         ")*/" + " select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
   }
 
   @Test
@@ -355,7 +361,7 @@ public class TestKeyed extends FlinkTestBase {
 
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -373,7 +379,73 @@ public class TestKeyed extends FlinkTestBase {
     expected.add(new Object[]{RowKind.DELETE, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     expected.add(new Object[]{RowKind.INSERT, 1000015, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
     Assert.assertEquals(DataUtil.toRowSet(expected),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
+  }
+
+  // Ignore this case because of ci blocking problem in Github
+  @Ignore
+  @Test
+  public void testFileUpsertWithSamePrimaryKey() throws Exception {
+    List<Object[]> data = new LinkedList<>();
+    data.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000011, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    data.add(new Object[]{RowKind.INSERT, 1000011, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    DataStream<RowData> source = getEnv().fromCollection(DataUtil.toRowData(data),
+      InternalTypeInfo.ofFields(
+        DataTypes.INT().getLogicalType(),
+        DataTypes.VARCHAR(100).getLogicalType(),
+        DataTypes.TIMESTAMP().getLogicalType()
+      ));
+
+    getEnv().setParallelism(4);
+    Table input = getTableEnv().fromDataStream(source, $("id"), $("name"), $("op_time"));
+    getTableEnv().createTemporaryView("input", input);
+
+    sql("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props));
+
+    Map<String, String> tableProperties = new HashMap<>();
+    tableProperties.put(TableProperties.UPSERT_ENABLED, "true");
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
+    sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
+      " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
+      ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
+
+    sql("insert into arcticCatalog." + db + "." + TABLE +
+      "/*+ OPTIONS(" +
+      "'arctic.emit.mode'='file'" +
+      ")*/" + " select * from input");
+
+    TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+      "'streaming'='false'" +
+      ") */");
+    LinkedList<Row> actual = new LinkedList<>();
+    try (CloseableIterator<Row> iterator = result.collect()) {
+      while (iterator.hasNext()) {
+        Row row = iterator.next();
+        actual.add(row);
+      }
+    }
+
+    LinkedList<Object[]> expected = new LinkedList<>();
+
+    expected.add(new Object[]{RowKind.DELETE, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000004, "a", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000004, "b", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000011, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000011, "e", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.DELETE, 1000011, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+    expected.add(new Object[]{RowKind.INSERT, 1000011, "f", LocalDateTime.parse("2022-06-17T10:10:11.0")});
+
+    Map<Object, List<Row>> actualMap = DataUtil.groupByPrimaryKey(actual, 0);
+    Map<Object, List<Row>> expectedMap = DataUtil.groupByPrimaryKey(DataUtil.toRowList(expected), 0);
+
+    for (Object key : actualMap.keySet()) {
+      Assert.assertTrue(CollectionUtils.isEqualCollection(actualMap.get(key),expectedMap.get(key)));
+    }
   }
 
   @Test
@@ -407,7 +479,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -421,7 +493,7 @@ public class TestKeyed extends FlinkTestBase {
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
         "/*+ OPTIONS(" +
         "'arctic.read.mode'='log'" +
-        ", 'scan.startup.mode'='earliest-offset'" +
+        ", 'scan.startup.mode'='earliest'" +
         ")*/" +
         "");
     Set<Row> actual = new HashSet<>();
@@ -432,7 +504,7 @@ public class TestKeyed extends FlinkTestBase {
       }
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 
   @Test
@@ -465,7 +537,7 @@ public class TestKeyed extends FlinkTestBase {
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_ADDRESS, kafkaTestBase.brokerConnectionStrings);
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    tableProperties.put(LOCATION, tableDir.getAbsolutePath());
+    tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
     sql("CREATE TABLE IF NOT EXISTS arcticCatalog." + db + "." + TABLE + "(" +
         " id INT, name STRING, op_time TIMESTAMP, PRIMARY KEY (id) NOT ENFORCED " +
         ") PARTITIONED BY(op_time) WITH %s", toWithClause(tableProperties));
@@ -477,9 +549,11 @@ public class TestKeyed extends FlinkTestBase {
         "select * from input");
 
     Assert.assertEquals(DataUtil.toRowSet(data),
-        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE)));
+        new HashSet<>(sql("select * from arcticCatalog." + db + "." + TABLE + " /*+ OPTIONS(" +
+            "'streaming'='false'" +
+            ") */")));
     TableResult result = exec("select * from arcticCatalog." + db + "." + TABLE +
-        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest-offset') */");
+        " /*+ OPTIONS('arctic.read.mode'='log', 'scan.startup.mode'='earliest') */");
 
     Set<Row> actual = new HashSet<>();
     try (CloseableIterator<Row> iterator = result.collect()) {
@@ -490,6 +564,6 @@ public class TestKeyed extends FlinkTestBase {
     }
     Assert.assertEquals(DataUtil.toRowSet(data), actual);
 
-    result.getJobClient().ifPresent(JobClient::cancel);
+    result.getJobClient().ifPresent(TestUtil::cancelJob);
   }
 }

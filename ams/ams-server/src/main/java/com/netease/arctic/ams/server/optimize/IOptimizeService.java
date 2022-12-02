@@ -35,10 +35,16 @@ public interface IOptimizeService {
   /**
    * List cached tables in OptimizeService.
    *
-   * @param forceRefresh whether force refresh
    * @return table id list
    */
-  List<TableIdentifier> listCachedTables(boolean forceRefresh);
+  List<TableIdentifier> listCachedTables();
+
+  /**
+   * List and refresh cached tables in OptimizeService.
+   *
+   * @return table id list
+   */
+  List<TableIdentifier> refreshAndListTables();
 
   /**
    * Get TableOptimizeItem in OptimizeService.
@@ -65,7 +71,6 @@ public interface IOptimizeService {
    */
   List<OptimizeHistory> getOptimizeHistory(TableIdentifier tableIdentifier);
 
-
   /**
    * Get max optimize history id.
    * @return max optimize history id
@@ -74,16 +79,25 @@ public interface IOptimizeService {
 
   /**
    * Trigger table to commit, async.
-   * @param tableIdentifier -
+   * @param tableOptimizeItem -
    * @return return true if trigger success
    */
-  boolean triggerOptimizeCommit(TableIdentifier tableIdentifier);
-
+  boolean triggerOptimizeCommit(TableOptimizeItem tableOptimizeItem);
 
   /**
    * Take Table to commit, wait if no table is ready.
-   * @return tableIdentifier -
+   * @return TableOptimizeItem -
    */
-  TableIdentifier takeTableToCommit() throws InterruptedException;
+  TableOptimizeItem takeTableToCommit() throws InterruptedException;
 
+  /**
+   * expire and clean optimize history record
+   * @param tableIdentifier -
+   * @param expireTime min timestamp which record need to retain
+   */
+  void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
+
+  void addNewTables(List<TableIdentifier> toAddTables);
+
+  void clearRemovedTables(List<TableIdentifier> toRemoveTables);
 }

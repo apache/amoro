@@ -20,16 +20,17 @@ package com.netease.arctic.ams.server.config;
 
 import com.netease.arctic.table.TableProperties;
 
-import java.awt.event.HierarchyBoundsAdapter;
 import java.util.HashSet;
 import java.util.Set;
 
 public class ServerTableProperties {
 
   public static final Set<String> HIDDEN_EXPOSED = new HashSet<>();
+  public static final Set<String> HIDDEN_INTERNAL = new HashSet<>();
 
   static {
     HIDDEN_EXPOSED.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    HIDDEN_EXPOSED.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
     HIDDEN_EXPOSED.add(TableProperties.LOCATION);
     HIDDEN_EXPOSED.add(TableProperties.TABLE_CREATE_TIME);
     HIDDEN_EXPOSED.add(TableProperties.TABLE_PARTITION_PROPERTIES);
@@ -45,7 +46,16 @@ public class ServerTableProperties {
     HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_HASH_AUTO);
     HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_MODE_NONE);
     HIDDEN_EXPOSED.add(TableProperties.READ_DISTRIBUTION_MODE_HASH);
-    HIDDEN_EXPOSED.add(TableProperties.PROTECTED_PROPERTIES.toString());
+    HIDDEN_EXPOSED.add(TableProperties.WRITE_PROTECTED_PROPERTIES.toString());
     HIDDEN_EXPOSED.add(TableProperties.TABLE_EVENT_TIME_FIELD);
+
+    HIDDEN_INTERNAL.add("meta_store_site");
+    HIDDEN_INTERNAL.add("hdfs_site");
+    HIDDEN_INTERNAL.add("core_site");
+    HIDDEN_INTERNAL.add("auth_method");
+    HIDDEN_INTERNAL.add("hadoop_username");
+    HIDDEN_INTERNAL.add("krb_keytab");
+    HIDDEN_INTERNAL.add("krb_conf");
+    HIDDEN_INTERNAL.add("krb_principal");
   }
 }

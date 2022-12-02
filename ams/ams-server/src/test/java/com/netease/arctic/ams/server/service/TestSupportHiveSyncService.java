@@ -151,7 +151,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         p.setPrivileges(privilegeSet.deepCopy());
       }
 
-      return client.add_partition(p);
+      return client.addPartition(p);
     });
 
     Partition hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
@@ -200,7 +200,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         p.setPrivileges(privilegeSet.deepCopy());
       }
 
-      return client.add_partition(p);
+      return client.addPartition(p);
     });
 
     Partition hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
@@ -250,7 +250,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
         p.setPrivileges(privilegeSet.deepCopy());
       }
 
-      return client.add_partition(p);
+      return client.addPartition(p);
     });
 
     Partition hivePartition = ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->

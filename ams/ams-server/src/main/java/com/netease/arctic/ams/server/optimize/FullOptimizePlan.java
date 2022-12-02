@@ -31,6 +31,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.commons.collections.CollectionUtils;
@@ -56,7 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class FullOptimizePlan extends BaseOptimizePlan {
+public class FullOptimizePlan extends BaseArcticOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(FullOptimizePlan.class);
 
   public FullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
@@ -88,7 +89,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
   }
 
   @Override
-  protected void addOptimizeFilesTree() {
+  protected void addOptimizeFiles() {
     addBaseFileIntoFileTree();
   }
 
@@ -122,21 +123,31 @@ public class FullOptimizePlan extends BaseOptimizePlan {
     return true;
   }
 
-
   protected boolean checkPosDeleteTotalSize(String partitionToPath) {
     long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
         0 : partitionPosDeleteFiles.get(partitionToPath).stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
-    return posDeleteSize >= PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES,
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES_DEFAULT);
+    Map<String, String> properties = arcticTable.properties();
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO) &&
+        properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES)) {
+      return posDeleteSize >=
+          Long.parseLong(properties.get(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES));
+    } else {
+      long targetSize = PropertyUtil.propertyAsLong(properties,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+      double duplicateRatio = PropertyUtil.propertyAsDouble(properties,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
+      return posDeleteSize >= targetSize * duplicateRatio;
+    }
   }
 
   protected boolean checkFullOptimizeInterval(long current, String partitionToPath) {
-    long fullMajorOptimizeInterval = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL,
-        TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
+    long fullMajorOptimizeInterval = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT);
 
-    if (fullMajorOptimizeInterval != TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT) {
+    if (fullMajorOptimizeInterval != TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT) {
       long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullOptimizeTime(partitionToPath);
       return current - lastFullMajorOptimizeTime >= fullMajorOptimizeInterval;
     }
@@ -153,8 +164,7 @@ public class FullOptimizePlan extends BaseOptimizePlan {
    */
   protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     List<DataFile> smallFiles = baseFiles.stream().filter(file -> file.fileSizeInBytes() <=
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
+        getSmallFileSize(arcticTable.properties())).collect(Collectors.toList());
     return CollectionUtils.isNotEmpty(posDeleteFiles) || smallFiles.size() >= 2;
   }
 
@@ -163,16 +173,16 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
-      String group = UUID.randomUUID().toString();
+      String commitGroup = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
       TaskConfig taskPartitionConfig = new TaskConfig(partition,
-          null, group, historyId, partitionOptimizeType.get(partition), createTime,
+          null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
           constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
               getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
-      long taskSize =
-          PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
-              TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
+      long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+              TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+              TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
       Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
       int taskCnt = (int) (sum / taskSize) + 1;
       List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
@@ -190,14 +200,14 @@ public class FullOptimizePlan extends BaseOptimizePlan {
 
   private List<BaseOptimizeTask> collectKeyedTableTasks(String partition, FileTree treeRoot) {
     List<BaseOptimizeTask> collector = new ArrayList<>();
-    String group = UUID.randomUUID().toString();
+    String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
     treeRoot.completeTree(false);
     List<DataFile> allBaseFiles = new ArrayList<>();
     treeRoot.collectBaseFiles(allBaseFiles);
     TaskConfig taskPartitionConfig = new TaskConfig(partition,
-        null, group, historyId, partitionOptimizeType.get(partition), createTime,
+        null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
         constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
             getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
     List<FileTree> subTrees = new ArrayList<>();
@@ -250,9 +260,8 @@ public class FullOptimizePlan extends BaseOptimizePlan {
         return null;
       }
 
-      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec);
+      ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
       currentPartitions.add(partition);
-      allPartitions.add(partition);
       if (!anyTaskRunning(partition)) {
         FileTree treeRoot =
             partitionFileTree.computeIfAbsent(partition, p -> FileTree.newTreeRoot());

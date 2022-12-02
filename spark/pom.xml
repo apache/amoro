@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-parent</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.1</version>
+        <version>0.4.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,6 +33,7 @@
 
     <modules>
         <module>v2.3/spark</module>
+        <module>v2.3/spark-runtime</module>
         <module>v3.1/spark</module>
         <module>v3.1/spark-runtime</module>
     </modules>

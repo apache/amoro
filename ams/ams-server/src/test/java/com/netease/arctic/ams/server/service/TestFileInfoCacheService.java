@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.DataFile;
@@ -29,14 +28,20 @@ import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
+import com.netease.arctic.ams.server.util.TableUtil;
+import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileMetadata;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,7 +54,7 @@ import static com.netease.arctic.ams.server.AmsTestBase.catalog;
 
 public class TestFileInfoCacheService extends TableTestBase {
 
-  TableIdentifier tableIdentifier = new TableIdentifier("test", "test", "test");
+  TableIdentifier tableIdentifier = new TableIdentifier(AMS_TEST_CATALOG_NAME, "test", "test");
   Random random = new Random();
 
   @Test
@@ -252,6 +257,86 @@ public class TestFileInfoCacheService extends TableTestBase {
     Assert.assertEquals(
         overwriteCommitSnapInfos.get(0).getTransactionId(),
         overwriteSnapInfos.get(0).getTransactionId());
+  }
+
+  @Test
+  public void testIcebergTable() {
+    Map<String, String> pro = new HashMap<>();
+    pro.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
+    ArcticTable table = TableUtil.createIcebergTable("test_iceberg_file_cache", TABLE_SCHEMA, pro, TableTestBase.SPEC);
+    DeleteFile posDelete = FileMetadata.deleteFileBuilder(table.spec())
+        .ofPositionDeletes()
+        .withPath("/path/to/data-unpartitioned-pos-deletes.parquet")
+        .withFileSizeInBytes(10)
+        .withPartitionPath("op_time_day=2022-01-01")
+        .withRecordCount(1)
+        .build();
+    DeleteFile eqDelete = FileMetadata.deleteFileBuilder(table.spec())
+        .ofEqualityDeletes()
+        .withPath("/path/to/data-unpartitioned-eq-deletes.parquet")
+        .withFileSizeInBytes(10)
+        .withPartitionPath("op_time_day=2022-01-01")
+        .withRecordCount(1)
+        .build();
+    table.asUnkeyedTable().newFastAppend()
+        .appendFile(FILE_A)
+        .appendFile(FILE_B)
+        .commit();
+    table.asUnkeyedTable().newRewrite().rewriteFiles(Sets.newHashSet(FILE_B), Sets.newHashSet(FILE_D))
+        .commit();
+    table.asUnkeyedTable().newOverwrite()
+        .deleteFile(FILE_A)
+        .addFile(FILE_C)
+        .commit();
+    table.asUnkeyedTable().newRowDelta().addDeletes(eqDelete).addDeletes(posDelete).commit();
+    List<TransactionsOfTable> transactionsOfTables =
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(table.id().buildTableIdentifier());
+    Collections.reverse(transactionsOfTables);
+    Assert.assertEquals(3, transactionsOfTables.size());
+
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(0).getPath(), FILE_A.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(0).getOperation(), "add");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(1).getPath(), FILE_B.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(0).getTransactionId()).get(1).getOperation(), "add");
+
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(0).getPath(), FILE_C.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(0).getOperation(), "add");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(1).getPath(), FILE_A.path().toString());
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(1).getTransactionId()).get(1).getOperation(), "remove");
+    Assert.assertEquals(transactionsOfTables.get(1).getFileCount(), 2);
+    Assert.assertEquals(transactionsOfTables.get(1).getFileSize(), 20);
+
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(2).getTransactionId()).get(0).getPath(), "/path/to/data-unpartitioned-eq-deletes" +
+        ".parquet");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(2).getTransactionId()).get(0).getType(), "eq-deletes");
+    Assert.assertEquals(
+        ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+            table.id().buildTableIdentifier(),
+            transactionsOfTables.get(2).getTransactionId()).get(1).getPath(),
+        "/path/to/data-unpartitioned-pos-deletes.parquet");
+    Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
+        table.id().buildTableIdentifier(),
+        transactionsOfTables.get(2).getTransactionId()).get(1).getType(), "pos-deletes");
   }
 
   private DataFile genDatafile() {

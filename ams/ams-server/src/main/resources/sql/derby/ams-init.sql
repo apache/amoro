@@ -17,14 +17,14 @@ CREATE TABLE catalog_metadata(
     PRIMARY KEY (catalog_id)
     );
 
-CREATE TABLE optimize_job (
-    job_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-    job_name varchar(1024) DEFAULT NULL,
+CREATE TABLE optimizer (
+    optimizer_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+    optimizer_name varchar(1024) DEFAULT NULL,
     queue_id bigint DEFAULT NULL,
     queue_name varchar(1024) DEFAULT NULL,
-    job_start_time varchar(1024) DEFAULT NULL,
-    job_fail_time varchar(1024) DEFAULT NULL,
-    job_status varchar(16) DEFAULT NULL,
+    optimizer_start_time varchar(1024) DEFAULT NULL,
+    optimizer_fail_time varchar(1024) DEFAULT NULL,
+    optimizer_status varchar(16) DEFAULT NULL,
     core_number bigint DEFAULT NULL,
     memory bigint DEFAULT NULL,
     parallelism bigint DEFAULT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE optimize_job (
     optimizer_state_info clob(64m),
     container varchar(50) DEFAULT '',
     update_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (job_id)
+    PRIMARY KEY (optimizer_id)
     );
 
 CREATE TABLE container_metadata (
@@ -46,6 +46,7 @@ CREATE TABLE container_metadata (
 CREATE TABLE snapshot_info_cache (
     table_identifier varchar(384) NOT NULL,
     snapshot_id bigint NOT NULL,
+    snapshot_sequence bigint NOT NULL DEFAULT -1,
     parent_snapshot_id bigint NOT NULL,
     action varchar(64) DEFAULT NULL,
     inner_table varchar(64) NOT NULL,
@@ -60,10 +61,10 @@ CREATE TABLE optimize_task (
     trace_id varchar(40) NOT NULL,
     optimize_type varchar(10) NOT NULL,
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     partition varchar(128) DEFAULT NULL,
-    task_group varchar(40) DEFAULT NULL,
+    task_commit_group varchar(40) DEFAULT NULL,
     max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
     create_time timestamp DEFAULT NULL,
     properties clob(64m),
@@ -78,7 +79,7 @@ CREATE TABLE optimize_task (
     pos_delete_file_size bigint DEFAULT NULL,
     source_nodes varchar(2048) DEFAULT NULL,
     is_delete_pos_delete int DEFAULT NULL,
-    task_history_id varchar(40) DEFAULT NULL,
+    task_plan_group varchar(40) DEFAULT NULL,
     status varchar(16) DEFAULT NULL,
     pending_time timestamp DEFAULT NULL,
     execute_time timestamp DEFAULT NULL,
@@ -99,13 +100,13 @@ CREATE TABLE optimize_task (
 
 CREATE TABLE optimize_table_runtime (
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     current_snapshot_id bigint NOT NULL DEFAULT -1,
     latest_major_optimize_time clob(64m),
     latest_full_optimize_time clob(64m),
     latest_minor_optimize_time clob(64m),
-    latest_task_history_id varchar(40) DEFAULT NULL,
+    latest_task_plan_group varchar(40) DEFAULT NULL,
     optimize_status varchar(20) DEFAULT 'Idle',
     optimize_status_start_time timestamp DEFAULT NULL,
     current_change_snapshotId bigint DEFAULT NULL,
@@ -114,8 +115,8 @@ CREATE TABLE optimize_table_runtime (
 
 CREATE TABLE table_metadata (
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     primary_key varchar(256) DEFAULT NULL,
     sort_key varchar(256) DEFAULT NULL,
     table_location varchar(256) DEFAULT NULL,
@@ -131,7 +132,7 @@ CREATE TABLE table_metadata (
     krb_keytab clob(64m),
     krb_conf clob(64m),
     krb_principal clob(64m),
-    current_tx_id bigint DEFAULT NULL,
+    current_tx_id bigint DEFAULT 0,
     cur_schema_id   int DEFAULT 0,
     PRIMARY KEY (catalog_name, db_name, table_name)
 );
@@ -142,6 +143,7 @@ CREATE TABLE file_info_cache (
     add_snapshot_id bigint NOT NULL,
     parent_snapshot_id bigint NOT NULL,
     delete_snapshot_id bigint DEFAULT NULL,
+    add_snapshot_sequence bigint NOT NULL DEFAULT -1,
     inner_table varchar(64) DEFAULT NULL,
     file_path varchar(400) NOT NULL,
     file_type varchar(64) DEFAULT NULL,
@@ -154,15 +156,14 @@ CREATE TABLE file_info_cache (
     partition_name varchar(256) DEFAULT NULL,
     action varchar(64) DEFAULT NULL,
     commit_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    watermark timestamp DEFAULT NULL,
     PRIMARY KEY (primary_key_md5)
 );
 
 CREATE TABLE optimize_file (
     id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
-    optimize_type varchar(5) NOT NULL,
+    optimize_type varchar(10) NOT NULL,
     trace_id varchar(40) NOT NULL,
-    file_type varchar(16) NOT NULL,
+    content_type varchar(32) NOT NULL,
     is_target int DEFAULT 0,
     file_content blob(60000) DEFAULT NULL,
     PRIMARY KEY (id)
@@ -171,8 +172,8 @@ CREATE TABLE optimize_file (
 CREATE TABLE optimize_history (
     history_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
+    table_name varchar(128) NOT NULL,
     optimize_range varchar(10) NOT NULL,
     visible_time timestamp DEFAULT NULL,
     commit_time timestamp DEFAULT NULL,
@@ -218,22 +219,23 @@ CREATE TABLE table_transaction_meta (
 );
 
 CREATE TABLE optimize_task_history (
-    catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
-    table_name varchar(64) NOT NULL,
-    task_history_id varchar(40) DEFAULT NULL,
-    start_time timestamp DEFAULT NULL,
-    end_time timestamp DEFAULT NULL,
-    cost_time bigint DEFAULT NULL,
-    queue_id int DEFAULT NULL,
-    task_group_id varchar(40) DEFAULT NULL,
-    UNIQUE (task_history_id, task_group_id)
+    task_trace_id     varchar(50) NOT NULL,
+    retry             int NOT NULL,
+    task_plan_group   varchar(40) NOT NULL,
+    catalog_name      varchar(64) NOT NULL,
+    db_name           varchar(128) NOT NULL,
+    table_name        varchar(128) NOT NULL,
+    start_time        timestamp DEFAULT NULL,
+    end_time          timestamp DEFAULT NULL,
+    cost_time         bigint DEFAULT NULL,
+    queue_id          int DEFAULT NULL,
+    PRIMARY KEY (task_trace_id, retry)
 );
 
 CREATE TABLE database_metadata (
     db_id int NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     catalog_name varchar(64) NOT NULL,
-    db_name varchar(64) NOT NULL,
+    db_name varchar(128) NOT NULL,
     PRIMARY KEY (db_id),
     UNIQUE (catalog_name,db_name)
 );
@@ -255,3 +257,13 @@ CREATE TABLE ddl_record
     commit_time      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE platform_file_info (
+  id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
+  file_name varchar(100) NOT NULL,
+  file_content_b64 clob(64m) NOT NULL,
+  file_path varchar(100) DEFAULT NULL,
+  add_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id)
+);
+
+INSERT INTO catalog_metadata(catalog_name,catalog_type,storage_configs,auth_configs, catalog_properties) VALUES ('local_catalog','ams','{"storage.type":"hdfs","hive.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.core.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg==","hadoop.hdfs.site":"PGNvbmZpZ3VyYXRpb24+PC9jb25maWd1cmF0aW9uPg=="}','{"auth.type":"simple","auth.simple.hadoop_username":"root"}','{"warehouse":"/tmp/arctic/warehouse","table-formats":"MIXED_ICEBERG"}');

@@ -29,7 +29,6 @@ public class PartitionFileBaseInfo {
   private String path;
   private String file;
   private long fileSize;
-  private long watermark;
 
   public PartitionFileBaseInfo() {
   }
@@ -101,13 +100,5 @@ public class PartitionFileBaseInfo {
   public void setFileSize(long fileSize) {
     this.fileSize = fileSize;
     this.size = AmsUtils.byteToXB(fileSize);
-  }
-
-  public long getWatermark() {
-    return watermark;
-  }
-
-  public void setWatermark(long watermark) {
-    this.watermark = watermark;
   }
 }

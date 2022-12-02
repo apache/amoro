@@ -18,17 +18,18 @@
 
 package com.netease.arctic.spark.sql.catalyst.rule
 
-import com.netease.arctic.spark.source.{ArcticSource}
-import com.netease.arctic.spark.sql.execution.{CreateArcticTableAsSelectCommand, CreateArcticTableCommand, DropArcticTableCommand}
-import com.netease.arctic.spark.sql.plan.OverwriteArcticTableDynamic
+import com.netease.arctic.spark.source.ArcticSource
+import com.netease.arctic.spark.sql.execution.{CreateArcticTableCommand, DropArcticTableCommand}
+import com.netease.arctic.spark.sql.plan.{CreateArcticTableAsSelect, OverwriteArcticTableDynamic}
 import org.apache.spark.sql.arctic.AnalysisException
-import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.{CatalogTable, HiveTableRelation, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.DDLUtils.HIVE_PROVIDER
 import org.apache.spark.sql.execution.command.DropTableCommand
-import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation}
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.execution.datasources.{CreateTable, LogicalRelation}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.sources.v2.reader.DataSourceReader
@@ -53,10 +54,12 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
       if tableDesc.provider.isDefined
         && tableDesc.provider.get.equalsIgnoreCase("arctic")
         && query.resolved && isDatasourceTable(tableDesc) =>
-      CreateArcticTableAsSelectCommand(arctic, tableDesc, mode, query, query.output.map(_.name))
+      val table = tableDesc.copy(schema = query.schema)
+      CreateArcticTableAsSelect(arctic, table, query)
+
     // drop table
-    case DropTableCommand(tableName, ifExists, _, purge)
-      if arctic.tableExists(tableName) =>
+    case DropTableCommand(tableName, ifExists, isView, purge)
+      if arctic.isDelegateDropTable(tableName, isView) =>
       DropArcticTableCommand(arctic, tableName, ifExists, purge)
 
     // insert into data source table
@@ -105,31 +108,6 @@ case class ArcticResolutionDelegateHiveRule(spark: SparkSession) extends Rule[Lo
         s"Cannot write, INSERT INTO is not supported for table: ${tableDesc.identifier}")
     }
   }
-//
-//  def createWriteToArcticSource(i: InsertIntoTable, tableDesc: CatalogTable): WriteToDataSourceV2 = {
-//    if (i.ifPartitionNotExists) {
-//      throw AnalysisException.message(
-//        s"Cannot write, IF NOT EXISTS is not supported for table: ${tableDesc.identifier}")
-//    }
-//
-//    val table = arctic.loadTable(tableDesc.identifier)
-//    val query = addStaticPartitionColumns(table.schema(), i.partition, i.query)
-//    val mode = if (i.overwrite) {
-//      SaveMode.Overwrite
-//    } else {
-//      SaveMode.Append
-//    }
-//    val optWriter = table.createWriter("", table.schema, mode, null)
-//    if (!optWriter.isPresent) {
-//      throw AnalysisException.message(s"failed to create writer for table ${tableDesc.identifier}")
-//    }
-//
-//    val writer = optWriter.get match {
-//      case w: SupportsDynamicOverwrite =>
-//        w.overwriteDynamicPartitions()
-//    }
-//    WriteToDataSourceV2(writer, query)
-//  }
 
   // add any static value as a literal column
   // part copied from spark-3.0 branch Analyzer.scala

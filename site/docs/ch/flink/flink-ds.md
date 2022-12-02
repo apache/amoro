@@ -19,7 +19,7 @@ TableIdentifier tableId = TableIdentifier.of("catalog_name", "database_name", "t
 ArcticTableLoader tableLoader = ArcticTableLoader.of(tableId, catalogBuilder);
 
 Map<String, String> properties = new HashMap<>();
-// 默认为 false。
+// 默认为 true。
 properties.put("streaming", "false");
 
 DataStream<RowData> batch = FlinkSource.forRowData()
@@ -115,7 +115,7 @@ TableIdentifier tableId = ...;
 ArcticTableLoader tableLoader = ...;
 
 Map<String, String> properties = new HashMap<>();
-// 默认为 false
+// 默认为 true
 properties.put("streaming", "true");
 
 DataStream<RowData> stream = FlinkSource.forRowData()
@@ -194,6 +194,6 @@ DataStream API 支持写主键表和非主键表。properties 支持的配置项
 
 > **TIPS**
 > 
-> arctic.emit.mode 包含 log 时，需要配置 log-store.enable = true [开启 Log 配置](flink-dml.md#log)
+> arctic.emit.mode 包含 log 时，需要配置 log-store.enabled = true [开启 Log 配置](flink-dml.md#log)
 >
 > arctic.emit.mode 包含 file 时，主键表只会写入 ChangeStore，非主键表会直接写入 BaseStore。

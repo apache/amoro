@@ -18,7 +18,7 @@
 
 package com.netease.arctic.hive.utils;
 
-import com.netease.arctic.hive.HMSClient;
+import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.op.OverwriteHiveFiles;
 import com.netease.arctic.io.ArcticHadoopFileIO;
@@ -28,7 +28,6 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
@@ -71,7 +70,7 @@ public class HiveMetaSynchronizer {
    * @param table arctic table to accept the schema change
    * @param hiveClient hive client
    */
-  public static void syncHiveSchemaToArctic(ArcticTable table, HMSClient hiveClient) {
+  public static void syncHiveSchemaToArctic(ArcticTable table, HMSClientPool hiveClient) {
     try {
       Table hiveTable = hiveClient.run(client -> client.getTable(table.id().getDatabase(), table.id().getTableName()));
       Schema hiveSchema = HiveSchemaUtil.convertHiveSchemaToIcebergSchema(hiveTable, table.isKeyedTable() ?
@@ -127,7 +126,7 @@ public class HiveMetaSynchronizer {
    * @param table arctic table to accept the data change
    * @param hiveClient hive client
    */
-  public static void syncHiveDataToArctic(ArcticTable table, HMSClient hiveClient) {
+  public static void syncHiveDataToArctic(ArcticTable table, HMSClientPool hiveClient) {
     UnkeyedTable baseStore;
     if (table.isKeyedTable()) {
       baseStore = table.asKeyedTable().baseTable();
@@ -184,7 +183,8 @@ public class HiveMetaSynchronizer {
               filesToDelete.addAll(filesMap.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
               // make sure new partition is not created by arctic
-            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null) {
+            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null &&
+                hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY) == null) {
               filesToAdd.addAll(hiveDataFiles);
             }
           }
@@ -230,12 +230,13 @@ public class HiveMetaSynchronizer {
           filesToDelete.stream().map(DataFile::path).collect(Collectors.toList()),
           filesToAdd.stream().map(DataFile::path).collect(Collectors.toList()));
       if (table.isKeyedTable()) {
-        long txId = table.asKeyedTable().beginTransaction(null);
+        long legacyTxId = table.asKeyedTable().beginTransaction(null);
+        long txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
         OverwriteBaseFiles overwriteBaseFiles = table.asKeyedTable().newOverwriteBaseFiles();
         overwriteBaseFiles.set(OverwriteHiveFiles.PROPERTIES_VALIDATE_LOCATION, "false");
         filesToDelete.forEach(overwriteBaseFiles::deleteFile);
         filesToAdd.forEach(overwriteBaseFiles::addFile);
-        overwriteBaseFiles.withTransactionId(txId);
+        overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
         overwriteBaseFiles.commit();
       } else {
         OverwriteFiles overwriteFiles = table.asUnkeyedTable().newOverwrite();

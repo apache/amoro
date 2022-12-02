@@ -19,8 +19,12 @@
             {{ record.durationDisplay }}
           </span>
         </template>
+        <template v-if="column.dataIndex === 'optimizeStatus'">
+          <span :style="{'background-color': (STATUS_CONFIG[record.optimizeStatus] || {}).color}" class="status-icon"></span>
+          <span>{{ record.optimizeStatus }}</span>
+        </template>
         <template v-if="column.dataIndex === 'operation'">
-          <span class="primary-link" @click="releaseModal(record)">
+          <span class="primary-link" :class="{'disabled': record.containerType === 'external'}" @click="releaseModal(record)">
             {{ t('release') }}
           </span>
         </template>
@@ -42,11 +46,18 @@ const { t } = useI18n()
 const router = useRouter()
 
 const props = defineProps<{ curGroupName: string, type: string, needFresh: boolean }>()
+const STATUS_CONFIG = shallowReactive({
+  pending: { title: 'pending', color: '#ffcc00' },
+  idle: { title: 'idle', color: '#c9cdd4' },
+  minor: { title: 'minor', color: '#0ad787' },
+  major: { title: 'major', color: '#0ad787' },
+  full: { title: 'full', color: '#0ad787' }
+})
 
 const loading = ref<boolean>(false)
 const tableColumns = shallowReactive([
   { dataIndex: 'tableName', title: t('table'), ellipsis: true, scopedSlots: { customRender: 'tableName' } },
-  { dataIndex: 'optimizeStatus', title: t('status'), width: '10%', ellipsis: true },
+  { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: '16%', ellipsis: true },
   { dataIndex: 'durationDisplay', title: t('duration'), width: '10%', ellipsis: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: '10%', ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: '10%', ellipsis: true },
@@ -111,7 +122,7 @@ async function getOptimizersList () {
     const { list, total } = result
     pagination.total = total;
     (list || []).forEach((p: IOptimizeResourceTableItem, index: number) => {
-      p.resourceAllocation = `${p.coreNumber}${t('core')} ${mbToSize(p.memory)}`
+      p.resourceAllocation = `${p.coreNumber} ${t('core')} ${mbToSize(p.memory)}`
       p.index = (pagination.current - 1) * pagination.pageSize + index + 1
       optimizersList.push(p)
     })
@@ -134,7 +145,7 @@ async function getTableList () {
     const { list, total } = result
     pagination.total = total;
     (list || []).forEach((p: IOptimizeTableItem) => {
-      p.quotaOccupationDesc = p.quotaOccupation ? `${(p.quotaOccupation * 100)}%` : '0'
+      p.quotaOccupationDesc = p.quotaOccupation - 0.0005 > 0 ? `${(p.quotaOccupation * 100).toFixed(1)}%` : '0'
       p.durationDesc = formatMS2Time(p.duration || 0)
       p.durationDisplay = formatMS2DisplayTime(p.duration || 0)
       p.fileSizeDesc = bytesToSize(p.fileSize)
@@ -147,6 +158,9 @@ async function getTableList () {
 }
 
 function releaseModal (record: IOptimizeResourceTableItem) {
+  if (record.containerType === 'external') {
+    return
+  }
   Modal.confirm({
     title: t('releaseOptModalTitle'),
     content: '',
@@ -194,6 +208,20 @@ onMounted(() => {
     &:hover {
       cursor: pointer;
     }
+    &.disabled {
+      color: #999;
+      &:hover {
+        cursor: not-allowed;
+      }
+    }
+  }
+  .status-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 8px;
+    background-color: #c9cdd4;
+    display: inline-block;
+    margin-right: 8px;
   }
 }
 </style>

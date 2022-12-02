@@ -75,6 +75,13 @@
                 <arg column="delete_file_size_before" javaType="long"/>
             </constructor>
         </association>
+        <association property="posDeleteFilesStatBeforeOptimize"
+                     javaType="com.netease.arctic.ams.server.model.FilesStatistics">
+            <constructor>
+                <arg column="pos_delete_file_cnt_before" javaType="int"/>
+                <arg column="pos_delete_file_size_before" javaType="long"/>
+            </constructor>
+        </association>
         <association property="baseFilesStatBeforeOptimize"
                      javaType="com.netease.arctic.ams.server.model.FilesStatistics">
             <constructor>

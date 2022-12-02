@@ -86,7 +86,7 @@ public class HiveSchemaUtil {
     List<FieldSchema> hiveSchema = hiveTable.getSd().getCols();
     hiveSchema.addAll(hiveTable.getPartitionKeys());
     Set<String> pkSet = new HashSet<>(primaryKeys);
-    Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema);
+    Schema schema = org.apache.iceberg.hive.HiveSchemaUtil.convert(hiveSchema, true);
     if (primaryKeys.isEmpty()) {
       return schema;
     }
@@ -99,5 +99,17 @@ public class HiveSchemaUtil {
       }
     });
     return new Schema(columnsWithPk);
+  }
+
+  /**
+   * Change the filed name in schema to lowercase.
+   *
+   * @param schema The original schema to change
+   * @return An new schema with lowercase field name
+   */
+  public static Schema changeFieldNameToLowercase(Schema schema) {
+    Types.StructType struct = TypeUtil.visit(schema.asStruct(),
+        new ChangeFieldName(ChangeFieldName.ChangeType.TO_LOWERCASE)).asStructType();
+    return new Schema(struct.fields());
   }
 }

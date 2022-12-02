@@ -155,7 +155,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.required(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()),
-        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone())
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone())
         );
     Assert.assertEquals("Schema should match expected",
         expectedSchema, keyedTable.schema().asStruct());
@@ -467,7 +467,7 @@ public class TestCreateTableDDL extends SparkTestBase {
     Types.StructType expectedSchema = Types.StructType.of(
         Types.NestedField.optional(1, "id", Types.IntegerType.get()),
         Types.NestedField.optional(2, "name", Types.StringType.get()),
-        Types.NestedField.optional(3, "ts", Types.TimestampType.withZone()));
+        Types.NestedField.optional(3, "ts", Types.TimestampType.withoutZone()));
     Assert.assertEquals("Schema should match expected",
         expectedSchema, loadTable(identifier).schema().asStruct());
 
@@ -510,6 +510,103 @@ public class TestCreateTableDDL extends SparkTestBase {
       Assert.assertEquals(3, rows.size());
       sql("drop table {0}.{1}", database, tableA);
     });
+  }
+
+  @Test
+  public void testCreateUppercaseTable() throws TException {
+    // hive style
+    TableIdentifier identifierA = TableIdentifier.of(catalogNameHive, database, tableA);
+
+    sql("create table {0}.{1} ( \n" +
+        " ID int , \n" +
+        " NAME string , \n " +
+        " primary key (ID) \n" +
+        ") using arctic \n" +
+        " partitioned by (TS string, DT string) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'', \n" +
+        " ''table.event-time-field'' = ''NAME'') ", database, tableA);
+    assertTableExist(identifierA);
+    ArcticTable keyedTableA = loadTable(identifierA);
+    Types.StructType expectedSchema = Types.StructType.of(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchema, keyedTableA.schema().asStruct());
+    sql("desc table {0}.{1}", database, tableA);
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
+
+    Assert.assertArrayEquals("Primary should match expected",
+        new List[]{Collections.singletonList("id")},
+        new List[]{keyedTableA.asKeyedTable().primaryKeySpec().fieldNames()});
+    Assert.assertTrue(keyedTableA.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", keyedTableA.properties().get("props.test1"));
+    Assert.assertTrue(keyedTableA.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", keyedTableA.properties().get("props.test2"));
+    Assert.assertTrue(keyedTableA.properties().containsKey("table.event-time-field"));
+    Assert.assertEquals("name", keyedTableA.properties().get("table.event-time-field"));
+
+    sql("use spark_catalog");
+    Table hiveTableA = hms.getClient().getTable(database, tableA);
+    Assert.assertNotNull(hiveTableA);
+    rows = sql("desc table {0}.{1}", database, tableA);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogNameHive);
+    sql("drop table {0}.{1}", database, tableA);
+    assertTableNotExist(identifierA);
+
+    // column reference style
+    TableIdentifier identifierB = TableIdentifier.of(catalogNameHive, database, tableB);
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n" +
+        " ts string ,\n " +
+        " dt string ,\n " +
+        " primary key (id) \n" +
+        ") using arctic \n" +
+        " partitioned by (ts, dt) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, tableB);
+
+    ArcticTable keyedTableB = loadTable(identifierB);
+    Types.StructType expectedSchemaB = Types.StructType.of(
+        Types.NestedField.required(1, "id", Types.IntegerType.get()),
+        Types.NestedField.optional(2, "name", Types.StringType.get()),
+        Types.NestedField.optional(3, "ts", Types.StringType.get()),
+        Types.NestedField.optional(4, "dt", Types.StringType.get()));
+    Assert.assertEquals("Schema should match expected",
+        expectedSchemaB, keyedTableB.schema().asStruct());
+
+    sql("desc table {0}.{1}", database, tableB);
+    assertPartitionResult(rows, Lists.newArrayList("ts", "dt"));
+
+    Assert.assertArrayEquals("Primary should match expected",
+        new List[]{Collections.singletonList("id")},
+        new List[]{keyedTableB.asKeyedTable().primaryKeySpec().fieldNames()});
+
+    Assert.assertTrue(keyedTableB.properties().containsKey("props.test1"));
+    Assert.assertEquals("val1", keyedTableB.properties().get("props.test1"));
+    Assert.assertTrue(keyedTableB.properties().containsKey("props.test2"));
+    Assert.assertEquals("val2", keyedTableB.properties().get("props.test2"));
+
+    sql("use spark_catalog");
+    Table hiveTableB = hms.getClient().getTable(database, tableB);
+    Assert.assertNotNull(hiveTableB);
+    rows = sql("desc table {0}.{1}", database, tableB);
+    assertHiveDesc(rows,
+        Lists.newArrayList("id", "name", "ts", "dt"),
+        Lists.newArrayList("ts", "dt"));
+
+    sql("use " + catalogNameHive);
+    sql("drop table {0}.{1}", database, tableB);
+    assertTableNotExist(identifierB);
   }
 
   private String rowToSqlValues(List<Object[]> rows) {

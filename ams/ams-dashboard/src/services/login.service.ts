@@ -26,7 +26,7 @@ export class LoginService {
     user: string
     password: string
   }) {
-    return request.post('ams/v1/login', params)
+    return request.post('ams/v1/login', params, { returnCode: true })
   }
 
   /**

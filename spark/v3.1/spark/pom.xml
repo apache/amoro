@@ -23,12 +23,12 @@
     <parent>
         <artifactId>arctic-spark</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.3.1</version>
+        <version>0.4.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>arctic-spark_3.1</artifactId>
+    <artifactId>arctic-spark-3.1</artifactId>
     <packaging>jar</packaging>
 
     <properties>
@@ -225,6 +225,12 @@
             <artifactId>hive-metastore</artifactId>
             <version>${hive.version}</version>
             <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>jdk.tools</groupId>
+                    <artifactId>jdk.tools</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
