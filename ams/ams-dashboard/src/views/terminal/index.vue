@@ -402,7 +402,6 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .console-wrap {
-  user-select: none;
   height: 100%;
   padding: 16px 24px;
   .console-content {
@@ -427,6 +426,7 @@ export default defineComponent({
       }
     }
     .sql-wrap {
+      user-select: none;
       font-size: 0;
       border: 1px solid #e5e5e5;
       border-bottom: 0;

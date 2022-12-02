@@ -42,6 +42,7 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,10 +87,14 @@ public class MajorExecutor extends BaseExecutor {
     } else {
       transactionId = null;
     }
+    long targetFileSize = PropertyUtil.propertyAsLong(table.properties(),
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(transactionId)
         .withTaskId(task.getAttemptId())
         .withCustomHiveSubdirectory(task.getCustomHiveSubdirectory())
+        .withTargetFileSize(targetFileSize)
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;

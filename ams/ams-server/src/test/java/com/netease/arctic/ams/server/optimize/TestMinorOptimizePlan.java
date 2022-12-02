@@ -84,7 +84,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Assert.assertEquals(10, tasks.get(0).getDeleteFileCnt());
   }
 
-  protected void insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
+  protected List<DataFile> insertChangeDeleteFiles(ArcticTable arcticTable, long transactionId) throws IOException {
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
         .withChangeAction(ChangeAction.DELETE)
         .withTransactionId(transactionId)
@@ -109,6 +109,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     changeDeleteFilesInfo = changeDeleteFiles.stream()
         .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable))
         .collect(Collectors.toList());
+    return changeDeleteFiles;
   }
 
   protected List<DataFile> insertChangeDataFiles(ArcticTable arcticTable, long transactionId) throws IOException {

@@ -178,7 +178,7 @@ public class TestKeyedTableDDL extends SparkTestBase {
     File testArcticDir = new File(testBaseDir, "arctic2");
     sql("set `spark.sql.arctic.refresh-catalog-before-usage` = {0}", "true");
     CatalogMeta catalog = ams.handler().getCatalog(catalogNameArctic);
-    ams.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE_DIR, testArcticDir.getPath());
+    ams.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE, testArcticDir.getPath());
     TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
 
     sql("create table {0}.{1} ( \n" +

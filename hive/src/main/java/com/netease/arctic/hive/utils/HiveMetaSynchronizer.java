@@ -183,7 +183,8 @@ public class HiveMetaSynchronizer {
               filesToDelete.addAll(filesMap.get(partitionData));
               filesToAdd.addAll(hiveDataFiles);
               // make sure new partition is not created by arctic
-            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null) {
+            } else if (hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG) == null &&
+                hivePartition.getParameters().get(HiveTableProperties.ARCTIC_TABLE_FLAG_LEGACY) == null) {
               filesToAdd.addAll(hiveDataFiles);
             }
           }

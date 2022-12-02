@@ -31,6 +31,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.commons.collections.CollectionUtils;
@@ -125,17 +126,28 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
   protected boolean checkPosDeleteTotalSize(String partitionToPath) {
     long posDeleteSize = partitionPosDeleteFiles.get(partitionToPath) == null ?
         0 : partitionPosDeleteFiles.get(partitionToPath).stream().mapToLong(DeleteFile::fileSizeInBytes).sum();
-    return posDeleteSize >= PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD,
-        TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    Map<String, String> properties = arcticTable.properties();
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO) &&
+        properties.containsKey(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES)) {
+      return posDeleteSize >=
+          Long.parseLong(properties.get(TableProperties.FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES));
+    } else {
+      long targetSize = PropertyUtil.propertyAsLong(properties,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+      double duplicateRatio = PropertyUtil.propertyAsDouble(properties,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO,
+          TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT);
+      return posDeleteSize >= targetSize * duplicateRatio;
+    }
   }
 
   protected boolean checkFullOptimizeInterval(long current, String partitionToPath) {
-    long fullMajorOptimizeInterval = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL,
-        TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT);
+    long fullMajorOptimizeInterval = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL,
+        TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT);
 
-    if (fullMajorOptimizeInterval != TableProperties.FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT) {
+    if (fullMajorOptimizeInterval != TableProperties.SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT) {
       long lastFullMajorOptimizeTime = tableOptimizeRuntime.getLatestFullOptimizeTime(partitionToPath);
       return current - lastFullMajorOptimizeTime >= fullMajorOptimizeInterval;
     }
@@ -152,8 +164,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
    */
   protected boolean nodeTaskNeedBuild(List<DeleteFile> posDeleteFiles, List<DataFile> baseFiles) {
     List<DataFile> smallFiles = baseFiles.stream().filter(file -> file.fileSizeInBytes() <=
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-            TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)).collect(Collectors.toList());
+        getSmallFileSize(arcticTable.properties())).collect(Collectors.toList());
     return CollectionUtils.isNotEmpty(posDeleteFiles) || smallFiles.size() >= 2;
   }
 
@@ -169,9 +180,9 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
           constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
               getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
-      long taskSize =
-          PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE,
-              TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT);
+      long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+              TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+              TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
       Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
       int taskCnt = (int) (sum / taskSize) + 1;
       List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)

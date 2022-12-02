@@ -194,6 +194,6 @@ DataStream API 支持写主键表和非主键表。properties 支持的配置项
 
 > **TIPS**
 > 
-> arctic.emit.mode 包含 log 时，需要配置 log-store.enable = true [开启 Log 配置](flink-dml.md#log)
+> arctic.emit.mode 包含 log 时，需要配置 log-store.enabled = true [开启 Log 配置](flink-dml.md#log)
 >
 > arctic.emit.mode 包含 file 时，主键表只会写入 ChangeStore，非主键表会直接写入 BaseStore。

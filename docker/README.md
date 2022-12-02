@@ -38,8 +38,8 @@ You can speed up image building via
 
 ```shell
 ./build.sh \
-  --apache-archive https://mirrors.tuna.tsinghua.edu.cn/apache \
-  --debian-mirror https://mirrors.tuna.tsinghua.edu.cn/  \
+  --apache-archive https://mirrors.aliyun.com/apache \
+  --debian-mirror https://mirrors.aliyun.com  \
   flink
 ```
 

@@ -23,6 +23,8 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,6 +123,19 @@ public abstract class BaseOptimizePlan {
 
   protected boolean anyTaskRunning(String partition) {
     return partitionTaskRunning.get(partition) != null && partitionTaskRunning.get(partition);
+  }
+
+  public long getSmallFileSize(Map<String, String> properties) {
+    if (!properties.containsKey(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO) &&
+        properties.containsKey(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD)) {
+      return Long.parseLong(properties.get(TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD));
+    } else {
+      long targetSize = PropertyUtil.propertyAsLong(properties, TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+          TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+      int fragmentRatio = PropertyUtil.propertyAsInt(properties, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+          TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+      return targetSize / fragmentRatio;
+    }
   }
 
   public abstract long getCurrentSnapshotId();

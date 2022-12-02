@@ -56,7 +56,7 @@ public class CatalogMetaTestUtil {
         System.getProperty("user.name"));
 
     meta.putToCatalogProperties(
-        CatalogMetaProperties.KEY_WAREHOUSE_DIR,
+        CatalogMetaProperties.KEY_WAREHOUSE,
         arcticBaseDir.getAbsolutePath()
     );
     return meta;

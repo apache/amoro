@@ -57,6 +57,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -122,12 +123,12 @@ public class TableOptimizeItem extends IJDBCService {
     this.arcticTable = arcticTable;
     this.metaRefreshTime = -1;
     this.tableOptimizeRuntime = new TableOptimizeRuntime(tableMetadata.getTableIdentifier());
-    this.quotaCache = PropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
-        TableProperties.OPTIMIZE_QUOTA,
-        TableProperties.OPTIMIZE_QUOTA_DEFAULT);
-    this.groupNameCache = PropertyUtil.propertyAsString(tableMetadata.getProperties(),
-        TableProperties.OPTIMIZE_GROUP,
-        TableProperties.OPTIMIZE_GROUP_DEFAULT);
+    this.quotaCache = CompatiblePropertyUtil.propertyAsDouble(tableMetadata.getProperties(),
+        TableProperties.SELF_OPTIMIZING_QUOTA,
+        TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT);
+    this.groupNameCache = CompatiblePropertyUtil.propertyAsString(tableMetadata.getProperties(),
+        TableProperties.SELF_OPTIMIZING_GROUP,
+        TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
     this.tableIdentifier = tableMetadata.getTableIdentifier();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
     this.metastoreClient = ServiceContainer.getTableMetastoreHandler();
@@ -269,18 +270,18 @@ public class TableOptimizeItem extends IJDBCService {
     ArcticCatalog catalog = CatalogLoader.load(metastoreClient, tableIdentifier.getCatalog());
     this.arcticTable = catalog.loadTable(tableIdentifier);
     this.metaRefreshTime = System.currentTimeMillis();
-    this.quotaCache = PropertyUtil.propertyAsDouble(arcticTable.properties(),
-        TableProperties.OPTIMIZE_QUOTA,
-        TableProperties.OPTIMIZE_QUOTA_DEFAULT);
-    this.groupNameCache = PropertyUtil.propertyAsString(arcticTable.properties(),
-        TableProperties.OPTIMIZE_GROUP,
-        TableProperties.OPTIMIZE_GROUP_DEFAULT);
+    this.quotaCache = CompatiblePropertyUtil.propertyAsDouble(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_QUOTA,
+        TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT);
+    this.groupNameCache = CompatiblePropertyUtil.propertyAsString(arcticTable.properties(),
+        TableProperties.SELF_OPTIMIZING_GROUP,
+        TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
   }
 
   private int optimizeMaxRetry() {
-    return PropertyUtil
-        .propertyAsInt(getArcticTable(false).properties(), TableProperties.OPTIMIZE_RETRY_NUMBER,
-            TableProperties.OPTIMIZE_RETRY_NUMBER_DEFAULT);
+    return CompatiblePropertyUtil
+        .propertyAsInt(getArcticTable(false).properties(), TableProperties.SELF_OPTIMIZING_RETRY_NUMBER,
+            TableProperties.SELF_OPTIMIZING_RETRY_NUMBER_DEFAULT);
   }
 
   private boolean isMetaExpired() {
@@ -395,9 +396,9 @@ public class TableOptimizeItem extends IJDBCService {
       }
     }
     // if optimizeTasks is empty
-    if (!(Boolean.parseBoolean(PropertyUtil
-        .propertyAsString(getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
-            TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
+    if (!CompatiblePropertyUtil
+        .propertyAsBoolean(getArcticTable(false).properties(), TableProperties.ENABLE_SELF_OPTIMIZING,
+            TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
       tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else {
       if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
@@ -529,9 +530,12 @@ public class TableOptimizeItem extends IJDBCService {
         optimizeTaskItem.persistOptimizeTask();
         addedOptimizeTaskIds.add(optimizeTask.getTaskId());
         LOG.info("{} add new task {}", tableIdentifier, optimizeTask);
-        // when minor optimize, there is no need to execute task not contains deleteFiles,
-        // but the inertFiles need to commit to base table
-        if (optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) && optimizeTask.getDeleteFiles().isEmpty() &&
+        // when minor optimize, there is no need to execute task not contains deleteFiles or not contains any dataFiles,
+        // for no deleteFiles the inertFiles need to commit to base table
+        // for no dataFiles the txId in base properties need to update
+        boolean minorNotNeedExecute = optimizeTask.getDeleteFiles().isEmpty() ||
+            (optimizeTask.getBaseFiles().isEmpty() && optimizeTask.getInsertFiles().isEmpty());
+        if (minorNotNeedExecute && optimizeTask.getTaskId().getType().equals(OptimizeType.Minor) &&
             !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(arcticTable)) {
           optimizeTaskItem.onPrepared(System.currentTimeMillis(),
               optimizeTask.getInsertFiles(), optimizeTask.getInsertFileSize(), 0L);

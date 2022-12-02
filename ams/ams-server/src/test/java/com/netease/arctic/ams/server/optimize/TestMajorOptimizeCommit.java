@@ -93,7 +93,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
         });
 
     testKeyedTable.updateProperties().
-        set(TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "0").commit();
+        set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
@@ -161,7 +161,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
         });
 
     testKeyedTable.updateProperties().
-        set(TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "0").commit();
+        set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
     MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
         tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,

@@ -115,7 +115,7 @@ public abstract class BaseExecutor implements Executor {
 
   protected void checkIfTimeout(Closeable writer) throws Exception {
     long maxExecuteTime = task.getMaxExecuteTime() != null ?
-        task.getMaxExecuteTime() : TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT;
+        task.getMaxExecuteTime() : TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT;
     long actualExecuteTime = System.currentTimeMillis() - startTime;
     if (actualExecuteTime > maxExecuteTime * factor) {
       writer.close();

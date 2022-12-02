@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSPartitionField;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
@@ -30,13 +31,17 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MetaService {
   private static final Logger LOG = LoggerFactory.getLogger(MetaService.class);
+
+  private static final DateFormat WATERMARK_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   /**
    * getServerTableMeta.
@@ -52,13 +57,13 @@ public class MetaService {
     ArcticTable at = ac.loadTable(ti);
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableIdentifier(ti);
-    Map<String, String> icebergProperties = at.properties();
-    Map<String, String> properties = new HashMap<>(icebergProperties);
+    Map<String, String> properties = Maps.newHashMap(at.properties());
+    formatTableProperties(properties);
     serverTableMeta.setProperties(properties);
     serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
             TableProperties.TABLE_CREATE_TIME_DEFAULT));
 
-    TableProperties.PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
+    TableProperties.READ_PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
     serverTableMeta.getProperties().remove(TableProperties.TABLE_CREATE_TIME);
 
     serverTableMeta.setBaseLocation(at.location());
@@ -92,5 +97,21 @@ public class MetaService {
       serverTableMeta.setPkList(new ArrayList<>());
     }
     return serverTableMeta;
+  }
+
+  private static void formatTableProperties(Map<String, String> tableProperties) {
+    formatTableWatermark(tableProperties, TableProperties.WATERMARK_TABLE);
+    formatTableWatermark(tableProperties, TableProperties.WATERMARK_BASE_STORE);
+  }
+
+  private static void formatTableWatermark(Map<String, String> tableProperties, String watermarkPropertyName) {
+    if (tableProperties.containsKey(watermarkPropertyName)) {
+      Long watermarkTimestamp = Long.valueOf(tableProperties.get(watermarkPropertyName));
+      if (watermarkTimestamp > 0) {
+        tableProperties.put(watermarkPropertyName, WATERMARK_FORMAT.format(new Date(watermarkTimestamp)));
+      } else {
+        tableProperties.remove(watermarkPropertyName);
+      }
+    }
   }
 }

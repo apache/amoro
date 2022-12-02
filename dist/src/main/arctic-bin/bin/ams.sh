@@ -24,6 +24,56 @@ export ARCTIC_HOME
 PRGDIR=$(dirname $0)
 PRGDIR=$(cd $PRGDIR;pwd)
 source ${PRGDIR}/config.sh
+
+
+CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+APP_HOME=$CURRENT_DIR/../
+
+
+if [[ -d $JAVA_HOME ]]; then
+    JAVA_RUN=$JAVA_HOME/bin/java
+else
+    JAVA_RUN=java
+fi
+XMX=$XMX_CONFIG
+XMS=$XMS_CONFIG
+MAX_PERM=$MAX_PERM_CONFIG
+
+JAVA_OPTS="-server -Xms${XMS}m -Xmx${XMX}m -XX:MaxPermSize=${MAX_PERM}m \
+-verbose:gc -XX:+PrintGCDetails \
+-Dcom.sun.management.jmxremote \
+-Dcom.sun.management.jmxremote.ssl=false \
+-Dcom.sun.management.jmxremote.authenticate=false \
+"
+
+
+if [ ! -z "$JMX_REMOTE_PORT_CONFIG" ];then
+        JAVA_OPTS="${JAVA_OPTS} -Dcom.sun.management.jmxremote.port=${JMX_REMOTE_PORT_CONFIG} "
+fi
+
+if [ -z "${LANG_CONFIG}" ];then
+        export LANG=zh_CN.GBK
+else
+        export LANG=${LANG_CONFIG}
+fi
+
+#LD_LIBRARY_PATH
+if [ -d "$APP_HOME/solib" ]; then
+        export LD_LIBRARY_PATH=$APP_HOME/solib
+fi
+
+nss_java_agent_path=`ls -1 $APP_HOME/conf/sentry-javaagent-home/sentry-javaagent-premain-*.jar 2>/dev/null | tail -n1`
+nss_java_agent_lib=$APP_HOME/lib
+if [ -f "$nss_java_agent_path" ]; then
+   JAVA_OPTS="${JAVA_OPTS} -javaagent:$nss_java_agent_path"
+   JAVA_OPTS="${JAVA_OPTS} -Dsentry_collector_libpath=$nss_java_agent_lib"
+fi
+
+if [ ! -z "$JVM_EXTRA_CONFIG" ];then
+    JAVA_OPTS="${JAVA_OPTS} ${JVM_EXTRA_CONFIG}"
+fi
+
+RUN_SERVER="com.netease.arctic.ams.server.ArcticMetaStore"
 WORKDIR=$ARCTIC_HOME
 RUNSERVER=$RUN_SERVER
 LIB_PATH=$ARCTIC_HOME/lib

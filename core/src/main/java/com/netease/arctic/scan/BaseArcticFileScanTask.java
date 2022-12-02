@@ -44,6 +44,8 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
 
   private final Expression expression;
 
+  private FileScanTask fileScanTask;
+
   public BaseArcticFileScanTask(PrimaryKeyedFile baseFile, List<DeleteFile> posDeleteFiles, PartitionSpec spec) {
     this(baseFile, posDeleteFiles, spec, Expressions.alwaysTrue());
   }
@@ -65,6 +67,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
   public BaseArcticFileScanTask(FileScanTask fileScanTask) {
     this(new DefaultKeyedFile(fileScanTask.file()), fileScanTask.deletes(),
         fileScanTask.spec(), fileScanTask.residual());
+    this.fileScanTask = fileScanTask;
   }
 
   @Override
@@ -84,11 +87,17 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
 
   @Override
   public long start() {
+    if (fileScanTask != null) {
+      return fileScanTask.start();
+    }
     return 0;
   }
 
   @Override
   public long length() {
+    if (fileScanTask != null) {
+      return fileScanTask.length();
+    }
     return baseFile.fileSizeInBytes();
   }
 
