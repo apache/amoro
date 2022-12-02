@@ -25,7 +25,9 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ArcticDataFiles;
@@ -33,6 +35,7 @@ import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -199,13 +202,13 @@ public class BaseOptimizeCommit {
       baseArcticTable = arcticTable.asUnkeyedTable();
     }
 
+    StructLikeMap<Long> oldPartitionMaxIds =
+        TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
     if (CollectionUtils.isNotEmpty(minorAddFiles) || CollectionUtils.isNotEmpty(minorDeleteFiles)) {
       OverwriteBaseFiles overwriteBaseFiles = new OverwriteBaseFiles(arcticTable.asKeyedTable());
       overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
       AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
-      StructLikeMap<Long> oldPartitionMaxIds =
-          TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
       minorAddFiles.forEach(contentFile -> {
         // if partition min transactionId isn't bigger than max transactionId in partitionProperty,
         // the partition files is expired
@@ -260,7 +263,19 @@ public class BaseOptimizeCommit {
           arcticTable.id(), minorDeleteFiles.size(), deletedPosDeleteFile.get(), minorAddFiles.size(),
           addedPosDeleteFile.get());
     } else {
-      LOG.info("{} skip minor optimize commit", arcticTable.id());
+      if (MapUtils.isNotEmpty(maxTransactionIds)) {
+        UpdatePartitionProperties updatePartitionProperties =
+            baseArcticTable.updatePartitionProperties(null);
+        maxTransactionIds.forEach((partition, txId) -> {
+          long oldTransactionId = oldPartitionMaxIds.getOrDefault(partition, -1L);
+          long maxTransactionId = Math.max(txId, oldTransactionId);
+          updatePartitionProperties.set(partition, TableProperties.PARTITION_MAX_TRANSACTION_ID,
+              String.valueOf(maxTransactionId));
+        });
+        updatePartitionProperties.commit();
+      }
+
+      LOG.info("{} skip minor optimize commit, but update partition txId", arcticTable.id());
     }
   }
 
