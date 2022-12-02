@@ -5,15 +5,15 @@ Table format (aka. format)最早由 Iceberg 提出，table format 可以描述�
 - 定义了表和文件的关系，任何引擎都可以根据 table format 查询和检索数据文件
 - Iceberg / Delta / Hudi 这类新型 format 进一步定义了表与快照，快照与文件的关系，表上所有写操作会产生新快照，所有表的读操作都面向快照，快照为数据湖带来了 MVCC、ACID 以及 Transaction 的能力。
 
-此外，[Iceberg](https://Iceberg.apache.org/) 这类新型 tabe format 还提供了 schema evolve、hidden partiton、data skip 等众多高级特性，[Hudi](https://Hudi.apache.org/)、[Delta](https://Delta.io/) 在具体功能上可能有所差异，但我们看到在过去两年的迭代中，table format 的标准随着三个开源项目的功能趋同在逐步确立。
+此外，[Iceberg](https://Iceberg.apache.org/) 这类新型 table format 还提供了 schema evolve、hidden partiton、data skip 等众多高级特性，[Hudi](https://hudi.apache.org/)、[Delta](https://delta.io/) 在具体功能上可能有所差异，但我们看到在过去两年的迭代中，table format 的标准随着三个开源项目的功能趋同在逐步确立。
 
-对用户，Arctic 的设计目标是开箱即用的湖仓系统，而在系统内部，Arctic 的设计理念是将不同 table format 作为数据湖的 storage engine 来使用，这种设计模式过去在 MySQL、clickhouse 这样的 DBMS 中比较多见。Arctic 选择了最早提出 table format 概念的 Iceberg 作为基础，在不魔改社区代码的前提下，为用户提供了一套可以兼容 Hive format，并且在流和更新场景下更加优化的 Mixed format。Iceberg format 和 Mixed format 各有优势，用户可以根据需求灵活选择，并且都能享受到 Arctic 开箱即用的体验。
+对用户，Arctic 的设计目标是开箱即用的湖仓系统，而在系统内部，Arctic 的设计理念是将不同 table format 作为数据湖的 storage engine 来使用，这种设计模式多见于 MySQL、ClickHouse 这样的开源系统。Arctic 选择了最早提出 table format 概念的 Iceberg 作为基础，在不魔改社区代码的前提下，为用户提供了一套可以兼容 Hive format，并且在流和更新场景下更加优化的 Mixed format。Iceberg format 和 Mixed format 各有优势，用户可以根据需求灵活选择，并且都能享受到 Arctic 开箱即用的体验。
 
 ## Iceberg format
 
 Arctic v0.4 之后开始支持管理原生 Iceberg 表，Iceberg format 具有充分的向上和向下兼容特性，一般情况下，用户不用担心引擎客户端所用的 Iceberg 版本与 Arctic 依赖的 Iceberg 版本的兼容性。
 
-Arctic 同时支持 Iceberg format v1 和 v2，[Iceberg v2](https://Iceberg.apache.org/spec/) 中引入了 row-delete 特性，支持 flink 摄取有主键的数据，可以减少更新场景下的写放大：
+Arctic 同时支持 Iceberg format v1 和 v2，[Iceberg v2](https://iceberg.apache.org/spec/) 中引入了 row-delete 特性，支持 flink 摄取有主键的数据，可以减少更新场景下的写放大：
 
 <left>
 ![Iceberg format](../images/concepts/iceberg_format.png){:height="70%" width="70%"}
