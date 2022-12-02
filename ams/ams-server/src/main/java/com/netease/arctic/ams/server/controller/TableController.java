@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.controller;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ServerTableProperties;
@@ -66,6 +67,7 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +79,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -129,6 +132,8 @@ public class TableController extends RestBaseController {
     } else {
       serverTableMeta.setTableType(TableMeta.TableType.HIVE.toString());
     }
+    long tableSize = 0;
+    long tableFileCnt = 0;
     Map<String, Object> baseMetrics = Maps.newHashMap();
     FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
     Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
@@ -136,6 +141,8 @@ public class TableController extends RestBaseController {
     baseMetrics.put("size", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("file", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
+    tableSize += baseFilesStatistics.getTotalSize();
+    tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
 
     Map<String, Object> changeMetrics = Maps.newHashMap();
@@ -146,6 +153,8 @@ public class TableController extends RestBaseController {
       changeMetrics.put("size", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
       changeMetrics.put("file", changeFilesStatistics.getFileCnt());
       changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
+      tableSize += changeFilesStatistics.getTotalSize();
+      tableFileCnt += changeFilesStatistics.getFileCnt();
     } else {
       changeMetrics.put("lastCommitTime", null);
       changeMetrics.put("size", null);
@@ -153,6 +162,16 @@ public class TableController extends RestBaseController {
       changeMetrics.put("averageFile", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
+    Set<TableFormat> tableFormats =
+        com.netease.arctic.utils.CatalogUtil.tableFormats(catalogMetadataService.getCatalog(catalog).get());
+    Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
+    TableFormat tableFormat = tableFormats.iterator().next();
+    Map<String, Object> tableSummary = new HashMap<>();
+    tableSummary.put("size", AmsUtils.byteToXB(tableSize));
+    tableSummary.put("file", tableFileCnt);
+    tableSummary.put("averageFile", AmsUtils.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+    tableSummary.put("tableFormat", AmsUtils.formatString(tableFormat.name()));
+    serverTableMeta.setTableSummary(tableSummary);
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
@@ -168,7 +187,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
@@ -200,7 +219,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
     ctx.json(OkResponse.ok());
   }
