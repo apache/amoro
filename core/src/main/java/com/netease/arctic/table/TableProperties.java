@@ -90,9 +90,6 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
   public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 100000;
 
-  public static final String SELF_OPTIMIZING_MAX_TASK_FILE_SIZE = "self-optimizing.max-task-file-size";
-  public static final long SELF_OPTIMIZING_MAX_TASK_FILE_SIZE_DEFAULT = 1073741824L; // 1 GB
-  
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
 
@@ -158,9 +155,6 @@ public class TableProperties {
 
   @Deprecated
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
-
-  @Deprecated
-  public static final String MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE = "optimize.major.max-task-file-size-bytes";
 
   /**
    * table clean related properties

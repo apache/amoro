@@ -181,8 +181,8 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
               getMaxTransactionId(fileList) : IdGenerator.randomId()));
 
       long taskSize = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
-              TableProperties.SELF_OPTIMIZING_MAX_TASK_FILE_SIZE,
-              TableProperties.SELF_OPTIMIZING_MAX_TASK_FILE_SIZE_DEFAULT);
+              TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+              TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
       Long sum = fileList.stream().map(DataFile::fileSizeInBytes).reduce(0L, Long::sum);
       int taskCnt = (int) (sum / taskSize) + 1;
       List<List<DataFile>> packed = new BinPacking.ListPacker<DataFile>(taskSize, taskCnt, true)
