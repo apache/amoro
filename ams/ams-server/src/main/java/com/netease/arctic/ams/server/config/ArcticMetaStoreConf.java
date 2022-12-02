@@ -26,7 +26,7 @@ public class ArcticMetaStoreConf {
           .withDescription("arctic ams cluster name.");
 
   public static final ConfigOption<Boolean> HA_ENABLE =
-      ConfigOptions.key("arctic.ams.ha.enable")
+      ConfigOptions.key("arctic.ams.ha.enabled")
           .booleanType()
           .defaultValue(false)
           .withDescription("is arctic ams running high available.");

@@ -2,8 +2,8 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.TableProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -12,10 +12,11 @@ import java.util.List;
 
 public class TestIcebergFullOptimizePlan extends TestIcebergBase {
   @Test
-  public void testNoPartitionMajorOptimize() throws Exception {
+  public void testNoPartitionFullOptimize() throws Exception {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(com.netease.arctic.table.TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
+        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
+        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
@@ -29,10 +30,11 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
   }
 
   @Test
-  public void testPartitionMajorOptimize() throws Exception {
+  public void testPartitionFullOptimize() throws Exception {
     icebergPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(com.netease.arctic.table.TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
+        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
+        .set(com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
@@ -47,11 +49,14 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
 
   @Test
   public void testBinPackPlan() throws Exception {
+    // small file size 1000, target size 3000
+    int fragmentRatio = 3;
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
-        .set(com.netease.arctic.table.TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "10")
-        .set(TableProperties.WRITE_TARGET_FILE_SIZE_BYTES, "1500")
+        .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO, fragmentRatio + "")
+        .set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0")
+        .set(TableProperties.SELF_OPTIMIZING_TARGET_SIZE, "3000")
         .commit();
+    // write 50 data files with size =~ 1000
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
@@ -60,6 +65,6 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
         icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
-    Assert.assertEquals(50, tasks.size());
+    Assert.assertEquals((int) Math.ceil(1.0 * dataFiles.size() / fragmentRatio), tasks.size());
   }
 }

@@ -29,6 +29,7 @@ RUN apt update \
     && apt-get install -y vim \
     && apt-get install -y net-tools \
     && apt-get install -y telnet \
+    && apt-get install -y dos2unix \
     && apt-get clean
 
 ARG AMS_FILE
@@ -39,6 +40,10 @@ RUN unzip arctic-${ARCTIC_VERSION}-bin.zip \
   && sed -i '/local_catalog/d' /usr/local/ams/arctic-${ARCTIC_VERSION}/conf/derby/ams-init.sql
 
 WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
+
+COPY config.sh  ./bin/config.sh
+RUN find ./bin -name "*.sh" | dos2unix
+
 
 EXPOSE 1630/tcp
 EXPOSE 1260/tcp

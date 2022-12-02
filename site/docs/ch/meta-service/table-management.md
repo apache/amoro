@@ -28,7 +28,7 @@ create table test_db.test_log_store(
 ) using arctic
 partitioned by(days(op_time))
 tblproperties(
-  'log-store.enable' = 'true',
+  'log-store.enabled' = 'true',
   'log-store.type' = 'kafka',
   'log-store.address' = '127.0.0.1:9092',
   'log-store.topic' = 'local_catalog.test_db.test_log_store.log_store',
@@ -122,7 +122,7 @@ ALTER TABLE test_db.test_log_store set tblproperties (
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
-    'optimize.enable' = 'false');
+    'optimize.enabled' = 'false');
 ```
 
 ## 删除表

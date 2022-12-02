@@ -27,7 +27,7 @@ import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.util.PropertyUtil;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,8 +62,8 @@ public class QuotaService implements IQuotaService {
     try {
       Map<String, String> properties =
           ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier).getArcticTable().properties();
-      double quota = PropertyUtil.propertyAsDouble(properties,
-          TableProperties.OPTIMIZE_QUOTA, TableProperties.OPTIMIZE_QUOTA_DEFAULT);
+      double quota = CompatiblePropertyUtil.propertyAsDouble(properties, TableProperties.SELF_OPTIMIZING_QUOTA,
+          TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT);
       result.setNeedCoreCount(quota);
     } catch (NoSuchObjectException e) {
       LOG.error("no such table", e);

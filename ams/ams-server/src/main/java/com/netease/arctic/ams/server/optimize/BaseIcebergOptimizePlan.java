@@ -202,8 +202,8 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
 
   private long getTargetSize() {
     return PropertyUtil.propertyAsLong(arcticTable.properties(),
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
   }
 
   protected void getOptimizeFile(List<FileScanTask> fileScanTasks,
