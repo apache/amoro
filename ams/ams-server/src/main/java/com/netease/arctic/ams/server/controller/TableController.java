@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.controller;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ServerTableProperties;
@@ -66,6 +67,7 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,6 +79,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -159,11 +162,16 @@ public class TableController extends RestBaseController {
       changeMetrics.put("averageFile", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
-    Map<String, Object> tableMetrics = new HashMap<>();
-    tableMetrics.put("size", AmsUtils.byteToXB(tableSize));
-    tableMetrics.put("file", tableFileCnt);
-    tableMetrics.put("averageFile", AmsUtils.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
-    serverTableMeta.setTableMetrics(tableMetrics);
+    Set<TableFormat> tableFormats =
+        com.netease.arctic.utils.CatalogUtil.tableFormats(catalogMetadataService.getCatalog(catalog).get());
+    Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
+    TableFormat tableFormat = tableFormats.iterator().next();
+    Map<String, Object> tableSummary = new HashMap<>();
+    tableSummary.put("size", AmsUtils.byteToXB(tableSize));
+    tableSummary.put("file", tableFileCnt);
+    tableSummary.put("averageFile", AmsUtils.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+    tableSummary.put("tableFormat", AmsUtils.formatString(tableFormat.name()));
+    serverTableMeta.setTableSummary(tableSummary);
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
