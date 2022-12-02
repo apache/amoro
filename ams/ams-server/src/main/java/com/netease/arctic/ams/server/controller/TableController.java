@@ -129,6 +129,8 @@ public class TableController extends RestBaseController {
     } else {
       serverTableMeta.setTableType(TableMeta.TableType.HIVE.toString());
     }
+    long tableSize = 0;
+    long tableFileCnt = 0;
     Map<String, Object> baseMetrics = Maps.newHashMap();
     FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
     Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
@@ -136,6 +138,8 @@ public class TableController extends RestBaseController {
     baseMetrics.put("size", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("file", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
+    tableSize += baseFilesStatistics.getTotalSize();
+    tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
 
     Map<String, Object> changeMetrics = Maps.newHashMap();
@@ -146,6 +150,8 @@ public class TableController extends RestBaseController {
       changeMetrics.put("size", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
       changeMetrics.put("file", changeFilesStatistics.getFileCnt());
       changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
+      tableSize += changeFilesStatistics.getTotalSize();
+      tableFileCnt += changeFilesStatistics.getFileCnt();
     } else {
       changeMetrics.put("lastCommitTime", null);
       changeMetrics.put("size", null);
@@ -153,6 +159,11 @@ public class TableController extends RestBaseController {
       changeMetrics.put("averageFile", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
+    Map<String, Object> tableMetrics = new HashMap<>();
+    tableMetrics.put("size", AmsUtils.byteToXB(tableSize));
+    tableMetrics.put("file", tableFileCnt);
+    tableMetrics.put("averageFile", AmsUtils.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+    serverTableMeta.setTableMetrics(tableMetrics);
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
@@ -168,7 +179,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
     HiveTableInfo hiveTableInfo;
@@ -200,7 +211,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
     ctx.json(OkResponse.ok());
   }

@@ -42,6 +42,7 @@ public class ServerTableMeta {
   private Map<String, String> properties;
   private Map<String, Object> changeMetrics;
   private Map<String, Object> baseMetrics;
+  private Map<String, Object> tableMetrics;
   private CdcMeta cdcMeta;
   private String baseLocation;
   private String filter;
@@ -183,6 +184,14 @@ public class ServerTableMeta {
 
   public void setBaseMetrics(Map<String, Object> baseMetrics) {
     this.baseMetrics = baseMetrics;
+  }
+
+  public Map<String, Object> getTableMetrics() {
+    return tableMetrics;
+  }
+
+  public void setTableMetrics(Map<String, Object> tableMetrics) {
+    this.tableMetrics = tableMetrics;
   }
 
   @Override
