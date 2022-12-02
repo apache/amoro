@@ -2,6 +2,7 @@ package com.netease.arctic.ams.server.optimize;
 
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.junit.Assert;
 import org.junit.Test;
@@ -13,7 +14,8 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
   @Test
   public void testUnPartitionMinorOptimize() throws Exception {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
@@ -29,7 +31,8 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
   @Test
   public void testPartitionMinorOptimize() throws Exception {
     icebergPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);

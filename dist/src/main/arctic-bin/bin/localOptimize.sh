@@ -17,10 +17,17 @@
 # limitations under the License.
 #
 
-PRGDIR=$(dirname $0)
-PRGDIR=$(cd $PRGDIR;pwd)
-source ${PRGDIR}/config.sh
-LIB_PATH=$APP_HOME/lib
-LOG_DIR=$APP_HOME/logs
+CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
+
+LIB_PATH=$ARCTIC_HOME/lib
+LOG_DIR=$ARCTIC_HOME/logs
 export CLASSPATH=$APP_HOME/conf/optimize:$LIB_PATH/:$(find $LIB_PATH/ -type f -name "*.jar" | paste -sd':' -)
+
+if [[ -d $JAVA_HOME ]]; then
+    JAVA_RUN=$JAVA_HOME/bin/java
+else
+    JAVA_RUN=java
+fi
+
 $JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-${6} -Xmx$1m com.netease.arctic.optimizer.local.LocalOptimizer -a $2 -q $3 -p $4 --heart-beat $5 -id $6

@@ -54,10 +54,16 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String ARCTIC_READ_MODE = "arctic.read.mode";
   public static final String ARCTIC_READ_MODE_DEFAULT = ARCTIC_READ_FILE;
 
-  public static final String ARCTIC_LATENCY_METRIC_ENABLE = "metrics.event-latency.enable";
+  public static final String ARCTIC_LATENCY_METRIC_ENABLE = "metrics.event-latency.enabled";
   public static final boolean ARCTIC_LATENCY_METRIC_ENABLE_DEFAULT = false;
-  public static final String ARCTIC_THROUGHPUT_METRIC_ENABLE = "metrics.enable";
+  @Deprecated
+  public static final String ARCTIC_LATENCY_METRIC_ENABLE_LEGACY = "metrics.event-latency.enable";
+
+  public static final String ARCTIC_THROUGHPUT_METRIC_ENABLE = "metrics.enabled";
   public static final boolean ARCTIC_THROUGHPUT_METRIC_ENABLE_DEFAULT = false;
+  @Deprecated
+  public static final String ARCTIC_THROUGHPUT_METRIC_ENABLE_LEGACY = "metrics.enable";
+
   public static final String BASE_WRITE_LOCATION = "base.write.location";
   public static final String BASE_WRITE_LOCATION_SUFFIX = "/init";
 
@@ -74,7 +80,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
   public static final String SCAN_STARTUP_MODE_TIMESTAMP = "timestamp";
 
   public static final ConfigOption<Boolean> ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE =
-      ConfigOptions.key("log-store.consistency-guarantee.enable")
+      ConfigOptions.key("log-store.consistency-guarantee.enabled")
           .booleanType()
           .defaultValue(false)
           .withDescription("Flag hidden kafka read retraction enable or not.");
@@ -148,7 +154,7 @@ public class ArcticValidator extends ConnectorDescriptorValidator {
           .withDescription("underlying arctic table name.");
 
   public static final ConfigOption<Boolean> DIM_TABLE_ENABLE =
-      ConfigOptions.key("dim-table.enable")
+      ConfigOptions.key("dim-table.enabled")
           .booleanType()
           .defaultValue(false)
           .withDescription("If it is true, Arctic source will generate watermark after stock data being read");

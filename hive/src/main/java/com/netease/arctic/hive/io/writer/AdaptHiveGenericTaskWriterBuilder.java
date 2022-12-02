@@ -66,6 +66,7 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
   private int taskId = 0;
   private ChangeAction changeAction = ChangeAction.INSERT;
   private String customHiveSubdirectory;
+  private Long targetFileSize;
 
   private AdaptHiveGenericTaskWriterBuilder(ArcticTable table) {
     this.table = table;
@@ -93,6 +94,11 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
 
   public AdaptHiveGenericTaskWriterBuilder withCustomHiveSubdirectory(String customHiveSubdirectory) {
     this.customHiveSubdirectory = customHiveSubdirectory;
+    return this;
+  }
+  
+  public AdaptHiveGenericTaskWriterBuilder withTargetFileSize(long targetFileSize) {
+    this.targetFileSize = targetFileSize;
     return this;
   }
 
@@ -140,8 +146,13 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.BASE_FILE_FORMAT,
         TableProperties.BASE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long fileSizeBytes;
+    if (this.targetFileSize == null) {
+      fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    } else {
+      fileSizeBytes = this.targetFileSize;
+    }
     long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
         TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
 
@@ -185,8 +196,13 @@ public class AdaptHiveGenericTaskWriterBuilder implements TaskWriterBuilder<Reco
     FileFormat fileFormat = FileFormat.valueOf((table.properties().getOrDefault(
         TableProperties.CHANGE_FILE_FORMAT,
         TableProperties.CHANGE_FILE_FORMAT_DEFAULT).toUpperCase(Locale.ENGLISH)));
-    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long fileSizeBytes;
+    if (this.targetFileSize == null) {
+      fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    } else {
+      fileSizeBytes = this.targetFileSize;
+    }
     long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
         TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
     Schema changeWriteSchema = SchemaUtil.changeWriteSchema(table.changeTable().schema());

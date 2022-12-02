@@ -271,7 +271,7 @@ public class BaseTaskExecutor implements Serializable {
       nodeTask.setCustomHiveSubdirectory(customHiveSubdirectory);
 
       Long maxExecuteTime = PropertyUtil.propertyAsLong(properties,
-          OptimizeTaskProperties.MAX_EXECUTE_TIME, TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
+          OptimizeTaskProperties.MAX_EXECUTE_TIME, TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT);
       nodeTask.setMaxExecuteTime(maxExecuteTime);
     }
 

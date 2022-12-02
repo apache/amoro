@@ -44,17 +44,20 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,8 +101,8 @@ public class OptimizeQueueService extends IJDBCService {
   }
 
   public int getQueueId(Map<String, String> properties) throws InvalidObjectException {
-    String groupName = properties.getOrDefault(TableProperties.OPTIMIZE_GROUP,
-        TableProperties.OPTIMIZE_GROUP_DEFAULT);
+    String groupName = CompatiblePropertyUtil.propertyAsString(properties,
+        TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
     return getOptimizeQueue(groupName).getOptimizeQueueMeta().getQueueId();
   }
 
@@ -198,7 +201,6 @@ public class OptimizeQueueService extends IJDBCService {
 
   /**
    * delete all OptimizeQueue
-   *
    */
   public void removeAllQueue() {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -379,13 +381,24 @@ public class OptimizeQueueService extends IJDBCService {
         }
         // clear useless files produced by failed full optimize task support hive
         if (task.getOptimizeRuntime().getStatus() == OptimizeStatus.Failed) {
-          String location =
+          String subDirectory =
               task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
 
-          if (location != null) {
+          if (StringUtils.isNotEmpty(subDirectory)) {
             try {
               ArcticTable arcticTable = ServiceContainer.getOptimizeService()
                   .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();
+
+              String location;
+              if (arcticTable.spec().isUnpartitioned()) {
+                location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), null, subDirectory);
+              } else {
+                location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), DataFiles.data(arcticTable.spec(), task.getOptimizeTask().getPartition()),
+                    subDirectory);
+              }
+
               if (arcticTable.io().exists(location)) {
                 for (FileStatus fileStatus : arcticTable.io().list(location)) {
                   String fileLocation = fileStatus.getPath().toUri().getPath();
@@ -595,9 +608,9 @@ public class OptimizeQueueService extends IJDBCService {
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
-          if (!(Boolean.parseBoolean(PropertyUtil
-              .propertyAsString(tableItem.getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
-                  TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
+          if (!CompatiblePropertyUtil.propertyAsBoolean(tableItem.getArcticTable(false).properties(),
+              TableProperties.ENABLE_SELF_OPTIMIZING,
+              TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
             LOG.debug("{} is not enable optimize continue", tableIdentifier);
             continue;
           }

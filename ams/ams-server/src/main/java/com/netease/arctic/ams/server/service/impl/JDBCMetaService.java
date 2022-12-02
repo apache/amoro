@@ -39,6 +39,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableMetaStore;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.Table;
@@ -170,10 +171,10 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
           oldTableMetaData.getProperties(),
           properties);
       tableMetadataMapper.updateTableProperties(tableIdentifier, properties);
-      String oldQueueName = oldTableMetaData.getProperties().getOrDefault(TableProperties.OPTIMIZE_GROUP,
-          TableProperties.OPTIMIZE_GROUP_DEFAULT);
-      String newQueueName =
-          properties.getOrDefault(TableProperties.OPTIMIZE_GROUP, TableProperties.OPTIMIZE_GROUP_DEFAULT);
+      String oldQueueName = CompatiblePropertyUtil.propertyAsString(oldTableMetaData.getProperties(),
+          TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
+      String newQueueName = CompatiblePropertyUtil.propertyAsString(properties,
+          TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
       if (StringUtils.isNotBlank(oldQueueName) && StringUtils.isNotBlank(newQueueName) && !oldQueueName.equals(
           newQueueName)) {
         OptimizeQueueItem newOptimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(newQueueName);

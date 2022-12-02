@@ -7,6 +7,7 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.local.LocalOptimizer;
+import com.netease.arctic.table.TableIdentifier;
 import org.apache.commons.io.FileUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.transport.TTransportException;
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -130,6 +132,10 @@ public class AmsEnvironment {
       }
     }
     LOG.info("ams start");
+  }
+  
+  public List<TableIdentifier> refreshTables() {
+    return ServiceContainer.getOptimizeService().refreshAndListTables();
   }
 
   public void createIcebergCatalog(String catalogName, String warehouseDir) {

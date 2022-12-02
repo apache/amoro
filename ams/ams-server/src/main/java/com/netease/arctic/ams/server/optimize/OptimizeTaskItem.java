@@ -37,6 +37,7 @@ import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.ContentFile;
@@ -205,7 +206,7 @@ public class OptimizeTaskItem extends IJDBCService {
   public boolean executeTimeout() {
     long maxExecuteTime = PropertyUtil
         .propertyAsLong(optimizeTask.getProperties(), OptimizeTaskProperties.MAX_EXECUTE_TIME,
-            TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
+            TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT);
     if (getOptimizeStatus() == OptimizeStatus.Executing) {
       return System.currentTimeMillis() - optimizeRuntime.getExecuteTime() > maxExecuteTime;
     }
@@ -262,8 +263,8 @@ public class OptimizeTaskItem extends IJDBCService {
     try {
       ArcticTable arcticTable = ServiceContainer.getOptimizeService()
           .getTableOptimizeItem(getTableIdentifier()).getArcticTable();
-      Long maxExecuteTime = PropertyUtil.propertyAsLong(arcticTable.properties(),
-          TableProperties.OPTIMIZE_EXECUTE_TIMEOUT, TableProperties.OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT);
+      Long maxExecuteTime = CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+          TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT, TableProperties.SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT);
       optimizeTask.getProperties().put(OptimizeTaskProperties.MAX_EXECUTE_TIME, String.valueOf(maxExecuteTime));
     } catch (Exception e) {
       LOG.error("update task max execute time failed.", e);

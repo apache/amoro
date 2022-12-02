@@ -121,15 +121,22 @@ public class OptimizeIntegrationTest {
   @Test
   public void testPkTableOptimizing() {
     createPkArcticTable(TB_2);
+    assertTableExist(TB_2);
     KeyedTable table = catalog(CATALOG).loadTable(TB_2).asKeyedTable();
 
     testKeyedTableContinueOptimizing(table);
 
   }
 
+  private void assertTableExist(TableIdentifier tableIdentifier) {
+    List<TableIdentifier> tableIdentifiers = amsEnvironment.refreshTables();
+    Assert.assertTrue(tableIdentifiers.contains(tableIdentifier));
+  }
+
   @Test
   public void testPkPartitionTableOptimizing() {
     createPkPartitionArcticTable(TB_1);
+    assertTableExist(TB_1);
     KeyedTable table = catalog(CATALOG).loadTable(TB_1).asKeyedTable();
 
     testKeyedTableContinueOptimizing(table);
@@ -138,6 +145,7 @@ public class OptimizeIntegrationTest {
   @Test
   public void testNoPkTableOptimizing() {
     createNoPkArcticTable(TB_3);
+    assertTableExist(TB_3);
     UnkeyedTable table = catalog(CATALOG).loadTable(TB_3).asUnkeyedTable();
 
     TableIdentifier tb = table.id();
@@ -177,6 +185,7 @@ public class OptimizeIntegrationTest {
   @Test
   public void testNoPkPartitionTableOptimizing() {
     createNoPkPartitionArcticTable(TB_4);
+    assertTableExist(TB_4);
     UnkeyedTable table = catalog(CATALOG).loadTable(TB_4).asUnkeyedTable();
 
     TableIdentifier tb = table.id();
@@ -217,12 +226,12 @@ public class OptimizeIntegrationTest {
   public void testIcebergTableFullOptimize() throws IOException {
     Table table = createIcebergTable(TB_5, PartitionSpec.unpartitioned());
     TableIdentifier tb = TB_5;
+    assertTableExist(TB_5);
     long startId = getOptimizeHistoryStartId();
     long offset = 1;
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
 
-    updateProperties(table, TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "100");
-    updateProperties(table, TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD, "100.0");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "100");
 
     insertDataFile(table, Lists.newArrayList(
         newRecord(1, "aaa", quickDateWithZone(3)),
@@ -268,7 +277,7 @@ public class OptimizeIntegrationTest {
     int size = assertContainIdSet(readRecords(table), 0, 4);
     Assert.assertEquals(1, size);
 
-    updateProperties(table, TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "1");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + offset++);
     assertOptimizeHistory(optimizeHistory, OptimizeType.FullMajor, 8, 1);
@@ -281,6 +290,7 @@ public class OptimizeIntegrationTest {
   public void testIcebergTableOptimizing() throws IOException {
     Table table = createIcebergTable(TB_6, PartitionSpec.unpartitioned());
     TableIdentifier tb = TB_6;
+    assertTableExist(TB_6);
     long startId = getOptimizeHistoryStartId();
     long offset = 1;
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
@@ -317,8 +327,8 @@ public class OptimizeIntegrationTest {
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
-    updateProperties(table, TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, (dataFileSize - 1) + "");
-    updateProperties(table, TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD, "100.0");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100) + "");
 
     insertEqDeleteFiles(table, Lists.newArrayList(
         newRecord(2, "aaa", quickDateWithZone(3))
@@ -333,7 +343,7 @@ public class OptimizeIntegrationTest {
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
     size = assertContainIdSet(readRecords(table), 0, 4, 5, 6);
     Assert.assertEquals(3, size);
-    updateProperties(table, TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "10");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
     // Step 4: insert 1 delete and full optimize
     // insertEqDeleteFiles(table, Lists.newArrayList(
@@ -345,7 +355,7 @@ public class OptimizeIntegrationTest {
     ), Lists.newArrayList(
         newRecord(4, "aaa", quickDateWithZone(3))
     ), partitionData);
-    updateProperties(table, TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "1");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset);
@@ -357,8 +367,9 @@ public class OptimizeIntegrationTest {
 
   @Test
   public void testV1IcebergTableOptimizing() throws IOException {
-    Table table = createIcebergTable(TB_8, PartitionSpec.unpartitioned());
+    Table table = createIcebergV1Table(TB_8, PartitionSpec.unpartitioned());
     TableIdentifier tb = TB_8;
+    assertTableExist(TB_8);
     long startId = getOptimizeHistoryStartId();
     long offset = 1;
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
@@ -400,6 +411,7 @@ public class OptimizeIntegrationTest {
   public void testPartitionIcebergTableOptimizing() throws IOException {
     Table table = createIcebergTable(TB_7, SPEC);
     TableIdentifier tb = TB_7;
+    assertTableExist(TB_7);
     long startId = getOptimizeHistoryStartId();
     long offset = 1;
     StructLike partitionData = partitionData(table.schema(), table.spec(), quickDateWithZone(3));
@@ -436,8 +448,8 @@ public class OptimizeIntegrationTest {
 
     // Step 3: insert 2 delete file and Minor Optimize(big file)
     long dataFileSize = getDataFileSize(table);
-    updateProperties(table, TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, (dataFileSize - 1) + "");
-    updateProperties(table, TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD, "100.0");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+        TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / (dataFileSize - 100) + "");
 
     insertEqDeleteFiles(table, Lists.newArrayList(
         newRecord(2, "aaa", quickDateWithZone(3))
@@ -452,7 +464,7 @@ public class OptimizeIntegrationTest {
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 3, 1);
     size = assertContainIdSet(readRecords(table), 0, 4, 5, 6);
     Assert.assertEquals(3, size);
-    updateProperties(table, TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "10");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "10");
 
     // Step 4: insert 1 delete and full optimize
     // insertEqDeleteFiles(table, Lists.newArrayList(
@@ -464,7 +476,7 @@ public class OptimizeIntegrationTest {
     ), Lists.newArrayList(
         newRecord(4, "aaa", quickDateWithZone(3))
     ), partitionData);
-    updateProperties(table, TableProperties.FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD, "1");
+    updateProperties(table, TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0");
 
     // wait FullMajor Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + offset);
@@ -574,8 +586,8 @@ public class OptimizeIntegrationTest {
     TableBuilder tableBuilder = catalog(CATALOG).newTableBuilder(tableIdentifier, SCHEMA)
         .withPrimaryKeySpec(primaryKeySpec)
         .withPartitionSpec(SPEC)
-        .withProperty(TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000")
-        .withProperty(TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000");
+        .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000")
+        .withProperty(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL, "1000");
 
     tableBuilder.create();
   }
@@ -586,8 +598,8 @@ public class OptimizeIntegrationTest {
 
     TableBuilder tableBuilder = catalog(CATALOG).newTableBuilder(tableIdentifier, SCHEMA)
         .withPrimaryKeySpec(primaryKeySpec)
-        .withProperty(TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000")
-        .withProperty(TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000");
+        .withProperty(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL, "1000")
+        .withProperty(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL, "1000");
 
     tableBuilder.create();
   }
@@ -595,7 +607,7 @@ public class OptimizeIntegrationTest {
   private void createNoPkArcticTable(TableIdentifier tableIdentifier) {
 
     TableBuilder tableBuilder = catalog(CATALOG).newTableBuilder(tableIdentifier, SCHEMA)
-        .withProperty(TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000");
+        .withProperty(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL, "1000");
 
     tableBuilder.create();
   }
@@ -604,7 +616,7 @@ public class OptimizeIntegrationTest {
     Tables hadoopTables = new HadoopTables(new Configuration());
     Map<String, String> tableProperties = Maps.newHashMap();
     tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
-    tableProperties.put(TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "2");
+    tableProperties.put(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
 
     return hadoopTables.create(SCHEMA, partitionSpec, tableProperties,
         ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
@@ -614,7 +626,7 @@ public class OptimizeIntegrationTest {
     Tables hadoopTables = new HadoopTables(new Configuration());
     Map<String, String> tableProperties = Maps.newHashMap();
     tableProperties.put(org.apache.iceberg.TableProperties.FORMAT_VERSION, "1");
-    tableProperties.put(TableProperties.MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT, "2");
+    tableProperties.put(TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT, "2");
 
     return hadoopTables.create(SCHEMA, partitionSpec, tableProperties,
         ICEBERG_CATALOG_DIR + "/" + tableIdentifier.getDatabase() + "/" + tableIdentifier.getTableName());
@@ -629,7 +641,7 @@ public class OptimizeIntegrationTest {
   private void createNoPkPartitionArcticTable(TableIdentifier tableIdentifier) {
     TableBuilder tableBuilder = catalog(CATALOG).newTableBuilder(tableIdentifier, SCHEMA)
         .withPartitionSpec(SPEC)
-        .withProperty(TableProperties.MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL, "1000");
+        .withProperty(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL, "1000");
 
     tableBuilder.create();
   }
