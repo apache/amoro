@@ -207,11 +207,11 @@ public class BaseOptimizeCommit {
       overwriteBaseFiles.set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name());
       overwriteBaseFiles.validateNoConflictingAppends(Expressions.alwaysFalse());
       AtomicInteger addedPosDeleteFile = new AtomicInteger(0);
+      StructLikeMap<Long> oldPartitionMaxIds =
+          TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
       minorAddFiles.forEach(contentFile -> {
         // if partition min transactionId isn't bigger than max transactionId in partitionProperty,
         // the partition files is expired
-        StructLikeMap<Long> oldPartitionMaxIds =
-            TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
         Long oldTransactionId = oldPartitionMaxIds.getOrDefault(contentFile.partition(), -1L);
         Long newMinTransactionId = minTransactionIds.getOrDefault(contentFile.partition(), Long.MAX_VALUE);
         if (oldTransactionId >= newMinTransactionId) {
