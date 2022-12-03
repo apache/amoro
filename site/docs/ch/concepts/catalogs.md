@@ -8,7 +8,7 @@ FROM MYSQL.ONLINE.CUSTOMERS c JOIN HIVE.OFFLINE.ORDERS o
 ON (c.ID = o.CUSTOMER_ID)
 ```
 
-过去数据湖围绕 HMS 来管理元数据，遗憾的是 HMS 不支持 multi-catalog，导致引擎在数据湖上的功能存在一定限制，比如有些用户希望用 spark 通过指定 catalog 名称在不同 Hive 集群之间做联邦计算，需要用户在上层重构一套 Hive CatalogPlugin。其次，数据湖格式正在从 Hive 单极走向 Iceberg，Delta 以及 Hudi 多家争鸣的格局，新型的数据湖 format 对公有云更加友好，也会促进数据湖上云的进程，在这些背景下，需要一套面向 multi-catalog 的管理系统帮助用户治理不同环境，不同 format 的数据湖。
+过去数据湖围绕 HMS 来管理元数据，遗憾的是 HMS 不支持 multi-catalog，导致引擎在数据湖上的功能存在一定限制，比如有些用户希望用 spark 通过指定 catalog 名称在不同 Hive 集群之间做联邦计算，需要用户在上层重构一套 Hive catalog plugin。其次，数据湖格式正在从 Hive 单极走向 Iceberg，Delta 以及 Hudi 多家争鸣的格局，新型的数据湖 format 对公有云更加友好，也会促进数据湖上云的进程，在这些背景下，需要一套面向 multi-catalog 的管理系统帮助用户治理不同环境，不同 format 的数据湖。
 
 用户可以在 Arctic 中为不同环境，不同集群以及不同的 table format 创建 catalog，再利用 Flink、Spark、Trino 的 multi-catalog 功能实现多集群、多格式的联邦计算。同时，配置在 catalog 中的属性可以被所有表和用户共享，避免了重复设置。Arctic 通过 multi-catalog 的设计，为数据平台提供元数据中心的支持。
 
