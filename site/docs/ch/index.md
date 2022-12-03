@@ -19,7 +19,7 @@ Arctic 为流和更新的场景提供更多可插拔的组件：
 
 ### Multiple formats
 
-Arcitc 的架构中，AMS 可以管理不同 table format 表，就像 MySQL/Clickhouse 可以选择和管理不同存储引擎一样，Arctic 通过使用不同的 table format 满足多样的用户需求，目前 Arctic 支持两种 table format：
+Arcitc 的架构中，AMS 可以管理不同 table format 表，就像 MySQL/ClickHouse 可以选择和管理不同存储引擎一样，Arctic 通过使用不同的 table format 满足多样的用户需求，目前 Arctic 支持两种 table format：
 
 - Iceberg format — aka. native Iceberg format，使用 Iceberg 社区原生的 table format，当然具备所有 Iceberg 功能和特性
 - Mixed streaming format — Arctic 在 Hive 和 Iceberg 之上自研的 format，可以用 LogStore 加速数据处理，在 CDC 摄取，流式更新，fresh OLAP 上有自己的优化，mixed format 根据兼容性可分为:
