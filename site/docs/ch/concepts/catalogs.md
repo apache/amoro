@@ -1,6 +1,6 @@
 ## Introduce multi-catalog
 
-Catalog 是一个包含了数据库，表，视图， 索引，用户和 UDF 等一系列信息的元数据空间，catalog 可以被简单理解为 table 和 database 的上一级 namespace。在实践中，一般将 catalog 指向特定类型的数据源实例或集群，在 flink、spark 和 trino 中，可以通过 multi-catalog 功能来支持跨数据源的 SQL，如：
+Catalog 是一个包含了数据库，表，视图， 索引，用户和 UDF 等一系列信息的元数据空间，catalog 可以被简单理解为 table 和 database 的上一级 namespace。在实践中，一般将 catalog 指向特定类型的数据源实例或集群，在 Flink、Spark 和 Trino 中，可以通过 multi-catalog 功能来支持跨数据源的 SQL，如：
 
 ```SQL
 SELECT c.ID, c.NAME, c.AGE, o.AMOUNT
