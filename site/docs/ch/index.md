@@ -23,7 +23,7 @@ Arcitc 的架构中，AMS 可以管理不同 table format 表，就像 MySQL/Cli
 
 - Iceberg format — aka. native Iceberg format，使用 Iceberg 社区原生的 table format，当然具备所有 Iceberg 功能和特性
 - Mixed streaming format — Arctic 在 Hive 和 Iceberg 之上自研的 format，可以用 LogStore 加速数据处理，在 CDC 摄取，流式更新，fresh OLAP 上有自己的优化，mixed format 根据兼容性可分为:
-    * mixed hive format —  schema、partition、types 与 hive 完全兼容，支持 hive 表原地升级和原生读写
+    * Mixed Hive format —  schema、partition、types 与 Hive 完全兼容，支持 Hive 表原地升级和原生读写
     * Mixed Iceberg format — schema、partition、types 与 Iceberg 完全兼容，但是在 stream upsert, CDC, Merge on read 实现上与 mixed Hive format 保持一致，测试结果请参阅：benchmark
 
 ### What makes difference
