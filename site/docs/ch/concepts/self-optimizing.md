@@ -36,7 +36,7 @@ self-optimizing.target-size = 128;
 self-optimizing.fragment-ratio = 8
 ```
 
-self-optimizing.target-size 定义了 major optimizing 的目标输出大小，默认 128m，self.optimizing.fragment-ratio 定义了 fragment 文件阈值在 target-size 中的占比，8 代表着 target-size 的 1/8，对应 128m 的 target-size 默认 fragement 阈值为 16m，小于 16m 是 fragment 文件，大于 16m 是 segment 文件，如下图所示：
+self-optimizing.target-size 定义了 major optimizing 的目标输出大小，默认 128m，self-optimizing.fragment-ratio 定义了 fragment 文件阈值在 target-size 中的占比，8 代表着 target-size 的 1/8，对应 128m 的 target-size 默认 fragement 阈值为 16m，小于 16m 是 fragment 文件，大于 16m 是 segment 文件，如下图所示：
 
 ![Minor optimizing](../images/concepts/minor_optimizing.png){:height="80%" width="80%"}
 
