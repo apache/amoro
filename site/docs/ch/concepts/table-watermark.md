@@ -6,7 +6,7 @@
 ![Fressness, cost and performance](../images/concepts/fressness_cost_performance.png){:height="50%" width="50%"}
 </left>
 
-Arctic 通过 AMS 的管理功能以及 Self-optimizing 机制为用户提供三元悖论的调和方案，不同于传统数仓，湖仓表会应用于各种各样的 datapipeline，AI，BI 的场景，怎样度量数据的新鲜度对于数据开发者，分析师以及管理员来说都直观重要，为此 Arctic 学习流计算采用 watermark 的概念来度量表的新鲜度。
+Arctic 通过 AMS 的管理功能以及 Self-optimizing 机制为用户提供三元悖论的调和方案，不同于传统数仓，湖仓表会应用于各种各样的 data pipeline，AI，BI 的场景，怎样度量数据的新鲜度对于数据开发者，分析师以及管理员来说都直观重要，为此 Arctic 学习流计算采用 watermark 的概念来度量表的新鲜度。
 
 ## Table watermark
 
