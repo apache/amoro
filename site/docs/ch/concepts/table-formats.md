@@ -41,7 +41,7 @@ Mixed streaming format 的设计初衷是基于数据湖为大数据平台提供
 - ChangeStore — 存储表的流和变更数据，通常由流计算实时写入，也可用于下游的 CDC 消费，作为 WriteStore 对写更加友好
 - LogStore — 作为 ChangeStore 的 cache 层来加速流处理，Arctic 会管理 LogStore 和 ChangeStore 的一致性
 
-Mixed format 中 TableStore 的设计理念类似数据库中的聚簇索引，每个 TableStore 可以使用不同 table format。Mixed format 通过 BaseStore 和 ChangeStore 之间的 Merge-on-read 来提供高新鲜度的 OLAP，为了提供高性能的 merge-on-read，basestore 和 changestore 采用了完全一致的 partition 和 layout，且都支持 auto-bucket：
+Mixed format 中 TableStore 的设计理念类似数据库中的聚簇索引，每个 TableStore 可以使用不同 table format。Mixed format 通过 BaseStore 和 ChangeStore 之间的 merge-on-read 来提供高新鲜度的 OLAP，为了提供高性能的 merge-on-read，BaseStore 和 ChangeStore 采用了完全一致的 partition 和 layout，且都支持 auto-bucket：
 
 Auto-bucket 功能帮助 self-optimizing 过程将 basestore 的文件大小控制在 target-size 上下，在尽可能维持 basefile size 同时，通过 bucket 的分裂和合并来实现数据量的动态伸缩。Auto-bucket 将一个 partition 下的数据按主键哈希的方式分割成一个个主键不相交的集合，极大降低了 optimizing 过程和 merge on read 时需要 scan 的数据量，提升了性能，效果请参阅：benchmark
 
