@@ -10,7 +10,7 @@ Arctic 开放式架构如下所示：
 
 作为湖仓管理系统，使用 Arctic 需要用到的组件有：
 
-- AMS — Arctic 的管理服务，负责提供管理 API，调度自优化任务，AMS 可以同时管理 hive 表和新型表格式，像 HMS (hive metastore) 一样具备元数据存储和管理的功能，可以和 HMS 或其他 Metastore 协同使用，用户可以通过 Arctic dashboard 对接 AMS 完成所有管理操作，查看 metrics，对计算资源和数据资源的伸缩做出决策，详情请参阅：Admin Guide
+- AMS — Arctic 的管理服务，负责提供管理 API，调度自优化任务，AMS 可以同时管理 hive 表和新型表格式，像 HMS (Hive Metastore) 一样具备元数据存储和管理的功能，可以和 HMS 或其他 Metastore 协同使用，用户可以通过 Arctic dashboard 对接 AMS 完成所有管理操作，查看 metrics，对计算资源和数据资源的伸缩做出决策，详情请参阅：Admin Guide
 
 Arctic 为流和更新的场景提供更多可插拔的组件：
 
