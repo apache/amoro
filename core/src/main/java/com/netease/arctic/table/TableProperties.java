@@ -296,6 +296,6 @@ public class TableProperties {
     WRITE_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
     WRITE_PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
     WRITE_PROTECTED_PROPERTIES.add(WATERMARK_BASE_STORE);
-    READ_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
+    WRITE_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
   }
 }
