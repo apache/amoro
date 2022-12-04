@@ -27,7 +27,7 @@ Mixed streaming format 相比 Iceberg format 提供了更多的特性：
 
 - 更强的主键约束，对 Spark 也同样适用
 - 通过 auto-bucket 机制，为实时数仓提供生产可用的 OLAP 性能
-- 可以通过配置 logstore，将 datapipeline 的延迟从分钟提升到毫秒/秒
+- 可以通过配置 LogStore，将 data pipeline 的延迟从分钟提升到毫秒/秒
 - hive 或 Iceberg 格式兼容，支持 hive 秒级原地升级，兼容 Iceberg 各项原生功能
 - 事务冲突解决机制，让相同主键的并发写入变得可能
 
