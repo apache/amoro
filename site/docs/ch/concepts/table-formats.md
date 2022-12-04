@@ -95,7 +95,7 @@ Mixed Hive format 使用 Hive 表作为 BaseStore，Iceberg 表作为 ChangeStor
 - schema、partition、types 与 Hive format 保持一致
 - 使用 Hive connector 将 Mixed Hive format 表当成 Hive 表来读写
 - 可以将 Hive 表原地升级为 Mixed Hive format 表，升级过程没有数据重写和迁移，秒级响应
-- 具有 mixed streaming format 所有功能特性
+- 具有 Mixed streaming format 所有功能特性
 
 Mixed Hive format 结构如下所示：
 
