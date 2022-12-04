@@ -653,7 +653,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       } else {
         throw new IllegalStateException(
             "either `location` in table properties or " +
-                "`warehouse.dir` in catalog properties is specified");
+                "`warehouse` in catalog properties is specified");
       }
     }
 
@@ -666,16 +666,21 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
     protected String getDatabaseLocation() {
       if (catalogMeta.getCatalogProperties() != null) {
-        String catalogWarehouseDir = catalogMeta.getCatalogProperties().getOrDefault(
-            CatalogMetaProperties.KEY_WAREHOUSE_DIR,
-            null
-        );
-        if (!Objects.equals("/", catalogWarehouseDir) && catalogWarehouseDir.endsWith("/")) {
-          catalogWarehouseDir = catalogWarehouseDir.substring(
-              0, catalogWarehouseDir.length() - 1);
+        String catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
+            CatalogMetaProperties.KEY_WAREHOUSE,null);
+        if (catalogWarehouse == null) {
+          catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
+              CatalogMetaProperties.KEY_WAREHOUSE_DIR,null);
         }
-        if (StringUtils.isNotBlank(catalogWarehouseDir)) {
-          return catalogWarehouseDir + '/' + identifier.getDatabase();
+        if (catalogWarehouse == null) {
+          throw new NullPointerException("Catalog warehouse is null.");
+        }
+        if (!Objects.equals("/", catalogWarehouse) && catalogWarehouse.endsWith("/")) {
+          catalogWarehouse = catalogWarehouse.substring(
+              0, catalogWarehouse.length() - 1);
+        }
+        if (StringUtils.isNotBlank(catalogWarehouse)) {
+          return catalogWarehouse + '/' + identifier.getDatabase();
         }
       }
       return null;

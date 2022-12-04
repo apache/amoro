@@ -19,11 +19,13 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.server.controller.response.ErrorResponse;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.Response;
 import com.netease.arctic.ams.server.model.CatalogSettingInfo;
 import io.javalin.testtools.HttpClient;
 import io.javalin.testtools.JavalinTest;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
@@ -58,18 +60,20 @@ public class CatalogControllerTest {
     String name = "unittest";
     String newAuthUser = "UnitTest";
     JavalinTest.test((app, client) -> {
-      // add one catalog
+
       app.post("/", CatalogController::createCatalog);
       app.get("/{catalogName}", CatalogController::getCatalogDetail);
       app.put("/{catalogName}", CatalogController::updateCatalog);
       app.delete("/{catalogName}", CatalogController::deleteCatalog);
-      String paramString = "{\"name\":\"unittest\",\"type\":\"hadoop\","
+
+      // add one catalog
+      String paramString = "{\"name\":\"unittest\",\"type\":\"ams\","
               + "\"storageConfig\":{"
               + "\"hadoop.core.site\":\"1\","
               + "\"hadoop.hdfs.site\":\"2\","
               + "\"hive.site\":\"3\"},"
               + "\"authConfig\":{\"auth.type\":\"SIMPLE\",\"auth.simple.hadoop_username\":\"arctic\"},"
-              + "\"properties\":{},\"tableFormatList\":[\"MIXED_HIVE\"]}";
+              + "\"properties\":{\"warehouse\":\"/data/warehouse\"},\"tableFormatList\":[\"MIXED_HIVE\"]}";
       JSONObject param = JSONObject.parseObject(paramString);
       final okhttp3.Response resp = client.post("/", param);
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
@@ -108,6 +112,20 @@ public class CatalogControllerTest {
       assert result5.getCode() == 200;
       assert result5.getResult() == null;
 
+      // validate catalog property
+      paramString = "{\"name\":\"unittest2\",\"type\":\"ams\","
+          + "\"storageConfig\":{"
+          + "\"hadoop.core.site\":\"1\","
+          + "\"hadoop.hdfs.site\":\"2\","
+          + "\"hive.site\":\"3\"},"
+          + "\"authConfig\":{\"auth.type\":\"SIMPLE\",\"auth.simple.hadoop_username\":\"arctic\"},"
+          + "\"properties\":{},\"tableFormatList\":[\"MIXED_HIVE\"]}";
+      JSONObject param6 = JSONObject.parseObject(paramString);
+      final okhttp3.Response resp6 = client.post("/", param6);
+      String resp6Body = resp6.body().string();
+      final ErrorResponse result6 = JSONObject.parseObject(resp6Body, ErrorResponse.class);
+      assert result6.getCode() == 400;
+      assert result6.getMessage().equals("Catalog type:ams require property:warehouse.");
     });
   }
 }

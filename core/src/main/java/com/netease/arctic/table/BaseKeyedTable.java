@@ -105,17 +105,19 @@ public class BaseKeyedTable implements KeyedTable {
     long changeWatermark = TablePropertyUtil.getTableWatermark(changeTable.properties());
     long baseWatermark = TablePropertyUtil.getTableWatermark(baseTable.properties());
 
+    ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
     if (changeWatermark > baseWatermark) {
-      ImmutableMap.Builder<String, String> builder = ImmutableMap.builder();
       baseTable.properties().forEach((k, v) -> {
         if (!TableProperties.WATERMARK_TABLE.equals(k)) {
           builder.put(k, v);
         }
       });
       builder.put(TableProperties.WATERMARK_TABLE, String.valueOf(changeWatermark));
-      return builder.build();
+    } else {
+      builder.putAll(baseTable.properties());
     }
-    return baseTable.properties();
+    builder.put(TableProperties.WATERMARK_BASE_STORE, String.valueOf(baseWatermark));
+    return builder.build();
   }
 
   @Override

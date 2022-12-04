@@ -82,8 +82,6 @@ public class CompatiblePropertyUtil {
         return TableProperties.OPTIMIZE_EXECUTE_TIMEOUT;
       case TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT:
         return TableProperties.OPTIMIZE_MAX_FILE_COUNT;
-      case TableProperties.SELF_OPTIMIZING_MAX_TASK_FILE_SIZE:
-        return TableProperties.MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE;
       case TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT:
         return TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT;
       case TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL:

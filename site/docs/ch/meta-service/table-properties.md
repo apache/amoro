@@ -37,7 +37,6 @@
 | self-optimizing.execute.timeout                     | 1800000（30分钟） | 结构优化执行超时时间                                  |
 | self-optimizing.target-size                         | 134217728（128MB）| 结构优化的目标文件大小                                |
 | self-optimizing.max-file-count                      | 100000           | 一次结构优化最多处理的文件个数                           |
-| self-optimizing.max-task-file-size                  | 1073741824（1GB） | 一次结构优化最大的任务大小                          |
 | self-optimizing.fragment-ratio                      | 8                | 处理的 fragment 文件阈值                             |
 | self-optimizing.minor.trigger.file-count            | 12               | 触发 minor optimize 的 fragment 文件数量             |
 | self-optimizing.minor.trigger.interval              | 3600000（1小时）  | 触发 minor optimize 的时间间隔                        |

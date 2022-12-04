@@ -64,7 +64,7 @@ public class TableProperties {
 
   public static final String WATERMARK_TABLE = "watermark.table";
 
-  public static final String WATERMARK_BASE_STORE = "watermark.base-store";
+  public static final String WATERMARK_BASE_STORE = "watermark.base";
 
   /**
    * table optimize related properties
@@ -90,9 +90,6 @@ public class TableProperties {
   public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
   public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 100000;
 
-  public static final String SELF_OPTIMIZING_MAX_TASK_FILE_SIZE = "self-optimizing.max-task-file-size";
-  public static final long SELF_OPTIMIZING_MAX_TASK_FILE_SIZE_DEFAULT = 1073741824L; // 1 GB
-  
   public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
   public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
 
@@ -158,9 +155,6 @@ public class TableProperties {
 
   @Deprecated
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
-
-  @Deprecated
-  public static final String MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE = "optimize.major.max-task-file-size-bytes";
 
   /**
    * table clean related properties
@@ -275,18 +269,33 @@ public class TableProperties {
   public static final String OWNER = "owner";
 
   /**
-   * Protected properties which should not be exposed to user.
+   * Protected properties which should not be read by user.
    */
-  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
+  public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
+
+  /**
+   * Protected properties which should not be written by user.
+   */
+  public static final Set<String> WRITE_PROTECTED_PROPERTIES = new HashSet<>();
 
   static {
-    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
-    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
-    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
-    PROTECTED_PROPERTIES.add(FORMAT_VERSION);
-    PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
-    PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
+    READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
+    READ_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
+    READ_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
+
+
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    WRITE_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
+    WRITE_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
+    WRITE_PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
+    WRITE_PROTECTED_PROPERTIES.add(WATERMARK_BASE_STORE);
+    READ_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
   }
 }
