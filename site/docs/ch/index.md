@@ -6,7 +6,7 @@ Arctic 是面向开放式架构的湖仓管理系统 ，在数据湖表格式之
 
 Arctic 开放式架构如下所示：
 
-![Architecture](images/introduce_Arctic.png){:height="85%" width="85%"}
+![Architecture](images/introduce_arctic.png){:height="85%" width="85%"}
 
 作为湖仓管理系统，使用 Arctic 需要用到的组件有：
 
