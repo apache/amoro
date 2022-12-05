@@ -56,7 +56,7 @@ java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark \
 此命令会一直不断的在测试库上执行 OLTP 操作，直到程序退出。
 此时可以回到 AMS 的 Terminal 页面，通过 Spark SQL 查询到  MySQL 上的数据变更会随着 Ingestion 任务不断的同步到 Arctic Table 上。
 
-注：Ingestion 任务的 Checkpoint 周期为 60s,  所以 Arctic 数据湖和 MySQL 的数据变更有 60s 的延迟
+???+note "Ingestion 任务的 Checkpoint 周期为 60s,  所以 Arctic 数据湖和 MySQL 的数据变更有 60s 的延迟。"
 
 
 # Step 4. check table result
