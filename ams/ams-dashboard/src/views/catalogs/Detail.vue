@@ -445,9 +445,13 @@ function uploadFile(info: UploadChangeParam, config, type?) {
       config.uploadLoading = false
     }
     if (info.file.status === 'done') {
+      const { code } = info.file.response
+      if (code !== 200) {
+        throw new Error('failed')
+      }
+      const { url, id } = info.file.response.result
       config.isSuccess = true
       config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.key] : info.file.name
-      const { url, id } = info.file.response.result || {}
       config.fileUrl = url
       config.fileId = id
       message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)

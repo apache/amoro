@@ -19,9 +19,9 @@
 
 Trino 版本：380(用于 Iceberg 和 Arctic的测试)
 
-Presto: 274(用于Hudi的测试，Trino不支持Hudi的MOR实时查询)
+Presto: 274(用于 Hudi 的测试，Trino 不支持 Hudi 的 MOR 实时查询)
 
-Iceberg 版本：0.13  （由于开源的iceberg在trino查询中的性能非常低，所以后面的测试均采用的是内部优化过后的版本，相关优化也提交社区见: https://github.com/apache/iceberg/issues/5245, https://github.com/apache/iceberg/pull/5264）
+Iceberg 版本：0.13  （由于开源的 iceberg 在 trino 查询中的性能非常低，所以后面的测试均采用的是内部优化过后的版本，相关优化也提交社区见: https://github.com/apache/iceberg/issues/5245, https://github.com/apache/iceberg/pull/5264）
 
 Arctic 版本：0.3
 
@@ -33,17 +33,17 @@ Arctic 版本：0.3
 
 ### CHbenchmark
 
-本次测试规范基于CHbenchmark，CHbenchmark是一个集成了TPCC和TPCH的混合测试标准，测试负载整体上可分成两类：
+本次测试规范基于 CHbenchmark，CHbenchmark 是一个集成了 TPCC 和 TPCH 的混合测试标准，测试负载整体上可分成两类：
 
 - 基于 TPC-C 的5个 OLTP 型负载：NewOrder, Payment, OrderStatus, Delivery 和 StockLevel
 
-- 基于 TCP-H 改写的22个 OLAP 型负载，其中由于Q15查询和视图相关，故此次测试舍弃了Q15
+- 基于 TCP-H 改写的22个 OLAP 型负载，其中由于 Q15 查询和视图相关，此次测试并没有做视图改写故舍弃了 Q15
 
 ![OLTP AND OLAP](../images/chbenchmark/OLTP-OLAP.png){:height="60%" width="60%"}
 
-### 基于TPC-C的数据构造
+### 基于 TPC-C 的数据构造
 
-基于TPC-C标准，本次测试在 MySQL中构造了原始数据，数据集总共包括12张表，其中TPC-C和TPC-H表的关系如下图所示：
+基于 TPC-C 标准，本次测试在 MySQL 中构造了原始数据，数据集总共包括12张表，其中 TPC-C 和 TPC-H 表的关系如下图所示：
 
 ![TPCC AND TPCH](../images/chbenchmark/TPCC-TPCH.png){:height="60%" width="60%"}
 
@@ -151,15 +151,21 @@ ORDER BY revenue DESC, o_entry_d;
 ## 静态数据
 ![arctic iceberg static performence](../images/chbenchmark/arctic-iceberg-100-warehouse-static-performence.png)
 
-上图表示100个 warehouse 数据量下，纯静态数据没有更新的情况下，10个查询并发 Arctic 和 Iceberg 查询性能比较，通过上图可以看出每个 Query 的查询耗时非常接近。
+上图表示100个 warehouse 数据量下，纯静态数据没有更新的情况下，10个查询并发 Mixed Iceberg 和 Iceberg 查询性能比较，通过上图可以看出每个 Query 的查询耗时非常接近。
 
 ## 动态持续查询性能
 
 ![Arctic Iceberg Hudi 100 warehouse performence with TPCC time](../images/chbenchmark/Arctic-Iceberg-Hudi_100_warehouse_performence_with_TPCC_time.png)
 
-在测试时间内 TPCC 持续进行，横轴表示的是查询的时间范围，纵轴表示21个查询（去除Q15）的平均时间，基础静态数据量为100个 warehouse, 查询并发数是10，其中 optimize 表示 Arctic 有小文件合并的场景，no_optimize 表示 Arctic 没有小文件合并的场景。 其中90分钟和120分钟没有 Iceberg 的数据是因为 Iceberg 已经无法跑出结果，打爆了 Trino 集群。
+在测试时间内 TPCC 持续进行，横轴表示的是查询的时间范围，纵轴表示21个查询（去除Q15）的平均时间，基础静态数据量为100个 warehouse, 查询并发数是10。
 
-根据图上显示所知，在有 optimize 的情况下查询性能最好且不随同步数据时间的增长而增长，而 no_optimize 的场景下查询时间会逐渐增长，Iceberg 的性能表现最差且随着时间增长查询时间大幅增长。
+mixed iceberg without self-optimizing：表示的是不带自优化的 Mixed Iceberg 表
+
+mixed iceberg with self-optimizing：表示的是带自优化的 Mixed Iceberg 表
+
+native iceberg with self-optimizing：表示的是带自优化的 Native Iceberg 表
+
+hudi with inline-compaction：表示的是带有 Compaction 的 Hudi 表
 
 具体query详情见下图：
 
@@ -173,6 +179,7 @@ ORDER BY revenue DESC, o_entry_d;
 
 # 小结
 
-- 静态数据情况下 Arctic 和 Iceberg 的查询性能几乎相同，但是随着 TPCC 的进行，CDC 数据的增多，Iceberg 的查询性能急剧下降，没有 optimize 的 Arctic 缓慢下降，有 optimize 的 Arctic 性能几乎保持不变。
-- Hudi 的性能因为写入任务自带 optimize，所以查询性能也能很好的收敛，总体是优于不带 optimize 的 Arctic，弱于带 optimize 的 Arctic。
+- 静态数据情况下 Mixed Iceberg 和 Iceberg 的查询性能几乎相同，但是随着 TPCC 的进行，CDC 数据的增多，不带 Self-Optimizing 的 Mixed Iceberg 和 Iceberg 的性能都会线性增长，
+  而带有 Self-Optimizing 的表都能稳定在一个合理的范围内
+- Hudi 的性能因为写入任务自带 Self-Optimizing，所以查询性能也能很好的收敛，总体是优于不带 Self-Optimizing 的 Mix Iceberg，弱于带 Self-Optimizing 的 Mixed Iceberg 和 Native Iceberg。
    

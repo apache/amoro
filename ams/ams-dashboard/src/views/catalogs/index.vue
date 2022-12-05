@@ -11,7 +11,8 @@
       <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
     </div>
     <div class="catalog-detail">
-      <Detail :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
+      <a-empty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty"></a-empty>
+      <Detail v-else :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
     </div>
   </div>
 </template>
@@ -206,6 +207,18 @@ onBeforeRouteLeave((to, form, next) => {
   .catalog-detail {
     display: flex;
     flex: 1;
+    .detail-empty {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      :deep(.ant-empty-image) {
+        height: 100px;
+        svg {
+          width: 120px;
+        }
+      }
+    }
   }
 }
 </style>
