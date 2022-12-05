@@ -4,13 +4,14 @@
 [lakehouse-benchmark](https://github.com/NetEase/lakehouse-benchmark)项目中提供的 TPCC 数据集，
 模拟真实业务场景下对 MySQL 的读写， 并使用 
 [lakehouse-benchmark-ingestion](https://github.com/NetEase/lakehouse-benchmark-ingestion) 工具完成数据通过 Binlog 从 MySQL 到 Arctic 的同步。
-您需要提前通过 Setup from docker 完成集群的部署，并完成 Quick Demo 中，创建 Catalog 并开启 Optimizer 的部分。
+您需要提前通过 [Setup from docker](./setup/setup-from-docker.md) 完成集群的部署，
+并完成 [Quick Demo](./quick-demo.md) 中，创建 Catalog 并开启 Optimizer 的部分。
 
 
 # Step1. initialize tables
 
 
-通过以下命令完成测试数据的初始化。 
+通过以下命令完成测试数据的初始化：
 
 ```shell
 
@@ -21,11 +22,11 @@ docker exec -it lakehouse-benchmark java \
   
 ```
 
-等待命令执行完成，以上命令会在 MySQL 中初始化一个 oltpbench 的数据库，并且创建一系列业务表，并完成表数据的初始化
+等待命令执行完成，以上命令会在 MySQL 中初始化一个 oltpbench 的数据库，并且创建一系列业务表，并完成表数据的初始化。
 
 # Step2. start streaming ingestion
 
-登录到 Ingestion 容器，通过以下命令完成 Ingestion 任务的启动 
+登录到 Ingestion 容器，通过以下命令完成 Ingestion 任务的启动：
 
 ```shell
 docker exec -it lakehouse-benchmark-ingestion bash
@@ -37,7 +38,7 @@ java -jar lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar \
 ```
 
 开启后可以在 AMS Tables 页面查看到 Table 信息已经同步到 Arctic ，您可以通过 Terminal 执行 SQL 以查询 Arctic 上同步的数据。
-Ingestion 容器也是一个 Flink Job， 您可以通过 http://localhost:8082  访问 Flink Web UI 以查看 Ingestion 任务信息。
+Ingestion 容器也是一个 Flink Job， 您可以通过 [Flink Dashboard](http://localhost:8082)  访问 Flink Web UI 以查看 Ingestion 任务信息。
 
 
 # Step3. start tpcc benchmark

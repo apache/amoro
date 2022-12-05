@@ -8,7 +8,6 @@ Arctic 提供了基于 Docker Compose 部署的 Quick Start 环境，
 1. 在开始之前，请先确保您安装了 Java 8 并且设置好了 JAVA_HOME 环境变量。
 2. 请确保您的环境变量中没有 HADOOP_HOME，HADOOP_CONF_DIR，如果有请先 unset 这些环境变量
 
-
 # Download Required Packages
 
 在开始之前请准备一个干净的目录以作为 Arctic Demo 演示的 Workspace。
@@ -27,8 +26,6 @@ wget https://github.com/NetEase/arctic/releases/download/${RELEASE_TAG}/arctic-$
 unzip arctic-${ARCTIC-VERSION}-bin.zip
 cd arctic-${ARCTIC-VERSION}
 ./bin/ams.sh start
-
-
 ```
 
 在执行完成以上命令后，请通过浏览器访问 [http://127.0.0.1:1630/](http://127.0.0.1:1630/)  并通过 admin/admin 登录系统。
