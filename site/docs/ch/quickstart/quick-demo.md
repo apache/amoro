@@ -2,9 +2,9 @@
 
 在尝试使用 Arctic 之前，可以需要进行一些步骤来完成必要的环境准备，这里提供了两种方式来完成 Quick Start Demo 所必须的准备工作。
 
-1. [Setup from docker](./setup-from-docker.md)
+1. [Setup from docker](./setup/setup-from-docker.md)
 
-2. [Setup from binary release](./setup-from-binary-release.md)
+2. [Setup from binary release](./setup/setup-from-binary-release.md)
 
 
 
@@ -12,22 +12,22 @@
 
 在浏览器打开 [http://localhost:1630](http://localhost:1630) 进入 Dashboard 页面，输入 admin/admin  登录。
 点击侧边栏 Catalogs ，然后点击 Catalog List 下的 `+` 按钮，添加第一个 Catalog， 设置其名字为 `demo_catalog`。
-请按照以下截图设置 Catalog 基本配置
+请按照以下截图设置 Catalog 基本配置:
 
 ![Create catalog](../images/quickstart/create-catalog.png)
 
-注：对于 Hadoop 配置文件，如果是采用 Docker setup，配置文件在 `<ARCIT-WORKSPACE>/hadoop-config` 目录，否则不用上传任何文件。
+???+note "对于 Hadoop 配置文件，如果是采用 Docker setup，配置文件在 `<ARCIT-WORKSPACE>/hadoop-config` 目录，否则不用上传任何文件。"
 
-注：对于 warehouse.dir，如果是本地部署，填写一个本地目录即可，需要有 Hadoop Username 配置的用户的访问权限。
+???+note "对于 warehouse.dir，如果是本地部署，填写一个本地目录即可，需要有 Hadoop Username 配置的用户的访问权限。"
 
 # Prepare 2: start optimizers
 
-AMS默认配置下会有一个类型为 local 的 optimizer group，这里需要在此 group 下创建一个 optimizer。 
+AMS 默认配置下会有一个类型为 local 的 optimizer group，这里需要在此 group 下创建一个 optimizer。 
 进入 AMS 的 Optimizing 页面，选择 Optimizers。
 
 ![Optimizers](../images/quickstart/Optimizing.png)
 
-点击 `Scale-Out` 按钮选择对应 `Optimizer Group` 并且配置 optimizer 并发度，点击OK后即完成了 optimizer 的创建。
+点击 `Scale-Out` 按钮选择对应 `Optimizer Group` 并且配置 optimizer 并发度，点击 `OK` 后即完成了 optimizer 的创建。
 
 ![ScaleOut](../images/quickstart/ScaleOut.png)
 
@@ -108,7 +108,6 @@ set table.exec.sink.upsert-materialize=none;
 
 -- 往 Arctic 表实时写入数据
 INSERT INTO `arctic`.`db`.`user`
-/*+OPTIONS('flink.max-continuous-empty-commits'='9223372036854775807')*/
 SELECT id,
        name,
        CAST(TO_TIMESTAMP(op_time) AS TIMESTAMP(6) WITH LOCAL TIME ZONE) ts
@@ -154,16 +153,3 @@ DELETE|3|lee|2022-07-01 10:11:00
 然后通过 Terminal 查询数据，预期数据为：
 
 ![Upsert result2](../images/quickstart/upsert-result2.png)
-
-
-
-
-
-
-
-
-
-
-
-
-

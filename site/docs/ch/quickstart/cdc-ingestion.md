@@ -59,9 +59,9 @@ java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark \
 注：Ingestion 任务的 Checkpoint 周期为 60s,  所以 Arctic 数据湖和 MySQL 的数据变更有 60s 的延迟
 
 
-# Step 4.  check table result
+# Step 4. check table result
 
-整个 tpcc benchmark 会执行 10min，在 tpcc benchmark 执行完成后，可以通过以下命令登录 mysql 容器
+整个 TPCC Benchmark 会执行 10min，在 tpcc benchmark 执行完成后，可以通过以下命令登录 mysql 容器
 
 ```shell
 docker exec -it mysql mysql -ppassword oltpbench
