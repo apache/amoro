@@ -48,8 +48,6 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                        |
 | read.split.planning-lookback       | 10               | 合并读取任务时同时考虑的任务个数               |
 | read.split.target-size              | 134217728（128MB）| 合并读取任务时的目标大小                     |
-| read.distribution-mode              | hash            | 读取时的数据分区方式，支持 none、hash          |
-| read.distribution.hash-mode         | auto            | 使用 hash 的分区读取方式时，使用的 hash 键，支持 primary-key、partition-key、primary-partition-key 和 auto                     |
 
 ### 表写入配置
 
