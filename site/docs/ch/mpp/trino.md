@@ -1,25 +1,25 @@
 # Trino
 
-## 安装
+## Iceberg format
+Iceberg format 是原生的 Iceberg 表，使用 Trino 原生为 Iceberg 提供的 Connector 即可。 相关文档见 [Iceberg Connector](https://trino.io/docs/current/connector/iceberg.html#)
 
-- 在 Trino 的安装包下创建{trino_home}/plugin/arctic目录，并把arctic-trino的包trino-arctic-xx-SNAPSHOT.tar.gz里的内容
-  解压到{trino_home}/plugin/arctic目录下。
-- 在{trino_home}/etc/catalog目录下配置 Arctic 的 Catalog 配置文件，例如
+## Mixed format
+### 安装
+
+- 在 Trino 的安装包下创建 {trino_home}/plugin/arctic 目录，并把 arctic-trino 的包 trino-arctic-xx-SNAPSHOT.tar.gz 里的内容
+  解压到 {trino_home}/plugin/arctic 目录下。
+- 在{ trino_home}/etc/catalog 目录下配置 Arctic 的 Catalog 配置文件，例如
 
 ```tex
 connector.name=arctic
-arctic.url=thrift://10.196.98.23:18111/{catalogName}
+arctic.url=thrift://{ip}:{port}/{catalogName}
 ```
 
-其他的读取文件的配置与 Trino 支持的 Iceberg 参数相同
+### 支持的语句
 
+#### 查询整表
 
-
-## 支持的语句
-
-### 查询表
-
-采用Merge-On-Read的方式读取 Arctic 表，能读取到表的最新数据，例如
+采用 Merge-On-Read 的方式读取 Mixed Format，能读取到表的最新数据，例如
 
 ```sql
 SELECT * FROM "{TABLE_NAME}"
@@ -27,9 +27,10 @@ SELECT * FROM "{TABLE_NAME}"
 
 
 
-### 查询base表
+#### 查询 BaseStore
 
-base 表里是已经完成 optimize 的数据，查询到的是表的静态数据，查询效率非常的高，就是时效性不好，取决于 optimize 的执行间隔，例如
+在有主键表中支持直接查询 BaseStore ，BaseStore 存储表的存量数据，通常由批计算或者 optimizing 产生，查询到的是表的静态数据，
+查询效率非常的高，但是时效性不好。语法如下：
 
 ```sql
 SELECT * FROM "{TABLE_NAME}#BASE"
@@ -37,9 +38,9 @@ SELECT * FROM "{TABLE_NAME}#BASE"
 
 
 
-### 查询change表
+#### 查询 ChangeStore
 
-change 表里是表的一些列更新操作，支持直接查询 change，查询到的是表的 changeLog，能查询到多久之前的 changeLog 取决于配置的 change 表过期时间
+在有主键表中支持直接查询 ChangeStore，ChangeStore 存储表的流和变更数据，通常由流计算实时写入，可以通过 ChangeStore 查询到表的变更记录，能查询到多久之前的变更记录由 ChangeStore 的数据过期时间决定。
 
 ```sql
 SELECT * FROM "{TABLE_NAME}#CHANGE"
@@ -47,11 +48,11 @@ SELECT * FROM "{TABLE_NAME}#CHANGE"
 
 查出来结果会多三列数据分别是：
 
-- _transaction_id: 数据写入时AMS分配的 transaction id。批模式下为每条SQL执行时分配，流模式下为每次checkpoint 分配。
+- _transaction_id: 数据写入时 AMS 分配的 transaction id。批模式下为每条 SQL 执行时分配，流模式下为每次 checkpoint 分配。
 - _file_offset：大小可以表示同一批 _transaction_id 中数据写入的先后顺序。
 - _change_action：表示数据的类型有 INSERT，DELETE 两种
 
-### Trino 和 Arctic 的类型对照
+#### Trino 和 Arctic 的类型对照
 
 | Arctic type   | Trino type                    |
 | :------------- | :---------------------------- |
