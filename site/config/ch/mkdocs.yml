@@ -83,7 +83,9 @@ nav:
   - MPP integration:
     - Trino: mpp/trino.md
     - Impala: empty.md
-  - Benchmark: benchmark.md
+  - Benchmark:
+    - Report: benchmark/benchmark.md
+    - How to benchmark: benchmark/benchmark-step.md
   - Roadmap: roadmap.md
   - Contributing: contribute.md
 

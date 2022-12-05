@@ -29,7 +29,7 @@ Trino 主要是用来最终执行 TPCH 查询，当前使用380版本
 [Iceberg-Plugin-Install](https://trino.io/docs/current/connector/iceberg.html)
 
 #### Presto
-Presto 也是用来最终执行 TPCH 查询，他和trino最初是同一个团队开发，非常相似。 Hudi 的 rt 表的查询也就是实时 MOR 查询目前不支持 Trino，只支持 Presto,如果需要测试 Hudi 需要安装配置 Presto。
+Presto 也是用来最终执行 TPCH 查询，他和 Trino 最初是同一个团队开发，非常相似。 Hudi 的 rt 表的查询也就是实时 MOR 查询目前不支持 Trino，只支持 Presto,如果需要测试 Hudi 需要安装配置 Presto。
 
 [Presto-Install](https://prestodb.io/docs/current/installation/deployment.html)
 

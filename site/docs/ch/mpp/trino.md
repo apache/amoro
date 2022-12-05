@@ -3,7 +3,7 @@
 ## Iceberg format
 Iceberg format 是原生的 Iceberg 表，使用 Trino 原生为 Iceberg 提供的 Connector 即可。 相关文档见 [Iceberg Connector](https://trino.io/docs/current/connector/iceberg.html#)
 
-## Mixed streaming/iceberg/hive table
+## Mixed streaming/iceberg/hive format
 ### 安装
 
 - 在 Trino 的安装包下创建 {trino_home}/plugin/arctic 目录，并把 arctic-trino 的包 trino-arctic-xx-SNAPSHOT.tar.gz 里的内容
@@ -12,14 +12,14 @@ Iceberg format 是原生的 Iceberg 表，使用 Trino 原生为 Iceberg 提供�
 
 ```tex
 connector.name=arctic
-arctic.url=thrift://10.196.98.23:18111/{catalogName}
+arctic.url=thrift://{ip}:{port}/{catalogName}
 ```
 
 ### 支持的语句
 
 #### 查询整表
 
-采用 Merge-On-Read 的方式读取 Mixed 表，能读取到表的最新数据，例如
+采用 Merge-On-Read 的方式读取 Mixed Format，能读取到表的最新数据，例如
 
 ```sql
 SELECT * FROM "{TABLE_NAME}"
@@ -40,7 +40,7 @@ SELECT * FROM "{TABLE_NAME}#BASE"
 
 #### 查询 ChangeStore
 
-ChangeStore 存储表的流和变更数据，通常由流计算实时写入，可以通过 ChangeStore 查询到表的变更记录，能查询到多久之前的变更记录由 ChangeStore 的数据过期时间决定。
+在有主键表中支持直接查询 ChangeStore，ChangeStore 存储表的流和变更数据，通常由流计算实时写入，可以通过 ChangeStore 查询到表的变更记录，能查询到多久之前的变更记录由 ChangeStore 的数据过期时间决定。
 
 ```sql
 SELECT * FROM "{TABLE_NAME}#CHANGE"
