@@ -68,3 +68,7 @@ docker exec -it mysql mysql -ppassword oltpbench
 ```
 
 然后通过在 MySQL 和 AMS 上执行 Select 对比最终数据是否正确。
+
+切换到 Tables 页面，在对应的 Table 详情页，可以查看到 Table 对应的 `watermark` 推进的时间节点。
+
+![CDC Table Watermark](../images/quickstart/cdc-watermark.png)
