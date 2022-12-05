@@ -28,7 +28,7 @@ ARCTIC_POM=${ARCTIC_HOME}/pom.xml
 
 if [ -f "${ARCTIC_POM}" ];then
   echo "Current dir in arctic project. parse version from ${ARCTIC_POM}"
-  PROJECT_VERSION=`cat ${ARCTIC_POM} |grep 'arctic-parent' -C 3 |grep -oP '(?<=<version>).*(?=</version>)'`
+  PROJECT_VERSION=`cat ${ARCTIC_POM} | grep 'arctic-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
 fi
 
 
