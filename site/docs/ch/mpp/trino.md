@@ -3,7 +3,7 @@
 ## Iceberg format
 Iceberg format 是原生的 Iceberg 表，使用 Trino 原生为 Iceberg 提供的 Connector 即可。 相关文档见 [Iceberg Connector](https://trino.io/docs/current/connector/iceberg.html#)
 
-## Mixed streaming/iceberg/hive format
+## Mixed format
 ### 安装
 
 - 在 Trino 的安装包下创建 {trino_home}/plugin/arctic 目录，并把 arctic-trino 的包 trino-arctic-xx-SNAPSHOT.tar.gz 里的内容
