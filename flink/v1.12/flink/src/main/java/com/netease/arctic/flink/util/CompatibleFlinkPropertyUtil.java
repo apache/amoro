@@ -19,6 +19,8 @@
 package com.netease.arctic.flink.util;
 
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
+import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ReadableConfig;
 import org.apache.iceberg.util.PropertyUtil;
 
 import java.util.Map;
@@ -34,6 +36,16 @@ public class CompatibleFlinkPropertyUtil {
   public static boolean propertyAsBoolean(Map<String, String> properties,
                                           String property, boolean defaultValue) {
     return PropertyUtil.propertyAsBoolean(properties, getCompatibleProperty(properties, property), defaultValue);
+  }
+
+  public static boolean propertyAsBoolean(ReadableConfig config, ConfigOption<Boolean> configOption) {
+    ConfigOption<Boolean> legacyProperty = getLegacyProperty(configOption);
+    if (legacyProperty != null && config.getOptional(legacyProperty).isPresent() &&
+        !config.getOptional(configOption).isPresent()) {
+      return config.get(legacyProperty);
+    } else {
+      return config.get(configOption);
+    }
   }
 
   public static double propertyAsDouble(Map<String, String> properties,
@@ -69,6 +81,11 @@ public class CompatibleFlinkPropertyUtil {
     if (property == null) {
       return null;
     }
+    if (ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(property)) {
+      return ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY.key();
+    } else if (ArcticValidator.DIM_TABLE_ENABLE.key().equals(property)) {
+      return ArcticValidator.DIM_TABLE_ENABLE_LEGACY.key();
+    }
     switch (property) {
       case ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE:
         return ArcticValidator.ARCTIC_LATENCY_METRIC_ENABLE_LEGACY;
@@ -77,5 +94,17 @@ public class CompatibleFlinkPropertyUtil {
       default:
         return null;
     }
+  }
+
+  private static ConfigOption<Boolean> getLegacyProperty(ConfigOption<Boolean> configOption) {
+    if (configOption == null) {
+      return null;
+    }
+    if (ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key().equals(configOption.key())) {
+      return ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE_LEGACY;
+    } else if (ArcticValidator.DIM_TABLE_ENABLE.key().equals(configOption.key())) {
+      return ArcticValidator.DIM_TABLE_ENABLE_LEGACY;
+    }
+    return null;
   }
 }

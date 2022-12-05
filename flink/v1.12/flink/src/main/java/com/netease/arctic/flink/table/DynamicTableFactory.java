@@ -23,6 +23,7 @@ import com.netease.arctic.flink.catalog.ArcticCatalog;
 import com.netease.arctic.flink.read.FlinkKafkaConsumerBase;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
@@ -142,7 +143,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String readMode = PropertyUtil.propertyAsString(arcticTable.properties(),
         ArcticValidator.ARCTIC_READ_MODE, ArcticValidator.ARCTIC_READ_MODE_DEFAULT);
 
-    boolean dimTable = PropertyUtil.propertyAsBoolean(arcticTable.properties(),
+    boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
         ArcticValidator.DIM_TABLE_ENABLE.key(), ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
     TableSchema tableSchema = com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema(catalogTable.getSchema(),
         dimTable);

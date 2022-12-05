@@ -65,6 +65,7 @@ export interface IBaseDetailInfo {
   size: string
   file: string
   averageFile: string
+  tableFormat: string
   hasPartition: boolean
 }
 

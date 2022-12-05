@@ -4,6 +4,9 @@ Apache Flink 引擎可以在批流模式处理 Arctic 表数据。Flink on Arcti
 Arctic 集成了 [Apache Flink](https://flink.apache.org/) 的 DataStream API 与 Table API，以方便的使用 Flink 从 Arctic 表中读取数据，或将数据写入
 Arctic 表中。
 
+Arctic Flink 目录下的文档均只针对 Mixed-Format 生效。如果您使用的是 Iceberg format 表，请参考 Iceberg 官方的用法
+[Iceberg Flink 用户手册](https://iceberg.apache.org/docs/latest/flink-connector/)
+
 Flink Connector 包括：
 
 - `Flink SQL Select` 通过 Apache Flink SQL 读取 Arctic 表数据。
