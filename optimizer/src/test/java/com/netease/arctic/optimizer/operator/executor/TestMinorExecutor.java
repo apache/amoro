@@ -31,6 +31,7 @@ import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.TableProperties;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Snapshot;
@@ -66,7 +67,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(250, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testKeyedTable.baseLocation()).toString()));
     });
   }
 
@@ -85,7 +86,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(250, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testNoPartitionTable.baseLocation()).toString()));
     });
   }
 
