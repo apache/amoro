@@ -75,6 +75,7 @@ public class TaskRecorder {
   synchronized void finishCurrentTask(Iterable<TaskStat.FileStat> outputFiles, long endTime) {
     if (this.currentTaskStat == null) {
       LOG.warn("current task is null, ignore finish");
+      return;
     }
     this.currentTaskStat.recordOutFiles(outputFiles);
     this.currentTaskStat.finish(endTime);
