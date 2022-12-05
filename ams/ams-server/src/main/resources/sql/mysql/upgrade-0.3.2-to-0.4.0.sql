@@ -29,3 +29,4 @@ ALTER TABLE `optimize_table_runtime` MODIFY COLUMN `db_name` varchar(128) NOT NU
 ALTER TABLE `optimize_table_runtime` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
 ALTER TABLE `optimize_task_history` MODIFY COLUMN `db_name` varchar(128) NOT NULL COMMENT 'Database name';
 ALTER TABLE `optimize_task_history` MODIFY COLUMN `table_name` varchar(128) NOT NULL COMMENT 'Table name';
+ALTER TABLE `optimize_task` ADD COLUMN `min_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Min change transaction id' after `max_change_transaction_id`;

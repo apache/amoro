@@ -90,6 +90,7 @@ public class BaseOptimizeCommit {
       // collect files
       PartitionSpec spec = arcticTable.spec();
       StructLikeMap<Long> maxTransactionIds = StructLikeMap.create(spec.partitionType());
+      StructLikeMap<Long> minTransactionIds = StructLikeMap.create(spec.partitionType());
       for (Map.Entry<String, List<OptimizeTaskItem>> entry : optimizeTasksToCommit.entrySet()) {
         for (OptimizeTaskItem task : entry.getValue()) {
           if (checkFileCount(task)) {
@@ -113,6 +114,17 @@ public class BaseOptimizeCommit {
                     ArcticDataFiles.data(spec, entry.getKey()), maxTransactionId);
               }
             }
+
+            long minTransactionId = task.getOptimizeTask().getMinChangeTransactionId();
+            if (minTransactionId != BaseOptimizeTask.INVALID_TRANSACTION_ID) {
+              if (arcticTable.asKeyedTable().baseTable().spec().isUnpartitioned()) {
+                minTransactionIds.put(TablePropertyUtil.EMPTY_STRUCT, minTransactionId);
+              } else {
+                minTransactionIds.putIfAbsent(
+                    ArcticDataFiles.data(spec, entry.getKey()), minTransactionId);
+              }
+            }
+            
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
           } else {
             task.getOptimizeRuntime().getTargetFiles().stream()
@@ -124,7 +136,6 @@ public class BaseOptimizeCommit {
         }
       }
 
-      StructLikeMap<Long> minTransactionIds = getMinTransactionId(minorAddFiles);
       // commit minor optimize content
       minorCommit(arcticTable, minorAddFiles, minorDeleteFiles, maxTransactionIds, minTransactionIds);
 
@@ -407,23 +418,6 @@ public class BaseOptimizeCommit {
         CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
           .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
-    }
-
-    return result;
-  }
-
-  private StructLikeMap<Long> getMinTransactionId(Set<ContentFile<?>> minorAddFiles) {
-    StructLikeMap<Long> result = StructLikeMap.create(arcticTable.spec().partitionType());
-
-    for (ContentFile<?> minorAddFile : minorAddFiles) {
-      long transactionId = FileUtil.parseFileTidFromFileName(minorAddFile.path().toString());
-      if (transactionId != 0) {
-        long minTransactionId = transactionId;
-        if (result.get(minorAddFile.partition()) != null) {
-          minTransactionId = Math.min(minTransactionId, result.get(minorAddFile.partition()));
-        }
-        result.put(minorAddFile.partition(), minTransactionId);
-      }
     }
 
     return result;

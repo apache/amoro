@@ -48,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
   protected StructLikeMap<Long> baseTableMaxTransactionId = null;
   protected StructLikeMap<Long> baseTableLegacyMaxTransactionId = null;
   private long changeTableMaxTransactionId;
+  private final Map<String, Long> changeTableMinTransactionId = new HashMap<>();
 
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<DataFileInfo> baseTableFileList,
@@ -157,7 +159,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
       if (changeFileInfo == null) {
         return null;
       }
-      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      String partition = getPartitionPathAsKey(dataFileInfo);
       currentPartitions.add(partition);
       if (isOptimized(changeFileInfo)) {
         return null;
@@ -190,7 +192,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
       DataFile dataFile = f.getDataFile();
       long transactionId = f.getTransactionId();
 
-      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      String partition = getPartitionPathAsKey(dataFileInfo);
       if (transactionId >= maxTransactionIdLimit) {
         return;
       }
@@ -213,6 +215,10 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     });
     LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
+  }
+
+  private String getPartitionPathAsKey(DataFileInfo dataFileInfo) {
+    return dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
   }
 
   private static class ChangeFileInfo {
@@ -275,7 +281,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     baseFileList.addAll(ImmutableList.copyOf(posDeleteFileList));
     List<ContentFile<?>> baseOptimizeFiles = baseFileList.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedArcticTable.baseTable().specs().get((int) dataFileInfo.getSpecId());
-      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      String partition = getPartitionPathAsKey(dataFileInfo);
 
       if (partitionSpec == null) {
         LOG.error("{} {} can not find partitionSpec id: {}", dataFileInfo.getPath(), getOptimizeType(),
@@ -314,6 +320,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId,
+        changeTableMinTransactionId.get(partition),
         commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
@@ -361,8 +368,16 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
   }
 
   private void markFileInfo(ChangeFileInfo changeFileInfo) {
-    if (this.changeTableMaxTransactionId < changeFileInfo.getTransactionId()) {
-      this.changeTableMaxTransactionId = changeFileInfo.getTransactionId();
+    long fileTid = changeFileInfo.getTransactionId();
+    if (this.changeTableMaxTransactionId < fileTid) {
+      this.changeTableMaxTransactionId = fileTid;
+    }
+    String partition = getPartitionPathAsKey(changeFileInfo.getDataFileInfo());
+    Long tid = changeTableMinTransactionId.get(partition);
+    if (tid == null) {
+      changeTableMinTransactionId.put(partition, fileTid);
+    } else if (fileTid < tid) {
+      changeTableMinTransactionId.put(partition, fileTid);
     }
   }
 
