@@ -661,6 +661,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
       meta.putToProperties(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+      meta.putToProperties("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
     }
 
     protected String getDatabaseLocation() {
