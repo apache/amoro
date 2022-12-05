@@ -45,6 +45,7 @@ import com.netease.arctic.trace.CreateTableTransaction;
 import com.netease.arctic.utils.CatalogUtil;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.ConvertStructUtil;
+import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.PartitionSpec;
@@ -434,8 +435,8 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
     @Override
     public ArcticTable create() {
-      doCreateCheck();
       ConvertStructUtil.TableMetaBuilder builder = createTableMataBuilder();
+      doCreateCheck();
       TableMeta meta = builder.build();
       ArcticTable table = doCreateTable(meta);
       createTableMeta(meta);
@@ -557,6 +558,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
       ConvertStructUtil.TableMetaBuilder builder = ConvertStructUtil.newTableMetaBuilder(
           this.identifier, this.schema);
       String tableLocation = getTableLocationForCreate();
+
+      // default properties would not override user-defined properties
+      this.properties = CatalogUtil.mergeCatalogPropertiesToTable(this.properties, catalogMeta.getCatalogProperties());
+
       builder.withTableLocation(tableLocation)
           .withProperties(this.properties)
           .withPrimaryKeySpec(this.primaryKeySpec);
@@ -648,7 +653,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
       } else {
         throw new IllegalStateException(
             "either `location` in table properties or " +
-                "`warehouse.dir` in catalog properties is specified");
+                "`warehouse` in catalog properties is specified");
       }
     }
 
@@ -656,20 +661,26 @@ public class BaseArcticCatalog implements ArcticCatalog {
       meta.putToProperties(TableProperties.TABLE_CREATE_TIME, String.valueOf(System.currentTimeMillis()));
       meta.putToProperties(org.apache.iceberg.TableProperties.FORMAT_VERSION, "2");
       meta.putToProperties(org.apache.iceberg.TableProperties.METADATA_DELETE_AFTER_COMMIT_ENABLED, "true");
+      meta.putToProperties("flink.max-continuous-empty-commits", String.valueOf(Integer.MAX_VALUE));
     }
 
     protected String getDatabaseLocation() {
       if (catalogMeta.getCatalogProperties() != null) {
-        String catalogWarehouseDir = catalogMeta.getCatalogProperties().getOrDefault(
-            CatalogMetaProperties.KEY_WAREHOUSE_DIR,
-            null
-        );
-        if (!Objects.equals("/", catalogWarehouseDir) && catalogWarehouseDir.endsWith("/")) {
-          catalogWarehouseDir = catalogWarehouseDir.substring(
-              0, catalogWarehouseDir.length() - 1);
+        String catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
+            CatalogMetaProperties.KEY_WAREHOUSE,null);
+        if (catalogWarehouse == null) {
+          catalogWarehouse = catalogMeta.getCatalogProperties().getOrDefault(
+              CatalogMetaProperties.KEY_WAREHOUSE_DIR,null);
         }
-        if (StringUtils.isNotBlank(catalogWarehouseDir)) {
-          return catalogWarehouseDir + '/' + identifier.getDatabase();
+        if (catalogWarehouse == null) {
+          throw new NullPointerException("Catalog warehouse is null.");
+        }
+        if (!Objects.equals("/", catalogWarehouse) && catalogWarehouse.endsWith("/")) {
+          catalogWarehouse = catalogWarehouse.substring(
+              0, catalogWarehouse.length() - 1);
+        }
+        if (StringUtils.isNotBlank(catalogWarehouse)) {
+          return catalogWarehouse + '/' + identifier.getDatabase();
         }
       }
       return null;

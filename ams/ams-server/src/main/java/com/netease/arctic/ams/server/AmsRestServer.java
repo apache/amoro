@@ -43,6 +43,12 @@ import org.eclipse.jetty.server.session.SessionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +62,25 @@ import static io.javalin.apibuilder.ApiBuilder.put;
 public class AmsRestServer {
   public static final Logger LOG = LoggerFactory.getLogger("AmsRestServer");
   private static Javalin app;
+  private static String indexHtml = "";
+
+  // read index.html content
+  public static String getFileContent() throws IOException, FileNotFoundException {
+    if ("".equals(indexHtml)) {
+      try (InputStream fileName = AmsRestServer.class.getClassLoader().getResourceAsStream("static/index.html");
+            InputStreamReader isr = new InputStreamReader(fileName, Charset.forName("UTF-8").newDecoder());
+            BufferedReader br = new BufferedReader(isr)) {
+        StringBuffer sb = new StringBuffer();
+        String line;
+        while ((line = br.readLine()) != null) {
+          //process the line
+          sb.append(line);
+        }
+        indexHtml = sb.toString();
+      }
+    }
+    return indexHtml;
+  }
 
   public static void startRestServer(Integer port) {
     app = Javalin.create(config -> {
@@ -75,19 +100,6 @@ public class AmsRestServer {
         staticFiles.skipFileFunction = req -> false;
         // you can use this to skip certain files in the dir, based on the HttpServletRequest
       });
-
-      //redirect the static page url to index.html
-      config.addSinglePageRoot("/login", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/overview", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/introduce", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/tables", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/optimizers", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/hive-tables", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/hive-tables/upgrade", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/terminal", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/catalogs", "/static/index.html", Location.CLASSPATH);
-      config.addSinglePageRoot("/settings", "/static/index.html", Location.CLASSPATH);
-
       config.sessionHandler(() -> new SessionHandler());
       config.enableCorsForAllOrigins();
     });
@@ -120,6 +132,9 @@ public class AmsRestServer {
       path("", () -> {
         //  /docs/latest can't be locationed to the index.html, so we add rule to redict to it.
         get("/docs/latest", ctx -> ctx.redirect("/docs/latest/index.html"));
+        // unify all addSinglePageRoot(like /tables, /optimizers etc) configure here
+        get("/{page}", ctx -> ctx.html(getFileContent()));
+        get("/hive-tables/upgrade", ctx -> ctx.html(getFileContent()));
       });
       path("/ams/v1", () -> {
         /** login controller**/
@@ -242,10 +257,19 @@ public class AmsRestServer {
     // exception-handler
     app.exception(Exception.class, (e, ctx) -> {
       if (e instanceof ForbiddenException) {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login! before request", ""));
+        try {
+          // request doesn't start with /ams is  page request. we return index.html
+          if (!ctx.req.getRequestURI().startsWith("/ams")) {
+            ctx.html(getFileContent());
+          } else {
+            ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "need login before request", ""));
+          }
+        } catch (Exception fe) {
+          LOG.error("Failed to get index.html {}",fe.getMessage(), fe);
+        }
         return;
       } else if (e instanceof SignatureCheckException) {
-        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "SignatureExceptoin! before request", ""));
+        ctx.json(new ErrorResponse(HttpCode.FORBIDDEN, "Signature Exception  before request", ""));
       } else {
         LOG.error("Failed to handle request", e);
         ctx.json(new ErrorResponse(HttpCode.INTERNAL_SERVER_ERROR, e.getMessage(), ""));

@@ -240,7 +240,7 @@ public class AmsTestBase {
             System.getProperty("user.name"));
 
     Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/tmp");
+    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
     CatalogMeta catalogMeta = new CatalogMeta(CATALOG_CONTROLLER_UNITTEST_NAME, CATALOG_TYPE_HADOOP,
             storageConfig, authConfig, catalogProperties);
     List<CatalogMeta> catalogMetas = Lists.newArrayList(catalogMeta);
@@ -265,7 +265,7 @@ public class AmsTestBase {
         System.getProperty("user.name"));
 
     Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, tempFolder.newFolder().getPath());
+    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, tempFolder.newFolder().getPath());
     CatalogMeta catalogMeta = new CatalogMeta(AMS_TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
         storageConfig, authConfig, catalogProperties);
     List<CatalogMeta> catalogMetas = Lists.newArrayList(catalogMeta);

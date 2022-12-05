@@ -21,6 +21,7 @@ package com.netease.arctic.ams.server.controller;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ServerTableProperties;
@@ -66,17 +67,19 @@ import io.javalin.http.Context;
 import io.javalin.http.HttpCode;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -86,12 +89,12 @@ import java.util.stream.Collectors;
 public class TableController extends RestBaseController {
   private static final Logger LOG = LoggerFactory.getLogger(TableController.class);
 
-  private static ITableInfoService tableInfoService = ServiceContainer.getTableInfoService();
-  private static IOptimizeService optimizeService = ServiceContainer.getOptimizeService();
-  private static FileInfoCacheService fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
-  private static CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
-  private static AdaptHiveService adaptHiveService = ServiceContainer.getAdaptHiveService();
-  private static DDLTracerService ddlTracerService = ServiceContainer.getDdlTracerService();
+  private static final ITableInfoService tableInfoService = ServiceContainer.getTableInfoService();
+  private static final IOptimizeService optimizeService = ServiceContainer.getOptimizeService();
+  private static final FileInfoCacheService fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
+  private static final CatalogMetadataService catalogMetadataService = ServiceContainer.getCatalogMetadataService();
+  private static final AdaptHiveService adaptHiveService = ServiceContainer.getAdaptHiveService();
+  private static final DDLTracerService ddlTracerService = ServiceContainer.getDdlTracerService();
 
   /**
    * get table detail.
@@ -111,7 +114,7 @@ public class TableController extends RestBaseController {
       return;
     }
 
-    TableBasicInfo tableBasicInfo = null;
+    TableBasicInfo tableBasicInfo;
 
     try {
       // set basic info
@@ -121,7 +124,6 @@ public class TableController extends RestBaseController {
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "", ""));
       return;
     }
-    SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     ServerTableMeta serverTableMeta = MetaService.getServerTableMeta(ac, TableIdentifier.of(catalog, db, table));
     if (CatalogUtil.isIcebergCatalog(catalog)) {
       serverTableMeta.setTableType(TableMeta.TableType.ICEBERG.toString());
@@ -130,16 +132,20 @@ public class TableController extends RestBaseController {
     } else {
       serverTableMeta.setTableType(TableMeta.TableType.HIVE.toString());
     }
-    Map baseMetrics = new HashMap();
+    long tableSize = 0;
+    long tableFileCnt = 0;
+    Map<String, Object> baseMetrics = Maps.newHashMap();
     FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
     Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
     baseMetrics.put("lastCommitTime", AmsUtils.longOrNull(baseSummary.get("visibleTime")));
     baseMetrics.put("size", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
     baseMetrics.put("file", baseFilesStatistics.getFileCnt());
     baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
+    tableSize += baseFilesStatistics.getTotalSize();
+    tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
 
-    Map changeMetrics = new HashMap();
+    Map<String, Object> changeMetrics = Maps.newHashMap();
     if (tableBasicInfo.getChangeStatistics() != null) {
       FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
       Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
@@ -147,6 +153,8 @@ public class TableController extends RestBaseController {
       changeMetrics.put("size", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
       changeMetrics.put("file", changeFilesStatistics.getFileCnt());
       changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
+      tableSize += changeFilesStatistics.getTotalSize();
+      tableFileCnt += changeFilesStatistics.getFileCnt();
     } else {
       changeMetrics.put("lastCommitTime", null);
       changeMetrics.put("size", null);
@@ -154,6 +162,16 @@ public class TableController extends RestBaseController {
       changeMetrics.put("averageFile", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
+    Set<TableFormat> tableFormats =
+        com.netease.arctic.utils.CatalogUtil.tableFormats(catalogMetadataService.getCatalog(catalog).get());
+    Preconditions.checkArgument(tableFormats.size() == 1, "Catalog support only one table format now.");
+    TableFormat tableFormat = tableFormats.iterator().next();
+    Map<String, Object> tableSummary = new HashMap<>();
+    tableSummary.put("size", AmsUtils.byteToXB(tableSize));
+    tableSummary.put("file", tableFileCnt);
+    tableSummary.put("averageFile", AmsUtils.byteToXB(tableFileCnt == 0 ? 0 : tableSize / tableFileCnt));
+    tableSummary.put("tableFormat", AmsUtils.formatString(tableFormat.name()));
+    serverTableMeta.setTableSummary(tableSummary);
     ctx.json(OkResponse.of(serverTableMeta));
   }
 
@@ -169,10 +187,10 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    HiveTableInfo hiveTableInfo = null;
+    HiveTableInfo hiveTableInfo;
     try {
       Table hiveTable = HiveTableUtil.loadHmsTable(arcticHiveCatalog.getHMSClient(), tableIdentifier);
       List<AMSColumnInfo> schema =
@@ -201,7 +219,7 @@ public class TableController extends RestBaseController {
     String thriftHost = ArcticMetaStore.conf.getString(ArcticMetaStoreConf.THRIFT_BIND_HOST);
     Integer thriftPort = ArcticMetaStore.conf.getInteger(ArcticMetaStoreConf.THRIFT_BIND_PORT);
     ArcticHiveCatalog arcticHiveCatalog
-        = (ArcticHiveCatalog)CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
+        = (ArcticHiveCatalog) CatalogUtil.getArcticCatalog(thriftHost, thriftPort, catalog);
     adaptHiveService.upgradeHiveTable(arcticHiveCatalog, TableIdentifier.of(catalog, db, table), upgradeHiveMeta);
     ctx.json(OkResponse.ok());
   }
@@ -254,7 +272,7 @@ public class TableController extends RestBaseController {
     checkOffsetAndLimit(offset, limit);
 
     TableIdentifier tableIdentifier = TableIdentifier.of(catalog, db, table);
-    List<BaseMajorCompactRecord> baseMajorCompactRecords = null;
+    List<BaseMajorCompactRecord> baseMajorCompactRecords;
     try {
       List<OptimizeHistory> tmpRecords = optimizeService.getOptimizeHistory(
           tableIdentifier);
@@ -278,7 +296,6 @@ public class TableController extends RestBaseController {
         .limit(limit)
         .collect(Collectors.toList());
     ctx.json(OkResponse.of(PageResult.of(result, total)));
-    return;
   }
 
   /**
@@ -295,15 +312,13 @@ public class TableController extends RestBaseController {
     try {
       List<TransactionsOfTable> transactionsOfTables = fileInfoCacheService.getTxExcludeOptimize(
           AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
-      Integer offset = (page - 1) * pageSize;
+      int offset = (page - 1) * pageSize;
       PageResult<TransactionsOfTable, AMSTransactionsOfTable> pageResult = PageResult.of(transactionsOfTables,
           offset, pageSize, AmsUtils::toTransactionsOfTable);
       ctx.json(OkResponse.of(pageResult));
-      return;
     } catch (Exception e) {
       LOG.error("Failed to list transactions ", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to list transactions", ""));
-      return;
     }
   }
 
@@ -321,15 +336,13 @@ public class TableController extends RestBaseController {
     try {
       List<AMSDataFileInfo> dataFileInfo = fileInfoCacheService.getDatafilesInfo(
           AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), Long.valueOf(transactionId));
-      Integer offset = (page - 1) * pageSize;
+      int offset = (page - 1) * pageSize;
       PageResult<DataFileInfo, AMSDataFileInfo> amsPageResult = PageResult.of(dataFileInfo,
           offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
-      return;
     } catch (Exception e) {
       LOG.error("Failed to get transactions detail", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get transactions detail", ""));
-      return;
     }
   }
 
@@ -347,11 +360,10 @@ public class TableController extends RestBaseController {
       // First determine whether there is a partitioned table, and then get different information
       List<PartitionBaseInfo> partitionBaseInfos = fileInfoCacheService.getPartitionBaseInfoList(
           AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)));
-      Integer offset = (page - 1) * pageSize;
+      int offset = (page - 1) * pageSize;
       PageResult<PartitionBaseInfo, PartitionBaseInfo> amsPageResult = PageResult.of(partitionBaseInfos,
           offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
-      return;
     } catch (Exception e) {
       LOG.error("Failed to get transactions detail", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get transactions detail", ""));
@@ -390,15 +402,13 @@ public class TableController extends RestBaseController {
       }
       List<PartitionFileBaseInfo> partitionFileBaseInfos = fileInfoCacheService.getPartitionFileList(
           AmsUtils.toTableIdentifier(TableIdentifier.of(catalog, db, table)), partition);
-      Integer offset = (page - 1) * pageSize;
+      int offset = (page - 1) * pageSize;
       PageResult<PartitionFileBaseInfo, PartitionFileBaseInfo> amsPageResult = PageResult.of(partitionFileBaseInfos,
           offset, pageSize);
       ctx.json(OkResponse.of(amsPageResult));
-      return;
     } catch (Exception e) {
       LOG.error("Failed to get partition file list", e);
       ctx.json(new ErrorResponse(HttpCode.BAD_REQUEST, "Failed to get partition file list", ""));
-      return;
     }
   }
 
@@ -410,7 +420,7 @@ public class TableController extends RestBaseController {
 
     Integer page = ctx.queryParamAsClass("page", Integer.class).getOrDefault(1);
     Integer pageSize = ctx.queryParamAsClass("pageSize", Integer.class).getOrDefault(20);
-    Integer offset = (page - 1) * pageSize;
+    int offset = (page - 1) * pageSize;
 
     List<DDLInfo> ddlInfos = ddlTracerService.getDDL(TableIdentifier.of(catalog, db, table).buildTableIdentifier());
     PageResult<DDLInfo, TableOperation> amsPageResult = PageResult.of(ddlInfos,
@@ -486,8 +496,6 @@ public class TableController extends RestBaseController {
 
   /**
    * get single page query token
-   *
-   * @param ctx
    */
   public static void getTableDetailTabToken(Context ctx) {
     String catalog = ctx.pathParam("catalog");

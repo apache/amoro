@@ -25,7 +25,9 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
+import com.netease.arctic.op.UpdatePartitionProperties;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ArcticDataFiles;
@@ -33,6 +35,7 @@ import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -72,6 +75,10 @@ public class BaseOptimizeCommit {
   }
 
   public boolean commit(long baseSnapshotId) throws Exception {
+    Set<ContentFile<?>> minorAddFiles = new HashSet<>();
+    Set<ContentFile<?>> minorDeleteFiles = new HashSet<>();
+    Set<ContentFile<?>> majorAddFiles = new HashSet<>();
+    Set<ContentFile<?>> majorDeleteFiles = new HashSet<>();
     try {
       if (optimizeTasksToCommit.isEmpty()) {
         LOG.info("{} get no tasks to commit", arcticTable.id());
@@ -81,10 +88,6 @@ public class BaseOptimizeCommit {
           optimizeTasksToCommit.keySet());
 
       // collect files
-      Set<ContentFile<?>> minorAddFiles = new HashSet<>();
-      Set<ContentFile<?>> minorDeleteFiles = new HashSet<>();
-      Set<ContentFile<?>> majorAddFiles = new HashSet<>();
-      Set<ContentFile<?>> majorDeleteFiles = new HashSet<>();
       PartitionSpec spec = arcticTable.spec();
       StructLikeMap<Long> maxTransactionIds = StructLikeMap.create(spec.partitionType());
       for (Map.Entry<String, List<OptimizeTaskItem>> entry : optimizeTasksToCommit.entrySet()) {
@@ -134,7 +137,19 @@ public class BaseOptimizeCommit {
       String foundNewDeleteMessage = "found new delete for replaced data file";
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage)) {
-        LOG.warn("Optimize commit table {} failed, give up commit.", arcticTable.id(), e);
+        LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
+        for (ContentFile<?> majorAddFile : majorAddFiles) {
+          if (arcticTable.io().exists(majorAddFile.path().toString())) {
+            arcticTable.io().deleteFile(majorAddFile.path().toString());
+            LOG.warn("Delete orphan file {} when optimize commit failed", majorAddFile.path().toString());
+          }
+        }
+        for (ContentFile<?> minorAddFile : minorAddFiles) {
+          if (arcticTable.io().exists(minorAddFile.path().toString())) {
+            arcticTable.io().deleteFile(minorAddFile.path().toString());
+            LOG.warn("Delete orphan file {} when optimize commit failed", minorAddFile.path().toString());
+          }
+        }
         return false;
       } else {
         LOG.error("unexpected commit error " + arcticTable.id(), e);
@@ -248,7 +263,21 @@ public class BaseOptimizeCommit {
           arcticTable.id(), minorDeleteFiles.size(), deletedPosDeleteFile.get(), minorAddFiles.size(),
           addedPosDeleteFile.get());
     } else {
-      LOG.info("{} skip minor optimize commit", arcticTable.id());
+      if (MapUtils.isNotEmpty(maxTransactionIds)) {
+        StructLikeMap<Long> oldPartitionMaxIds =
+            TablePropertyUtil.getPartitionMaxTransactionId(arcticTable.asKeyedTable());
+        UpdatePartitionProperties updatePartitionProperties =
+            baseArcticTable.updatePartitionProperties(null);
+        maxTransactionIds.forEach((partition, txId) -> {
+          long oldTransactionId = oldPartitionMaxIds.getOrDefault(partition, -1L);
+          long maxTransactionId = Math.max(txId, oldTransactionId);
+          updatePartitionProperties.set(partition, TableProperties.PARTITION_MAX_TRANSACTION_ID,
+              String.valueOf(maxTransactionId));
+        });
+        updatePartitionProperties.commit();
+      }
+
+      LOG.info("{} skip minor optimize commit, but update partition txId", arcticTable.id());
     }
   }
 
