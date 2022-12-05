@@ -34,7 +34,7 @@ Mixed streaming format 相比 Iceberg format 提供了更多的特性：
 - Hive 或 Iceberg 格式兼容，支持 Hive 秒级原地升级，兼容 Iceberg 各项原生功能
 - 事务冲突解决机制，让相同主键的并发写入变得可能
 
-Mixed streaming format 的设计初衷是基于数据湖为大数据平台提供流批一体的存储层，以及离线和实时统一的数据仓库，在这个目标驱动下，Arctic 将 mixed format 设计为三级结构，每级结构命名为不同的 TableStore：
+Mixed streaming format 的设计初衷是基于数据湖为大数据平台提供流批一体的存储层，以及离线和实时统一的数据仓库，在这个目标驱动下，Arctic 将 mixed format 设计为三级结构，每级结构命名为不同的 tablestore：
 
 <left>
 ![Mixed format](../images/concepts/mixed_format.png){:height="80%" width="80%"}
