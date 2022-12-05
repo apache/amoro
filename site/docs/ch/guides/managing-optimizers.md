@@ -1,4 +1,3 @@
-# Managing Optimizers
 
 随着业务发展，需要 optimizer 的表越来越多，你需要扩容你的 optimizer 资源。反之，如果一开始创建了过多的 optimizer 资源，你可以释放掉部分来减少资源占用。在此之前，你需要先点击 Optimizers , 进入到管理页面。
 ![optimizer-manage](../images/admin/optimizer_management.png)

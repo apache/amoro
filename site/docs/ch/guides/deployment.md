@@ -1,4 +1,3 @@
-#Deployment
 
 用户可以通过从 Github 上下载稳定的 0.4.0 的 release zip 包，或者可以下载源码根据 README 进行编译。
 

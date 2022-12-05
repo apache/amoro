@@ -62,12 +62,12 @@ nav:
       - Quick demo: quickstart/quick-demo.md
       - CDC ingestion: quickstart/cdc-ingestion.md
   - Admin guide:
-    - Deployment: admin/deployment.md
-    - Managing catalogs: admin/managing_catalogs.md
-    - Managing tables: admin/managing_tables.md
-    - Managing optimizers: admin/managing_optimizers.md
-    - Using Kyuubi by terminal: admin/terminal.md
-    - Metrics: admin/metrics.md
+    - Deployment: guides/deployment.md
+    - Managing catalogs: guides/managing-catalogs.md
+    - Managing tables: guides/managing-tables.md
+    - Managing optimizers: guides/managing-optimizers.md
+    - Using Kyuubi by terminal: guides/using-kyuubi.md
+    - Metrics: guides/metrics.md
   - Configurations: configurations.md
   - Flink integration:
     - Getting Started: flink/flink-get-started.md
