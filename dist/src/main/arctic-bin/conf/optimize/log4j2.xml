@@ -24,13 +24,6 @@
     </properties>
 
     <Appenders>
-        <!--*********************Console log***********************-->
-        <Console name="consoleAppender" target="SYSTEM_OUT">
-            <!--Set log format and color-->
-            <PatternLayout
-                    pattern="%d %p [%t] [%logger{39}] [%X{RequestId}] - %m%n"/>
-        </Console>
-
         <!--*********************File Log***********************-->
         <!--Logs with a grade of debug-->
         <RollingFile name="debugFileAppender"
@@ -95,7 +88,6 @@
 
     <Loggers>
         <Root level="debug">
-            <AppenderRef ref="consoleAppender" level="info"/>
             <!--By default, debug logs are not printed-->
 <!--            <AppenderRef ref="debugFileAppender" level="debug"/>-->
             <AppenderRef ref="infoFileAppender" level="info"/>
