@@ -168,6 +168,10 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
       optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
     }
 
+    if (taskConfig.getMinTransactionId() != null) {
+      optimizeTask.setMinChangeTransactionId(taskConfig.getMinTransactionId());
+    }
+
     // table ams url
     Map<String, String> properties = new HashMap<>();
     properties.put(OptimizeTaskProperties.ALL_FILE_COUNT, (optimizeTask.getBaseFiles().size() +

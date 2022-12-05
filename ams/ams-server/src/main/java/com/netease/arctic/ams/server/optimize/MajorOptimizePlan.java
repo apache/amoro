@@ -219,7 +219,7 @@ public class MajorOptimizePlan extends BaseArcticOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
         null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
 
     List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles.getOrDefault(partition, Collections.emptyList());
@@ -246,7 +246,7 @@ public class MajorOptimizePlan extends BaseArcticOptimizePlan {
     List<BaseOptimizeTask> collector = new ArrayList<>();
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
-    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
         null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
