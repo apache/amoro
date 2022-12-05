@@ -84,7 +84,7 @@ nav:
     - Spark DataFrame: spark/spark-dataframe.md
   - MPP integration:
     - Trino: mpp/trino.md
-    - Impala: empty.md
+    - Impala: mpp/impala.md
   - Benchmark:
     - Report: benchmark/benchmark.md
     - How to benchmark: benchmark/benchmark-step.md
