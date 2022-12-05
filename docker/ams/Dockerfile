@@ -43,7 +43,7 @@ WORKDIR /usr/local/ams/arctic-${ARCTIC_VERSION}
 
 COPY config.sh  ./bin/config.sh
 RUN find ./bin -name "*.sh" | xargs dos2unix
-RUN mkdir -p ./logs && touch ams-info.log
+RUN mkdir -p ./logs && touch ./logs/ams-info.log
 
 
 EXPOSE 1630/tcp
