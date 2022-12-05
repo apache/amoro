@@ -127,6 +127,7 @@ function build_ams() {
   set -x
   AMS_IMAGE_RELEASE_PACKAGE=${CURRENT_DIR}/ams/arctic-${ARCTIC_VERSION}-bin.zip
   cp ${ARCTIC_BINARY_PACKAGE} ${AMS_IMAGE_RELEASE_PACKAGE}
+  # dos2unix ${CURRENT_DIR}/ams/config.sh
   docker build -t arctic163/ams --build-arg ARCTIC_VERSION=${ARCTIC_VERSION} \
     --build-arg DEBIAN_MIRROR=${DEBIAN_MIRROR} \
     ams/.
