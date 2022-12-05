@@ -1,6 +1,7 @@
 package com.netease.arctic.ams.server;
 
 import com.netease.arctic.TableTestBase;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -488,6 +489,10 @@ public class OptimizeIntegrationTest {
 
   private void testKeyedTableContinueOptimizing(KeyedTable table) {
     TableIdentifier tb = table.id();
+    emptyCommit(table);
+    emptyCommit(table);
+    emptyCommit(table);
+    emptyCommit(table);
     long startId = getOptimizeHistoryStartId();
     // Step1: insert change data
     writeChange(table, Lists.newArrayList(
@@ -496,6 +501,8 @@ public class OptimizeIntegrationTest {
         newRecord(5, "eee", quickDateWithZone(4)),
         newRecord(6, "ddd", quickDateWithZone(4))
     ), null);
+
+    amsEnvironment.syncTableFileCache(tb, Constants.INNER_TABLE_CHANGE);
 
     // wait Minor Optimize result, no major optimize because there is only 1 base file for each node
     OptimizeHistory optimizeHistory = waitOptimizeResult(tb, startId + 1);
@@ -508,6 +515,7 @@ public class OptimizeIntegrationTest {
         newRecord(9, "hhh", quickDateWithZone(4)),
         newRecord(10, "iii", quickDateWithZone(4))
     ), null);
+
     // wait Minor/Major Optimize result
     optimizeHistory = waitOptimizeResult(tb, startId + 2);
     assertOptimizeHistory(optimizeHistory, OptimizeType.Minor, 8, 4);
@@ -721,6 +729,11 @@ public class OptimizeIntegrationTest {
     AppendFiles appendFiles = table.changeTable().newAppend();
     insertFiles.forEach(appendFiles::appendFile);
     deleteFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+  }
+  
+  public void emptyCommit(KeyedTable table) {
+    AppendFiles appendFiles = table.changeTable().newAppend();
     appendFiles.commit();
   }
 

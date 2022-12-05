@@ -175,7 +175,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
     if (nodeTaskNeedBuild(posDeleteFiles, fileList)) {
       String commitGroup = UUID.randomUUID().toString();
       long createTime = System.currentTimeMillis();
-      TaskConfig taskPartitionConfig = new TaskConfig(partition,
+      TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
           null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
           constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
               getMaxTransactionId(fileList) : IdGenerator.randomId()));
@@ -206,7 +206,7 @@ public class FullOptimizePlan extends BaseArcticOptimizePlan {
     treeRoot.completeTree(false);
     List<DataFile> allBaseFiles = new ArrayList<>();
     treeRoot.collectBaseFiles(allBaseFiles);
-    TaskConfig taskPartitionConfig = new TaskConfig(partition,
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
         null, commitGroup, planGroup, partitionOptimizeType.get(partition), createTime,
         constructCustomHiveSubdirectory(arcticTable.isKeyedTable() ?
             getMaxTransactionId(allBaseFiles) : IdGenerator.randomId()));
