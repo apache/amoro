@@ -12,13 +12,15 @@
 
 在浏览器打开 [http://localhost:1630](http://localhost:1630) 进入 Dashboard 页面，输入 admin/admin  登录。
 点击侧边栏 Catalogs ，然后点击 Catalog List 下的 `+` 按钮，添加第一个 Catalog， 设置其名字为 `demo_catalog`。
-请按照以下截图设置 Catalog 基本配置:
+并添加一属性 `warehouse` 对应值为 `hdfs://namenode:8020/user/arctic/demo_warehouse`。
+
+其余部分请按照以下截图设置 Catalog 基本配置:
 
 ![Create catalog](../images/quickstart/create-catalog.png)
 
-???+note "对于 Hadoop 配置文件，如果是采用 Docker setup，配置文件在 `<ARCIT-WORKSPACE>/hadoop-config` 目录，否则不用上传任何文件。"
+> 对于 Hadoop 配置文件，如果是采用 Docker setup，配置文件在 `<ARCIT-WORKSPACE>/hadoop-config` 目录，否则不用上传任何文件。
 
-???+note "对于 warehouse.dir，如果是本地部署，填写一个本地目录即可，需要有 Hadoop Username 配置的用户的访问权限。"
+> 对于 warehouse 属性，如果是本地部署，填写一个有 Hadoop Username 对应的用户有权限访问的本地目录即可。
 
 # Prepare 2: start optimizers
 
