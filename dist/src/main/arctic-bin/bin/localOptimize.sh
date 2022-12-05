@@ -30,4 +30,4 @@ else
     JAVA_RUN=java
 fi
 
-$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-${6} -Xmx$1m com.netease.arctic.optimizer.local.LocalOptimizer -a $2 -q $3 -p $4 --heart-beat $5 -id $6
+$JAVA_RUN -Dlog.home=${LOG_DIR} -Dlog.subdir=localOptimizer-${6} -Xmx$1m com.netease.arctic.optimizer.local.LocalOptimizer -a $2 -q $3 -p $4 --heart-beat $5 -id $6 >/dev/null
