@@ -1,7 +1,10 @@
 # Spark
 
 Arctic 支持应用 [Apache Spark](https://spark.apache.org/) 进行数据的批量读写，并且采用了 Merge-On-Read 模式，以此保证数据近实时性。 数据的延迟，取决于数据最终写入 HDFS
-的延迟，一旦数据落盘成功，使用 Arctic-Spark-Connector 即可立即访问到最新数据。 当前仅支持 Spark SQL 作业(Jar暂不支持)对 Arctic 表的数据进行近实时的 ETL。
+的延迟，一旦数据落盘成功，使用 Arctic-Spark-Connector 即可立即访问到最新数据。
+
+Arctic Spark 目录下的文档均只针对 Mixed-Format 生效。如果您使用的是 Iceberg format 表，请参考 Iceberg 官方的用法
+[Iceberg Spark 用户手册](https://iceberg.apache.org/docs/latest/spark-ddl/)
 
 ## 环境准备
 
