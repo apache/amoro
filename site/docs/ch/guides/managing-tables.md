@@ -1,4 +1,4 @@
-# Managing tables
+
 [AMS Dashboard](http://localhost:1630) 中提供了 SQL 执行工具 `Terminal` 帮组用户快速完成表的创建、修改与删除操作。
 同时还可以在 [Spark](../spark/spark-ddl.md) 和 [Flink](../flink/flink-ddl.md) 等引擎中使用 SQL 完成表的管理。
 

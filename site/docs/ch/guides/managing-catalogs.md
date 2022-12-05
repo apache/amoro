@@ -1,4 +1,3 @@
-# Managing Catalogs
 
 在默认的 AMS 配置中，我们已经初始化了一个名为 `local_catalog` 的基于本地文件系统的集群以方便你的测试。 用户可以通过 AMS Dashboard 提供的 Catalog 管理功能导入更多测试或线上集群。新增 Catalog 前，请阅读以下指引，根据自己的实际需求进行选择创建。
 

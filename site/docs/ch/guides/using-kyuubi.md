@@ -1,4 +1,3 @@
-# Using Kyuubi by Terminal
 
 Terminal 支持对接 Kyuubi, 将 SQL 提交到 Kyuubi 上执行。你只需要按照下面的指示添加 Kyuubi 配置：
 ```shell
