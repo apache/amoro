@@ -70,7 +70,7 @@ CREATE TABLE arctic_catalog.db.sample
 USING arctic
 AS SELECT ...
 ```
-???+note "CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及 properties 不会从源表中继承，需单独配置。"
+> CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及 properties 不会从源表中继承，需单独配置。
 
 创建带主键、分区、preoperties 的表，可以使用如下语法：
 
@@ -94,10 +94,11 @@ LIKE arctic_catalog.db.sample2
 USING arctic
 ```
 
-???+note "因为 primary key 不是 Spark 标准语法，所以如果源表是 Arctic 表，且有主键，新建表可以复制主键这部分的 schema 信息，如果是其他类型的表，则无法复制"
+> 因为 primary key 不是 Spark 标准语法，所以如果源表是 Arctic 表，且有主键，新建表可以复制主键这部分的 schema 信息，如果是其他类型的表，则无法复制
+> 
 ## REPLACE TABLE ... AS SELECT
 
-???+note "REPLACE TABLE ... AS SELECT 语法在当前版本只支持无主键表"
+> REPLACE TABLE ... AS SELECT 语法在当前版本只支持无主键表 
 
 ``` 
 REPLACE TABLE arctic_catalog.db.sample
@@ -105,7 +106,7 @@ USING arctic
 AS SELECT ...
 ```
 
-???+danger "REPLACE TABLE ... AS SELECT 在当前版本没有原子性保证"
+> REPLACE TABLE ... AS SELECT 在当前版本没有原子性保证
 
 ## DROP TABLE
 

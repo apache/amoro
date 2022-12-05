@@ -81,7 +81,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | ----------------------------------------------| ------------------- | ----------------------------------       |
 | table.event-time-field                        | _ingest_time        | 计算 watermark 的事件时间字段，默认的 _ingest_time 表示使用数据写入时间来计算 |
 | table.watermark-allowed-lateness-second       | 0                   | 计算 watermark 时允许的数据乱序时间           |
-| table.event-time-field.datetime-string-format | yyyy-MM-dd HH:mm:ss | 当事件时间为字符串时，事件时间的格式           |
+| table.event-time-field.datetime-string-format | `yyyy-MM-dd HH:mm:ss` | 当事件时间为字符串时，事件时间的格式           |
 | table.event-time-field.datetime-number-format | TIMESTAMP_MS | 当事件时间为数字时，事件时间的格式，支持 TIMESTAMP_MS(毫秒级时间戳)与TIMESTAMP_S(秒级时间戳) |
 
 ### Mixed Hive format 相关配置

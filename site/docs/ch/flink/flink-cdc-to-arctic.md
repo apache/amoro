@@ -111,4 +111,4 @@ SET execution.runtime-mode = streaming;
 SELECT * FROM arctic.db.user_info
 /*+ OPTIONS('read.distribution-mode'='hash','read.distribution.hash-mode'='auto') */
 ```
-相关参数配置可以参考[这里](../meta-service/table-properties.md)
+相关参数配置可以参考[这里](../configurations.md)
