@@ -263,7 +263,9 @@ export default defineComponent({
         runStatus.value = logStatus
         await getDebugResult()
         if (logStatus === 'Finished' || logStatus === 'Canceled') {
-          operationActive.value = resultTabList[0].id
+          if (resultTabList.length) {
+            operationActive.value = resultTabList[0].id
+          }
         } else {
           logInterval.value = setTimeout(() => {
             getLogResult()
@@ -557,6 +559,7 @@ export default defineComponent({
     bottom: 0;
     width: 100%;
     z-index: 2;
+    background-color: #fff;
   }
   .tab-operation {
     display: flex;
