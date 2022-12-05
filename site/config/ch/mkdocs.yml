@@ -60,12 +60,12 @@ nav:
       - Quick demo: empty.md
       - CDC ingestion: empty.md
   - Admin guide:
-    - Deployment: empty.md
-    - Managing catalogs: empty.md
-    - Managing tables: empty.md
-    - Managing optimizers: empty.md
-    - Using kyuubi through terminal: empty.md
-    - Metrics: empty.md
+    - Deployment: admin/deployment.md
+    - Managing catalogs: admin/managing_catalogs.md
+    - Managing tables: admin/managing_tables.md
+    - Managing optimizers: admin/managing_optimizers.md
+    - Using Kyuubi by terminal: admin/terminal.md
+    - Metrics: admin/metrics.md
   - Configurations: configurations.md
   - Flink integration:
     - Getting Started: flink/flink-get-started.md
