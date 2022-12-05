@@ -46,7 +46,7 @@ docker-compose up -d
 ```
 启动成功后，使用`docker ps`命令查看当前已启动的容器，您将看到两个个容器，分别为 ams 和 arctic_flink。 
 ## 启动AMS
-如[概述](index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是启动 AMS。  
+如[概述](../index.md)中所述，AMS(Arctic Meta Service) 是 Arctic 中负责元数据管理与结构优化的独立服务，使用 Arctic 的第一步就是启动 AMS。  
 
 **1.启动AMS**  
 
@@ -57,11 +57,11 @@ docker-compose up -d
 AMS 中的 optimizer 负责自动为表进行结构优化，AMS默认配置下会有一个类型为 local 的 optimizer group，这里需要在此 group 下创建一个 optimizer。
 进入 AMS 的 Optimizing 页面，选择 Optimizers。
 
-![Optimizing.png](images/Optimizing.png)
+![Optimizing.png](../images/Optimizing.png)
 
 点击`Scale-Out`按钮选择对应`Optimizer Group`并且配置 optimizer 并发度，点击OK后即完成了 optimizer 的创建。
 
-![ScaleOut.png](images/ScaleOut.png)
+![ScaleOut.png](../images/ScaleOut.png)
 
 ## 建表
 
@@ -84,7 +84,7 @@ create table test_db.test_table(
 
 **0. 环境准备**
 
-使用 docker 部署可跳过该步骤。非 docker 部署请参考 [环境准备](flink/flink-get-started.md#_2)
+使用 docker 部署可跳过该步骤。非 docker 部署请参考 [环境准备](../flink/flink-get-started.md#_2)
 
 **1.启动 Flink SQL Client**  
 
@@ -265,7 +265,7 @@ select * from test_db.test_table order by id;
 启动 optimizer 之后，表的结构优化会自动触发。
 登录并进入 [AMS Dashboard](http://localhost:1630)，从左侧菜单进入到 `Optimizing` 页面，在 `Tables` 目录下可以看到当前所有表的结构优化状态。
 
-![table_optimizing](images/table_optimizing.png)
+![table_optimizing](../images/table_optimizing.png)
 
 其中：
 
@@ -286,7 +286,7 @@ select * from test_db.test_table order by id;
 从左侧菜单进入到 `Tables` 页面，选择测试表并进入到 `Optimized目录` 可以看到表的历史结构优化记录。
 如果已经完成[实时写入与读取](#_2)，测试表预期会进行3次结构优化，分别是2次 minor optimize, 一次 major optimize。
 
-![optimize_history](images/optimize_history.png)
+![optimize_history](../images/optimize_history.png)
 
 上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
 
@@ -300,7 +300,7 @@ select * from test_db.test_table order by id;
 
 3次 Optimize 之后，文件情况如下，以分区 op_time_day=2022-07-02 为例
 
-![files_after_optimize](images/files_after_optimize.png)
+![files_after_optimize](../images/files_after_optimize.png)
 
 新增的1个 pos-delete 是 minor optimize 的结果，而新增的1个 base file 是 major optimize 的结果，由于只有一行数据被删除，因此只有1个 base 文件和 pos-delete 文件合并生成了最终的 base file。
 

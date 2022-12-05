@@ -50,18 +50,24 @@ markdown_extensions:
 
 nav:
   - Overview: index.md
-  - Motivation: arctic-motivation.md
-  - Quickstart: docker-quickstart.md
-  - Table Format:
-    - Tablestore: table-format/table-store.md
-    - Iceberg Format: table-format/iceberg-format.md
-    - Hive Format: table-format/hive-format.md
-  - Meta Service:
-    - Arctic Dashboard: meta-service/dashboard.md
-    - Table Management: meta-service/table-management.md
-    - Table Config: meta-service/table-properties.md
-  - Optimizers: optimizers.md
-  - Flink:
+  - Concepts:
+    - Catalogs: concepts/catalogs.md
+    - Table formats: concepts/table-formats.md
+    - Self-optimizing: concepts/self-optimizing.md
+    - Table watermark: concepts/table-watermark.md
+  - Quick Start:
+      - Setup: empty.md
+      - Quick demo: empty.md
+      - CDC ingestion: empty.md
+  - Admin guide:
+    - Deployment: empty.md
+    - Managing catalogs: empty.md
+    - Managing tables: empty.md
+    - Managing optimizers: empty.md
+    - Using kyuubi through terminal: empty.md
+    - Metrics: empty.md
+  - Configurations: configurations.md
+  - Flink integration:
     - Getting Started: flink/flink-get-started.md
     - Flink DDL: flink/flink-ddl.md
     - Flink DML: flink/flink-dml.md
@@ -69,18 +75,17 @@ nav:
     - Flink DataStream: flink/flink-ds.md
     - Using Kafka as Logstore: flink/hidden-kafka.md
     - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
-  - Spark:
+  - Spark integration:
     - Getting Started: spark/spark-get-started.md
-    - Spark Configuration: spark/spark-conf.md
     - Spark DDL: spark/spark-ddl.md
     - Spark DML: spark/spark-dml.md
     - Spark DataFrame: spark/spark-dataframe.md
-  - Trino: trino.md
-  - Benchmark:
-    - Report: benchmark/benchmark.md
-    - How to benchmark:  benchmark/benchmark-step.md
+  - MPP integration:
+    - Trino: mpp/trino.md
+    - Impala: empty.md
+  - Benchmark: benchmark.md
   - Roadmap: roadmap.md
-  - How to contribute: contribute.md
+  - Contributing: contribute.md
 
 
 plugins:
