@@ -21,7 +21,7 @@ CURRENT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 ARCTIC_HOME="$( cd "$CURRENT_DIR/../" ; pwd -P )"
 export ARCTIC_HOME
 
-ARCTIC_VERSION=`cat $ARCTIC_HOME/pom.xml |grep 'arctic-parent' -C 3 | grep '<version>' |grep -oE '[0-9].[0-9].[0-9][-A-Z]+?'`
+ARCTIC_VERSION=`cat $ARCTIC_HOME/pom.xml | grep 'arctic-parent' -C 3 | grep -Eo '<version>.*</version>' | awk -F'[><]' '{print $3}'`
 ARCTIC_BINARY_PACKAGE=${ARCTIC_HOME}/dist/target/arctic-${ARCTIC_VERSION}-bin.zip
 FLINK_VERSION=1.15.3
 HADOOP_VERSION=2.10.2

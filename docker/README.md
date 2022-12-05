@@ -22,13 +22,13 @@ We provide a bash script to help you build docker image easier.
 You can build all image via script in current dir.
 
 ```shell
-./build all 
+./build.sh all 
 ```
 
 or just build only one image.
 
 ```shell
-./build ams
+./build.sh ams
 ```
 
 - NOTICE: The ams image and flink image required the project had been packaged. 
