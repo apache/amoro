@@ -21,6 +21,7 @@ package com.netease.arctic.flink.table;
 import com.netease.arctic.flink.read.FlinkKafkaConsumer;
 import com.netease.arctic.flink.read.LogKafkaConsumer;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.configuration.ReadableConfig;
@@ -165,7 +166,8 @@ public class LogDynamicSource extends KafkaDynamicSource {
     this.schema = schema;
     this.tableOptions = tableOptions;
     this.consumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
-    this.logRetractionEnable = tableOptions.get(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
+    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
+        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
   }
 
   @Override
