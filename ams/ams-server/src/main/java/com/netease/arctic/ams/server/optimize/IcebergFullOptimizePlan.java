@@ -125,7 +125,7 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
     String commitGroup = UUID.randomUUID().toString();
     long createTime = System.currentTimeMillis();
 
-    TaskConfig taskPartitionConfig = new TaskConfig(partition, null,
+    TaskConfig taskPartitionConfig = new TaskConfig(partition, null, null,
         commitGroup, planGroup, getOptimizeType(), createTime, "");
     List<FileScanTask> fileScanTasks = partitionFileList.get(partition);
 

@@ -66,6 +66,7 @@ CREATE TABLE optimize_task (
     partition varchar(128) DEFAULT NULL,
     task_commit_group varchar(40) DEFAULT NULL,
     max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
+    min_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
     create_time timestamp DEFAULT NULL,
     properties clob(64m),
     queue_id bigint NOT NULL,
