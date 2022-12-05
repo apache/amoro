@@ -143,7 +143,7 @@ function build_flink() {
   echo "=============================================="
   echo "               arctic163/flink                 "
   echo "=============================================="
-  FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oE '\d+.\d+'`
+  FLINK_MAJOR_VERSION=`echo $FLINK_VERSION| grep -oE '[0-9]+.[0-9]+'`
   FLINK_CONNECTOR_BINARY=${ARCTIC_HOME}/flink/v${FLINK_MAJOR_VERSION}/flink-runtime/target/arctic-flink-runtime-${FLINK_MAJOR_VERSION}-${ARCTIC_VERSION}.jar
 
   echo "Start Build arctic163/flink Image, Flink Version: ${FLINK_VERSION}"
