@@ -145,6 +145,7 @@ CREATE TABLE `optimize_task`
     `partition`                 varchar(128)  DEFAULT NULL COMMENT 'Partition',
     `task_commit_group`         varchar(40)   DEFAULT NULL COMMENT 'UUID. Commit group of task, task of one commit group should commit together',
     `max_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Max change transaction id',
+    `min_change_transaction_id` bigint(20) NOT NULL DEFAULT '-1' COMMENT 'Min change transaction id',
     `create_time`               datetime(3) DEFAULT NULL COMMENT 'Task create time',
     `properties`                text COMMENT 'Task properties',
     `queue_id`                  int(11) NOT NULL COMMENT 'Task group id',

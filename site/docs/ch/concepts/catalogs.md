@@ -12,13 +12,15 @@ ON (c.ID = o.CUSTOMER_ID)
 
 用户可以在 Arctic 中为不同环境，不同集群以及不同的 table format 创建 catalog，再利用 Flink、Spark、Trino 的 multi-catalog 功能实现多集群、多格式的联邦计算。同时，配置在 catalog 中的属性可以被所有表和用户共享，避免了重复设置。Arctic 通过 multi-catalog 的设计，为数据平台提供元数据中心的支持。
 
-AMS 和 HMS 协同使用时，相当于使用 HMS 作为 AMS 的存储底座，结合 native Iceberg format，用户可以在不引入任何 Arctic 依赖的情况下，使用 AMS 的 multi-catalog 管理功能。
+AMS 和 HMS 协同使用时，相当于使用 HMS 作为 AMS 的存储底座，结合 [native Iceberg format](table-formats.md#iceberg-format)，用户可以在不引入任何 Arctic 依赖的情况下，使用 AMS 的 multi-catalog 管理功能。
 
 ## How to use
 
-在 Arctic v0.4 之后，引入了 catalog 管理功能，所有表的管理都要在 catalog 下完成，在 dashboard 的 catalogs 模块中创建，编辑和删除 catalog，创建 catalog 时需要配置 metastore，table format 以及环境配置信息，了解更多请参阅：Admin guide 
+在 Arctic v0.4 之后，引入了 catalog 管理功能，所有表的创建都在 catalog 下完成，用户可以在 catalogs 模块中创建，编辑和删除 catalog，创建 catalog 时需要配置 metastore，table format 以及环境配置信息，了解更多请参阅：[Managing catalogs](../guides/managing-catalogs.md) 
 
-> 用户可以在 catalog properties 中配置给所有表配置参数，也可以在建表时指定 table properteis，在各个引擎执行时配置执行参数，这些参数的覆盖规则为：引擎优先于表，优先于 catalog。
+???+ 注意
+
+	用户可以在 catalog properties 中配置给所有表配置参数，也可以在建表时指定 table properteis，在各个引擎执行时配置执行参数，这些参数的覆盖规则为：引擎优先于表，优先于 catalog。
 
 在实践中，推荐按照下面的方式创建 catalog：
 
@@ -33,3 +35,4 @@ AMS 未来会围绕两个目标提升元数据中心的价值：
 
 - 扩展数据源 —  除数据湖之外，消息队列，数据库，数据仓库都可以作为 catalog 托管的对象，通过元数据中心和计算引擎基于 SQL 的联邦计算，为 DataOps、DataFabric 等数据平台提供基础设施方案
 - catalog 自动感知 — 在 spark、flink 等计算引擎里能够自动感知到 catalog 的创建和变更，做到一次配置，永久扩展
+  

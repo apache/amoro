@@ -1,8 +1,8 @@
-## Use Properties
+## 多级配置管理
 
-Arctic 提供的参数都可以在 catalog, table, 引擎端配置，配置的优先级为引擎优先表，优先 catalog，一般情况下，我们推荐用户在 catalog 中设置默认值，比如 self-optimizing 相关参数，推荐用户在 [创建表](table-management.md##_2) 时指定表的个性化配置，也可以通过 [修改表](table-management.md##_4) 修改配置，如果要在引擎中针对性调优，再考虑在引擎中配置
+Arctic 提供的参数都可以在 catalog, table, 引擎端配置，配置的优先级为引擎优先表，优先 catalog，一般情况下，我们推荐用户在 catalog 中设置默认值，比如 self-optimizing 相关参数，推荐用户在 [创建表](guides/managing-tables.md##_1) 时指定表的个性化配置，也可以通过 [修改表](guides/managing-tables.md##_2) 修改配置，如果要在引擎中针对性调优，再考虑在引擎中配置
 
-## Self-optimizing
+## Self-optimizing 配置
 
 Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 
@@ -24,7 +24,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | self-optimizing.major.trigger.interval              | 86400000（1天）   | 触发 major optimizing 的最长时间间隔                        |
 | self-optimizing.full.trigger.interval               | -1（关闭）         | 触发 full optimizing 的最长时间间隔       
 
-## 数据清理
+## 数据清理配置
 
 数据清理配置对 Iceberg format, Mixed streaming format 都会生效。
 
@@ -46,10 +46,8 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | 配置名称                            | 默认值             | 描述                                     |
 | ---------------------------------- | ---------------- | ----------------------------------       |
 | read.split.open-file-cost          | 4194304（4MB）    | 预估与读取开销等价的打开一个文件开销，一般不改                        |
-| read.split.planning-lookback       | 10               | 合并读取任务时同时考虑的任务个数               |
-| read.split.target-size              | 134217728（128MB）| 合并读取任务时的目标大小                     |
-| read.distribution-mode              | hash            | 读取时的数据分区方式，支持 none、hash          |
-| read.distribution.hash-mode         | auto            | 使用 hash 的分区读取方式时，使用的 hash 键，支持 primary-key、partition-key、primary-partition-key 和 auto                     |
+| read.split.planning-lookback       | 10               | 拆分读取任务所使用分桶算法里桶的个数               |
+| read.split.target-size              | 134217728（128MB）| 查询引擎中的读取任务会尽量拆分成这个大小                     |
 
 ### 表写入配置
 
@@ -81,7 +79,7 @@ Self-optimizing 配置对 Iceberg format, Mixed streaming format 都会生效。
 | ----------------------------------------------| ------------------- | ----------------------------------       |
 | table.event-time-field                        | _ingest_time        | 计算 watermark 的事件时间字段，默认的 _ingest_time 表示使用数据写入时间来计算 |
 | table.watermark-allowed-lateness-second       | 0                   | 计算 watermark 时允许的数据乱序时间           |
-| table.event-time-field.datetime-string-format | yyyy-MM-dd HH:mm:ss | 当事件时间为字符串时，事件时间的格式           |
+| table.event-time-field.datetime-string-format | `yyyy-MM-dd HH:mm:ss` | 当事件时间为字符串时，事件时间的格式           |
 | table.event-time-field.datetime-number-format | TIMESTAMP_MS | 当事件时间为数字时，事件时间的格式，支持 TIMESTAMP_MS(毫秒级时间戳)与TIMESTAMP_S(秒级时间戳) |
 
 ### Mixed Hive format 相关配置

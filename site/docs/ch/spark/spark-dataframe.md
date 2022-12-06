@@ -19,7 +19,7 @@ val data: DataFrame = ...
 data.writeTo("arctic_catalog.db.sample").append()
 ```
 
-???+note "append 只支持无主键表"
+> append 只支持无主键表
 
 
 

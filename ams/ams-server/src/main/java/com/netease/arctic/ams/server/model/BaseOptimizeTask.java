@@ -41,6 +41,7 @@ public class BaseOptimizeTask extends OptimizeTask {
   protected long createTime;
 
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
+  private long minChangeTransactionId = INVALID_TRANSACTION_ID;
 
   public BaseOptimizeTask() {
   }
@@ -67,6 +68,14 @@ public class BaseOptimizeTask extends OptimizeTask {
 
   public void setMaxChangeTransactionId(long maxChangeTransactionId) {
     this.maxChangeTransactionId = maxChangeTransactionId;
+  }
+
+  public long getMinChangeTransactionId() {
+    return minChangeTransactionId;
+  }
+
+  public void setMinChangeTransactionId(long minChangeTransactionId) {
+    this.minChangeTransactionId = minChangeTransactionId;
   }
 
   public String getPartition() {
@@ -174,6 +183,7 @@ public class BaseOptimizeTask extends OptimizeTask {
         ", queueId=" + queueId +
         ", createTime=" + createTime +
         ", maxChangeTransactionId=" + maxChangeTransactionId +
+        ", minChangeTransactionId=" + minChangeTransactionId +
         "} " + superToString();
   }
 

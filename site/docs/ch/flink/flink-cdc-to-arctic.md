@@ -98,17 +98,5 @@ SET execution.runtime-mode = streaming;
 SELECT * FROM arctic.db.user_info
 /*+ OPTIONS('arctic.emit.mode'='file','streaming'='true','scan.startup.mode'='latest') */
 ```
+
 相关参数配置可以参考[这里](flink-dml.md#filestore_1)
-
-### Reading Shuffle 配置
-读取有主键表时，如果 Source Operator 并发与后面算子并发不同的话，Flink 自动更新 Shuffle 规则为 rebalance，有可能会造成数据乱序，最终数据不一致。Arctic Source 默认会通过以下配置修改数据 Shuffle 规则保证数据一致性。
-
-```sql
--- 在当前 session 中以流的模式运行 Flink 任务
-SET execution.runtime-mode = streaming;
-
--- 以 hash 的方式 shuffle 数据给下游
-SELECT * FROM arctic.db.user_info
-/*+ OPTIONS('read.distribution-mode'='hash','read.distribution.hash-mode'='auto') */
-```
-相关参数配置可以参考[这里](../meta-service/table-properties.md)

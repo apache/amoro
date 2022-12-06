@@ -62,12 +62,12 @@ nav:
       - Quick demo: quickstart/quick-demo.md
       - CDC ingestion: quickstart/cdc-ingestion.md
   - Admin guide:
-    - Deployment: empty.md
-    - Managing catalogs: empty.md
-    - Managing tables: empty.md
-    - Managing optimizers: empty.md
-    - Using kyuubi through terminal: empty.md
-    - Metrics: empty.md
+    - Deployment: guides/deployment.md
+    - Managing catalogs: guides/managing-catalogs.md
+    - Managing tables: guides/managing-tables.md
+    - Managing optimizers: guides/managing-optimizers.md
+    - Using Kyuubi by terminal: guides/using-kyuubi.md
+    - Metrics: guides/metrics.md
   - Configurations: configurations.md
   - Flink integration:
     - Getting Started: flink/flink-get-started.md
@@ -84,7 +84,7 @@ nav:
     - Spark DataFrame: spark/spark-dataframe.md
   - MPP integration:
     - Trino: mpp/trino.md
-    - Impala: empty.md
+    - Impala: mpp/impala.md
   - Benchmark:
     - Report: benchmark/benchmark.md
     - How to benchmark: benchmark/benchmark-step.md
