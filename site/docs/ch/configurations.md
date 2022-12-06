@@ -1,6 +1,6 @@
 ## 多级配置管理
 
-Arctic 提供的参数都可以在 catalog, table, 引擎端配置，配置的优先级为引擎优先表，优先 catalog，一般情况下，我们推荐用户在 catalog 中设置默认值，比如 self-optimizing 相关参数，推荐用户在 [创建表](table-management.md##_2) 时指定表的个性化配置，也可以通过 [修改表](table-management.md##_4) 修改配置，如果要在引擎中针对性调优，再考虑在引擎中配置
+Arctic 提供的参数都可以在 catalog, table, 引擎端配置，配置的优先级为引擎优先表，优先 catalog，一般情况下，我们推荐用户在 catalog 中设置默认值，比如 self-optimizing 相关参数，推荐用户在 [创建表](guides/managing-tables.md##_1) 时指定表的个性化配置，也可以通过 [修改表](guides/managing-tables.md##_2) 修改配置，如果要在引擎中针对性调优，再考虑在引擎中配置
 
 ## Self-optimizing 配置
 

@@ -119,7 +119,7 @@ ams:
 ```
 
 ### 配置 Optimizer
-Self-optimizing 需要配置 optimizer 资源，包含 Containers 配置和 Optimizer group 配置。以配置 Flink 类型的 Optimizer 为例，配置如下， 详细的参数说明及其它类型的配置见 [managing-optimizers](managing_optimizers.md)
+Self-optimizing 需要配置 optimizer 资源，包含 Containers 配置和 Optimizer group 配置。以配置 Flink 类型的 Optimizer 为例，配置如下， 详细的参数说明及其它类型的配置见 [managing-optimizers](managing-optimizers.md)
 ```shell
 containers:
   - name: flinkContainer

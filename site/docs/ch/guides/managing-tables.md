@@ -23,7 +23,7 @@ tblproperties(
   'table.watermark-allowed-lateness-second' = '60');
 ```
 
-当前 Terminal 使用 Spark Engine 完成 SQL 的执行，更多有关建表的语法参考 [Spark DDL](../spark/spark-ddl.md#create-table)。不同 Catalog 创建的表格式不同，可参考 [创建Catalog](managing_catalogs.md#catalog)
+当前 Terminal 使用 Spark Engine 完成 SQL 的执行，更多有关建表的语法参考 [Spark DDL](../spark/spark-ddl.md#create-table)。不同 Catalog 创建的表格式不同，可参考 [创建Catalog](managing-catalogs.md#catalog)
 
 ### 配置 LogStore
 如 [Mixed streaming format](../concepts/table-formats.md#mixed-streaming-format) 所述，Mixed streaming format 可能由几部分共同组成，BaseStore 与 ChangeStore 会随着表的创建而自动创建，
@@ -75,11 +75,11 @@ Arctic 支持 [Mixed Hive format](../concepts/table-formats.md#mixed-hive-format
 
 登录 [AMS Dashboard](http://localhost:1630) 后，从菜单中的 `Tables` 中选择某个 Hive Catalog 下的一张表，即可进行升级操作。
 
-![Hive Table Detail](../images/meta-service/hive-table-detail.png)
+![Hive Table Detail](../images/admin/hive-table-detail.png)
 
 点击表详情右上角的 `Upgrade` 按钮（已经完成升级的 Hive 表不再显示此按钮）。
 
-![Hive Table Upgrade](../images/meta-service/hive-table-upgrade.png)
+![Hive Table Upgrade](../images/admin/hive-table-upgrade.png)
 
 在升级界面为表选择主键，并添加额外的参数，之后点击 `OK` 完成 Hive 表的升级操作。
 
@@ -88,7 +88,7 @@ Arctic 支持 [Mixed Hive format](../concepts/table-formats.md#mixed-hive-format
 Arctic 提供了 Self-optimizing 的功能，Self-optimizing 需要在表配置的 Optimizer Group 中有活跃的 Optimizer。
 
 ### 修改 Optimize Group
-如果要使用在特定的 [Optimizer Group](managing_optimizers.md#optimizer-group) 下启动的 Optimizer 执行 Self-optimizing，则需要修改表的 `self-optimizing.group` 参数，为表指定特定的资源池，设置方式如下：
+如果要使用在特定的 [Optimizer Group](managing-optimizers.md#optimizer-group) 下启动的 Optimizer 执行 Self-optimizing，则需要修改表的 `self-optimizing.group` 参数，为表指定特定的资源池，设置方式如下：
 
 ```sql
 ALTER TABLE test_db.test_log_store set tblproperties (
