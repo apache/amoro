@@ -57,6 +57,7 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.exceptions.NoSuchTableException;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -677,6 +678,9 @@ public class OptimizeQueueService extends IJDBCService {
           } else {
             LOG.debug("{} after plan put no tasks into queue, try next table", tableItem.getTableIdentifier());
           }
+        } catch (NoSuchTableException noTable) {
+          LOG.warn("Table {} not exist when try to refresh, release it", tableIdentifier.toString());
+          releaseTable(tableIdentifier);
         } catch (Throwable e) {
           LOG.error(tableIdentifier + " plan failed, continue", e);
         }
