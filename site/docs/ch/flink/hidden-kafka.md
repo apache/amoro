@@ -45,11 +45,9 @@ create table db.log_table (
 Arctic Connector 通过双写写入 Logstore 和 Changestore，不会开启 Kafka transaction 保证两者数据一致性，因为这会给下游任务带来数分钟延迟（与上游任务 Checkpoint 时间间隔有关）。
 
 当上游任务重启或是发生 failover 时，会有冗余数据发送到 Logstore，下游任务会辨识出冗余部分数据，将这部分冗余数据进行回撤来保证数据最终一致性。
-Logstore 的配置请参考[这里](../meta-service/table-properties.md#logstore)，消费 Kafka 的配置请参考[这里](flink-dml.md#logstore)。
-> **TIPS**
->
-> 目前只有 Apache Flink 引擎实现双写 Logstore 和 Filestore 功能。
-> 
+Logstore 的配置请参考[这里](../configurations.md#logstore)，消费 Kafka 的配置请参考[这里](flink-dml.md#logstore)。
+
+> 目前只有 Apache Flink 引擎实现双写 Logstore 和 Filestore 功能。 
 
 ###开启一致性读取
 ```sql

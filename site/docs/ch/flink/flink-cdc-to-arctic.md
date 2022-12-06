@@ -98,4 +98,5 @@ SET execution.runtime-mode = streaming;
 SELECT * FROM arctic.db.user_info
 /*+ OPTIONS('arctic.emit.mode'='file','streaming'='true','scan.startup.mode'='latest') */
 ```
+
 相关参数配置可以参考[这里](flink-dml.md#filestore_1)

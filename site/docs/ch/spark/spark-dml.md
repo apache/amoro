@@ -68,8 +68,7 @@ partition( dt = '2021-1-1')  values
 (1, 'aaa'), (2, 'bbb'), (3, 'ccc') 
 ```
 
-???+note "在 Static 模式下，不支持在分区字段上定义 transform"
-
+> 在 Static 模式下，不支持在分区字段上定义 transform
 
 ### Insert into
 
@@ -103,7 +102,7 @@ INSERT INTO arctic_catalog.db.keyedTable VALUES (1, 'a'), (2, 'b')
 
 INSERT INTO prod.db.keyedTable SELECT ...
 ```
-???+note "目前写入时如果数据没有去重，会导致 primary key 唯一性被破坏"
+> 目前写入时如果数据没有去重，会导致 primary key 唯一性被破坏
 
 
 
@@ -170,4 +169,4 @@ WHEN NOT MATCHED THEN INSERT *
 
 ```
 
-???+note "MERGE INTO 语法在当前版本只支持无主键表"
+> MERGE INTO 语法在当前版本只支持无主键表
