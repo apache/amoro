@@ -14,7 +14,7 @@ Benchmark 提供了一套 Docker 容器，可以帮助用户跑单机版测试�
 | MySQL    | MySQL 用于生产 TPCC 数据然后通过同步工具同步到 Arctic，Hudi，Iceberg 等数据湖中。本文档使用5.7，安装方式参考附录    |
 | Hadoop    | Hadoop体系包含 Hdfs,Yarn,Hive。安装方式有很多，可以选择 [Ambari](https://ambari.apache.org/) 安装    |
 | Trino    | Trino 用于执行 Benchmark 中的 TPCH 查询，当前使用 380 版本，部署见：[Trino-Install](https://trino.io/docs/current/installation/deployment.html)    |
-| Trino-Arctic    | 在 Trino 中查询 Arctic 表需要在 trino 中安装配置 Arctic 插件：[Arctic-Plugin-Install](https://arctic.netease.com/ch/trino/)    |
+| Trino-Arctic    | 在 Trino 中查询 Arctic 表需要在 trino 中安装配置 Arctic 插件：[Arctic-Plugin-Install](https://arctic.netease.com/ch/mpp/trino/)    |
 | Trino-Iceberg    | 如果需要测试 Iceberg 需要配置 Iceberg 插件：[Iceberg-Plugin-Install](https://trino.io/docs/current/connector/iceberg.html)    |
 | Presto    | Presto 也是用来执行 Benchmark 中的TPCH 查询，他和 Trino 最初是同一个团队开发。 Hudi 的 rt 表的查询也就是实时 MOR 查询目前不支持 Trino，只支持 Presto,如果需要测试 Hudi 建议安装配置 Presto    |
 | Presto-Hudi    | 在 Presto 中安装配置 Hudi 插件：[Hudi-Plugin-Install](https://prestodb.io/docs/current/connector/hudi.html)    |
@@ -69,7 +69,7 @@ Benchmark 提供了一套 Docker 容器，可以帮助用户跑单机版测试�
    ```
    export tpcc_name_suffix=_rt
    ```
-   这样所有实际执行查询的表都会带上 _rt 前缀   
+   这样所有实际执行查询的表都会带上 _rt 后缀
 
 ### 测试结果
 data-lake-benchmark 跑完以后会生成一个 results 目录，测试结果都在里面，关注两个文件：
