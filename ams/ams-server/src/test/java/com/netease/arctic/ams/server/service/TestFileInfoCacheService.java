@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.service;
 
-import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CommitMetaProducer;
 import com.netease.arctic.ams.api.DataFile;
@@ -28,7 +27,6 @@ import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
-import com.netease.arctic.ams.server.model.AMSDataFileInfo;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.util.TableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -36,15 +34,14 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.FileContent;
 import org.apache.iceberg.FileMetadata;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -285,6 +282,8 @@ public class TestFileInfoCacheService extends TableTestBase {
         .appendFile(FILE_A)
         .appendFile(FILE_B)
         .commit();
+    table.asUnkeyedTable().newRewrite().rewriteFiles(Sets.newHashSet(FILE_B), Sets.newHashSet(FILE_D))
+        .commit();
     table.asUnkeyedTable().newOverwrite()
         .deleteFile(FILE_A)
         .addFile(FILE_C)
@@ -292,6 +291,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     table.asUnkeyedTable().newRowDelta().addDeletes(eqDelete).addDeletes(posDelete).commit();
     List<TransactionsOfTable> transactionsOfTables =
         ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(table.id().buildTableIdentifier());
+    Collections.reverse(transactionsOfTables);
     Assert.assertEquals(3, transactionsOfTables.size());
 
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
@@ -328,7 +328,7 @@ public class TestFileInfoCacheService extends TableTestBase {
         ".parquet");
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
         table.id().buildTableIdentifier(),
-        transactionsOfTables.get(2).getTransactionId()).get(0).getType(), FileContent.EQUALITY_DELETES.name());
+        transactionsOfTables.get(2).getTransactionId()).get(0).getType(), "eq-deletes");
     Assert.assertEquals(
         ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
             table.id().buildTableIdentifier(),
@@ -336,7 +336,7 @@ public class TestFileInfoCacheService extends TableTestBase {
         "/path/to/data-unpartitioned-pos-deletes.parquet");
     Assert.assertEquals(ServiceContainer.getFileInfoCacheService().getDatafilesInfo(
         table.id().buildTableIdentifier(),
-        transactionsOfTables.get(2).getTransactionId()).get(1).getType(), FileContent.POSITION_DELETES.name());
+        transactionsOfTables.get(2).getTransactionId()).get(1).getType(), "pos-deletes");
   }
 
   private DataFile genDatafile() {

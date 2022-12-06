@@ -74,4 +74,8 @@ public class AdaptHiveService {
       return new UpgradeRunningInfo(UpgradeStatus.NONE.toString());
     }
   }
+
+  public void removeTableCache(TableIdentifier tableIdentifier) {
+    runningInfoCache.remove(tableIdentifier);
+  }
 }

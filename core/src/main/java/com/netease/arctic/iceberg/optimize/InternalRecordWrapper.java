@@ -104,4 +104,8 @@ public class InternalRecordWrapper implements StructLike {
   public <T> void set(int pos, T value) {
     throw new UnsupportedOperationException("Cannot update InternalRecordWrapper");
   }
+
+  public InternalRecordWrapper copyFor(StructLike record) {
+    return new InternalRecordWrapper(transforms).wrap(record);
+  }
 }

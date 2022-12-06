@@ -30,19 +30,18 @@ public class BaseOptimizeTask extends OptimizeTask {
   protected long baseFileSize;
   protected long insertFileSize;
   protected long deleteFileSize;
-  protected long eqDeleteFileSize;
   protected long posDeleteFileSize;
 
   protected int baseFileCnt;
   protected int insertFileCnt;
   protected int deleteFileCnt;
-  protected int eqDeleteFileCnt;
   protected int posDeleteFileCnt;
 
   protected int queueId = -1;
   protected long createTime;
 
   private long maxChangeTransactionId = INVALID_TRANSACTION_ID;
+  private long minChangeTransactionId = INVALID_TRANSACTION_ID;
 
   public BaseOptimizeTask() {
   }
@@ -69,6 +68,14 @@ public class BaseOptimizeTask extends OptimizeTask {
 
   public void setMaxChangeTransactionId(long maxChangeTransactionId) {
     this.maxChangeTransactionId = maxChangeTransactionId;
+  }
+
+  public long getMinChangeTransactionId() {
+    return minChangeTransactionId;
+  }
+
+  public void setMinChangeTransactionId(long minChangeTransactionId) {
+    this.minChangeTransactionId = minChangeTransactionId;
   }
 
   public String getPartition() {
@@ -151,28 +158,12 @@ public class BaseOptimizeTask extends OptimizeTask {
     this.posDeleteFileSize = posDeleteFileSize;
   }
 
-  public long getEqDeleteFileSize() {
-    return eqDeleteFileSize;
-  }
-
-  public void setEqDeleteFileSize(long eqDeleteFileSize) {
-    this.eqDeleteFileSize = eqDeleteFileSize;
-  }
-
   public int getPosDeleteFileCnt() {
     return posDeleteFileCnt;
   }
 
   public void setPosDeleteFileCnt(int posDeleteFileCnt) {
     this.posDeleteFileCnt = posDeleteFileCnt;
-  }
-
-  public int getEqDeleteFileCnt() {
-    return eqDeleteFileCnt;
-  }
-
-  public void setEqDeleteFileCnt(int eqDeleteFileCnt) {
-    this.eqDeleteFileCnt = eqDeleteFileCnt;
   }
 
   @Override
@@ -184,16 +175,15 @@ public class BaseOptimizeTask extends OptimizeTask {
         ", baseFileSize=" + baseFileSize +
         ", insertFileSize=" + insertFileSize +
         ", deleteFileSize=" + deleteFileSize +
-        ", eqDeleteFileSize=" + eqDeleteFileSize +
         ", posDeleteFileSize=" + posDeleteFileSize +
         ", baseFileCnt=" + baseFileCnt +
         ", insertFileCnt=" + insertFileCnt +
         ", deleteFileCnt=" + deleteFileCnt +
-        ", eqDeleteFileCnt=" + eqDeleteFileCnt +
         ", posDeleteFileCnt=" + posDeleteFileCnt +
         ", queueId=" + queueId +
         ", createTime=" + createTime +
         ", maxChangeTransactionId=" + maxChangeTransactionId +
+        ", minChangeTransactionId=" + minChangeTransactionId +
         "} " + superToString();
   }
 

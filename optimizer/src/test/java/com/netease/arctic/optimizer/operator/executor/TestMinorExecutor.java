@@ -31,9 +31,9 @@ import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.TableProperties;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.WriteResult;
@@ -63,11 +63,11 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DeleteFile> result = minorExecutor.execute();
+    OptimizeTaskResult result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(250, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testKeyedTable.baseLocation()).toString()));
     });
   }
 
@@ -82,11 +82,11 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MinorExecutor minorExecutor = new MinorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DeleteFile> result = minorExecutor.execute();
+    OptimizeTaskResult result = minorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(250, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testNoPartitionTable.baseLocation()).toString()));
     });
   }
 

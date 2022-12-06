@@ -24,5 +24,5 @@ package com.netease.arctic.ams.api.properties;
  * @since 0.4.0
  */
 public enum TableFormat {
-  ICEBERG, HIVE;
+  ICEBERG, MIXED_ICEBERG, MIXED_HIVE;
 }

@@ -42,7 +42,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -122,7 +121,6 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     optimizeTask.setInsertFiles(insertFileBytesList);
     optimizeTask.setDeleteFiles(deleteFileBytesList);
     optimizeTask.setPosDeleteFiles(posDeleteFileBytesList);
-    optimizeTask.setIcebergFileScanTasks(Collections.emptyList());
 
     FilesStatisticsBuilder baseFb = new FilesStatisticsBuilder();
     FilesStatisticsBuilder insertFb = new FilesStatisticsBuilder();
@@ -168,6 +166,10 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     }
     if (taskConfig.getMaxTransactionId() != null) {
       optimizeTask.setMaxChangeTransactionId(taskConfig.getMaxTransactionId());
+    }
+
+    if (taskConfig.getMinTransactionId() != null) {
+      optimizeTask.setMinChangeTransactionId(taskConfig.getMinTransactionId());
     }
 
     // table ams url

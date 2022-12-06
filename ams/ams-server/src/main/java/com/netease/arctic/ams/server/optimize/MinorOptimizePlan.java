@@ -31,6 +31,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -41,13 +42,13 @@ import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +69,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
   protected StructLikeMap<Long> baseTableMaxTransactionId = null;
   protected StructLikeMap<Long> baseTableLegacyMaxTransactionId = null;
   private long changeTableMaxTransactionId;
+  private final Map<String, Long> changeTableMinTransactionId = new HashMap<>();
 
   public MinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                            List<DataFileInfo> baseTableFileList,
@@ -87,9 +89,9 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     List<DataFile> deleteFileList = partitionDeleteFiles.get(partitionToPath);
     if (CollectionUtils.isNotEmpty(deleteFileList)) {
       // file count
-      if (deleteFileList.size() >= PropertyUtil.propertyAsInt(arcticTable.properties(),
-          TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT,
-          TableProperties.MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT)) {
+      if (deleteFileList.size() >= CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(),
+          TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT,
+          TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT)) {
         partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
         return true;
       }
@@ -97,8 +99,9 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
 
     // optimize interval
     if (current - tableOptimizeRuntime.getLatestMinorOptimizeTime(partitionToPath) >=
-        PropertyUtil.propertyAsLong(arcticTable.properties(), TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL,
-            TableProperties.MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT)) {
+        CompatiblePropertyUtil.propertyAsLong(arcticTable.properties(),
+            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL,
+            TableProperties.SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT)) {
       partitionOptimizeType.put(partitionToPath, OptimizeType.Minor);
       return true;
     }
@@ -156,7 +159,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
       if (changeFileInfo == null) {
         return null;
       }
-      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      String partition = getPartitionPathAsKey(dataFileInfo);
       currentPartitions.add(partition);
       if (isOptimized(changeFileInfo)) {
         return null;
@@ -165,8 +168,8 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     }).filter(Objects::nonNull).collect(Collectors.toList());
 
     final int maxChangeFiles =
-        PropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.OPTIMIZE_MAX_FILE_COUNT,
-            TableProperties.OPTIMIZE_MAX_FILE_COUNT_DEFAULT);
+        CompatiblePropertyUtil.propertyAsInt(arcticTable.properties(), TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT,
+            TableProperties.SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT);
     long maxTransactionIdLimit;
     if (unOptimizedChangeFiles.size() <= maxChangeFiles) {
       maxTransactionIdLimit = Long.MAX_VALUE;
@@ -189,7 +192,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
       DataFile dataFile = f.getDataFile();
       long transactionId = f.getTransactionId();
 
-      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      String partition = getPartitionPathAsKey(dataFileInfo);
       if (transactionId >= maxTransactionIdLimit) {
         return;
       }
@@ -212,6 +215,10 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     });
     LOG.debug("{} ==== {} add {} change files into tree, total files: {}." + " After added, partition cnt of tree: {}",
         tableId(), getOptimizeType(), addCnt, unOptimizedChangeFiles.size(), partitionFileTree.size());
+  }
+
+  private String getPartitionPathAsKey(DataFileInfo dataFileInfo) {
+    return dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
   }
 
   private static class ChangeFileInfo {
@@ -274,7 +281,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     baseFileList.addAll(ImmutableList.copyOf(posDeleteFileList));
     List<ContentFile<?>> baseOptimizeFiles = baseFileList.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedArcticTable.baseTable().specs().get((int) dataFileInfo.getSpecId());
-      String partition = dataFileInfo.getPartition() == null ? "" : dataFileInfo.getPartition();
+      String partition = getPartitionPathAsKey(dataFileInfo);
 
       if (partitionSpec == null) {
         LOG.error("{} {} can not find partitionSpec id: {}", dataFileInfo.getPath(), getOptimizeType(),
@@ -313,6 +320,7 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
     long createTime = System.currentTimeMillis();
 
     TaskConfig taskPartitionConfig = new TaskConfig(partition, changeTableMaxTransactionId,
+        changeTableMinTransactionId.get(partition),
         commitGroup, planGroup, OptimizeType.Minor, createTime, "");
     treeRoot.completeTree(false);
     List<FileTree> subTrees = new ArrayList<>();
@@ -360,8 +368,16 @@ public class MinorOptimizePlan extends BaseArcticOptimizePlan {
   }
 
   private void markFileInfo(ChangeFileInfo changeFileInfo) {
-    if (this.changeTableMaxTransactionId < changeFileInfo.getTransactionId()) {
-      this.changeTableMaxTransactionId = changeFileInfo.getTransactionId();
+    long fileTid = changeFileInfo.getTransactionId();
+    if (this.changeTableMaxTransactionId < fileTid) {
+      this.changeTableMaxTransactionId = fileTid;
+    }
+    String partition = getPartitionPathAsKey(changeFileInfo.getDataFileInfo());
+    Long tid = changeTableMinTransactionId.get(partition);
+    if (tid == null) {
+      changeTableMinTransactionId.put(partition, fileTid);
+    } else if (fileTid < tid) {
+      changeTableMinTransactionId.put(partition, fileTid);
     }
   }
 

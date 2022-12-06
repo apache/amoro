@@ -29,7 +29,7 @@ import com.netease.arctic.optimizer.util.ContentFileUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import org.apache.iceberg.DataFile;
+import org.apache.hadoop.fs.Path;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -46,11 +46,11 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    OptimizeTaskResult result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(240, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testKeyedTable.baseLocation()).toString()));
     });
   }
 
@@ -62,11 +62,11 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
       OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
       optimizerConfig.setOptimizerId("UnitTest");
       MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testKeyedTable, System.currentTimeMillis(), optimizerConfig);
-      OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+      OptimizeTaskResult result = majorExecutor.execute();
       Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
       result.getTargetFiles().forEach(dataFile -> {
         Assert.assertEquals(240, dataFile.recordCount());
-        Assert.assertTrue(dataFile.path().toString().contains(testKeyedTable.baseLocation()));
+        Assert.assertTrue(dataFile.path().toString().contains(new Path(testKeyedTable.baseLocation()).toString()));
       });
   }
 
@@ -78,11 +78,11 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    OptimizeTaskResult result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(1000, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testTable.location()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testTable.location()).toString()));
     });
   }
 
@@ -94,11 +94,11 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    OptimizeTaskResult result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 1);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(1000, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testTable.location()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testTable.location()).toString()));
     });
   }
 
@@ -110,11 +110,11 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    OptimizeTaskResult result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(240, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testNoPartitionTable.baseLocation()).toString()));
     });
   }
 
@@ -126,11 +126,11 @@ public class TestMajorExecutor extends TestBaseOptimizeBase {
     OptimizerConfig optimizerConfig = new OptimizerConfig(arg);
     optimizerConfig.setOptimizerId("UnitTest");
     MajorExecutor majorExecutor = new MajorExecutor(nodeTask, testNoPartitionTable, System.currentTimeMillis(), optimizerConfig);
-    OptimizeTaskResult<DataFile> result = majorExecutor.execute();
+    OptimizeTaskResult result = majorExecutor.execute();
     Assert.assertEquals(Iterables.size(result.getTargetFiles()), 4);
     result.getTargetFiles().forEach(dataFile -> {
       Assert.assertEquals(240, dataFile.recordCount());
-      Assert.assertTrue(dataFile.path().toString().contains(testNoPartitionTable.baseLocation()));
+      Assert.assertTrue(dataFile.path().toString().contains(new Path(testNoPartitionTable.baseLocation()).toString()));
     });
   }
 

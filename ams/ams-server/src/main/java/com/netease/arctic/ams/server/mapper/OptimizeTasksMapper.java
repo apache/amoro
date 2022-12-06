@@ -36,10 +36,10 @@ public interface OptimizeTasksMapper {
   String TABLE_NAME = "optimize_task";
 
   @Select("select trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
-      " task_commit_group, task_plan_group, max_change_transaction_id," +
+      " task_commit_group, task_plan_group, max_change_transaction_id, min_change_transaction_id, " +
       " source_nodes, create_time, properties, queue_id," +
-      " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size, eq_delete_file_size," +
-      " insert_files, delete_files, base_files, pos_delete_files, eq_delete_files" +
+      " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
+      " insert_files, delete_files, base_files, pos_delete_files" +
       " from " + TABLE_NAME)
   @Results({
       @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
@@ -51,17 +51,16 @@ public interface OptimizeTasksMapper {
       @Result(property = "taskCommitGroup", column = "task_commit_group"),
       @Result(property = "taskPlanGroup", column = "task_plan_group"),
       @Result(property = "maxChangeTransactionId", column = "max_change_transaction_id"),
+      @Result(property = "minChangeTransactionId", column = "min_change_transaction_id"),
       @Result(property = "queueId", column = "queue_id"),
       @Result(property = "insertFileSize", column = "insert_file_size"),
       @Result(property = "deleteFileSize", column = "delete_file_size"),
       @Result(property = "baseFileSize", column = "base_file_size"),
       @Result(property = "posDeleteFileSize", column = "pos_delete_file_size"),
-      @Result(property = "eqDeleteFileSize", column = "eq_delete_file_size"),
       @Result(property = "insertFileCnt", column = "insert_files"),
       @Result(property = "deleteFileCnt", column = "delete_files"),
       @Result(property = "baseFileCnt", column = "base_files"),
       @Result(property = "posDeleteFileCnt", column = "pos_delete_files"),
-      @Result(property = "eqDeleteFileCnt", column = "eq_delete_files"),
       @Result(property = "createTime", column = "create_time",
           typeHandler = Long2TsConvertor.class),
       @Result(property = "properties", column = "properties",
@@ -73,10 +72,10 @@ public interface OptimizeTasksMapper {
 
   @Insert("insert into " + TABLE_NAME + " (" +
       " trace_id, optimize_type, catalog_name, db_name, table_name, `partition`," +
-      " task_commit_group, task_plan_group, max_change_transaction_id," +
+      " task_commit_group, task_plan_group, max_change_transaction_id, min_change_transaction_id," +
       " source_nodes, create_time, properties, queue_id," +
-      " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size, eq_delete_file_size," +
-      " insert_files, delete_files, base_files, pos_delete_files, eq_delete_files," +
+      " insert_file_size, delete_file_size, base_file_size, pos_delete_file_size," +
+      " insert_files, delete_files, base_files, pos_delete_files," +
       " status, pending_time, execute_time," +
       " prepared_time, report_time, commit_time, job_type, job_id, attempt_id, retry, fail_reason," +
       " fail_time, new_file_size, new_file_cnt, cost_time)" +
@@ -90,6 +89,7 @@ public interface OptimizeTasksMapper {
       " #{optimizeTask.taskCommitGroup}," +
       " #{optimizeTask.taskPlanGroup}," +
       " #{optimizeTask.maxChangeTransactionId}," +
+      " #{optimizeTask.minChangeTransactionId}," +
       " #{optimizeTask.sourceNodes, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.ListOfTreeNode2StringConverter}," +
       " #{optimizeTask.createTime, " +
@@ -101,12 +101,10 @@ public interface OptimizeTasksMapper {
       " #{optimizeTask.deleteFileSize}," +
       " #{optimizeTask.baseFileSize}," +
       " #{optimizeTask.posDeleteFileSize}," +
-      " #{optimizeTask.eqDeleteFileSize}," +
       " #{optimizeTask.insertFileCnt}," +
       " #{optimizeTask.deleteFileCnt}," +
       " #{optimizeTask.baseFileCnt}," +
       " #{optimizeTask.posDeleteFileCnt}," +
-      " #{optimizeTask.eqDeleteFileCnt}," +
       " #{optimizeTaskRuntime.status}, " +
       " #{optimizeTaskRuntime.pendingTime, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}," +

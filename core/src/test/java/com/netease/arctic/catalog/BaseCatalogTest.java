@@ -19,12 +19,16 @@
 package com.netease.arctic.catalog;
 
 import com.netease.arctic.TableTestBase;
+import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 
 public class BaseCatalogTest extends TableTestBase {
@@ -59,6 +63,17 @@ public class BaseCatalogTest extends TableTestBase {
 
     Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
     Assert.assertEquals(SPEC, loadTable.changeTable().spec());
+  }
+
+  @Test
+  public void refreshCatalog() throws TException {
+    CatalogMeta catalog = AMS.handler().getCatalog(TEST_CATALOG_NAME);
+    AMS.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE, "/test");
+    testCatalog = CatalogLoader.load(AMS.getUrl());
+    testCatalog.refresh();
+    Assert.assertEquals("/test",
+        AMS.handler().getCatalog(TEST_CATALOG_NAME).
+            getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE));
   }
 
 }

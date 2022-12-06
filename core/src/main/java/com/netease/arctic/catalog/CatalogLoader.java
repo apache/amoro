@@ -121,15 +121,15 @@ public class CatalogLoader {
         case CATALOG_TYPE_HIVE:
           if (tableFormat.equals(TableFormat.ICEBERG)) {
             catalogImpl = ICEBERG_CATALOG_IMPL;
-          } else if (tableFormat.equals(TableFormat.HIVE)) {
+          } else if (tableFormat.equals(TableFormat.MIXED_HIVE)) {
             catalogImpl = HIVE_CATALOG_IMPL;
           } else {
-            throw new IllegalArgumentException("Hive Catalog support iceberg table and hive table only");
+            throw new IllegalArgumentException("Hive Catalog support iceberg table and mixed hive table only");
           }
           break;
         case CATALOG_TYPE_AMS:
-          Preconditions.checkArgument(tableFormat.equals(TableFormat.ICEBERG),
-              "AMS catalog support iceberg table only.");
+          Preconditions.checkArgument(tableFormat.equals(TableFormat.MIXED_ICEBERG),
+              "AMS catalog support mixed iceberg table only.");
           catalogImpl = AMS_CATALOG_IMPL;
           break;
         case CATALOG_TYPE_CUSTOM:

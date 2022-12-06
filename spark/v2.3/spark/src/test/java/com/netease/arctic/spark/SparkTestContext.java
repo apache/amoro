@@ -129,7 +129,7 @@ public class SparkTestContext extends ExternalResource {
 
     configs.put("spark.sql.catalogImplementation", "hive");
     configs.put("hive.metastore.uris", "thrift://127.0.0.1:" + hms.getMetastorePort());
-    configs.put("spark.arctic.sql.delegate.enable", "true");
+    configs.put("spark.arctic.sql.delegate.enabled", "true");
     //hive.metastore.client.capability.check
     configs.put("hive.metastore.client.capability.check", "false");
 

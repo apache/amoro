@@ -27,18 +27,21 @@ public class TaskConfig {
   private final String partition;
   @Nullable
   private final Long maxTransactionId;
+  private final Long minTransactionId;
   private final String commitGroup;
   private final String planGroup;
   private final long createTime;
   private final String customHiveSubdirectory;
 
   public TaskConfig(String partition, @Nullable Long maxTransactionId,
+                    @Nullable Long minTransactionId,
                     String commitGroup, String planGroup,
                     OptimizeType optimizeType, long createTime,
                     @Nullable String customHiveSubdirectory) {
     this.optimizeType = optimizeType;
     this.partition = partition;
     this.maxTransactionId = maxTransactionId;
+    this.minTransactionId = minTransactionId;
     this.commitGroup = commitGroup;
     this.planGroup = planGroup;
     this.createTime = createTime;
@@ -53,9 +56,14 @@ public class TaskConfig {
     return partition;
   }
 
-  @org.jetbrains.annotations.Nullable
+  @javax.annotation.Nullable
   public Long getMaxTransactionId() {
     return maxTransactionId;
+  }
+
+  @javax.annotation.Nullable
+  public Long getMinTransactionId() {
+    return minTransactionId;
   }
 
   public String getCommitGroup() {

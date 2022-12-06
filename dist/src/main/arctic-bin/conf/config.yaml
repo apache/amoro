@@ -19,13 +19,13 @@ ams:
   #arctic.ams.database.type: mysql
 
   #HA config
-  #arctic.ams.ha.enable: true
+  #arctic.ams.ha.enabled: true
   #arctic.ams.cluster.name: default
   #arctic.ams.zookeeper.server: 127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183
 
   # kyuubi config
   #arctic.ams.terminal.backend: kyuubi
-  #arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:2183/;k1=v2;serviceDiscoveryMode=zooKeeper
+  #arctic.ams.terminal.kyuubi.jdbc.url: jdbc:hive2://127.0.0.1:10009/;
 
 # extension properties for like syste
 extension_properties:

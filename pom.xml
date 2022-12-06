@@ -68,6 +68,7 @@
         <zookeeper.version>3.7.1</zookeeper.version>
         <fastjson.version>1.2.75</fastjson.version>
         <parquet-avro.version>1.12.2</parquet-avro.version>
+        <orc-core.version>1.7.2</orc-core.version>
     </properties>
 
     <dependencyManagement>
@@ -236,6 +237,13 @@
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${mysql.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.orc</groupId>
+                <artifactId>orc-core</artifactId>
+                <classifier>nohive</classifier>
+                <version>${orc-core.version}</version>
             </dependency>
 
             <dependency>

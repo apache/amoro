@@ -3,9 +3,12 @@
     <div class="detail-content-wrap">
       <div class="content-wrap">
         <a-form ref="formRef" :model="formState" class="catalog-form">
+          <a-form-item>
+            <p class="header">{{$t('basic')}}</p>
+          </a-form-item>
           <a-form-item :label="$t('name')" :name="['catalog', 'name']" :rules="[{ required: isEdit && isNewCatalog, validator: validatorName }]">
             <a-input v-if="isEdit && isNewCatalog" v-model:value="formState.catalog.name" />
-            <span v-else>{{formState.catalog.name}}</span>
+            <span v-else class="config-value">{{formState.catalog.name}}</span>
           </a-form-item>
           <a-form-item :label="$t('metastore')" :name="['catalog', 'type']" :rules="[{ required: isEdit && isNewCatalog }]">
             <a-select
@@ -19,8 +22,9 @@
           </a-form-item>
           <a-form-item :label="$t('tableFormat')" :name="['tableFormat']" :rules="[{ required: isEdit && isNewCatalog }]">
             <a-radio-group :disabled="!isEdit || !isNewCatalog" v-model:value="formState.tableFormat" name="radioGroup">
-              <a-radio v-if="isHiveMetastore" :value="tableFormatMap.HIVE">Hive</a-radio>
-              <a-radio :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
+              <a-radio v-if="isHiveMetastore" :value="tableFormatMap.MIXED_HIVE">Mixed Hive</a-radio>
+              <a-radio v-if="!isArcticMetastore" :value="tableFormatMap.ICEBERG">Iceberg</a-radio>
+              <a-radio v-if="isArcticMetastore" :value="tableFormatMap.MIXED_ICEBERG">Mixed Iceberg</a-radio>
             </a-radio-group>
           </a-form-item>
           <a-form-item>
@@ -83,7 +87,7 @@
               >
                 <a-button type="primary" ghost :loading="config.uploadLoading" class="g-mr-12">{{$t('upload')}}</a-button>
               </a-upload>
-              <span v-if="config.isSuccess || config.fileName" class="config-value" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)">{{config.fileName}}</span>
+              <span v-if="config.isSuccess || config.fileName" class="config-value auth-filename" :class="{'view-active': !!config.fileUrl}" @click="viewFileDetail(config.fileUrl)" :title="config.fileName">{{config.fileName}}</span>
             </a-form-item>
           </div>
           <a-form-item>
@@ -96,12 +100,12 @@
       </div>
     </div>
     <div v-if="isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleSave" class="g-mr-12">{{$t('save')}}</a-button>
+      <a-button type="primary" @click="handleSave" class="save-btn g-mr-12">{{$t('save')}}</a-button>
       <a-button @click="handleCancle">{{$t('cancel')}}</a-button>
     </div>
     <div v-if="!isEdit" class="footer-btn">
-      <a-button type="primary" @click="handleEdit" class="g-mr-12">{{$t('edit')}}</a-button>
-      <a-button @click="handleRemove">{{$t('remove')}}</a-button>
+      <a-button type="primary" @click="handleEdit" class="edit-btn g-mr-12">{{$t('edit')}}</a-button>
+      <a-button @click="handleRemove" class="remove-btn">{{$t('remove')}}</a-button>
     </div>
     <u-loading v-if="loading" />
   </div>
@@ -156,18 +160,26 @@ const uploadUrl = computed(() => {
   return '/ams/v1/files'
 })
 const isNewCatalog = computed(() => {
-  const catalog = (route.query?.catalog || '').toString()
+  const catalog = (route.query?.catalogname || '').toString()
   return decodeURIComponent(catalog) === 'new catalog'
 })
+// Arctic Metastore supports Mixed Iceberg format only.
+// Hive Metastore supports Iceberg and Mixed Hive format only.
+// Hadoop and Custom support Iceberg format only.
 const isHiveMetastore = computed(() => {
   return formState.catalog.type === 'hive'
+})
+const isArcticMetastore = computed(() => {
+  return formState.catalog.type === 'ams'
 })
 const loading = ref<boolean>(false)
 const formRef = ref()
 const propertiesRef = ref()
+// ICEBERG  MIXED_HIVE  MIXED_ICEBERG
 const tableFormatMap = {
-  HIVE: 'HIVE',
-  ICEBERG: 'ICEBERG'
+  MIXED_HIVE: 'MIXED_HIVE',
+  ICEBERG: 'ICEBERG',
+  MIXED_ICEBERG: 'MIXED_ICEBERG'
 }
 const storageConfigFileNameMap = {
   'hadoop.core.site': 'core-site.xml',
@@ -223,7 +235,6 @@ watch(() => route.query,
   }
 )
 const catalogTypeOps = reactive<ILableAndValue[]>([])
-
 function initData() {
   getConfigInfo()
 }
@@ -243,19 +254,19 @@ function getMetastoreType() {
 async function getConfigInfo() {
   try {
     loading.value = true
-    const { catalog, type } = route.query
-    if (!catalog) { return }
+    const { catalogname, type } = route.query
+    if (!catalogname) { return }
     if (isNewCatalog.value) {
       formState.catalog.name = ''
       formState.catalog.type = type || 'ams'
-      formState.tableFormat = tableFormatMap.ICEBERG
+      formState.tableFormat = tableFormatMap.MIXED_ICEBERG
       formState.authConfig = { ...newCatalogConfig.authConfig }
       formState.storageConfig = { ...newCatalogConfig.storageConfig }
       formState.properties = {}
       formState.storageConfigArray.length = 0
       formState.authConfigArray.length = 0
     } else {
-      const res = await getCatalogsSetting(catalog)
+      const res = await getCatalogsSetting(catalogname)
       if (!res) { return }
       const { name, type, tableFormatList, storageConfig, authConfig, properties } = res
       formState.catalog.name = name
@@ -312,15 +323,16 @@ async function getConfigInfo() {
 }
 
 function changeMetastore() {
-  formState.tableFormat = isHiveMetastore.value ? tableFormatMap.HIVE : tableFormatMap.ICEBERG
+  formState.tableFormat = isHiveMetastore.value ? tableFormatMap.MIXED_HIVE : isArcticMetastore.value ? tableFormatMap.MIXED_ICEBERG : tableFormatMap.ICEBERG
   if (!isNewCatalog.value) { return }
-  const index = formState.storageConfigArray.findIndex(item => item.label === 'hive.site')
+  const index = formState.storageConfigArray.findIndex(item => item.key === 'hive.site')
   if (isHiveMetastore.value) {
     if (index > -1) {
       return
     }
     formState.storageConfigArray.push({
-      label: 'hive.site',
+      key: 'hive.site',
+      label: storageConfigMap['hive.site'],
       value: '',
       fileName: '',
       fileUrl: '',
@@ -366,12 +378,12 @@ function getFileIdParams() {
   const { storageConfig, authConfig, storageConfigArray, authConfigArray } = formState
   Object.keys(authConfig).forEach(key => {
     if (['auth.kerberos.keytab', 'auth.kerberos.krb5'].includes(key)) {
-      const id = (authConfigArray.find(item => item.label === key) || {}).fileId
+      const id = (authConfigArray.find(item => item.key === key) || {}).fileId
       authConfig[key] = id
     }
   })
   Object.keys(storageConfig).forEach(key => {
-    const id = (storageConfigArray.find(item => item.label === key) || {}).fileId
+    const id = (storageConfigArray.find(item => item.key === key) || {}).fileId
     storageConfig[key] = id
   })
 }
@@ -433,9 +445,13 @@ function uploadFile(info: UploadChangeParam, config, type?) {
       config.uploadLoading = false
     }
     if (info.file.status === 'done') {
+      const { code } = info.file.response
+      if (code !== 200) {
+        throw new Error('failed')
+      }
+      const { url, id } = info.file.response.result
       config.isSuccess = true
-      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.label] : info.file.name
-      const { url, id } = info.file.response.result || {}
+      config.fileName = type === 'STORAGE' ? storageConfigFileNameMap[config.key] : info.file.name
       config.fileUrl = url
       config.fileId = id
       message.success(`${info.file.name} ${t('uploaded')} ${t('success')}`)
@@ -463,7 +479,8 @@ onMounted(() => {
   display: flex;
   flex: 1;
   flex-direction: column;
-  box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
+  border: 1px solid #e8e8f0;
+  border-left: 0;
   .detail-content-wrap {
     height: 100%;
     padding-right: 200px;
@@ -474,6 +491,9 @@ onMounted(() => {
     flex: 1;
     overflow: auto;
     flex-direction: column;
+    .ant-form-item {
+      margin-bottom: 8px;
+    }
     :deep(.ant-form-item-label) {
       > label {
         word-break: break-all;
@@ -483,7 +503,7 @@ onMounted(() => {
       margin-right: 16px;
     }
     .header {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 600;
       color: #102048;
     }
@@ -491,12 +511,34 @@ onMounted(() => {
       color: @primary-color;
       cursor: pointer;
     }
+    .config-value {
+      word-break: break-all;
+      &.auth-filename {
+        max-width: 72%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        display: inline-block;
+        vertical-align: middle;
+        margin-top: -4px;
+      }
+    }
   }
   .footer-btn {
     height: 44px;
     flex-shrink: 0;
     padding-top: 12px;
     background-color: #fff;
+    .edit-btn, .save-btn {
+      min-width: 60px;
+    }
+    .remove-btn {
+      &:hover {
+        background-color: #ff4d4f;
+        border-color: transparent;
+        color: #fff;
+      }
+    }
   }
 }
 </style>

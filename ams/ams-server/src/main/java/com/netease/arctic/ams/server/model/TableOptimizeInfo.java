@@ -24,9 +24,6 @@ import com.netease.arctic.table.TableIdentifier;
  * Current optimize state of an ArcticTable.
  */
 public class TableOptimizeInfo {
-  public enum OptimizeStatus {
-    MajorOptimizing, MinorOptimizing, Pending, Idle
-  }
 
   public TableOptimizeInfo(TableIdentifier tableIdentifier) {
     this.tableIdentifier = tableIdentifier;
@@ -36,7 +33,7 @@ public class TableOptimizeInfo {
 
   private final TableIdentifier tableIdentifier;
   private String tableName;
-  private OptimizeStatus optimizeStatus = OptimizeStatus.Idle;
+  private String optimizeStatus = TableOptimizeRuntime.OptimizeStatus.Idle.displayValue();
   private long duration = 0;
   private long fileCount = 0;
   private long fileSize = 0;
@@ -51,12 +48,11 @@ public class TableOptimizeInfo {
     return tableName;
   }
 
-  public OptimizeStatus getOptimizeStatus() {
+  public String getOptimizeStatus() {
     return optimizeStatus;
   }
 
-  public void setOptimizeStatus(
-      OptimizeStatus optimizeStatus) {
+  public void setOptimizeStatus(String optimizeStatus) {
     this.optimizeStatus = optimizeStatus;
   }
 

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.terminal;
 
+import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.ams.server.config.Configuration;
 import com.netease.arctic.table.TableMetaStore;
 import org.apache.commons.io.Charsets;
@@ -43,7 +44,7 @@ public class TerminalSessionContext {
   private final TableMetaStore metaStore;
 
   private final AtomicReference<ExecutionStatus> status = new AtomicReference<>(ExecutionStatus.Created);
-  private final AtomicReference<ExecutionTask> task = new AtomicReference<>();
+  private volatile ExecutionTask task = null;
   private final TerminalSessionFactory factory;
   private final Configuration sessionConfiguration;
   private volatile TerminalSession session;
@@ -82,7 +83,7 @@ public class TerminalSessionContext {
   }
 
   public synchronized void submit(String catalog, String script, int fetchLimit, boolean stopOnError) {
-    ExecutionTask task = new ExecutionTask(catalog, script, fetchLimit, stopOnError, this::lazyLoadSession);
+    ExecutionTask task = new ExecutionTask(catalog, script, fetchLimit, stopOnError);
     if (!isReadyToExecute()) {
       throw new IllegalStateException("current session is not ready to execute. status: " + status.get().name());
     }
@@ -91,7 +92,7 @@ public class TerminalSessionContext {
     CompletableFuture.supplyAsync(task, threadPool)
         .whenComplete((s, e) -> status.compareAndSet(ExecutionStatus.Running, s))
         .thenApply(s -> lastExecutionTime = System.currentTimeMillis());
-    this.task.set(task);
+    this.task = task;
 
     String poolInfo = "new sql script submit, current thread pool state. [Active: " +
         threadPool.getActiveCount() + ", PoolSize: " + threadPool.getPoolSize() + "]";
@@ -100,23 +101,31 @@ public class TerminalSessionContext {
   }
 
   public synchronized void cancel() {
-    task.get().cancel();
+    if (this.task != null) {
+      this.task.cancel();
+    }
   }
 
   public void release() {
-
+    this.session.release();
   }
 
   public ExecutionStatus getStatus() {
     return status.get();
   }
 
-  public List<String> getLogs() {
-    return task.get().executionResult.getLogs();
+  public synchronized List<String> getLogs() {
+    if (task != null) {
+      return task.executionResult.getLogs();
+    }
+    return Lists.newArrayList();
   }
 
-  public List<StatementResult> getStatementResults() {
-    return task.get().executionResult.getResults();
+  public synchronized List<StatementResult> getStatementResults() {
+    if (task != null) {
+      return task.executionResult.getResults();
+    }
+    return Lists.newArrayList();
   }
 
   public long lastExecutionTime() {
@@ -124,18 +133,28 @@ public class TerminalSessionContext {
   }
 
   public String lastScript() {
-    ExecutionTask t = this.task.get();
-    if (t == null) {
+    if (this.task == null) {
       return "";
     }
-    return t.script;
+    return this.task.script;
   }
 
-  private synchronized TerminalSession lazyLoadSession() {
+  private synchronized TerminalSession lazyLoadSession(ExecutionTask task) {
+    if (session != null && !session.active()) {
+      task.executionResult.appendLog("terminal session is not active, release session");
+      try {
+        session.release();
+      } catch (Throwable e) {
+        LOG.error("error when release session.");
+      } finally {
+        session = null;
+      }
+    }
+
     if (session == null) {
-      task.get().executionResult.appendLog("terminal session dose not exists. create session first");
+      task.executionResult.appendLog("terminal session dose not exists. create session first");
       session = factory.create(metaStore, sessionConfiguration);
-      task.get().executionResult.appendLog("create a new terminal session.");
+      task.executionResult.appendLog("create a new terminal session.");
     }
     return session;
   }
@@ -149,29 +168,34 @@ public class TerminalSessionContext {
     private final AtomicBoolean canceled = new AtomicBoolean(false);
     private final int fetchLimits;
     private final boolean stopOnError;
-    private final Supplier<TerminalSession> sessionSupplier;
     private final String catalog;
 
     public ExecutionTask(
         String catalog,
         String script,
         int fetchLimits,
-        boolean stopOnError,
-        Supplier<TerminalSession> sessionSupplier) {
+        boolean stopOnError) {
       this.catalog = catalog;
-      this.script = script;
+      if (script.trim().endsWith(";")) {
+        this.script = script;
+      } else {
+        this.script = script + ";";
+      }
       this.fetchLimits = fetchLimits;
       this.stopOnError = stopOnError;
-      this.sessionSupplier = sessionSupplier;
     }
 
     @Override
     public ExecutionStatus get() {
       try {
         return metaStore.doAs(() -> {
-          TerminalSession session = sessionSupplier.get();
+          TerminalSession session = lazyLoadSession(this);
           executionResult.appendLog("fetch terminal session: " + sessionId);
           executionResult.appendLogs(session.logs());
+          for (String key : session.configs().keySet()) {
+            executionResult.appendLog("session configuration: " + key + " => " + session.configs().get(key));
+          }
+
           return execute(session);
         });
       } catch (Throwable t) {
@@ -209,7 +233,9 @@ public class TerminalSessionContext {
           statementBuilder.append(line);
           no = lineNumber(reader, no);
 
-          boolean success = executeStatement(session, statementBuilder.toString(), no);
+          // drop the semicolon(;) character
+          String statement = statementBuilder.substring(0, statementBuilder.length() - 1);
+          boolean success = executeStatement(session, statement, no);
           if (!success) {
             if (stopOnError) {
               executionResult.appendLog("execution stopped for error happened and stop-when-error config.");

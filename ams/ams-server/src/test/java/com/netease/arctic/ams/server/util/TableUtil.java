@@ -23,12 +23,13 @@ import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.ArcticTable;
-import java.util.Map;
-import java.util.Optional;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.catalog.Catalog;
+
+import java.util.Map;
+import java.util.Optional;
 
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_CATALOG_NAME;
 import static com.netease.arctic.ams.server.AmsTestBase.AMS_TEST_ICEBERG_DB_NAME;

@@ -28,6 +28,7 @@ import scala.collection.JavaConverters;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class LocalTerminalSession implements TerminalSession {
@@ -38,16 +39,25 @@ public class LocalTerminalSession implements TerminalSession {
   SparkSession session;
   String currentCatalog;
 
-  LocalTerminalSession(List<String> supportedCatalogs, SparkSession session, List<String> initLogs) {
+  Map<String, String> sessionConfigs;
+
+  LocalTerminalSession(List<String> supportedCatalogs, SparkSession session, List<String> initLogs, Map<String,
+      String> sessionConfigs) {
     this.session = session;
     this.catalogs = supportedCatalogs;
     this.logs.addAll(initLogs);
+    this.sessionConfigs = sessionConfigs;
+  }
+
+  @Override
+  public Map<String, String> configs() {
+    return this.sessionConfigs;
   }
 
   @Override
   public ResultSet executeStatement(String catalog, String statement) {
     if (currentCatalog == null || !currentCatalog.equalsIgnoreCase(catalog)) {
-      session.sql("use " + catalog);
+      session.sql("use `" + catalog + "`");
       currentCatalog = catalog;
       logs.add("switch to new catalog via: use " + catalog);
     }
@@ -75,5 +85,12 @@ public class LocalTerminalSession implements TerminalSession {
     } catch (Throwable t) {
       return false;
     }
+  }
+
+  @Override
+  public void release() {
+    // do not call release in local mode.
+    // spark session.release will release spark context.
+    // spark session is a hash-map, release reference is enough.
   }
 }

@@ -19,6 +19,7 @@
 package com.netease.arctic.flink.read;
 
 import com.netease.arctic.flink.read.internals.AbstractFetcher;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.metrics.MetricGroup;
@@ -65,7 +66,8 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
     super(topics, deserializer, props);
     this.logRecordDeserializationSchemaWrapper = deserializer;
     this.schema = schema;
-    this.logRetractionEnable = tableOptions.get(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
+    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
+        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
     this.logConsumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
     this.logReadHelper = new LogReadHelper();
   }
@@ -78,7 +80,8 @@ public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
       ReadableConfig tableOptions) {
     super(subscriptionPattern, deserializer, props);
     this.schema = schema;
-    this.logRetractionEnable = tableOptions.get(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
+    this.logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableOptions,
+        ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE);
     this.logConsumerChangelogMode = tableOptions.get(ARCTIC_LOG_CONSUMER_CHANGELOG_MODE);
     this.logReadHelper = new LogReadHelper();
   }

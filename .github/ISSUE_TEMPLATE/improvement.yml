@@ -17,7 +17,7 @@
 name: Arctic Improvement
 title: "[Improvement]: "
 description: Suggest an improvement on performance, code quality, user experience, etc
-labels: [ "improvement" ]
+labels: [ "type:improvement" ]
 body:
   - type: markdown
     attributes:

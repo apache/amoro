@@ -50,18 +50,26 @@ markdown_extensions:
 
 nav:
   - Overview: index.md
-  - Motivation: arctic-motivation.md
-  - Quickstart: docker-quickstart.md
-  - Table Format:
-    - Tablestore: table-format/table-store.md
-    - Iceberg Format: table-format/iceberg-format.md
-    - Hive Format: table-format/hive-format.md
-  - Meta Service:
-    - Arctic Dashboard: meta-service/dashboard.md
-    - Table Management: meta-service/table-management.md
-    - Table Config: meta-service/table-properties.md
-  - Optimizers: optimizers.md
-  - Flink:
+  - Concepts:
+    - Catalogs: concepts/catalogs.md
+    - Table formats: concepts/table-formats.md
+    - Self-optimizing: concepts/self-optimizing.md
+    - Table watermark: concepts/table-watermark.md
+  - Quick Start:
+      - Setup:
+          - Setup from docker: quickstart/setup/setup-from-docker.md
+          - Setup from binary release: quickstart/setup/setup-from-binary-release.md
+      - Quick demo: quickstart/quick-demo.md
+      - CDC ingestion: quickstart/cdc-ingestion.md
+  - Admin guide:
+    - Deployment: guides/deployment.md
+    - Managing catalogs: guides/managing-catalogs.md
+    - Managing tables: guides/managing-tables.md
+    - Managing optimizers: guides/managing-optimizers.md
+    - Using Kyuubi by terminal: guides/using-kyuubi.md
+    - Metrics: guides/metrics.md
+  - Configurations: configurations.md
+  - Flink integration:
     - Getting Started: flink/flink-get-started.md
     - Flink DDL: flink/flink-ddl.md
     - Flink DML: flink/flink-dml.md
@@ -69,18 +77,19 @@ nav:
     - Flink DataStream: flink/flink-ds.md
     - Using Kafka as Logstore: flink/hidden-kafka.md
     - Flink CDC to Arctic: flink/flink-cdc-to-arctic.md
-  - Spark:
+  - Spark integration:
     - Getting Started: spark/spark-get-started.md
-    - Spark Configuration: spark/spark-conf.md
     - Spark DDL: spark/spark-ddl.md
     - Spark DML: spark/spark-dml.md
     - Spark DataFrame: spark/spark-dataframe.md
-  - Trino: trino.md
+  - MPP integration:
+    - Trino: mpp/trino.md
+    - Impala: mpp/impala.md
   - Benchmark:
     - Report: benchmark/benchmark.md
-    - How to benchmark:  benchmark/benchmark-step.md
+    - How to benchmark: benchmark/benchmark-step.md
   - Roadmap: roadmap.md
-  - How to contribute: contribute.md
+  - Contributing: contribute.md
 
 
 plugins:

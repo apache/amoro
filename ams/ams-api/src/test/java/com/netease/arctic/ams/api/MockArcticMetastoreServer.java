@@ -76,7 +76,7 @@ public class MockArcticMetastoreServer implements Runnable {
           System.getProperty("user.name"));
 
       Map<String, String> catalogProperties = new HashMap<>();
-      catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/tmp");
+      catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
 
       CatalogMeta catalogMeta = new CatalogMeta(TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
           storageConfig, authConfig, catalogProperties);
@@ -327,6 +327,10 @@ public class MockArcticMetastoreServer implements Runnable {
         }
       }
     }
+
+     public void updateMeta(CatalogMeta meta, String key, String value) {
+      meta.getCatalogProperties().replace(key, value);
+     }
   }
 
   public class OptimizeManagerHandler implements OptimizeManager.Iface {

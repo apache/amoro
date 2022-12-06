@@ -255,19 +255,25 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
 
         @Override
         public FieldGetter<RowData> createFieldGetter(Type type, int pos) {
+          final FieldGetter<RowData> fieldGetter;
           switch (type.typeId()) {
             case BOOLEAN:
-              return RowData::getBoolean;
+              fieldGetter = RowData::getBoolean;
+              break;
             case INTEGER:
             case DATE:
-              return RowData::getInt;
+              fieldGetter = RowData::getInt;
+              break;
             case LONG:
             case TIME:
-              return RowData::getLong;
+              fieldGetter = RowData::getLong;
+              break;
             case FLOAT:
-              return RowData::getFloat;
+              fieldGetter = RowData::getFloat;
+              break;
             case DOUBLE:
-              return RowData::getDouble;
+              fieldGetter = RowData::getDouble;
+              break;
             case TIMESTAMP:
               Types.TimestampType timestamp = (Types.TimestampType) type;
               if (timestamp.shouldAdjustToUTC()) {
@@ -286,41 +292,53 @@ public class LogRecordV1 implements LogData<RowData>, Serializable {
                 };
               }
             case STRING:
-              return RowData::getString;
+              fieldGetter = RowData::getString;
+              break;
             case UUID:
             case FIXED:
             case BINARY:
-              return RowData::getBinary;
+              fieldGetter = RowData::getBinary;
+              break;
             case DECIMAL:
-              return (row, fieldPos) -> {
+              fieldGetter = ((row, fieldPos) -> {
                 Types.DecimalType decimalType = (Types.DecimalType) type;
                 int precision = decimalType.precision();
                 int scale = decimalType.scale();
                 DecimalData decimalData = row.getDecimal(fieldPos, precision, scale);
                 return decimalData == null ? null : decimalData.toBigDecimal();
-              };
+              });
+              break;
             case LIST:
-              return (row, fieldPos) -> {
+              fieldGetter = ((row, fieldPos) -> {
                 ArrayData arrayData = row.getArray(fieldPos);
                 // check arrayData is null or not. arrayData could be nullable.
                 if (arrayData == null) {
                   return null;
                 }
                 return new LogFlinkArrayData(arrayData);
-              };
+              });
+              break;
             case MAP:
-              return (row, fieldPos) -> {
+              fieldGetter = ((row, fieldPos) -> {
                 MapData mapData = row.getMap(pos);
                 if (mapData == null) {
                   return null;
                 }
                 return new LogFlinkMapData(mapData);
-              };
+              });
+              break;
             case STRUCT:
-              return ((row, fieldPos) -> row.getRow(fieldPos, 0));
+              fieldGetter = ((row, fieldPos) -> row.getRow(fieldPos, 0));
+              break;
             default:
               throw new UnsupportedOperationException("not supported type:" + type);
           }
+          return (row,fieldPos) -> {
+            if (row.isNullAt(fieldPos)) {
+              return null;
+            }
+            return fieldGetter.getFieldOrNull(row,fieldPos);
+          };
         }
       };
 

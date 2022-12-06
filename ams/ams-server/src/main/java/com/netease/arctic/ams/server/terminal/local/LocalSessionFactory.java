@@ -18,20 +18,32 @@
 
 package com.netease.arctic.ams.server.terminal.local;
 
-import com.google.common.collect.Lists;
 import com.netease.arctic.ams.server.config.Configuration;
+import com.netease.arctic.ams.server.terminal.SparkContextUtil;
 import com.netease.arctic.ams.server.terminal.TerminalSession;
 import com.netease.arctic.ams.server.terminal.TerminalSessionFactory;
-import com.netease.arctic.spark.ArcticSparkCatalog;
 import com.netease.arctic.spark.ArcticSparkExtensions;
 import com.netease.arctic.table.TableMetaStore;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
+import org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions;
 import org.apache.spark.SparkConf;
 import org.apache.spark.sql.SparkSession;
 import org.apache.spark.sql.internal.SQLConf;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
 
 public class LocalSessionFactory implements TerminalSessionFactory {
+
+  static final Set<String> STATIC_SPARK_CONF = Collections.unmodifiableSet(
+      Sets.newHashSet("spark.sql.extensions")
+  );
 
   SparkSession context = null;
 
@@ -48,16 +60,18 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     List<String> initializeLogs = Lists.newArrayList();
     initializeLogs.add("initialize session, session factory: " + LocalSessionFactory.class.getName());
 
-    for (String catalog : catalogs) {
-      String type = configuration.getString(SessionConfigOptions.catalogType(catalog));
-      String url = configuration.getString(SessionConfigOptions.catalogUrl(catalog));
-      initializeLogs.add("add catalog config to spark session:");
-
-      updateSessionConf(session, initializeLogs, "spark.sql.catalog." + catalog, ArcticSparkCatalog.class.getName());
-      updateSessionConf(session, initializeLogs, "spark.sql.catalog." + catalog + ".url", url);
+    Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
+    Map<String, String> finallyConf = Maps.newLinkedHashMap();
+    for (String key : sparkConf.keySet()) {
+      if (STATIC_SPARK_CONF.contains(key)) {
+        continue;
+      }
+      updateSessionConf(session, initializeLogs, key, sparkConf.get(key));
+      finallyConf.put(key, sparkConf.get(key));
     }
+    finallyConf.put(REFRESH_CATALOG_BEFORE_USAGE, "true");
 
-    return new LocalTerminalSession(catalogs, session, initializeLogs);
+    return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
   }
 
   private void updateSessionConf(SparkSession session, List<String> logs, String key, String value) {
@@ -69,11 +83,12 @@ public class LocalSessionFactory implements TerminalSessionFactory {
     if (context == null) {
       SparkConf sparkconf = new SparkConf()
           .setAppName("spark-local-context")
-          .setMaster("local[*]");
+          .setMaster("local");
       sparkconf.set(SQLConf.PARTITION_OVERWRITE_MODE().key(), "dynamic");
       sparkconf.set("spark.executor.heartbeatInterval", "100s");
       sparkconf.set("spark.network.timeout", "200s");
-      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName());
+      sparkconf.set("spark.sql.extensions", ArcticSparkExtensions.class.getName() +
+          "," + IcebergSparkSessionExtensions.class.getName());
       context = SparkSession
           .builder()
           .config(sparkconf)

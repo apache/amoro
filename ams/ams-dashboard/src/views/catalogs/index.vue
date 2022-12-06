@@ -11,7 +11,8 @@
       <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
     </div>
     <div class="catalog-detail">
-      <Detail :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
+      <a-empty v-if="!catalogs.length && !loading" :image="simpleImage" class="detail-empty"></a-empty>
+      <Detail v-else :isEdit="isEdit" @updateEdit="updateEdit" @updateCatalogs="updateCatalogs" />
     </div>
   </div>
 </template>
@@ -51,14 +52,14 @@ async function getCatalogs() {
   }
 }
 function initSelectCatalog() {
-  const { catalog = '', type } = route.query
+  const { catalogname = '', type } = route.query
   const item: ICatalogItem = {}
-  if (decodeURIComponent(catalog as string) === NEW_CATALOG) {
+  if (decodeURIComponent(catalogname as string) === NEW_CATALOG) {
     addCatalog()
     return
   }
-  if (catalog) {
-    item.catalogName = catalog
+  if (catalogname) {
+    item.catalogName = catalogname
     item.catalogType = type
   } else {
     item.catalogName = catalogs[0]?.catalogName
@@ -84,7 +85,7 @@ function selectCatalog(item: ICatalogItem) {
   router.replace({
     path: '/catalogs',
     query: {
-      catalog: encodeURIComponent(curCatalog.catalogName),
+      catalogname: encodeURIComponent(curCatalog.catalogName),
       type: curCatalog.catalogType
     }
   })
@@ -161,18 +162,19 @@ onBeforeRouteLeave((to, form, next) => {
 <style lang="less" scoped>
 .catalogs-wrap {
   height: 100%;
+  padding: 16px 24px;
   .catalog-list-left {
     width: 200px;
     height: 100%;
-    // border: 1px solid #e8e8f0;
-    box-shadow: 0 1px 4px rgb(0 21 41 / 8%);
+    border: 1px solid #e8e8f0;
     text-align: center;
   }
   .catalog-header {
-    height: 48px;
-    line-height: 48px;
+    height: 40px;
+    line-height: 40px;
     font-size: 14px;
-    border-bottom: 1px solid #e8e8f0;
+    font-weight: 500;
+    background-color: #fafafa;
   }
   .catalog-list {
     background-color: #fff;
@@ -184,13 +186,13 @@ onBeforeRouteLeave((to, form, next) => {
       border-bottom: 1px solid #e8e8f0;
       padding: 0 12px;
       &.active {
-        color: #fff;
+        color: #fff !important;
         background-color: @primary-color;
+        border-color: transparent;
       }
       &:hover {
         cursor: pointer;
-        color: #fff;
-        background-color: @primary-color;
+        color: @primary-color;
       }
       &:last-child {
         border-bottom: 0;
@@ -205,6 +207,18 @@ onBeforeRouteLeave((to, form, next) => {
   .catalog-detail {
     display: flex;
     flex: 1;
+    .detail-empty {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      :deep(.ant-empty-image) {
+        height: 100px;
+        svg {
+          width: 120px;
+        }
+      }
+    }
   }
 }
 </style>

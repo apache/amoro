@@ -6,7 +6,6 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.server.AmsTestBase;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -16,6 +15,7 @@ import org.apache.iceberg.PartitionKey;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.TableProperties;
 import org.apache.iceberg.catalog.Catalog;
 import org.apache.iceberg.catalog.TableIdentifier;
@@ -50,11 +50,17 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
 import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 public class TestIcebergBase {
-  ArcticTable icebergTable;
+  ArcticTable icebergNoPartitionTable;
+  ArcticTable icebergPartitionTable;
 
   static final String DATABASE = "native_test_db";
-  static final String TABLE_NAME = "native_test_tb";
-  TableIdentifier tableIdentifier = TableIdentifier.of(DATABASE, TABLE_NAME);
+  static final String NO_PARTITION_TABLE_NAME = "native_test_npt_tb";
+  static final String PARTITION_TABLE_NAME = "native_test_pt_tb";
+  TableIdentifier noPartitionTableIdentifier = TableIdentifier.of(DATABASE, NO_PARTITION_TABLE_NAME);
+  TableIdentifier partitionTableIdentifier = TableIdentifier.of(DATABASE, PARTITION_TABLE_NAME);
+
+  protected static final PartitionSpec SPEC = PartitionSpec.builderFor(TableTestBase.TABLE_SCHEMA)
+      .identity("name").build();
 
   @BeforeClass
   public static void createDatabase() {
@@ -76,9 +82,16 @@ public class TestIcebergBase {
         catalogProperties, new Configuration());
     Map<String, String> tableProperty = new HashMap<>();
     tableProperty.put(TableProperties.FORMAT_VERSION, "2");
-    nativeIcebergCatalog.createTable(tableIdentifier, TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperty);
-    icebergTable = AmsTestBase.icebergCatalog.loadTable(
-        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_ICEBERG_CATALOG_NAME, DATABASE, TABLE_NAME));
+
+    // init unPartitionTable
+    nativeIcebergCatalog.createTable(noPartitionTableIdentifier, TableTestBase.TABLE_SCHEMA, PartitionSpec.unpartitioned(), tableProperty);
+    icebergNoPartitionTable = AmsTestBase.icebergCatalog.loadTable(
+        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_ICEBERG_CATALOG_NAME, DATABASE, NO_PARTITION_TABLE_NAME));
+
+    // init partitionTable
+    nativeIcebergCatalog.createTable(partitionTableIdentifier, TableTestBase.TABLE_SCHEMA, SPEC, tableProperty);
+    icebergPartitionTable = AmsTestBase.icebergCatalog.loadTable(
+        com.netease.arctic.table.TableIdentifier.of(AMS_TEST_ICEBERG_CATALOG_NAME, DATABASE, PARTITION_TABLE_NAME));
   }
 
   @After
@@ -89,31 +102,55 @@ public class TestIcebergBase {
     catalogProperties.put(ICEBERG_CATALOG_TYPE, catalogMeta.getCatalogType());
     Catalog nativeIcebergCatalog = org.apache.iceberg.CatalogUtil.buildIcebergCatalog(AMS_TEST_ICEBERG_CATALOG_NAME,
         catalogProperties, new Configuration());
-    nativeIcebergCatalog.dropTable(tableIdentifier);
+    nativeIcebergCatalog.dropTable(noPartitionTableIdentifier);
+    nativeIcebergCatalog.dropTable(partitionTableIdentifier);
   }
 
-  protected List<DataFile> insertDataFiles(UnkeyedTable arcticTable, int length) throws IOException {
+  private long getSmallFileSize(Map<String, String> properties) {
+    long targetSize = PropertyUtil.propertyAsLong(properties,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    int fragmentRatio = PropertyUtil.propertyAsInt(properties,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+    return targetSize / fragmentRatio;
+  }
+  
+  protected List<DataFile> insertDataFiles(Table arcticTable, int length) throws IOException {
+    PartitionKey partitionKey = null;
+    if (!arcticTable.spec().isUnpartitioned()) {
+      partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
+      partitionKey.partition(baseRecords(0, 1, arcticTable.schema()).get(0));
+    }
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
             .build();
-    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+    EncryptedOutputFile outputFile;
+    if (partitionKey != null) {
+      outputFile = outputFileFactory.newOutputFile(partitionKey);
+    } else {
+      outputFile = outputFileFactory.newOutputFile();
+    }
 
-    long smallSizeByBytes = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-        com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    long smallSizeByBytes = getSmallFileSize(arcticTable.properties());
     List<DataFile> result = new ArrayList<>();
     DataWriter<Record> writer = appenderFactory
-        .newDataWriter(outputFile, FileFormat.PARQUET, null);
+        .newDataWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
     for (int i = 1; i < length * 10; i = i + length) {
       for (Record record : baseRecords(i, length, arcticTable.schema())) {
         if (writer.length() > smallSizeByBytes || result.size() > 0) {
           writer.close();
           result.add(writer.toDataFile());
-          EncryptedOutputFile newOutputFile = outputFileFactory.newOutputFile();
+          EncryptedOutputFile newOutputFile;
+          if (partitionKey != null) {
+            newOutputFile = outputFileFactory.newOutputFile(partitionKey);
+          } else {
+            newOutputFile = outputFileFactory.newOutputFile();
+          }
           writer = appenderFactory
-              .newDataWriter(newOutputFile, FileFormat.PARQUET, null);
+              .newDataWriter(newOutputFile, FileFormat.PARQUET, partitionKey);
         }
         writer.write(record);
       }
@@ -128,10 +165,12 @@ public class TestIcebergBase {
     return result;
   }
 
-  protected void insertEqDeleteFiles(UnkeyedTable arcticTable, int length) throws IOException {
-    Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
-    PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
-    partitionKey.partition(tempRecord);
+  protected void insertEqDeleteFiles(Table arcticTable, int length) throws IOException {
+    PartitionKey partitionKey = null;
+    if (!arcticTable.spec().isUnpartitioned()) {
+      partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
+      partitionKey.partition(baseRecords(0, 1, arcticTable.schema()).get(0));
+    }
     List<Integer> equalityFieldIds = Lists.newArrayList(arcticTable.schema().findField("id").fieldId());
     Schema eqDeleteRowSchema = arcticTable.schema().select("id");
     GenericAppenderFactory appenderFactory =
@@ -140,7 +179,12 @@ public class TestIcebergBase {
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
             .build();
-    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(arcticTable.spec(), partitionKey);
+    EncryptedOutputFile outputFile;
+    if (partitionKey != null) {
+      outputFile = outputFileFactory.newOutputFile(partitionKey);
+    } else {
+      outputFile = outputFileFactory.newOutputFile();
+    }
 
     List<DeleteFile> result = new ArrayList<>();
     EqualityDeleteWriter<Record> writer = appenderFactory
@@ -162,16 +206,23 @@ public class TestIcebergBase {
     rowDelta.commit();
   }
 
-  protected void insertPosDeleteFiles(UnkeyedTable arcticTable, List<DataFile> dataFiles) throws IOException {
-    Record tempRecord = baseRecords(0, 1, arcticTable.schema()).get(0);
-    PartitionKey partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
-    partitionKey.partition(tempRecord);
+  protected List<DeleteFile> insertPosDeleteFiles(Table arcticTable, List<DataFile> dataFiles) throws IOException {
+    PartitionKey partitionKey = null;
+    if (!arcticTable.spec().isUnpartitioned()) {
+      partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
+      partitionKey.partition(baseRecords(0, 1, arcticTable.schema()).get(0));
+    }
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
             .build();
-    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile(arcticTable.spec(), partitionKey);
+    EncryptedOutputFile outputFile;
+    if (partitionKey != null) {
+      outputFile = outputFileFactory.newOutputFile(partitionKey);
+    } else {
+      outputFile = outputFileFactory.newOutputFile();
+    }
 
     List<DeleteFile> result = new ArrayList<>();
     PositionDeleteWriter<Record> writer = appenderFactory
@@ -190,16 +241,29 @@ public class TestIcebergBase {
     RowDelta rowDelta = arcticTable.newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
+
+    return result;
   }
 
-  protected List<DataFile> insertOptimizeTargetDataFiles(UnkeyedTable arcticTable, int length) throws IOException {
+  protected List<DataFile> insertOptimizeTargetDataFiles(Table arcticTable, int length) throws IOException {
+    PartitionKey partitionKey = null;
+    if (!arcticTable.spec().isUnpartitioned()) {
+      partitionKey = new PartitionKey(arcticTable.spec(), arcticTable.schema());
+      partitionKey.partition(baseRecords(0, 1, arcticTable.schema()).get(0));
+    }
     GenericAppenderFactory appenderFactory = new GenericAppenderFactory(arcticTable.schema(), arcticTable.spec());
     OutputFileFactory outputFileFactory =
         OutputFileFactory.builderFor(arcticTable, arcticTable.spec().specId(), 1)
             .build();
-    EncryptedOutputFile outputFile = outputFileFactory.newOutputFile();
+    EncryptedOutputFile outputFile;
+    if (partitionKey != null) {
+      outputFile = outputFileFactory.newOutputFile(partitionKey);
+    } else {
+      outputFile = outputFileFactory.newOutputFile();
+    }
+
     DataWriter<Record> writer = appenderFactory
-        .newDataWriter(outputFile, FileFormat.PARQUET, null);
+        .newDataWriter(outputFile, FileFormat.PARQUET, partitionKey);
 
     List<DataFile> result = new ArrayList<>();
     for (int i = 1; i < length * 10; i = i + length) {

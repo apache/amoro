@@ -20,10 +20,12 @@ package com.netease.arctic.spark;
 
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
+import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.BaseKeyedTable;
+import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableBuilder;
@@ -68,6 +70,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE;
+import static com.netease.arctic.spark.SparkSQLProperties.REFRESH_CATALOG_BEFORE_USAGE_DEFAULT;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES;
 import static com.netease.arctic.spark.SparkSQLProperties.USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT;
 import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHOUT_TIMEZONE;
@@ -75,6 +79,7 @@ import static org.apache.iceberg.spark.SparkSQLProperties.HANDLE_TIMESTAMP_WITHO
 public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   // private static final Logger LOG = LoggerFactory.getLogger(ArcticSparkCatalog.class);
   private String catalogName = null;
+
   private ArcticCatalog catalog;
 
   /**
@@ -124,6 +129,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
 
   @Override
   public Table loadTable(Identifier ident) throws NoSuchTableException {
+    checkAndRefreshCatalogMeta(catalog);
     TableIdentifier identifier;
     ArcticTable table;
     try {
@@ -146,7 +152,8 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     if (type != null) {
       switch (type) {
         case CHANGE:
-          return new ArcticSparkChangeTable((BaseKeyedTable)table, false);
+          return new ArcticSparkChangeTable((BaseUnkeyedTable)table.asKeyedTable().changeTable(),
+              false);
         default:
           throw new IllegalArgumentException("Unknown inner table type: " + type);
       }
@@ -166,29 +173,19 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
   public Table createTable(
       Identifier ident, StructType schema, Transform[] transforms,
       Map<String, String> properties) throws TableAlreadyExistsException {
+    checkAndRefreshCatalogMeta(catalog);
     properties = Maps.newHashMap(properties);
-    Schema convertSchema;
-    SparkSession sparkSession = SparkSession.active();
-    if (Boolean.parseBoolean(
-            sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
-                    USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT))) {
-      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
-      convertSchema = SparkSchemaUtil.convert(schema, true);
-    } else {
-      convertSchema = SparkSchemaUtil.convert(schema, false);
-    }
-    Schema icebergSchema = checkAndConvertSchema(
-            convertSchema, properties);
+    Schema finalSchema = checkAndConvertSchema(schema, properties);
     TableIdentifier identifier = buildIdentifier(ident);
-    TableBuilder builder = catalog.newTableBuilder(identifier, icebergSchema);
-    PartitionSpec spec = Spark3Util.toPartitionSpec(icebergSchema, transforms);
+    TableBuilder builder = catalog.newTableBuilder(identifier, finalSchema);
+    PartitionSpec spec = Spark3Util.toPartitionSpec(finalSchema, transforms);
     if (properties.containsKey(TableCatalog.PROP_LOCATION) &&
         isIdentifierLocation(properties.get(TableCatalog.PROP_LOCATION), ident)) {
       properties.remove(TableCatalog.PROP_LOCATION);
     }
     try {
       if (properties.containsKey("primary.keys")) {
-        PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(icebergSchema)
+        PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(finalSchema)
             .addDescription(properties.get("primary.keys"))
             .build();
         properties.remove("primary.keys");
@@ -206,15 +203,41 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
     }
   }
 
-  private Schema checkAndConvertSchema(Schema schema, Map<String, String> properties) {
+  private void checkAndRefreshCatalogMeta(ArcticCatalog catalog) {
+    SparkSession sparkSession = SparkSession.active();
+    if (Boolean.parseBoolean(sparkSession.conf().get(REFRESH_CATALOG_BEFORE_USAGE,
+        REFRESH_CATALOG_BEFORE_USAGE_DEFAULT))) {
+      catalog.refresh();
+    }
+  }
+
+  private Schema checkAndConvertSchema(StructType schema, Map<String, String> properties) {
+    Schema convertSchema;
+    boolean useTimestampWithoutZoneInNewTables;
+    SparkSession sparkSession = SparkSession.active();
+    if (CatalogUtil.isHiveCatalog(catalog)) {
+      useTimestampWithoutZoneInNewTables = true;
+    } else {
+      useTimestampWithoutZoneInNewTables = Boolean.parseBoolean(
+          sparkSession.conf().get(USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES,
+              USE_TIMESTAMP_WITHOUT_TIME_ZONE_IN_NEW_TABLES_DEFAULT));
+    }
+    if (useTimestampWithoutZoneInNewTables) {
+      sparkSession.conf().set(HANDLE_TIMESTAMP_WITHOUT_TIMEZONE, true);
+      convertSchema = SparkSchemaUtil.convert(schema, true);
+    } else {
+      convertSchema = SparkSchemaUtil.convert(schema, false);
+    }
+
+    // schema add primary keys
     if (properties.containsKey("primary.keys")) {
-      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(schema)
+      PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(convertSchema)
           .addDescription(properties.get("primary.keys"))
           .build();
       List<String> primaryKeys = primaryKeySpec.fieldNames();
       Set<String> pkSet = new HashSet<>(primaryKeys);
       List<Types.NestedField> columnsWithPk = new ArrayList<>();
-      schema.columns().forEach(nestedField -> {
+      convertSchema.columns().forEach(nestedField -> {
         if (pkSet.contains(nestedField.name())) {
           columnsWithPk.add(nestedField.asRequired());
         } else {
@@ -223,7 +246,7 @@ public class ArcticSparkCatalog implements TableCatalog, SupportsNamespaces {
       });
       return new Schema(columnsWithPk);
     }
-    return schema;
+    return convertSchema;
   }
 
   private boolean isIdentifierLocation(String location, Identifier identifier) {

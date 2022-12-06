@@ -19,14 +19,10 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.AmsClient;
-import com.netease.arctic.ams.api.MetaException;
-import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.model.TableBasicInfo;
 import com.netease.arctic.ams.server.model.TableStatistics;
-import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ITableInfoService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
-import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;

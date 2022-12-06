@@ -18,10 +18,6 @@
 
 package com.netease.arctic.optimizer.operator.executor;
 
-import com.netease.arctic.ams.api.JobId;
-import com.netease.arctic.ams.api.JobType;
-import com.netease.arctic.ams.api.OptimizeStatus;
-import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
@@ -37,8 +33,6 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.WriteOperationKind;
-import com.netease.arctic.utils.SerializationUtil;
-import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -48,36 +42,27 @@ import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.TaskWriter;
+import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MajorExecutor extends BaseExecutor<DataFile> {
+public class MajorExecutor extends BaseExecutor {
   private static final Logger LOG = LoggerFactory.getLogger(MajorExecutor.class);
 
-  private final NodeTask task;
-  private final ArcticTable table;
-  private final long startTime;
-  private final OptimizerConfig config;
-
   public MajorExecutor(NodeTask nodeTask, ArcticTable table, long startTime, OptimizerConfig config) {
-    this.task = nodeTask;
-    this.table = table;
-    this.startTime = startTime;
-    this.config = config;
+    super(nodeTask, table, startTime, config);
   }
 
   @Override
-  public OptimizeTaskResult<DataFile> execute() throws Exception {
+  public OptimizeTaskResult execute() throws Exception {
     Iterable<DataFile> targetFiles;
-    LOG.info("start process major optimize task: {}", task);
+    LOG.info("Start processing arctic table major optimize task: {}", task);
 
     Map<DataTreeNode, List<DeleteFile>> deleteFileMap = groupDeleteFilesByNode(task.posDeleteFiles());
     List<DataFile> dataFiles = task.dataFiles();
@@ -88,33 +73,7 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
       return optimizeTable(recordIterator);
     });
 
-    long totalFileSize = 0;
-    List<ByteBuffer> baseFileBytesList = new ArrayList<>();
-    for (DataFile baseFile : targetFiles) {
-      totalFileSize += baseFile.fileSizeInBytes();
-      baseFileBytesList.add(SerializationUtil.toByteBuffer(baseFile));
-    }
-
-    OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();
-    BeanUtils.copyProperties(optimizeTaskStat, task);
-    JobId jobId = new JobId();
-    jobId.setId(config.getOptimizerId());
-    jobId.setType(JobType.Optimize);
-    optimizeTaskStat.setJobId(jobId);
-    optimizeTaskStat.setStatus(OptimizeStatus.Prepared);
-    optimizeTaskStat.setAttemptId(task.getAttemptId() + "");
-    optimizeTaskStat.setCostTime(System.currentTimeMillis() - startTime);
-    optimizeTaskStat.setNewFileSize(totalFileSize);
-    optimizeTaskStat.setReportTime(System.currentTimeMillis());
-    optimizeTaskStat.setFiles(baseFileBytesList);
-    optimizeTaskStat.setTableIdentifier(task.getTableIdentifier().buildTableIdentifier());
-    optimizeTaskStat.setTaskId(task.getTaskId());
-
-    OptimizeTaskResult<DataFile> result = new OptimizeTaskResult<>();
-    result.setTargetFiles(targetFiles);
-    result.setOptimizeTaskStat(optimizeTaskStat);
-
-    return result;
+    return buildOptimizeResult(targetFiles);
   }
 
   @Override
@@ -128,18 +87,24 @@ public class MajorExecutor extends BaseExecutor<DataFile> {
     } else {
       transactionId = null;
     }
+    long targetFileSize = PropertyUtil.propertyAsLong(table.properties(),
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
     TaskWriter<Record> writer = AdaptHiveGenericTaskWriterBuilder.builderFor(table)
         .withTransactionId(transactionId)
         .withTaskId(task.getAttemptId())
         .withCustomHiveSubdirectory(task.getCustomHiveSubdirectory())
+        .withTargetFileSize(targetFileSize)
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
     while (recordIterator.hasNext()) {
+      checkIfTimeout(writer);
+
       Record baseRecord = recordIterator.next();
       writer.write(baseRecord);
       insertCount++;
-      if (insertCount == 1 || insertCount == 100000) {
+      if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
         LOG.info("task {} insert records number {} and data sampling {}",
             task.getTaskId(), insertCount, baseRecord);
       }

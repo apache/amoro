@@ -7,7 +7,7 @@
         <div class="td g-flex-ac bd-left">{{$t('value')}}</div>
       </div>
       <a-form ref="propertiesFormRef" :model="propertiesForm" class="g-mt-12">
-        <div class="config-row g-flex-ac" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
+        <div class="config-row" v-for="(item, index) in propertiesForm.data" :key="item.uuid">
           <!-- validator: validateUnique -->
           <a-form-item
             :name="['data', index, 'key']"
@@ -57,16 +57,10 @@ import { getUUid } from '@/utils/index'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { useI18n } from 'vue-i18n'
 
-interface IItem {
-  key: string
-  value: string
-  uuid: string
-}
-
 const { t } = useI18n()
 const props = defineProps<{ propertiesObj: IMap<string>, isEdit: boolean }>()
 const propertiesColumns = shallowReactive([
-  { dataIndex: 'key', title: t('key'), ellipsis: true },
+  { dataIndex: 'key', title: t('key'), width: 284, ellipsis: true },
   { dataIndex: 'value', title: t('value'), ellipsis: true }
 ])
 const propertiesFormRef = ref()
@@ -176,6 +170,7 @@ onMounted(() => {
       }
     }
     .config-row {
+      display: flex;
       // height: 40px;
       position: relative;
       padding-right: 32px;

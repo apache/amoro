@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.terminal;
 
 import java.util.List;
+import java.util.Map;
 
 public interface TerminalSession {
 
@@ -57,6 +58,11 @@ public interface TerminalSession {
   }
 
   /**
+   * get current session configs for logs
+   */
+  Map<String, String> configs();
+
+  /**
    * execute a statement and return result set.
    * @param statement single statement.
    * @return result set
@@ -69,8 +75,13 @@ public interface TerminalSession {
   List<String> logs();
 
   /**
-   * to check current session is alive.
+   * to check current session is alive. DO-NOT-THROW-ANYTHING of this method.
    * @return - false if session is not able to execute statement.
    */
   boolean active();
+
+  /**
+   * close session and release resources.
+   */
+  void release();
 }

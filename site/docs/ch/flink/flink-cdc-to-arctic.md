@@ -33,6 +33,33 @@ CREATE TABLE IF NOT EXISTS arctic.db.user_info(
 INSERT INTO arctic.db.user_info select * from user_info;
 ```
 
+### 自动开启双写
+可通过以下方式，Flink 入湖任务自动将数据写入到 Logstore，而不需要手动重启任务。适用场景：数据库存量加增量数据入湖，存量数据写入 Filestore 进行批计算，最新数据写入 Logstore 进行实时计算。
+
+```sql
+CREATE TABLE source (
+    id int,
+    opt timestamp(3),
+    WATERMARK FOR opt AS opt,
+) WITH (
+    'connector'='mysql-cdc'...
+);
+
+INSERT INTO arctic.db.table 
+/*+ OPTIONS('arctic.emit.mode'='auto','arctic.emit.auto-write-to-logstore.watermark-gap'='60s') */
+ SELECT * FROM source;
+```
+> 
+> 前提
+>
+> - Arctic 表需要开启 Logstore。
+> 
+> - Source 表需要配置 Watermark。
+
+![Introduce](../images/flink-auto-writer.png){:height="80%" width="80%"}
+
+当 AutomaticLogWriter 算子收到的 Watermark 大于等于当前时间减去配置的 GAP 时间，便会将后面新的数据写入到 Logstore。
+
 ### 开启 Upsert 功能
 开启 UPSERT 功能后相同主键的多条 insert 数据会在表结构优化过程中合并，保留后面插入的 insert 数据。
 
@@ -72,16 +99,3 @@ SELECT * FROM arctic.db.user_info
 /*+ OPTIONS('arctic.emit.mode'='file','streaming'='true','scan.startup.mode'='latest') */
 ```
 相关参数配置可以参考[这里](flink-dml.md#filestore_1)
-
-### Reading Shuffle 配置
-读取有主键表时，如果 Source Operator 并发与后面算子并发不同的话，Flink 自动更新 Shuffle 规则为 rebalance，有可能会造成数据乱序，最终数据不一致。Arctic Source 默认会通过以下配置修改数据 Shuffle 规则保证数据一致性。
-
-```sql
--- 在当前 session 中以流的模式运行 Flink 任务
-SET execution.runtime-mode = streaming;
-
--- 以 hash 的方式 shuffle 数据给下游
-SELECT * FROM arctic.db.user_info
-/*+ OPTIONS('read.distribution-mode'='hash','read.distribution.hash-mode'='auto') */
-```
-相关参数配置可以参考[这里](../meta-service/table-properties.md)
