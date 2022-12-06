@@ -19,7 +19,7 @@
       in data lake management and optimization.
     </p>
     <img
-      src="@/assets/images/arctic-introduce.png"
+      src="@/assets/images/introduce_arctic.png"
       alt=""
       class="arctic-introduce"
     />
@@ -68,7 +68,7 @@
             <span class="td-val">Spark</span>
           </td>
           <td>
-            <span class="td-val">3.1+</span>
+            <span class="td-val">2.3, 3.1</span>
           </td>
         </tr>
         <tr>
@@ -85,10 +85,10 @@
     <p class="desc">
       Visit
       <a
-        href="https://arctic.netease.com/ch/docker-quickstart/"
+        href="https://arctic.netease.com/ch/quickstart/quick-demo/"
         target="_blank"
         rel="noopener noreferrer">
-      https://arctic.netease.com/ch/docker-quickstart/
+      https://arctic.netease.com/ch/quickstart/quick-demo/
       </a>
       to quickly explore what arctic can do.
     </p>
