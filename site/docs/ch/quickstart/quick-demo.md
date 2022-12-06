@@ -116,8 +116,11 @@ SELECT id,
 FROM cdc_source;
 ```
 
-然后重新打开一个 Terminal 窗口，在新的窗口执行以下命令往 socket 中写入 CDC 数据
-
+然后重新打开一个 Terminal 窗口，然后进入 flink 容器（容器中已安装netcat）
+```shell
+docker exec -it flink bash
+```
+执行以下命令往 socket 中写入 CDC 数据
 ```shell
 nc -lk 9999
 ```
