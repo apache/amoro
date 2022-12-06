@@ -48,9 +48,11 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
+import java.util.concurrent.Executors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,34 +225,36 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Set<TableIdentifier> tableIdentifiers = com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog();
 
     Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
-    for (TableIdentifier tableIdentifier : tableIdentifiers) {
-      TableMetadata tableMetadata = new TableMetadata();
-      if (icebergCatalogMap.get(tableIdentifier.getCatalog()) != null) {
-        ArcticTable arcticTable = icebergCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
-        tableMetadata.setTableIdentifier(tableIdentifier);
-        tableMetadata.setProperties(arcticTable.properties());
-      } else {
-        ArcticCatalog arcticCatalog =
-            CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
-        if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
-          ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
-          tableMetadata.setTableIdentifier(tableIdentifier);
-          tableMetadata.setProperties(arcticTable.properties());
-          icebergCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
-        } else {
-          tableMetadata = metaService.loadTableMetadata(tableIdentifier);
-        }
-      }
-      TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
-      TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
-      arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
-          .initOptimizeTasks(optimizeTasks.remove(tableIdentifier));
-      try {
-        addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
-      } catch (Throwable t) {
-        LOG.error("cannot add table to server " + tableIdentifier, t);
-      }
-    }
+    Tasks.foreach(tableIdentifiers)
+        .noRetry()
+        .suppressFailureWhenFinished()
+        .onFailure(((identifier, exception) ->  LOG.error("cannot add table to server " + identifier, exception)))
+        .executeWith(Executors.newFixedThreadPool(5))
+        .run(tableIdentifier -> {
+          TableMetadata tableMetadata = new TableMetadata();
+          if (icebergCatalogMap.get(tableIdentifier.getCatalog()) != null) {
+            ArcticTable arcticTable = icebergCatalogMap.get(tableIdentifier.getCatalog()).loadTable(tableIdentifier);
+            tableMetadata.setTableIdentifier(tableIdentifier);
+            tableMetadata.setProperties(arcticTable.properties());
+          } else {
+            ArcticCatalog arcticCatalog =
+                CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), tableIdentifier.getCatalog());
+            if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
+              ArcticTable arcticTable = arcticCatalog.loadTable(tableIdentifier);
+              tableMetadata.setTableIdentifier(tableIdentifier);
+              tableMetadata.setProperties(arcticTable.properties());
+              icebergCatalogMap.put(tableIdentifier.getCatalog(), arcticCatalog);
+            } else {
+              tableMetadata = metaService.loadTableMetadata(tableIdentifier);
+            }
+          }
+          TableOptimizeItem arcticTableItem = new TableOptimizeItem(null, tableMetadata);
+          TableOptimizeRuntime oldTableOptimizeRuntime = tableOptimizeRuntimes.remove(tableIdentifier);
+          arcticTableItem.initTableOptimizeRuntime(oldTableOptimizeRuntime)
+              .initOptimizeTasks(optimizeTasks.remove(tableIdentifier));
+
+          addTableIntoCache(arcticTableItem, tableMetadata.getProperties(), oldTableOptimizeRuntime == null);
+        });
 
     if (!optimizeTasks.isEmpty()) {
       LOG.warn("clear optimize tasks {}", optimizeTasks.keySet());
