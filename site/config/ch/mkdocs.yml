@@ -56,9 +56,7 @@ nav:
     - Self-optimizing: concepts/self-optimizing.md
     - Table watermark: concepts/table-watermark.md
   - Quick Start:
-      - Setup:
-          - Setup from docker: quickstart/setup/setup-from-docker.md
-          - Setup from binary release: quickstart/setup/setup-from-binary-release.md
+      - Setup: quickstart/setup.md
       - Quick demo: quickstart/quick-demo.md
       - CDC ingestion: quickstart/cdc-ingestion.md
   - Admin guide:
