@@ -2,7 +2,7 @@
 
 ## Setup from Docker-Compose
 
-Arctic 提供了基于 Docker 部署的 Quick Start 环境，基于此部分的文档可以完成后续 Quick Demo 的所有环境准备工作。
+Arctic 提供了基于 Docker-Compose 部署 quick start 环境，基于这篇文档可以完成后续 [Quick Demo](quick-demo.md) 的所有环境准备工作。
 
 ### Requirements
 

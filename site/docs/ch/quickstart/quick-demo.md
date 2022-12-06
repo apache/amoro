@@ -7,12 +7,12 @@
 
 ### Prepare 1: create catalog
 
-在浏览器打开 [http://localhost:1630](http://localhost:1630) 输入 admin/admin 登录 dashboard，点击侧边栏 Catalogs ，点击 Catalog List 下的 `+` 按钮，添加第一个 Catalog， 设置其名字为 `demo_catalog`。
+在浏览器打开 [http://localhost:1630](http://localhost:1630) 输入 admin/admin 登录 dashboard，点击侧边栏 Catalogs ，点击 Catalog List 下的 `+` 按钮，添加第一个 catalog， 设置其名字为 `demo_catalog`。
 并添加一属性 `warehouse` 对应值为：
 
 `hdfs://namenode:8020/user/arctic/demo_warehouse`。
 
-其余部分请按照以下截图设置 Catalog 基本配置:
+其余部分请按照以下截图设置 catalog 基本配置:
 
 ![Create catalog](../images/quickstart/create-catalog.png)
 
@@ -22,21 +22,17 @@
 
 ### Prepare 2: start optimizers
 
-AMS 默认配置下会有一个类型为 local 的 optimizer group，这里需要在此 group 下创建一个 optimizer。 
-进入 AMS 的 Optimizing 页面，选择 Optimizers。
+AMS 默认配置下会有一个类型为 local 的 optimizer group，在此 group 下创建一个 optimizer，进入 AMS 的 Optimizing 页面，选择 Optimizers。
 
 ![Optimizers](../images/quickstart/Optimizing.png)
 
-点击 `Scale-Out` 按钮选择对应 `Optimizer Group` 并且配置 optimizer 并发度，点击 `OK` 后即完成了 optimizer 的创建。
+点击 `Scale-Out` 按钮选择对应 `Optimizer Group` 并且配置 optimizer 并发度，点击 `OK` 完成 optimizer 的创建。
 
 ![ScaleOut](../images/quickstart/ScaleOut.png)
 
 ### Step 1: initialize table
 
-在左侧菜单栏切换到  Terminal Tab 页面，通过这里我们可以进行建表，数据读写等操作，
-Terminal SQL 语法为 Spark SQL 语法，具体支持的语法请参考 Spark 部分。
-
-切换到 demo_catalog 后输入以下 SQL 初始化表。
+在左侧菜单栏切换到  Terminal 页面，这里我们可以进行建表，数据读写等操作，Terminal SQL 语法为 Spark SQL 语法，切换到 demo_catalog 后输入以下 SQL 初始化表。
 
 ```shell
 
@@ -59,13 +55,11 @@ SELECT * FROM user ;
 
 ```
 
-然后点击SQL Editor 上方的 RUN  按钮，等待 SQL 执行完成后，可以在 当前页面看到 SQL 的查询结果。
+点击 SQL Editor 上方的 RUN 按钮，等待 SQL 执行完成后，可以在当前页面看到 SQL 的查询结果。
 
 ### Step 2: execute flink upsert
 
-如果是通过 Docker 完成环境准备，Flink Cluster 已经自动启动，可以直接通过，
-[http://localhost:8081](http://localhost:8081)  打开 Flink Dashboard UI  
-如果是通过二进制包进行本地部署，可以通过以下命令启动 Standalone 的 Flink Cluster。
+如果是通过 Docker 完成环境准备，Flink Cluster 已经自动启动，可以直接通过 [http://localhost:8081](http://localhost:8081) 打开 Flink Dashboard，如果是通过二进制包进行本地部署，可以通过以下命令启动 Standalone 的 Flink Cluster。
 
 ```shell
 cd <FLINK_DIR>
@@ -81,7 +75,7 @@ docker exec -it flink bash
 ./bin/sql-client.sh embedded
 ```
 
-然后输入以下SQL （ 由于 Flink SQL Client 不支持批量 SQL 输入，需要逐条输入以下 SQL )
+然后输入以下SQL（由于 Flink SQL Client 不支持批量 SQL 输入，需要逐条输入以下 SQL)
 
 ```SQL
 -- 创建 catalog，非 docker 启动将 url 替换为 'thrift://localhost:1260/demo_catalog'
