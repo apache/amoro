@@ -10,7 +10,7 @@ Arctic 开放式架构如下所示：
 
 目前 Arcitc 是搭建在 Iceberg format 之上的湖仓管理系统，得益于 [Apache Iceberg](https://iceberg.apache.org/) 繁荣的生态，可以使用 Flink、Spark、Trino、Impala 等多种引擎在私有化场景和各个公有云平台上使用 Arctic，Arctic 的核心组件有：
 
-- AMS — Arctic Management Service，负责提供湖仓管理功能，调度自优化任务，AMS 可以同时管理 Hive 表和新型表格式，像 [HMS](https://docs.cloudera.com/runtime/7.2.1/hive-hms-overview/topics/hive-hms-introduction.html) 一样具备元数据存储和管理的功能，可以和 HMS 或其他 Metastore 协同使用，AMS 配套的 dashboard 可执行管理操作，查看 metrics，对计算资源和数据资源的伸缩做出决策，请参阅：[Admin Guide](guide/manage-catalogs.md)
+- AMS — Arctic Management Service，负责提供湖仓管理功能，调度自优化任务，AMS 可以同时管理 Hive 表和新型表格式，像 [HMS](https://docs.cloudera.com/runtime/7.2.1/hive-hms-overview/topics/hive-hms-introduction.html) 一样具备元数据存储和管理的功能，可以和 HMS 或其他 Metastore 协同使用，AMS 配套的 dashboard 可执行管理操作，查看 metrics，对计算资源和数据资源的伸缩做出决策，请参阅：[Admin Guide](guides/managing-catalogs.md)
 
 Arctic 为流和更新的场景提供更多可插拔的组件：
 
@@ -25,7 +25,7 @@ AMS 可以管理不同 table format 的表，类似于 MySQL/ClickHouse 可以�
 - [Iceberg format](concepts/table-formats.md#iceberg-format) — aka. native Iceberg format，使用 Iceberg 社区原生的 table format，具备所有 Iceberg 功能和特性
 - [Mixed streaming format](concepts/table-formats.md#mixed-streaming-format) — Arctic 在 Hive 和 Iceberg 之上构建的 format，可以用 LogStore 加速数据处理，在 CDC 摄取，流式更新，fresh OLAP 上有自己的优化，mixed format 根据兼容性可分为:
     * [Mixed Hive format](concepts/table-formats.md#mixed-hive-format) —  schema、partition、types 与 Hive 完全兼容，支持 Hive 表原地升级和原生读写
-    * [Mixed Iceberg format](concepts/table-formats.md#mixed-iceberg-format) — schema、partition、types 与 Iceberg 完全兼容，但是在 stream upsert, CDC, Merge on read 实现上与 mixed Hive format 保持一致，测试结果请参阅：[Benchmark](benchmark.md)
+    * [Mixed Iceberg format](concepts/table-formats.md#mixed-iceberg-format) — schema、partition、types 与 Iceberg 完全兼容，但是在 stream upsert, CDC, Merge on read 实现上与 mixed Hive format 保持一致，测试结果请参阅：[Benchmark](benchmark/benchmark.md)
 
 ### What makes difference
 
