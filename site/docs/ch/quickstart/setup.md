@@ -20,7 +20,6 @@ Arctic 提供了基于 Docker 部署的 Quick Start 环境，基于此部分的�
 ```shell
 cd <ARCTIC-WORKSPACE>
 wget https://raw.githubusercontent.com/NetEase/arctic/master/docker/demo-cluster.sh
-VERSION=0.4.0 && bash demo-cluster.sh -v $VERSION start
 ```
 
 执行以下 Shell 命令以通过 Docker-Compose 拉起 demo cluster：
