@@ -59,7 +59,7 @@ nav:
       - Setup: quickstart/setup.md
       - Quick Demo: quickstart/quick-demo.md
       - CDC Ingestion: quickstart/cdc-ingestion.md
-  - Admin guide:
+  - Admin Guides:
     - Deployment: guides/deployment.md
     - Managing Catalogs: guides/managing-catalogs.md
     - Managing Tables: guides/managing-tables.md
