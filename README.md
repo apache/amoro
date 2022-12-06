@@ -1,28 +1,27 @@
 ![logo](site/docs/ch/images/arctic_logo_for_git.png)
 
-Welcome to arctic, arctic is a streaming lake warehouse system open sourced by NetEase.
- Arctic adds more real-time capabilities on top of iceberg and hive, and provides stream-batch unified, out-of-the-box metadata services for dataops, 
-allowing Data lakes much more usable and practical.
+Arctic is a LakeHouse management system under open architecture, which on top of data lake open formats provides more optimizations for streaming and upsert scenarios, as well as a set of pluggable self-optimizing mechanisms and management services. Using Arctic could help various data platforms, tools and products build out-of-the-box, streaming and batch unified LakeHouses quickly.
+
 ## What is arctic
-Arctic is a streaming lakehouse service built on top of apache iceberg table format. 
-Through arctic, users could benefit optimized CDC、streaming update、fresh olap etc. on engines like flink, spark, and trino. 
-Combined with efficient offline processing capabilities of data lakes, arctic can serve more scenarios where streaming and batch are fused. 
-At the same time, the function of self-optimization、concurrent conflict resolution and standard management tools could effectively reduce the burden on users in data lake management and optimization.
+
+Currently, Arctic is a LakeHouse management system on top of iceberg format. Benefit from the thriving ecology of Apache Iceberg, Arctic could be used on kinds of data lakes on premise or clouds with varities of engines. Several concepts should be known before your deeper steps:
+
 ![Introduce](site/docs/ch/images/introduce_arctic.png)
 
-Arctic services are presented by deploying AMS, which can be considered as a replacement for HMS (Hive Metastore), or HMS for iceberg. 
-Arctic uses iceberg as the base table format, but instead of hacking the iceberg implementation, it uses iceberg as a lib. 
-Arctic's open overlay architecture can help large-scale offline data lakes quickly upgraded to real-time data lakes, without worrying about compatibility issues with the original data lakes, 
-allowing data lakes to meet more real-time analysis, real-time risk control, Real-time training, feature engineering and other scenarios.
+- AMS and optimizers - Arctic Management Service provides management features including self-optimizing mechanisms running on optimizers, which could be scaled as demand and scheduled on different platforms.
+- Mutiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
+	* Iceberg format — learn more about iceberg format details and usage with different engines: [Iceberg Docs](https://iceberg.apache.org/docs/latest/)
+	* Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible, strict PK constraints etc. learn Arctic [Mixed Iceberg format](https://arctic.netease.com/ch/concetps/table-formats/#mixed-iceberg-format) and [Mixed Hive format](https://arctic.netease.com/ch/concetps/table-formats/#mixed-hive-format)
+
 ## Arctic features
 
-* Efficient streaming updates based on primary keys
-* Data auto bucketing and self-optimized for performance and efficiency
-* Encapsulating data lake and message queue into a unified table to achieve lower-latency computing
-* Provide standardized metrics, dashboard and related management tools for streaming lakehouse
-* Support spark and flink to read and write data, support trino to query data
-* 100% compatible with iceberg / hive table format and syntax
-* Provide transactional guarantee for streaming and batch concurrent writing
+- Defining keys - supports defining primary key with strict constraints, and more types of keys in future
+- Self-optimizing - user-insensitive asynchronous self-optimization mechanisms could keep lakehouse fresh and healthy
+- Management features - dashboard UI to support catalog/table management, SQL terminal and all kinds of metrics
+- Formats compatible - Hive/Iceberg format compatible means writing and reading through native Hive/Iceberg connector 
+- Better data pipeline SLA - using LogStore like kafka to accelarate streaming data pipeline to ms/s latency
+- Better OLAP performace - provides auto-bucket feature for better compaction and merge-on-read performance
+- Concurrent conflicts resovling - Flink or Spark could concurrent write data without worring about conflicts
 
 ## Modules
 
@@ -60,6 +59,7 @@ Arctic is built using Maven with Java 1.8 and Java 11(only for `trino` module).
 ```
 * To invoke a build and run tests: `mvn package -P toolchain`
 * To skip tests: `mvn -DskipTests package -P toolchain`
+* To package without trino module and JAVA 11 dependency: `mvn clean package -DskipTests -pl '!trino'`
 
 ## Engines supported
 
@@ -73,7 +73,7 @@ Arctic support multiple processing engines as below:
 
 ## Quickstart
 
-Visit [https://arctic.netease.com/ch/quickstart/quick-demo/](https://arctic.netease.com/ch/quickstart/quick-demo/) to quickly explore what arctic can do.
+Visit [https://arctic.netease.com/ch/docker-quickstart/](https://arctic.netease.com/ch/docker-quickstart/) to quickly explore what arctic can do.
 
 ## Join Community 
 If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source. 

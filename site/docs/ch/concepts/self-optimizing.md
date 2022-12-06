@@ -40,18 +40,27 @@ self-optimizing.target-size 定义了 major optimizing 的目标输出大小，�
 
 ![Minor optimizing](../images/concepts/minor_optimizing.png){:height="80%" width="80%"}
 
-Minor optimizing 的目标是将 fragment 文件尽可能快地合并为 segment 文件，以缓解读放大，所以当 fragment 文件积累到一定量时， minor optimizing 会较为频繁的调度执行。
-Major optimizing 会同时处理 segment 和 fragment 文件，在这个过程中会按照主键消除部分或全部的重复数据，如果是有主键表，相比 minor optimizing 通过 major optimizing 一般可以更为明显地提升读取性能，并且更低的 major 调度频率可以有效缓解写放大问题。Full optimizing 会将 target space 内所有文件合并成一个文件，是 major optimizing 的一种特殊情况：
+Minor optimizing 的目标是缓解读放大问题，这里涉及两项工作：
+
+* 将 fragment 文件尽可能快地合并为 segment 文件，当小文件积累时， minor optimizing 会较为频繁地执行
+* 将写友好（WriteStore）的文件格式转换为读友好（ReadStore）的文件格式，对 Mixed format 而言是 ChangeStore 向 BaseStore 的转换，对 Iceberg format 则是 eq-delete 文件向 pos-delete 的转换
+
+在 Minor optimizing 执行多次之后，表空间内会存在较多的 Segment 文件，虽然 Segement 文件的读取效率很多情况下能够满足对性能的要求，但是：
+
+* 各个 Segment 文件上可能积累了总量可观的 delete 数据
+* Segment 之间可能存在很多在主键上的重复数据
+
+这时候影响读取性能不再是小文件和文件格式引发的读放大问题，而是在存在过量垃圾数据，需要在 merge-on-read 时被合并处理，所以 Arctic 在这里引入了 major optimizing 通过 segment 文件合并来清理垃圾数据，从而将垃圾数据量控制在一个对读友好的比例，一般情况下，minor optimizing 已经做过多轮去重，major optimizing 不会频繁调度执行，从而避免了写放大问题。另外，Full optimizing 会将 target space 内所有文件合并成一个文件，是 major optimizing 的一种特殊情况：
 
 ![Major optimizing](../images/concepts/major_optimizing.png){:height="80%" width="80%"}
 
-Minor、major 和 full optimizing 的输入输出关系如下表所示：
+Major optimizing 和 minor optimizing 的设计参考了垃圾回收算法的分代设计，两种 optimizing 的执行逻辑是一致的，都会执行文件合并，数据去重，WriteStore 格式向 ReadStore 格式的转换，Minor、major 和 full optimizing 的输入输出关系如下表所示：
 
 | Self-optimizing type  | Input space  | Output space  | Input file types  | Output file types  |
 |:----------|:----------|:----------|:----------|:----------|
-| minor    | fragment    | fragment/segment    | insert, delete    | insert, deletee    |
-| major    | fragment, segment    | segment    | insert, delete    | insert, delete    |
-| full    | fragment, segment    | segment    | insert, delete   | insert    |
+| minor    | fragment    | fragment/segment    | insert, eq-delete, pos-delete   | insert, pos-delete    |
+| major    | fragment, segment    | segment    | insert, eq-delete, pos-delete    | insert, pos-delete    |
+| full    | fragment, segment    | segment    | insert, eq-delete, pos-delete   | insert    |
 
 
 ## Self-optimizing quota
