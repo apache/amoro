@@ -28,9 +28,8 @@ docker exec -it lakehouse-benchmark java \
 登录到 Ingestion 容器，通过以下命令完成 Ingestion 任务的启动：
 
 ```shell
-docker exec -it lakehouse-benchmark-ingestion bash
-
-java -jar lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar \
+docker exec -it lakehouse-benchmark-ingestion java \
+  -jar lakehouse-benchmark-ingestion-1.0-SNAPSHOT.jar \
   -confDir /usr/lib/lakehouse_benchmark_ingestion/conf \
   -sinkType arctic \
   -sinkDatabase oltpbench
@@ -45,9 +44,8 @@ Ingestion 容器也是一个 Flink Job， 您可以通过 [Flink Dashboard](http
 重新回到 Benchmark 容器，通过以下命令可以持续在测试库上执行有业务含义的 OLTP 操作
 
 ```shell
-docker exec -it lakehouse-benchmark bash
-
-java -jar lakehouse-benchmark.jar -b tpcc,chbenchmark \
+docker exec -it lakehouse-benchmark java \
+  -jar lakehouse-benchmark.jar -b tpcc,chbenchmark \
   -c config/mysql/sample_chbenchmark_config.xml -\
   -execute=true
 ```
