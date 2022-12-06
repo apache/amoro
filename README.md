@@ -11,8 +11,7 @@ Currently, Arctic is a LakeHouse management system on top of iceberg format. Ben
 - AMS and optimizers - Arctic Management Service provides management features including self-optimizing mechanisms running on optimizers, which could be scaled as demand and scheduled on different platforms.
 - Mutiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
 	* Iceberg format — learn more about iceberg format details and usage with different engines: [Iceberg Docs](https://iceberg.apache.org/docs/latest/)
-	* Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible, strict PK constraints etc. learn Arctic [Mixed Iceberg format](https://arctic.netease.com/ch/concetps/table-formats/#mixed-iceberg-format) and [Mixed Hive format](https://arctic.netease.com/ch/concetps/table-formats/#mixed-hive-format)
-
+	* Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible, strict PK constraints etc. learn Arctic [Mixed Iceberg format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-iceberg-format) and [Mixed Hive format](https://arctic.netease.com/ch/concepts/table-formats/#mixed-hive-format)
 ## Arctic features
 
 - Defining keys - supports defining primary key with strict constraints, and more types of keys in future
