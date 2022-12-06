@@ -13,7 +13,7 @@ df.count
 
 ### Appending data
 
-要向 Arcitc 表添加数据，使用 `append()`:
+要向 Arctic 表添加数据，使用 `append()`:
 ```sql
 val data: DataFrame = ...
 data.writeTo("arctic_catalog.db.sample").append()

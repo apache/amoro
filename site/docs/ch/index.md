@@ -8,7 +8,7 @@ Arctic 开放式架构如下所示：
 
 ![Architecture](images/introduce_arctic.png){:height="85%" width="85%"}
 
-目前 Arcitc 是搭建在 Iceberg format 之上的湖仓管理系统，得益于 [Apache Iceberg](https://iceberg.apache.org/) 繁荣的生态，可以使用 Flink、Spark、Trino、Impala 等多种引擎在私有化场景和各个公有云平台上使用 Arctic，Arctic 的核心组件有：
+目前 Arctic 是搭建在 Iceberg format 之上的湖仓管理系统，得益于 [Apache Iceberg](https://iceberg.apache.org/) 繁荣的生态，可以使用 Flink、Spark、Trino、Impala 等多种引擎在私有化场景和各个公有云平台上使用 Arctic，Arctic 的核心组件有：
 
 - AMS — Arctic Management Service，负责提供湖仓管理功能，调度自优化任务，AMS 可以同时管理 Hive 表和新型表格式，像 [HMS](https://docs.cloudera.com/runtime/7.2.1/hive-hms-overview/topics/hive-hms-introduction.html) 一样具备元数据存储和管理的功能，可以和 HMS 或其他 Metastore 协同使用，AMS 配套的 dashboard 可执行管理操作，查看 metrics，对计算资源和数据资源的伸缩做出决策，请参阅：[Admin Guide](guides/managing-catalogs.md)
 
