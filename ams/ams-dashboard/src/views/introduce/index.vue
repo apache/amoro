@@ -1,49 +1,60 @@
 <template>
   <div class="introduce-wrap">
+    <h1 class="title">Introduce</h1>
     <p class="desc">
-      Welcome to arctic, arctic is a streaming lake warehouse system open
-      sourced by NetEase. Arctic adds more real-time capabilities on top of
-      iceberg and hive, and provides stream-batch unified, out-of-the-box
-      metadata services for dataops, allowing Data lakes much more usable and
-      practical.
+      Arctic is a LakeHouse management system under open architecture, which on top of data lake open formats provides more optimizations for streaming and upsert scenarios, as well as a set of pluggable self-optimizing mechanisms and management services. Using Arctic could help various data platforms, tools and products build out-of-the-box, streaming and batch unified LakeHouses quickly.
     </p>
     <h2 class="sub-title">What is arctic</h2>
     <p class="desc">
-      Arctic is a streaming lakehouse service built on top of apache iceberg
-      table format. Through arctic, users could benefit optimized CDC、streaming
-      update、fresh olap etc. on engines like flink, spark, and trino. Combined
-      with efficient offline processing capabilities of data lakes, arctic can
-      serve more scenarios where streaming and batch are fused. At the same
-      time, the function of self-optimization、concurrent conflict resolution
-      and standard management tools could effectively reduce the burden on users
-      in data lake management and optimization.
+      Currently, Arctic is a LakeHouse management system on top of iceberg format. Benefit from the thriving ecology of Apache Iceberg, Arctic could be used on kinds of data lakes on premise or clouds with varities of engines. Several concepts should be known before your deeper steps:
     </p>
     <img
       src="@/assets/images/introduce_arctic.png"
       alt=""
       class="arctic-introduce"
     />
-    <p class="desc">
-      Arctic services are presented by deploying AMS, which can be considered as
-      a replacement for HMS (Hive Metastore), or HMS for iceberg. Arctic uses
-      iceberg as the base table format, but instead of hacking the iceberg
-      implementation, it uses iceberg as a lib. Arctic's open overlay
-      architecture can help large-scale offline data lakes quickly upgraded to
-      real-time data lakes, without worrying about compatibility issues with the
-      original data lakes, allowing data lakes to meet more real-time analysis,
-      real-time risk control, Real-time training, feature engineering and other
-      scenarios.
-    </p>
+    <div class="desc">
+      <ol>
+        <li>AMS and optimizers - Arctic Management Service provides management features including self-optimizing mechanisms running on optimizers, which could be scaled as demand and scheduled on different platforms.</li>
+        <li>Mutiple formats — Arctic use formats analogous to MySQL or ClickHouse using storage engines to meet different scenarios. Two formats were available since Arctic v0.4.
+          <div>
+            <p>
+              <span class="dot"></span>Iceberg format — learn more about iceberg format details and usage with different engines:
+              <a
+                href="https://iceberg.apache.org/docs/latest/"
+                target="_blank"
+                rel="noopener noreferrer">
+                Iceberg Docs
+              </a>
+            </p>
+            <p><span class="dot"></span>Mixed streaming format - if you are interested in advanced features like auto-bucket, logstore, hive compatible, strict PK constraints etc. learn Arctic
+              <a
+                href="https://arctic.netease.com/ch/concepts/table-formats/#mixed-iceberg-format"
+                target="_blank"
+                rel="noopener noreferrer">
+                Mixed Iceberg format
+              </a> and
+              <a
+                href="https://arctic.netease.com/ch/concepts/table-formats/#mixed-hive-format"
+                target="_blank"
+                rel="noopener noreferrer">
+                Mixed Hive format
+              </a>
+            </p>
+          </div>
+        </li>
+      </ol>
+    </div>
     <h2 class="sub-title">Arctic features</h2>
     <ol>
-      <li>Efficient streaming updates based on primary keys</li>
-      <li>Data auto bucketing and self-optimized for performance and efficiency</li>
-      <li>Encapsulating data lake and message queue into a unified table to achieve lower-latency computing
+      <li>Defining keys - supports defining primary key with strict constraints, and more types of keys in future</li>
+      <li>Self-optimizing - user-insensitive asynchronous self-optimization mechanisms could keep lakehouse fresh and healthy</li>
+      <li>Management features - dashboard UI to support catalog/table management, SQL terminal and all kinds of metrics
       </li>
-      <li>Provide standardized metrics, dashboard and related management tools for streaming lakehouse</li>
-      <li>Support spark and flink to read and write data, support trino to query data</li>
-      <li>100% compatible with iceberg / hive table format and syntax</li>
-      <li>Provide transactional guarantee for streaming and batch concurrent writing</li>
+      <li>Formats compatible - Hive/Iceberg format compatible means writing and reading through native Hive/Iceberg connector</li>
+      <li>Better data pipeline SLA - using LogStore like kafka to accelarate streaming data pipeline to ms/s latency</li>
+      <li>Better OLAP performace - provides auto-bucket feature for better compaction and merge-on-read performance</li>
+      <li>Concurrent conflicts resovling - Flink or Spark could concurrent write data without worring about conflicts</li>
     </ol>
     <h2 class="sub-title">Engines supported</h2>
     <p class="desc">Arctic support multiple processing engines as below:</p>
@@ -115,10 +126,14 @@ export default defineComponent({
 .introduce-wrap {
   font-size: 16px;
   box-sizing: border-box;
-  padding: 0 12px;
+  padding: 24px 48px;
+  max-width: 1200px;
   .title {
     font-size: 30px;
     font-weight: bold;
+    padding-bottom: 7px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #e5e5e5;
   }
   .arctic-introduce {
     width: 80%;
@@ -127,6 +142,15 @@ export default defineComponent({
   }
   .desc {
     margin-bottom: 16px;
+  }
+  .dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 6px;
+    border: 1px solid #000;
+    margin-right: 12px;
+    vertical-align: middle;
   }
   .sub-title {
     margin: 24px 0 16px;
