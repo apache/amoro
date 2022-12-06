@@ -66,6 +66,7 @@ CREATE TABLE optimize_task (
     partition varchar(128) DEFAULT NULL,
     task_commit_group varchar(40) DEFAULT NULL,
     max_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
+    min_change_transaction_id bigint NOT NULL WITH DEFAULT -1,
     create_time timestamp DEFAULT NULL,
     properties clob(64m),
     queue_id bigint NOT NULL,
@@ -260,7 +261,7 @@ CREATE TABLE ddl_record
 CREATE TABLE platform_file_info (
   id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
   file_name varchar(100) NOT NULL,
-  file_content_b64 clob(64m) NOT NULL,
+  file_content_b64 varchar(32672) NOT NULL,
   file_path varchar(100) DEFAULT NULL,
   add_time timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id)

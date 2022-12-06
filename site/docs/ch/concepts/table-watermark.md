@@ -35,4 +35,4 @@ SHOW TBLPROPERTIES test_db.test_log_store ('watermark.table');
 SHOW TBLPROPERTIES test_db.test_log_store ('watermark.base');
 ```
 
-通过 Admin guide 详细了解 watermark 的使用方式。
+通过 [Managing tables](../guides/managing-tables.md) 详细了解 watermark 的使用方式。

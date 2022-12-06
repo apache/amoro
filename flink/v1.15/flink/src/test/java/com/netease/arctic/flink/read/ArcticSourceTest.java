@@ -97,7 +97,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 public class ArcticSourceTest extends RowDataReaderFunctionTest implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(ArcticSourceTest.class);
   private static final long serialVersionUID = 7418812854449034756L;
-  private static final int PARALLELISM = 4;
+  private static final int PARALLELISM = 1;
 
   @Rule
   public final MiniClusterWithClientResource miniClusterResource =

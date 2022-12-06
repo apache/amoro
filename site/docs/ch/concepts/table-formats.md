@@ -19,7 +19,10 @@ Arctic 同时支持 Iceberg format v1 和 v2，[Iceberg v2](https://iceberg.apac
 ![Iceberg format](../images/concepts/iceberg_format.png){:height="70%" width="70%"}
 </left>
 
-> 与 mixed streaming format 不同，Iceberg format 中的主键只适用于 flink，spark 下不保障主键约束。
+
+???+ 注意 
+
+	与 mixed streaming format 不同，Iceberg format 中的主键只适用于 flink，spark 下不保障主键约束。
 
 ## Mixed streaming format
 
@@ -31,7 +34,7 @@ Mixed streaming format 相比 Iceberg format 提供了更多的特性：
 - Hive 或 Iceberg 格式兼容，支持 Hive 秒级原地升级，兼容 Iceberg 各项原生功能
 - 事务冲突解决机制，让相同主键的并发写入变得可能
 
-Mixed streaming format 的设计初衷是基于数据湖为大数据平台提供流批一体的存储层，以及离线和实时统一的数据仓库，在这个目标驱动下，Arctic 将 mixed format 设计为三级结构，每级结构命名为不同的 tablestore：
+Mixed streaming format 的设计初衷是基于数据湖为大数据平台提供流批一体的存储层，以及离线和实时统一的数据仓库，在这个目标驱动下，Arctic 将 mixed format 设计为三级结构，每级结构命名为不同的 TableStore：
 
 <left>
 ![Mixed format](../images/concepts/mixed_format.png){:height="80%" width="80%"}
@@ -41,7 +44,7 @@ Mixed streaming format 的设计初衷是基于数据湖为大数据平台提供
 - ChangeStore — 存储表的流和变更数据，通常由流计算实时写入，也可用于下游的 CDC 消费，作为 WriteStore 对写更加友好
 - LogStore — 作为 ChangeStore 的 cache 层来加速流处理，Arctic 会管理 LogStore 和 ChangeStore 的一致性
 
-Mixed format 中 TableStore 的设计理念类似数据库中的聚簇索引，每个 TableStore 可以使用不同 table format。Mixed format 通过 BaseStore 和 ChangeStore 之间的 merge-on-read 来提供高新鲜度的 OLAP，为了提供高性能的 merge-on-read，BaseStore 和 ChangeStore 采用了完全一致的 partition 和 layout，且都支持 auto-bucket：
+Mixed format 中 TableStore 的设计理念类似数据库中的聚簇索引，每个 TableStore 可以使用不同 table format。Mixed format 通过 BaseStore 和 ChangeStore 之间的 merge-on-read 来提供高新鲜度的 OLAP，为了提供高性能的 merge-on-read，BaseStore 和 ChangeStore 采用了完全一致的 partition 和 layout，且都支持 auto-bucket。
 
 Auto-bucket 功能帮助 self-optimizing 过程将 BaseStore 的文件大小控制在 target-size 上下，在尽可能维持 base file size 同时，通过 bucket 的分裂和合并来实现数据量的动态伸缩。Auto-bucket 将一个 partition 下的数据按主键哈希的方式分割成一个个主键不相交的集合，极大降低了 optimizing 过程和 merge-on-read 时需要 scan 的数据量，提升了性能，效果请参阅：benchmark(../benchmark/benchmark.md)
 
@@ -53,7 +56,7 @@ mixed streaming format 在使用上存在的限制有：
 - Primary key constraint — 在主键不包含分区键的情况下，如果流数据中没有更新前像，需要使用 normalized 算子或其他方式还原数据前像，才能保障主键唯一
 - Engines integrated — 目前支持 Flink 和 Spark 读写，支持 Trino 和 Impala 查询数据
 
-## Mixed Iceberg format
+### Mixed Iceberg format
 
 Mixed Iceberg format 的 BaseStore 和 ChangeStore 都使用 Iceberg format，在 schema、types 和 partition 用法上与 Iceberg 保持一致，在具备 Mixed streaming format 功能特性的同时，可以使用原生 Iceberg connector 读写 BaseStore 和 ChangeStore，从而具备 Iceberg format 的所有功能特性，下面以 Spark 为例，介绍如何用 Iceberg connector 操作 Quick demo 创建的 Mixed Iceberg format 表，我们使用下面的命令打开一个 Spark SQL 客户端：
 
@@ -86,9 +89,11 @@ insert into local.test_db.test_table.base value(10, 'tony', timestamp('2022-07-0
 
 更多 Iceberg 兼容用法可以在 [Iceberg docs](https://Iceberg.apache.org/docs/latest/) 中找到。
 
-> Arctic 的 Minor optimizing 功能一般可以保障 Iceberg BaseStore 的数据新鲜度维持在分钟级
+???+ 注意 
 
-## Mixed Hive format
+	Arctic 的 Minor optimizing 功能一般可以保障 Iceberg BaseStore 的数据新鲜度维持在分钟级
+
+### Mixed Hive format
 
 Mixed Hive format 使用 Hive 表作为 BaseStore，Iceberg 表作为 ChangeStore，Mixed Hive format 支持：
 
@@ -105,4 +110,7 @@ Mixed Hive format 结构如下所示：
 
 在 BaseStore 中，Hive location 下的文件也会被 Iceberg manifest 索引，不会产生两种 format 的数据冗余，Mixed Hive format 融合了 Iceberg 的快照、ACID 以及 MVCC 特性，对 Hive 的使用方式也做出了极大的兼容，为过去围绕 Hive format 搭建的数据平台、流程以及产品提供了灵活的选型和扩展方案。
 
-> Hive location 下的数据新鲜度通过 Full optimizing 来保障，因此 Hive 原生读的时效性相比 Mixed Iceberg table 有较大差距，推荐使用 Mixed Hive format 的 Merge-on-read 读取分钟级新鲜度数据
+???+ 注意 
+
+	Hive location 下的数据新鲜度通过 Full optimizing 来保障，因此 Hive 原生读的时效性相比 Mixed Iceberg table 有较大差距，推荐使用 Mixed Hive format 的 Merge-on-read 读取分钟级新鲜度数据
+

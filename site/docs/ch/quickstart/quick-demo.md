@@ -12,13 +12,15 @@
 
 在浏览器打开 [http://localhost:1630](http://localhost:1630) 进入 Dashboard 页面，输入 admin/admin  登录。
 点击侧边栏 Catalogs ，然后点击 Catalog List 下的 `+` 按钮，添加第一个 Catalog， 设置其名字为 `demo_catalog`。
-请按照以下截图设置 Catalog 基本配置:
+并添加一属性 `warehouse` 对应值为 `hdfs://namenode:8020/user/arctic/demo_warehouse`。
+
+其余部分请按照以下截图设置 Catalog 基本配置:
 
 ![Create catalog](../images/quickstart/create-catalog.png)
 
-???+note "对于 Hadoop 配置文件，如果是采用 Docker setup，配置文件在 `<ARCIT-WORKSPACE>/hadoop-config` 目录，否则不用上传任何文件。"
+> 对于 Hadoop 配置文件，如果是采用 Docker setup，配置文件在 `<ARCIT-WORKSPACE>/hadoop-config` 目录，否则不用上传任何文件。
 
-???+note "对于 warehouse.dir，如果是本地部署，填写一个本地目录即可，需要有 Hadoop Username 配置的用户的访问权限。"
+> 对于 warehouse 属性，如果是本地部署，填写一个有 Hadoop Username 对应的用户有权限访问的本地目录即可。
 
 # Prepare 2: start optimizers
 
@@ -153,3 +155,48 @@ DELETE|3|lee|2022-07-01 10:11:00
 然后通过 Terminal 查询数据，预期数据为：
 
 ![Upsert result2](../images/quickstart/upsert-result2.png)
+
+# Step3: self-optimizing
+
+启动 optimizer 之后，表的结构优化会自动触发。 登录并进入 AMS Dashboard，从左侧菜单进入到 Optimizing 页面，
+在 Tables 目录下可以看到当前所有表的结构优化状态。
+
+![Table optimizing](../images/quickstart/table-optimizing.png)
+
+其中：
+
+- Status：结构优化的状态，可能为：`idle`、`pending`、`minor`、`major` 和 `full`
+
+- Duration：进入到该状态的持续时间
+
+- File Count：准备或者正在进行合并的文件个数
+
+- File size：准备或者正在进行合并的文件大小
+
+- Quota：表的资源配额
+
+- Quota Occupation：最近1个小时内，该表的实际配额占用百分比
+
+从左侧菜单进入到 Tables 页面，选择测试表并进入到 Optimized 目录 可以看到表的历史结构优化记录。 
+如果已经完成实时写入与读取，测试表预期会进行2次结构优化，分别是1次 Minor optimize, 一次 Major optimize。
+
+![Table optimized history](../images/quickstart/table-optimized-history.png)
+
+上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
+
+- CommitTime：结构优化的提交时间
+
+- Duration：结构优化的持续时间
+
+- Input：合并之前的文件个数和文件大小
+
+- Output：合并生成的文件个数和文件大小
+
+经过 Optimizing 之后，以分区 `ts_day=2022-07-01` 为例，其文件情况如下
+
+![Table optimized partition](../images/quickstart/table-optimized-partition.png)
+
+2 个 `BASE_FILE` 来自批的 Insert Overwrite 写入，2 个 `EQ_DELETE_FILE` 来自 Flink upsert 写入，经过 Optimizing，
+两个 `EQ_DELETE_FILE` 被转换为 2 个 `POS_DELETE_FILE`。 
+
+更多结构优化相关的信息可以参考 [结构优化的具体介绍](../concepts/self-optimizing.md)
