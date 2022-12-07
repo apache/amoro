@@ -66,7 +66,7 @@ cd <FLINK_DIR>
 ./bin/start-cluster.sh
 ```
 
-然后启动 Flink SQL Client
+然后启动 Flink SQL Client 
 
 ```shell
 # 登录 Flink 容器, 非 docker 启动跳过此步骤
@@ -129,7 +129,7 @@ INSERT|6|mars|2022-07-02 11:19:10
 ```
 
 
-等待至少 10s (取决于 flink-conf.yaml 中配置的 checkpoint 间隔），打开 Dashboard 并进入 Terminal 页面，执行：
+等待至少 10s (取决于 flink-conf.yaml 中配置的 checkpoint 间隔），打开 Dashboard 并进入 Terminal 页面，执行： 
 
 ```shell
 SELECT * FROM db.user ORDER BY id ;
@@ -170,6 +170,6 @@ DELETE|3|lee|2022-07-01 10:11:00
 ![Table optimized partition](../images/quickstart/table-optimized-partition.png)
 
 2 个 `BASE_FILE` 来自 Spark insert overwrite 写入，2 个 `EQ_DELETE_FILE` 来自 Flink upsert 写入，经过 self-optimizing，
-两个 `EQ_DELETE_FILE` 被转换为 2 个 `POS_DELETE_FILE`。
+两个 `EQ_DELETE_FILE` 被转换为 2 个 `POS_DELETE_FILE`。 
 
 更多 self-optimizing 的介绍可以参考 [Self-optimizing](../concepts/self-optimizing.md)
