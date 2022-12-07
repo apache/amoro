@@ -51,6 +51,8 @@ import com.netease.arctic.utils.CatalogUtil;
 import java.util.concurrent.Executors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.exceptions.NoSuchTableException;
+import org.apache.iceberg.exceptions.NotFoundException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.Tasks;
 import org.slf4j.Logger;
@@ -79,6 +81,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private final BlockingQueue<TableOptimizeItem> toCommitTables = new ArrayBlockingQueue<>(1000);
 
   private final ConcurrentHashMap<TableIdentifier, TableOptimizeItem> cachedTables = new ConcurrentHashMap<>();
+  private final Set<TableIdentifier> invalidTables = Collections.synchronizedSet(new HashSet<>());
 
   private final OptimizeQueueService optimizeQueueService;
   private final IMetaService metaService;
@@ -140,10 +143,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Set<TableIdentifier> tableIdentifiers =
         new HashSet<>(com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog());
     List<TableIdentifier> toAddTables = tableIdentifiers.stream()
-        .filter(t -> !cachedTables.containsKey(t))
+        .filter(t -> !cachedTables.containsKey(t) && !invalidTables.contains(t))
         .collect(Collectors.toList());
     List<TableIdentifier> toRemoveTables = cachedTables.keySet().stream()
-        .filter(t -> !tableIdentifiers.contains(t))
+        .filter(t -> !tableIdentifiers.contains(t) && !invalidTables.contains(t))
         .collect(Collectors.toList());
 
     addNewTables(toAddTables);
@@ -228,7 +231,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Tasks.foreach(tableIdentifiers)
         .noRetry()
         .suppressFailureWhenFinished()
-        .onFailure(((identifier, exception) ->  LOG.error("cannot add table to server " + identifier, exception)))
+        .onFailure(((identifier, exception) ->  {
+          LOG.error("cannot add table to server " + identifier, exception);
+          invalidTables.add(identifier);
+        }))
         .executeWith(Executors.newFixedThreadPool(5))
         .run(tableIdentifier -> {
           TableMetadata tableMetadata = new TableMetadata();
@@ -302,29 +308,43 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
     for (TableIdentifier toAddTable : toAddTables) {
       TableMetadata tableMetadata = new TableMetadata();
-      if (icebergCatalogMap.get(toAddTable.getCatalog()) != null) {
-        ArcticTable arcticTable = icebergCatalogMap.get(toAddTable.getCatalog()).loadTable(toAddTable);
-        tableMetadata.setTableIdentifier(toAddTable);
-        tableMetadata.setProperties(arcticTable.properties());
-      } else {
-        ArcticCatalog arcticCatalog =
-            CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), toAddTable.getCatalog());
-        if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
-          ArcticTable arcticTable = arcticCatalog.loadTable(toAddTable);
+      try {
+        if (icebergCatalogMap.get(toAddTable.getCatalog()) != null) {
+          ArcticTable arcticTable = icebergCatalogMap.get(toAddTable.getCatalog()).loadTable(toAddTable);
           tableMetadata.setTableIdentifier(toAddTable);
           tableMetadata.setProperties(arcticTable.properties());
-          icebergCatalogMap.put(toAddTable.getCatalog(), arcticCatalog);
         } else {
-          tableMetadata = metaService.loadTableMetadata(toAddTable);
+          ArcticCatalog arcticCatalog =
+              CatalogLoader.load(ServiceContainer.getTableMetastoreHandler(), toAddTable.getCatalog());
+          if (CatalogUtil.isIcebergCatalog(arcticCatalog)) {
+            ArcticTable arcticTable = arcticCatalog.loadTable(toAddTable);
+            tableMetadata.setTableIdentifier(toAddTable);
+            tableMetadata.setProperties(arcticTable.properties());
+            icebergCatalogMap.put(toAddTable.getCatalog(), arcticCatalog);
+          } else {
+            tableMetadata = metaService.loadTableMetadata(toAddTable);
+          }
         }
+        ArcticCatalog catalog = CatalogLoader.load(metastoreClient, toAddTable.getCatalog());
+        ArcticTable arcticTable = catalog.loadTable(toAddTable);
+        TableOptimizeItem newTableItem = new TableOptimizeItem(arcticTable, tableMetadata);
+        long createTime = PropertyUtil.propertyAsLong(tableMetadata.getProperties(), TableProperties.TABLE_CREATE_TIME,
+            TableProperties.TABLE_CREATE_TIME_DEFAULT);
+        newTableItem.getTableOptimizeRuntime().setOptimizeStatusStartTime(createTime);
+        addTableIntoCache(newTableItem, arcticTable.properties(), true);
+      } catch (NoSuchTableException e) {
+        LOG.error("Table {} not existing, fail to add", toAddTable, e);
+        optimizeQueueService.release(toAddTable);
+        optimizeQueueService.clearTasks(toAddTable);
+        invalidTables.add(toAddTable);
+      } catch (NotFoundException e) {
+        LOG.error("File not find when load table {}, fail to add", toAddTable, e);
+        optimizeQueueService.release(toAddTable);
+        optimizeQueueService.clearTasks(toAddTable);
+        invalidTables.add(toAddTable);
+      } catch (Throwable e) {
+        throw e;
       }
-      ArcticCatalog catalog = CatalogLoader.load(metastoreClient, toAddTable.getCatalog());
-      ArcticTable arcticTable = catalog.loadTable(toAddTable);
-      TableOptimizeItem newTableItem = new TableOptimizeItem(arcticTable, tableMetadata);
-      long createTime = PropertyUtil.propertyAsLong(tableMetadata.getProperties(), TableProperties.TABLE_CREATE_TIME,
-          TableProperties.TABLE_CREATE_TIME_DEFAULT);
-      newTableItem.getTableOptimizeRuntime().setOptimizeStatusStartTime(createTime);
-      addTableIntoCache(newTableItem, arcticTable.properties(), true);
     }
     LOG.info("add new tables[{}] {}", toAddTables.size(), toAddTables);
   }
