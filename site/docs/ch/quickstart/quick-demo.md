@@ -181,11 +181,11 @@ DELETE|3|lee|2022-07-01 10:11:00
 - Quota Occupation：最近1个小时内，该表的实际配额占用百分比
 
 从左侧菜单进入到 Tables 页面，选择测试表并进入到 Optimized 目录 可以看到表的历史结构优化记录。 
-如果已经完成实时写入与读取，测试表预期会进行2次结构优化，分别是1次 Minor optimize, 一次 Major optimize。
+如果已经完成实时写入与读取，测试表预期会进行3次结构优化，分别是2次 Minor optimize, 1次 Major optimize。
 
 ![Table optimized history](../images/quickstart/table-optimized-history.png)
 
-上图中，第一行提交为 major optimize，第二行提交为 minor optimize，其中：
+上图中，第一行提交为 minor optimize，第二行提交为 major optimize，其中：
 
 - CommitTime：结构优化的提交时间
 
