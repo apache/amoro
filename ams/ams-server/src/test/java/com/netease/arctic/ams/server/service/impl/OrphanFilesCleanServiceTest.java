@@ -24,11 +24,11 @@ import org.junit.Test;
 public class OrphanFilesCleanServiceTest {
   @Test
   public void testGetUriPath() {
-    Assert.assertEquals("/a/b/c",OrphanFilesCleanService.getUriPath("hdfs://xxxxx/a/b/c"));
-    Assert.assertEquals("/a/b/c",OrphanFilesCleanService.getUriPath("hdfs://localhost:8888/a/b/c"));
-    Assert.assertEquals("/a/b/c",OrphanFilesCleanService.getUriPath("file://xxxxx/a/b/c"));
-    Assert.assertEquals("/a/b/c",OrphanFilesCleanService.getUriPath("/a/b/c"));
-    Assert.assertEquals("/a/b/c",OrphanFilesCleanService.getUriPath("hdfs:/a/b/c"));
-    Assert.assertEquals("a/b/c",OrphanFilesCleanService.getUriPath("a/b/c"));
+    Assert.assertEquals("/a/b/c", OrphanFilesCleanService.getUriPath("hdfs://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", OrphanFilesCleanService.getUriPath("hdfs://localhost:8888/a/b/c"));
+    Assert.assertEquals("/a/b/c", OrphanFilesCleanService.getUriPath("file://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", OrphanFilesCleanService.getUriPath("/a/b/c"));
+    Assert.assertEquals("/a/b/c", OrphanFilesCleanService.getUriPath("hdfs:/a/b/c"));
+    Assert.assertEquals("a/b/c", OrphanFilesCleanService.getUriPath("a/b/c"));
   }
 }
