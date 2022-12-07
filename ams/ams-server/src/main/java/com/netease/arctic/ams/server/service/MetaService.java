@@ -108,7 +108,7 @@ public class MetaService {
     if (tableProperties.containsKey(watermarkPropertyName)) {
       Long watermarkTimestamp = Long.valueOf(tableProperties.get(watermarkPropertyName));
       if (watermarkTimestamp > 0) {
-        tableProperties.put(watermarkPropertyName, WATERMARK_FORMAT.format(new Date(watermarkTimestamp)));
+        tableProperties.put(watermarkPropertyName, String.valueOf(watermarkTimestamp));
       } else {
         tableProperties.remove(watermarkPropertyName);
       }
