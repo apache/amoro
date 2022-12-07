@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.optimize;
 
-import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -38,6 +37,7 @@ import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
@@ -52,7 +52,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
 @PowerMockIgnore({"org.apache.logging.log4j.*", "javax.management.*", "org.apache.http.conn.ssl.*",
     "com.amazonaws.http.conn.ssl.*",
     "javax.net.ssl.*", "org.apache.hadoop.*", "javax.*", "com.sun.org.apache.*", "org.apache.xerces.*"})
-public class TestOrphanFileClean extends TableTestBase {
+public class TestOrphanFileClean extends TestBaseOptimizeBase {
 
   @Before
   public void mock() {
@@ -64,7 +64,9 @@ public class TestOrphanFileClean extends TableTestBase {
   }
 
   @Test
-  public void orphanDataFileClean() {
+  public void orphanDataFileClean() throws IOException {
+    insertTableBaseDataFiles(testKeyedTable, 1L);
+
     String baseOrphanFilePath = testKeyedTable.baseTable().location() +
         File.separator + DATA_FOLDER_NAME + File.separator + "orphan.parquet";
     String changeOrphanFilePath = testKeyedTable.changeTable().location() +
@@ -87,7 +89,9 @@ public class TestOrphanFileClean extends TableTestBase {
   }
 
   @Test
-  public void orphanMetadataFileClean() {
+  public void orphanMetadataFileClean() throws IOException {
+    insertTableBaseDataFiles(testKeyedTable, 1L);
+
     String baseOrphanFilePath = testKeyedTable.baseTable().location() + File.separator + "metadata" +
         File.separator + "orphan.avro";
     String changeOrphanFilePath = testKeyedTable.changeTable().location() + File.separator + "metadata" +
