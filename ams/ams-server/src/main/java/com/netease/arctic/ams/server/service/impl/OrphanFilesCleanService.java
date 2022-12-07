@@ -48,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -267,7 +268,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                             Long lastTime,
                                             Set<String> exclude,
                                             boolean execute) {
-    String location = fileStatus.getPath().toUri().getPath();
+    String location = getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
@@ -316,7 +317,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                            FileStatus fileStatus,
                                            Set<String> validFiles,
                                            Long lastTime, boolean execute) {
-    String location = fileStatus.getPath().toUri().getPath();
+    String location = getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
@@ -346,13 +347,14 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       cnt++;
       int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
-      validFiles.add(manifestListLocation);
+      
+      validFiles.add(getUriPath(manifestListLocation));
 
       io.doAs(() -> {
         // valid data files
         List<ManifestFile> manifestFiles = snapshot.allManifests();
         for (ManifestFile manifestFile : manifestFiles) {
-          validFiles.add(manifestFile.path());
+          validFiles.add(getUriPath(manifestFile.path()));
         }
         return null;
       });
@@ -361,6 +363,10 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     }
 
     return validFiles;
+  }
+  
+  protected static String getUriPath(String path) {
+    return URI.create(path).getPath();
   }
 
   private static Set<String> getValidDataFiles(TableIdentifier tableIdentifier, ArcticFileIO io,
@@ -378,8 +384,8 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         for (FileScanTask scanTask
             : internalTable.newScan().useSnapshot(snapshot.snapshotId()).planFiles()) {
           if (scanTask.file() != null) {
-            validFiles.add(scanTask.file().path().toString());
-            scanTask.deletes().forEach(file -> validFiles.add(file.path().toString()));
+            validFiles.add(getUriPath(scanTask.file().path().toString()));
+            scanTask.deletes().forEach(file -> validFiles.add(getUriPath(file.path().toString())));
           }
         }
         return null;
