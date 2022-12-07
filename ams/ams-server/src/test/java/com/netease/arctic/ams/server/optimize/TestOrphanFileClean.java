@@ -25,6 +25,11 @@ import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.ReachableFileUtil;
+import org.apache.iceberg.Snapshot;
+import org.apache.iceberg.Table;
 import org.apache.iceberg.io.OutputFile;
 import org.junit.Assert;
 import org.junit.Before;
@@ -73,6 +78,12 @@ public class TestOrphanFileClean extends TableTestBase {
     OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", false);
     Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
+    for (FileScanTask task : testKeyedTable.baseTable().newScan().planFiles()) {
+      Assert.assertTrue(testKeyedTable.io().exists(task.file().path().toString()));
+    }
+    for (FileScanTask task : testKeyedTable.changeTable().newScan().planFiles()) {
+      Assert.assertTrue(testKeyedTable.io().exists(task.file().path().toString()));
+    }
   }
 
   @Test
@@ -85,11 +96,34 @@ public class TestOrphanFileClean extends TableTestBase {
     baseOrphanDataFile.createOrOverwrite();
     OutputFile changeOrphanDataFile = testKeyedTable.io().newOutputFile(changeOrphanFilePath);
     changeOrphanDataFile.createOrOverwrite();
+
+    String changeInvalidMetadataJson = testKeyedTable.changeTable().location() + File.separator + "metadata" +
+        File.separator + "v0.metadata.json";
+    testKeyedTable.io().newOutputFile(changeInvalidMetadataJson).createOrOverwrite();
     Assert.assertTrue(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertTrue(testKeyedTable.io().exists(changeOrphanFilePath));
+    Assert.assertTrue(testKeyedTable.io().exists(changeInvalidMetadataJson));
+    
     OrphanFilesCleanService.clean(testKeyedTable, System.currentTimeMillis(), true, "all", true);
     Assert.assertFalse(testKeyedTable.io().exists(baseOrphanFilePath));
     Assert.assertFalse(testKeyedTable.io().exists(changeOrphanFilePath));
+    Assert.assertFalse(testKeyedTable.io().exists(changeInvalidMetadataJson));
+    
+    assertMetadataExists(testKeyedTable.changeTable());
+    assertMetadataExists(testKeyedTable.baseTable());
+  }
+
+  private void assertMetadataExists(Table table) {
+    for (Snapshot snapshot : table.snapshots()) {
+      Assert.assertTrue(testKeyedTable.io().exists(snapshot.manifestListLocation()));
+      for (ManifestFile allManifest : snapshot.allManifests()) {
+        Assert.assertTrue(testKeyedTable.io().exists(allManifest.path()));
+      }
+    }
+    for (String metadataFile : ReachableFileUtil.metadataFileLocations(table, false)) {
+      Assert.assertTrue(testKeyedTable.io().exists(metadataFile));
+    }
+    Assert.assertTrue(testKeyedTable.io().exists(ReachableFileUtil.versionHintLocation(table)));
   }
 
   private static class FakeFileInfoCacheService extends FileInfoCacheService {
