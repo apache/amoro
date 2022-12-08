@@ -22,6 +22,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.TableMetadata;
+import org.apache.iceberg.exceptions.CommitStateUnknownException;
 import org.apache.iceberg.hadoop.HadoopTableOperations;
 import org.apache.iceberg.util.LockManagers;
 
@@ -42,7 +43,16 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
   @Override
   public void commit(TableMetadata base, TableMetadata metadata) {
     arcticFileIO.doAs(() -> {
-      super.commit(base, metadata);
+      try {
+        super.commit(base, metadata);
+      } catch (RuntimeException e) {
+        // HadoopTableOperations#commit will throw CommitFailedException even though rename metadata file successfully
+        // in hdfs, it may be not safe. So transform all RuntimeException to CommitStateUnknownException to avoid
+        // delete the committed metadata and manifest files.
+        //
+        // But this change may invalid the retry action for all commit operation.
+        throw new CommitStateUnknownException(e);
+      }
       return null;
     });
   }
