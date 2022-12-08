@@ -160,7 +160,7 @@ DELETE|3|lee|2022-07-01 10:11:00
 ![Table optimizing](../images/quickstart/table-optimizing.png)
 
 
-如下图所示，如果已经完成实时写入与读取，测试表预期会进行 1 次 minor optimizing, 1 次 major optimizing。
+如下图所示，如果已经完成实时写入与读取，测试表预期会进行 2 次 minor optimizing, 1 次 major optimizing。
 
 ![Table optimized history](../images/quickstart/table-optimized-history.png)
 
