@@ -110,6 +110,30 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
+    //use correct db name
+    if (tableIdentifier.getTableName().contains(".")) {
+      String[] tableString = tableIdentifier.getTableName().split("\\.");
+      if (tableString.length == 2) {
+        if (tableString[0].equalsIgnoreCase(tableIdentifier.getDatabase())) {
+          tableIdentifier.setTableName(tableString[1]);
+        } else {
+          throw new IllegalArgumentException("DB name " + tableString[0] + " is not exist");
+        }
+      } else if (tableString.length == 3) {
+        if (tableString[0].equalsIgnoreCase(tableIdentifier.getCatalog()) &&
+                tableString[1].equalsIgnoreCase(tableIdentifier.getDatabase())) {
+          tableIdentifier.setTableName(tableString[2]);
+        } else {
+          if (!tableString[0].equalsIgnoreCase(tableIdentifier.getCatalog())) {
+            throw new IllegalArgumentException("Catalog name " + tableString[0] + " is not exist");
+          }
+          if (!tableString[1].equalsIgnoreCase(tableIdentifier.getDatabase())) {
+            throw new IllegalArgumentException("DB name " + tableString[1] + " is not exist");
+          }
+        }
+      }
+    }
+
     TableNameResolve tableNameResolve = new TableNameResolve(tableIdentifier.getTableName());
     if (tableNameResolve.withSuffix()) {
       TableIdentifier newTableIdentifier = TableIdentifier.of(tableIdentifier.getCatalog(),
