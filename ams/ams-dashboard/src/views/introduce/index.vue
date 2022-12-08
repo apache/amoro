@@ -4,7 +4,7 @@
     <p class="desc">
       Arctic is a LakeHouse management system under open architecture, which on top of data lake open formats provides more optimizations for streaming and upsert scenarios, as well as a set of pluggable self-optimizing mechanisms and management services. Using Arctic could help various data platforms, tools and products build out-of-the-box, streaming and batch unified LakeHouses quickly.
     </p>
-    <h2 class="sub-title">What is arctic</h2>
+    <h2 class="sub-title">What is Arctic</h2>
     <p class="desc">
       Currently, Arctic is a LakeHouse management system on top of iceberg format. Benefit from the thriving ecology of Apache Iceberg, Arctic could be used on kinds of data lakes on premise or clouds with varities of engines. Several concepts should be known before your deeper steps:
     </p>
