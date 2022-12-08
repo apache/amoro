@@ -151,12 +151,8 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
     addNewTables(toAddTables);
     clearRemovedTables(toRemoveTables);
-    ArrayList<TableIdentifier> validTables = new ArrayList<>(cachedTables.keySet());
-    if (!toAddTables.isEmpty() || !toRemoveTables.isEmpty()) {
-      internalCheckOptimizeChecker(validTables);
-    }
 
-    return validTables;
+    return new ArrayList<>(cachedTables.keySet());
   }
 
   private void clearTableCache(TableIdentifier tableIdentifier) {
