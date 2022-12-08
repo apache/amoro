@@ -87,20 +87,19 @@ watch(
   }
 )
 const commonMetricMap = {
-  averageFileSize: 'Average File Size',
   fileCount: 'File Count',
-  totalSize: 'Total Size'
+  totalSize: 'Total Size',
+  averageFileSize: 'Average File Size',
+  lastCommitTime: 'Last Commit Time'
 }
 
 const baseMetricsMap: IMap<string | number> = {
-  lastCommitTime: 'Last Commit Time',
-  baseWatermark: 'Base Watermark',
-  ...commonMetricMap
+  ...commonMetricMap,
+  baseWatermark: 'Base Watermark'
 }
 const changeMetricsMap: IMap<string | number> = {
-  lastCommitTime: 'Last Commit Time',
-  tableWatermark: 'Table Watermark',
-  ...commonMetricMap
+  ...commonMetricMap,
+  tableWatermark: 'Table Watermark'
 }
 
 const state = reactive({
