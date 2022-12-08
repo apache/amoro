@@ -16,11 +16,45 @@ docker exec -it lakehouse-benchmark java \
   
 ```
 
-等待命令执行完成，以上命令会在 MySQL 中初始化一个 oltpbench 的数据库，并且创建一系列业务表，并完成表数据的初始化。
+等待命令执行完成，以上命令会在 MySQL 中初始化一个 oltpbench 的数据库，并且创建一系列业务表，并完成表数据的初始化，输入下面的命令登陆 MySQL 容器可以查看创建的表和导入的数据：
+
+```shell
+docker exec -it mysql mysql -ppassword oltpbench
+```
+
+预期可以在 MySQL 中看到：
+```sql
+mysql> show tables;
++---------------------+
+| Tables_in_oltpbench |
++---------------------+
+| customer            |
+| district            |
+| history             |
+| item                |
+| nation              |
+| new_order           |
+| oorder              |
+| order_line          |
+| region              |
+| stock               |
+| supplier            |
+| warehouse           |
++---------------------+
+12 rows in set (0.01 sec)
+
+mysql> select * from warehouse;
++------+-----------+--------+--------+-------------------+---------------------+--------------------+---------+-----------+
+| w_id | w_ytd     | w_tax  | w_name | w_street_1        | w_street_2          | w_city             | w_state | w_zip     |
++------+-----------+--------+--------+-------------------+---------------------+--------------------+---------+-----------+
+|    1 | 300000.00 | 0.1591 | sblyvr | whthbdoldxinpnkpz | pkgqqoyrficypgbipgg | jbqjquxazxhvmvbdwb | TE      | 123456789 |
++------+-----------+--------+--------+-------------------+---------------------+--------------------+---------+-----------+
+1 row in set (0.01 sec)
+```
 
 ### Step2. start streaming ingestion
 
-登录到 Ingestion 容器，通过以下命令完成 Ingestion 任务的启动：
+在命令行中输入以下指令完成 Ingestion 任务的启动：
 
 ```shell
 docker exec -it lakehouse-benchmark-ingestion java \
@@ -30,13 +64,14 @@ docker exec -it lakehouse-benchmark-ingestion java \
   -sinkDatabase oltpbench
 ```
 
-开启后可以在 AMS Tables 页面查看到 Table 信息已经同步到 Arctic ，您可以通过 Terminal 执行 SQL 以查询 Arctic 上同步的数据。
-Ingestion 容器也是一个 Flink Job， 您可以通过 [Flink Dashboard](http://localhost:8082)  访问 Flink Web UI 以查看 Ingestion 任务信息。
+该任务会启动一个 Flink cluster 将 oltpbench 数据库实时同步到指定的 demo_catalog 中，并自动创建同名 database 和 table，开启后可以在 AMS Tables 页面查看到 Table 信息已经同步到 Arctic，这时表中只有初始化后的数据，可以通过 Terminal 执行 SQL 查询 Arctic 上同步的存量数据。
+
+可以通过 [Flink Dashboard](http://localhost:8082) 访问 Flink Web UI 查看 Ingestion 任务信息。
 
 
 ### Step3. start tpcc benchmark
 
-重新回到 Benchmark 容器，通过以下命令可以持续在测试库上执行有业务含义的 OLTP 操作
+打开一个新的命令行，复制以下指令可以持续在测试库上执行 TPCC 测试：
 
 ```shell
 docker exec -it lakehouse-benchmark java \
@@ -45,22 +80,28 @@ docker exec -it lakehouse-benchmark java \
   -execute=true
 ```
 
-此命令会一直不断的在测试库上执行 OLTP 操作，直到程序退出。
-此时可以回到 AMS 的 Terminal 页面，通过 Spark SQL 查询到  MySQL 上的数据变更会随着 Ingestion 任务不断的同步到 Arctic Table 上。
+此命令会一直不断的在测试库上执行 OLTP 操作，直到程序退出。在 TPCC 执行过程中，可以回到 [Arctic Dashboard](http://localhost:1630) 的 Terminal 页面，通过 Spark SQL 查询到  MySQL 上的数据变更会随着 Ingestion 任务不断的同步到 Arctic Table 上。
 
 ???+note "Ingestion 任务的 Checkpoint 周期为 60s,  所以 Arctic 数据湖和 MySQL 的数据变更有 60s 的延迟。"
 
 
 ### Step 4. check table result
 
-整个 TPCC Benchmark 会执行 10min，在 tpcc benchmark 执行完成后，可以通过以下命令登录 mysql 容器
+整个 TPCC Benchmark 会执行 30min，可以 `Ctrl + C` 随时中断 TPCC 的执行，在 TPCC 执行完成后，可以通过以下命令登录 MySQL 容器
 
 ```shell
 docker exec -it mysql mysql -ppassword oltpbench
 ```
 
-然后通过在 MySQL 和 AMS 上执行 Select 对比最终数据是否正确。
+通过在 MySQL 和 AMS 上执行 select 对比最终数据是否一致。比如我们可以对比 order_line 这张表最终的数据量是否一致：
 
-切换到 Tables 页面，在对应的 Table 详情页，可以查看到 Table 对应的 `watermark` 推进的时间节点。
-
-![CDC Table Watermark](../images/quickstart/cdc-watermark.png)
+```sql
+mysql> select count(*) from order_line;
++----------+
+| count(*) |
++----------+
+|   300193 |
++----------+
+1 row in set (0.08 sec)
+```
+![SparkSQL result](../images/quickstart/sparksql_result.jpg)
