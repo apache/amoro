@@ -57,15 +57,7 @@ public class MetaService {
     ArcticTable at = ac.loadTable(ti);
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableIdentifier(ti);
-    Map<String, String> properties = Maps.newHashMap(at.properties());
-    formatTableProperties(properties);
-    serverTableMeta.setProperties(properties);
-    serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
-            TableProperties.TABLE_CREATE_TIME_DEFAULT));
-
-    TableProperties.READ_PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
-    serverTableMeta.getProperties().remove(TableProperties.TABLE_CREATE_TIME);
-
+    fillTableProperties(serverTableMeta, at.properties());
     serverTableMeta.setBaseLocation(at.location());
     serverTableMeta.setPartitionColumnList(at
             .spec()
@@ -99,19 +91,16 @@ public class MetaService {
     return serverTableMeta;
   }
 
-  private static void formatTableProperties(Map<String, String> tableProperties) {
-    formatTableWatermark(tableProperties, TableProperties.WATERMARK_TABLE);
-    formatTableWatermark(tableProperties, TableProperties.WATERMARK_BASE_STORE);
-  }
+  private static void fillTableProperties(ServerTableMeta serverTableMeta,
+                                            Map<String, String> tableProperties) {
+    Map<String, String> properties = Maps.newHashMap(tableProperties);
+    serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
+    serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));
+    serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
+            TableProperties.TABLE_CREATE_TIME_DEFAULT));
+    properties.remove(TableProperties.TABLE_CREATE_TIME);
 
-  private static void formatTableWatermark(Map<String, String> tableProperties, String watermarkPropertyName) {
-    if (tableProperties.containsKey(watermarkPropertyName)) {
-      Long watermarkTimestamp = Long.valueOf(tableProperties.get(watermarkPropertyName));
-      if (watermarkTimestamp > 0) {
-        tableProperties.put(watermarkPropertyName, String.valueOf(watermarkTimestamp));
-      } else {
-        tableProperties.remove(watermarkPropertyName);
-      }
-    }
+    TableProperties.READ_PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
+    serverTableMeta.setProperties(properties);
   }
 }
