@@ -1,5 +1,5 @@
 <template>
-  <a-modal :visible="props.visible" :title="$t('scaleOut')" @ok="handleOk" @cancel="handleCancel">
+  <a-modal :visible="props.visible" :title="$t('scaleOut')" :confirmLoading="confirmLoading" :closable="false" @ok="handleOk" @cancel="handleCancel">
     <a-form ref="formRef" :model="formState" class="label-120">
       <a-form-item name="resourceGroup" :label="$t('resourceGroup')" :rules="[{ required: true, message: `${placeholder.resourceGroupPh}` }]">
         <a-select
@@ -16,7 +16,7 @@
   </a-modal>
 </template>
 <script lang="ts" setup>
-import { onMounted, reactive, ref } from 'vue'
+import { nextTick, onMounted, reactive, ref } from 'vue'
 import { usePlaceholder } from '@/hooks/usePlaceholder'
 import { IGroupItem } from '@/types/common.type'
 import { getOptimizerGroups, scaleoutResource } from '@/services/optimize.service'
@@ -33,7 +33,7 @@ const emit = defineEmits<{
 }>()
 
 const props = defineProps<{ visible: boolean, resourceGroup: string }>()
-
+const confirmLoading = ref<boolean>(false)
 const placeholder = reactive(usePlaceholder())
 const formRef = ref()
 const formState:FormState = reactive({
@@ -58,6 +58,7 @@ function handleOk () {
   formRef.value
     .validateFields()
     .then(async() => {
+      confirmLoading.value = true
       await scaleoutResource({
         optimizerGroup: formState.resourceGroup || '',
         parallelism: Number(formState.parallelism)
@@ -65,9 +66,10 @@ function handleOk () {
       formRef.value.resetFields()
       emit('cancel')
       emit('refreshOptimizersTab')
+      confirmLoading.value = false
     })
-    .catch((error: Error) => {
-      message.error(error.message)
+    .catch(() => {
+      confirmLoading.value = false
     })
 }
 
