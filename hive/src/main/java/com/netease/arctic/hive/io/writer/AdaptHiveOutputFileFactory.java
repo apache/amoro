@@ -32,6 +32,8 @@ import org.apache.iceberg.io.OutputFile;
 
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.netease.arctic.utils.FileUtil.getFileName;
+
 /**
  * For adapt hive table with partitions the dir construct is :
  *    ${table_location}
@@ -51,6 +53,12 @@ import java.util.concurrent.atomic.AtomicLong;
  * txId of unkeyed table is random long.
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
+
+  public static final String SEPARATOR = "-";
+  /**
+   * start from 0
+   */
+  public static final int TRANSACTION_INDEX = 2;
 
   private final String baseLocation;
   private final String hiveSubDirectory;
@@ -117,4 +125,17 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     OutputFile outputFile = io.newOutputFile(fileLocation);
     return encryptionManager.encrypt(outputFile);
   }
+
+  /**
+   * extract transactionId from data path name.
+   */
+  public static int parseTransactionId(CharSequence path) {
+    String fileName = getFileName(path.toString());
+    String[] values = fileName.split(SEPARATOR);
+    if (values.length <= TRANSACTION_INDEX) {
+      throw new IllegalArgumentException("path is invalid. " + path);
+    }
+    return Integer.parseInt(values[TRANSACTION_INDEX]);
+  }
+
 }
