@@ -317,9 +317,19 @@ public class TableOptimizeItem extends IJDBCService {
         // if minor optimize, insert files as base new files
         if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor &&
             !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
-          if (optimizeTaskItem.getOptimizeTask().getInsertFileCnt() !=
-              optimizeTaskItem.getOptimizeTask().getInsertFiles().size()) {
+          if (optimizeTaskItem.getOptimizeTask().getInsertFiles() == null ||
+              optimizeTaskItem.getOptimizeTask().getInsertFileCnt() !=
+                  optimizeTaskItem.getOptimizeTask().getInsertFiles().size()) {
             optimizeTaskItem.setFiles();
+          }
+          // check whether insert files don't change, confirm data consistency
+          if (optimizeTaskItem.getOptimizeTask().getInsertFiles() != null &&
+              optimizeTaskItem.getOptimizeTask().getInsertFileCnt() !=
+              optimizeTaskItem.getOptimizeTask().getInsertFiles().size()) {
+            String errorMessage =
+                String.format("table %s insert files changed in minor optimize task %s, can't prepared.",
+                    optimizeTaskItem.getTableIdentifier(), optimizeTaskItem.getOptimizeTask().getTaskId().getTraceId());
+            throw new IllegalStateException(errorMessage);
           }
           targetFiles.addAll(optimizeTaskItem.getOptimizeTask().getInsertFiles());
           targetFileSize = targetFileSize + optimizeTaskItem.getOptimizeTask().getInsertFileSize();
