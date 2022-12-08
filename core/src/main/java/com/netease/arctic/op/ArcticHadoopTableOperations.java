@@ -59,8 +59,6 @@ public class ArcticHadoopTableOperations extends HadoopTableOperations {
           // Do to wrap the direct CommitFailedException, we should retry committing.
           throw e;
         }
-      } catch (RuntimeException e) {
-        throw new CommitStateUnknownException(e);
       }
       return null;
     });
