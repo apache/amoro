@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 
 /**
  * Current optimize state of an ArcticTable.
@@ -40,7 +41,7 @@ public class TableOptimizeInfo {
   private double quota = 0.0;
   private double quotaOccupation = 0.0;
 
-  private String groupName = "default";
+  private String groupName = TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
 
   public TableIdentifier getTableIdentifier() {
     return tableIdentifier;
