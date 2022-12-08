@@ -365,6 +365,7 @@ public class TableOptimizeItem extends IJDBCService {
       tableOptimizeInfo.setFileCount(this.optimizeFileInfo.getFileCnt());
       tableOptimizeInfo.setFileSize(this.optimizeFileInfo.getTotalSize());
     }
+    tableOptimizeInfo.setGroupName(groupNameCache);
     return tableOptimizeInfo;
   }
 
