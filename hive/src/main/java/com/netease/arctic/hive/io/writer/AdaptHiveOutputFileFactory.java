@@ -36,20 +36,20 @@ import static com.netease.arctic.utils.FileUtil.getFileName;
 
 /**
  * For adapt hive table with partitions the dir construct is :
- * ${table_location}
- * -| change
- * -| base
- * -| hive
- * -| ${partition_name1}
- * -| ${partition_name2}
- * -| ${timestamp}_{txid}
- * <p>
+ *    ${table_location}
+ *            -| change
+ *            -| base
+ *            -| hive
+ *                 -| ${partition_name1}
+ *                 -| ${partition_name2}
+ *                            -| ${timestamp}_{txid}
+ *
  * For adapt hive table without partitions the dir construct is :
- * ${table_location}
- * -| change
- * -| base
- * -| hive
- * -| ${timestamp}_{txid}
+ *    ${table_location}
+ *            -| change
+ *            -| base
+ *            -| hive
+ *                  -| ${timestamp}_{txid}
  * txId of unkeyed table is random long.
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
