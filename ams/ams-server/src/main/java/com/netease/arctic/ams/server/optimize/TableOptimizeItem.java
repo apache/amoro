@@ -317,6 +317,7 @@ public class TableOptimizeItem extends IJDBCService {
         // if minor optimize, insert files as base new files
         if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor &&
             !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+          optimizeTaskItem.setFiles();
           targetFiles.addAll(optimizeTaskItem.getOptimizeTask().getInsertFiles());
           targetFileSize = targetFileSize + optimizeTaskItem.getOptimizeTask().getInsertFileSize();
         }
