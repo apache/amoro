@@ -305,7 +305,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
           formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);
     }
-    ReachableFileUtil.metadataFileLocations(internalTable, true).forEach(f -> validFiles.add(getUriPath(f)));
+    ReachableFileUtil.metadataFileLocations(internalTable, false).forEach(f -> validFiles.add(getUriPath(f)));
     validFiles.add(getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
 
     return validFiles;
