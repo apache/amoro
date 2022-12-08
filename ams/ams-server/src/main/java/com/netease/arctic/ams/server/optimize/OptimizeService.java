@@ -71,7 +71,6 @@ import java.util.stream.Collectors;
 
 public class OptimizeService extends IJDBCService implements IOptimizeService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizeService.class);
-  private static final long DEFAULT_CHECK_INTERVAL = 60000;
 
   private ScheduledTasks<TableIdentifier, OptimizeCheckTask> checkTasks;
 
@@ -82,7 +81,7 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   private final OptimizeQueueService optimizeQueueService;
   private final IMetaService metaService;
   private final AmsClient metastoreClient;
-  private long optimizeStatusCheckInterval = DEFAULT_CHECK_INTERVAL;
+  private volatile boolean inited = false;
 
   public OptimizeService() {
     super();
@@ -94,12 +93,19 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
 
   private void init() {
     try {
-      LOG.info("OptimizeService init...");
       new Thread(() -> {
-        loadTables();
-        initOptimizeTasksIntoOptimizeQueue();
+        try {
+          LOG.info("OptimizeService init...");
+          loadTables();
+          initOptimizeTasksIntoOptimizeQueue();
+          LOG.info("OptimizeService init completed");
+        } catch (Exception e) {
+          LOG.error("OptimizeService init failed", e);
+        } finally {
+          inited = true;
+        }
       }).start();
-      LOG.info("OptimizeService init completed");
+      LOG.info("OptimizeService init async");
     } catch (Exception e) {
       LOG.error("OptimizeService init failed", e);
     }
@@ -108,28 +114,24 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   @Override
   public synchronized void checkOptimizeCheckTasks(long checkInterval) {
     try {
-      this.optimizeStatusCheckInterval = checkInterval;
+      LOG.info("Schedule Optimize Checker");
+      if (!inited) {
+        LOG.info("OptimizeService init not completed, not check optimize task");
+        return;
+      }
       if (checkTasks == null) {
         checkTasks = new ScheduledTasks<>(ThreadPool.Type.OPTIMIZE_CHECK);
       }
       List<TableIdentifier> validTables = refreshAndListTables();
-      internalCheckOptimizeChecker(validTables);
+      checkTasks.checkRunningTask(
+          new HashSet<>(validTables),
+          identifier -> checkInterval,
+          OptimizeCheckTask::new,
+          false);
+      LOG.info("Schedule Optimize Checker finished with {} valid tables", validTables.size());
     } catch (Throwable t) {
       LOG.error("unexpected error when checkOptimizeCheckTasks", t);
     }
-  }
-
-  private void internalCheckOptimizeChecker(List<TableIdentifier> validTables) {
-    LOG.info("Schedule Optimize Checker");
-    if (checkTasks == null) {
-      return;
-    }
-    checkTasks.checkRunningTask(
-        new HashSet<>(validTables),
-        identifier -> this.optimizeStatusCheckInterval,
-        OptimizeCheckTask::new,
-        false);
-    LOG.info("Schedule Optimize Checker finished with {} valid tables", validTables.size());
   }
 
   @Override
@@ -140,6 +142,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   @Override
   public List<TableIdentifier> refreshAndListTables() {
     LOG.info("refresh tables");
+    if (!inited) {
+      LOG.info("OptimizeService init not completed, not refresh");
+      return new ArrayList<>(cachedTables.keySet());
+    }
     Set<TableIdentifier> tableIdentifiers =
         new HashSet<>(com.netease.arctic.ams.server.utils.CatalogUtil.loadTablesFromCatalog());
     List<TableIdentifier> toAddTables = tableIdentifiers.stream()
@@ -303,6 +309,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
     if (CollectionUtils.isEmpty(toAddTables)) {
       return;
     }
+    if (!inited) {
+      LOG.info("OptimizeService init not completed, can't add new tables");
+      return;
+    }
 
     Map<String, ArcticCatalog> icebergCatalogMap = new HashMap<>();
     int success = 0;
@@ -327,6 +337,10 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
   @Override
   public void clearRemovedTables(List<TableIdentifier> toRemoveTables) {
     if (CollectionUtils.isEmpty(toRemoveTables)) {
+      return;
+    }
+    if (!inited) {
+      LOG.info("OptimizeService init not completed, can't add new tables");
       return;
     }
     toRemoveTables.forEach(this::clearTableCache);
