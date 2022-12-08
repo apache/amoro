@@ -31,6 +31,7 @@
       </template>
     </a-table>
   </div>
+  <u-loading v-if="releaseLoading" />
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
@@ -45,7 +46,10 @@ import { useRouter } from 'vue-router'
 const { t } = useI18n()
 const router = useRouter()
 
-const props = defineProps<{ curGroupName: string, type: string, needFresh: boolean }>()
+const props = defineProps<{ curGroupName: string, type: string }>()
+const emit = defineEmits<{
+ (e: 'refreshCurGroupInfo'): void
+}>()
 const STATUS_CONFIG = shallowReactive({
   pending: { title: 'pending', color: '#ffcc00' },
   idle: { title: 'idle', color: '#c9cdd4' },
@@ -55,8 +59,10 @@ const STATUS_CONFIG = shallowReactive({
 })
 
 const loading = ref<boolean>(false)
+const releaseLoading = ref<boolean>(false)
 const tableColumns = shallowReactive([
   { dataIndex: 'tableName', title: t('table'), ellipsis: true, scopedSlots: { customRender: 'tableName' } },
+  { dataIndex: 'groupName', title: t('optimizeGroup'), width: '16%', ellipsis: true },
   { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: '16%', ellipsis: true },
   { dataIndex: 'durationDisplay', title: t('duration'), width: '10%', ellipsis: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: '10%', ellipsis: true },
@@ -88,13 +94,6 @@ watch(
   () => props.curGroupName,
   (value) => {
     value && refresh()
-  }
-)
-
-watch(
-  () => props.needFresh,
-  (value) => {
-    value && refresh(true)
   }
 )
 
@@ -172,11 +171,17 @@ function releaseModal (record: IOptimizeResourceTableItem) {
   })
 }
 async function releaseJob (record: IOptimizeResourceTableItem) {
-  await releaseResource({
-    optimizerGroup: record.groupName,
-    jobId: record.jobId
-  })
-  refresh(true)
+  try {
+    releaseLoading.value = true
+    await releaseResource({
+      optimizerGroup: record.groupName,
+      jobId: record.jobId
+    })
+    refresh(true)
+    emit('refreshCurGroupInfo')
+  } finally {
+    releaseLoading.value = false
+  }
 }
 function changeTable ({ current = pagination.current, pageSize = pagination.pageSize }) {
   pagination.current = current
