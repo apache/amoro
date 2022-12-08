@@ -42,13 +42,14 @@ import com.netease.arctic.ams.server.service.MetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
-import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.TestSupportHiveSyncService;
+import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
+import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanServiceTest;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
@@ -95,6 +96,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestMinorOptimizeCommit.class,
     TestMinorOptimizePlan.class,
     TestOrphanFileClean.class,
+    OrphanFilesCleanServiceTest.class,
     TestFileInfoCacheService.class,
     TestSupportHiveMajorOptimizePlan.class,
     TestSupportHiveMajorOptimizeCommit.class,
