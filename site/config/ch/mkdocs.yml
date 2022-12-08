@@ -67,7 +67,7 @@ nav:
     - Using Kyuubi By Terminal: guides/using-kyuubi.md
     - Metrics: guides/metrics.md
   - Configurations: configurations.md
-  - Flink integration:
+  - Flink Integration:
     - Getting Started: flink/flink-get-started.md
     - Flink DDL: flink/flink-ddl.md
     - Flink DML: flink/flink-dml.md
