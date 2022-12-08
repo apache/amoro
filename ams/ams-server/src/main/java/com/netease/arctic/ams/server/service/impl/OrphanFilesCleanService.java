@@ -42,16 +42,17 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.ManifestFile;
+import org.apache.iceberg.ReachableFileUtil;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.URI;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -192,73 +193,21 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
     Set<String> validFiles = getValidMetadataFiles(table.id(), table.io(), internalTable);
     LOG.info("{} table get {} valid files", table.id(), validFiles.size());
     int deleteFilesCnt = 0;
-    List<MetadataJson> metadataJsonFiles = new ArrayList<>();
-    int maxVersion = 0;
     String metadataLocation = internalTable.location() + File.separator + METADATA_FOLDER_NAME;
     LOG.info("start orphan files clean in {}", metadataLocation);
     for (FileStatus fileStatus : table.io().list(metadataLocation)) {
-      if (fileStatus.getPath().toString().endsWith("metadata.json")) {
-        Integer version = getVersionFromMetadataFilePath(fileStatus, lastTime);
-        metadataJsonFiles.add(new MetadataJson(version, fileStatus));
-        if (version != null && version > maxVersion) {
-          maxVersion = version;
-        }
-        continue;
-      }
       deleteFilesCnt += deleteInvalidMetadata(table.io(),
           fileStatus,
           validFiles,
           lastTime,
           execute);
     }
-    LOG.info("{} total delete[execute={}] {} manifestList/manifest files", table.id(), execute, deleteFilesCnt);
-    // delete metadata.json, keep latest 100 files and last modify time < min modify time
-    int minKeepVersion = Math.max(1, maxVersion - 100);
-    int deleteMetadataFileCnt = 0;
-    Set<String> parentDirectory = new HashSet<>();
-    for (MetadataJson metadataJson : metadataJsonFiles) {
-      Integer version = metadataJson.version;
-      FileStatus fileStatus = metadataJson.fileStatus;
-      if ((version == null || version < minKeepVersion) && fileStatus.getModificationTime() < lastTime) {
-        deleteMetadataFileCnt++;
-        if (execute) {
-          table.io().deleteFile(fileStatus.getPath().toString());
-          parentDirectory.add(fileStatus.getPath().getParent().toString());
-        }
-        LOG.info("delete[execute={}] metadata file {}: {}", execute, fileStatus.getPath().toString(),
-            formatTime(fileStatus.getModificationTime()));
-      }
-    }
-    parentDirectory.forEach(parent -> FileUtil.deleteEmptyDirectory(table.io(), parent));
-    LOG.info("{} total delete[execute={}] {} metadata files with min keep version {}, total delete {} files",
-        table.id(), execute, deleteMetadataFileCnt, minKeepVersion, deleteMetadataFileCnt + deleteFilesCnt);
-  }
-
-  private static class MetadataJson {
-    final Integer version;
-    final FileStatus fileStatus;
-
-    public MetadataJson(Integer version, FileStatus fileStatus) {
-      this.version = version;
-      this.fileStatus = fileStatus;
-    }
+    LOG.info("{} total delete[execute={}] {} manifestList/manifest/metadata files", table.id(), execute,
+        deleteFilesCnt);
   }
 
   private static String formatTime(long timestamp) {
     return LocalDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()).toString();
-  }
-
-  private static Integer getVersionFromMetadataFilePath(FileStatus fileStatus, long lastTime) {
-    String path = fileStatus.getPath().toString();
-    try {
-      int lastSlash = path.lastIndexOf('/');
-      String fileName = path.substring(lastSlash + 1);
-      return Integer.parseInt(fileName.replace(".metadata.json", "").replace("v", ""));
-    } catch (NumberFormatException e) {
-      LOG.warn("get unexpected table metadata {}: {}, delete it later if modify time is old than {}", path,
-          formatTime(fileStatus.getModificationTime()), formatTime(lastTime));
-      return null;
-    }
   }
 
   private static int deleteInvalidDataFiles(ArcticFileIO io,
@@ -267,7 +216,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                             Long lastTime,
                                             Set<String> exclude,
                                             boolean execute) {
-    String location = fileStatus.getPath().toUri().getPath();
+    String location = getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
@@ -316,15 +265,12 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                            FileStatus fileStatus,
                                            Set<String> validFiles,
                                            Long lastTime, boolean execute) {
-    String location = fileStatus.getPath().toUri().getPath();
+    String location = getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
     } else {
-      if (!validFiles.contains(location) &&
-          fileStatus.getModificationTime() < lastTime &&
-          !location.endsWith("metadata.json") &&
-          !location.contains("version-hint.text")) {
+      if (!validFiles.contains(location) && fileStatus.getModificationTime() < lastTime) {
         if (execute) {
           io.deleteFile(location);
         }
@@ -346,21 +292,28 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       cnt++;
       int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
-      validFiles.add(manifestListLocation);
+      
+      validFiles.add(getUriPath(manifestListLocation));
 
       io.doAs(() -> {
         // valid data files
         List<ManifestFile> manifestFiles = snapshot.allManifests();
         for (ManifestFile manifestFile : manifestFiles) {
-          validFiles.add(manifestFile.path());
+          validFiles.add(getUriPath(manifestFile.path()));
         }
         return null;
       });
       LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
           formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);
     }
+    ReachableFileUtil.metadataFileLocations(internalTable, true).forEach(f -> validFiles.add(getUriPath(f)));
+    validFiles.add(getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
 
     return validFiles;
+  }
+  
+  protected static String getUriPath(String path) {
+    return URI.create(path).getPath();
   }
 
   private static Set<String> getValidDataFiles(TableIdentifier tableIdentifier, ArcticFileIO io,
@@ -378,8 +331,8 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         for (FileScanTask scanTask
             : internalTable.newScan().useSnapshot(snapshot.snapshotId()).planFiles()) {
           if (scanTask.file() != null) {
-            validFiles.add(scanTask.file().path().toString());
-            scanTask.deletes().forEach(file -> validFiles.add(file.path().toString()));
+            validFiles.add(getUriPath(scanTask.file().path().toString()));
+            scanTask.deletes().forEach(file -> validFiles.add(getUriPath(file.path().toString())));
           }
         }
         return null;
