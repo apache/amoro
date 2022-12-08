@@ -40,6 +40,8 @@ public class TableOptimizeInfo {
   private double quota = 0.0;
   private double quotaOccupation = 0.0;
 
+  private String groupName = "default";
+
   public TableIdentifier getTableIdentifier() {
     return tableIdentifier;
   }
@@ -100,6 +102,14 @@ public class TableOptimizeInfo {
     this.tableName = tableName;
   }
 
+  public String getGroupName() {
+    return groupName;
+  }
+
+  public void setGroupName(String groupName) {
+    this.groupName = groupName;
+  }
+
   @Override
   public String toString() {
     return "TableOptimizeInfo{" +
@@ -111,6 +121,7 @@ public class TableOptimizeInfo {
         ", fileSize=" + fileSize +
         ", quota=" + quota +
         ", quotaOccupation=" + quotaOccupation +
+        ", groupName='" + groupName + '\'' +
         '}';
   }
 }
