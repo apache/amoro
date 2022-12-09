@@ -1,6 +1,6 @@
 <template>
   <div :class="{'side-bar-collapsed': collapsed}" class="side-bar">
-    <div :class="{'logo-collapsed': collapsed}" @mouseenter="toggleTablesMenu(false)" class="logo g-flex-ac">
+    <div :class="{'logo-collapsed': collapsed}" @mouseenter="toggleTablesMenu(false)" @click="viewIntroduce" class="logo g-flex-ac">
       <img src="../assets/images/logo.svg" class="logo-img" alt="">
       <img v-show="!collapsed" src="../assets/images/arctic-dashboard.svg" class="arctic-name" alt="">
     </div>
@@ -155,6 +155,12 @@ export default defineComponent({
       store.updateTablesMenu(flag)
     }
 
+    const viewIntroduce = () => {
+      router.push({
+        path: '/introduce'
+      })
+    }
+
     return {
       ...toRefs(state),
       hasToken,
@@ -164,7 +170,8 @@ export default defineComponent({
       mouseenter,
       store,
       toggleTablesMenu,
-      goCreatePage
+      goCreatePage,
+      viewIntroduce
     }
   }
 })
@@ -217,6 +224,7 @@ export default defineComponent({
       padding: 12px 0 12px 16px;
       overflow: hidden;
       background-color: #001529;
+      cursor: pointer;
     }
     .logo-img {
       width: 32px;
