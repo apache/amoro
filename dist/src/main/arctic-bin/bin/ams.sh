@@ -39,7 +39,8 @@ XMX=$XMX_CONFIG
 XMS=$XMS_CONFIG
 MAX_PERM=$MAX_PERM_CONFIG
 
-JAVA_OPTS="-server -Xms${XMS}m -Xmx${XMX}m -XX:MaxPermSize=${MAX_PERM}m \
+JAVA_OPTS="-server -Xloggc:$ARCTIC_HOME/logs/gc.log -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=10 -XX:GCLogFileSize=10M \
+-Xms${XMS}m -Xmx${XMX}m -XX:MaxPermSize=${MAX_PERM}m \
 -verbose:gc -XX:+PrintGCDetails \
 -Dcom.sun.management.jmxremote \
 -Dcom.sun.management.jmxremote.ssl=false \

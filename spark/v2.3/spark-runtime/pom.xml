@@ -29,6 +29,8 @@
 
     <artifactId>arctic-spark-2.3-runtime</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project Spark 2.3 Runtime</name>
+    <url>https://arctic.netease.com</url>
 
     <dependencies>
         <dependency>

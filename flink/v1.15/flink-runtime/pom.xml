@@ -29,6 +29,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-flink-runtime-1.15</artifactId>
+    <name>Arctic Project Flink 1.15 Runtime</name>
+    <url>https://arctic.netease.com</url>
 
     <properties>
         <flink.version>1.15.2</flink.version>

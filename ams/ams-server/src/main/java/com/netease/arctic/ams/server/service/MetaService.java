@@ -100,7 +100,7 @@ public class MetaService {
             TableProperties.TABLE_CREATE_TIME_DEFAULT));
     properties.remove(TableProperties.TABLE_CREATE_TIME);
 
-    TableProperties.READ_PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
+    TableProperties.READ_PROTECTED_PROPERTIES.forEach(properties::remove);
     serverTableMeta.setProperties(properties);
   }
 }
