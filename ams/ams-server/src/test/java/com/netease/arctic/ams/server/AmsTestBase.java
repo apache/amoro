@@ -56,6 +56,7 @@ import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
+import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanServiceTest;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -114,6 +115,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestIcebergMinorOptimizeCommit.class,
     TestExpireFileCleanSupportIceberg.class,
     TestOrphanFileCleanSupportIceberg.class,
+    OrphanFilesCleanServiceTest.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
     SupportHiveTestGroup.class,

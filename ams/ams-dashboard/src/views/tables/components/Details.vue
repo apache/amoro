@@ -86,12 +86,20 @@ watch(
     val?.catalog && route.path === '/tables' && getTableDetails()
   }
 )
+const commonMetricMap = {
+  fileCount: 'File Count',
+  totalSize: 'Total Size',
+  averageFileSize: 'Average File Size',
+  lastCommitTime: 'Last Commit Time'
+}
 
-const metricsMap: IMap<string | number> = {
-  averageFile: 'Average File Size',
-  file: 'File',
-  lastCommitTime: 'Last Commit Time',
-  size: 'Size'
+const baseMetricsMap: IMap<string | number> = {
+  ...commonMetricMap,
+  baseWatermark: 'Base Watermark'
+}
+const changeMetricsMap: IMap<string | number> = {
+  ...commonMetricMap,
+  tableWatermark: 'Table Watermark'
 }
 
 const state = reactive({
@@ -137,17 +145,17 @@ const getTableDetails = async() => {
     state.partitionColumnList = partitionColumnList || []
     state.schema = schema || []
 
-    state.changeMetrics = Object.keys(metricsMap || {}).map(key => {
+    state.changeMetrics = Object.keys(changeMetricsMap || {}).map(key => {
       return {
-        metric: metricsMap[key],
-        value: key === 'lastCommitTime' ? ((changeMetrics || {})[key] ? dateFormat((changeMetrics || {})[key]) : '') : (changeMetrics || {})[key]
+        metric: changeMetricsMap[key],
+        value: key === 'lastCommitTime' || key === 'tableWatermark' ? ((changeMetrics || {})[key] ? dateFormat((changeMetrics || {})[key]) : '') : (changeMetrics || {})[key]
       }
     }).filter(ele => ele.value)
 
-    state.baseMetrics = Object.keys(metricsMap || {}).map(key => {
+    state.baseMetrics = Object.keys(baseMetricsMap || {}).map(key => {
       return {
-        metric: metricsMap[key],
-        value: key === 'lastCommitTime' ? ((baseMetrics || {})[key] ? dateFormat((baseMetrics || {})[key]) : '') : (baseMetrics || {})[key]
+        metric: baseMetricsMap[key],
+        value: key === 'lastCommitTime' || key === 'baseWatermark' ? ((baseMetrics || {})[key] ? dateFormat((baseMetrics || {})[key]) : '') : (baseMetrics || {})[key]
       }
     })
     state.properties = Object.keys(properties || {}).map(key => {

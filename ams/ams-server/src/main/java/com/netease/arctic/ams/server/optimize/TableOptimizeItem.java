@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.ErrorMessage;
+import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
@@ -38,6 +39,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
+import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -45,6 +47,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
@@ -317,6 +320,20 @@ public class TableOptimizeItem extends IJDBCService {
         // if minor optimize, insert files as base new files
         if (optimizeTaskItem.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor &&
             !com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
+          if (optimizeTaskItem.getOptimizeTask().getInsertFiles() == null ||
+              optimizeTaskItem.getOptimizeTask().getInsertFileCnt() !=
+                  optimizeTaskItem.getOptimizeTask().getInsertFiles().size()) {
+            optimizeTaskItem.setFiles();
+          }
+          // check whether insert files don't change, confirm data consistency
+          if (optimizeTaskItem.getOptimizeTask().getInsertFiles() != null &&
+              optimizeTaskItem.getOptimizeTask().getInsertFileCnt() !=
+              optimizeTaskItem.getOptimizeTask().getInsertFiles().size()) {
+            String errorMessage =
+                String.format("table %s insert files changed in minor optimize task %s, can't prepared.",
+                    optimizeTaskItem.getTableIdentifier(), optimizeTaskItem.getOptimizeTask().getTaskId().getTraceId());
+            throw new IllegalStateException(errorMessage);
+          }
           targetFiles.addAll(optimizeTaskItem.getOptimizeTask().getInsertFiles());
           targetFileSize = targetFileSize + optimizeTaskItem.getOptimizeTask().getInsertFileSize();
         }
@@ -365,6 +382,7 @@ public class TableOptimizeItem extends IJDBCService {
       tableOptimizeInfo.setFileCount(this.optimizeFileInfo.getFileCnt());
       tableOptimizeInfo.setFileSize(this.optimizeFileInfo.getTotalSize());
     }
+    tableOptimizeInfo.setGroupName(groupNameCache);
     return tableOptimizeInfo;
   }
 
@@ -451,6 +469,19 @@ public class TableOptimizeItem extends IJDBCService {
           }
         }
       }
+    }
+  }
+
+  public void checkOptimizeGroup() {
+    try {
+      Set<TableIdentifier> tablesOfQueue =
+          ServiceContainer.getOptimizeQueueService().getTablesOfQueue(this.groupNameCache);
+      if (!tablesOfQueue.contains(this.tableIdentifier)) {
+        ServiceContainer.getOptimizeQueueService().release(this.tableIdentifier);
+        ServiceContainer.getOptimizeQueueService().bind(tableIdentifier, this.groupNameCache);
+      }
+    } catch (Exception e) {
+      LOG.error("checkOptimizeGroup error", e);
     }
   }
 
