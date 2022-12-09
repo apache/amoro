@@ -43,6 +43,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -278,10 +279,11 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
 
       List<DataFile> partitionFiles = new ArrayList<>();
       arcticTable.io().doAs(() -> {
-        TableScan tableScan = baseStore.newScan();
-        for (FileScanTask fileScanTask : tableScan.planFiles()) {
-          if (fileScanTask.file().partition().equals(partition)) {
-            partitionFiles.add(fileScanTask.file());
+        try (CloseableIterable<FileScanTask> fileScanTasks = baseStore.newScan().planFiles()) {
+          for (FileScanTask fileScanTask : fileScanTasks) {
+            if (fileScanTask.file().partition().equals(partition)) {
+              partitionFiles.add(fileScanTask.file());
+            }
           }
         }
 
