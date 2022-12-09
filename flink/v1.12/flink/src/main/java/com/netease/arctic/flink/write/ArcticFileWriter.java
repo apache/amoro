@@ -71,7 +71,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   private transient int subTaskId;
   private transient int attemptId;
   private transient String jobId;
-  private transient long checkpointId = 0;
+  private transient long checkpointId = 1;
   private transient ListState<Long> checkpointState;
   /**
    * Load table in runtime, because that table's refresh method will be invoked in serialization.
@@ -184,7 +184,8 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
 
   @Override
   public void prepareSnapshotPreBarrier(long checkpointId) throws Exception {
-    this.checkpointId = checkpointId;
+    // get ckpId for next cp writer
+    this.checkpointId = checkpointId + 1;
 
     table.io().doAs(() -> {
       completeAndEmitFiles();

@@ -194,6 +194,7 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "471859200");
     sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
+    sparkConfigs.put("spark.sql.arctic.check-source-data-uniqueness.enabled", "true");
 
     sparkConfigs.putAll(configs);
     sparkConfigs.forEach(((k, v) -> System.out.println("--" + k + "=" + v)));

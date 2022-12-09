@@ -30,6 +30,8 @@
 
     <artifactId>arctic-ams-api</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project AMS API</name>
+    <url>https://arctic.netease.com</url>
 
     <properties>
         <checkstyle.skip>true</checkstyle.skip>

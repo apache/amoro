@@ -30,6 +30,8 @@
 
     <artifactId>arctic-ams</artifactId>
     <packaging>pom</packaging>
+    <name>Arctic Project AMS Parent</name>
+    <url>https://arctic.netease.com</url>
 
     <modules>
         <module>ams-api</module>

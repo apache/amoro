@@ -58,10 +58,10 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
   private static final Logger LOG = LoggerFactory.getLogger(BaseIcebergOptimizePlan.class);
 
   protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
-  Iterable<FileScanTask> fileScanTasks;
+  protected List<FileScanTask> fileScanTasks;
 
   public BaseIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                 Iterable<FileScanTask> fileScanTasks,
+                                 List<FileScanTask> fileScanTasks,
                                  Map<String, Boolean> partitionTaskRunning,
                                  int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, partitionTaskRunning, queueId, currentTime);

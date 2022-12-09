@@ -138,9 +138,10 @@ public class TableController extends RestBaseController {
     FilesStatistics baseFilesStatistics = tableBasicInfo.getBaseStatistics().getTotalFilesStat();
     Map<String, String> baseSummary = tableBasicInfo.getBaseStatistics().getSummary();
     baseMetrics.put("lastCommitTime", AmsUtils.longOrNull(baseSummary.get("visibleTime")));
-    baseMetrics.put("size", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
-    baseMetrics.put("file", baseFilesStatistics.getFileCnt());
-    baseMetrics.put("averageFile", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
+    baseMetrics.put("totalSize", AmsUtils.byteToXB(baseFilesStatistics.getTotalSize()));
+    baseMetrics.put("fileCount", baseFilesStatistics.getFileCnt());
+    baseMetrics.put("averageFileSize", AmsUtils.byteToXB(baseFilesStatistics.getAverageSize()));
+    baseMetrics.put("baseWatermark", AmsUtils.longOrNull(serverTableMeta.getBaseWatermark()));
     tableSize += baseFilesStatistics.getTotalSize();
     tableFileCnt += baseFilesStatistics.getFileCnt();
     serverTableMeta.setBaseMetrics(baseMetrics);
@@ -150,16 +151,18 @@ public class TableController extends RestBaseController {
       FilesStatistics changeFilesStatistics = tableBasicInfo.getChangeStatistics().getTotalFilesStat();
       Map<String, String> changeSummary = tableBasicInfo.getChangeStatistics().getSummary();
       changeMetrics.put("lastCommitTime", AmsUtils.longOrNull(changeSummary.get("visibleTime")));
-      changeMetrics.put("size", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
-      changeMetrics.put("file", changeFilesStatistics.getFileCnt());
-      changeMetrics.put("averageFile", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
+      changeMetrics.put("totalSize", AmsUtils.byteToXB(changeFilesStatistics.getTotalSize()));
+      changeMetrics.put("fileCount", changeFilesStatistics.getFileCnt());
+      changeMetrics.put("averageFileSize", AmsUtils.byteToXB(changeFilesStatistics.getAverageSize()));
+      changeMetrics.put("tableWatermark", AmsUtils.longOrNull(serverTableMeta.getTableWatermark()));
       tableSize += changeFilesStatistics.getTotalSize();
       tableFileCnt += changeFilesStatistics.getFileCnt();
     } else {
       changeMetrics.put("lastCommitTime", null);
-      changeMetrics.put("size", null);
-      changeMetrics.put("file", null);
-      changeMetrics.put("averageFile", null);
+      changeMetrics.put("totalSize", null);
+      changeMetrics.put("fileCount", null);
+      changeMetrics.put("averageFileSize", null);
+      changeMetrics.put("tableWatermark", null);
     }
     serverTableMeta.setChangeMetrics(changeMetrics);
     Set<TableFormat> tableFormats =

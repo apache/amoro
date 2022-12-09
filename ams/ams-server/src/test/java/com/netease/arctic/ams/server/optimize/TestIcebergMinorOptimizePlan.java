@@ -4,6 +4,9 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -20,9 +23,14 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      fileScanTasks = Lists.newArrayList(filesIterable);
+    }
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(2, tasks.size());
@@ -37,9 +45,13 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan().planFiles()) {
+      fileScanTasks = Lists.newArrayList(filesIterable);
+    }
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        icebergPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(2, tasks.size());

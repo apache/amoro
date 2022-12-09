@@ -28,6 +28,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-optimizer</artifactId>
+    <name>Arctic Project Optimizer</name>
+    <url>https://arctic.netease.com</url>
 
     <properties>
         <fastjson.version>1.2.58</fastjson.version>

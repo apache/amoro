@@ -71,6 +71,7 @@ USING arctic
 AS SELECT ...
 ```
 > CREATE TABLE ... AS SELECT 语法作用为创建表并将查询结果写入表中，主键、分区、以及 properties 不会从源表中继承，需单独配置。
+> 可以通过 SPARK SQL`set spark.sql.arctic.check-source-data-uniqueness.enabled = true` 开启对源表主键的唯一性校验，若存在相同主键，写入时会报错提示。
 
 创建带主键、分区、preoperties 的表，可以使用如下语法：
 

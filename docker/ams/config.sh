@@ -20,11 +20,11 @@
 
 
 if [ -z "$XMX_CONFIG" ]; then
-    XMX_CONFIG="8196"
+    XMX_CONFIG="2048"
 fi
 
 if [ -z "$XMS_CONFIG" ]; then
-    XMS_CONFIG="1024"
+    XMS_CONFIG="2048"
 fi
 
 if [ -z "$MAX_PERM_CONFIG" ]; then

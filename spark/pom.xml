@@ -29,7 +29,8 @@
 
     <artifactId>arctic-spark</artifactId>
     <packaging>pom</packaging>
-
+    <name>Arctic Project Spark Parent</name>
+    <url>https://arctic.netease.com</url>
 
     <modules>
         <module>v2.3/spark</module>
