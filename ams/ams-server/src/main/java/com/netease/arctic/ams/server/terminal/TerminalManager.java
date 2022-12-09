@@ -92,7 +92,7 @@ public class TerminalManager {
     }
     CatalogMeta catalogMeta = optCatalogMeta.get();
     TableMetaStore metaStore = getCatalogTableMetaStore(catalogMeta);
-    String sessionId = getSessionId(terminalId, metaStore);
+    String sessionId = getSessionId(terminalId, metaStore, catalog);
     String catalogType = CatalogUtil.isIcebergCatalog(catalog) ? "iceberg" : "arctic";
     Configuration configuration = new Configuration();
     configuration.setInteger(SessionConfigOptions.FETCH_SIZE, resultLimits);
@@ -210,12 +210,8 @@ public class TerminalManager {
 
   // ========================== private method =========================
 
-  private String getSessionId(String loginId, TableMetaStore auth) {
-    String authName = auth.getHadoopUsername();
-    if (auth.isKerberosAuthMethod()) {
-      authName = auth.getKrbPrincipal();
-    }
-    String sessionId = loginId + "-" + auth.getAuthMethod() + "-" + authName;
+  private String getSessionId(String loginId, TableMetaStore auth, String catalog) {
+    String sessionId = loginId + "-" + auth.getAuthMethod() + "-" + catalog;
     sessionId = sessionId.replace("/", "_");
     return sessionId;
   }
