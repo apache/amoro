@@ -62,6 +62,7 @@ public class LocalSessionFactory implements TerminalSessionFactory {
 
     Map<String, String> sparkConf = SparkContextUtil.getSparkConf(configuration);
     Map<String, String> finallyConf = Maps.newLinkedHashMap();
+    sparkConf.put(REFRESH_CATALOG_BEFORE_USAGE, "true");
     for (String key : sparkConf.keySet()) {
       if (STATIC_SPARK_CONF.contains(key)) {
         continue;
@@ -69,7 +70,6 @@ public class LocalSessionFactory implements TerminalSessionFactory {
       updateSessionConf(session, initializeLogs, key, sparkConf.get(key));
       finallyConf.put(key, sparkConf.get(key));
     }
-    finallyConf.put(REFRESH_CATALOG_BEFORE_USAGE, "true");
 
     return new LocalTerminalSession(catalogs, session, initializeLogs, finallyConf);
   }
