@@ -211,7 +211,11 @@ public class TerminalManager {
   // ========================== private method =========================
 
   private String getSessionId(String loginId, TableMetaStore auth, String catalog) {
-    String sessionId = loginId + "-" + auth.getAuthMethod() + "-" + catalog;
+    String authName = auth.getHadoopUsername();
+    if (auth.isKerberosAuthMethod()) {
+      authName = auth.getKrbPrincipal();
+    }
+    String sessionId = loginId + "-" + auth.getAuthMethod() + "-" + authName + "-" + catalog;
     sessionId = sessionId.replace("/", "_");
     return sessionId;
   }
