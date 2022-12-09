@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.ErrorMessage;
+import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskId;
@@ -38,6 +39,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.CoreInfo;
 import com.netease.arctic.ams.server.model.FilesStatistics;
 import com.netease.arctic.ams.server.model.OptimizeHistory;
+import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.model.TableOptimizeInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
@@ -45,6 +47,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
+import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
@@ -466,6 +469,19 @@ public class TableOptimizeItem extends IJDBCService {
           }
         }
       }
+    }
+  }
+
+  public void checkOptimizeGroup() {
+    try {
+      Set<TableIdentifier> tablesOfQueue =
+          ServiceContainer.getOptimizeQueueService().getTablesOfQueue(this.groupNameCache);
+      if (!tablesOfQueue.contains(this.tableIdentifier)) {
+        ServiceContainer.getOptimizeQueueService().release(this.tableIdentifier);
+        ServiceContainer.getOptimizeQueueService().bind(tableIdentifier, this.groupNameCache);
+      }
+    } catch (Exception e) {
+      LOG.error("checkOptimizeGroup error", e);
     }
   }
 

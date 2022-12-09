@@ -60,10 +60,7 @@ public class QuotaService implements IQuotaService {
         new BigDecimal(calculateTotalCostTime(tableTaskHistoryList, startTime, endTime)).divide(new BigDecimal(period),
             2, RoundingMode.HALF_UP).doubleValue());
     try {
-      Map<String, String> properties =
-          ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier).getArcticTable().properties();
-      double quota = CompatiblePropertyUtil.propertyAsDouble(properties, TableProperties.SELF_OPTIMIZING_QUOTA,
-          TableProperties.SELF_OPTIMIZING_QUOTA_DEFAULT);
+      double quota = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier).getQuotaCache();
       result.setNeedCoreCount(quota);
     } catch (NoSuchObjectException e) {
       LOG.error("no such table", e);
