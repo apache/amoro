@@ -30,6 +30,8 @@
 
     <artifactId>arctic-spark-3.1</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project Spark 3.1</name>
+    <url>https://arctic.netease.com</url>
 
     <properties>
         <root.dir>${project.basedir}</root.dir>
