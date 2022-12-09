@@ -46,8 +46,7 @@ public class TestIcebergMinorOptimizePlan extends TestIcebergBase {
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
     List<FileScanTask> fileScanTasks;
-    try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
-        .planFiles()) {
+    try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan().planFiles()) {
       fileScanTasks = Lists.newArrayList(filesIterable);
     }
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,

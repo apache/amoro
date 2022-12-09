@@ -111,7 +111,7 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
-    try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+    try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan()
         .planFiles()) {
       filesIterable.forEach(fileScanTask -> {
         if (fileScanTask.file().fileSizeInBytes() <= 1000) {
@@ -122,7 +122,7 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
     }
 
     List<FileScanTask> fileScanTasks;
-    try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+    try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan()
         .planFiles()) {
       fileScanTasks = Lists.newArrayList(filesIterable);
     }
