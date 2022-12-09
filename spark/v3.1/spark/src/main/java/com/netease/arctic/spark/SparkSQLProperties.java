@@ -34,5 +34,5 @@ public class SparkSQLProperties {
 
   public static final String CHECK_DATA_DUPLICATES_ENABLE = "spark.sql.arctic.check-source-data-uniqueness.enabled";
 
-  public static final String CHECK_DATA_DUPLICATES_ENABLE_DEFAULT = "true";
+  public static final String CHECK_DATA_DUPLICATES_ENABLE_DEFAULT = "false";
 }
