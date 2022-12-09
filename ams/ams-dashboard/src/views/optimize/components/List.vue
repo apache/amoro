@@ -10,7 +10,7 @@
       >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'tableName'">
-          <span class="primary-link" @click="goTableDetail(record)">
+          <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
             {{ record.tableName }}
           </span>
         </template>
@@ -62,13 +62,13 @@ const loading = ref<boolean>(false)
 const releaseLoading = ref<boolean>(false)
 const tableColumns = shallowReactive([
   { dataIndex: 'tableName', title: t('table'), ellipsis: true, scopedSlots: { customRender: 'tableName' } },
-  { dataIndex: 'groupName', title: t('optimizeGroup'), width: '16%', ellipsis: true },
+  { dataIndex: 'groupName', title: t('optimizerGroup'), width: '16%', ellipsis: true },
   { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: '16%', ellipsis: true },
   { dataIndex: 'durationDisplay', title: t('duration'), width: '10%', ellipsis: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: '10%', ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: '10%', ellipsis: true },
   { dataIndex: 'quota', title: t('quota'), width: '10%', ellipsis: true },
-  { dataIndex: 'quotaOccupationDesc', title: t('quotaOccupation'), width: 160, ellipsis: true }
+  { dataIndex: 'quotaOccupationDesc', title: t('occupation'), width: 120, ellipsis: true }
 ])
 const optimizerColumns = shallowReactive([
   { dataIndex: 'index', title: t('order'), width: 80, ellipsis: true },
