@@ -83,14 +83,14 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
         (short) -1);
     Assert.assertEquals(2, partitions.size());
     //disable arctic
-    sql("set spark.arctic.sql.delegate.enabled = false");
+    sql("set spark.sql.arctic.delegate.enabled = false");
     rows = sql("select * from {0}.{1} order by id", database, table);
     assertEquals("Should have rows matching the expected rows",
         files.subList(6, files.size()),
         rows);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
-    sql("set spark.arctic.sql.delegate.enabled = true");
+    sql("set spark.sql.arctic.delegate.enabled = true");
   }
 
   @Test
@@ -124,13 +124,13 @@ public class TestUnkeyedHiveTableMergeOnRead extends SparkTestBase {
     Assert.assertEquals(10, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
     //disable arctic
-    sql("set spark.arctic.sql.delegate.enabled = false");
+    sql("set spark.sql.arctic.delegate.enabled = false");
     rows = sql("select * from {0}.{1} order by id", database, table);
     assertEquals("Should have rows matching the expected rows",
         files.subList(6, files.size()),
         rows);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 7, 8, 9, 10);
-    sql("set spark.arctic.sql.delegate.enabled = true");
+    sql("set spark.sql.arctic.delegate.enabled = true");
   }
 }

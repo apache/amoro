@@ -295,4 +295,37 @@ public class TestKeyedTableDml extends SparkTestBase {
     Assert.assertEquals(1, rows.get(0)[0]);
     Assert.assertEquals(2, rows.get(1)[0]);
   }
+
+  @Test
+  public void testDuplicateEnabled() {
+    sql("set `spark.sql.check-data-duplicates.enabled` = `false`");
+    sql("create table {0}.{1}( \n" +
+        " id int, \n" +
+        " name string, \n" +
+        " data string, primary key(id, name))\n" +
+        " using arctic partitioned by (data) " , database, "testPks");
+
+    sql("insert into " + database + "." + "testPks" +
+        " values (1, 1.1, 'abcd' ) , " +
+        "(1, 1.1, 'bbcd'), " +
+        "(3, 1.3, 'cbcd') ");
+
+    rows = sql("select * from " + database + "." + "testPks");
+    Assert.assertEquals(3, rows.size());
+
+    sql("insert overwrite " + database + "." + "testPks" +
+        " values (1, 'aaa', 'abcd' ) , " +
+        "(1, 'bbb', 'bbcd'), " +
+        "(3, 'ccc', 'cbcd') ");
+    rows = sql("select * from " + database + "." + "testPks");
+    Assert.assertEquals(3, rows.size());
+
+    sql("create table {0}.{1} as select * from {0}.{2}", database, "testTable", "testPks");
+    rows = sql("select * from " + database + "." + "testTable");
+    Assert.assertEquals(3, rows.size());
+
+    sql("drop table " + database + "." + "testPks");
+    sql("drop table " + database + "." + "testTable");
+    sql("set `spark.sql.check-data-duplicates.enabled` = `true`");
+  }
 }
