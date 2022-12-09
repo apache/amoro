@@ -68,13 +68,12 @@
         <java.version>1.8</java.version>
         <root.dir>${project.basedir}</root.dir>
 
-        <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
         <maven-assembly-plugin.version>3.3.0</maven-assembly-plugin.version>
         <maven-checkstyle-plugin.version>3.1.2</maven-checkstyle-plugin.version>
         <maven-jar-plugin-version>3.0.2</maven-jar-plugin-version>
         <maven-source-plugin-version>2.2.1</maven-source-plugin-version>
-        <maven.plugin.javadoc.version>3.3.0</maven.plugin.javadoc.version>
-        <maven.plugin.gpg.version>3.0.1</maven.plugin.gpg.version>
+        <maven-javadoc-plugin.version>3.3.0</maven-javadoc-plugin.version>
+        <maven-gpg-plugin.version>3.0.1</maven-gpg-plugin.version>
 
         <iceberg.version>0.13.2</iceberg.version>
         <hadoop.version>2.9.2</hadoop.version>
@@ -465,7 +464,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-javadoc-plugin</artifactId>
-                        <version>${maven.plugin.javadoc.version}</version>
+                        <version>${maven-javadoc-plugin.version}</version>
                         <configuration>
                             <quiet>true</quiet>
                             <doclint>none</doclint>
@@ -482,7 +481,7 @@
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>
-                        <version>${maven.plugin.gpg.version}</version>
+                        <version>${maven-gpg-plugin.version}</version>
                         <executions>
                             <execution>
                                 <id>sign-release-artifacts</id>
