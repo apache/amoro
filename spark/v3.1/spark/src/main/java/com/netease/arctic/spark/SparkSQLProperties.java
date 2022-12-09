@@ -31,4 +31,8 @@ public class SparkSQLProperties {
   public static final String REFRESH_CATALOG_BEFORE_USAGE = "spark.sql.arctic.refresh-catalog-before-usage";
 
   public static final String REFRESH_CATALOG_BEFORE_USAGE_DEFAULT = "false";
+
+  public static final String CHECK_DATA_DUPLICATES_ENABLE = "spark.sql.check-data-duplicates.enabled";
+
+  public static final String CHECK_DATA_DUPLICATES_ENABLE_DEFAULT = "true";
 }
