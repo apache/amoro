@@ -9,7 +9,7 @@ Arctic Spark 目录下的文档均只针对 Mixed format 生效。如果您使�
 ## 环境准备
 
 当前 Arctic-Spark-Connector 支持与 Spark3.1 版本使用。在开始使用前，
-[下载](https://github.com/NetEase/arctic/releases/download/v0.4.0-rc2/arctic-spark-3.1-runtime-0.4.0.jar)并将 arctic-spark-3.1-runtime.jar 复制到
+[下载](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-spark-3.1-runtime-0.4.0.jar)并将 arctic-spark-3.1-runtime.jar 复制到
 `${SPARK_HOME}/jars` 目录下，然后通过 Bash 启动Spark-Sql 客户端。
 
 ```
