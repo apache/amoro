@@ -29,6 +29,8 @@
 
     <artifactId>arctic-ams-dashboard</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project AMS Dashboard</name>
+    <url>https://arctic.netease.com</url>
 
 
     <properties>

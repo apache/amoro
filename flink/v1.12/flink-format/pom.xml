@@ -29,7 +29,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>arctic-flink-format-1.12</artifactId>
-    <name>arctic-flink-format-1.12</name>
+    <name>Arctic Project Flink 1.12 Format</name>
+    <url>https://arctic.netease.com</url>
 
     <properties>
         <flink.version>1.12.7</flink.version>

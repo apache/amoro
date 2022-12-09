@@ -30,6 +30,8 @@
 
     <artifactId>arctic-spark-3.1-runtime</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project Spark 3.1 Runtime</name>
+    <url>https://arctic.netease.com</url>
 
     <dependencies>
         <dependency>
