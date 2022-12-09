@@ -31,7 +31,7 @@ SELECT * FROM arctic_catalog.db.sample.change
 
 ## Write
 
-### Insert overwrite 
+### INSERT OVERWRITE 
 
 `INSERT OVERWRITE`可以用查询的结果替换表中的数据
 
@@ -72,7 +72,7 @@ partition( dt = '2021-1-1')  values
 
 > 可以通过 SPARK SQL`set spark.sql.arctic.check-source-data-uniqueness.enabled = true` 开启对源表主键的唯一性校验，若存在相同主键，写入时会报错提示。
 
-### Insert into
+### INSERT INTO
 
 #### 无主键表
 要向无主键表添加新数据，请使用 `INSERT INTO`
@@ -108,7 +108,7 @@ INSERT INTO prod.db.keyedTable SELECT ...
 
 
 
-### Delete from
+### DELETE FROM
 
 Arctic Spark 支持 `DELETE FROM` 语法用于删除表中数据
 
@@ -124,7 +124,7 @@ WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 ```
 
 
-### Update 
+### UPDATE 
 
 支持 `UPDATE` 语句对表进行更新
 
