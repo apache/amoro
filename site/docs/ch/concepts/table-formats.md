@@ -77,13 +77,13 @@ use local;
 -- 查看所有的 Iceberg 表
 show tables;
 
--- 查看 Basestore
+-- 查看 BaseStore
 select * from local.test_db.test_table.base;
 
--- 查看 Changestore
+-- 查看 ChangeStore
 select * from local.test_db.test_table.change;
 
--- 写入 Basestore
+-- 写入 BaseStore
 insert into local.test_db.test_table.base value(10, 'tony', timestamp('2022-07-03 12:10:30'));
 ```
 
