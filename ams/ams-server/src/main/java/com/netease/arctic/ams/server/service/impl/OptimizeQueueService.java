@@ -57,12 +57,16 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -668,8 +672,13 @@ public class OptimizeQueueService extends IJDBCService {
                   tableIdentifier);
               continue;
             }
-            Iterable<FileScanTask> fileScanTasks =
-                tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles();
+            List<FileScanTask> fileScanTasks;
+            try (CloseableIterable<FileScanTask> filesIterable = 
+                     tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles()) {
+              fileScanTasks = Lists.newArrayList(filesIterable);
+            } catch (IOException e) {
+              throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
+            }
 
             optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime);
             optimizeTasks = optimizePlan.plan();

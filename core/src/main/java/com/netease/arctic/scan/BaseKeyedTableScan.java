@@ -39,6 +39,7 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -237,8 +238,17 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     ListMultimap<StructLike, ArcticFileScanTask> filesGroupedByPartition
         = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
 
-    changeTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
-    baseTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
-    return filesGroupedByPartition.asMap();
+    try {
+      changeTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
+      baseTasks.forEach(task -> filesGroupedByPartition.put(task.file().partition(), task));
+      return filesGroupedByPartition.asMap();
+    } finally {
+      try {
+        changeTasks.close();
+        baseTasks.close();
+      } catch (IOException e) {
+        LOG.warn("Failed to close table scan of {} ", table.id(), e);
+      }
+    }
   }
 }

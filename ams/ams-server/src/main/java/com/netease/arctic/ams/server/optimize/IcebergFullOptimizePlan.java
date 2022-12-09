@@ -49,7 +49,7 @@ public class IcebergFullOptimizePlan extends BaseIcebergOptimizePlan {
   protected final Map<String, List<FileScanTask>> partitionFileList = new LinkedHashMap<>();
 
   public IcebergFullOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                 Iterable<FileScanTask> fileScanTasks,
+                                 List<FileScanTask> fileScanTasks,
                                  Map<String, Boolean> partitionTaskRunning,
                                  int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);
