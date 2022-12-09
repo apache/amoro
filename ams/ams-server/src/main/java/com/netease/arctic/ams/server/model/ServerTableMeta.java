@@ -49,6 +49,8 @@ public class ServerTableMeta {
   private long createTime;
   private String creator;
 
+  private String tableWatermark;
+  private String baseWatermark;
 
   public ServerTableMeta() {
   }
@@ -151,6 +153,22 @@ public class ServerTableMeta {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
+  }
+
+  public String getTableWatermark() {
+    return tableWatermark;
+  }
+
+  public void setTableWatermark(String tableWatermark) {
+    this.tableWatermark = tableWatermark;
+  }
+
+  public String getBaseWatermark() {
+    return baseWatermark;
+  }
+
+  public void setBaseWatermark(String baseWatermark) {
+    this.baseWatermark = baseWatermark;
   }
 
   public CdcMeta getCdcMeta() {

@@ -98,7 +98,7 @@ export default {
   release: 'Release',
   optimizeStatus: 'Optimize Status',
   fileSize: 'File Size',
-  quotaOccupation: 'Quota Occupation',
+  occupation: 'Occupation',
   optimizerGroup: 'Optimizer Group',
   resourceAllocation: 'Resource Allocation',
   resourceGroup: 'Resource Group',

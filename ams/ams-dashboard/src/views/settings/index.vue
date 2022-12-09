@@ -55,15 +55,7 @@ import { getSystemSetting, getContainersSetting } from '@/services/setting.servi
 const { t } = useI18n()
 const loading = ref<boolean>(false)
 const systemSettingArray = reactive<IKeyAndValue>([])
-const containerSetting = reactive<IContainerSetting[]>([
-  {
-    name: '',
-    type: '',
-    properties: {},
-    propertiesArray: [],
-    optimizeGroup: []
-  }
-])
+const containerSetting = reactive<IContainerSetting[]>([])
 const optimzeGroupColumns: IColumns[] = reactive([
   { title: t('name'), dataIndex: 'name', width: 340, ellipsis: true },
   { title: t('propertiesMemory', { type: 'taskmanager' }), dataIndex: 'tmMemory', width: '50%', ellipsis: true },
