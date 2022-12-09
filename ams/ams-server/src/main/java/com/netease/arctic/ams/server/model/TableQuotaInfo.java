@@ -66,4 +66,9 @@ public class TableQuotaInfo implements Comparable<TableQuotaInfo> {
 
     return o.getTargetQuota().compareTo(targetQuota);
   }
+
+  @Override
+  public String toString() {
+    return "Q{" + tableIdentifier + ": " + quota + "/" + targetQuota + '}';
+  }
 }

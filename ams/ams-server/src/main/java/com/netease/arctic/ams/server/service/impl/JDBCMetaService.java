@@ -177,7 +177,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
           TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
       if (StringUtils.isNotBlank(oldQueueName) && StringUtils.isNotBlank(newQueueName) && !oldQueueName.equals(
           newQueueName)) {
-        OptimizeQueueItem newOptimizeQueue = ServiceContainer.getOptimizeQueueService().getOptimizeQueue(newQueueName);
         TableOptimizeItem arcticTableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
         ServiceContainer.getOptimizeQueueService().release(tableIdentifier);
         try {
@@ -185,8 +184,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         } catch (Throwable t) {
           LOG.error("failed to delete " + tableIdentifier + " compact task, ignore", t);
         }
-        ServiceContainer.getOptimizeQueueService().bind(arcticTableItem.getTableIdentifier(),
-            newOptimizeQueue.getOptimizeQueueMeta().getQueueId());
+        ServiceContainer.getOptimizeQueueService().bind(arcticTableItem.getTableIdentifier(), newQueueName);
       }
     } catch (InvalidObjectException | NoSuchObjectException e) {
       LOG.error("get tables failed " + tableIdentifier, e);

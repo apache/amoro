@@ -58,6 +58,7 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -229,10 +230,17 @@ public class OptimizeQueueService extends IJDBCService {
    */
   public OptimizeQueueItem getOptimizeQueue(String queueName) throws InvalidObjectException {
     Preconditions.checkNotNull(queueName, "queueName can't be null");
-    return optimizeQueues.values().stream()
-        .filter(q -> queueName.equals(q.getOptimizeQueueItem().getOptimizeQueueMeta().getName()))
-        .findFirst()
-        .orElseThrow(() -> new InvalidObjectException("lost queue " + queueName)).getOptimizeQueueItem();
+    return getQueue(queueName).getOptimizeQueueItem();
+  }
+
+  /**
+   * Get tables of optimize queue.
+   * @param queueName queueName
+   * @return set of tables
+   * @throws InvalidObjectException when can't find queue
+   */
+  public Set<TableIdentifier> getTablesOfQueue(String queueName) throws InvalidObjectException {
+    return getQueue(queueName).getTables();
   }
 
   /**
@@ -245,6 +253,13 @@ public class OptimizeQueueService extends IJDBCService {
     Objects.requireNonNull(task, "taskItem can't be null");
     Objects.requireNonNull(task.getOptimizeTask(), "task cant' be null");
     getQueue(task.getOptimizeTask().getQueueId()).addIntoOptimizeQueue(task);
+  }
+
+  private OptimizeQueueWrapper getQueue(String queueName) throws InvalidObjectException {
+    return optimizeQueues.values().stream()
+        .filter(q -> queueName.equals(q.getOptimizeQueueItem().getOptimizeQueueMeta().getName()))
+        .findFirst()
+        .orElseThrow(() -> new InvalidObjectException("lost queue " + queueName));
   }
 
   private OptimizeQueueWrapper getQueue(int queueId) throws InvalidObjectException {
@@ -300,9 +315,8 @@ public class OptimizeQueueService extends IJDBCService {
     queue.setName(queue.getName().trim());
   }
 
-  public void bind(TableIdentifier tableIdentifier, int queueId) throws InvalidObjectException {
-    getQueue(queueId).bindTable(tableIdentifier);
-    LOG.info("bind {} with queue {}", tableIdentifier, queueId);
+  public void bind(TableIdentifier tableIdentifier, String queueName) throws InvalidObjectException {
+    getQueue(queueName).bindTable(tableIdentifier);
   }
 
   public void release(TableIdentifier tableIdentifier) {
@@ -357,6 +371,7 @@ public class OptimizeQueueService extends IJDBCService {
       lock();
       try {
         tables.add(tableIdentifier);
+        LOG.info("operation queue success, bind {} with queue {}", tableIdentifier, queueName());
       } finally {
         unlock();
       }
@@ -366,7 +381,10 @@ public class OptimizeQueueService extends IJDBCService {
       lock();
       try {
         clearTasks(tableIdentifier);
-        tables.remove(tableIdentifier);
+        boolean removed = tables.remove(tableIdentifier);
+        if (removed) {
+          LOG.info("operation queue success, remove {} from queue {}", tableIdentifier, queueName());
+        }
       } finally {
         unlock();
       }
@@ -464,6 +482,7 @@ public class OptimizeQueueService extends IJDBCService {
                 int retry = 0;
                 boolean isHaveTask = false;
 
+                long threadStartTime = System.currentTimeMillis();
                 try {
                   LOG.info("this plan started {}, {}", attemptId, jobId);
                   while (retry <= retryTime) {
@@ -493,7 +512,8 @@ public class OptimizeQueueService extends IJDBCService {
                   LOG.error("failed to plan", t);
                   throw t;
                 } finally {
-                  LOG.info("this plan end {}", attemptId);
+                  LOG.info("this plan end {}, cost {} ms, retry {}",
+                      attemptId, System.currentTimeMillis() - threadStartTime, retry);
                   if (planThreadStarted.compareAndSet(true, false)) {
                     lock();
                     try {
@@ -583,16 +603,24 @@ public class OptimizeQueueService extends IJDBCService {
       return tasks.size();
     }
 
+    public Set<TableIdentifier> getTables() {
+      return Sets.newHashSet(tables);
+    }
+
     public OptimizeQueueItem getOptimizeQueueItem() {
       optimizeQueue.setSize(size());
       return optimizeQueue;
     }
 
     private List<OptimizeTaskItem> plan(long currentTime) {
-      List<TableIdentifier> tableSort = sortTableByQuota(new ArrayList<>(tables));
+      List<TableQuotaInfo> tableSort = sortTableByQuota(new ArrayList<>(tables));
 
-      for (TableIdentifier tableIdentifier : tableSort) {
-        LOG.debug("{} try plan", tableIdentifier);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("get sort table {}", tableSort);
+      }
+      for (TableQuotaInfo tableQuotaInfo : tableSort) {
+        TableIdentifier tableIdentifier = tableQuotaInfo.getTableIdentifier();
+        LOG.debug("{} try plan, quota {}", tableIdentifier, tableQuotaInfo.getQuota());
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
 
@@ -685,7 +713,7 @@ public class OptimizeQueueService extends IJDBCService {
       return Collections.emptyList();
     }
 
-    private List<TableIdentifier> sortTableByQuota(List<TableIdentifier> tables) {
+    private List<TableQuotaInfo> sortTableByQuota(List<TableIdentifier> tables) {
       long currentTime = System.currentTimeMillis();
       List<TableQuotaInfo> tableQuotaInfoList = tables.stream()
           .map(tableIdentifier -> {
@@ -701,7 +729,7 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }).filter(Objects::nonNull).collect(Collectors.toList());
 
-      return tableQuotaInfoList.stream().sorted().map(TableQuotaInfo::getTableIdentifier).collect(Collectors.toList());
+      return tableQuotaInfoList.stream().sorted().collect(Collectors.toList());
     }
 
     private BigDecimal evalQuotaRate(TableIdentifier tableId, long currentTime) throws NoSuchObjectException {
