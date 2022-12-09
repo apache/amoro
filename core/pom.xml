@@ -31,6 +31,8 @@
 
     <artifactId>arctic-core</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project Core</name>
+    <url>https://arctic.netease.com</url>
 
     <dependencies>
         <dependency>
