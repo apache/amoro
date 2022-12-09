@@ -99,7 +99,6 @@ public class TestKeyedHiveInsertOverwriteDynamic extends SparkTestBase {
 
   @Test
   public void testInsertOverwriteDuplicateData() {
-    sql("set `spark.sql.check-data-duplicates.enabled` = `false`");
     sql("create table {0}.{1}( \n" +
             " id int, \n" +
             " name string, \n" +
