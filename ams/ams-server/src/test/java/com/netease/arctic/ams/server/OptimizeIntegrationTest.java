@@ -21,6 +21,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
@@ -890,9 +891,13 @@ public class OptimizeIntegrationTest {
   
   private long getDataFileSize(Table table) {
     table.refresh();
-    DataFile file = table.newScan().planFiles().iterator().next().file();
-    LOG.info("get file size {} of {}", file.fileSizeInBytes(), file.path());
-    return file.fileSizeInBytes();
+    try (CloseableIterable<FileScanTask> fileScanTasks = table.newScan().planFiles()) {
+      DataFile file = fileScanTasks.iterator().next().file();
+      LOG.info("get file size {} of {}", file.fileSizeInBytes(), file.path());
+      return file.fileSizeInBytes();
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
+    }
   }
 
   @AfterClass

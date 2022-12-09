@@ -66,13 +66,17 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.base.Predicate;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.util.PropertyUtil;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
@@ -420,7 +424,12 @@ public class TableOptimizeItem extends IJDBCService {
       tryUpdateOptimizeInfo(TableOptimizeRuntime.OptimizeStatus.Idle, Collections.emptyList(), null);
     } else {
       if (com.netease.arctic.utils.TableTypeUtil.isIcebergTableFormat(getArcticTable())) {
-        Iterable<FileScanTask> fileScanTasks = arcticTable.asUnkeyedTable().newScan().planFiles();
+        List<FileScanTask> fileScanTasks;
+        try (CloseableIterable<FileScanTask> filesIterable = arcticTable.asUnkeyedTable().newScan().planFiles()) {
+          fileScanTasks = Lists.newArrayList(filesIterable);
+        } catch (IOException e) {
+          throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
+        }
         IcebergFullOptimizePlan fullPlan = getIcebergFullPlan(fileScanTasks, -1, System.currentTimeMillis());
         List<BaseOptimizeTask> fullTasks = fullPlan.plan();
         // pending for full optimize
@@ -1009,7 +1018,7 @@ public class TableOptimizeItem extends IJDBCService {
    * @param currentTime -
    * @return -
    */
-  public IcebergFullOptimizePlan getIcebergFullPlan(Iterable<FileScanTask> fileScanTasks,
+  public IcebergFullOptimizePlan getIcebergFullPlan(List<FileScanTask> fileScanTasks,
                                                      int queueId,
                                                      long currentTime) {
     return new IcebergFullOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,
@@ -1017,13 +1026,13 @@ public class TableOptimizeItem extends IJDBCService {
   }
 
   /**
-   * Get mior optimize plan for iceberg tables.
+   * Get minor optimize plan for iceberg tables.
    *
    * @param queueId     -
    * @param currentTime -
    * @return -
    */
-  public IcebergMinorOptimizePlan getIcebergMinorPlan(Iterable<FileScanTask> fileScanTasks,
+  public IcebergMinorOptimizePlan getIcebergMinorPlan(List<FileScanTask> fileScanTasks,
                                                       int queueId,
                                                       long currentTime) {
     return new IcebergMinorOptimizePlan(arcticTable, tableOptimizeRuntime, fileScanTasks,

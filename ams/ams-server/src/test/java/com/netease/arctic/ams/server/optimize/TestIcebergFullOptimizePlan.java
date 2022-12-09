@@ -4,6 +4,9 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -21,9 +24,14 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> fileIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      fileScanTasks = Lists.newArrayList(fileIterable);
+    }
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
@@ -39,9 +47,13 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> fileIterable = icebergPartitionTable.asUnkeyedTable().newScan().planFiles()) {
+      fileScanTasks = Lists.newArrayList(fileIterable);
+    }
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        icebergPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals(1, tasks.size());
@@ -60,9 +72,14 @@ public class TestIcebergFullOptimizePlan extends TestIcebergBase {
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> fileIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      fileScanTasks = Lists.newArrayList(fileIterable);
+    }
     IcebergFullOptimizePlan optimizePlan = new IcebergFullOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
     Assert.assertEquals((int) Math.ceil(1.0 * dataFiles.size() / fragmentRatio), tasks.size());
