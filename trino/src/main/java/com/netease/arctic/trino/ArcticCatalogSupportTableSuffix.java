@@ -110,7 +110,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
 
   @Override
   public ArcticTable loadTable(TableIdentifier tableIdentifier) {
-
     TableNameResolve tableNameResolve = new TableNameResolve(tableIdentifier.getTableName());
     if (tableNameResolve.withSuffix()) {
       TableIdentifier newTableIdentifier = TableIdentifier.of(tableIdentifier.getCatalog(),
