@@ -185,6 +185,7 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   public boolean baseTableCacheAll() {
     if (arcticTable.isKeyedTable()) {
       long snapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
+      this.currentBaseSnapshotId = snapshotId;
       if (snapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID && !snapshotIsCached.test(snapshotId)) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
             "wait file cache sync latest file info", snapshotId);
@@ -201,7 +202,6 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     }
 
     if (arcticTable.isKeyedTable()) {
-      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
       this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
     } else {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
