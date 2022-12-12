@@ -183,12 +183,11 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   }
 
   public boolean baseTableCacheAll() {
-    Snapshot snapshot;
     if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
-      if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
+      long snapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
+      if (snapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID && !snapshotIsCached.test(snapshotId)) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", snapshot.snapshotId());
+            "wait file cache sync latest file info", snapshotId);
         return false;
       }
     }
