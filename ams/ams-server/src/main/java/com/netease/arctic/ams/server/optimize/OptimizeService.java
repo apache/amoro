@@ -332,10 +332,9 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
         invalidTables.remove(toAddTable);
         success++;
       } catch (Throwable t) {
-        // avoid print too many error logs
+        // avoid printing too many error logs
         if (!invalidTables.contains(toAddTable)) {
           LOG.error("failed to load  " + toAddTable, t);
-        } else {
           invalidTables.add(toAddTable);
         }
       }
