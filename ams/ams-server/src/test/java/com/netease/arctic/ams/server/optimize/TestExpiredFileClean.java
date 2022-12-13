@@ -30,10 +30,12 @@ import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
@@ -64,14 +66,16 @@ public class TestExpiredFileClean extends TableTestBase {
     updateProperties.set(partitions.get(1), TableProperties.PARTITION_MAX_TRANSACTION_ID, "0");
     updateProperties.commit();
     List<DataFile> existedDataFiles = new ArrayList<>();
-    testKeyedTable.changeTable().newScan().planFiles()
-        .forEach(fileScanTask -> existedDataFiles.add(fileScanTask.file()));
+    try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
+      fileScanTasks.forEach(fileScanTask -> existedDataFiles.add(fileScanTask.file()));
+    }
     Assert.assertEquals(4, existedDataFiles.size());
 
     TableExpireService.deleteChangeFile(testKeyedTable, changeTableFilesInfo);
     List<DataFile> currentDataFiles = new ArrayList<>();
-    testKeyedTable.changeTable().newScan().planFiles()
-        .forEach(fileScanTask -> currentDataFiles.add(fileScanTask.file()));
+    try (CloseableIterable<FileScanTask> fileScanTasks = testKeyedTable.changeTable().newScan().planFiles()) {
+      fileScanTasks.forEach(fileScanTask -> currentDataFiles.add(fileScanTask.file()));
+    }
     Assert.assertEquals(2, currentDataFiles.size());
   }
 

@@ -23,7 +23,7 @@
         </div> -->
       </div>
       <div class="content">
-        <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane>
+        <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
           <a-tab-pane key="Details" tab="Details">
             <u-details @setBaseDetailInfo="setBaseDetailInfo" />
           </a-tab-pane>
@@ -42,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, watch, shallowReactive, computed } from 'vue'
+import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted } from 'vue'
 // import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
@@ -101,6 +101,11 @@ export default defineComponent({
       state.detailLoaded = true
       state.baseInfo = { ...baseInfo }
     }
+    const onChangeTab = (key: string) => {
+      const query = { ...route.query }
+      query.tab = key
+      router.replace({ query: { ...query } })
+    }
 
     const editTable = () => {}
     const delTable = () => {}
@@ -121,10 +126,14 @@ export default defineComponent({
 
     watch(
       () => route.query,
-      () => {
-        state.activeKey = 'Details'
+      (value) => {
+        state.activeKey = value.tab as string
       }
     )
+
+    onMounted(() => {
+      state.activeKey = (route.query?.tab as string) || 'Details'
+    })
 
     return {
       ...toRefs(state),
@@ -135,7 +144,8 @@ export default defineComponent({
       delTable,
       setBaseDetailInfo,
       hideTablesMenu,
-      goBack
+      goBack,
+      onChangeTab
     }
   }
 })

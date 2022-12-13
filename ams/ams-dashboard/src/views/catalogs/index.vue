@@ -7,7 +7,6 @@
           {{ item.catalogName }}
         </li>
       </ul>
-      <a-empty v-if="!catalogs.length && !loading" :image="simpleImage"></a-empty>
       <a-button @click="addCatalog" :disabled="curCatalog.catalogName === NEW_CATALOG" class="add-btn">+</a-button>
     </div>
     <div class="catalog-detail">

@@ -30,13 +30,14 @@ import org.apache.iceberg.TableScan;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -135,44 +136,50 @@ public class FlinkSplitPlanner {
     }
 
     public static BaseAndChangeTask ofIceberg(CloseableIterable<FileScanTask> fileScanTasks) {
-      CloseableIterator<FileScanTask> icebergTasks = fileScanTasks.iterator();
-      Map<Long, TransactionTask> transactionTasks = new HashMap<>();
+      try (CloseableIterator<FileScanTask> icebergTasks = fileScanTasks.iterator()) {
+        Map<Long, TransactionTask> transactionTasks = new HashMap<>();
 
-      while (icebergTasks.hasNext()) {
-        BaseArcticFileScanTask task = new BaseArcticFileScanTask(icebergTasks.next());
+        while (icebergTasks.hasNext()) {
+          BaseArcticFileScanTask task = new BaseArcticFileScanTask(icebergTasks.next());
 
-        if (task.fileType().equals(DataFileType.INSERT_FILE)) {
-          taskMap(Collections.singleton(task), true, transactionTasks);
-        } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
-          taskMap(Collections.singleton(task), false, transactionTasks);
-        } else {
-          throw new IllegalArgumentException(
-              String.format(
-                  "DataFileType %s is not supported during change log reading period.",
-                  task.fileType()));
+          if (task.fileType().equals(DataFileType.INSERT_FILE)) {
+            taskMap(Collections.singleton(task), true, transactionTasks);
+          } else if (task.fileType().equals(DataFileType.EQ_DELETE_FILE)) {
+            taskMap(Collections.singleton(task), false, transactionTasks);
+          } else {
+            throw new IllegalArgumentException(
+                String.format(
+                    "DataFileType %s is not supported during change log reading period.",
+                    task.fileType()));
+          }
         }
+        return new BaseAndChangeTask(Collections.emptySet(), transactionTasks);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
       }
-      return new BaseAndChangeTask(Collections.emptySet(), transactionTasks);
     }
 
     public static BaseAndChangeTask of(CloseableIterable<CombinedScanTask> combinedScanTasks) {
-      Iterator<CombinedScanTask> initTasks = combinedScanTasks.iterator();
-      final Set<ArcticFileScanTask> allBaseTasks = new HashSet<>();
-      final Map<Long, TransactionTask> transactionTasks = new HashMap<>();
+      try (CloseableIterator<CombinedScanTask> initTasks = combinedScanTasks.iterator()) {
+        final Set<ArcticFileScanTask> allBaseTasks = new HashSet<>();
+        final Map<Long, TransactionTask> transactionTasks = new HashMap<>();
 
-      while (initTasks.hasNext()) {
-        CombinedScanTask combinedScanTask = initTasks.next();
-        combinedScanTask.tasks().forEach(keyedTableScanTask -> {
-          allBaseTasks.addAll(keyedTableScanTask.baseTasks());
+        while (initTasks.hasNext()) {
+          CombinedScanTask combinedScanTask = initTasks.next();
+          combinedScanTask.tasks().forEach(keyedTableScanTask -> {
+            allBaseTasks.addAll(keyedTableScanTask.baseTasks());
 
-          taskMap(keyedTableScanTask.insertTasks(), true, transactionTasks);
-          taskMap(keyedTableScanTask.arcticEquityDeletes(), false, transactionTasks);
-        });
+            taskMap(keyedTableScanTask.insertTasks(), true, transactionTasks);
+            taskMap(keyedTableScanTask.arcticEquityDeletes(), false, transactionTasks);
+          });
+        }
+        List<ArcticFileScanTask> baseTasks = allBaseTasks.stream()
+            .sorted(Comparator.comparing(t -> t.file().transactionId())).collect(Collectors.toList());
+
+        return new BaseAndChangeTask(baseTasks, transactionTasks);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
       }
-      List<ArcticFileScanTask> baseTasks = allBaseTasks.stream()
-          .sorted(Comparator.comparing(t -> t.file().transactionId())).collect(Collectors.toList());
-
-      return new BaseAndChangeTask(baseTasks, transactionTasks);
     }
 
     private static void taskMap(

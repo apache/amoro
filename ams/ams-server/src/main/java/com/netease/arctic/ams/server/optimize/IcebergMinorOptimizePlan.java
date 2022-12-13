@@ -57,7 +57,7 @@ public class IcebergMinorOptimizePlan extends BaseIcebergOptimizePlan {
   private final Map<String, Set<FileScanTask>> deleteDataFileMap = new HashMap<>();
 
   public IcebergMinorOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
-                                  Iterable<FileScanTask> fileScanTasks,
+                                  List<FileScanTask> fileScanTasks,
                                   Map<String, Boolean> partitionTaskRunning,
                                   int queueId, long currentTime) {
     super(arcticTable, tableOptimizeRuntime, fileScanTasks, partitionTaskRunning, queueId, currentTime);

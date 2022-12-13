@@ -177,10 +177,10 @@ public class TestMultiDelegateSessionCatalog extends SparkTestContext {
     assertContainIdSet(rows,0, 1L, 2L, 3L);
 
 
-    sql("set spark.arctic.sql.delegate.enabled = false");
+    sql("set spark.sql.arctic.delegate.enabled = false");
     rows = sql("select id, name, pt from {0}.{1}", database, arcticTable);
     assertContainIdSet(rows,0, 1L, 2L, 3L);
-    sql("set spark.arctic.sql.delegate.enabled = true");
+    sql("set spark.sql.arctic.delegate.enabled = true");
   }
 
 

@@ -31,6 +31,7 @@ import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.MetricsConfig;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.PartitionSpec;
@@ -39,6 +40,7 @@ import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.data.TableMigrationUtil;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.mapping.NameMappingParser;
 import org.apache.iceberg.relocated.com.google.common.collect.ListMultimap;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
@@ -51,6 +53,8 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -148,7 +152,11 @@ public class HiveMetaSynchronizer {
           List<DataFile> hiveDataFiles = listHivePartitionFiles(table, Maps.newHashMap(),
               hiveTable.getSd().getLocation());
           List<DataFile> deleteFiles = Lists.newArrayList();
-          baseStore.newScan().planFiles().forEach(fileScanTask -> deleteFiles.add(fileScanTask.file()));
+          try (CloseableIterable<FileScanTask> fileScanTasks = baseStore.newScan().planFiles()) {
+            fileScanTasks.forEach(fileScanTask -> deleteFiles.add(fileScanTask.file()));
+          } catch (IOException e) {
+            throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
+          }
           overwriteTable(table, deleteFiles, hiveDataFiles);
         }
       } else {
@@ -159,8 +167,12 @@ public class HiveMetaSynchronizer {
         ListMultimap<StructLike, DataFile> filesGroupedByPartition
             = Multimaps.newListMultimap(Maps.newHashMap(), Lists::newArrayList);
         TableScan tableScan = baseStore.newScan();
-        for (org.apache.iceberg.FileScanTask fileScanTask : tableScan.planFiles()) {
-          filesGroupedByPartition.put(fileScanTask.file().partition(),fileScanTask.file());
+        try (CloseableIterable<FileScanTask> fileScanTasks = tableScan.planFiles()) {
+          for (org.apache.iceberg.FileScanTask fileScanTask : fileScanTasks) {
+            filesGroupedByPartition.put(fileScanTask.file().partition(), fileScanTask.file());
+          }
+        } catch (IOException e) {
+          throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
         }
         Map<StructLike, Collection<DataFile>> filesMap = filesGroupedByPartition.asMap();
         List<DataFile> filesToDelete = Lists.newArrayList();

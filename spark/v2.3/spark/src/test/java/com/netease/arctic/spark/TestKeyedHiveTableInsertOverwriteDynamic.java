@@ -76,11 +76,11 @@ public class TestKeyedHiveTableInsertOverwriteDynamic extends SparkTestBase {
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6, 3);
     //read by hive
-    sql("set spark.arctic.sql.delegate.enabled = false");
+    sql("set spark.sql.arctic.delegate.enabled = false");
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
     Assert.assertEquals(4, rows.size());
     assertContainIdSet(rows, 0, 4, 5, 6, 3);
-    sql("set spark.arctic.sql.delegate.enabled = true");
+    sql("set spark.sql.arctic.delegate.enabled = true");
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,
@@ -100,11 +100,11 @@ public class TestKeyedHiveTableInsertOverwriteDynamic extends SparkTestBase {
     Assert.assertEquals(6, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6);
     //read by hive
-    sql("set spark.arctic.sql.delegate.enabled = false");
+    sql("set spark.sql.arctic.delegate.enabled = false");
     rows = sql("select id, data, dt from {0}.{1} order by id", database, table);
     Assert.assertEquals(6, rows.size());
     assertContainIdSet(rows, 0, 1, 2, 3, 4, 5, 6);
-    sql("set spark.arctic.sql.delegate.enabled = true");
+    sql("set spark.sql.arctic.delegate.enabled = true");
 
     List<Partition> partitions = hms.getClient().listPartitions(
         database,

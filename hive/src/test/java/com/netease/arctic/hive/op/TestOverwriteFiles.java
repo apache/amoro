@@ -390,6 +390,32 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     assertHivePartitionLocations(partitions, table);
   }
 
+  @Test
+  public void testOverwriteCommitHMSFailed() throws TException {
+    UnkeyedTable table = testHiveTable;
+    List<Map.Entry<String, String>> files = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a2.parquet"),
+        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet")
+    );
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
+    List<DataFile> dataFiles = dataFileBuilder.buildList(files);
+
+    OverwriteFiles overwriteFiles = table.newOverwrite();
+    dataFiles.forEach(overwriteFiles::addFile);
+
+    // rename the hive table,
+    Table hiveTable = hms.getClient().getTable(testHiveTable.id().getDatabase(), testHiveTable.id().getTableName());
+    hiveTable.setTableName("new_table");
+    hms.getClient().alter_table(testHiveTable.id().getDatabase(), testHiveTable.id().getTableName(), hiveTable);
+
+    // commit should success even though hive table is not existed.
+    overwriteFiles.commit();
+
+    hiveTable.setTableName(testHiveTable.id().getTableName());
+    hms.getClient().alter_table(testHiveTable.id().getDatabase(), "new_table", hiveTable);
+  }
+
   private void applyOverwrite(
       Map<String, String> partitionAndLocations,
       Predicate<String> deleteFunc,

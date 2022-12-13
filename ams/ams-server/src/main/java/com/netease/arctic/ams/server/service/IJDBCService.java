@@ -63,10 +63,10 @@ public abstract class IJDBCService {
         }
 
         if (mapperSet == null || mapperSet.size() == 0) {
-          return sqlSession.getMapper(type);
+          mapperIntfMap.put(type, type);
+        } else {
+          mapperIntfMap.put(type, mapperSet.stream().findFirst().get());
         }
-
-        mapperIntfMap.put(type, mapperSet.stream().findFirst().get());
       }
       return sqlSession.getMapper((Class<T>)mapperIntfMap.get(type));
     } else {
