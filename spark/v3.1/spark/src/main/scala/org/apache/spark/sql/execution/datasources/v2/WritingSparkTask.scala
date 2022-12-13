@@ -1,15 +1,32 @@
 package org.apache.spark.sql.execution.datasources.v2
 
-import org.apache.spark.{SparkEnv, TaskContext}
+import com.netease.arctic.spark.writer.merge.MergeWriter
+import org.apache.spark.{SparkEnv, SparkException, TaskContext}
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory}
 import org.apache.spark.util.Utils
 
-trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serializable {
+object WritingSparkTask extends Logging{
 
-  protected def writeFunc(writer: W, row: InternalRow): Unit
+  protected def writeFunc(writer: MergeWriter[InternalRow], row: InternalRow): Unit = {
+    val operation = row.getString(0)
+
+    operation match {
+      case "D" =>
+        writer.delete(row)
+
+      case "U" =>
+        writer.update(row)
+
+      case "I" =>
+        writer.insert(row)
+
+      case other =>
+        throw new SparkException(s"Unexpected operation ID: $other")
+    }
+  }
 
   def run(
            writerFactory: DataWriterFactory,
@@ -21,7 +38,7 @@ trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serial
     val partId = context.partitionId()
     val taskId = context.taskAttemptId()
     val attemptId = context.attemptNumber()
-    val dataWriter = writerFactory.createWriter(partId, taskId).asInstanceOf[W]
+    val dataWriter = writerFactory.createWriter(partId, taskId).asInstanceOf[MergeWriter[InternalRow]]
 
     var count = 0L
     // write the data and commit this writer.

@@ -23,12 +23,9 @@ import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.merge.MergeWriter
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.AttributeSet
-import org.apache.spark.sql.connector.write._
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
-
-import java.util.UUID
 
 /**
  * Physical plan node to write a delta of rows to an existing table.
@@ -37,44 +34,15 @@ case class WriteMergeExec(
                            table: ArcticSparkTable,
                            query: SparkPlan,
                            writeOptions: CaseInsensitiveStringMap,
-                           refreshCache: () => Unit) extends ExtendedV2ExistingTableWriteExec[MergeWriter[InternalRow]]{
-
-  override lazy val references: AttributeSet = query.outputSet
-
-  override lazy val writingTask: WritingSparkTask[MergeWriter[InternalRow]] = {
-    DeltaWithMetadataWritingSparkTask()
-  }
+                           refreshCache: () => Unit) extends ExtendedV2ExistingTableWriteExec[MergeWriter[InternalRow]] with BatchWriteHelper{
 
   override protected def run(): Seq[InternalRow] = {
-    prepare()
-    val info = LogicalWriteInfoImpl(
-      queryId = UUID.randomUUID().toString,
-      query.schema,
-      writeOptions)
-    val writtenRows = writeWithV2(table.newWriteBuilder(info).buildForBatch())
+    val writtenRows = writeWithV2(newWriteBuilder().buildForBatch())
     refreshCache()
     writtenRows
   }
 
-  case class DeltaWithMetadataWritingSparkTask() extends WritingSparkTask[MergeWriter[InternalRow]] {
+  override def output: Seq[Attribute] = Nil
 
-
-    override protected def writeFunc(writer: MergeWriter[InternalRow], row: InternalRow): Unit = {
-      val operation = row.getString(0)
-
-      operation match {
-        case "D" =>
-          writer.delete(row)
-
-        case "U" =>
-          writer.update(row)
-
-        case "I" =>
-          writer.insert(row)
-
-        case other =>
-          throw new SparkException(s"Unexpected operation ID: $other")
-      }
-    }
-  }
+  override def child: SparkPlan = query
 }

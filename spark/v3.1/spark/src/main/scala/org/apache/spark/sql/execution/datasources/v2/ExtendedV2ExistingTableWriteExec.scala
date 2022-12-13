@@ -1,17 +1,26 @@
 package org.apache.spark.sql.execution.datasources.v2
 
+import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriter, PhysicalWriteInfoImpl, WriterCommitMessage}
+import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.util.LongAccumulator
 
 import scala.util.control.NonFatal
 
-trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2TableWriteExec {
-  def writingTask: WritingSparkTask[W]
+trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2CommandExec with UnaryExecNode with Serializable{
+  def query: SparkPlan
 
-  protected override def writeWithV2(batchWrite: BatchWrite): Seq[InternalRow] = {
+  var commitProgress: Option[StreamWriterCommitProgress] = None
+
+  override def child: SparkPlan = query
+
+  override def output: Seq[Attribute] = Nil
+
+  protected def writeWithV2(batchWrite: BatchWrite): Seq[InternalRow] = {
     val rdd: RDD[InternalRow] = {
       val tempRdd = query.execute()
       // SPARK-23271 If we are attempting to write a zero partition rdd, create a dummy single
@@ -23,7 +32,6 @@ trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2T
       }
     }
     // introduce a local var to avoid serializing the whole class
-    val task = writingTask
     val writerFactory = batchWrite.createBatchWriterFactory(
       PhysicalWriteInfoImpl(rdd.getNumPartitions))
     val useCommitCoordinator = batchWrite.useCommitCoordinator
@@ -37,7 +45,7 @@ trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2T
       sparkContext.runJob(
         rdd,
         (context: TaskContext, iter: Iterator[InternalRow]) =>
-          task.run(writerFactory, context, iter, useCommitCoordinator),
+          WritingSparkTask.run(writerFactory, context, iter, useCommitCoordinator),
         rdd.partitions.indices,
         (index, result: DataWritingSparkTaskResult) => {
           val commitMessage = result.writerCommitMessage

@@ -66,6 +66,7 @@ import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -75,7 +76,7 @@ import java.util.stream.Collectors;
 /**
  * Base {@link ArcticCatalog} implementation.
  */
-public class BaseArcticCatalog implements ArcticCatalog {
+public class BaseArcticCatalog implements ArcticCatalog, Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(BaseArcticCatalog.class);
 
   protected AmsClient client;
