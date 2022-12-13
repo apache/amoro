@@ -26,7 +26,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @After
   public void cleanUp() {
-    sql("drop table {0}.{1}", database, tgTableA);
+//    sql("drop table {0}.{1}", database, tgTableA);
     sql("drop table {0}.{1}", database, srcTableA);
   }
 
@@ -42,6 +42,7 @@ public class TestMergeInto extends SparkTestBase{
         "  UPDATE SET * " +
         "WHEN NOT MATCHED AND s.id != 1 THEN " +
         "  INSERT *", database, tgTableA, srcTableA);
+    sql("select * from {0}.{1}", database, tgTableA);
   }
 
 

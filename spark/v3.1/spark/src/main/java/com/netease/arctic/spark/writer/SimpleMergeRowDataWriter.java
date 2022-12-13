@@ -1,5 +1,7 @@
 package com.netease.arctic.spark.writer;
 
+import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.spark.SparkInternalRowCastWrapper;
 import com.netease.arctic.spark.writer.merge.MergeWriter;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
@@ -21,20 +23,22 @@ public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
 
   @Override
   public void delete(InternalRow row) throws IOException {
-    // TODO: 2022/12/13  Constructing a delete row
-    writer.write(row);
+    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(true , row, schema, ChangeAction.DELETE);
+    writer.write(delete);
   }
 
   @Override
   public void update(InternalRow row) throws IOException {
-    // TODO: 2022/12/13 Constructing a update row 
-    writer.write(row);
+    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.DELETE);
+    SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.UPDATE_AFTER);
+    writer.write(delete);
+    writer.write(insert);
   }
 
   @Override
   public void insert(InternalRow row) throws IOException {
-    // TODO: 2022/12/13 Constructing a insert row 
-    writer.write(row);
+    SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.INSERT);
+    writer.write(insert);
   }
 
   @Override

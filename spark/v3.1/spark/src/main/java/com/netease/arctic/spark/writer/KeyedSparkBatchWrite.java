@@ -303,15 +303,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public MergeWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      StructType schema = new StructType(Arrays.stream(dsSchema.fields())
-          .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)
           .withTaskId(taskId)
-          .withDataSourceSchema(schema)
+          .withDataSourceSchema(dsSchema)
           .newChangeWriter();
-      return new SimpleMergeRowDataWriter(writer, schema);
+      return new SimpleMergeRowDataWriter(writer, dsSchema);
     }
   }
 }

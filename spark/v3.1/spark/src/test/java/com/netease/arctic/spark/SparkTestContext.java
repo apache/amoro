@@ -370,7 +370,6 @@ public class SparkTestContext extends ExternalResource {
     }
     LOG.info("execute sql: " + sql);
     Dataset<Row> result = spark.sql(sql);
-    result.show();
     List<Row> rows = result.collectAsList();
     if (rows.size() < 1) {
       LOG.info("empty result");
