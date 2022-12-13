@@ -98,12 +98,13 @@ public class OverviewController extends RestBaseController {
       List<OverviewTableInfo> result = new ArrayList<>();
       List<TableMetricsStatistic> ordered;
       switch (orderBy) {
-        case "size":
+        case "Size":
           ordered = metricsStatisticService
               .getTableMetricsOrdered(order, SnapshotSummary.TOTAL_FILE_SIZE_PROP, count);
           ordered.forEach(e -> {
             OverviewTableInfo info = new OverviewTableInfo();
-            info.setTableName(e.getTableIdentifier().toString());
+            info.setTableName(String.format("%s.%s.%s", e.getTableIdentifier().catalog,
+                e.getTableIdentifier().database, e.getTableIdentifier().tableName));
             info.setSize(e.getMetricValue().longValue());
             TableMetricsStatistic countMetric = metricsStatisticService
                 .getTableMetrics(e.getTableIdentifier(), SnapshotSummary.TOTAL_DATA_FILES_PROP);
@@ -111,12 +112,13 @@ public class OverviewController extends RestBaseController {
             result.add(info);
           });
           break;
-        case "count":
+        case "Files":
           ordered = metricsStatisticService
               .getTableMetricsOrdered(order, SnapshotSummary.TOTAL_DATA_FILES_PROP, count);
           ordered.forEach(e -> {
             OverviewTableInfo info = new OverviewTableInfo();
-            info.setTableName(e.getTableIdentifier().toString());
+            info.setTableName(String.format("%s.%s.%s", e.getTableIdentifier().catalog,
+                e.getTableIdentifier().database, e.getTableIdentifier().tableName));
             info.setFileCnt(e.getMetricValue().longValue());
             TableMetricsStatistic countMetric = metricsStatisticService
                 .getTableMetrics(e.getTableIdentifier(), SnapshotSummary.TOTAL_FILE_SIZE_PROP);

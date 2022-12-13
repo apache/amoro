@@ -23,6 +23,7 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import java.util.List;
 /**
  * Util to record recent task stats, thread-safe.
  */
-public class TaskRecorder {
+public class TaskRecorder implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(TaskRecorder.class);
   private static final int DEFAULT_HISTORY_SIZE = 256;
   private TaskStat currentTaskStat;

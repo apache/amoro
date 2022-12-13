@@ -64,18 +64,15 @@ public interface TableMetricsStatisticMapper {
   List<TableMetricsStatistic> getInnerTableMetricsStatistic(
       @Param("metricsStatistic") TableMetricsStatistic metricsStatistic);
 
-  @Select("select table_identifier, inner_table, metric_name, metric_value, commit_time from " + TABLE_NAME + "  " +
-      "where metric_name = #{metricsStatistic.metricName} and table_identifier = #{metricsStatistic.tableIdentifier," +
-      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
-      "#{metricsStatistic.innerTable}")
+  @Select("select table_identifier, metric_name, metric_value from " + TABLE_NAME + "  " +
+      "where metric_name = #{metricName} and table_identifier = #{tableIdentifier," +
+      " typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} group by table_identifier," +
+      " metric_name")
   @Results({
       @Result(column = "table_identifier", property = "tableIdentifier",
           typeHandler = TableIdentifier2StringConverter.class),
-      @Result(column = "inner_table", property = "innerTable"),
       @Result(column = "metric_name", property = "metricName"),
-      @Result(column = "metric_value", property = "metricValue"),
-      @Result(column = "commit_time", property = "commitTime",
-          typeHandler = Long2TsConvertor.class)
+      @Result(column = "metric_value", property = "metricValue")
   })
   TableMetricsStatistic getMetricsStatistic(
       @Param("tableIdentifier") TableIdentifier tableIdentifier,
@@ -83,7 +80,7 @@ public interface TableMetricsStatisticMapper {
 
   @Select("select table_identifier, metric_name, sum(metric_value) as sum_metric from " + TABLE_NAME +
       " where metric_name = #{metricName} group by table_identifier, metric_name order by sum_metric" +
-      " #{orderExpression} limit #{limit}")
+      " ${orderExpression} limit #{limit}")
   @Results({
       @Result(column = "table_identifier", property = "tableIdentifier",
           typeHandler = TableIdentifier2StringConverter.class),
@@ -99,9 +96,10 @@ public interface TableMetricsStatisticMapper {
       "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter}")
   Timestamp getMaxCommitTime(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
-  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select metric_name, sum(CAST" +
-      "(metric_value AS SIGNED)), #{commitTime, typeHandler=com.netease.arctic.ams" +
-      ".server.mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}")
+  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select * from (select " +
+      "metric_name, sum(CAST(metric_value AS SIGNED)), #{commitTime, typeHandler=com.netease.arctic.ams.server" +
+      ".mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}) as mna where metric_name" +
+      " is not null")
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);

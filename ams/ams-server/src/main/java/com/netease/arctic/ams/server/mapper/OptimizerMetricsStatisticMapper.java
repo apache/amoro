@@ -60,9 +60,10 @@ public interface OptimizerMetricsStatisticMapper {
   List<OptimizerMetricsStatistic> getMetricsStatistic(
       @Param("metricsStatistic") OptimizerMetricsStatistic metricsStatistic);
 
-  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select metric_name, avg(CAST" +
-      "(metric_value AS SIGNED)), #{commitTime, typeHandler=com.netease.arctic.ams" +
-      ".server.mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}")
+  @Insert("insert into metric_statistics_summary (metric_name, metric_value,commit_time) select * from (select " +
+      "metric_name, avg(CAST(metric_value AS SIGNED)), #{commitTime, typeHandler=com.netease.arctic.ams.server" +
+      ".mybatis.Long2TsConvertor} from " + TABLE_NAME + " where metric_name = #{metricName}) as mna where metric_name" +
+      " is not null")
   void summaryMetrics(
       @Param("metricName") String metricName,
       @Param("commitTime") long commitTime);
