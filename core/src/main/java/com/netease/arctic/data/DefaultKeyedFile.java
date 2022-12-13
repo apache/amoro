@@ -41,8 +41,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   private final DataFile internalFile;
 
   private transient FileMeta meta;
-  private transient ChangedLsn minLsn;
-  private transient ChangedLsn maxLsn;
 
   public DefaultKeyedFile(DataFile internalFile) {
     this.internalFile = internalFile;
@@ -50,22 +48,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   private void parse() {
     this.meta = FileUtil.parseFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
-    if (internalFile.lowerBounds() != null) {
-      ByteBuffer minOffsetBuffer = internalFile.lowerBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
-      if (minOffsetBuffer != null) {
-        minLsn = ChangedLsn.of(meta.transactionId(), Conversions.fromByteBuffer(Types.LongType.get(), minOffsetBuffer));
-      } else {
-        minLsn = ChangedLsn.of(meta.transactionId(), Long.MAX_VALUE);
-      }
-    }
-    if (internalFile.upperBounds() != null) {
-      ByteBuffer maxOffsetBuffer = internalFile.upperBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
-      if (maxOffsetBuffer != null) {
-        maxLsn = ChangedLsn.of(meta.transactionId(), Conversions.fromByteBuffer(Types.LongType.get(), maxOffsetBuffer));
-      } else {
-        maxLsn = ChangedLsn.of(meta.transactionId(), Long.MAX_VALUE);
-      }
-    }
   }
 
   @Override
@@ -74,16 +56,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
       parse();
     }
     return meta.transactionId();
-  }
-
-  @Override
-  public ChangedLsn minLsn() {
-    throw new UnsupportedOperationException("Unsupported method minLsn");
-  }
-
-  @Override
-  public ChangedLsn maxLsn() {
-    throw new UnsupportedOperationException("Unsupported method maxLsn");
   }
 
   @Override
