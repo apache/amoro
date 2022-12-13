@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData, WriteMerge}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, Describ
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
-import org.apache.spark.sql.execution.datasources.v2.{AppendDataExec, AppendInsertDataExec, CreateArcticTableAsSelectExec, CreateTableAsSelectExec, DataSourceV2Relation, OverwriteArcticByExpressionExec, OverwriteArcticDataExec}
+import org.apache.spark.sql.execution.datasources.v2.{AppendDataExec, AppendInsertDataExec, CreateArcticTableAsSelectExec, CreateTableAsSelectExec, DataSourceV2Relation, OverwriteArcticByExpressionExec, OverwriteArcticDataExec, WriteMergeExec}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
@@ -77,6 +77,13 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         case t: ArcticSparkTable =>
           AppendInsertDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
             planLater(validateQuery), refreshCache(table)) :: Nil
+      }
+
+    case WriteMerge(table: DataSourceV2Relation, query, options) =>
+      table.table match {
+        case arctic: ArcticSparkTable =>
+          WriteMergeExec(arctic, planLater(query),
+            new CaseInsensitiveStringMap(options.asJava), refreshCache(table)) :: Nil
       }
 
     case OverwriteArcticData(table: DataSourceV2Relation, query, validateQuery, options) =>

@@ -87,6 +87,11 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     return new UpsertWrite();
   }
 
+  @Override
+  public BatchWrite asMergeBatchWrite() {
+    return null;
+  }
+
   private abstract class BaseBatchWrite implements BatchWrite {
 
     @Override

@@ -22,7 +22,7 @@ package com.netease.arctic.spark
 import com.netease.arctic.spark.sql.catalyst.analysis.ResolveArcticCommand
 import com.netease.arctic.spark.sql.catalyst.parser.ArcticSqlExtensionsParser
 import com.netease.arctic.spark.sql.execution
-import com.netease.arctic.spark.sql.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
+import com.netease.arctic.spark.sql.optimize.{OptimizeWriteRule, RewriteAppendArcticTable, RewriteArcticMergeInto, RewriteDeleteFromArcticTable, RewriteUpdateArcticTable}
 import org.apache.spark.sql.SparkSessionExtensions
 import org.apache.spark.sql.catalyst.analysis.{AlignRowLevelOperations, RowLevelOperationsPredicateCheck}
 import org.apache.spark.sql.catalyst.optimizer._
@@ -43,6 +43,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectPostHocResolutionRule { spark => RewriteAppendArcticTable(spark) }
     extensions.injectPostHocResolutionRule { spark => RewriteDeleteFromArcticTable(spark) }
     extensions.injectPostHocResolutionRule { spark => RewriteUpdateArcticTable(spark) }
+    extensions.injectPostHocResolutionRule { spark => RewriteArcticMergeInto(spark) }
     extensions.injectCheckRule { _ => RowLevelOperationsPredicateCheck }
 
     // iceberg optimizer rules

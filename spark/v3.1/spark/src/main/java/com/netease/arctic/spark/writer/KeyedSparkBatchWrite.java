@@ -23,6 +23,7 @@ import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.table.SupportsUpsert;
+import com.netease.arctic.spark.writer.merge.MergeWriter;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
@@ -90,12 +91,12 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     return new UpsertWrite();
   }
 
-  private abstract class BaseBatchWrite implements BatchWrite {
-    private boolean isOverwrite;
+  @Override
+  public BatchWrite asMergeBatchWrite() {
+    return new MergeIntoWrite();
+  }
 
-    BaseBatchWrite(boolean isOverwrite) {
-      this.isOverwrite = isOverwrite;
-    }
+  private abstract class BaseBatchWrite implements BatchWrite {
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
@@ -117,7 +118,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private class AppendWrite extends BaseBatchWrite {
 
     AppendWrite() {
-      super(false);
+      super();
     }
 
     @Override
@@ -138,7 +139,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private class DynamicOverwrite extends BaseBatchWrite {
 
     DynamicOverwrite() {
-      super(true);
+      super();
     }
 
     @Override
@@ -162,7 +163,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     private final Expression overwriteExpr;
 
     private OverwriteByFilter(Expression overwriteExpr) {
-      super(true);
+      super();
       this.overwriteExpr = overwriteExpr;
     }
 
@@ -186,7 +187,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private class UpsertWrite extends BaseBatchWrite {
     UpsertWrite() {
-      super(true);
+      super();
     }
 
     @Override
@@ -273,6 +274,44 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withDataSourceSchema(schema)
           .newChangeWriter();
       return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
+    }
+  }
+
+  private class MergeIntoWrite extends BaseBatchWrite {
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new MergeWriteFactory(table, dsSchema, legacyTxId);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
+      for (DataFile file : files(messages)) {
+        append.appendFile(file);
+      }
+      append.commit();
+    }
+  }
+
+
+  private static class MergeWriteFactory extends AbstractWriterFactory{
+
+    MergeWriteFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
+      super(table, dsSchema, transactionId);
+    }
+
+    @Override
+    public MergeWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      StructType schema = new StructType(Arrays.stream(dsSchema.fields())
+          .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newChangeWriter();
+      return new SimpleMergeRowDataWriter(writer, schema);
     }
   }
 }

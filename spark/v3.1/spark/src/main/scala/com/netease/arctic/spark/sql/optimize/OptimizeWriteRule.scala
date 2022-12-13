@@ -49,15 +49,15 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] {
         case _ =>
           a
       }
-    case a@ReplaceArcticData(r: DataSourceV2Relation, query, _) =>
-      r.table match {
-        case table: ArcticSparkTable =>
-          val newQuery = distributionQuery(query, table)
-          val optimizedAppend = a.copy(query = newQuery)
-          optimizedAppend
-        case _ =>
-          a
-      }
+//    case a@ReplaceArcticData(r: DataSourceV2Relation, query, _) =>
+//      r.table match {
+//        case table: ArcticSparkTable =>
+//          val newQuery = distributionQuery(query, table)
+//          val optimizedAppend = a.copy(query = newQuery)
+//          optimizedAppend
+//        case _ =>
+//          a
+//      }
     case a@OverwriteArcticData(r: DataSourceV2Relation, query, _, _) =>
       r.table match {
         case table: ArcticSparkTable =>
