@@ -78,18 +78,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public ChangedLsn minLsn() {
-    if (minLsn == null) {
-      parse();
-    }
-    return minLsn;
+    throw new UnsupportedOperationException("Unsupported method minLsn");
   }
 
   @Override
   public ChangedLsn maxLsn() {
-    if (maxLsn == null) {
-      parse();
-    }
-    return maxLsn;
+    throw new UnsupportedOperationException("Unsupported method maxLsn");
   }
 
   @Override
