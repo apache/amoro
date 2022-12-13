@@ -106,7 +106,7 @@ public class OptimizeIntegrationTest {
   public static TemporaryFolder tempFolder = new TemporaryFolder();
 
   @BeforeClass
-  public static void beforeClass() throws InterruptedException {
+  public static void beforeClass() {
     String rootPath = tempFolder.getRoot().getAbsolutePath();
     CATALOG_DIR = rootPath + "/arctic/warehouse";
     ICEBERG_CATALOG_DIR = rootPath + "/iceberg/warehouse";
