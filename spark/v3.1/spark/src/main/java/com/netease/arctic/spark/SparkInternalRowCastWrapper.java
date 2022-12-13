@@ -1,12 +1,9 @@
 package com.netease.arctic.spark;
 
-import javax.ws.rs.DELETE;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.table.SupportsUpsert;
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.BaseGenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.catalyst.expressions.SpecializedGettersReader;
 import org.apache.spark.sql.catalyst.util.ArrayData;
 import org.apache.spark.sql.catalyst.util.MapData;
 import org.apache.spark.sql.types.DataType;
@@ -148,7 +145,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         rows.add(mergedRow.get(i, dataTypeList.get(i)));
       }
       return new GenericInternalRow(rows.toArray());
-    } else if (ChangeAction.INSERT.equals(changeAction)){
+    } else if (ChangeAction.INSERT.equals(changeAction)) {
       List<Object> rows = new ArrayList<>();
       for (int i = 0; i < newSchema.size() / 2; i++) {
         rows.add(mergedRow.get(i, dataTypeList.get(i)));
@@ -164,16 +161,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     } else {
       return row;
     }
-  }
-
-  private InternalRow buildSimpleMergeInternalRow(InternalRow row, StructType schema) {
-    dataTypeList = Arrays.stream(schema.fields())
-        .map(StructField::dataType).collect(Collectors.toList());
-    List<Object> rows = new ArrayList<>();
-    for (int i = 1; i < schema.size() + 1; i++) {
-      rows.add(row.get(i, dataTypeList.get(i - 1)));
-    }
-    return new GenericInternalRow(rows.toArray());
   }
 
   private boolean isUpsertRow(InternalRow row, StructType schema) {
@@ -414,24 +401,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   public InternalRow setFileOffset(Long fileOffset) {
-    if (!isMerge) {
-      return setSimpleInternalRowFileOffset(fileOffset);
-    } else {
-      return setMergeInternalRowFileOffset(fileOffset);
-    }
-  }
-
-  private InternalRow setMergeInternalRowFileOffset(Long fileOffset) {
-    dataTypeList = Arrays.stream(schema.fields()).map(StructField::dataType).collect(Collectors.toList());
-    List<Object> rows = new ArrayList<>(middle + 1);
-    for (int i = 0; i < middle; i++) {
-      rows.add(row.get(i, dataTypeList.get(i)));
-    }
-    rows.add(fileOffset);
-    return new GenericInternalRow(rows.toArray());
-  }
-
-  private InternalRow setSimpleInternalRowFileOffset(Long fileOffset) {
     List<DataType> dataTypeList;
     List<Object> rows;
     if (isDelete) {

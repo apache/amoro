@@ -23,7 +23,7 @@ public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
 
   @Override
   public void delete(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(true , row, schema, ChangeAction.DELETE);
+    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.DELETE);
     writer.write(delete);
   }
 

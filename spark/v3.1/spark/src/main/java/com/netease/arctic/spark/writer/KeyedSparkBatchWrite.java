@@ -295,7 +295,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   }
 
 
-  private static class MergeWriteFactory extends AbstractWriterFactory{
+  private static class MergeWriteFactory extends AbstractWriterFactory {
 
     MergeWriteFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
       super(table, dsSchema, transactionId);

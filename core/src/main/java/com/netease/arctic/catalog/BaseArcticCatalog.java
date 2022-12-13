@@ -76,7 +76,7 @@ import java.util.stream.Collectors;
 /**
  * Base {@link ArcticCatalog} implementation.
  */
-public class BaseArcticCatalog implements ArcticCatalog, Serializable {
+public class BaseArcticCatalog implements ArcticCatalog {
   private static final Logger LOG = LoggerFactory.getLogger(BaseArcticCatalog.class);
 
   protected AmsClient client;
