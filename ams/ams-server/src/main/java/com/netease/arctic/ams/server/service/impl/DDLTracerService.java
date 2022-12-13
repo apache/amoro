@@ -22,8 +22,6 @@ import com.google.common.collect.Maps;
 import com.netease.arctic.ams.api.SchemaUpdateMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.UpdateColumn;
-import com.netease.arctic.ams.server.ArcticMetaStore;
-import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.mapper.DDLRecordMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
@@ -35,7 +33,6 @@ import com.netease.arctic.ams.server.utils.CatalogUtil;
 import com.netease.arctic.ams.server.utils.PropertiesUtil;
 import com.netease.arctic.ams.server.utils.TableMetadataUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
-import com.netease.arctic.catalog.BaseIcebergCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
@@ -179,7 +176,7 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder unsetPro = new StringBuilder();
     int c = 0;
     for (String oldPro : before.keySet()) {
-      if (TableProperties.PROTECTED_PROPERTIES.contains(oldPro)) {
+      if (TableProperties.WRITE_PROTECTED_PROPERTIES.contains(oldPro)) {
         continue;
       }
       if (!after.containsKey(oldPro)) {
@@ -193,7 +190,7 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder setPro = new StringBuilder();
     int c1 = 0;
     for (String newPro : after.keySet()) {
-      if (TableProperties.PROTECTED_PROPERTIES.contains(newPro)) {
+      if (TableProperties.WRITE_PROTECTED_PROPERTIES.contains(newPro)) {
         continue;
       }
       if (!after.get(newPro).equals(before.get(newPro))) {
@@ -324,7 +321,7 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder unsetPro = new StringBuilder();
     int c = 0;
     for (String oldPro : before.keySet()) {
-      if (TableProperties.PROTECTED_PROPERTIES.contains(oldPro)) {
+      if (TableProperties.WRITE_PROTECTED_PROPERTIES.contains(oldPro)) {
         continue;
       }
       if (!after.containsKey(oldPro)) {
@@ -338,7 +335,7 @@ public class DDLTracerService extends IJDBCService {
     StringBuilder setPro = new StringBuilder();
     int c1 = 0;
     for (String newPro : after.keySet()) {
-      if (TableProperties.PROTECTED_PROPERTIES.contains(newPro)) {
+      if (TableProperties.WRITE_PROTECTED_PROPERTIES.contains(newPro)) {
         continue;
       }
       if (!after.get(newPro).equals(before.get(newPro))) {

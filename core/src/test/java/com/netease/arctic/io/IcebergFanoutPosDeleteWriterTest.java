@@ -18,10 +18,10 @@
 
 package com.netease.arctic.io;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.IcebergTableBase;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
-import org.apache.iceberg.DataFile;
+import com.netease.arctic.utils.FileUtil;
+import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.Files;
@@ -75,12 +75,12 @@ public class IcebergFanoutPosDeleteWriterTest extends IcebergTableBase {
 
     String dataDir = temp.newFolder("data").getPath();
 
-    String dataFile1Path = dataDir + "/data-1.parquet";
+    String dataFile1Path = new Path(FileUtil.getNewFilePath(dataDir, "data-1.parquet")).toString();
     icebergPosDeleteWriter.delete(dataFile1Path, 0);
     icebergPosDeleteWriter.delete(dataFile1Path, 1);
     icebergPosDeleteWriter.delete(dataFile1Path, 3);
 
-    String dataFile2Path = dataDir + "/data-2.parquet";
+    String dataFile2Path = new Path(FileUtil.getNewFilePath(dataDir, "data-2.parquet")).toString();
     icebergPosDeleteWriter.delete(dataFile2Path, 10);
     icebergPosDeleteWriter.delete(dataFile2Path, 9);
     icebergPosDeleteWriter.delete(dataFile2Path, 8);
@@ -89,7 +89,8 @@ public class IcebergFanoutPosDeleteWriterTest extends IcebergTableBase {
     Assert.assertEquals(2, deleteFiles.size());
     Map<String, DeleteFile> deleteFileMap = deleteFiles.stream().collect(Collectors.toMap(f -> f.path().toString(),
         f -> f));
-    DeleteFile deleteFile1 = deleteFileMap.get(dataDir + "/data-1-delete-suffix.parquet");
+    DeleteFile deleteFile1 = deleteFileMap.get(
+        new Path(FileUtil.getNewFilePath(dataDir, "data-1-delete-suffix.parquet")).toString());
     Assert.assertNotNull(deleteFile1);
     Assert.assertEquals(3, deleteFile1.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
@@ -102,9 +103,12 @@ public class IcebergFanoutPosDeleteWriterTest extends IcebergTableBase {
             record.copy("file_path", dataFile1Path, "pos", 3L));
     Assert.assertEquals(expectedDeletes, readRecordsAsList(FileFormat.PARQUET, pathPosSchema, deleteFile1.path()));
 
-    DeleteFile deleteFile2 = deleteFileMap.get(dataDir + "/data-2-delete-suffix.parquet");
+    DeleteFile deleteFile2 = deleteFileMap.get(
+        new Path(FileUtil.getNewFilePath(dataDir, "data-2-delete-suffix.parquet")).toString());
     Assert.assertNotNull(deleteFile2);
-    Assert.assertEquals(dataDir + "/data-2-delete-suffix.parquet", deleteFile2.path().toString());
+    Assert.assertEquals(
+        new Path(FileUtil.getNewFilePath(dataDir, "data-2-delete-suffix.parquet")).toString(),
+        deleteFile2.path().toString());
     Assert.assertEquals(3, deleteFile2.recordCount());
     // Check whether the path-pos pairs are sorted as expected.
     expectedDeletes =

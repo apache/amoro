@@ -23,9 +23,11 @@ import com.netease.arctic.flink.catalog.ArcticCatalog;
 import com.netease.arctic.flink.read.FlinkKafkaConsumerBase;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
@@ -141,7 +143,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String readMode = PropertyUtil.propertyAsString(arcticTable.properties(),
         ArcticValidator.ARCTIC_READ_MODE, ArcticValidator.ARCTIC_READ_MODE_DEFAULT);
 
-    boolean dimTable = PropertyUtil.propertyAsBoolean(arcticTable.properties(),
+    boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
         ArcticValidator.DIM_TABLE_ENABLE.key(), ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
     TableSchema tableSchema = com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema(catalogTable.getSchema(),
         dimTable);
@@ -152,7 +154,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         break;
       case ArcticValidator.ARCTIC_READ_LOG:
       default:
-        Preconditions.checkArgument(PropertyUtil.propertyAsBoolean(arcticTable.properties(),
+        Preconditions.checkArgument(CompatiblePropertyUtil.propertyAsBoolean(arcticTable.properties(),
                 ENABLE_LOG_STORE, ENABLE_LOG_STORE_DEFAULT),
             String.format("Read log should enable %s at first", ENABLE_LOG_STORE));
         arcticDynamicSource = createLogSource(arcticTable, context, options);

@@ -23,7 +23,6 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.DataFile;
 import com.netease.arctic.ams.api.DataFileInfo;
-import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.api.PartitionFieldData;
 import com.netease.arctic.ams.api.TableChange;
 import com.netease.arctic.ams.api.TableCommitMeta;
@@ -56,14 +55,18 @@ import org.apache.ibatis.session.SqlSession;
 import org.apache.iceberg.DataOperations;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
+import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -357,15 +360,19 @@ public class FileInfoCacheService extends IJDBCService {
     Set<String> addedDeleteFiles = new HashSet<>();
     Set<org.apache.iceberg.DeleteFile> deleteFiles = new HashSet<>();
     Snapshot curr = table.currentSnapshot();
-    table.newScan().planFiles().forEach(fileScanTask -> {
-      dataFiles.add(fileScanTask.file());
-      fileScanTask.deletes().forEach(deleteFile -> {
-        if (!addedDeleteFiles.contains(deleteFile.path().toString())) {
-          deleteFiles.add(deleteFile);
-          addedDeleteFiles.add(deleteFile.path().toString());
-        }
+    try (CloseableIterable<FileScanTask> fileScanTasks = table.newScan().planFiles()) {
+      fileScanTasks.forEach(fileScanTask -> {
+        dataFiles.add(fileScanTask.file());
+        fileScanTask.deletes().forEach(deleteFile -> {
+          if (!addedDeleteFiles.contains(deleteFile.path().toString())) {
+            deleteFiles.add(deleteFile);
+            addedDeleteFiles.add(deleteFile.path().toString());
+          }
+        });
       });
-    });
+    } catch (IOException e) {
+      throw new UncheckedIOException("Failed to close table scan of " + table.name(), e);
+    }
     List<CacheFileInfo> cacheFileInfos = new ArrayList<>();
     dataFiles.forEach(dataFile -> {
       DataFile amsFile = ConvertStructUtil.convertToAmsDatafile(dataFile, (ArcticTable) table);

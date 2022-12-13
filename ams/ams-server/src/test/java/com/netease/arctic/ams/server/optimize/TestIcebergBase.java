@@ -106,6 +106,16 @@ public class TestIcebergBase {
     nativeIcebergCatalog.dropTable(partitionTableIdentifier);
   }
 
+  private long getSmallFileSize(Map<String, String> properties) {
+    long targetSize = PropertyUtil.propertyAsLong(properties,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
+    int fragmentRatio = PropertyUtil.propertyAsInt(properties,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+        com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT);
+    return targetSize / fragmentRatio;
+  }
+  
   protected List<DataFile> insertDataFiles(Table arcticTable, int length) throws IOException {
     PartitionKey partitionKey = null;
     if (!arcticTable.spec().isUnpartitioned()) {
@@ -123,9 +133,7 @@ public class TestIcebergBase {
       outputFile = outputFileFactory.newOutputFile();
     }
 
-    long smallSizeByBytes = PropertyUtil.propertyAsLong(arcticTable.properties(),
-        com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-        com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT);
+    long smallSizeByBytes = getSmallFileSize(arcticTable.properties());
     List<DataFile> result = new ArrayList<>();
     DataWriter<Record> writer = appenderFactory
         .newDataWriter(outputFile, FileFormat.PARQUET, partitionKey);

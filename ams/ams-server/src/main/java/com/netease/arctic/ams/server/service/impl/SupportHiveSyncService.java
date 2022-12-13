@@ -27,6 +27,7 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.hive.HiveTableProperties;
 import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.CompatibleHivePropertyUtil;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -42,6 +43,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.TableScan;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -234,8 +236,8 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
                                                Map<String, Partition> hivePartitionMap) {
       inHiveNotInIceberg.forEach(partition -> {
         Partition hivePartition = hivePartitionMap.get(partition);
-        boolean isArctic = hivePartition.getParameters()
-            .getOrDefault(HiveTableProperties.ARCTIC_TABLE_FLAG, "false").equals("true");
+        boolean isArctic = CompatibleHivePropertyUtil.propertyAsBoolean(hivePartition.getParameters(),
+            HiveTableProperties.ARCTIC_TABLE_FLAG, false);
         if (isArctic) {
           HivePartitionUtil.dropPartition(((SupportHive) arcticTable).getHMSClient(), arcticTable, hivePartition);
         }
@@ -277,10 +279,11 @@ public class SupportHiveSyncService implements ISupportHiveSyncService {
 
       List<DataFile> partitionFiles = new ArrayList<>();
       arcticTable.io().doAs(() -> {
-        TableScan tableScan = baseStore.newScan();
-        for (FileScanTask fileScanTask : tableScan.planFiles()) {
-          if (fileScanTask.file().partition().equals(partition)) {
-            partitionFiles.add(fileScanTask.file());
+        try (CloseableIterable<FileScanTask> fileScanTasks = baseStore.newScan().planFiles()) {
+          for (FileScanTask fileScanTask : fileScanTasks) {
+            if (fileScanTask.file().partition().equals(partition)) {
+              partitionFiles.add(fileScanTask.file());
+            }
           }
         }
 

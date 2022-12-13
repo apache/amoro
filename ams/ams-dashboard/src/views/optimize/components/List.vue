@@ -10,7 +10,7 @@
       >
       <template #bodyCell="{ column, record }">
         <template v-if="column.dataIndex === 'tableName'">
-          <span class="primary-link" @click="goTableDetail(record)">
+          <span :title="record.tableName" class="primary-link" @click="goTableDetail(record)">
             {{ record.tableName }}
           </span>
         </template>
@@ -18,6 +18,10 @@
           <span :title="record.durationDesc">
             {{ record.durationDisplay }}
           </span>
+        </template>
+        <template v-if="column.dataIndex === 'optimizeStatus'">
+          <span :style="{'background-color': (STATUS_CONFIG[record.optimizeStatus] || {}).color}" class="status-icon"></span>
+          <span>{{ record.optimizeStatus }}</span>
         </template>
         <template v-if="column.dataIndex === 'operation'">
           <span class="primary-link" :class="{'disabled': record.containerType === 'external'}" @click="releaseModal(record)">
@@ -27,6 +31,7 @@
       </template>
     </a-table>
   </div>
+  <u-loading v-if="releaseLoading" />
 </template>
 <script lang="ts" setup>
 import { computed, onMounted, reactive, ref, shallowReactive, watch } from 'vue'
@@ -41,17 +46,29 @@ import { useRouter } from 'vue-router'
 const { t } = useI18n()
 const router = useRouter()
 
-const props = defineProps<{ curGroupName: string, type: string, needFresh: boolean }>()
+const props = defineProps<{ curGroupName: string, type: string }>()
+const emit = defineEmits<{
+ (e: 'refreshCurGroupInfo'): void
+}>()
+const STATUS_CONFIG = shallowReactive({
+  pending: { title: 'pending', color: '#ffcc00' },
+  idle: { title: 'idle', color: '#c9cdd4' },
+  minor: { title: 'minor', color: '#0ad787' },
+  major: { title: 'major', color: '#0ad787' },
+  full: { title: 'full', color: '#0ad787' }
+})
 
 const loading = ref<boolean>(false)
+const releaseLoading = ref<boolean>(false)
 const tableColumns = shallowReactive([
   { dataIndex: 'tableName', title: t('table'), ellipsis: true, scopedSlots: { customRender: 'tableName' } },
-  { dataIndex: 'optimizeStatus', title: t('status'), width: '10%', ellipsis: true },
+  { dataIndex: 'groupName', title: t('optimizerGroup'), width: '16%', ellipsis: true },
+  { dataIndex: 'optimizeStatus', title: t('optimizingStatus'), width: '16%', ellipsis: true },
   { dataIndex: 'durationDisplay', title: t('duration'), width: '10%', ellipsis: true },
   { dataIndex: 'fileCount', title: t('fileCount'), width: '10%', ellipsis: true },
   { dataIndex: 'fileSizeDesc', title: t('fileSize'), width: '10%', ellipsis: true },
   { dataIndex: 'quota', title: t('quota'), width: '10%', ellipsis: true },
-  { dataIndex: 'quotaOccupationDesc', title: t('quotaOccupation'), width: 160, ellipsis: true }
+  { dataIndex: 'quotaOccupationDesc', title: t('occupation'), width: 120, ellipsis: true }
 ])
 const optimizerColumns = shallowReactive([
   { dataIndex: 'index', title: t('order'), width: 80, ellipsis: true },
@@ -77,13 +94,6 @@ watch(
   () => props.curGroupName,
   (value) => {
     value && refresh()
-  }
-)
-
-watch(
-  () => props.needFresh,
-  (value) => {
-    value && refresh(true)
   }
 )
 
@@ -161,11 +171,17 @@ function releaseModal (record: IOptimizeResourceTableItem) {
   })
 }
 async function releaseJob (record: IOptimizeResourceTableItem) {
-  await releaseResource({
-    optimizerGroup: record.groupName,
-    jobId: record.jobId
-  })
-  refresh(true)
+  try {
+    releaseLoading.value = true
+    await releaseResource({
+      optimizerGroup: record.groupName,
+      jobId: record.jobId
+    })
+    refresh(true)
+    emit('refreshCurGroupInfo')
+  } finally {
+    releaseLoading.value = false
+  }
 }
 function changeTable ({ current = pagination.current, pageSize = pagination.pageSize }) {
   pagination.current = current
@@ -203,6 +219,14 @@ onMounted(() => {
         cursor: not-allowed;
       }
     }
+  }
+  .status-icon {
+    width: 8px;
+    height: 8px;
+    border-radius: 8px;
+    background-color: #c9cdd4;
+    display: inline-block;
+    margin-right: 8px;
   }
 }
 </style>

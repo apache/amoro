@@ -19,14 +19,12 @@
 package com.netease.arctic.ams.server.model;
 
 import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.TableProperties;
 
 /**
  * Current optimize state of an ArcticTable.
  */
 public class TableOptimizeInfo {
-  public enum OptimizeStatus {
-    MajorOptimizing, MinorOptimizing, Pending, Idle
-  }
 
   public TableOptimizeInfo(TableIdentifier tableIdentifier) {
     this.tableIdentifier = tableIdentifier;
@@ -36,12 +34,14 @@ public class TableOptimizeInfo {
 
   private final TableIdentifier tableIdentifier;
   private String tableName;
-  private OptimizeStatus optimizeStatus = OptimizeStatus.Idle;
+  private String optimizeStatus = TableOptimizeRuntime.OptimizeStatus.Idle.displayValue();
   private long duration = 0;
   private long fileCount = 0;
   private long fileSize = 0;
   private double quota = 0.0;
   private double quotaOccupation = 0.0;
+
+  private String groupName = TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT;
 
   public TableIdentifier getTableIdentifier() {
     return tableIdentifier;
@@ -51,12 +51,11 @@ public class TableOptimizeInfo {
     return tableName;
   }
 
-  public OptimizeStatus getOptimizeStatus() {
+  public String getOptimizeStatus() {
     return optimizeStatus;
   }
 
-  public void setOptimizeStatus(
-      OptimizeStatus optimizeStatus) {
+  public void setOptimizeStatus(String optimizeStatus) {
     this.optimizeStatus = optimizeStatus;
   }
 
@@ -104,6 +103,14 @@ public class TableOptimizeInfo {
     this.tableName = tableName;
   }
 
+  public String getGroupName() {
+    return groupName;
+  }
+
+  public void setGroupName(String groupName) {
+    this.groupName = groupName;
+  }
+
   @Override
   public String toString() {
     return "TableOptimizeInfo{" +
@@ -115,6 +122,7 @@ public class TableOptimizeInfo {
         ", fileSize=" + fileSize +
         ", quota=" + quota +
         ", quotaOccupation=" + quotaOccupation +
+        ", groupName='" + groupName + '\'' +
         '}';
   }
 }

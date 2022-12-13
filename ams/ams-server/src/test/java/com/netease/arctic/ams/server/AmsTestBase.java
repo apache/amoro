@@ -59,6 +59,7 @@ import com.netease.arctic.ams.server.service.impl.JDBCMetaService;
 import com.netease.arctic.ams.server.service.impl.MetricsStatisticService;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
 import com.netease.arctic.ams.server.service.impl.OptimizeQueueService;
+import com.netease.arctic.ams.server.service.impl.OrphanFilesCleanServiceTest;
 import com.netease.arctic.ams.server.service.impl.PlatformFileInfoService;
 import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.CatalogUtil;
@@ -118,6 +119,7 @@ import static org.powermock.api.mockito.PowerMockito.when;
     TestIcebergMinorOptimizeCommit.class,
     TestExpireFileCleanSupportIceberg.class,
     TestOrphanFileCleanSupportIceberg.class,
+    OrphanFilesCleanServiceTest.class,
     TestOrphanFileClean.class,
     TestFileInfoCacheService.class,
     SupportHiveTestGroup.class,
@@ -246,7 +248,7 @@ public class AmsTestBase {
             System.getProperty("user.name"));
 
     Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/tmp");
+    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
     CatalogMeta catalogMeta = new CatalogMeta(CATALOG_CONTROLLER_UNITTEST_NAME, CATALOG_TYPE_HADOOP,
             storageConfig, authConfig, catalogProperties);
     List<CatalogMeta> catalogMetas = Lists.newArrayList(catalogMeta);
@@ -271,7 +273,7 @@ public class AmsTestBase {
         System.getProperty("user.name"));
 
     Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, tempFolder.newFolder().getPath());
+    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, tempFolder.newFolder().getPath());
     CatalogMeta catalogMeta = new CatalogMeta(AMS_TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
         storageConfig, authConfig, catalogProperties);
     List<CatalogMeta> catalogMetas = Lists.newArrayList(catalogMeta);

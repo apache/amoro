@@ -4,6 +4,9 @@ Apache Flink 引擎可以在批流模式处理 Arctic 表数据。Flink on Arcti
 Arctic 集成了 [Apache Flink](https://flink.apache.org/) 的 DataStream API 与 Table API，以方便的使用 Flink 从 Arctic 表中读取数据，或将数据写入
 Arctic 表中。
 
+Arctic Flink 目录下的文档均只针对 Mixed-Format 生效。如果您使用的是 Iceberg format 表，请参考 Iceberg 官方的用法
+[Iceberg Flink 用户手册](https://iceberg.apache.org/docs/latest/flink-connector/)
+
 Flink Connector 包括：
 
 - `Flink SQL Select` 通过 Apache Flink SQL 读取 Arctic 表数据。
@@ -17,17 +20,16 @@ Flink Connector 包括：
 
 | Connector Version | Flink Version | Dependent Iceberg Version | 下载                                                                                                                         |
 | ----------------- |---------------|  ----------------- |----------------------------------------------------------------------------------------------------------------------------|
-| 0.3.2             | 1.12.x        | 0.12.0            | [flink-1.12-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.12-0.3.2.jar) |
-| 0.3.2             | 1.14.x        | 0.12.0            | [flink-1.14-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.14-0.3.2.jar) |
-| 0.3.2             | 1.15.x        | 0.12.0            | [flink-1.15-0.3.2-rc1](https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.15-0.3.2.jar) |
-
+| 0.4.0             | 1.12.x        | 0.12.0            | [flink-1.12-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.12-0.4.0.jar) |
+| 0.4.0             | 1.14.x        | 0.12.0            | [flink-1.14-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.14-0.4.0.jar) |
+| 0.4.0             | 1.15.x        | 0.12.0            | [flink-1.15-0.4.0](https://github.com/NetEase/arctic/releases/download/v0.4.0/arctic-flink-runtime-1.15-0.4.0.jar) |
 Kafka 作为 Logstore 版本说明：
 
 | Connector Version | Flink Version | Kafka Versions |
 | ----------------- |---------------|  ----------------- |
-| 0.3.2             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
-| 0.3.2             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
-| 0.3.2             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.4.0             | 1.12.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.4.0             | 1.14.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
+| 0.4.0             | 1.15.x        | 0.10.2.\*<br> 0.11.\*<br> 1.\*<br> 2.\*<br> 3.\*            | 
 
 
 对 Arctic 工程自行编译也可以获取该 runtime jar
@@ -53,7 +55,7 @@ tar -zxvf flink-1.12.7-bin-scala_2.12.tgz
 # 下载 hadoop 依赖
 wget https://repo1.maven.org/maven2/org/apache/flink/flink-shaded-hadoop-2-uber/${HADOOP_VERSION}-10.0/flink-shaded-hadoop-2-uber-${HADOOP_VERSION}-10.0.jar
 # 下载 arctic flink connector
-wget https://github.com/NetEase/arctic/releases/download/v0.3.2-rc1/arctic-flink-runtime-1.12-0.3.2.jar
+wget https://github.com/NetEase/arctic/releases/download/v0.4.0-rc2/arctic-flink-runtime-1.12-0.4.0.jar
 ```
 
 修改 Flink 相关配置文件：
@@ -89,16 +91,17 @@ Arctic 0.3.1 版本开始支持 Hive 兼容的功能，可以通过 Flink 读取
 3. 对于 Hive 兼容表，[建表方式](flink-ddl.md)和[读写方式](flink-dml.md)与非 Hive 兼容的 Arctic 表一致；
 4. 支持 Hive 版本为 2.1.1
 
-## Roadmap
-- [Arctic 表支持实时维表 JOIN](https://github.com/NetEase/arctic/issues/94)
-- [批模式下 MOR](https://github.com/NetEase/arctic/issues/5)
-- [Arctic 主键表支持 insert overwrite](https://github.com/NetEase/arctic/issues/4)
-- [Arctic 完善 DDL 语法，例如 Alter Table](https://github.com/NetEase/arctic/issues/2)
 
 ## 常见问题
-### 写 Arctic 表 File 数据不可见
+
+**写 Arctic 表 File 数据不可见**
+
 需要打开 Flink checkpoint，修改 Flink conf 中的 [Flink checkpoint 配置](https://nightlies.apache.org/flink/flink-docs-release-1.12/deployment/config.html#execution-checkpointing-interval)，数据只有在 checkpoint 时才会提交。
-### 通过 Flink SQL-Client 读取开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据
+
+**通过 Flink SQL-Client 读取开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据**
+
 通过 Flink SQL-Client 得到的查询结果不能提供基于主键的 MOR 语义，如果需要通过 Flink 引擎查询得到合并后的结果，可以将 Arctic 表的内容通过 JDBC connector 写入到 MySQL 表中进行查看
-### Flink 1.15 版本下通过 SQL-Client 写入开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据
+
+**Flink 1.15 版本下通过 SQL-Client 写入开启了 write.upsert 特性的 Arctic 表时，仍存在重复主键的数据**
+
 需要在 SQL-Client 中执行命令 set table.exec.sink.upsert-materialize = none，以关闭 upsert materialize 算子生成的 upsert 视图。该算子会影响 ArcticWriter 在 write.upsert 特性开启时生成 delete 数据，导致重复主键的数据无法合并

@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSPartitionField;
 import com.netease.arctic.ams.server.model.ServerTableMeta;
@@ -30,13 +31,17 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MetaService {
   private static final Logger LOG = LoggerFactory.getLogger(MetaService.class);
+
+  private static final DateFormat WATERMARK_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
   /**
    * getServerTableMeta.
@@ -52,15 +57,7 @@ public class MetaService {
     ArcticTable at = ac.loadTable(ti);
     ServerTableMeta serverTableMeta = new ServerTableMeta();
     serverTableMeta.setTableIdentifier(ti);
-    Map<String, String> icebergProperties = at.properties();
-    Map<String, String> properties = new HashMap<>(icebergProperties);
-    serverTableMeta.setProperties(properties);
-    serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
-            TableProperties.TABLE_CREATE_TIME_DEFAULT));
-
-    TableProperties.PROTECTED_PROPERTIES.forEach(serverTableMeta.getProperties()::remove);
-    serverTableMeta.getProperties().remove(TableProperties.TABLE_CREATE_TIME);
-
+    fillTableProperties(serverTableMeta, at.properties());
     serverTableMeta.setBaseLocation(at.location());
     serverTableMeta.setPartitionColumnList(at
             .spec()
@@ -92,5 +89,18 @@ public class MetaService {
       serverTableMeta.setPkList(new ArrayList<>());
     }
     return serverTableMeta;
+  }
+
+  private static void fillTableProperties(ServerTableMeta serverTableMeta,
+                                            Map<String, String> tableProperties) {
+    Map<String, String> properties = Maps.newHashMap(tableProperties);
+    serverTableMeta.setTableWatermark(properties.remove(TableProperties.WATERMARK_TABLE));
+    serverTableMeta.setBaseWatermark(properties.remove(TableProperties.WATERMARK_BASE_STORE));
+    serverTableMeta.setCreateTime(PropertyUtil.propertyAsLong(properties, TableProperties.TABLE_CREATE_TIME,
+            TableProperties.TABLE_CREATE_TIME_DEFAULT));
+    properties.remove(TableProperties.TABLE_CREATE_TIME);
+
+    TableProperties.READ_PROTECTED_PROPERTIES.forEach(properties::remove);
+    serverTableMeta.setProperties(properties);
   }
 }

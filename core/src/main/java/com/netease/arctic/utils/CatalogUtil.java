@@ -27,6 +27,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.ArcticHadoopTableOperations;
 import com.netease.arctic.op.ArcticTableOperations;
 import com.netease.arctic.table.TableMetaStore;
+import com.netease.arctic.table.TableProperties;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.shaded.com.google.common.collect.Maps;
 import org.apache.hadoop.conf.Configuration;
@@ -67,11 +68,12 @@ public class CatalogUtil {
       // Generate table format from catalog type for compatibility with older versions
       switch (meta.getCatalogType()) {
         case CATALOG_TYPE_AMS:
+          return Sets.newHashSet(TableFormat.MIXED_ICEBERG);
         case CATALOG_TYPE_CUSTOM:
         case CATALOG_TYPE_HADOOP:
           return Sets.newHashSet(TableFormat.ICEBERG);
         case CATALOG_TYPE_HIVE:
-          return Sets.newHashSet(TableFormat.HIVE);
+          return Sets.newHashSet(TableFormat.MIXED_HIVE);
         default:
           throw new IllegalArgumentException("Unsupported catalog type:" +  meta.getCatalogType());
       }
@@ -185,12 +187,28 @@ public class CatalogUtil {
    */
   public static Map<String, String> mergeCatalogPropertiesToTable(Map<String, String> tableProperties,
                                                                   Map<String, String> catalogProperties) {
-    Map<String, String> mergedProperties = new HashMap<>();
-    catalogProperties.forEach((key, value) -> {
-      if (key.startsWith(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX)) {
-        mergedProperties.put(key.substring(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX.length()), value);
-      }
-    });
+    Map<String, String> mergedProperties = catalogProperties.entrySet().stream()
+            .filter(e -> e.getKey().startsWith(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX))
+            .collect(Collectors.toMap(e ->
+                    e.getKey().substring(CatalogMetaProperties.TABLE_PROPERTIES_PREFIX.length()), Map.Entry::getValue));
+
+    if (!PropertyUtil.propertyAsBoolean(tableProperties, TableProperties.ENABLE_LOG_STORE,
+            TableProperties.ENABLE_LOG_STORE_DEFAULT)) {
+      mergedProperties = mergedProperties.entrySet().stream()
+              .filter(e -> !e.getKey().startsWith(CatalogMetaProperties.LOG_STORE_PROPERTIES_PREFIX))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    String optimizationEnabled = tableProperties.getOrDefault(TableProperties.ENABLE_SELF_OPTIMIZING,
+            mergedProperties.getOrDefault(TableProperties.ENABLE_SELF_OPTIMIZING,
+                String.valueOf(TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)));
+    if (!Boolean.parseBoolean(optimizationEnabled)) {
+      mergedProperties = mergedProperties.entrySet().stream()
+              .filter(e -> !e.getKey().startsWith(CatalogMetaProperties.OPTIMIZE_PROPERTIES_PREFIX))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+      // maintain 'optimize.enable' flag as false in table properties
+      mergedProperties.put(TableProperties.ENABLE_SELF_OPTIMIZING, optimizationEnabled);
+    }
     mergedProperties.putAll(tableProperties);
 
     return mergedProperties;

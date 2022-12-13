@@ -5,15 +5,20 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,24 +38,34 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
   @Test
   public void testNoPartitionTableMinorOptimizeCommit() throws Exception {
     icebergNoPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergNoPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergNoPartitionTable.asUnkeyedTable(), dataFiles);
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
-    icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles()
-        .forEach(fileScanTask -> {
-          if (fileScanTask.file().fileSizeInBytes() <= 1000) {
-            oldDataFilesPath.add((String) fileScanTask.file().path());
-            fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-          }
-        });
+    try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      filesIterable.forEach(fileScanTask -> {
+        if (fileScanTask.file().fileSizeInBytes() <= 1000) {
+          oldDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
+        }
+      });
+    }
 
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> filesIterable = icebergNoPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      fileScanTasks = Lists.newArrayList(filesIterable);
+    }
+
+    icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles();
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergNoPartitionTable,
         new TableOptimizeRuntime(icebergNoPartitionTable.id()),
-        icebergNoPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 
@@ -88,24 +103,33 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
   @Test
   public void testPartitionTableMinorOptimizeCommit() throws Exception {
     icebergPartitionTable.asUnkeyedTable().updateProperties()
-        .set(com.netease.arctic.table.TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD, "1000")
+        .set(TableProperties.SELF_OPTIMIZING_FRAGMENT_RATIO,
+            TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT / 1000 + "")
         .commit();
     List<DataFile> dataFiles = insertDataFiles(icebergPartitionTable.asUnkeyedTable(), 10);
     insertEqDeleteFiles(icebergPartitionTable.asUnkeyedTable(), 5);
     insertPosDeleteFiles(icebergPartitionTable.asUnkeyedTable(), dataFiles);
     Set<String> oldDataFilesPath = new HashSet<>();
     Set<String> oldDeleteFilesPath = new HashSet<>();
-    icebergPartitionTable.asUnkeyedTable().newScan().planFiles()
-        .forEach(fileScanTask -> {
-          if (fileScanTask.file().fileSizeInBytes() <= 1000) {
-            oldDataFilesPath.add((String) fileScanTask.file().path());
-            fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-          }
-        });
+    try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      filesIterable.forEach(fileScanTask -> {
+        if (fileScanTask.file().fileSizeInBytes() <= 1000) {
+          oldDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
+        }
+      });
+    }
+
+    List<FileScanTask> fileScanTasks;
+    try (CloseableIterable<FileScanTask> filesIterable = icebergPartitionTable.asUnkeyedTable().newScan()
+        .planFiles()) {
+      fileScanTasks = Lists.newArrayList(filesIterable);
+    }
 
     IcebergMinorOptimizePlan optimizePlan = new IcebergMinorOptimizePlan(icebergPartitionTable,
         new TableOptimizeRuntime(icebergPartitionTable.id()),
-        icebergPartitionTable.asUnkeyedTable().newScan().planFiles(),
+        fileScanTasks,
         new HashMap<>(), 1, System.currentTimeMillis());
     List<BaseOptimizeTask> tasks = optimizePlan.plan();
 

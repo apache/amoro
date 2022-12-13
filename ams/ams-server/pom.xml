@@ -30,6 +30,8 @@
 
     <artifactId>arctic-ams-server</artifactId>
     <packaging>jar</packaging>
+    <name>Arctic Project AMS Server</name>
+    <url>https://arctic.netease.com</url>
 
     <properties>
         <powermock.version>2.0.2</powermock.version>

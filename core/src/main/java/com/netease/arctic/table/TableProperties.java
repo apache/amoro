@@ -64,71 +64,105 @@ public class TableProperties {
 
   public static final String WATERMARK_TABLE = "watermark.table";
 
-  public static final String WATERMARK_BASE_STORE = "watermark.base-store";
+  public static final String WATERMARK_BASE_STORE = "watermark.base";
 
   /**
    * table optimize related properties
    */
-  public static final String ENABLE_OPTIMIZE = "optimize.enable";
-  public static final String ENABLE_OPTIMIZE_DEFAULT = "true";
-
-  @Deprecated
-  public static final String OPTIMIZE_COMMIT_INTERVAL = "optimize.commit.interval";
-  @Deprecated
-  public static final long OPTIMIZE_COMMIT_INTERVAL_DEFAULT = 60_000; // 1 min
-
-  public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
-  public static final long OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT = 16777216; // 16 MB
-
-  public static final String OPTIMIZE_GROUP = "optimize.group";
-  public static final String OPTIMIZE_GROUP_DEFAULT = "default";
-
-  public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
-  public static final int OPTIMIZE_RETRY_NUMBER_DEFAULT = 5;
-
-  public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
-  public static final int OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
+  public static final String ENABLE_SELF_OPTIMIZING = "self-optimizing.enabled";
+  public static final boolean ENABLE_SELF_OPTIMIZING_DEFAULT = true;
   
+  public static final String SELF_OPTIMIZING_GROUP = "self-optimizing.group";
+  public static final String SELF_OPTIMIZING_GROUP_DEFAULT = "default";
+  
+  public static final String SELF_OPTIMIZING_QUOTA = "self-optimizing.quota";
+  public static final double SELF_OPTIMIZING_QUOTA_DEFAULT = 0.1;
+
+  public static final String SELF_OPTIMIZING_RETRY_NUMBER = "self-optimizing.num-retries";
+  public static final int SELF_OPTIMIZING_RETRY_NUMBER_DEFAULT = 5;
+
+  public static final String SELF_OPTIMIZING_EXECUTE_TIMEOUT = "self-optimizing.execute.timeout";
+  public static final long SELF_OPTIMIZING_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
+
+  public static final String SELF_OPTIMIZING_TARGET_SIZE = "self-optimizing.target-size";
+  public static final long SELF_OPTIMIZING_TARGET_SIZE_DEFAULT = 134217728; // 128 MB
+
+  public static final String SELF_OPTIMIZING_MAX_FILE_CNT = "self-optimizing.max-file-count";
+  public static final int SELF_OPTIMIZING_MAX_FILE_CNT_DEFAULT = 100000;
+
+  public static final String SELF_OPTIMIZING_FRAGMENT_RATIO = "self-optimizing.fragment-ratio";
+  public static final int SELF_OPTIMIZING_FRAGMENT_RATIO_DEFAULT = 8;
+
+  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT = "self-optimizing.minor.trigger.file-count";
+  public static final int SELF_OPTIMIZING_MINOR_TRIGGER_FILE_CNT_DEFAULT = 12;
+
+  public static final String SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL = "self-optimizing.minor.trigger.interval";
+  public static final long SELF_OPTIMIZING_MINOR_TRIGGER_INTERVAL_DEFAULT = 3600000; // 1 h
+
+  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO =
+      "self-optimizing.major.trigger.duplicate-ratio";
+  public static final double SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO_DEFAULT = 0.5;
+
+  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT = "self-optimizing.major.trigger.file-count";
+  public static final int SELF_OPTIMIZING_MAJOR_TRIGGER_FILE_CNT_DEFAULT = 12;
+
+  public static final String SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL = "self-optimizing.major.trigger.interval";
+  public static final long SELF_OPTIMIZING_MAJOR_TRIGGER_INTERVAL_DEFAULT = 86400000; // 1 day
+  
+  public static final String SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL = "self-optimizing.full.trigger.interval";
+  public static final long SELF_OPTIMIZING_FULL_TRIGGER_INTERVAL_DEFAULT = -1; // not trigger
+  
+  
+  /**
+   * deprecated table optimize related properties
+   */
+  @Deprecated
+  public static final String ENABLE_OPTIMIZE = "optimize.enable";
+
+  @Deprecated
+  public static final String OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD = "optimize.small-file-size-bytes-threshold";
+
+  @Deprecated
+  public static final String OPTIMIZE_GROUP = "optimize.group";
+
+  @Deprecated
+  public static final String OPTIMIZE_RETRY_NUMBER = "optimize.num-retries";
+
+  @Deprecated
+  public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
+
+  @Deprecated
   public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
-  public static final int OPTIMIZE_MAX_FILE_COUNT_DEFAULT = 100000;
 
+  @Deprecated
   public static final String MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.major.trigger.max-interval";
-  public static final long MAJOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 86_400_000; // 1 day
 
+  @Deprecated
   public static final String FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.full.trigger.max-interval";
-  public static final long FULL_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = -1; // default not trigger
 
+  @Deprecated
   public static final String MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL = "optimize.minor.trigger.max-interval";
-  public static final long MINOR_OPTIMIZE_TRIGGER_MAX_INTERVAL_DEFAULT = 3600_000; // 1h
 
+  @Deprecated
   public static final String MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT = "optimize.minor.trigger.delete-file-count";
-  public static final int MINOR_OPTIMIZE_TRIGGER_DELETE_FILE_COUNT_DEFAULT = 12; // 12
 
-  public static final String MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.minor.trigger.small-file-count";
-  public static final int MINOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
-
+  @Deprecated
   public static final String MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT = "optimize.major.trigger.small-file-count";
-  public static final int MAJOR_OPTIMIZE_TRIGGER_SMALL_FILE_COUNT_DEFAULT = 12; // 12
 
-  public static final String FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD =
-      "optimize.full.trigger.duplicate-size-bytes-threshold";
-  public static final int FULL_OPTIMIZE_TRIGGER_DUPLICATE_SIZE_BYTES_THRESHOLD_DEFAULT = 67108864; // 64 MB
+  @Deprecated
+  public static final String FULL_OPTIMIZE_TRIGGER_DELETE_FILE_SIZE_BYTES =
+      "optimize.full.trigger.delete-file-size-bytes";
 
-  public static final String FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD =
-      "optimize.full.trigger.duplicate-ratio-threshold";
-  public static final double FULL_OPTIMIZE_TRIGGER_DUPLICATE_RATIO_THRESHOLD_DEFAULT = 0.5;
-
+  @Deprecated
   public static final String OPTIMIZE_QUOTA = "optimize.quota";
-  public static final double OPTIMIZE_QUOTA_DEFAULT = 0.1;
-
-  public static final String MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE = "optimize.major.max-task-file-size-bytes";
-  public static final long MAJOR_OPTIMIZE_MAX_TASK_FILE_SIZE_DEFAULT = 1073741824L; // 1 GB
 
   /**
    * table clean related properties
    */
-  public static final String ENABLE_TABLE_EXPIRE = "table-expire.enable";
-  public static final String ENABLE_TABLE_EXPIRE_DEFAULT = "true";
+  public static final String ENABLE_TABLE_EXPIRE = "table-expire.enabled";
+  public static final boolean ENABLE_TABLE_EXPIRE_DEFAULT = true;
+  @Deprecated
+  public static final String ENABLE_TABLE_EXPIRE_LEGACY = "table-expire.enable";
 
   public static final String CHANGE_DATA_TTL = "change.data.ttl.minutes";
   public static final String CHANGE_DATA_TTL_DEFAULT = "10080"; // 7 Days
@@ -139,8 +173,10 @@ public class TableProperties {
   public static final String BASE_SNAPSHOT_KEEP_MINUTES = "snapshot.base.keep.minutes";
   public static final String BASE_SNAPSHOT_KEEP_MINUTES_DEFAULT = "720"; // 12 Hours
 
-  public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enable";
-  public static final String ENABLE_ORPHAN_CLEAN_DEFAULT = "false";
+  public static final String ENABLE_ORPHAN_CLEAN = "clean-orphan-file.enabled";
+  public static final boolean ENABLE_ORPHAN_CLEAN_DEFAULT = false;
+  @Deprecated
+  public static final String ENABLE_ORPHAN_CLEAN_LEGACY = "clean-orphan-file.enable";
 
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME = "clean-orphan-file.min-existing-time-minutes";
   public static final String MIN_ORPHAN_FILE_EXISTING_TIME_DEFAULT = "2880"; // 2 Days
@@ -212,8 +248,10 @@ public class TableProperties {
   /**
    * log store related properties
    */
-  public static final String ENABLE_LOG_STORE = "log-store.enable";
+  public static final String ENABLE_LOG_STORE = "log-store.enabled";
   public static final boolean ENABLE_LOG_STORE_DEFAULT = false;
+  @Deprecated
+  public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
   public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = "kafka";
@@ -231,17 +269,33 @@ public class TableProperties {
   public static final String OWNER = "owner";
 
   /**
-   * Protected properties which should not be exposed to user.
+   * Protected properties which should not be read by user.
    */
-  public static final Set<String> PROTECTED_PROPERTIES = new HashSet<>();
+  public static final Set<String> READ_PROTECTED_PROPERTIES = new HashSet<>();
+
+  /**
+   * Protected properties which should not be written by user.
+   */
+  public static final Set<String> WRITE_PROTECTED_PROPERTIES = new HashSet<>();
 
   static {
-    PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
-    PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
-    PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
-    PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
-    PROTECTED_PROPERTIES.add(FORMAT_VERSION);
-    PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    READ_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    READ_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
+    READ_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
+    READ_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
+
+
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.BASE_TABLE_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.PARTITION_MAX_TRANSACTION_ID);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.LOCATION);
+    WRITE_PROTECTED_PROPERTIES.add(TableProperties.TABLE_PARTITION_PROPERTIES);
+    WRITE_PROTECTED_PROPERTIES.add(DEFAULT_NAME_MAPPING);
+    WRITE_PROTECTED_PROPERTIES.add(FORMAT_VERSION);
+    WRITE_PROTECTED_PROPERTIES.add(WATERMARK_TABLE);
+    WRITE_PROTECTED_PROPERTIES.add(WATERMARK_BASE_STORE);
+    WRITE_PROTECTED_PROPERTIES.add("flink.max-continuous-empty-commits");
   }
 }

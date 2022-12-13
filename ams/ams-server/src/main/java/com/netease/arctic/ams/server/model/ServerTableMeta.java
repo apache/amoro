@@ -42,12 +42,15 @@ public class ServerTableMeta {
   private Map<String, String> properties;
   private Map<String, Object> changeMetrics;
   private Map<String, Object> baseMetrics;
+  private Map<String, Object> tableSummary;
   private CdcMeta cdcMeta;
   private String baseLocation;
   private String filter;
   private long createTime;
   private String creator;
 
+  private String tableWatermark;
+  private String baseWatermark;
 
   public ServerTableMeta() {
   }
@@ -152,6 +155,22 @@ public class ServerTableMeta {
     this.properties = properties;
   }
 
+  public String getTableWatermark() {
+    return tableWatermark;
+  }
+
+  public void setTableWatermark(String tableWatermark) {
+    this.tableWatermark = tableWatermark;
+  }
+
+  public String getBaseWatermark() {
+    return baseWatermark;
+  }
+
+  public void setBaseWatermark(String baseWatermark) {
+    this.baseWatermark = baseWatermark;
+  }
+
   public CdcMeta getCdcMeta() {
     return cdcMeta;
   }
@@ -183,6 +202,14 @@ public class ServerTableMeta {
 
   public void setBaseMetrics(Map<String, Object> baseMetrics) {
     this.baseMetrics = baseMetrics;
+  }
+
+  public Map<String, Object> getTableSummary() {
+    return tableSummary;
+  }
+
+  public void setTableSummary(Map<String, Object> tableSummary) {
+    this.tableSummary = tableSummary;
   }
 
   @Override

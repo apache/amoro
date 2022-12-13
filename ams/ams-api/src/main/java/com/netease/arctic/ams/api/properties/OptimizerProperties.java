@@ -34,7 +34,7 @@ public class OptimizerProperties {
   public static final String ARCTIC_HOME = "ARCTIC_HOME";
   public static final String THRIFT_BIND_HOST = "arctic.ams.server-host";
   public static final String THRIFT_BIND_PORT = "arctic.ams.thrift.port";
-  public static final String HA_ENABLE = "arctic.ams.ha.enable";
+  public static final String HA_ENABLE = "arctic.ams.ha.enabled";
   public static final String CLUSTER_NAME = "arctic.ams.cluster.name";
   public static final String ZOOKEEPER_SERVER = "arctic.ams.zookeeper.server";
 

@@ -37,7 +37,10 @@ public class CatalogMetaProperties {
     public static final String AUTH_CONFIGS_VALUE_TYPE_SIMPLE = "simple";
     public static final String AUTH_CONFIGS_VALUE_TYPE_KERBEROS = "kerberos";
 
+    //Deprecated from version v0.4.0, use KEY_WAREHOUSE
+    @Deprecated
     public static final String KEY_WAREHOUSE_DIR = "warehouse.dir";
+    public static final String KEY_WAREHOUSE = "warehouse";
     public static final String KEY_DATABASE_FILTER_REGULAR_EXPRESSION = "database.filter-regular-expression";
 
     public static final String CATALOG_TYPE_HADOOP = "hadoop";
@@ -63,4 +66,6 @@ public class CatalogMetaProperties {
 
     // properties in table level set by catalog
     public static final String TABLE_PROPERTIES_PREFIX = "table.";
+    public static  final String LOG_STORE_PROPERTIES_PREFIX = "log-store.";
+    public static  final String OPTIMIZE_PROPERTIES_PREFIX = "self-optimizing.";
 }

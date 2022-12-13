@@ -91,13 +91,21 @@ public interface IOptimizeService {
   TableOptimizeItem takeTableToCommit() throws InterruptedException;
 
   /**
-   * expire and clean optimize history record
+   * Expire and clean optimize history record
    * @param tableIdentifier -
    * @param expireTime min timestamp which record need to retain
    */
   void expireOptimizeHistory(TableIdentifier tableIdentifier, long expireTime);
 
+  /**
+   * Add new tables into cache
+   * @param toAddTables -
+   */
   void addNewTables(List<TableIdentifier> toAddTables);
 
+  /**
+   * Clear removed tables from cache
+   * @param toRemoveTables -
+   */
   void clearRemovedTables(List<TableIdentifier> toRemoveTables);
 }

@@ -13,6 +13,8 @@
             <p>{{$t('file')}}:  <span class="text-color">{{baseInfo.file}}</span></p>
             <a-divider type="vertical" />
             <p>{{$t('averageFileSize')}}: <span class="text-color">{{baseInfo.averageFile}}</span></p>
+            <a-divider type="vertical" />
+            <p>{{$t('tableFormat')}}: <span class="text-color">{{baseInfo.tableFormat}}</span></p>
           </div>
         </div>
         <!-- <div class="table-edit">
@@ -21,7 +23,7 @@
         </div> -->
       </div>
       <div class="content">
-        <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane>
+        <a-tabs v-model:activeKey="activeKey" destroyInactiveTabPane @change="onChangeTab">
           <a-tab-pane key="Details" tab="Details">
             <u-details @setBaseDetailInfo="setBaseDetailInfo" />
           </a-tab-pane>
@@ -40,7 +42,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, reactive, toRefs, watch, shallowReactive, computed } from 'vue'
+import { defineComponent, reactive, toRefs, watch, shallowReactive, computed, onMounted } from 'vue'
 // import { EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import UDetails from './components/Details.vue'
 import UFiles from './components/Files.vue'
@@ -85,6 +87,7 @@ export default defineComponent({
         size: '',
         file: '',
         averageFile: '',
+        tableFormat: '',
         hasPartition: false
       } as IBaseDetailInfo,
       detailLoaded: false
@@ -97,6 +100,11 @@ export default defineComponent({
     const setBaseDetailInfo = (baseInfo: IBaseDetailInfo) => {
       state.detailLoaded = true
       state.baseInfo = { ...baseInfo }
+    }
+    const onChangeTab = (key: string) => {
+      const query = { ...route.query }
+      query.tab = key
+      router.replace({ query: { ...query } })
     }
 
     const editTable = () => {}
@@ -118,10 +126,14 @@ export default defineComponent({
 
     watch(
       () => route.query,
-      () => {
-        state.activeKey = 'Details'
+      (value) => {
+        state.activeKey = value.tab as string
       }
     )
+
+    onMounted(() => {
+      state.activeKey = (route.query?.tab as string) || 'Details'
+    })
 
     return {
       ...toRefs(state),
@@ -132,7 +144,8 @@ export default defineComponent({
       delTable,
       setBaseDetailInfo,
       hideTablesMenu,
-      goBack
+      goBack,
+      onChangeTab
     }
   }
 })

@@ -193,6 +193,22 @@ public class AmsUtils {
     }
   }
 
+  public static String formatString(String beforeFormat) {
+    StringBuilder result = new StringBuilder();
+    int flag = 0;
+    for (int i = 0; i < beforeFormat.length(); i++) {
+      String s = String.valueOf(beforeFormat.toCharArray()[i]);
+      if (!s.matches("[a-zA-Z]+")) {
+        flag = 0;
+        result.append(" ");
+      } else {
+        result.append(flag == 0 ? s.toUpperCase() : s.toLowerCase());
+        flag++;
+      }
+    }
+    return result.toString();
+  }
+
   private static boolean checkHostAddress(InetAddress address, String prefix) {
     return address != null && address.getHostAddress().startsWith(prefix);
   }

@@ -19,15 +19,12 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.server.controller.response.Response;
 import io.javalin.testtools.JavalinTest;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.netease.arctic.ams.server.controller.response.Response;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class LoginControllerTest extends TestCase {
   private final Logger LOG = LoggerFactory.getLogger("LoginControllerTest");

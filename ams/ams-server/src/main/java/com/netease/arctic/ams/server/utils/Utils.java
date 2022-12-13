@@ -20,16 +20,13 @@ package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import io.javalin.http.Context;
-import org.apache.arrow.util.VisibleForTesting;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.telnet.TelnetClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class Utils {

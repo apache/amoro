@@ -18,14 +18,20 @@
 
 package com.netease.arctic.spark;
 
+import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.Types;
+import org.apache.thrift.TException;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.util.List;
 
 /**
  * test for arctic keyed table
@@ -163,6 +169,31 @@ public class TestKeyedTableDDL extends SparkTestBase {
 
     sql("drop table {0}.{1}", database, targetTable);
 
+    sql("drop table {0}.{1}", database, table);
+    assertTableNotExist(identifier);
+  }
+
+  @Test
+  public void testCreateTableRefreshed() throws TException {
+    File testArcticDir = new File(testBaseDir, "arctic2");
+    sql("set `spark.sql.arctic.refresh-catalog-before-usage` = {0}", "true");
+    CatalogMeta catalog = ams.handler().getCatalog(catalogNameArctic);
+    ams.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE, testArcticDir.getPath());
+    TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, table);
+
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts timestamp " +
+        ") using arctic \n" +
+        " partitioned by ( days(ts) ) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, table);
+
+    ArcticTable arcticTable = loadTable(identifier);
+    String expectLocation = testArcticDir.getPath() + "/" +database + "/"+ table + "/base";
+    Assert.assertEquals(expectLocation, arcticTable.location());
     sql("drop table {0}.{1}", database, table);
     assertTableNotExist(identifier);
   }

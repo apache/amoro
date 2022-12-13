@@ -21,18 +21,15 @@ package com.netease.arctic.ams.server.optimize;
 import com.google.common.base.Preconditions;
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.ams.api.OptimizeType;
-import com.netease.arctic.ams.server.model.CacheFileInfo;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,10 +79,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
         notInHiveFile = true;
         LOG.info("table {} has in not hive location files", arcticTable.id());
         break;
-      } else if (baseFile.fileSizeInBytes() <=
-          PropertyUtil.propertyAsLong(arcticTable.properties(),
-              TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD,
-              TableProperties.OPTIMIZE_SMALL_FILE_SIZE_BYTES_THRESHOLD_DEFAULT)) {
+      } else if (baseFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties())) {
         DataTreeNode node = FileUtil.parseFileNodeFromFileName(baseFile.path().toString());
         if (nodeSmallFileCount.get(node) != null) {
           nodeHaveTwoSmallFiles = true;

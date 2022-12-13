@@ -19,20 +19,15 @@
 package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.OptimizeRangeType;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.ams.server.AmsRestServer;
 import com.netease.arctic.ams.server.ArcticMetaStore;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
-import com.netease.arctic.ams.server.controller.response.PageResult;
-import com.netease.arctic.ams.server.exception.ForbiddenException;
-import com.netease.arctic.ams.server.exception.SignatureCheckException;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.model.AMSColumnInfo;
 import com.netease.arctic.ams.server.model.AMSDataFileInfo;
@@ -66,11 +61,8 @@ import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
-import io.javalin.apibuilder.ApiBuilder;
 import io.javalin.testtools.JavalinTest;
-import java.util.Optional;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -99,6 +91,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -582,7 +575,7 @@ public class TableControllerTest {
         System.getProperty("user.name"));
 
     Map<String, String> catalogProperties = new HashMap<>();
-    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE_DIR, "/tmp");
+    catalogProperties.put(CatalogMetaProperties.KEY_WAREHOUSE, "/tmp");
 
     CatalogMeta catalogMeta = new CatalogMeta(TEST_CATALOG_NAME, CATALOG_TYPE_HADOOP,
         storageConfig, authConfig, catalogProperties);

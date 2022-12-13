@@ -19,7 +19,6 @@
 package com.netease.arctic.ams.server.service;
 
 import com.netease.arctic.ams.api.MetaException;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableMetaStore;
 
 public interface IInternalTableService {

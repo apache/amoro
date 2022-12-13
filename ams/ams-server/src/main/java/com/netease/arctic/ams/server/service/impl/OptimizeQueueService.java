@@ -44,21 +44,29 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
+import com.netease.arctic.hive.table.SupportHive;
+import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.CompatiblePropertyUtil;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileScanTask;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.util.PropertyUtil;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -98,8 +106,8 @@ public class OptimizeQueueService extends IJDBCService {
   }
 
   public int getQueueId(Map<String, String> properties) throws InvalidObjectException {
-    String groupName = properties.getOrDefault(TableProperties.OPTIMIZE_GROUP,
-        TableProperties.OPTIMIZE_GROUP_DEFAULT);
+    String groupName = CompatiblePropertyUtil.propertyAsString(properties,
+        TableProperties.SELF_OPTIMIZING_GROUP, TableProperties.SELF_OPTIMIZING_GROUP_DEFAULT);
     return getOptimizeQueue(groupName).getOptimizeQueueMeta().getQueueId();
   }
 
@@ -198,7 +206,6 @@ public class OptimizeQueueService extends IJDBCService {
 
   /**
    * delete all OptimizeQueue
-   *
    */
   public void removeAllQueue() {
     try (SqlSession sqlSession = getSqlSession(true)) {
@@ -227,10 +234,17 @@ public class OptimizeQueueService extends IJDBCService {
    */
   public OptimizeQueueItem getOptimizeQueue(String queueName) throws InvalidObjectException {
     Preconditions.checkNotNull(queueName, "queueName can't be null");
-    return optimizeQueues.values().stream()
-        .filter(q -> queueName.equals(q.getOptimizeQueueItem().getOptimizeQueueMeta().getName()))
-        .findFirst()
-        .orElseThrow(() -> new InvalidObjectException("lost queue " + queueName)).getOptimizeQueueItem();
+    return getQueue(queueName).getOptimizeQueueItem();
+  }
+
+  /**
+   * Get tables of optimize queue.
+   * @param queueName queueName
+   * @return set of tables
+   * @throws InvalidObjectException when can't find queue
+   */
+  public Set<TableIdentifier> getTablesOfQueue(String queueName) throws InvalidObjectException {
+    return getQueue(queueName).getTables();
   }
 
   /**
@@ -243,6 +257,13 @@ public class OptimizeQueueService extends IJDBCService {
     Objects.requireNonNull(task, "taskItem can't be null");
     Objects.requireNonNull(task.getOptimizeTask(), "task cant' be null");
     getQueue(task.getOptimizeTask().getQueueId()).addIntoOptimizeQueue(task);
+  }
+
+  private OptimizeQueueWrapper getQueue(String queueName) throws InvalidObjectException {
+    return optimizeQueues.values().stream()
+        .filter(q -> queueName.equals(q.getOptimizeQueueItem().getOptimizeQueueMeta().getName()))
+        .findFirst()
+        .orElseThrow(() -> new InvalidObjectException("lost queue " + queueName));
   }
 
   private OptimizeQueueWrapper getQueue(int queueId) throws InvalidObjectException {
@@ -298,9 +319,8 @@ public class OptimizeQueueService extends IJDBCService {
     queue.setName(queue.getName().trim());
   }
 
-  public void bind(TableIdentifier tableIdentifier, int queueId) throws InvalidObjectException {
-    getQueue(queueId).bindTable(tableIdentifier);
-    LOG.info("bind {} with queue {}", tableIdentifier, queueId);
+  public void bind(TableIdentifier tableIdentifier, String queueName) throws InvalidObjectException {
+    getQueue(queueName).bindTable(tableIdentifier);
   }
 
   public void release(TableIdentifier tableIdentifier) {
@@ -355,6 +375,7 @@ public class OptimizeQueueService extends IJDBCService {
       lock();
       try {
         tables.add(tableIdentifier);
+        LOG.info("operation queue success, bind {} with queue {}", tableIdentifier, queueName());
       } finally {
         unlock();
       }
@@ -364,7 +385,10 @@ public class OptimizeQueueService extends IJDBCService {
       lock();
       try {
         clearTasks(tableIdentifier);
-        tables.remove(tableIdentifier);
+        boolean removed = tables.remove(tableIdentifier);
+        if (removed) {
+          LOG.info("operation queue success, remove {} from queue {}", tableIdentifier, queueName());
+        }
       } finally {
         unlock();
       }
@@ -379,13 +403,24 @@ public class OptimizeQueueService extends IJDBCService {
         }
         // clear useless files produced by failed full optimize task support hive
         if (task.getOptimizeRuntime().getStatus() == OptimizeStatus.Failed) {
-          String location =
+          String subDirectory =
               task.getOptimizeTask().getProperties().get(OptimizeTaskProperties.CUSTOM_HIVE_SUB_DIRECTORY);
 
-          if (location != null) {
+          if (StringUtils.isNotEmpty(subDirectory)) {
             try {
               ArcticTable arcticTable = ServiceContainer.getOptimizeService()
                   .getTableOptimizeItem(task.getTableIdentifier()).getArcticTable();
+
+              String location;
+              if (arcticTable.spec().isUnpartitioned()) {
+                location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), null, subDirectory);
+              } else {
+                location = HiveTableUtil.newHiveDataLocation(((SupportHive) arcticTable).hiveLocation(),
+                    arcticTable.spec(), DataFiles.data(arcticTable.spec(), task.getOptimizeTask().getPartition()),
+                    subDirectory);
+              }
+
               if (arcticTable.io().exists(location)) {
                 for (FileStatus fileStatus : arcticTable.io().list(location)) {
                   String fileLocation = fileStatus.getPath().toUri().getPath();
@@ -451,6 +486,7 @@ public class OptimizeQueueService extends IJDBCService {
                 int retry = 0;
                 boolean isHaveTask = false;
 
+                long threadStartTime = System.currentTimeMillis();
                 try {
                   LOG.info("this plan started {}, {}", attemptId, jobId);
                   while (retry <= retryTime) {
@@ -480,7 +516,8 @@ public class OptimizeQueueService extends IJDBCService {
                   LOG.error("failed to plan", t);
                   throw t;
                 } finally {
-                  LOG.info("this plan end {}", attemptId);
+                  LOG.info("this plan end {}, cost {} ms, retry {}",
+                      attemptId, System.currentTimeMillis() - threadStartTime, retry);
                   if (planThreadStarted.compareAndSet(true, false)) {
                     lock();
                     try {
@@ -570,16 +607,24 @@ public class OptimizeQueueService extends IJDBCService {
       return tasks.size();
     }
 
+    public Set<TableIdentifier> getTables() {
+      return Sets.newHashSet(tables);
+    }
+
     public OptimizeQueueItem getOptimizeQueueItem() {
       optimizeQueue.setSize(size());
       return optimizeQueue;
     }
 
     private List<OptimizeTaskItem> plan(long currentTime) {
-      List<TableIdentifier> tableSort = sortTableByQuota(new ArrayList<>(tables));
+      List<TableQuotaInfo> tableSort = sortTableByQuota(new ArrayList<>(tables));
 
-      for (TableIdentifier tableIdentifier : tableSort) {
-        LOG.debug("{} try plan", tableIdentifier);
+      if (LOG.isDebugEnabled()) {
+        LOG.debug("get sort table {}", tableSort);
+      }
+      for (TableQuotaInfo tableQuotaInfo : tableSort) {
+        TableIdentifier tableIdentifier = tableQuotaInfo.getTableIdentifier();
+        LOG.debug("{} try plan, quota {}", tableIdentifier, tableQuotaInfo.getQuota());
         try {
           TableOptimizeItem tableItem = ServiceContainer.getOptimizeService().getTableOptimizeItem(tableIdentifier);
 
@@ -595,9 +640,9 @@ public class OptimizeQueueService extends IJDBCService {
 
           tableItem.checkTaskExecuteTimeout();
           // if enable_optimize is false
-          if (!(Boolean.parseBoolean(PropertyUtil
-              .propertyAsString(tableItem.getArcticTable(false).properties(), TableProperties.ENABLE_OPTIMIZE,
-                  TableProperties.ENABLE_OPTIMIZE_DEFAULT)))) {
+          if (!CompatiblePropertyUtil.propertyAsBoolean(tableItem.getArcticTable(false).properties(),
+              TableProperties.ENABLE_SELF_OPTIMIZING,
+              TableProperties.ENABLE_SELF_OPTIMIZING_DEFAULT)) {
             LOG.debug("{} is not enable optimize continue", tableIdentifier);
             continue;
           }
@@ -627,10 +672,15 @@ public class OptimizeQueueService extends IJDBCService {
                   tableIdentifier);
               continue;
             }
-            Iterable<FileScanTask> fileScanTasks =
-                tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles();
+            List<FileScanTask> fileScanTasks;
+            try (CloseableIterable<FileScanTask> filesIterable = 
+                     tableItem.getArcticTable(false).asUnkeyedTable().newScan().planFiles()) {
+              fileScanTasks = Lists.newArrayList(filesIterable);
+            } catch (IOException e) {
+              throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
+            }
 
-            optimizePlan = tableItem.getIcebergMajorPlan(fileScanTasks, queueId, currentTime);
+            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime);
             optimizeTasks = optimizePlan.plan();
             // if no major tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
@@ -672,7 +722,7 @@ public class OptimizeQueueService extends IJDBCService {
       return Collections.emptyList();
     }
 
-    private List<TableIdentifier> sortTableByQuota(List<TableIdentifier> tables) {
+    private List<TableQuotaInfo> sortTableByQuota(List<TableIdentifier> tables) {
       long currentTime = System.currentTimeMillis();
       List<TableQuotaInfo> tableQuotaInfoList = tables.stream()
           .map(tableIdentifier -> {
@@ -688,7 +738,7 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }).filter(Objects::nonNull).collect(Collectors.toList());
 
-      return tableQuotaInfoList.stream().sorted().map(TableQuotaInfo::getTableIdentifier).collect(Collectors.toList());
+      return tableQuotaInfoList.stream().sorted().collect(Collectors.toList());
     }
 
     private BigDecimal evalQuotaRate(TableIdentifier tableId, long currentTime) throws NoSuchObjectException {
