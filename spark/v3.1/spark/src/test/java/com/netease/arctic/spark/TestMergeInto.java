@@ -1,5 +1,6 @@
 package com.netease.arctic.spark;
 
+import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @After
   public void cleanUp() {
-//    sql("drop table {0}.{1}", database, tgTableA);
+    sql("drop table {0}.{1}", database, tgTableA);
     sql("drop table {0}.{1}", database, srcTableA);
   }
 
@@ -42,7 +43,12 @@ public class TestMergeInto extends SparkTestBase{
         "  UPDATE SET * " +
         "WHEN NOT MATCHED AND s.id != 1 THEN " +
         "  INSERT *", database, tgTableA, srcTableA);
-    sql("select * from {0}.{1}", database, tgTableA);
+    rows = sql("select * from {0}.{1} order by id", database, tgTableA);
+    Assert.assertEquals(4, rows.size());
+    Assert.assertEquals(2, rows.get(0)[0]);
+    Assert.assertEquals("g", rows.get(1)[1]);
+    Assert.assertEquals("e", rows.get(2)[1]);
+    Assert.assertEquals("f", rows.get(3)[1]);
   }
 
 
