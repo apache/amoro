@@ -182,24 +182,27 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     return optimizeTask;
   }
 
-  public boolean baseTableCacheAll() {
+  private boolean baseTableCacheAll() {
     if (arcticTable.isKeyedTable()) {
-      long snapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
-      this.currentBaseSnapshotId = snapshotId;
-      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
-      if (snapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID && !snapshotIsCached.test(snapshotId)) {
+      if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+          !snapshotIsCached.test(currentBaseSnapshotId)) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", snapshotId);
+            "wait file cache sync latest file info", currentBaseSnapshotId);
         return false;
       }
-    } else {
-      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
     }
 
     return true;
   }
 
   public boolean tableNeedPlan() {
+    if (arcticTable.isKeyedTable()) {
+      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
+      this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
+    } else {
+      this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
+    }
+
     if (!baseTableCacheAll()) {
       return false;
     }

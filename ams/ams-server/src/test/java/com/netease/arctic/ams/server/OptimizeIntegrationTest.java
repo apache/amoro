@@ -118,9 +118,6 @@ public class OptimizeIntegrationTest {
     amsEnvironment.createIcebergCatalog(ICEBERG_CATALOG, ICEBERG_CATALOG_DIR);
     catalog(CATALOG).createDatabase(DATABASE);
     catalog(ICEBERG_CATALOG).createDatabase(DATABASE);
-
-    // wait for ams init service
-    Thread.sleep(1000);
   }
 
   @Test
