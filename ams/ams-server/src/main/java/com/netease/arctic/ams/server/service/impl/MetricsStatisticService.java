@@ -62,6 +62,8 @@ public class MetricsStatisticService extends IJDBCService {
         mapper.insertMetricsStatistic(statistic);
       });
       sqlSession.commit();
+    } catch (Exception e) {
+      LOG.error("commit arctic statistic error", e);
     }
   }
 
@@ -146,6 +148,8 @@ public class MetricsStatisticService extends IJDBCService {
         }
       });
       sqlSession.commit();
+    } catch (Exception e) {
+      LOG.error("commit optimizer statistic error", e);
     }
   }
 
