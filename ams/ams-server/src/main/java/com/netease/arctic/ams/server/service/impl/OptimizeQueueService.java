@@ -647,7 +647,7 @@ public class OptimizeQueueService extends IJDBCService {
             continue;
           }
 
-          if (tableItem.getTableOptimizeRuntime().isRunning()) {
+          if (tableItem.optimizeRunning()) {
             LOG.debug("{} is running continue", tableIdentifier);
 
             // add failed tasks and retry
@@ -664,12 +664,12 @@ public class OptimizeQueueService extends IJDBCService {
           BaseOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
 
+          Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
           if (TableTypeUtil.isIcebergTableFormat(tableItem.getArcticTable(false))) {
             if (!BaseIcebergOptimizePlan.tableChanged(tableItem.getArcticTable(false),
                 tableItem.getTableOptimizeRuntime())) {
               tableItem.persistTableOptimizeRuntime();
-              LOG.debug("table {} not changed, no need plan",
-                  tableIdentifier);
+              LOG.debug("table {} not changed, no need plan", tableIdentifier);
               continue;
             }
             List<FileScanTask> fileScanTasks;
@@ -680,26 +680,26 @@ public class OptimizeQueueService extends IJDBCService {
               throw new UncheckedIOException("Failed to close table scan of " + tableIdentifier, e);
             }
 
-            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime);
+            optimizePlan = tableItem.getIcebergFullPlan(fileScanTasks, queueId, currentTime, partitionIsRunning);
             optimizeTasks = optimizePlan.plan();
             // if no major tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime);
+              optimizePlan = tableItem.getIcebergMinorPlan(fileScanTasks, queueId, currentTime, partitionIsRunning);
               optimizeTasks = optimizePlan.plan();
             }
           } else {
-            optimizePlan = tableItem.getFullPlan(queueId, currentTime);
+            optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning);
             optimizeTasks = optimizePlan.plan();
 
             // if no full tasks, then plan minor tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
+              optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning);
               optimizeTasks = optimizePlan.plan();
             }
 
             // if no major tasks and keyed table, then plan minor tasks
             if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-              optimizePlan = tableItem.getMinorPlan(queueId, currentTime);
+              optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning);
               optimizeTasks = optimizePlan.plan();
             }
           }
@@ -818,7 +818,6 @@ public class OptimizeQueueService extends IJDBCService {
           }
 
           tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
-          tableItem.getTableOptimizeRuntime().setRunning(true);
           tableItem.persistTableOptimizeRuntime();
         } catch (Throwable e) {
           tableItem.getTableOptimizeRuntime().restoreTableOptimizeRuntime(oldTableOptimizeRuntime);

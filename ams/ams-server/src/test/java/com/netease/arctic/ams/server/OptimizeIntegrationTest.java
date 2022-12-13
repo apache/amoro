@@ -106,7 +106,7 @@ public class OptimizeIntegrationTest {
   public static TemporaryFolder tempFolder = new TemporaryFolder();
 
   @BeforeClass
-  public static void beforeClass() {
+  public static void beforeClass() throws InterruptedException {
     String rootPath = tempFolder.getRoot().getAbsolutePath();
     CATALOG_DIR = rootPath + "/arctic/warehouse";
     ICEBERG_CATALOG_DIR = rootPath + "/iceberg/warehouse";
@@ -118,6 +118,9 @@ public class OptimizeIntegrationTest {
     amsEnvironment.createIcebergCatalog(ICEBERG_CATALOG, ICEBERG_CATALOG_DIR);
     catalog(CATALOG).createDatabase(DATABASE);
     catalog(ICEBERG_CATALOG).createDatabase(DATABASE);
+
+    // wait for ams init service
+    Thread.sleep(1000);
   }
 
   @Test
