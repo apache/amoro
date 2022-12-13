@@ -586,7 +586,7 @@ public class OptimizeQueueService extends IJDBCService {
             continue;
           }
 
-          if (tableItem.getTableOptimizeRuntime().isRunning()) {
+          if (tableItem.optimizeRunning()) {
             LOG.debug("{} is running continue", tableIdentifier);
 
             // add failed tasks and retry
@@ -604,18 +604,20 @@ public class OptimizeQueueService extends IJDBCService {
           BaseOptimizePlan optimizePlan;
           Map<String, String> properties = tableItem.getArcticTable(false).properties();
           int queueId = ServiceContainer.getOptimizeQueueService().getQueueId(properties);
-          optimizePlan = tableItem.getFullPlan(queueId, currentTime);
+
+          Map<String, Boolean> partitionIsRunning = tableItem.generatePartitionRunning();
+          optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning);
           optimizeTasks = optimizePlan.plan();
 
           // if no full tasks, then plan minor tasks
           if (CollectionUtils.isEmpty(optimizeTasks)) {
-            optimizePlan = tableItem.getMajorPlan(queueId, currentTime);
+            optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning);
             optimizeTasks = optimizePlan.plan();
           }
 
           // if no major tasks and keyed table, then plan minor tasks
           if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
-            optimizePlan = tableItem.getMinorPlan(queueId, currentTime);
+            optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning);
             optimizeTasks = optimizePlan.plan();
           }
 
@@ -731,7 +733,6 @@ public class OptimizeQueueService extends IJDBCService {
         }
 
         tableItem.getTableOptimizeRuntime().setLatestTaskPlanGroup(optimizeTasks.get(0).getTaskPlanGroup());
-        tableItem.getTableOptimizeRuntime().setRunning(true);
         tableItem.persistTableOptimizeRuntime();
       }
     }
