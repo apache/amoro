@@ -36,6 +36,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.List;
+
 /**
  * Implementation of {@link com.netease.arctic.table.KeyedTable} with Hive table as base store.
  */
@@ -91,6 +93,11 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
   @Override
   public HMSClientPool getHMSClient() {
     return hiveClient;
+  }
+
+  @Override
+  public void dropPartition(List<String> partitions) {
+
   }
 
   public static class HiveChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {
