@@ -93,12 +93,12 @@ public class OverviewController extends RestBaseController {
   public static void tableInfo(Context ctx) {
     try {
       String order = ctx.queryParamAsClass("order", String.class).getOrDefault("desc");
-      String orderBy = ctx.queryParamAsClass("orderBy", String.class).getOrDefault("Size");
+      String orderBy = ctx.queryParamAsClass("orderBy", String.class).getOrDefault("size");
       Integer count = ctx.queryParamAsClass("count", Integer.class).getOrDefault(10);
       List<OverviewTableInfo> result = new ArrayList<>();
       List<TableMetricsStatistic> ordered;
       switch (orderBy) {
-        case "Size":
+        case "size":
           ordered = metricsStatisticService
               .getTableMetricsOrdered(order, SnapshotSummary.TOTAL_FILE_SIZE_PROP, count);
           ordered.forEach(e -> {
@@ -112,7 +112,7 @@ public class OverviewController extends RestBaseController {
             result.add(info);
           });
           break;
-        case "Files":
+        case "files":
           ordered = metricsStatisticService
               .getTableMetricsOrdered(order, SnapshotSummary.TOTAL_DATA_FILES_PROP, count);
           ordered.forEach(e -> {

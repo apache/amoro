@@ -42,10 +42,11 @@ public interface TableMetricsStatisticMapper {
       "#{metricsStatistic.metricName}, #{metricsStatistic.metricValue})")
   void insertMetricsStatistic(@Param("metricsStatistic") TableMetricsStatistic metricsStatistic);
 
-  @Update("update " + TABLE_NAME + " set metric_value = #{metricsStatistic.metricValue} where metric_name = " +
-      "#{metricsStatistic.metricName} and table_identifier = #{metricsStatistic.tableIdentifier, typeHandler=com" +
-      ".netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = #{metricsStatistic" +
-      ".innerTable}")
+  @Update("update " + TABLE_NAME + " set metric_value = #{metricsStatistic.metricValue}, commit_time = " +
+      "#{metricsStatistic.commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} where " +
+      "metric_name = #{metricsStatistic.metricName} and table_identifier = #{metricsStatistic.tableIdentifier, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and inner_table = " +
+      "#{metricsStatistic.innerTable}")
   void updateMetricsStatistic(@Param("metricsStatistic") TableMetricsStatistic metricsStatistic);
 
   @Select("select table_identifier, inner_table, metric_name, metric_value, commit_time from " + TABLE_NAME + "  " +

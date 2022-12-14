@@ -144,6 +144,7 @@ public class MetricsStatisticService extends IJDBCService {
         if (mapper.getMetricsStatistic(statistic).isEmpty()) {
           mapper.insertMetricsStatistic(statistic);
         } else {
+          statistic.setCommitTime(System.currentTimeMillis());
           mapper.updateMetricsStatistic(statistic);
         }
       });
@@ -211,6 +212,7 @@ public class MetricsStatisticService extends IJDBCService {
     try (SqlSession sqlSession = getSqlSession(true)) {
       TableMetricsStatisticMapper metricsStatisticMapper = getMapper(sqlSession, TableMetricsStatisticMapper.class);
       if (metricsStatisticMapper.getInnerTableMetricsStatistic(fileSizeStatistic).size() > 0) {
+        fileSizeStatistic.setCommitTime(System.currentTimeMillis());
         metricsStatisticMapper.updateMetricsStatistic(fileSizeStatistic);
       } else {
         metricsStatisticMapper.insertMetricsStatistic(fileSizeStatistic);

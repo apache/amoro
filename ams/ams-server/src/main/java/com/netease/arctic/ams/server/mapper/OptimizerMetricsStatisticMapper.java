@@ -40,9 +40,10 @@ public interface OptimizerMetricsStatisticMapper {
       "#{metricsStatistic.metricName}, #{metricsStatistic.metricValue})")
   void insertMetricsStatistic(@Param("metricsStatistic") OptimizerMetricsStatistic metricsStatistic);
 
-  @Update("update " + TABLE_NAME + " set metric_value = #{metricsStatistic.metricValue} where metric_name = " +
-      "#{metricsStatistic.metricName} and optimizer_id = #{metricsStatistic.optimizerId} and subtask_id = " +
-      "#{metricsStatistic.subtaskId}")
+  @Update("update " + TABLE_NAME + " set metric_value = #{metricsStatistic.metricValue} commit_time = " +
+      "#{metricsStatistic.commitTime,typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} where " +
+      "metric_name = #{metricsStatistic.metricName} and optimizer_id = #{metricsStatistic.optimizerId} and subtask_id" +
+      " = #{metricsStatistic.subtaskId}")
   void updateMetricsStatistic(@Param("metricsStatistic") OptimizerMetricsStatistic metricsStatistic);
 
   @Select("select optimizer_id, subtask_id, metric_name, metric_value, commit_time from " + TABLE_NAME + "  " +
