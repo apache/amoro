@@ -152,11 +152,17 @@ public class BaseOptimizeCommit {
       String foundNewDeleteMessage = "found new delete for replaced data file";
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage)) {
+        UnkeyedTable baseArcticTable;
+        if (arcticTable.isKeyedTable()) {
+          baseArcticTable = arcticTable.asKeyedTable().baseTable();
+        } else {
+          baseArcticTable = arcticTable.asUnkeyedTable();
+        }
         LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
         // only delete data files are produced by major optimize, because the major optimize maybe support hive
         // and produce redundant data files in hive location.(don't produce DeleteFile)
         // minor produced files will be clean by orphan file clean
-        Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(arcticTable, baseSnapshotId);
+        Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
         for (ContentFile<?> majorAddFile : majorAddFiles) {
           String filePath = getUriPath(majorAddFile.path().toString());
           if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
@@ -426,21 +432,14 @@ public class BaseOptimizeCommit {
     return result;
   }
 
-  private static Set<String> getCommittedDataFilesFromSnapshotId(ArcticTable arcticTable, long snapshotId) {
-    UnkeyedTable baseArcticTable;
-    if (arcticTable.isKeyedTable()) {
-      baseArcticTable = arcticTable.asKeyedTable().baseTable();
-    } else {
-      baseArcticTable = arcticTable.asUnkeyedTable();
-    }
-
-    long currentSnapshotId = UnKeyedTableUtil.getSnapshotId(baseArcticTable);
-    if (currentSnapshotId == snapshotId) {
-      return Collections.emptySet();
+  private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
+    long currentSnapshotId = UnKeyedTableUtil.getSnapshotId(table);
+    if (snapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+      snapshotId = null;
     }
 
     Set<String> committedFilePath = new HashSet<>();
-    for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, baseArcticTable::snapshot)) {
+    for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, table::snapshot)) {
       for (DataFile dataFile : snapshot.addedFiles()) {
         committedFilePath.add(getUriPath(dataFile.path().toString()));
       }
