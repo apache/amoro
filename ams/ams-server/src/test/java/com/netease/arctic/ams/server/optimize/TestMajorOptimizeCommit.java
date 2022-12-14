@@ -290,14 +290,6 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
             testKeyedTable.asKeyedTable()))
         .collect(Collectors.toList()));
 
-    Set<String> oldDataFilesPath = new HashSet<>();
-    Set<String> oldDeleteFilesPath = new HashSet<>();
-    testKeyedTable.baseTable().newScan().planFiles()
-        .forEach(fileScanTask -> {
-          oldDataFilesPath.add((String) fileScanTask.file().path());
-          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
-        });
-
     testKeyedTable.updateProperties().
         set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
     TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
