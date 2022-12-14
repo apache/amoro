@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -167,5 +168,14 @@ public class FileUtil {
       nodeId = Long.parseLong(matcher.group(1));
     }
     return DataTreeNode.ofId(nodeId);
+  }
+
+  /**
+   * construct file path with Uniform Resource Identifier (URI) reference
+   * @param path file path
+   * @return file path with Uniform Resource Identifier (URI) reference
+   */
+  public static String getUriPath(String path) {
+    return URI.create(path).getPath();
   }
 }

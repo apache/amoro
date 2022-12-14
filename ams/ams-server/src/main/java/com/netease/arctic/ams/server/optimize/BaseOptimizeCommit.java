@@ -51,7 +51,6 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -164,7 +163,7 @@ public class BaseOptimizeCommit {
         // minor produced files will be clean by orphan file clean
         Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
         for (ContentFile<?> majorAddFile : majorAddFiles) {
-          String filePath = getUriPath(majorAddFile.path().toString());
+          String filePath = FileUtil.getUriPath(majorAddFile.path().toString());
           if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
             arcticTable.io().deleteFile(filePath);
             LOG.warn("Delete orphan file {} when optimize commit failed", filePath);
@@ -441,14 +440,10 @@ public class BaseOptimizeCommit {
     Set<String> committedFilePath = new HashSet<>();
     for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, table::snapshot)) {
       for (DataFile dataFile : snapshot.addedFiles()) {
-        committedFilePath.add(getUriPath(dataFile.path().toString()));
+        committedFilePath.add(FileUtil.getUriPath(dataFile.path().toString()));
       }
     }
 
     return committedFilePath;
-  }
-
-  private static String getUriPath(String path) {
-    return URI.create(path).getPath();
   }
 }
