@@ -137,7 +137,7 @@ public class OverviewControllerTest {
     List<MetricsSummary> metricsSummaries = new ArrayList<>();
     MetricsSummary metricsSummary = new MetricsSummary();
     metricsSummaries.add(metricsSummary);
-    metricsSummary.setMetricValue(BigDecimal.valueOf(1024 * 100));
+    metricsSummary.setMetricValue(BigDecimal.valueOf(1024 * 1024 * 100));
     metricsSummary.setCommitTime(1669776182286L);
     when(metricsStatisticService.getMetricsSummary(SnapshotSummary.TOTAL_FILE_SIZE_PROP)).thenReturn(metricsSummaries);
     JavalinTest.test((app, client) -> {
@@ -145,7 +145,7 @@ public class OverviewControllerTest {
       final okhttp3.Response resp = client.get("/", x -> {});
       OkResponse<JSONObject> result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       assert result.getResult().getJSONArray("timeLine").get(0).equals("11-30 10:43");
-      assert result.getResult().getJSONArray("size").get(0).equals("0.10MB");
+      assert result.getResult().getJSONArray("size").get(0).equals(BigDecimal.valueOf(0.1));
       assert result.getCode() == 200;
     });
   }

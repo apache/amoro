@@ -33,7 +33,7 @@ import java.util.List;
 public class OverviewFileSizeVO {
   private final List<String> timeLine = new ArrayList<>();
   //The unit of measurement is GB
-  private final List<String> size = new ArrayList<>();
+  private final List<Double> size = new ArrayList<>();
 
   public static OverviewFileSizeVO convert(List<MetricsSummary> data) {
     OverviewFileSizeVO overviewFileSizeVO = new OverviewFileSizeVO();
@@ -43,11 +43,11 @@ public class OverviewFileSizeVO {
       }
       String time = LocalDateTime.ofInstant(Instant.ofEpochMilli(e.getCommitTime()), ZoneId.systemDefault())
           .format(DateTimeFormatter.ofPattern("MM-dd HH:mm"));
-      boolean compare = e.getMetricValue().compareTo(BigDecimal.valueOf(Math.pow(1024, 3))) > 0;
-      double divisor = compare ? Math.pow(1024, 3) : Math.pow(1024, 2);
-      String unit = compare ? "G" : "MB";
-      String size =
-          e.getMetricValue().divide(BigDecimal.valueOf(divisor)).setScale(2, RoundingMode.HALF_UP) + unit;
+      double size =
+          e.getMetricValue()
+              .divide(BigDecimal.valueOf(Math.pow(1024, 3)))
+              .setScale(2, RoundingMode.HALF_UP)
+              .doubleValue();
       overviewFileSizeVO.getSize().add(size);
       overviewFileSizeVO.getTimeLine().add(time);
     });

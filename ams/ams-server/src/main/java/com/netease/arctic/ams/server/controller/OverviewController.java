@@ -93,7 +93,7 @@ public class OverviewController extends RestBaseController {
   public static void tableInfo(Context ctx) {
     try {
       String order = ctx.queryParamAsClass("order", String.class).getOrDefault("desc");
-      String orderBy = ctx.queryParamAsClass("orderBy", String.class).getOrDefault("size");
+      String orderBy = ctx.queryParamAsClass("orderBy", String.class).getOrDefault("Size");
       Integer count = ctx.queryParamAsClass("count", Integer.class).getOrDefault(10);
       List<OverviewTableInfo> result = new ArrayList<>();
       List<TableMetricsStatistic> ordered;
