@@ -71,7 +71,7 @@
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-flink-format-1.12</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
