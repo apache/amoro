@@ -138,11 +138,6 @@ public abstract class BaseOptimizePlan {
   public List<BaseOptimizeTask> plan() {
     long startTime = System.nanoTime();
 
-    // add check for base table file cache when optimize
-    if (!baseTableCacheAll()) {
-      return Collections.emptyList();
-    }
-
     if (!tableNeedPlan()) {
       LOG.debug("{} === skip {} plan", tableId(), getOptimizeType());
       return Collections.emptyList();
@@ -286,13 +281,12 @@ public abstract class BaseOptimizePlan {
     return partitionOptimizeType;
   }
 
-  public boolean baseTableCacheAll() {
-    Snapshot snapshot;
+  private boolean baseTableCacheAll() {
     if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
-      if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
+      if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+          !snapshotIsCached.test(currentBaseSnapshotId)) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", snapshot.snapshotId());
+            "wait file cache sync latest file info", currentBaseSnapshotId);
         return false;
       }
     }
@@ -306,6 +300,10 @@ public abstract class BaseOptimizePlan {
       this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
     } else {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
+    }
+
+    if (!baseTableCacheAll()) {
+      return false;
     }
 
     return tableChanged();

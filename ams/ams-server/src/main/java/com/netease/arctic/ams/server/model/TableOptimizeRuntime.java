@@ -41,7 +41,6 @@ public class TableOptimizeRuntime {
   private final Map<String, Long> latestFullOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskPlanGroup;
-  private volatile boolean isRunning;
 
   public TableOptimizeRuntime() {
   }
@@ -160,14 +159,6 @@ public class TableOptimizeRuntime {
     this.latestTaskPlanGroup = latestTaskPlanGroup;
   }
 
-  public boolean isRunning() {
-    return isRunning;
-  }
-
-  public void setRunning(boolean running) {
-    isRunning = running;
-  }
-
   @Override
   public String toString() {
     return "TableOptimizeRuntime{" +
@@ -180,7 +171,6 @@ public class TableOptimizeRuntime {
         ", latestFullOptimizeTime=" + latestFullOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskPlanGroup='" + latestTaskPlanGroup + '\'' +
-        ", isRunning=" + isRunning +
         '}';
   }
 }
