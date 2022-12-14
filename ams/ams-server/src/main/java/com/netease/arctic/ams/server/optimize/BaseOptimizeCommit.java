@@ -41,11 +41,12 @@ import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
-import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.util.SnapshotUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,11 +153,11 @@ public class BaseOptimizeCommit {
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage)) {
         LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
-        // only delete files are produced by major optimize, because the major optimize maybe support hive
-        // and produce redundant files in hive location.
+        // only delete data files are produced by major optimize, because the major optimize maybe support hive
+        // and produce redundant data files in hive location.(don't produce DeleteFile)
         // minor produced files will be clean by orphan file clean
+        Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(arcticTable, baseSnapshotId);
         for (ContentFile<?> majorAddFile : majorAddFiles) {
-          Set<String> committedFilePath = getCommittedFilesFromSnapshotId(arcticTable, baseSnapshotId);
           String filePath = getUriPath(majorAddFile.path().toString());
           if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
             arcticTable.io().deleteFile(filePath);
@@ -425,7 +426,7 @@ public class BaseOptimizeCommit {
     return result;
   }
 
-  private static Set<String> getCommittedFilesFromSnapshotId(ArcticTable arcticTable, long snapshotId) {
+  private static Set<String> getCommittedDataFilesFromSnapshotId(ArcticTable arcticTable, long snapshotId) {
     UnkeyedTable baseArcticTable;
     if (arcticTable.isKeyedTable()) {
       baseArcticTable = arcticTable.asKeyedTable().baseTable();
@@ -439,10 +440,9 @@ public class BaseOptimizeCommit {
     }
 
     Set<String> committedFilePath = new HashSet<>();
-    for (FileScanTask fileScanTask : baseArcticTable.newScan().appendsBetween(snapshotId, currentSnapshotId).planFiles()) {
-      committedFilePath.add(getUriPath(fileScanTask.file().path().toString()));
-      for (DeleteFile deleteFile : fileScanTask.deletes()) {
-        committedFilePath.add(getUriPath(deleteFile.path().toString()));
+    for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, baseArcticTable::snapshot)) {
+      for (DataFile dataFile : snapshot.addedFiles()) {
+        committedFilePath.add(getUriPath(dataFile.path().toString()));
       }
     }
 
