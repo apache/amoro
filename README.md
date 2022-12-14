@@ -72,7 +72,7 @@ Arctic support multiple processing engines as below:
 
 ## Quickstart
 
-Visit [https://arctic.netease.com/ch/docker-quickstart/](https://arctic.netease.com/ch/docker-quickstart/) to quickly explore what arctic can do.
+Visit [https://arctic.netease.com/ch/quickstart/setup/](https://arctic.netease.com/ch/quickstart/setup/) to quickly explore what arctic can do.
 
 ## Join Community 
 If you are interested in Lakehouse, Data Lake Format, welcome to join our community, we welcome any organizations, teams and individuals to grow together, and sincerely hope to help users better use Data Lake Format through open source. 
