@@ -540,7 +540,7 @@
                 <configuration>
                     <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
                     <generateGitPropertiesFile>true</generateGitPropertiesFile>
-                    <generateGitPropertiesFilename>${build.outputDirectory}/arctic/git.properties</generateGitPropertiesFilename>
+                    <generateGitPropertiesFilename>${project.build.outputDirectory}/arctic/git.properties</generateGitPropertiesFilename>
                     <includeOnlyProperties>
                         <includeOnlyProperty>^git.build.(time|version)$</includeOnlyProperty>
                         <includeOnlyProperty>^git.commit.id.(abbrev|full)$</includeOnlyProperty>
