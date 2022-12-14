@@ -171,9 +171,9 @@ public class FileUtil {
   }
 
   /**
-   * construct file path with Uniform Resource Identifier (URI) reference
-   * @param path file path
-   * @return file path with Uniform Resource Identifier (URI) reference
+   * remove Uniform Resource Identifier (URI) in file path
+   * @param path file path with Uniform Resource Identifier (URI)
+   * @return file path without Uniform Resource Identifier (URI)
    */
   public static String getUriPath(String path) {
     return URI.create(path).getPath();
