@@ -31,6 +31,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.hive.HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE;
+
 public class TestOverwriteFiles extends HiveTableTestBase {
 
   @Test
@@ -425,6 +427,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
         Maps.immutableEntry("name=bbb", "/test_path/partition3/orphan-a3.parquet")
     );
     UnkeyedTable table = testHiveTable;
+    table.updateProperties().set(DELETE_UNTRACKED_HIVE_FILE, "true").commit();
     AppendFiles appendFiles = table.newAppend();
     MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
     List<DataFile> orphanDataFiles = dataFileBuilder.buildList(orphanFiles);

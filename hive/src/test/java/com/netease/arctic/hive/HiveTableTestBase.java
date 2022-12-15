@@ -258,6 +258,6 @@ public class HiveTableTestBase extends TableTestBase {
       fileNameList.addAll(table.io().list(p.getSd().
           getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
     }
-    Assert.assertEquals(fileNameList, exceptedFiles);
+    Assert.assertEquals(exceptedFiles, fileNameList);
   }
 }
