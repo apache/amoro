@@ -30,6 +30,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,9 +99,12 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
-    List<String> collect = this.partitionToCreate.values()
-        .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
-    checkPartitionDataInAddData(collect, addFiles, deleteFiles);
+    if (PropertyUtil.propertyAsBoolean(
+        table.properties(),
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
+        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
+      checkOrphanFilesAndDelete();
+    }
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
     boolean noHiveDataFilesChanged = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles) &&
         expr != Expressions.alwaysTrue();
@@ -266,14 +270,13 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
   /**
    * check files in the partition, and delete orphan files
-   * @param partitionLocations
-   * @param dataFiles
    */
-  private void checkPartitionDataInAddData(List<String> partitionLocations,
-                                           List<DataFile> dataFiles, List<DataFile> deleteFiles) {
-    for(String partitionLocation: partitionLocations) {
+  private void checkOrphanFilesAndDelete() {
+    List<String> partitionsToCheck = this.partitionToCreate.values()
+        .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
+    for(String partitionLocation: partitionsToCheck) {
       if (!table.io().isEmptyDirectory(partitionLocation)) {
-        List<String> addFilesPathCollect = dataFiles.stream().
+        List<String> addFilesPathCollect = addFiles.stream().
             map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
         List<String> deleteFilesPathCollect = deleteFiles.stream().
             map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
