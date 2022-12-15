@@ -98,6 +98,9 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
+    List<String> collect = this.partitionToCreate.values()
+        .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
+    checkPartitionDataInAddData(collect, addFiles, deleteFiles);
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
     boolean noHiveDataFilesChanged = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles) &&
         expr != Expressions.alwaysTrue();
@@ -257,6 +260,30 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
             "can't create new hive location: " + partitionLocation + " for data file: " + df.path().toString() +
                 " is not under partition location path"
         );
+      }
+    }
+  }
+
+  /**
+   * check files in the partition, and delete orphan files
+   * @param partitionLocations
+   * @param dataFiles
+   */
+  private void checkPartitionDataInAddData(List<String> partitionLocations,
+                                           List<DataFile> dataFiles, List<DataFile> deleteFiles) {
+    for(String partitionLocation: partitionLocations) {
+      if (!table.io().isEmptyDirectory(partitionLocation)) {
+        List<String> addFilesPathCollect = dataFiles.stream().
+            map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
+        List<String> deleteFilesPathCollect = deleteFiles.stream().
+            map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
+        List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
+        for(FileStatus filePath: exisitedFiles) {
+          if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
+              !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
+            table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
+          }
+        }
       }
     }
   }
