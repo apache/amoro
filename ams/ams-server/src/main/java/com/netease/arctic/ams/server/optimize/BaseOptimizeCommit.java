@@ -433,6 +433,10 @@ public class BaseOptimizeCommit {
 
   private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
     long currentSnapshotId = UnKeyedTableUtil.getSnapshotId(table);
+    if (currentSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+      return Collections.emptySet();
+    }
+
     if (snapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
       snapshotId = null;
     }
