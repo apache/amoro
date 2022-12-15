@@ -206,8 +206,8 @@ public class ReplaceHivePartitions implements ReplacePartitions {
     }
     if (PropertyUtil.propertyAsBoolean(
         table.properties(),
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
+        HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE,
+        HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE_DEFAULT)) {
       partitionLocationMap.forEach((k, v) -> checkOrphanFilesAndDelete(v, partitionDataFileMap.get(k)));
     }
     partitionLocationMap.forEach((k, v) -> checkDataFileInSameLocation(v, partitionDataFileMap.get(k)));

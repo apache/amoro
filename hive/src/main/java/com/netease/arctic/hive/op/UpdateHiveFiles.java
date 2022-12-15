@@ -101,8 +101,8 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
 
     if (PropertyUtil.propertyAsBoolean(
         table.properties(),
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE,
-        HiveTableProperties.AUTO_SYNC_HIVE_SCHEMA_CHANGE_DEFAULT)) {
+        HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE,
+        HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE_DEFAULT)) {
       checkOrphanFilesAndDelete();
     }
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
