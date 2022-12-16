@@ -42,12 +42,6 @@ import java.util
 case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case UpdateTable(table: DataSourceV2Relation, assignments, condition) =>
-      val pre = Filter(condition.get, table)
-      val after = Filter(condition.get, table)
-
-      val newQuery = Union(pre, after)
-      newQuery
     case u: UpdateTable if isArcticRelation(u.table) =>
       val arcticRelation = asTableRelation(u.table)
       val upsertWrite = arcticRelation.table.asUpsertWrite
@@ -65,23 +59,6 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       ReplaceArcticData(arcticRelation, query, options)
 
     case _ => plan
-  }
-
-  private def distributionQuery(query: LogicalPlan, table: ArcticSparkTable): LogicalPlan =  {
-    val distribution = ArcticSparkUtils.buildRequiredDistribution(table) match {
-      case d: ClusteredDistribution =>
-        d.clustering.map(e => ArcticExpressionUtils.toCatalyst(e, query))
-      case _ =>
-        Array.empty[Expression]
-    }
-    val queryWithDistribution = if (distribution.nonEmpty) {
-      val partitionNum = conf.numShufflePartitions
-      val pp = RepartitionByExpression(distribution, query, partitionNum)
-      pp
-    } else {
-      query
-    }
-    queryWithDistribution
   }
 
   def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns,
