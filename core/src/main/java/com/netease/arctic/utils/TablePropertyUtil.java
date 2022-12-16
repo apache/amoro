@@ -89,26 +89,6 @@ public class TablePropertyUtil {
     }
   }
 
-  public static StructLikeMap<Map<String, String>> decodeToPartitionDataProperties(PartitionSpec spec, String value) {
-    try {
-      StructLikeMap<Map<String, String>> results = StructLikeMap.create(spec.partitionType());
-      TypeReference<Map<String, Map<String, String>>> typeReference =
-          new TypeReference<Map<String, Map<String, String>>>() {};
-      Map<String, Map<String, String>> map = new ObjectMapper().readValue(value, typeReference);
-      for (String key : map.keySet()) {
-        if (spec.isUnpartitioned()) {
-          results.put(EMPTY_STRUCT, map.get(key));
-        } else {
-          StructLike partitionData = DataFiles.data(spec, key);
-          results.put(partitionData, map.get(key));
-        }
-      }
-      return results;
-    } catch (JsonProcessingException e) {
-      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
-    }
-  }
-
   public static String encodePartitionProperties(PartitionSpec spec,
       StructLikeMap<Map<String, String>> partitionProperties) {
     Map<String, Map<String, String>> stringKeyMap = Maps.newHashMap();

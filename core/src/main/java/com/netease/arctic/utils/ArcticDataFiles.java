@@ -97,8 +97,7 @@ public class ArcticDataFiles {
   }
 
   public static GenericRecord data(PartitionSpec spec, String partitionPath) {
-    List<String> collect = spec.fields().stream().map(PartitionField::name).collect(Collectors.toList());
-    GenericRecord data = GenericRecord.create(spec.schema().select(collect));
+    GenericRecord data = GenericRecord.create(spec.schema());
     String[] partitions = partitionPath.split("/", -1);
     Preconditions.checkArgument(partitions.length <= spec.fields().size(),
         "Invalid partition data, too many fields (expecting %s): %s",
