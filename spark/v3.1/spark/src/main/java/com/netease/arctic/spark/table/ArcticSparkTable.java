@@ -212,12 +212,13 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
                 TableProperties.UPSERT_ENABLED, "false"));
   }
 
-  public void dropPartition(List<String> partitions) throws TException, InterruptedException {
-    if (arcticTable instanceof SupportHive) {
-      ((SupportHive)arcticTable).dropPartition(partitions);
-      // TODO: 2022/12/14 iceberg table marked file deletion
-      } else {
-      // TODO: 2022/12/14  
+  public void dropPartitions(String partitions) throws TException, InterruptedException {
+    if (arcticTable.isUnkeyedTable()) {
+      arcticTable.asUnkeyedTable().dropPartitions(partitions);
+    } else {
+      arcticTable.asKeyedTable().changeTable().dropPartitions(partitions);
+      arcticTable.asKeyedTable().baseTable().dropPartitions(partitions);
     }
+
   }
 }

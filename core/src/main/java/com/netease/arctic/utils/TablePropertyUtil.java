@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -79,6 +80,26 @@ public class TablePropertyUtil {
           results.put(EMPTY_STRUCT, map.get(key));
         } else {
           StructLike partitionData = ArcticDataFiles.data(spec, key);
+          results.put(partitionData, map.get(key));
+        }
+      }
+      return results;
+    } catch (JsonProcessingException e) {
+      throw new UnsupportedOperationException("Failed to decode partition max txId ", e);
+    }
+  }
+
+  public static StructLikeMap<Map<String, String>> decodeToPartitionDataProperties(PartitionSpec spec, String value) {
+    try {
+      StructLikeMap<Map<String, String>> results = StructLikeMap.create(spec.partitionType());
+      TypeReference<Map<String, Map<String, String>>> typeReference =
+          new TypeReference<Map<String, Map<String, String>>>() {};
+      Map<String, Map<String, String>> map = new ObjectMapper().readValue(value, typeReference);
+      for (String key : map.keySet()) {
+        if (spec.isUnpartitioned()) {
+          results.put(EMPTY_STRUCT, map.get(key));
+        } else {
+          StructLike partitionData = DataFiles.data(spec, key);
           results.put(partitionData, map.get(key));
         }
       }

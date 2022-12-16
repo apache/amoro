@@ -35,37 +35,18 @@ import com.netease.arctic.trace.TracedSchemaUpdate;
 import com.netease.arctic.trace.TracedTransaction;
 import com.netease.arctic.trace.TracedUpdateProperties;
 import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.iceberg.AppendFiles;
-import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.ExpireSnapshots;
-import org.apache.iceberg.HasTableOperations;
-import org.apache.iceberg.HistoryEntry;
-import org.apache.iceberg.ManageSnapshots;
-import org.apache.iceberg.OverwriteFiles;
-import org.apache.iceberg.PartitionSpec;
-import org.apache.iceberg.ReplacePartitions;
-import org.apache.iceberg.ReplaceSortOrder;
-import org.apache.iceberg.RewriteFiles;
-import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
-import org.apache.iceberg.RowDelta;
-import org.apache.iceberg.Schema;
-import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.SortOrder;
-import org.apache.iceberg.Table;
-import org.apache.iceberg.TableOperations;
-import org.apache.iceberg.TableScan;
-import org.apache.iceberg.Transaction;
-import org.apache.iceberg.UpdateLocation;
-import org.apache.iceberg.UpdatePartitionSpec;
-import org.apache.iceberg.UpdateProperties;
-import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.*;
 import org.apache.iceberg.encryption.EncryptionManager;
+import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.util.StructLikeMap;
+import org.apache.thrift.TException;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Base implementation of {@link UnkeyedTable}, wrapping a {@link Table}.
@@ -323,5 +304,20 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
     return new PartitionPropertiesUpdate(this, transaction);
+  }
+
+  @Override
+  public void dropPartitions(String partitions) throws TException, InterruptedException {
+    CloseableIterable<FileScanTask> fileScanTasks = icebergTable.newScan().planFiles();
+    StructLike partitionData = DataFiles.data(spec(), partitions);
+    List<DataFile> partitionFiles = new ArrayList<>();
+    for (FileScanTask fileScanTask : fileScanTasks) {
+      if (fileScanTask.file().partition().equals(partitionData)) {
+        partitionFiles.add(fileScanTask.file());
+      }
+    }
+    DeleteFiles deleteFiles = icebergTable.newDelete();
+    partitionFiles.forEach(deleteFiles::deleteFile);
+    deleteFiles.commit();
   }
 }

@@ -41,5 +41,4 @@ public interface SupportHive {
    */
   HMSClientPool getHMSClient();
 
-  void dropPartition(List<String> partitions) throws TException, InterruptedException;
 }

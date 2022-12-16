@@ -22,6 +22,7 @@ import com.netease.arctic.op.UpdatePartitionProperties;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.util.StructLikeMap;
+import org.apache.thrift.TException;
 
 import java.util.Map;
 
@@ -57,4 +58,6 @@ public interface UnkeyedTable extends ArcticTable, Table {
   default UnkeyedTable asUnkeyedTable() {
     return this;
   }
+
+  void dropPartitions(String partitions) throws TException, InterruptedException;
 }

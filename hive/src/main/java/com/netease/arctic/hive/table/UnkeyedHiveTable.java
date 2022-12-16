@@ -18,6 +18,9 @@
 
 package com.netease.arctic.hive.table;
 
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.hive.HMSClientPool;
 import com.netease.arctic.hive.HiveTableProperties;
@@ -33,7 +36,6 @@ import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.hadoop.hive.metastore.PartitionDropOptions;
-import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -43,6 +45,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
@@ -120,14 +123,23 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   }
 
   @Override
-  public void dropPartition(List<String> partitions) throws TException, InterruptedException {
+  public void dropPartitions(String partitions) throws TException, InterruptedException {
+    super.dropPartitions(partitions);
+    List<String> partitionList = new ArrayList<> ();
+    for (String p : partitions.split("/")) {
+      String[] paramSplit = p.split("=");
+      if (paramSplit.length == 2) {
+        partitionList.add(paramSplit[1]);
+      }
+    }
     hiveClient.run(client -> {
           PartitionDropOptions options = PartitionDropOptions.instance()
               .deleteData(false)
               .ifExists(true)
               .purgeData(false)
               .returnResults(false);
-          return client.dropPartition(tableIdentifier.getDatabase(), tableIdentifier.getTableName(), partitions, options);
+          return client.dropPartition(tableIdentifier.getDatabase(),
+              tableIdentifier.getTableName(), partitionList, options);
         });
   }
 

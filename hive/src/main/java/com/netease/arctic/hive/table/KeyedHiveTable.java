@@ -95,11 +95,6 @@ public class KeyedHiveTable extends BaseKeyedTable implements SupportHive {
     return hiveClient;
   }
 
-  @Override
-  public void dropPartition(List<String> partitions) {
-
-  }
-
   public static class HiveChangeInternalTable extends BaseUnkeyedTable implements ChangeTable {
 
     public HiveChangeInternalTable(
