@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,68 +16,98 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.utils.map;
+package com.netease.arctic.utils;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import com.netease.arctic.data.IcebergContentFile;
 import org.apache.avro.util.Utf8;
+import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.util.ByteBuffers;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 
-/**
- * {@link SerializationUtils} class internally uses {@link Kryo} serializer for serializing / deserializing objects.
- */
 public class SerializationUtils {
 
-  // Caching kryo serializer to avoid creating kryo instance for every serde operation
-  private static final ThreadLocal<KryoSerializerInstance> SERIALIZER_REF =
-      ThreadLocal.withInitial(KryoSerializerInstance::new);
+  private static final ThreadLocal<KryoSerializerInstance> SERIALIZER =
+          ThreadLocal.withInitial(KryoSerializerInstance::new);
 
-  /**
-   * <p>
-   * Serializes an {@code Object} to a byte array for storage/serialization.
-   * </p>
-   *
-   * @param obj the object to serialize to bytes
-   * @return a byte[] with the converted Serializable
-   * @throws IOException if the serialization fails
-   */
-  public static byte[] serialize(final Object obj) throws IOException {
-    return SERIALIZER_REF.get().serialize(obj);
+  public static ByteBuffer toByteBuffer(Object obj) {
+    try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+      try (ObjectOutputStream oos = new ObjectOutputStream(bos)) {
+        oos.writeObject(obj);
+        oos.flush();
+        return ByteBuffer.wrap(bos.toByteArray());
+      }
+    } catch (IOException e) {
+      throw new IllegalArgumentException("serialization error of " + obj, e);
+    }
   }
 
-  /**
-   * <p>
-   * Deserializes a single {@code Object} from an array of bytes.
-   * </p>
-   *
-   * <p>
-   * If the call site incorrectly types the return value, a {@link ClassCastException} is thrown from the call site.
-   * Without Generics in this declaration, the call site must type cast and can cause the same ClassCastException. Note
-   * that in both cases, the ClassCastException is in the call site, not in this method.
-   * </p>
-   *
-   * @param <T> the object type to be deserialized
-   * @param objectData the serialized object, must not be null
-   * @return the deserialized object
-   * @throws IllegalArgumentException if {@code objectData} is {@code null}
-   */
+  public static ByteBuffer byteArrayToByteBuffer(byte[] bytes) {
+    return ByteBuffer.wrap(bytes);
+  }
+
+  public static byte[] byteBufferToByteArray(ByteBuffer buffer) {
+    return ByteBuffers.toByteArray(buffer);
+  }
+
+  public static Object toObject(ByteBuffer buffer) {
+    byte[] bytes = ByteBuffers.toByteArray(buffer);
+    try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
+      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
+        return ois.readObject();
+      }
+    } catch (IOException | ClassNotFoundException e) {
+      throw new IllegalArgumentException("deserialization error ", e);
+    }
+  }
+
+  public static Object toObject(byte[] bytes) {
+    try (ByteArrayInputStream bis = new ByteArrayInputStream(bytes)) {
+      try (ObjectInputStream ois = new ObjectInputStream(bis)) {
+        return ois.readObject();
+      }
+    } catch (IOException | ClassNotFoundException e) {
+      throw new IllegalArgumentException("deserialization error ", e);
+    }
+  }
+
+  public static ContentFile<?> toInternalTableFile(ByteBuffer buffer) {
+    return (ContentFile<?>) toObject(buffer);
+  }
+
+  public static ContentFile<?> toInternalTableFile(byte[] bytes) {
+    return (ContentFile<?>) toObject(bytes);
+  }
+
+  public static IcebergContentFile toIcebergContentFile(ByteBuffer buffer) {
+    return (IcebergContentFile) toObject(buffer);
+  }
+
+  public static byte[] serialize(final Object obj) throws IOException {
+    return SERIALIZER.get().serialize(obj);
+  }
+
   public static <T> T deserialize(final byte[] objectData) {
     if (objectData == null) {
       throw new IllegalArgumentException("The byte[] must not be null");
     }
-    return (T) SERIALIZER_REF.get().deserialize(objectData);
+    return (T) SERIALIZER.get().deserialize(objectData);
   }
 
   private static class KryoSerializerInstance implements Serializable {
     public static final int KRYO_SERIALIZER_INITIAL_BUFFER_SIZE = 1048576;
     private final Kryo kryo;
-    // Caching ByteArrayOutputStream to avoid recreating it for every operation
     private final ByteArrayOutputStream baos;
 
     KryoSerializerInstance() {
@@ -93,7 +123,6 @@ public class SerializationUtils {
       Output output = new Output(baos);
       this.kryo.writeClassAndObject(output, obj);
       output.close();
-      System.out.println("#####   " + new String(baos.toByteArray()));
       return baos.toByteArray();
     }
 
@@ -102,10 +131,6 @@ public class SerializationUtils {
     }
   }
 
-  /**
-   * This class has a no-arg constructor, suitable for use with reflection instantiation. For Details checkout
-   * com.twitter.chill.KryoBase.
-   */
   private static class KryoInstantiator implements Serializable {
 
     public Kryo newKryo() {
@@ -128,10 +153,6 @@ public class SerializationUtils {
 
   }
 
-  /**
-   * NOTE: This {@link Serializer} could deserialize instance of {@link Utf8} serialized
-   *       by implicitly generated Kryo serializer (based on {@link com.esotericsoftware.kryo.serializers.FieldSerializer}
-   */
   private static class AvroUtf8Serializer extends Serializer<Utf8> {
 
     @SuppressWarnings("unchecked")

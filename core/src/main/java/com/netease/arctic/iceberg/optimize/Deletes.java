@@ -67,8 +67,9 @@ public class Deletes {
   public static StructLikeSet toEqualitySet(CloseableIterable<StructLike> eqDeletes, Types.StructType eqType) {
     try (CloseableIterable<StructLike> deletes = eqDeletes) {
       StructLikeSet deleteSet = StructLikeSet.createMemorySet(eqType);
-      for (StructLike delete : deletes)
+      for (StructLike delete : deletes) {
         deleteSet.add(delete);
+      }
       return deleteSet;
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close equality delete source", e);

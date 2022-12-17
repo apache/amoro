@@ -37,7 +37,7 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
   private String mapIdentifier;
   private int putCount = 0;
 
-  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier)  {
+  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier) {
     Validate.isTrue(mapIdentifier != null, "Map identifier can not be null");
     this.inMemoryMap = Maps.newHashMap();
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
@@ -72,25 +72,27 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
   }
 
   public K get(T key) {
-    return Optional.ofNullable(inMemoryMap.get(key)).
-            orElse(diskBasedMap.map(diskMap -> diskMap.get(key)).orElse(null));
+    return Optional.ofNullable(inMemoryMap.get(key))
+            .orElse(diskBasedMap.map(diskMap -> diskMap.get(key)).orElse(null));
   }
 
   public void put(T key, K value) {
     if (estimatedPayloadSize == 0) {
       this.estimatedPayloadSize = estimateSize(key) + estimateSize(value);
     } else if (++putCount % NUMBER_OF_RECORDS_TO_ESTIMATE_PAYLOAD_SIZE == 0) {
-      this.estimatedPayloadSize = (long) (this.estimatedPayloadSize * 0.9
-              + (estimateSize(key) + estimateSize(value)) * 0.1);
+      this.estimatedPayloadSize = (long) (this.estimatedPayloadSize * 0.9 +
+              (estimateSize(key) + estimateSize(value)) * 0.1);
       this.currentInMemoryMapSize = this.inMemoryMap.size() * this.estimatedPayloadSize;
     }
 
     if (this.currentInMemoryMapSize < maxInMemorySizeInBytes) {
-      if (inMemoryMap.put(key, value) == null)
+      if (inMemoryMap.put(key, value) == null) {
         currentInMemoryMapSize += this.estimatedPayloadSize;
+      }
     } else {
-      if (!diskBasedMap.isPresent())
+      if (!diskBasedMap.isPresent()) {
         diskBasedMap = Optional.of(new SimpleSpilledMap<>());
+      }
       diskBasedMap.get().put(key, value);
     }
   }
@@ -109,16 +111,17 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
     diskBasedMap.ifPresent(diskMap -> diskMap.close());
     currentInMemoryMapSize = 0L;
   }
+
   private long estimateSize(Object obj) {
     return ObjectSizeCalculator.getObjectSize(obj);
   }
 
-  /**
-   * This class provides a disk map with RocksDBBackend
-   */
-  protected class SimpleSpilledMap<T extends Serializable, K extends Serializable> implements SimpleMap<T, K>{
+  protected class SimpleSpilledMap<T extends Serializable, K extends Serializable>
+          implements SimpleMap<T, K> {
+
     private RocksDBBackend rocksDB = RocksDBBackend.getOrCreateInstance();
-    public SimpleSpilledMap(){
+
+    public SimpleSpilledMap() {
       rocksDB.addColumnFamily(mapIdentifier);
     }
 

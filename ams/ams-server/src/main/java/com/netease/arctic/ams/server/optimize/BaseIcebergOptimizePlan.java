@@ -30,7 +30,7 @@ import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
@@ -118,25 +118,25 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
         baseFiles.stream().map(dataFile -> {
           IcebergContentFile icebergContentFile =
               new IcebergContentFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
-          return SerializationUtil.toByteBuffer(icebergContentFile);
+          return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     List<ByteBuffer> insertFileBytesList =
         insertFiles.stream().map(dataFile -> {
           IcebergContentFile icebergContentFile =
               new IcebergContentFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
-          return SerializationUtil.toByteBuffer(icebergContentFile);
+          return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     List<ByteBuffer> eqDeleteFileBytesList =
         eqDeleteFiles.stream().map(deleteFile -> {
           IcebergContentFile icebergContentFile =
               new IcebergContentFile(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
-          return SerializationUtil.toByteBuffer(icebergContentFile);
+          return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     List<ByteBuffer> posDeleteFileBytesList =
         posDeleteFiles.stream().map(deleteFile -> {
           IcebergContentFile icebergContentFile =
               new IcebergContentFile(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
-          return SerializationUtil.toByteBuffer(icebergContentFile);
+          return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     optimizeTask.setBaseFiles(baseFileBytesList);
     optimizeTask.setInsertFiles(insertFileBytesList);

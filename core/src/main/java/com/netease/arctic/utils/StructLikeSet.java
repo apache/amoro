@@ -34,6 +34,7 @@ public class StructLikeSet {
                                                  Long maxInMemorySizeInBytes, String mapIdentifier) {
     return new StructLikeSet(type, maxInMemorySizeInBytes, mapIdentifier);
   }
+
   private static final Integer _V = 0;
   private StructLikeBaseMap<Integer> structLikeMap;
 

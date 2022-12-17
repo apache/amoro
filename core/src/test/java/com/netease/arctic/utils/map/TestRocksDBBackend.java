@@ -53,7 +53,7 @@ public class TestRocksDBBackend {
       String value = rocksDBBackend.get(CF_NAME, "name");
       Assert.assertTrue(false);
     } catch (Throwable t) {
-      Assert.assertTrue(t instanceof IllegalStateException);
+      Assert.assertTrue(t instanceof IllegalArgumentException);
     }
   }
 

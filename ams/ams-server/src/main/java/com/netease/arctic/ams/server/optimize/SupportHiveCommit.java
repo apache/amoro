@@ -28,9 +28,9 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.IdGenerator;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -79,7 +79,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
         for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
           BaseOptimizeTaskRuntime optimizeRuntime = optimizeTaskItem.getOptimizeRuntime();
           List<DataFile> targetFiles = optimizeRuntime.getTargetFiles().stream()
-              .map(fileByte -> (DataFile) SerializationUtil.toInternalTableFile(fileByte))
+              .map(fileByte -> (DataFile) SerializationUtils.toInternalTableFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
               .mapToLong(dataFile -> TableFileUtils.parseFileTidFromFileName(dataFile.path().toString()))
@@ -117,7 +117,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
             }
 
             DataFile finalDataFile = moveTargetFiles(targetFile, partitionPathMap.get(partition));
-            newTargetFiles.add(SerializationUtil.toByteBuffer(finalDataFile));
+            newTargetFiles.add(SerializationUtils.toByteBuffer(finalDataFile));
           }
 
           optimizeRuntime.setTargetFiles(newTargetFiles);

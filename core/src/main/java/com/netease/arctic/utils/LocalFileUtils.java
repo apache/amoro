@@ -9,7 +9,8 @@ public class LocalFileUtils {
 
   public static void deleteDirectory(File directory) throws IOException {
     if (directory.exists()) {
-      Files.walk(directory.toPath()).sorted(Comparator.reverseOrder()).map(java.nio.file.Path::toFile).forEach(File::delete);
+      Files.walk(directory.toPath()).sorted(Comparator.reverseOrder())
+              .map(java.nio.file.Path::toFile).forEach(File::delete);
       directory.delete();
       if (directory.exists()) {
         throw new IOException("Unable to delete directory " + directory);

@@ -36,8 +36,8 @@ public class StructLikeWrapper implements Serializable {
     return new StructLikeWrapper(struct);
   }
 
-  private transient final Comparator<StructLike> comparator;
-  private transient final JavaHash<StructLike> structHash;
+  private final transient Comparator<StructLike> comparator;
+  private final transient JavaHash<StructLike> structHash;
   private transient Integer hashCode;
   private StructLike struct;
 

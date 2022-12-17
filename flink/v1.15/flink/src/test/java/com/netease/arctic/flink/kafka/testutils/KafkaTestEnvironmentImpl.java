@@ -16,7 +16,6 @@
  */
 package com.netease.arctic.flink.kafka.testutils;
 
-import kafka.metrics.KafkaMetricsReporter;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
 import org.apache.commons.collections.list.UnmodifiableList;

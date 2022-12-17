@@ -20,10 +20,10 @@ package com.netease.arctic.iceberg;
 
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.utils.map.StructLikeMemoryMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.utils.map.StructLikeMemoryMap;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;

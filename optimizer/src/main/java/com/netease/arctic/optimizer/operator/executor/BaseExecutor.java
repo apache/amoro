@@ -27,8 +27,8 @@ import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
+import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
-import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -89,7 +89,7 @@ public abstract class BaseExecutor implements Executor {
     List<ByteBuffer> baseFileBytesList = new ArrayList<>();
     for (ContentFile<?> targetFile : targetFiles) {
       totalFileSize += targetFile.fileSizeInBytes();
-      baseFileBytesList.add(SerializationUtil.toByteBuffer(targetFile));
+      baseFileBytesList.add(SerializationUtils.toByteBuffer(targetFile));
     }
 
     OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();

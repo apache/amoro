@@ -41,6 +41,25 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
     return new ChangedLsn(transactionId, fileOffset);
   }
 
+  public static ChangedLsn of(byte[] bytes) {
+    return of(((long) bytes[15] << 56) |
+                    ((long) bytes[14] & 0xff) << 48 |
+                    ((long) bytes[13] & 0xff) << 40 |
+                    ((long) bytes[12] & 0xff) << 32 |
+                    ((long) bytes[11] & 0xff) << 24 |
+                    ((long) bytes[10] & 0xff) << 16 |
+                    ((long) bytes[9] & 0xff) << 8 |
+                    ((long) bytes[8] & 0xff),
+            ((long) bytes[7] << 56) |
+                    ((long) bytes[6] & 0xff) << 48 |
+                    ((long) bytes[5] & 0xff) << 40 |
+                    ((long) bytes[4] & 0xff) << 32 |
+                    ((long) bytes[3] & 0xff) << 24 |
+                    ((long) bytes[2] & 0xff) << 16 |
+                    ((long) bytes[1] & 0xff) << 8 |
+                    ((long) bytes[0] & 0xff));
+  }
+
   private ChangedLsn(long transactionId, long fileOffset) {
     this.transactionId = transactionId;
     this.fileOffset = fileOffset;
@@ -94,41 +113,22 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
 
   public byte[] toBytes() {
     return new byte[] {
-            (byte) transactionId,
-            (byte) (transactionId >> 8),
-            (byte) (transactionId >> 16),
-            (byte) (transactionId >> 24),
-            (byte) (transactionId >> 32),
-            (byte) (transactionId >> 40),
-            (byte) (transactionId >> 48),
-            (byte) (transactionId >> 56),
-            (byte) fileOffset,
-            (byte) (fileOffset >> 8),
-            (byte) (fileOffset >> 16),
-            (byte) (fileOffset >> 24),
-            (byte) (fileOffset >> 32),
-            (byte) (fileOffset >> 40),
-            (byte) (fileOffset >> 48),
-            (byte) (fileOffset >> 56)
+        (byte) transactionId,
+        (byte) (transactionId >> 8),
+        (byte) (transactionId >> 16),
+        (byte) (transactionId >> 24),
+        (byte) (transactionId >> 32),
+        (byte) (transactionId >> 40),
+        (byte) (transactionId >> 48),
+        (byte) (transactionId >> 56),
+        (byte) fileOffset,
+        (byte) (fileOffset >> 8),
+        (byte) (fileOffset >> 16),
+        (byte) (fileOffset >> 24),
+        (byte) (fileOffset >> 32),
+        (byte) (fileOffset >> 40),
+        (byte) (fileOffset >> 48),
+        (byte) (fileOffset >> 56)
     };
-  }
-
-  public static ChangedLsn of(byte[] bytes) {
-    return of(((long) bytes[15] << 56)
-            | ((long) bytes[14] & 0xff) << 48
-            | ((long) bytes[13] & 0xff) << 40
-            | ((long) bytes[12] & 0xff) << 32
-            | ((long) bytes[11] & 0xff) << 24
-            | ((long) bytes[10] & 0xff) << 16
-            | ((long) bytes[9] & 0xff) << 8
-            | ((long) bytes[8] & 0xff),
-            ((long) bytes[7] << 56)
-            | ((long) bytes[6] & 0xff) << 48
-            | ((long) bytes[5] & 0xff) << 40
-            | ((long) bytes[4] & 0xff) << 32
-            | ((long) bytes[3] & 0xff) << 24
-            | ((long) bytes[2] & 0xff) << 16
-            | ((long) bytes[1] & 0xff) << 8
-            | ((long) bytes[0] & 0xff));
   }
 }
