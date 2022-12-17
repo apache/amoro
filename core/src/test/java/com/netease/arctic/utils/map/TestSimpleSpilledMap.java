@@ -31,7 +31,8 @@ public class TestSimpleSpilledMap {
   private SimpleSpillableMap.SimpleSpilledMap map;
   @Before
   public void createMap() {
-    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L, "TEST");
+    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L,
+            TestRocksDBBackend.CF_NAME);
     map = spillableMap.new SimpleSpilledMap();
   }
 

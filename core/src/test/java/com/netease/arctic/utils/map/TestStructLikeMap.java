@@ -61,7 +61,7 @@ public class TestStructLikeMap {
   @Test
   public void testSpillableMap() throws UnsupportedEncodingException {
     testMap(StructLikeSpillableMap.create(TYPE,
-            50L, "TEST"));
+            50L, TestRocksDBBackend.CF_NAME));
   }
 
   private void testMap(StructLikeBaseMap actualMap) throws UnsupportedEncodingException {

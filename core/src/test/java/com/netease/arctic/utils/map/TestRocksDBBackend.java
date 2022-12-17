@@ -13,7 +13,7 @@ import java.util.List;
 
 public class TestRocksDBBackend {
 
-  private static final String CF_NAME = "test_cf";
+  public static final String CF_NAME = "TEST";
 
   @Before
   public void setup() {
