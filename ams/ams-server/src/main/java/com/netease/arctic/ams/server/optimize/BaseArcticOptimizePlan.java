@@ -182,13 +182,12 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     return optimizeTask;
   }
 
-  public boolean baseTableCacheAll() {
-    Snapshot snapshot;
+  private boolean baseTableCacheAll() {
     if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
-      if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
+      if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+          !snapshotIsCached.test(currentBaseSnapshotId)) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", snapshot.snapshotId());
+            "wait file cache sync latest file info", currentBaseSnapshotId);
         return false;
       }
     }
@@ -197,15 +196,15 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   }
 
   public boolean tableNeedPlan() {
-    if (!baseTableCacheAll()) {
-      return false;
-    }
-
     if (arcticTable.isKeyedTable()) {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
       this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
     } else {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
+    }
+
+    if (!baseTableCacheAll()) {
+      return false;
     }
 
     return tableChanged();

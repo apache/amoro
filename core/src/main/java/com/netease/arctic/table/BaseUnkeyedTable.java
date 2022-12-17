@@ -101,7 +101,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public TableScan newScan() {
-    return icebergTable.newScan().includeColumnStats();
+    return icebergTable.newScan();
   }
 
   @Override

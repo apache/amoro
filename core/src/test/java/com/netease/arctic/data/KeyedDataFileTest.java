@@ -43,8 +43,6 @@ public class KeyedDataFileTest extends TableTestBase {
     Long txId = AMS.handler().getTableCurrentTxId(PK_TABLE_ID.buildTableIdentifier());
     Assert.assertEquals(0, defaultKeyedFile.node().index());
     Assert.assertEquals(txId, defaultKeyedFile.transactionId());
-    Assert.assertEquals(ChangedLsn.of(txId, 1), defaultKeyedFile.minLsn());
-    Assert.assertEquals(ChangedLsn.of(txId,2), defaultKeyedFile.maxLsn());
 
   }
 

@@ -77,22 +77,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   @Override
-  public ChangedLsn minLsn() {
-    if (minLsn == null) {
-      parse();
-    }
-    return minLsn;
-  }
-
-  @Override
-  public ChangedLsn maxLsn() {
-    if (maxLsn == null) {
-      parse();
-    }
-    return maxLsn;
-  }
-
-  @Override
   public DataFileType type() {
     if (meta == null) {
       parse();
