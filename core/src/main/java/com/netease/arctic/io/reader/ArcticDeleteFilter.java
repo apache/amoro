@@ -22,7 +22,7 @@ import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeMap;
+import com.netease.arctic.utils.map.StructLikeMemoryMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
@@ -226,7 +226,7 @@ public abstract class ArcticDeleteFilter<T> {
     CloseableIterable<StructLike> structLikeIterable = CloseableIterable.transform(
         records, record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
 
-    StructLikeMap<ChangedLsn> structLikeMap = StructLikeMap.create(pkSchema.asStruct());
+    StructLikeMemoryMap<ChangedLsn> structLikeMap = StructLikeMemoryMap.create(pkSchema.asStruct());
     //init map
     try (CloseableIterable<StructLike> deletes = structLikeIterable) {
       Iterator<StructLike> it = getArcticFileIo() == null ? deletes.iterator()

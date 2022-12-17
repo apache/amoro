@@ -28,7 +28,7 @@ import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -82,7 +82,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               .map(fileByte -> (DataFile) SerializationUtil.toInternalTableFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
-              .mapToLong(dataFile -> FileUtil.parseFileTidFromFileName(dataFile.path().toString()))
+              .mapToLong(dataFile -> TableFileUtils.parseFileTidFromFileName(dataFile.path().toString()))
               .max()
               .orElse(0L);
 
@@ -146,7 +146,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
 
   private DataFile moveTargetFiles(DataFile targetFile, String hiveLocation) {
     String oldFilePath = targetFile.path().toString();
-    String newFilePath = FileUtil.getNewFilePath(hiveLocation, oldFilePath);
+    String newFilePath = TableFileUtils.getNewFilePath(hiveLocation, oldFilePath);
 
     if (!arcticTable.io().exists(newFilePath)) {
       arcticTable.io().rename(oldFilePath, newFilePath);

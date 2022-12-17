@@ -37,7 +37,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.FileScanTask;
@@ -230,7 +230,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         if (location.endsWith(METADATA_FOLDER_NAME) || location.endsWith(DATA_FOLDER_NAME)) {
           return 0;
         }
-        FileUtil.deleteEmptyDirectory(io, location, exclude);
+        TableFileUtils.deleteEmptyDirectory(io, location, exclude);
         return deleteFileCnt;
       } else if (io.isEmptyDirectory(location) &&
           fileStatus.getModificationTime() < lastTime) {
@@ -239,7 +239,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
         }
 
         if (execute) {
-          FileUtil.deleteEmptyDirectory(io, location, exclude);
+          TableFileUtils.deleteEmptyDirectory(io, location, exclude);
         }
         LOG.info("delete[execute={}] empty dir : {}", location,
             formatTime(fileStatus.getModificationTime()));

@@ -9,7 +9,7 @@ import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
 import org.apache.iceberg.DataFile;
@@ -426,7 +426,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     deleteLocations.forEach(partitionAndLocations::remove);
 
     addFiles.forEach(kv -> {
-      String partLocation = FileUtil.getFileDir(kv.getValue());
+      String partLocation = TableFileUtils.getFileDir(kv.getValue());
       partitionAndLocations.put(
           kv.getKey(),
           partLocation

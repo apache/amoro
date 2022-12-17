@@ -31,7 +31,7 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.SerializationUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
@@ -395,7 +395,7 @@ public class BaseOptimizeCommit {
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
-        return FileUtil.parseFileNodeFromFileName(contentFile.path().toString());
+        return TableFileUtils.parseFileNodeFromFileName(contentFile.path().toString());
       }
 
       return null;
@@ -403,7 +403,7 @@ public class BaseOptimizeCommit {
 
     return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtil::toInternalTableFile)
         .filter(posDeleteFile ->
-            newFileNodes.contains(FileUtil.parseFileNodeFromFileName(posDeleteFile.path().toString())))
+            newFileNodes.contains(TableFileUtils.parseFileNodeFromFileName(posDeleteFile.path().toString())))
         .collect(Collectors.toSet());
   }
 
