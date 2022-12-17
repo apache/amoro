@@ -1,11 +1,11 @@
 package com.netease.arctic.utils.map;
 
 import com.google.common.collect.Maps;
-import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.openjdk.jol.info.GraphLayout;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -59,8 +59,8 @@ public class TestSimpleSpillableMap {
 
   @Before
   public void createMap() {
-    keySize = ObjectSizeCalculator.getObjectSize(new Key());
-    valueSize = ObjectSizeCalculator.getObjectSize(new Value());
+    keySize = GraphLayout.parseInstance(new Key()).totalSize();
+    keySize = GraphLayout.parseInstance(new Value()).totalSize();
   }
 
   @After
