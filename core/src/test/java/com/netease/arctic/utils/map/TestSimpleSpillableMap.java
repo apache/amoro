@@ -28,20 +28,23 @@ public class TestSimpleSpillableMap {
 
   @Test
   public void testMemoryMap() {
-    Assert.assertTrue( testMap(100, 100)
-            .getSizeOfFileOnDiskInBytes() == 0);
+    SimpleSpillableMap map = testMap(10, 10);
+    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
+    map.close();
   }
 
   @Test
   public void testSpilledMap() {
-    Assert.assertTrue( testMap(0, 20)
-            .getSizeOfFileOnDiskInBytes() > 0);
+    SimpleSpillableMap map = testMap(0, 20);
+    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
+    map.close();
   }
 
   @Test
   public void testSpillableMap() {
-    Assert.assertTrue( testMap(10, 20)
-            .getSizeOfFileOnDiskInBytes() > 0);
+    SimpleSpillableMap map = testMap(10, 20);
+    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
+    map.close();
   }
 
   private SimpleSpillableMap testMap(long expectMemorySize, int expectKeyCount) {
