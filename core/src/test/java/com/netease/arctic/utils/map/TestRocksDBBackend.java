@@ -22,12 +22,12 @@ public class TestRocksDBBackend {
   @Test
   public void testAddAndDropColumnFamily() throws Exception {
     RocksDBBackend rocksDBBackend = RocksDBBackend.getOrCreateInstance();
+    int originalCfCount = rocksDBBackend.listColumnFamilies().size();
     rocksDBBackend.addColumnFamily(CF_NAME);
-    Assert.assertEquals(2, rocksDBBackend.listColumnFamilies().size());
-    Assert.assertEquals("default", new String(rocksDBBackend.listColumnFamilies().get(0).getName(), "utf8"));
-    Assert.assertEquals(CF_NAME, new String(rocksDBBackend.listColumnFamilies().get(1).getName(), "utf8"));
+    Assert.assertEquals(originalCfCount + 1, rocksDBBackend.listColumnFamilies().size());
+    Assert.assertEquals(CF_NAME, new String(rocksDBBackend.listColumnFamilies().get(originalCfCount).getName(), "utf8"));
     rocksDBBackend.dropColumnFamily(CF_NAME);
-    Assert.assertEquals(1, rocksDBBackend.listColumnFamilies().size());
+    Assert.assertEquals(originalCfCount, rocksDBBackend.listColumnFamilies().size());
   }
 
   @Test
