@@ -18,9 +18,9 @@
 
 package com.netease.arctic.utils.map;
 
-import jdk.nashorn.internal.ir.debug.ObjectSizeCalculator;
 import org.apache.commons.lang.Validate;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.openjdk.jol.info.GraphLayout;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -30,11 +30,11 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
 
   private static final int NUMBER_OF_RECORDS_TO_ESTIMATE_PAYLOAD_SIZE = 100;
   private final long maxInMemorySizeInBytes;
+  private final String mapIdentifier;
   private Map<T, K> inMemoryMap;
   private Optional<SimpleSpilledMap<T, K>> diskBasedMap = Optional.empty();
   private Long currentInMemoryMapSize;
   private long estimatedPayloadSize = 0;
-  private String mapIdentifier;
   private int putCount = 0;
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier) {
@@ -49,7 +49,7 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
    * Number of bytes spilled to disk.
    */
   public long getSizeOfFileOnDiskInBytes() {
-    return diskBasedMap.map(diskMap -> diskMap.sizeOfFileOnDiskInBytes()).orElse(0L);
+    return diskBasedMap.map(SimpleSpilledMap::sizeOfFileOnDiskInBytes).orElse(0L);
   }
 
   /**
@@ -66,7 +66,7 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
     return currentInMemoryMapSize;
   }
 
-  public boolean containsKey(Object key) {
+  public boolean containsKey(T key) {
     return inMemoryMap.containsKey(key) ||
             diskBasedMap.map(diskMap -> diskMap.containsKey(key)).orElse(false);
   }
@@ -108,25 +108,25 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
 
   public void close() {
     inMemoryMap = null;
-    diskBasedMap.ifPresent(diskMap -> diskMap.close());
+    diskBasedMap.ifPresent(SimpleSpilledMap::close);
     currentInMemoryMapSize = 0L;
   }
 
   private long estimateSize(Object obj) {
-    return ObjectSizeCalculator.getObjectSize(obj);
+    return obj == null ? 0 : GraphLayout.parseInstance(obj).totalSize();
   }
 
   protected class SimpleSpilledMap<T extends Serializable, K extends Serializable>
           implements SimpleMap<T, K> {
 
-    private RocksDBBackend rocksDB = RocksDBBackend.getOrCreateInstance();
+    private final RocksDBBackend rocksDB = RocksDBBackend.getOrCreateInstance();
 
     public SimpleSpilledMap() {
       rocksDB.addColumnFamily(mapIdentifier);
     }
 
-    public boolean containsKey(Object key) {
-      return rocksDB.get(mapIdentifier, (T) key) != null;
+    public boolean containsKey(T key) {
+      return rocksDB.get(mapIdentifier, key) != null;
     }
 
     public K get(T key) {
