@@ -16,6 +16,55 @@ public class TestSimpleSpillableMap {
 
   private static final Random random = new Random(100000);
 
+  private SimpleSpillableMap<Key, Value> map;
+  private long keySize;
+  private long valueSize;
+
+  @Before
+  public void initSizes() {
+    keySize = GraphLayout.parseInstance(new Key()).totalSize();
+    valueSize = GraphLayout.parseInstance(new Value()).totalSize();
+  }
+
+  @Test
+  public void testMemoryMap() {
+    Assert.assertTrue( testMap(100, 100)
+            .getSizeOfFileOnDiskInBytes() == 0);
+  }
+
+  @Test
+  public void testSpilledMap() {
+    Assert.assertTrue( testMap(0, 20)
+            .getSizeOfFileOnDiskInBytes() > 0);
+  }
+
+  @Test
+  public void testSpillableMap() {
+    Assert.assertTrue( testMap(10, 20)
+            .getSizeOfFileOnDiskInBytes() > 0);
+  }
+
+  private SimpleSpillableMap testMap(long expectMemorySize, int expectKeyCount) {
+    SimpleSpillableMap actualMap =
+            new SimpleSpillableMap(expectMemorySize * (keySize + valueSize), "TEST");
+    Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() == 0);
+    Map<Key, Value> expectedMap = Maps.newHashMap();
+    for (int i = 0; i < expectKeyCount; i++) {
+      Key key = new Key();
+      Value value = new Value();
+      expectedMap.put(key, value);
+      actualMap.put(key, value);
+    }
+    for (Key key : expectedMap.keySet()) {
+      Assert.assertEquals(expectedMap.get(key), actualMap.get(key));
+    }
+    Assert.assertEquals(expectMemorySize, actualMap.getMemoryMapSize());
+    Assert.assertEquals(expectMemorySize * (keySize + valueSize),
+            actualMap.getMemoryMapSpaceSize());
+    return actualMap;
+  }
+
+
   private static class Key implements Serializable {
     String id = UUID.randomUUID().toString();
 
@@ -50,82 +99,6 @@ public class TestSimpleSpillableMap {
     public String toString() {
       return Long.toString(value);
     }
-  }
-
-  private SimpleSpillableMap<Key, Value> map;
-
-  private long keySize;
-  private long valueSize;
-
-  @Before
-  public void createMap() {
-    keySize = GraphLayout.parseInstance(new Key()).totalSize();
-    keySize = GraphLayout.parseInstance(new Value()).totalSize();
-  }
-
-  @After
-  public void disposeMap() {
-    map.close();
-    map = null;
-  }
-  @Test
-  public void testMemoryMap() {
-    map = new SimpleSpillableMap<>(100 * (keySize + valueSize),
-            "TEST");
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
-    Map<Key, Value> expectedMap = Maps.newHashMap();
-    for (int i = 0; i < 100; i++) {
-      Key key = new Key();
-      Value value = new Value();
-      expectedMap.put(key, value);
-      map.put(key, value);
-    }
-    for (Key key : expectedMap.keySet()) {
-      Assert.assertEquals(expectedMap.get(key), map.get(key));
-    }
-    Assert.assertEquals(100, map.getMemoryMapSize());
-    Assert.assertEquals(100 *(keySize + valueSize), map.getMemoryMapSpaceSize());
-    Assert.assertEquals(0, map.getSizeOfFileOnDiskInBytes());
-  }
-
-  @Test
-  public void testSpilledMap() {
-    map = new SimpleSpillableMap(0L,
-            "TEST");
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
-    Map<Key, Value> expectedMap = Maps.newHashMap();
-    for (int i = 0; i < 100; i++) {
-      Key key = new Key();
-      Value value = new Value();
-      expectedMap.put(key, value);
-      map.put(key, value);
-    }
-    for (Key key : expectedMap.keySet()) {
-      Assert.assertEquals(expectedMap.get(key), map.get(key));
-    }
-    Assert.assertEquals(0, map.getMemoryMapSize());
-    Assert.assertEquals(0, map.getMemoryMapSpaceSize());
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
-  }
-
-  @Test
-  public void testSpillableMap() {
-    map = new SimpleSpillableMap(10 * (keySize + valueSize),
-            "TEST");
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() == 0);
-    Map<Key, Value> expectedMap = Maps.newHashMap();
-    for (int i = 0; i < 100; i++) {
-      Key key = new Key();
-      Value value = new Value();
-      expectedMap.put(key, value);
-      map.put(key, value);
-    }
-    for (Key key : expectedMap.keySet()) {
-      Assert.assertEquals(expectedMap.get(key), map.get(key));
-    }
-    Assert.assertEquals(10, map.getMemoryMapSize());
-    Assert.assertEquals(10 * (keySize + valueSize), map.getMemoryMapSpaceSize());
-    Assert.assertTrue(map.getSizeOfFileOnDiskInBytes() > 0);
   }
 }
 
