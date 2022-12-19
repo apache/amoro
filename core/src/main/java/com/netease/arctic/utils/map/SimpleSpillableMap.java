@@ -28,10 +28,10 @@ import java.util.Optional;
 
 public class SimpleSpillableMap<T extends Serializable, K extends Serializable> implements SimpleMap<T, K> {
 
-  private static final int NUMBER_OF_RECORDS_TO_ESTIMATE_PAYLOAD_SIZE = 100;
+  private static final int RECORDS_TO_SKIP_FOR_ESTIMATING = 200;
   private final long maxInMemorySizeInBytes;
   private final String mapIdentifier;
-  private Map<T, K> inMemoryMap;
+  private Map<T, K> memoryMap;
   private Optional<SimpleSpilledMap<T, K>> diskBasedMap = Optional.empty();
   private Long currentInMemoryMapSize;
   private long estimatedPayloadSize = 0;
@@ -39,7 +39,7 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier) {
     Validate.isTrue(mapIdentifier != null, "Map identifier can not be null");
-    this.inMemoryMap = Maps.newHashMap();
+    this.memoryMap = Maps.newHashMap();
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
     this.currentInMemoryMapSize = 0L;
     this.mapIdentifier = mapIdentifier;
@@ -56,7 +56,7 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
    * Number of entries in InMemoryMap.
    */
   public int getMemoryMapSize() {
-    return inMemoryMap.size();
+    return memoryMap.size();
   }
 
   /**
@@ -67,26 +67,26 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
   }
 
   public boolean containsKey(T key) {
-    return inMemoryMap.containsKey(key) ||
+    return memoryMap.containsKey(key) ||
             diskBasedMap.map(diskMap -> diskMap.containsKey(key)).orElse(false);
   }
 
   public K get(T key) {
-    return Optional.ofNullable(inMemoryMap.get(key))
+    return Optional.ofNullable(memoryMap.get(key))
             .orElse(diskBasedMap.map(diskMap -> diskMap.get(key)).orElse(null));
   }
 
   public void put(T key, K value) {
     if (estimatedPayloadSize == 0) {
       this.estimatedPayloadSize = estimateSize(key) + estimateSize(value);
-    } else if (++putCount % NUMBER_OF_RECORDS_TO_ESTIMATE_PAYLOAD_SIZE == 0) {
+    } else if (++putCount % RECORDS_TO_SKIP_FOR_ESTIMATING == 0) {
       this.estimatedPayloadSize = (long) (this.estimatedPayloadSize * 0.9 +
               (estimateSize(key) + estimateSize(value)) * 0.1);
-      this.currentInMemoryMapSize = this.inMemoryMap.size() * this.estimatedPayloadSize;
+      this.currentInMemoryMapSize = this.memoryMap.size() * this.estimatedPayloadSize;
     }
 
     if (this.currentInMemoryMapSize < maxInMemorySizeInBytes) {
-      if (inMemoryMap.put(key, value) == null) {
+      if (memoryMap.put(key, value) == null) {
         currentInMemoryMapSize += this.estimatedPayloadSize;
       }
     } else {
@@ -98,16 +98,16 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
   }
 
   public void delete(T key) {
-    if (inMemoryMap.containsKey(key)) {
+    if (memoryMap.containsKey(key)) {
       currentInMemoryMapSize -= estimatedPayloadSize;
-      inMemoryMap.remove(key);
+      memoryMap.remove(key);
     } else {
       diskBasedMap.ifPresent(map -> map.delete(key));
     }
   }
 
   public void close() {
-    inMemoryMap = null;
+    memoryMap = null;
     diskBasedMap.ifPresent(SimpleSpilledMap::close);
     currentInMemoryMapSize = 0L;
   }
