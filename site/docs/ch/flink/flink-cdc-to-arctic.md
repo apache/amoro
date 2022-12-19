@@ -83,7 +83,7 @@ SET execution.runtime-mode = streaming;
 
 -- 以无界的方式读取存量和增量数据
 SELECT * FROM arctic.db.user_info
-/*+ OPTIONS('arctic.emit.mode'='file','streaming'='true') */
+/*+ OPTIONS('arctic.read.mode'='file','streaming'='true') */
 ```
 相关参数配置可以参考[这里](flink-dml.md#filestore_1)
 
@@ -96,7 +96,7 @@ SET execution.runtime-mode = streaming;
 
 -- 以无界的方式增量数据
 SELECT * FROM arctic.db.user_info
-/*+ OPTIONS('arctic.emit.mode'='file','streaming'='true','scan.startup.mode'='latest') */
+/*+ OPTIONS('arctic.read.mode'='file','streaming'='true','scan.startup.mode'='latest') */
 ```
 
 相关参数配置可以参考[这里](flink-dml.md#filestore_1)
