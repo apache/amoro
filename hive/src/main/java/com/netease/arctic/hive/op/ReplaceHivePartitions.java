@@ -41,8 +41,9 @@ import org.apache.iceberg.relocated.com.google.common.base.Joiner;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
@@ -51,6 +52,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class ReplaceHivePartitions implements ReplacePartitions {
+
+  private static final Logger LOG = LoggerFactory.getLogger(ReplaceHivePartitions.class);
 
   private final Transaction transaction;
   private final boolean insideTransaction;
@@ -239,6 +242,7 @@ public class ReplaceHivePartitions implements ReplacePartitions {
       for (FileStatus filePath: exisitedFiles) {
         if (!filePathCollect.contains(filePath.getPath().toString())) {
           table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
+          LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
         }
       }
     }

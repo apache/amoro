@@ -285,6 +285,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
           if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
               !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
             table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
+            LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
           }
         }
       }
