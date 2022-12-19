@@ -20,10 +20,11 @@ package com.netease.arctic.hive.io;
 
 import com.netease.arctic.hive.HiveTableTestBase;
 import com.netease.arctic.hive.table.HiveLocationKind;
-import java.io.IOException;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Test;
+
+import java.io.IOException;
 
 import static com.netease.arctic.hive.io.TestIOUtils.testWrite;
 

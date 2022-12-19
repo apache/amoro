@@ -40,7 +40,7 @@ import com.netease.arctic.optimizer.operator.executor.OptimizeTaskResult;
 import com.netease.arctic.optimizer.operator.executor.TableIdentificationInfo;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableTypeUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -229,29 +229,29 @@ public class BaseTaskExecutor implements Serializable {
 
     if (TableTypeUtil.isIcebergTableFormat(table)) {
       for (ByteBuffer file : task.getBaseFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.BASE_FILE);
+        nodeTask.addFile(SerializationUtils.toIcebergContentFile(file), DataFileType.BASE_FILE);
       }
       for (ByteBuffer file : task.getInsertFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.INSERT_FILE);
+        nodeTask.addFile(SerializationUtils.toIcebergContentFile(file), DataFileType.INSERT_FILE);
       }
       for (ByteBuffer file : task.getDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.EQ_DELETE_FILE);
+        nodeTask.addFile(SerializationUtils.toIcebergContentFile(file), DataFileType.EQ_DELETE_FILE);
       }
       for (ByteBuffer file : task.getPosDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toIcebergContentFile(file), DataFileType.POS_DELETE_FILE);
+        nodeTask.addFile(SerializationUtils.toIcebergContentFile(file), DataFileType.POS_DELETE_FILE);
       }
     } else {
       for (ByteBuffer file : task.getBaseFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.BASE_FILE);
+        nodeTask.addFile(SerializationUtils.toInternalTableFile(file), DataFileType.BASE_FILE);
       }
       for (ByteBuffer file : task.getInsertFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.INSERT_FILE);
+        nodeTask.addFile(SerializationUtils.toInternalTableFile(file), DataFileType.INSERT_FILE);
       }
       for (ByteBuffer file : task.getDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.EQ_DELETE_FILE);
+        nodeTask.addFile(SerializationUtils.toInternalTableFile(file), DataFileType.EQ_DELETE_FILE);
       }
       for (ByteBuffer file : task.getPosDeleteFiles()) {
-        nodeTask.addFile(SerializationUtil.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
+        nodeTask.addFile(SerializationUtils.toInternalTableFile(file), DataFileType.POS_DELETE_FILE);
       }
     }
 

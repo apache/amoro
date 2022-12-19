@@ -24,7 +24,7 @@ import com.netease.arctic.hive.exceptions.CannotAlterHiveLocationException;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Transaction;
@@ -178,7 +178,7 @@ public class TestRewritePartitions extends HiveTableTestBase {
       Map<String, String> partitionLocations,
       List<Map.Entry<String, String>> overwriteFiles) {
     overwriteFiles.forEach(kv -> {
-      String partLocation = FileUtil.getFileDir(kv.getValue());
+      String partLocation = TableFileUtils.getFileDir(kv.getValue());
       partitionLocations.put(kv.getKey(), partLocation);
     });
   }

@@ -6,7 +6,7 @@ import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -18,7 +18,6 @@ import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,7 +80,7 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
       optimizeRuntime.setReportTime(System.currentTimeMillis());
       if (resultFiles != null) {
         optimizeRuntime.setNewFileSize(resultFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(resultFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(resultFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
       optimizeRuntime.setTargetFiles(finalTargetFiles);
@@ -145,7 +144,7 @@ public class TestIcebergMinorOptimizeCommit extends TestIcebergBase {
       optimizeRuntime.setReportTime(System.currentTimeMillis());
       if (resultFiles != null) {
         optimizeRuntime.setNewFileSize(resultFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(resultFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(resultFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       List<ByteBuffer> finalTargetFiles = optimizeRuntime.getTargetFiles();
       optimizeRuntime.setTargetFiles(finalTargetFiles);

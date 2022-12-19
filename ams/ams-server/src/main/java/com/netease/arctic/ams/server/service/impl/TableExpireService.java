@@ -39,7 +39,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.CompatiblePropertyUtil;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -248,7 +248,7 @@ public class TableExpireService implements ITableExpireService {
             toDeleteFiles.incrementAndGet();
           }
         }).cleanExpiredFiles(true).commit();
-    parentDirectory.forEach(parent -> FileUtil.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
+    parentDirectory.forEach(parent -> TableFileUtils.deleteEmptyDirectory(arcticInternalTable.io(), parent, exclude));
     LOG.info("to delete {} files, success delete {} files", toDeleteFiles.get(), deleteFiles.get());
   }
 }

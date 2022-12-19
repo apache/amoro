@@ -33,8 +33,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class FileUtil {
-  private static final Logger LOG = LoggerFactory.getLogger(FileUtil.class);
+public class TableFileUtils {
+  private static final Logger LOG = LoggerFactory.getLogger(TableFileUtils.class);
 
   private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-(\\d+)\\.\\w+";
   private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
@@ -110,7 +110,7 @@ public class FileUtil {
    * @return fileMeta
    */
   public static DefaultKeyedFile.FileMeta parseFileMetaFromFileName(String fileName) {
-    fileName = FileUtil.getFileName(fileName);
+    fileName = TableFileUtils.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long nodeId = 1;
     DataFileType type = DataFileType.BASE_FILE;
@@ -130,7 +130,7 @@ public class FileUtil {
    * @return DataFileType
    */
   public static DataFileType parseFileTypeFromFileName(String fileName) {
-    fileName = FileUtil.getFileName(fileName);
+    fileName = TableFileUtils.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     DataFileType type = DataFileType.BASE_FILE;
     if (matcher.matches()) {
@@ -145,7 +145,7 @@ public class FileUtil {
    * @return transaction id
    */
   public static long parseFileTidFromFileName(String fileName) {
-    fileName = FileUtil.getFileName(fileName);
+    fileName = TableFileUtils.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long transactionId = 0L;
     if (matcher.matches()) {
@@ -160,7 +160,7 @@ public class FileUtil {
    * @return node id
    */
   public static DataTreeNode parseFileNodeFromFileName(String fileName) {
-    fileName = FileUtil.getFileName(fileName);
+    fileName = TableFileUtils.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long nodeId = 1;
     if (matcher.matches()) {

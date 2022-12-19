@@ -20,6 +20,7 @@ package com.netease.arctic.ams.api.client;
 
 import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.properties.AmsHAProperties;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Locale;

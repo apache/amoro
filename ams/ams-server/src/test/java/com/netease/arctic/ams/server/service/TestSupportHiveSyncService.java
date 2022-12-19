@@ -27,7 +27,7 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.PrincipalPrivilegeSet;
@@ -98,7 +98,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     StructLikeMap<Map<String, String>> partitionProperty = testKeyedHiveTable.baseTable().partitionProperty();
     Assert.assertEquals(0, partitionProperty.size());
     List<DataFile> dataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 1);
-    String partitionLocation = FileUtil.getFileDir(dataFiles.get(0).path().toString());
+    String partitionLocation = TableFileUtils.getFileDir(dataFiles.get(0).path().toString());
     testKeyedHiveTable.baseTable().updatePartitionProperties(null)
         .set(dataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, partitionLocation)
         .commit();
@@ -122,7 +122,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     Assert.assertEquals(0, partitionProperty.size());
 
     List<DataFile> dataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 1);
-    String partitionLocation = FileUtil.getFileDir(dataFiles.get(0).path().toString());
+    String partitionLocation = TableFileUtils.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), testKeyedHiveTable.spec().partitionType());
     ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
@@ -172,7 +172,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     Assert.assertEquals(0, partitionProperty.size());
 
     List<DataFile> dataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 1);
-    String partitionLocation = FileUtil.getFileDir(dataFiles.get(0).path().toString());
+    String partitionLocation = TableFileUtils.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), testKeyedHiveTable.spec().partitionType());
     ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
@@ -222,7 +222,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     Assert.assertEquals(0, partitionProperty.size());
 
     List<DataFile> dataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 1);
-    String partitionLocation = FileUtil.getFileDir(dataFiles.get(0).path().toString());
+    String partitionLocation = TableFileUtils.getFileDir(dataFiles.get(0).path().toString());
     List<String> partitionValues =
         HivePartitionUtil.partitionValuesAsList(dataFiles.get(0).partition(), testKeyedHiveTable.spec().partitionType());
     ((SupportHive) testKeyedHiveTable).getHMSClient().run(client ->
@@ -259,7 +259,7 @@ public class TestSupportHiveSyncService extends TestSupportHiveBase {
     Assert.assertEquals(partitionLocation, hivePartition.getSd().getLocation());
 
     List<DataFile> newDataFiles = insertTableHiveDataFiles(testKeyedHiveTable, 2);
-    String newPartitionLocation = FileUtil.getFileDir(newDataFiles.get(0).path().toString());
+    String newPartitionLocation = TableFileUtils.getFileDir(newDataFiles.get(0).path().toString());
     testKeyedHiveTable.baseTable().updatePartitionProperties(null)
         .set(newDataFiles.get(0).partition(), HiveTableProperties.PARTITION_PROPERTIES_KEY_HIVE_LOCATION, newPartitionLocation)
         .commit();
