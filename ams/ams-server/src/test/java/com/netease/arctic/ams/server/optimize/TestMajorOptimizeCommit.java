@@ -30,7 +30,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
@@ -110,7 +110,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);

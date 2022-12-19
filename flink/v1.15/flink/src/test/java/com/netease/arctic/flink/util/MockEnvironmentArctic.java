@@ -31,7 +31,6 @@ import org.apache.flink.runtime.operators.testutils.MockInputSplitProvider;
 import org.apache.flink.runtime.state.TaskStateManager;
 import org.apache.flink.runtime.taskexecutor.GlobalAggregateManager;
 import org.apache.flink.runtime.taskmanager.TaskManagerRuntimeInfo;
-import org.apache.flink.runtime.throughput.ThroughputCalculator;
 import org.apache.flink.util.UserCodeClassLoader;
 
 public class MockEnvironmentArctic extends MockEnvironment {

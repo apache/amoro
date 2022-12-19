@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.util;
 
-import java.time.Instant;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.flink.table.api.ApiExpression;
 import org.apache.flink.table.data.GenericRowData;
@@ -34,6 +33,7 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
 import org.junit.Assert;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.table.api.Expressions.e;
 import static org.apache.flink.table.api.Expressions.row;
 
 public class DataUtil {
