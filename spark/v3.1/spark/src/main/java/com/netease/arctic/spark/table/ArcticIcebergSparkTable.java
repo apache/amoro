@@ -25,7 +25,7 @@ import org.apache.thrift.TException;
 
 import java.util.Map;
 
-public class ArcticIcebergSparkTable extends SparkTable implements SupportDropPartitions{
+public class ArcticIcebergSparkTable extends SparkTable implements SupportDropPartitions {
   private final UnkeyedTable unkeyedTable;
 
   public ArcticIcebergSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
