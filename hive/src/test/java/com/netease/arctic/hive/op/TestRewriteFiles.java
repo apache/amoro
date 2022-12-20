@@ -12,6 +12,7 @@ import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.FileUtil;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.hadoop.hive.metastore.api.Table;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
 import org.apache.iceberg.RewriteFiles;
@@ -24,12 +25,15 @@ import org.apache.thrift.TException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 
 public class TestRewriteFiles extends HiveTableTestBase {
 
@@ -61,6 +65,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
     );
     Set<DataFile> newDataFiles = new HashSet<>(dataFileBuilder.buildList(newFiles));
     RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
     rewriteFiles.commit();
 
@@ -372,6 +377,46 @@ public class TestRewriteFiles extends HiveTableTestBase {
     rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
 
     Assert.assertThrows(CannotAlterHiveLocationException.class, rewriteFiles::commit);
+  }
+
+  @Test
+  public void testCleanOrphanFileWhenCommit() throws TException {
+    List<Map.Entry<String, String>> orphanFiles = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
+        Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet"),
+        Maps.immutableEntry("name=ccc", "/test_path/partition3/data-a3.parquet"),
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/orphan-a1.parquet"),
+        Maps.immutableEntry("name=aaa", "/test_path/partition2/orphan-a2.parquet"),
+        Maps.immutableEntry("name=bbb", "/test_path/partition3/orphan-a3.parquet")
+    );
+    UnkeyedTable table = testHiveTable;
+    table.updateProperties().set(DELETE_UNTRACKED_HIVE_FILE, "true").commit();
+    AppendFiles appendFiles = table.newAppend();
+    MockDataFileBuilder dataFileBuilder = new MockDataFileBuilder(table, hms.getClient());
+    List<DataFile> orphanDataFiles = dataFileBuilder.buildList(orphanFiles);
+    orphanDataFiles.forEach(appendFiles::appendFile);
+    appendFiles.commit();
+
+    List<Map.Entry<String, String>> files = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet")
+    );
+    Set<DataFile> initDataFiles = new HashSet<>(dataFileBuilder.buildList(files));
+
+    List<Map.Entry<String, String>> newFiles = Lists.newArrayList(
+        Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
+        Maps.immutableEntry("name=ccc", "/test_path/partition3/data-a3.parquet")
+    );
+    Set<DataFile> newDataFiles = new HashSet<>(dataFileBuilder.buildList(newFiles));
+
+    RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
+    rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
+    rewriteFiles.commit();
+
+    List<String> exceptedFiles = new ArrayList<>();
+    exceptedFiles.add("data-a1.parquet");
+    exceptedFiles.add("data-a3.parquet");
+    asserFilesName(exceptedFiles, table);
   }
 
   private void applyUpdateHiveFiles(
