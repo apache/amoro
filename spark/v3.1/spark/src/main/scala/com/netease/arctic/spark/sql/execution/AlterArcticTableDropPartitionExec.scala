@@ -24,10 +24,9 @@ case class AlterArcticTableDropPartitionExec(table: Table,
           case part: UnresolvedPartitionSpec =>
             part.spec.map(s => s._1 + "=" + s._2).asJava
         }
-        val ident = specs.mkString.replace(",", "/")
+        val ident = specs.mkString.replace(", ", "/")
           .replace("[", "")
           .replace("]", "")
-          .replace(" ", "")
         table.dropPartitions(ident)
       case _ =>
         throw new UnsupportedOperationException(
