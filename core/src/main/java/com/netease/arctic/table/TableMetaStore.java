@@ -299,28 +299,39 @@ public class TableMetaStore implements Serializable {
   public <T> T doAs(Callable<T> callable) {
     // if disableAuth, use process ugi to execute
     if (disableAuth) {
-      try {
-        return callable.call();
-      } catch (Throwable e) {
-        if (e instanceof RuntimeException) {
-          LOG.error("run with process ugi request failed.", e);
-          throw (RuntimeException) e;
-        }
-        throw new RuntimeException("run with process ugi request failed.", e);
-      }
+      LOG.debug("run with process ugi.");
+      return doAsUgi(callable);
     }
+    LOG.debug("run with catalog ugi {}.", Objects.requireNonNull(getUGI()));
+    return Objects.requireNonNull(getUGI()).doAs((PrivilegedAction<T>) () -> doAsUgi(callable));
+  }
 
-    return Objects.requireNonNull(getUGI()).doAs((PrivilegedAction<T>) () -> {
-      try {
-        return callable.call();
-      } catch (Throwable e) {
-        if (e instanceof RuntimeException) {
-          LOG.error("run with catalog ugi request failed. UGI is {}", getUGI(), e);
-          throw (RuntimeException) e;
-        }
-        throw new RuntimeException("run with catalog ugi doAs request failed.", e);
+  /**
+   * Login with configured catalog user and create a proxy user ugi. Then the operations are performed
+   * within the doAs method of this proxy user ugi.
+   */
+  public <T> T doAsImpersonating(String proxyUser, Callable<T> callable) {
+    // if disableAuth, use process ugi to execute
+    if (disableAuth) {
+      LOG.debug("run with process ugi.");
+      return doAsUgi(callable);
+    }
+    // create proxy user ugi and execute
+    UserGroupInformation proxyUgi = UserGroupInformation.createProxyUser(proxyUser, Objects.requireNonNull(getUGI()));
+    LOG.debug("proxy user {} with catalog ugi {}, and run with ugi {}.", proxyUser, getUGI(), proxyUgi);
+    return proxyUgi.doAs((PrivilegedAction<T>) () -> doAsUgi(callable));
+  }
+
+  private  <T> T doAsUgi(Callable<T> callable) {
+    try {
+      return callable.call();
+    } catch (Throwable e) {
+      if (e instanceof RuntimeException) {
+        LOG.error("run with ugi request failed.", e);
+        throw (RuntimeException) e;
       }
-    });
+      throw new RuntimeException("run with ugi request failed.", e);
+    }
   }
 
   public synchronized Optional<URL> getHiveSiteLocation() {
