@@ -22,7 +22,6 @@ import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.LogDataJsonSerialization;
-import com.netease.arctic.table.TableProperties;
 
 import java.util.Properties;
 

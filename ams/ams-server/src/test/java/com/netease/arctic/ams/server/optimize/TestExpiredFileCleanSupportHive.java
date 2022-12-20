@@ -24,7 +24,7 @@ import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.hive.utils.TableTypeUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
@@ -65,7 +65,7 @@ public class TestExpiredFileCleanSupportHive extends TestSupportHiveBase {
 
     Set<String> hiveLocation = new HashSet<>();
     if (TableTypeUtil.isHive(testUnPartitionKeyedHiveTable)) {
-      hiveLocation.add(FileUtil.getFileDir(hiveFiles.get(0).path().toString()));
+      hiveLocation.add(TableFileUtils.getFileDir(hiveFiles.get(0).path().toString()));
     }
     TableExpireService.expireSnapshots(testUnPartitionKeyedHiveTable.baseTable(), System.currentTimeMillis(), hiveLocation);
     Assert.assertEquals(1, Iterables.size(testUnPartitionKeyedHiveTable.baseTable().snapshots()));

@@ -7,7 +7,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileStatus;
@@ -173,7 +173,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     for (DataFile d : addFiles) {
       List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(d.partition(), partitionSchema);
       String value = Joiner.on("/").join(partitionValues);
-      String location = FileUtil.getFileDir(d.path().toString());
+      String location = TableFileUtils.getFileDir(d.path().toString());
       partitionLocationMap.put(value, location);
       if (!partitionDataFileMap.containsKey(value)) {
         partitionDataFileMap.put(value, Lists.newArrayList());
@@ -256,7 +256,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkCreatePartitionDataFiles(List<DataFile> addFiles, String partitionLocation) {
     Path partitionPath = new Path(partitionLocation);
     for (DataFile df : addFiles) {
-      String fileDir = FileUtil.getFileDir(df.path().toString());
+      String fileDir = TableFileUtils.getFileDir(df.path().toString());
       Path dirPath = new Path(fileDir);
       if (!partitionPath.equals(dirPath)) {
         throw new CannotAlterHiveLocationException(
@@ -396,7 +396,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (this.addFiles.isEmpty()) {
       unpartitionTableLocation = createUnpartitionEmptyLocationForHive();
     } else {
-      unpartitionTableLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
+      unpartitionTableLocation = TableFileUtils.getFileDir(this.addFiles.get(0).path().toString());
     }
   }
 

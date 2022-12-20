@@ -25,7 +25,6 @@ import com.netease.arctic.ams.server.controller.response.Response;
 import com.netease.arctic.ams.server.model.CatalogSettingInfo;
 import io.javalin.testtools.HttpClient;
 import io.javalin.testtools.JavalinTest;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;

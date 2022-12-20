@@ -18,6 +18,7 @@
 
 package com.netease.arctic.iceberg.optimize;
 
+import com.netease.arctic.utils.StructLikeSet;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;

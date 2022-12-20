@@ -18,16 +18,14 @@
 
 package com.netease.arctic.ams.api;
 
-import java.util.Random;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.TestingServer;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.Random;
 
 /**
  * Provides mock zookeeper server.

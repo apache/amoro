@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.table.api.Expressions.e;
 import static org.apache.flink.table.api.Expressions.row;
 
 public class DataUtil {

@@ -53,7 +53,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
