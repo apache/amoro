@@ -411,6 +411,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
 
     RewriteFiles rewriteFiles = table.newRewrite();
     rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
+    rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     rewriteFiles.commit();
 
     List<String> exceptedFiles = new ArrayList<>();
