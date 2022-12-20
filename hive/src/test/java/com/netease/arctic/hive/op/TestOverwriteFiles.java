@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 
-
 public class TestOverwriteFiles extends HiveTableTestBase {
 
   @Test
