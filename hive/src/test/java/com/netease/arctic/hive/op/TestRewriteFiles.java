@@ -381,7 +381,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
   }
 
   @Test
-  public void testPreCommitCheck() throws TException {
+  public void checkOrphanFilesAndDelete() throws TException {
     List<Map.Entry<String, String>> orphanFiles = Lists.newArrayList(
         Maps.immutableEntry("name=aaa", "/test_path/partition1/data-a1.parquet"),
         Maps.immutableEntry("name=bbb", "/test_path/partition2/data-a2.parquet"),
