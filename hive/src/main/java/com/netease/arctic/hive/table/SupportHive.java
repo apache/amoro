@@ -19,10 +19,6 @@
 package com.netease.arctic.hive.table;
 
 import com.netease.arctic.hive.HMSClientPool;
-import org.apache.hadoop.hive.metastore.api.PartitionSpec;
-import org.apache.thrift.TException;
-
-import java.util.List;
 
 /**
  * Mix-in interface to mark task use hive as base store
@@ -40,5 +36,4 @@ public interface SupportHive {
    * @return hive metastore client
    */
   HMSClientPool getHMSClient();
-
 }
