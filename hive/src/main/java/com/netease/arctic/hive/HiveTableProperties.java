@@ -56,7 +56,5 @@ public class HiveTableProperties {
   public static final String PARQUET_OUTPUT_FORMAT = "org.apache.hadoop.hive.ql.io.parquet.MapredParquetOutputFormat";
   public static final String PARQUET_ROW_FORMAT_SERDE = "org.apache.hadoop.hive.ql.io.parquet.serde.ParquetHiveSerDe";
 
-  public static final String DELETE_UNTRACKED_HIVE_FILE = "delete.untracked.hive.file";
-  public static final boolean DELETE_UNTRACKED_HIVE_FILE_DEFAULT = false;
 }
 

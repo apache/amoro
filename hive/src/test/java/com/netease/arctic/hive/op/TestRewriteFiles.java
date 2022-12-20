@@ -33,7 +33,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.hive.HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+
 
 public class TestRewriteFiles extends HiveTableTestBase {
 
@@ -65,7 +66,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
     );
     Set<DataFile> newDataFiles = new HashSet<>(dataFileBuilder.buildList(newFiles));
     RewriteFiles rewriteFiles = table.newRewrite();
-    rewriteFiles.set(OverwriteHiveFiles.DELETE_UNTRACKED_HIVE_FILE, "true");
+    rewriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
     rewriteFiles.commit();
 

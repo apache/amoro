@@ -31,7 +31,8 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.hive.HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE;
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
+
 
 public class TestOverwriteFiles extends HiveTableTestBase {
 
@@ -442,7 +443,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     List<DataFile> dataFiles = dataFileBuilder.buildList(files);
 
     OverwriteFiles overwriteFiles = table.newOverwrite();
-    overwriteFiles.set(OverwriteHiveFiles.DELETE_UNTRACKED_HIVE_FILE, "true");
+    overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 
