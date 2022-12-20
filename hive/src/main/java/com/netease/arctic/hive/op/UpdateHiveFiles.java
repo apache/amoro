@@ -274,18 +274,16 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     List<String> partitionsToCheck = this.partitionToCreate.values()
         .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
     for (String partitionLocation: partitionsToCheck) {
-      if (!table.io().isEmptyDirectory(partitionLocation)) {
-        List<String> addFilesPathCollect = addFiles.stream()
-            .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
-        List<String> deleteFilesPathCollect = deleteFiles.stream()
-            .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
-        List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
-        for (FileStatus filePath: exisitedFiles) {
-          if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
-              !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
-            table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
-            LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
-          }
+      List<String> addFilesPathCollect = addFiles.stream()
+          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
+      List<String> deleteFilesPathCollect = deleteFiles.stream()
+          .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
+      List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
+      for (FileStatus filePath: exisitedFiles) {
+        if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
+            !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
+          table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
+          LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
         }
       }
     }

@@ -235,18 +235,15 @@ public class ReplaceHivePartitions implements ReplacePartitions {
    * @param dataFiles
    */
   private void checkOrphanFilesAndDelete(String partitionLocation, List<DataFile> dataFiles) {
-    if (!table.io().isEmptyDirectory(partitionLocation)) {
-      List<String> filePathCollect = dataFiles.stream()
-          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
-      List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
-      for (FileStatus filePath: exisitedFiles) {
-        if (!filePathCollect.contains(filePath.getPath().toString())) {
-          table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
-          LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
-        }
+    List<String> filePathCollect = dataFiles.stream()
+        .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
+    List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
+    for (FileStatus filePath: exisitedFiles) {
+      if (!filePathCollect.contains(filePath.getPath().toString())) {
+        table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
+        LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
       }
     }
-
   }
 
   private void commitUnPartitionedTable() {
