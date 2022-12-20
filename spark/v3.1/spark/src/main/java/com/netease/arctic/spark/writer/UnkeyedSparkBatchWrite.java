@@ -134,7 +134,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public void commit(WriterCommitMessage[] messages) {
       ReplacePartitions replacePartitions = table.newReplacePartitions();
-      replacePartitions.set(DELETE_UNTRACKED_HIVE_FILE, "true");
       for (DataFile file : files(messages)) {
         replacePartitions.addFile(file);
       }

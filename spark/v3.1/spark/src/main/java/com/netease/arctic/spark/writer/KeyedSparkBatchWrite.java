@@ -19,7 +19,6 @@
 package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.hive.utils.HiveTableUtil;
-import com.netease.arctic.op.KeyedPartitionRewrite;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
@@ -150,9 +149,8 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
-      KeyedPartitionRewrite rewritePartitions = (KeyedPartitionRewrite) table.newRewritePartitions();
+      RewritePartitions rewritePartitions = table.newRewritePartitions();
       rewritePartitions.withTransactionId(txId);
-      rewritePartitions.set(DELETE_UNTRACKED_HIVE_FILE, "true");
 
       for (DataFile file : files(messages)) {
         rewritePartitions.addDataFile(file);
