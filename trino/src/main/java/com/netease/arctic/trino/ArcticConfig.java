@@ -20,20 +20,29 @@
 package com.netease.arctic.trino;
 
 import io.airlift.configuration.Config;
-import org.apache.commons.lang3.StringUtils;
 
 /**
  * Arctic config
  */
 public class ArcticConfig {
   private String catalogUrl;
+  private boolean hdfsImpersonationEnabled;
 
   public String getCatalogUrl() {
     return catalogUrl;
   }
 
+  public boolean getHdfsImpersonationEnabled() {
+    return hdfsImpersonationEnabled;
+  }
+
   @Config("arctic.url")
   public void setCatalogUrl(String catalogUrl) {
     this.catalogUrl = catalogUrl;
+  }
+
+  @Config("arctic.hdfs.impersonation.enabled")
+  public void setHdfsImpersonationEnabled(boolean enabled) {
+    this.hdfsImpersonationEnabled = enabled;
   }
 }
