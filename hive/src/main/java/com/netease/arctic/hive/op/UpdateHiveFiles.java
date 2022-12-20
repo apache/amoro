@@ -47,6 +47,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private static final Logger LOG = LoggerFactory.getLogger(UpdateHiveFiles.class);
 
   public static final String PROPERTIES_VALIDATE_LOCATION = "validate-location";
+  public static final String DELETE_UNTRACKED_HIVE_FILE = "delete-untracked-hive-file";
 
   protected final Transaction transaction;
   protected final boolean insideTransaction;
@@ -68,6 +69,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected String unpartitionTableLocation;
   protected long txId = -1;
   protected boolean validateLocation = true;
+  protected boolean checkOrphanFiles = false;
   protected int commitTimestamp; // in seconds
 
   public UpdateHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
@@ -99,10 +101,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
-    if (PropertyUtil.propertyAsBoolean(
-        table.properties(),
-        HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE,
-        HiveTableProperties.DELETE_UNTRACKED_HIVE_FILE_DEFAULT)) {
+    if (checkOrphanFiles) {
       checkOrphanFilesAndDelete();
     }
     // if no DataFiles to add or delete in Hive location, only commit to iceberg

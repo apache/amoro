@@ -442,6 +442,7 @@ public class TestOverwriteFiles extends HiveTableTestBase {
     List<DataFile> dataFiles = dataFileBuilder.buildList(files);
 
     OverwriteFiles overwriteFiles = table.newOverwrite();
+    overwriteFiles.set(OverwriteHiveFiles.DELETE_UNTRACKED_HIVE_FILE, "true");
     dataFiles.forEach(overwriteFiles::addFile);
     overwriteFiles.commit();
 

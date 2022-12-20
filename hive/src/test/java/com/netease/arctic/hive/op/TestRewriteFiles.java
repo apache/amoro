@@ -65,6 +65,7 @@ public class TestRewriteFiles extends HiveTableTestBase {
     );
     Set<DataFile> newDataFiles = new HashSet<>(dataFileBuilder.buildList(newFiles));
     RewriteFiles rewriteFiles = table.newRewrite();
+    rewriteFiles.set(OverwriteHiveFiles.DELETE_UNTRACKED_HIVE_FILE, "true");
     rewriteFiles.rewriteFiles(initDataFiles, newDataFiles);
     rewriteFiles.commit();
 
