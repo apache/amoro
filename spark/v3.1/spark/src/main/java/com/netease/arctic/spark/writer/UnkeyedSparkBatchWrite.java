@@ -45,6 +45,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Map;
 
+import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS;
 import static org.apache.iceberg.TableProperties.COMMIT_MAX_RETRY_WAIT_MS_DEFAULT;
@@ -156,6 +157,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     public void commit(WriterCommitMessage[] messages) {
       OverwriteFiles overwriteFiles = table.newOverwrite();
       overwriteFiles.overwriteByRowFilter(overwriteExpr);
+      overwriteFiles.set(DELETE_UNTRACKED_HIVE_FILE, "true");
       for (DataFile file : files(messages)) {
         overwriteFiles.addFile(file);
       }
