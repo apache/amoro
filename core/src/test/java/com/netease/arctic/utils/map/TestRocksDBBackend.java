@@ -1,5 +1,6 @@
 package com.netease.arctic.utils.map;
 
+import com.netease.arctic.ArcticIOException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +53,7 @@ public class TestRocksDBBackend {
       rocksDBBackend.get(CF_NAME, "name");
       Assert.assertTrue(false);
     } catch (Throwable t) {
-      Assert.assertTrue(t instanceof IllegalArgumentException);
+      Assert.assertTrue(t instanceof ArcticIOException);
     }
   }
 
