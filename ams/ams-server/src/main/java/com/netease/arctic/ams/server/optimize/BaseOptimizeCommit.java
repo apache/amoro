@@ -163,7 +163,7 @@ public class BaseOptimizeCommit {
         // minor produced files will be clean by orphan file clean
         Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
         for (ContentFile<?> majorAddFile : majorAddFiles) {
-          String filePath = FileUtil.getUriPath(majorAddFile.path().toString());
+          String filePath = TableFileUtils.getUriPath(majorAddFile.path().toString());
           if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
             arcticTable.io().deleteFile(filePath);
             LOG.warn("Delete orphan file {} when optimize commit failed", filePath);
@@ -444,7 +444,7 @@ public class BaseOptimizeCommit {
     Set<String> committedFilePath = new HashSet<>();
     for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, table::snapshot)) {
       for (DataFile dataFile : snapshot.addedFiles()) {
-        committedFilePath.add(FileUtil.getUriPath(dataFile.path().toString()));
+        committedFilePath.add(TableFileUtils.getUriPath(dataFile.path().toString()));
       }
     }
 

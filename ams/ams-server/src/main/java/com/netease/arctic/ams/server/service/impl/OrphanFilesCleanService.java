@@ -216,7 +216,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                             Long lastTime,
                                             Set<String> exclude,
                                             boolean execute) {
-    String location = FileUtil.getUriPath(fileStatus.getPath().toString());
+    String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       if (!io.isEmptyDirectory(location)) {
         LOG.info("start orphan files clean in {}", location);
@@ -265,7 +265,7 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                                            FileStatus fileStatus,
                                            Set<String> validFiles,
                                            Long lastTime, boolean execute) {
-    String location = FileUtil.getUriPath(fileStatus.getPath().toString());
+    String location = TableFileUtils.getUriPath(fileStatus.getPath().toString());
     if (io.isDirectory(location)) {
       LOG.warn("unexpected dir in metadata/, {}", location);
       return 0;
@@ -293,21 +293,21 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
       int before = validFiles.size();
       String manifestListLocation = snapshot.manifestListLocation();
       
-      validFiles.add(FileUtil.getUriPath(manifestListLocation));
+      validFiles.add(TableFileUtils.getUriPath(manifestListLocation));
 
       io.doAs(() -> {
         // valid data files
         List<ManifestFile> manifestFiles = snapshot.allManifests();
         for (ManifestFile manifestFile : manifestFiles) {
-          validFiles.add(FileUtil.getUriPath(manifestFile.path()));
+          validFiles.add(TableFileUtils.getUriPath(manifestFile.path()));
         }
         return null;
       });
       LOG.info("{} scan snapshot {}: {} and get {} files, complete {}/{}", tableIdentifier, snapshot.snapshotId(),
           formatTime(snapshot.timestampMillis()), validFiles.size() - before, cnt, size);
     }
-    ReachableFileUtil.metadataFileLocations(internalTable, false).forEach(f -> validFiles.add(FileUtil.getUriPath(f)));
-    validFiles.add(FileUtil.getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
+    ReachableFileUtil.metadataFileLocations(internalTable, false).forEach(f -> validFiles.add(TableFileUtils.getUriPath(f)));
+    validFiles.add(TableFileUtils.getUriPath(ReachableFileUtil.versionHintLocation(internalTable)));
 
     return validFiles;
   }
@@ -329,8 +329,8 @@ public class OrphanFilesCleanService implements IOrphanFilesCleanService {
                  internalTable.newScan().useSnapshot(snapshot.snapshotId()).planFiles()) {
           for (FileScanTask scanTask : fileScanTasks) {
             if (scanTask.file() != null) {
-              validFiles.add(FileUtil.getUriPath(scanTask.file().path().toString()));
-              scanTask.deletes().forEach(file -> validFiles.add(FileUtil.getUriPath(file.path().toString())));
+              validFiles.add(TableFileUtils.getUriPath(scanTask.file().path().toString()));
+              scanTask.deletes().forEach(file -> validFiles.add(TableFileUtils.getUriPath(file.path().toString())));
             }
           }
           return null;
