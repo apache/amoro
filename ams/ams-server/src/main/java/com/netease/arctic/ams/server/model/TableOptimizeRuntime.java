@@ -41,7 +41,6 @@ public class TableOptimizeRuntime implements Cloneable {
   private final Map<String, Long> latestFullOptimizeTime = new HashMap<>();
   private final Map<String, Long> latestMinorOptimizeTime = new HashMap<>();
   private String latestTaskPlanGroup;
-  private volatile boolean isRunning;
 
   public TableOptimizeRuntime() {
   }
@@ -66,7 +65,6 @@ public class TableOptimizeRuntime implements Cloneable {
     newTableOptimizeRuntime.latestFullOptimizeTime.putAll(this.latestFullOptimizeTime);
     newTableOptimizeRuntime.latestMinorOptimizeTime.putAll(this.latestMinorOptimizeTime);
     newTableOptimizeRuntime.latestTaskPlanGroup = this.latestTaskPlanGroup;
-    newTableOptimizeRuntime.isRunning = this.isRunning;
     return newTableOptimizeRuntime;
   }
 
@@ -84,7 +82,6 @@ public class TableOptimizeRuntime implements Cloneable {
     this.latestMinorOptimizeTime.clear();
     this.latestMinorOptimizeTime.putAll(old.latestMinorOptimizeTime);
     this.latestTaskPlanGroup = old.latestTaskPlanGroup;
-    this.isRunning = old.isRunning;
   }
 
   public TableIdentifier getTableIdentifier() {
@@ -193,14 +190,6 @@ public class TableOptimizeRuntime implements Cloneable {
     this.latestTaskPlanGroup = latestTaskPlanGroup;
   }
 
-  public boolean isRunning() {
-    return isRunning;
-  }
-
-  public void setRunning(boolean running) {
-    isRunning = running;
-  }
-
   @Override
   public String toString() {
     return "TableOptimizeRuntime{" +
@@ -213,7 +202,6 @@ public class TableOptimizeRuntime implements Cloneable {
         ", latestFullOptimizeTime=" + latestFullOptimizeTime +
         ", latestMinorOptimizeTime=" + latestMinorOptimizeTime +
         ", latestTaskPlanGroup='" + latestTaskPlanGroup + '\'' +
-        ", isRunning=" + isRunning +
         '}';
   }
 

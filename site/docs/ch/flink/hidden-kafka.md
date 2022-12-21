@@ -65,6 +65,11 @@ create table catalog.db.arctic (
 );
 ```
 
+### Hint Options
+|Key|默认值|类型|是否必填|描述|
+|--- |--- |--- |--- |--- |
+|log.consumer.changelog.modes| all-kinds   | String   |否| 读log数据时会产生的RowKind类型，支持：all-kinds, append-only。'all-kinds'：会读出cdc的数据，包括+I/-D/-U/+U；'append-only'：只会产生Insert数据，读无主键时建议使用此配置|
+
 ###限制
 
 - 下游任务开启一致性保证时，不能包含 Cumulate Window Agg Operator，因为这个算子不能处理 Update_before/Delete 数据。

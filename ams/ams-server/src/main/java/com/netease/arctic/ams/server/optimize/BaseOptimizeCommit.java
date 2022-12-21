@@ -32,8 +32,8 @@ import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
 import com.netease.arctic.utils.ArcticDataFiles;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -103,7 +103,7 @@ public class BaseOptimizeCommit {
           // tasks in partition
           if (task.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor) {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtil::toInternalTableFile)
+                .map(SerializationUtils::toInternalTableFile)
                 .forEach(minorAddFiles::add);
 
             minorDeleteFiles.addAll(selectDeletedFiles(task, minorAddFiles));
@@ -131,7 +131,7 @@ public class BaseOptimizeCommit {
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
           } else {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtil::toInternalTableFile)
+                .map(SerializationUtils::toInternalTableFile)
                 .forEach(majorAddFiles::add);
             majorDeleteFiles.addAll(selectDeletedFiles(task, new HashSet<>()));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
@@ -403,15 +403,15 @@ public class BaseOptimizeCommit {
                                                                      Set<ContentFile<?>> addPosDeleteFiles) {
     Set<DataTreeNode> newFileNodes = addPosDeleteFiles.stream().map(contentFile -> {
       if (contentFile.content() == FileContent.POSITION_DELETES) {
-        return FileUtil.parseFileNodeFromFileName(contentFile.path().toString());
+        return TableFileUtils.parseFileNodeFromFileName(contentFile.path().toString());
       }
 
       return null;
     }).filter(Objects::nonNull).collect(Collectors.toSet());
 
-    return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtil::toInternalTableFile)
+    return optimizeTask.getPosDeleteFiles().stream().map(SerializationUtils::toInternalTableFile)
         .filter(posDeleteFile ->
-            newFileNodes.contains(FileUtil.parseFileNodeFromFileName(posDeleteFile.path().toString())))
+            newFileNodes.contains(TableFileUtils.parseFileNodeFromFileName(posDeleteFile.path().toString())))
         .collect(Collectors.toSet());
   }
 
@@ -419,13 +419,13 @@ public class BaseOptimizeCommit {
                                                                      BaseOptimizeTaskRuntime optimizeTaskRuntime) {
     // add base deleted files
     Set<ContentFile<?>> result = optimizeTask.getBaseFiles().stream()
-        .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet());
+        .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet());
 
     // if full optimize or new DataFiles is empty, can delete DeleteFiles
     if (optimizeTask.getTaskId().getType() == OptimizeType.FullMajor ||
         CollectionUtils.isEmpty(optimizeTaskRuntime.getTargetFiles())) {
       result.addAll(optimizeTask.getPosDeleteFiles().stream()
-          .map(SerializationUtil::toInternalTableFile).collect(Collectors.toSet()));
+          .map(SerializationUtils::toInternalTableFile).collect(Collectors.toSet()));
     }
 
     return result;

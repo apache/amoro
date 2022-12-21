@@ -23,21 +23,22 @@ import org.apache.iceberg.types.Comparators;
 import org.apache.iceberg.types.JavaHash;
 import org.apache.iceberg.types.Types;
 
+import java.io.Serializable;
 import java.util.Comparator;
 
 /**
  * Copy from iceberg {@link org.apache.iceberg.util.StructLikeWrapper},
  * Add new constructor to create StructLikeWrapper more cheap
  */
-public class StructLikeWrapper {
+public class StructLikeWrapper implements Serializable {
 
   public static StructLikeWrapper forType(Types.StructType struct) {
     return new StructLikeWrapper(struct);
   }
 
-  private final Comparator<StructLike> comparator;
-  private final JavaHash<StructLike> structHash;
-  private Integer hashCode;
+  private final transient Comparator<StructLike> comparator;
+  private final transient JavaHash<StructLike> structHash;
+  private transient Integer hashCode;
   private StructLike struct;
 
   private StructLikeWrapper(Types.StructType type) {

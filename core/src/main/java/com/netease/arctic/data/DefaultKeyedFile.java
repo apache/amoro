@@ -18,13 +18,10 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.table.MetadataColumns;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.types.Conversions;
-import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -41,31 +38,14 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   private final DataFile internalFile;
 
   private transient FileMeta meta;
-  private transient ChangedLsn minLsn;
-  private transient ChangedLsn maxLsn;
 
   public DefaultKeyedFile(DataFile internalFile) {
     this.internalFile = internalFile;
   }
 
   private void parse() {
-    this.meta = FileUtil.parseFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
-    if (internalFile.lowerBounds() != null) {
-      ByteBuffer minOffsetBuffer = internalFile.lowerBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
-      if (minOffsetBuffer != null) {
-        minLsn = ChangedLsn.of(meta.transactionId(), Conversions.fromByteBuffer(Types.LongType.get(), minOffsetBuffer));
-      } else {
-        minLsn = ChangedLsn.of(meta.transactionId(), Long.MAX_VALUE);
-      }
-    }
-    if (internalFile.upperBounds() != null) {
-      ByteBuffer maxOffsetBuffer = internalFile.upperBounds().get(MetadataColumns.FILE_OFFSET_FILED_ID);
-      if (maxOffsetBuffer != null) {
-        maxLsn = ChangedLsn.of(meta.transactionId(), Conversions.fromByteBuffer(Types.LongType.get(), maxOffsetBuffer));
-      } else {
-        maxLsn = ChangedLsn.of(meta.transactionId(), Long.MAX_VALUE);
-      }
-    }
+    this.meta = TableFileUtils.parseFileMetaFromFileName(TableFileUtils
+            .getFileName(internalFile.path().toString()));
   }
 
   @Override
@@ -74,22 +54,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
       parse();
     }
     return meta.transactionId();
-  }
-
-  @Override
-  public ChangedLsn minLsn() {
-    if (minLsn == null) {
-      parse();
-    }
-    return minLsn;
-  }
-
-  @Override
-  public ChangedLsn maxLsn() {
-    if (maxLsn == null) {
-      parse();
-    }
-    return maxLsn;
   }
 
   @Override
