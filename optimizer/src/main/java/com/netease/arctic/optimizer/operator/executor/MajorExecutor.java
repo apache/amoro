@@ -33,6 +33,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.WriteOperationKind;
+import com.netease.arctic.utils.map.StructLikeFactory;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -98,16 +99,20 @@ public class MajorExecutor extends BaseExecutor {
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
-    while (recordIterator.hasNext()) {
-      checkIfTimeout(writer);
+    try {
+      while (recordIterator.hasNext()) {
+        checkIfTimeout(writer);
 
-      Record baseRecord = recordIterator.next();
-      writer.write(baseRecord);
-      insertCount++;
-      if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-        LOG.info("task {} insert records number {} and data sampling {}",
-            task.getTaskId(), insertCount, baseRecord);
+        Record baseRecord = recordIterator.next();
+        writer.write(baseRecord);
+        insertCount++;
+        if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
+          LOG.info("task {} insert records number {} and data sampling {}",
+              task.getTaskId(), insertCount, baseRecord);
+        }
       }
+    } finally {
+      recordIterator.close();
     }
 
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
@@ -128,10 +133,15 @@ public class MajorExecutor extends BaseExecutor {
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
 
+    StructLikeFactory structLikeFactory = new StructLikeFactory();
+    if (config.isEnableSpillMap()) {
+      structLikeFactory = new StructLikeFactory(maxInMemorySizeInBytes, mapIdentifier);
+    }
+
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema, primaryKeySpec,
-            table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
-            IdentityPartitionConverters::convertConstant, sourceNodes, false);
+        table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
+        IdentityPartitionConverters::convertConstant, sourceNodes, false, structLikeFactory);
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {

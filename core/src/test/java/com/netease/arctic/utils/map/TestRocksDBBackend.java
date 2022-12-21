@@ -25,7 +25,6 @@ public class TestRocksDBBackend {
     int originalCfCount = rocksDBBackend.listColumnFamilies().size();
     rocksDBBackend.addColumnFamily(CF_NAME);
     Assert.assertEquals(originalCfCount + 1, rocksDBBackend.listColumnFamilies().size());
-    Assert.assertEquals(CF_NAME, new String(rocksDBBackend.listColumnFamilies().get(originalCfCount).getName(), "utf8"));
     rocksDBBackend.dropColumnFamily(CF_NAME);
     Assert.assertEquals(originalCfCount, rocksDBBackend.listColumnFamilies().size());
   }
@@ -50,7 +49,7 @@ public class TestRocksDBBackend {
     Assert.assertEquals("mj", rocksDBBackend.get(CF_NAME, "name"));
     rocksDBBackend.dropColumnFamily(CF_NAME);
     try {
-      String value = rocksDBBackend.get(CF_NAME, "name");
+      rocksDBBackend.get(CF_NAME, "name");
       Assert.assertTrue(false);
     } catch (Throwable t) {
       Assert.assertTrue(t instanceof IllegalArgumentException);

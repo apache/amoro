@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,47 +18,40 @@
 
 package com.netease.arctic.utils.map;
 
+import com.netease.arctic.iceberg.optimize.StructLikeCopy;
 import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
 import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 
 import java.io.IOException;
 
-public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
+public class StructLikeWrapperSerializer implements Serializer<StructLikeWrapper> {
 
-  protected final ThreadLocal<StructLikeWrapper> wrappers;
   protected final StructLikeWrapperFactory structLikeWrapperFactory;
 
-  protected StructLikeBaseMap(Types.StructType type) {
+  public StructLikeWrapperSerializer(StructLikeWrapperFactory structLikeWrapperFactory) {
+    this.structLikeWrapperFactory = structLikeWrapperFactory;
+  }
+
+  public StructLikeWrapperSerializer(Types.StructType type) {
     this.structLikeWrapperFactory = new StructLikeWrapperFactory(type);
-    this.wrappers = ThreadLocal.withInitial(() -> structLikeWrapperFactory.create());
   }
 
   @Override
-  public T get(StructLike key) {
-    StructLikeWrapper wrapper = wrappers.get();
-    T value = getInternalMap().get(wrapper.set((key)));
-    wrapper.set(null); // don't hold a reference to the key.
-    return value;
+  public byte[] serialize(StructLikeWrapper structLikeWrapper) {
+    StructLike copy = StructLikeCopy.copy(structLikeWrapper.get());
+    try {
+      return SerializationUtils.serialize(copy);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
-  public void put(StructLike key, T value) {
-    getInternalMap().put(structLikeWrapperFactory.create().set(key), value);
+  public StructLikeWrapper deserialize(byte[] bytes) {
+    StructLikeCopy structLike = SerializationUtils.deserialize(bytes);
+    return structLikeWrapperFactory.create().set(structLike);
   }
-
-  @Override
-  public void delete(StructLike key) {
-    StructLikeWrapper wrapper = wrappers.get();
-    getInternalMap().delete(wrapper.set(key));
-    wrapper.set(null); // don't hold a reference to the key.
-  }
-
-  @Override
-  public void close() throws IOException {
-    getInternalMap().close();
-  }
-
-  protected abstract SimpleMap<StructLikeWrapper, T> getInternalMap();
 }

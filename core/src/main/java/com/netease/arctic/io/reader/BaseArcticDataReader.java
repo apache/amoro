@@ -24,6 +24,7 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.map.StructLikeFactory;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
@@ -59,6 +60,23 @@ public abstract class BaseArcticDataReader<T> {
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final PrimaryKeySpec primaryKeySpec;
   protected final boolean reuseContainer;
+  private StructLikeFactory structLikeFactory = new StructLikeFactory();
+
+  public BaseArcticDataReader(
+      ArcticFileIO fileIO,
+      Schema tableSchema,
+      Schema projectedSchema,
+      PrimaryKeySpec primaryKeySpec,
+      String nameMapping,
+      boolean caseSensitive,
+      BiFunction<Type, Object, Object> convertConstant,
+      Set<DataTreeNode> sourceNodes,
+      boolean reuseContainer,
+      StructLikeFactory structLikeFactory) {
+    this(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive,
+        convertConstant, sourceNodes, reuseContainer);
+    this.structLikeFactory = structLikeFactory;
+  }
 
   public BaseArcticDataReader(
       ArcticFileIO fileIO,
@@ -94,10 +112,9 @@ public abstract class BaseArcticDataReader<T> {
   }
 
   public CloseableIterator<T> readData(KeyedTableScanTask keyedTableScanTask) {
-
-    ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
-        keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
-    );
+    ArcticDeleteFilter<T> arcticDeleteFilter =
+        new GenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
+            sourceNodes, structLikeFactory);
     Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
     CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
@@ -113,8 +130,9 @@ public abstract class BaseArcticDataReader<T> {
 
     if (!equDeleteFiles.isEmpty()) {
       ArcticDeleteFilter<T> arcticDeleteFilter = new GenericArcticDeleteFilter(
-          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes
+          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes, structLikeFactory
       );
+
       Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
 
       CloseableIterable<T> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
@@ -161,6 +179,18 @@ public abstract class BaseArcticDataReader<T> {
         KeyedTableScanTask keyedTableScanTask,
         Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
+      this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
+    }
+
+    protected GenericArcticDeleteFilter(
+        KeyedTableScanTask keyedTableScanTask,
+        Schema tableSchema,
+        Schema requestedSchema,
+        PrimaryKeySpec primaryKeySpec,
+        Set<DataTreeNode> sourceNodes,
+        StructLikeFactory structLikeFactory) {
+      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
+          sourceNodes, structLikeFactory);
       this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 

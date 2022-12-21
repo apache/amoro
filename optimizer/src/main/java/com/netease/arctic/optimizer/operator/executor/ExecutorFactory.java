@@ -28,7 +28,7 @@ public class ExecutorFactory {
   private static final Logger LOG = LoggerFactory.getLogger(ExecutorFactory.class);
 
   public static Executor constructOptimize(NodeTask nodeTask, ArcticTable table,
-                                              long startTime, OptimizerConfig config) {
+                                           long startTime, OptimizerConfig config) {
     if (TableTypeUtil.isIcebergTableFormat(table)) {
       return new IcebergExecutor(nodeTask, table, startTime, config);
     } else {

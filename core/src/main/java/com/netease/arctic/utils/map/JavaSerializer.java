@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,13 +18,26 @@
 
 package com.netease.arctic.utils.map;
 
-import java.io.Closeable;
+import com.netease.arctic.utils.SerializationUtils;
 
-public interface SimpleMap<T, K> extends Closeable {
+import java.io.IOException;
+import java.io.Serializable;
 
-  void put(T key, K value);
+public class JavaSerializer<T extends Serializable> implements Serializer<T> {
 
-  void delete(T key);
+  public static final JavaSerializer INSTANT = new JavaSerializer();
 
-  K get(T key);
+  @Override
+  public byte[] serialize(T t) {
+    try {
+      return SerializationUtils.serialize(t);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public T deserialize(byte[] bytes) {
+    return SerializationUtils.deserialize(bytes);
+  }
 }

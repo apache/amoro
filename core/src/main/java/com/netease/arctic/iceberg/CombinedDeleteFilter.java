@@ -22,8 +22,10 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
-import com.netease.arctic.utils.map.StructLikeMemoryMap;
+import com.netease.arctic.utils.map.StructLikeBaseMap;
+import com.netease.arctic.utils.map.StructLikeFactory;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -85,8 +87,18 @@ public abstract class CombinedDeleteFilter<T> {
   private Set<Integer> deleteIds = new HashSet<>();
   private final Set<String> pathSets;
 
-  private Predicate<T> eqPredicate;
+  private CloseablePredicate<T> eqPredicate;
   private final Schema deleteSchema;
+
+  private StructLikeFactory structLikeFactory = new StructLikeFactory();
+
+  protected CombinedDeleteFilter(CombinedIcebergScanTask task,
+                                 Schema tableSchema,
+                                 Schema requestedSchema,
+                                 StructLikeFactory structLikeFactory) {
+    this(task, tableSchema, requestedSchema);
+    this.structLikeFactory = structLikeFactory;
+  }
 
   protected CombinedDeleteFilter(CombinedIcebergScanTask task, Schema tableSchema, Schema requestedSchema) {
     ImmutableList.Builder<IcebergContentFile> posDeleteBuilder = ImmutableList.builder();
@@ -147,7 +159,7 @@ public abstract class CombinedDeleteFilter<T> {
   }
 
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return applyEqDeletes(applyPosDeletes(records));
+    return new CloseableIterableWithOtherCloseable<>(applyEqDeletes(applyPosDeletes(records)));
   }
 
   public CloseableIterable<T> filterNegate(CloseableIterable<T> records) {
@@ -161,7 +173,7 @@ public abstract class CombinedDeleteFilter<T> {
       }
     };
 
-    return remainingRowsFilter.filter(records);
+    return new CloseableIterableWithOtherCloseable<>(remainingRowsFilter.filter(records));
   }
 
   private Predicate<T> applyEqDeletes() {
@@ -188,7 +200,8 @@ public abstract class CombinedDeleteFilter<T> {
 
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
 
-    StructLikeMemoryMap<Long> structLikeMap = StructLikeMemoryMap.create(pkSchema.asStruct());
+    StructLikeBaseMap<Long> structLikeMap = structLikeFactory.createStructLikeMap(pkSchema.asStruct());
+
     //init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
       Iterator<RecordWithLsn> it = getArcticFileIo() == null ? deletes.iterator()
@@ -219,7 +232,8 @@ public abstract class CombinedDeleteFilter<T> {
       return deleteLsn.compareTo(dataLSN) > 0;
     };
 
-    this.eqPredicate = isInDeleteSet;
+    CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
+    this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
 
@@ -414,6 +428,53 @@ public abstract class CombinedDeleteFilter<T> {
     public RecordWithLsn recordCopy() {
       record = record.copy();
       return this;
+    }
+  }
+
+  private class CloseableIterableWithOtherCloseable<T> implements CloseableIterable<T> {
+
+    private CloseableIterable<T> inner;
+
+    public CloseableIterableWithOtherCloseable(CloseableIterable<T> inner) {
+      this.inner = inner;
+    }
+
+    @Override
+    public CloseableIterator<T> iterator() {
+      CloseableIterator<T> closeableIterator = inner.iterator();
+      return new CloseableIteratorWithOtherCloseable<>(closeableIterator);
+    }
+
+    @Override
+    public void close() throws IOException {
+      inner.close();
+      if (eqPredicate != null) {
+        eqPredicate.close();
+      }
+    }
+  }
+
+  private class CloseableIteratorWithOtherCloseable<T> implements CloseableIterator<T> {
+
+    private CloseableIterator<T> closeableIterator;
+
+    public CloseableIteratorWithOtherCloseable(CloseableIterator<T> closeableIterator) {
+      this.closeableIterator = closeableIterator;
+    }
+
+    @Override
+    public void close() throws IOException {
+      closeableIterator.close();
+    }
+
+    @Override
+    public boolean hasNext() {
+      return closeableIterator.hasNext();
+    }
+
+    @Override
+    public T next() {
+      return closeableIterator.next();
     }
   }
 }

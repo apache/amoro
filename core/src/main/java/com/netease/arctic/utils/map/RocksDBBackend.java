@@ -20,7 +20,6 @@ package com.netease.arctic.utils.map;
 
 import com.netease.arctic.ArcticIOException;
 import com.netease.arctic.utils.LocalFileUtils;
-import com.netease.arctic.utils.SerializationUtils;
 import org.apache.commons.lang.Validate;
 import org.rocksdb.AbstractImmutableNativeReference;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -38,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -47,16 +45,32 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-public class RocksDBBackend {
+public class RocksDBBackend<K, T> {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBBackend.class);
   private static final String BACKEND_BASE_DIR = System.getProperty("rocksdb.dir");
   private static final ThreadLocal<RocksDBBackend> instance =
-          new ThreadLocal<>().withInitial(() -> create());
+          new ThreadLocal<>();
 
   public static RocksDBBackend getOrCreateInstance() {
     RocksDBBackend backend = instance.get();
+    if (backend == null) {
+      backend = create();
+    }
     if (backend.closed) {
       backend = create();
+      instance.set(backend);
+    }
+    return backend;
+  }
+
+  public static <K, T> RocksDBBackend<K, T> getOrCreateInstance(Serializer<K> keySerializer,
+      Serializer<T> valueSerializer) {
+    RocksDBBackend backend = instance.get();
+    if (backend == null) {
+      backend = create(keySerializer, valueSerializer);
+    }
+    if (backend.closed) {
+      backend = create(keySerializer, valueSerializer);
       instance.set(backend);
     }
     return backend;
@@ -68,16 +82,28 @@ public class RocksDBBackend {
   private boolean closed = false;
   private final String rocksDBBasePath;
   private long totalBytesWritten;
+  private Serializer<K> keySerializer;
+  private Serializer<T> valueSerializer;
 
   private static RocksDBBackend create() {
     return new RocksDBBackend();
   }
 
+  private static <K, T> RocksDBBackend create(Serializer<K> keySerializer, Serializer<T> valueSerializer) {
+    return new RocksDBBackend(keySerializer, valueSerializer);
+  }
+
   private RocksDBBackend() {
+    this(JavaSerializer.INSTANT, JavaSerializer.INSTANT);
+  }
+
+  private RocksDBBackend(Serializer<K> keySerializer, Serializer<T> valueSerializer) {
     this.rocksDBBasePath = BACKEND_BASE_DIR == null ? UUID.randomUUID().toString() :
-            String.format("%s/%s", BACKEND_BASE_DIR, UUID.randomUUID().toString());
+        String.format("%s/%s", BACKEND_BASE_DIR, UUID.randomUUID().toString());
     totalBytesWritten = 0L;
     setup();
+    this.keySerializer = keySerializer;
+    this.valueSerializer = valueSerializer;
   }
 
   /**
@@ -157,16 +183,13 @@ public class RocksDBBackend {
    * @param columnFamilyName Column family name
    * @param key Key
    * @param value Payload
-   * @param <T> Type of Payload
    */
-  public <T extends Serializable> void put(String columnFamilyName, String key, T value) {
+  public void put(String columnFamilyName, K key, T value) {
     try {
       Validate.isTrue(key != null && value != null,
               "values or keys in rocksdb can not be null!");
-      ColumnFamilyHandle cfHandler = handlesMap.get(columnFamilyName);
-      Validate.isTrue(cfHandler != null, "column family " +
-              columnFamilyName + " does not exists in rocksdb");
-      rocksDB.put(cfHandler, key.getBytes(), serializePayload(value));
+      byte[] payload = serializePayload(value);
+      rocksDB.put(handlesMap.get(columnFamilyName), keySerializer.serialize(key), payload);
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -178,66 +201,46 @@ public class RocksDBBackend {
    * @param columnFamilyName Column family name
    * @param key Key
    * @param value Payload
-   * @param <T> Type of Payload
    */
-  public <K extends Serializable, T extends Serializable> void put(String columnFamilyName, K key, T value) {
+  public void put(String columnFamilyName, byte[] key, byte[] value) {
     try {
       Validate.isTrue(key != null && value != null,
-              "values or keys in rocksdb can not be null!");
-      byte[] payload = serializePayload(value);
-      rocksDB.put(handlesMap.get(columnFamilyName), SerializationUtils.serialize(key), payload);
-    } catch (Exception e) {
-      throw new ArcticIOException(e);
-    }
-  }
-
-  /**
-   * Perform a single Delete operation.
-   *
-   * @param columnFamilyName Column Family name
-   * @param key Key to be deleted
-   */
-  public void delete(String columnFamilyName, String key) {
-    try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      rocksDB.delete(handlesMap.get(columnFamilyName), key.getBytes());
-    } catch (RocksDBException e) {
-      throw new ArcticIOException(e);
-    }
-  }
-
-  /**
-   * Perform a single Delete operation.
-   *
-   * @param columnFamilyName Column Family name
-   * @param key Key to be deleted
-   */
-  public <K extends Serializable> void delete(String columnFamilyName, K key) {
-    try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      rocksDB.delete(handlesMap.get(columnFamilyName), SerializationUtils.serialize(key));
-    } catch (Exception e) {
-      throw new ArcticIOException(e);
-    }
-  }
-
-  /**
-   * Retrieve a value for a given key in a column family.
-   *
-   * @param columnFamilyName Column Family Name
-   * @param key Key to be retrieved
-   * @param <T> Type of object stored.
-   */
-  public <T extends Serializable> T get(String columnFamilyName, String key) {
-    Validate.isTrue(!closed);
-    try {
-      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+          "values or keys in rocksdb can not be null!");
       ColumnFamilyHandle cfHandler = handlesMap.get(columnFamilyName);
       Validate.isTrue(cfHandler != null, "column family " +
-              columnFamilyName + " does not exists in rocksdb");
-      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), key.getBytes());
-      return val == null ? null : SerializationUtils.deserialize(val);
-    } catch (RocksDBException e) {
+          columnFamilyName + " does not exists in rocksdb");
+      rocksDB.put(cfHandler, key, payload(value));
+    } catch (Exception e) {
+      throw new ArcticIOException(e);
+    }
+  }
+
+  /**
+   * Perform a single Delete operation.
+   *
+   * @param columnFamilyName Column Family name
+   * @param key Key to be deleted
+   */
+  public void delete(String columnFamilyName, K key) {
+    try {
+      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+      rocksDB.delete(handlesMap.get(columnFamilyName), keySerializer.serialize(key));
+    } catch (Exception e) {
+      throw new ArcticIOException(e);
+    }
+  }
+
+  /**
+   * Perform a single Delete operation.
+   *
+   * @param columnFamilyName Column Family name
+   * @param key Key to be deleted
+   */
+  public void delete(String columnFamilyName, byte[] key) {
+    try {
+      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+      rocksDB.delete(handlesMap.get(columnFamilyName), key);
+    } catch (Exception e) {
       throw new ArcticIOException(e);
     }
   }
@@ -247,14 +250,30 @@ public class RocksDBBackend {
    *
    * @param columnFamilyName Column Family Name
    * @param key Key to be retrieved
-   * @param <T> Type of object stored.
    */
-  public <K extends Serializable, T extends Serializable> T get(String columnFamilyName, K key) {
+  public T get(String columnFamilyName, K key) {
     Validate.isTrue(!closed);
     try {
       Validate.isTrue(key != null, "keys in rocksdb can not be null!");
-      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), SerializationUtils.serialize(key));
-      return val == null ? null : SerializationUtils.deserialize(val);
+      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), keySerializer.serialize(key));
+      return val == null ? null : valueSerializer.deserialize(val);
+    } catch (Exception e) {
+      throw new ArcticIOException(e);
+    }
+  }
+
+  /**
+   * Retrieve a value for a given key in a column family.
+   *
+   * @param columnFamilyName Column Family Name
+   * @param key Key to be retrieved
+   */
+  public byte[] get(String columnFamilyName, byte[] key) {
+    Validate.isTrue(!closed);
+    try {
+      Validate.isTrue(key != null, "keys in rocksdb can not be null!");
+      byte[] val = rocksDB.get(handlesMap.get(columnFamilyName), key);
+      return val;
     } catch (Exception e) {
       throw new ArcticIOException(e);
     }
@@ -264,10 +283,9 @@ public class RocksDBBackend {
    * Return Iterator of key-value pairs from RocksIterator.
    *
    * @param columnFamilyName Column Family Name
-   * @param <T>              Type of value stored
    */
-  public <T extends Serializable> Iterator<T> iterator(String columnFamilyName) {
-    return new IteratorWrapper<>(rocksDB.newIterator(handlesMap.get(columnFamilyName)));
+  public Iterator<T> iterator(String columnFamilyName) {
+    return new IteratorWrapper<>(rocksDB.newIterator(handlesMap.get(columnFamilyName)), valueSerializer);
   }
 
   /**
@@ -341,10 +359,15 @@ public class RocksDBBackend {
     return totalBytesWritten;
   }
 
-  private <T extends Serializable> byte[] serializePayload(T value) throws IOException {
-    byte[] payload = SerializationUtils.serialize(value);
+  private byte[] serializePayload(T value) throws IOException {
+    byte[] payload = valueSerializer.serialize(value);
     totalBytesWritten += payload.length;
     return payload;
+  }
+
+  private byte[] payload(byte[] value) {
+    totalBytesWritten += value.length;
+    return value;
   }
 
   /**
@@ -354,9 +377,12 @@ public class RocksDBBackend {
 
     private final RocksIterator iterator;
 
-    public IteratorWrapper(final RocksIterator iterator) {
+    private final Serializer<R> serializer;
+
+    public IteratorWrapper(final RocksIterator iterator, Serializer<R> serializer) {
       this.iterator = iterator;
       iterator.seekToFirst();
+      this.serializer = serializer;
     }
 
     @Override
@@ -369,7 +395,7 @@ public class RocksDBBackend {
       if (!hasNext()) {
         throw new IllegalStateException("next() called on rocksDB with no more valid entries");
       }
-      R val = SerializationUtils.deserialize(iterator.value());
+      R val = serializer.deserialize(iterator.value());
       iterator.next();
       return val;
     }

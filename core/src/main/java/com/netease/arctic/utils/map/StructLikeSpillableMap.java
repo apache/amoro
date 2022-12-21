@@ -39,7 +39,8 @@ public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
   private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes,
                                  String mapIdentifier) {
     super(type);
-    this.wrapperMap = new SimpleSpillableMap(maxInMemorySizeInBytes, mapIdentifier);
+    this.wrapperMap = new SimpleSpillableMap(maxInMemorySizeInBytes, mapIdentifier,
+        new StructLikeWrapperSerializer(structLikeWrapperFactory), JavaSerializer.INSTANT);
   }
 
   @Override

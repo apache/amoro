@@ -22,11 +22,10 @@ import org.apache.commons.lang.Validate;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.openjdk.jol.info.GraphLayout;
 
-import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 
-public class SimpleSpillableMap<T extends Serializable, K extends Serializable> implements SimpleMap<T, K> {
+public class SimpleSpillableMap<T, K> implements SimpleMap<T, K> {
 
   private static final int RECORDS_TO_SKIP_FOR_ESTIMATING = 200;
   private final long maxInMemorySizeInBytes;
@@ -37,12 +36,22 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 
+  private final Serializer<T> keySerializer;
+  private final Serializer<K> valueSerializer;
+
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier) {
+    this(maxInMemorySizeInBytes, mapIdentifier, JavaSerializer.INSTANT, JavaSerializer.INSTANT);
+  }
+
+  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier,
+      Serializer<T> keySerializer, Serializer<K> valueSerializer) {
     Validate.isTrue(mapIdentifier != null, "Map identifier can not be null");
     this.memoryMap = Maps.newHashMap();
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
     this.currentInMemoryMapSize = 0L;
     this.mapIdentifier = mapIdentifier;
+    this.keySerializer = keySerializer;
+    this.valueSerializer = valueSerializer;
   }
 
   /**
@@ -91,7 +100,7 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
       }
     } else {
       if (!diskBasedMap.isPresent()) {
-        diskBasedMap = Optional.of(new SimpleSpilledMap<>());
+        diskBasedMap = Optional.of(new SimpleSpilledMap<>(keySerializer, valueSerializer));
       }
       diskBasedMap.get().put(key, value);
     }
@@ -116,12 +125,13 @@ public class SimpleSpillableMap<T extends Serializable, K extends Serializable> 
     return obj == null ? 0 : GraphLayout.parseInstance(obj).totalSize();
   }
 
-  protected class SimpleSpilledMap<T extends Serializable, K extends Serializable>
+  protected class SimpleSpilledMap<T, K>
           implements SimpleMap<T, K> {
 
-    private final RocksDBBackend rocksDB = RocksDBBackend.getOrCreateInstance();
+    private final RocksDBBackend<T, K> rocksDB;
 
-    public SimpleSpilledMap() {
+    public SimpleSpilledMap(Serializer<T> keySerializer, Serializer<K> valueSerializer) {
+      rocksDB = RocksDBBackend.getOrCreateInstance(keySerializer, valueSerializer);
       rocksDB.addColumnFamily(mapIdentifier);
     }
 

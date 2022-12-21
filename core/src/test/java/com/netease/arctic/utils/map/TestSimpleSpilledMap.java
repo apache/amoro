@@ -33,7 +33,7 @@ public class TestSimpleSpilledMap {
   public void createMap() {
     SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L,
             TestRocksDBBackend.CF_NAME);
-    map = spillableMap.new SimpleSpilledMap();
+    map = spillableMap.new SimpleSpilledMap(JavaSerializer.INSTANT, JavaSerializer.INSTANT);
   }
 
   @After

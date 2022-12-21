@@ -56,11 +56,16 @@ public abstract class BaseExecutor implements Executor {
   protected final OptimizerConfig config;
   protected double factor = 0.9;
 
+  protected Long maxInMemorySizeInBytes;
+  protected String mapIdentifier;
+
   public BaseExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
     this.task = task;
     this.table = table;
     this.startTime = startTime;
     this.config = config;
+    this.maxInMemorySizeInBytes = config.getMaxInMemorySizeInBytes();
+    this.mapIdentifier = table.id().toString();
   }
 
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
