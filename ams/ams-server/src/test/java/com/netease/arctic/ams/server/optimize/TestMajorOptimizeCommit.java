@@ -244,7 +244,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -308,7 +308,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
