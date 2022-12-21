@@ -19,7 +19,7 @@
 package com.netease.arctic.iceberg.optimize;
 
 import com.netease.arctic.utils.StructLikeSet;
-import com.netease.arctic.utils.map.StructLikeFactory;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
@@ -67,9 +67,9 @@ public class Deletes {
 
   public static StructLikeSet toEqualitySet(CloseableIterable<StructLike> eqDeletes,
                                             Types.StructType eqType,
-                                            StructLikeFactory structLikeFactory) {
+                                            StructLikeCollections structLikeCollections) {
     try (CloseableIterable<StructLike> deletes = eqDeletes) {
-      StructLikeSet deleteSet = structLikeFactory.createStructLikeSet(eqType);
+      StructLikeSet deleteSet = structLikeCollections.createStructLikeSet(eqType);
       for (StructLike delete : deletes) {
         deleteSet.add(delete);
       }

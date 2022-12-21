@@ -22,7 +22,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.reader.BaseIcebergDataReader;
 import com.netease.arctic.table.PrimaryKeySpec;
-import com.netease.arctic.utils.map.StructLikeFactory;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.io.CloseableIterable;
@@ -47,7 +47,7 @@ public abstract class AdaptHiveBaseIcebergDataReader<T> extends BaseIcebergDataR
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer,
-      StructLikeFactory structLikeFactory) {
+      StructLikeCollections structLikeFactory) {
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
         convertConstant, reuseContainer, structLikeFactory);
   }

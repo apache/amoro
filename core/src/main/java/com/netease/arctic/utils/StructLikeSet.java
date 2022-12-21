@@ -34,8 +34,8 @@ public class StructLikeSet implements Closeable {
   }
 
   public static StructLikeSet createSpillableSet(Types.StructType type,
-                                                 Long maxInMemorySizeInBytes, String mapIdentifier) {
-    return new StructLikeSet(type, maxInMemorySizeInBytes, mapIdentifier);
+                                                 Long maxInMemorySizeInBytes) {
+    return new StructLikeSet(type, maxInMemorySizeInBytes);
   }
 
   private static final Integer _V = 0;
@@ -45,8 +45,8 @@ public class StructLikeSet implements Closeable {
     this.structLikeMap =  StructLikeMemoryMap.create(type);
   }
 
-  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes, String mapIdentifier) {
-    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, mapIdentifier);
+  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes) {
+    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes);
   }
 
   public boolean contains(StructLike key) {

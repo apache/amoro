@@ -16,11 +16,32 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.utils.map;
+package com.netease.arctic.io;
 
-public interface Serializer<T> {
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.CloseableIterator;
 
-  byte[] serialize(T t);
+import java.io.Closeable;
+import java.io.IOException;
 
-  T deserialize(byte[] bytes);
+public class CloseableIterableWrapper<T> implements CloseableIterable<T> {
+
+  private Closeable[] closeables;
+  private CloseableIterable<T> inner;
+
+  public CloseableIterableWrapper(CloseableIterable<T> inner, Closeable... closeables) {
+    this.inner = inner;
+    this.closeables = closeables;
+  }
+
+  @Override
+  public CloseableIterator<T> iterator() {
+    CloseableIterator<T> closeableIterator = inner.iterator();
+    return new CloseableIteratorWrapper<>(closeableIterator, closeables);
+  }
+
+  @Override
+  public void close() throws IOException {
+    inner.close();
+  }
 }

@@ -23,7 +23,7 @@ import com.netease.arctic.iceberg.CombinedDeleteFilter;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
-import com.netease.arctic.utils.map.StructLikeFactory;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
@@ -54,15 +54,15 @@ public class GenericCombinedIcebergDataReader {
   protected final BiFunction<Type, Object, Object> convertConstant;
   protected final boolean reuseContainer;
 
-  protected StructLikeFactory structLikeFactory = new StructLikeFactory();
+  protected StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   public GenericCombinedIcebergDataReader(
       ArcticFileIO fileIO, Schema tableSchema, Schema projectedSchema,
       String nameMapping, boolean caseSensitive, BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer,
-      StructLikeFactory structLikeFactory) {
+      StructLikeCollections structLikeCollections) {
     this(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive, convertConstant, reuseContainer);
-    this.structLikeFactory = structLikeFactory;
+    this.structLikeCollections = structLikeCollections;
   }
 
   public GenericCombinedIcebergDataReader(
@@ -80,7 +80,7 @@ public class GenericCombinedIcebergDataReader {
 
   public CloseableIterable<Record> readData(CombinedIcebergScanTask task) {
     CombinedDeleteFilter<Record> deleteFilter =
-        new GenericDeleteFilter(task, tableSchema, projectedSchema, structLikeFactory);
+        new GenericDeleteFilter(task, tableSchema, projectedSchema, structLikeCollections);
 
     CloseableIterable<Record> concat = CloseableIterable.concat(CloseableIterable.transform(
         CloseableIterable.withNoopClose(task.getDataFiles()),
@@ -93,7 +93,7 @@ public class GenericCombinedIcebergDataReader {
 
   public CloseableIterable<Record> readDeleteData(CombinedIcebergScanTask task) {
     CombinedDeleteFilter<Record> deleteFilter =
-        new GenericDeleteFilter(task, tableSchema, projectedSchema, structLikeFactory);
+        new GenericDeleteFilter(task, tableSchema, projectedSchema, structLikeCollections);
 
     CloseableIterable<Record> concat = CloseableIterable.concat(CloseableIterable.transform(
         CloseableIterable.withNoopClose(task.getDataFiles()),
@@ -160,7 +160,7 @@ public class GenericCombinedIcebergDataReader {
         CombinedIcebergScanTask task,
         Schema tableSchema,
         Schema requestedSchema,
-        StructLikeFactory structLikeFactory) {
+        StructLikeCollections structLikeFactory) {
       super(task, tableSchema, requestedSchema, structLikeFactory);
       internalRecordWrapper = new InternalRecordWrapper(requiredSchema().asStruct());
     }

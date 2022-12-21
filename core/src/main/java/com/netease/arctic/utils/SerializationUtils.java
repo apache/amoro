@@ -23,8 +23,13 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.iceberg.optimize.StructLikeCopy;
+import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
+import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
 import org.apache.avro.util.Utf8;
 import org.apache.iceberg.ContentFile;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.ByteBuffers;
 import org.objenesis.strategy.StdInstantiatorStrategy;
 
@@ -35,6 +40,8 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 public class SerializationUtils {
 
@@ -105,6 +112,15 @@ public class SerializationUtils {
     return (T) SERIALIZER.get().deserialize(objectData);
   }
 
+  public static <T> SimpleSerializer<T> createJavaSimpleSerializer() {
+    return JavaSerializer.INSTANT;
+  }
+
+  public static SimpleSerializer<StructLikeWrapper> createStructLikeWrapperSerializer(
+      StructLikeWrapperFactory structLikeWrapperFactory) {
+    return new StructLikeWrapperSerializer(structLikeWrapperFactory);
+  }
+
   private static class KryoSerializerInstance implements Serializable {
     public static final int KRYO_SERIALIZER_INITIAL_BUFFER_SIZE = 1048576;
     private final Kryo kryo;
@@ -168,6 +184,70 @@ public class SerializationUtils {
       Serializer<byte[]> bytesSerializer = kryo.getDefaultSerializer(byte[].class);
       byte[] bytes = bytesSerializer.read(kryo, input, byte[].class);
       return new Utf8(bytes);
+    }
+  }
+
+
+  public interface SimpleSerializer<T> {
+
+    byte[] serialize(T t);
+
+    T deserialize(byte[] bytes);
+  }
+
+  public static class StructLikeWrapperSerializer implements SimpleSerializer<StructLikeWrapper> {
+
+    protected final StructLikeWrapperFactory structLikeWrapperFactory;
+
+    public StructLikeWrapperSerializer(StructLikeWrapperFactory structLikeWrapperFactory) {
+      this.structLikeWrapperFactory = structLikeWrapperFactory;
+    }
+
+    public StructLikeWrapperSerializer(Types.StructType type) {
+      this.structLikeWrapperFactory = new StructLikeWrapperFactory(type);
+    }
+
+    @Override
+    public byte[] serialize(StructLikeWrapper structLikeWrapper) {
+      checkNotNull(structLikeWrapper);
+      StructLike copy = StructLikeCopy.copy(structLikeWrapper.get());
+      try {
+        return SerializationUtils.serialize(copy);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public StructLikeWrapper deserialize(byte[] bytes) {
+      if (bytes == null) {
+        return null;
+      }
+      StructLikeCopy structLike = SerializationUtils.deserialize(bytes);
+      return structLikeWrapperFactory.create().set(structLike);
+    }
+  }
+
+  public static class JavaSerializer<T extends Serializable> implements SimpleSerializer<T> {
+
+    public static final JavaSerializer INSTANT = new JavaSerializer();
+
+    @Override
+    public byte[] serialize(T t) {
+      try {
+        checkNotNull(t);
+        return SerializationUtils.serialize(t);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    @Override
+    public T deserialize(byte[] bytes) {
+      if (bytes == null) {
+        return null;
+      }
+      return SerializationUtils.deserialize(bytes);
     }
   }
 }

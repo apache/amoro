@@ -21,31 +21,31 @@ package com.netease.arctic.utils.map;
 import com.netease.arctic.utils.StructLikeSet;
 import org.apache.iceberg.types.Types;
 
-public class StructLikeFactory {
+public class StructLikeCollections {
+
+  public static final StructLikeCollections DEFAULT = new StructLikeCollections(false, 0L);
+
   private Long maxInMemorySizeInBytes;
-  private String mapIdentifier;
 
-  public StructLikeFactory() {
-  }
-
-  public StructLikeFactory(Long maxInMemorySizeInBytes, String mapIdentifier) {
-    this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
-    this.mapIdentifier = mapIdentifier;
+  public StructLikeCollections(boolean enableSpillableMap, Long maxInMemorySizeInBytes) {
+    if (enableSpillableMap) {
+      this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
+    }
   }
 
   public StructLikeBaseMap createStructLikeMap(Types.StructType type) {
-    if (maxInMemorySizeInBytes == null || mapIdentifier == null) {
+    if (maxInMemorySizeInBytes == null) {
       return StructLikeMemoryMap.create(type);
     } else {
-      return StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, mapIdentifier);
+      return StructLikeSpillableMap.create(type, maxInMemorySizeInBytes);
     }
   }
 
   public StructLikeSet createStructLikeSet(Types.StructType type) {
-    if (maxInMemorySizeInBytes == null || mapIdentifier == null) {
+    if (maxInMemorySizeInBytes == null) {
       return StructLikeSet.createMemorySet(type);
     } else {
-      return StructLikeSet.createSpillableSet(type, maxInMemorySizeInBytes, mapIdentifier);
+      return StructLikeSet.createSpillableSet(type, maxInMemorySizeInBytes);
     }
   }
 }

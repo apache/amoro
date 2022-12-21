@@ -22,10 +22,11 @@ import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.CloseableIterableWrapper;
 import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
-import com.netease.arctic.utils.map.StructLikeFactory;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -90,14 +91,14 @@ public abstract class CombinedDeleteFilter<T> {
   private CloseablePredicate<T> eqPredicate;
   private final Schema deleteSchema;
 
-  private StructLikeFactory structLikeFactory = new StructLikeFactory();
+  private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   protected CombinedDeleteFilter(CombinedIcebergScanTask task,
                                  Schema tableSchema,
                                  Schema requestedSchema,
-                                 StructLikeFactory structLikeFactory) {
+                                 StructLikeCollections structLikeCollections) {
     this(task, tableSchema, requestedSchema);
-    this.structLikeFactory = structLikeFactory;
+    this.structLikeCollections = structLikeCollections;
   }
 
   protected CombinedDeleteFilter(CombinedIcebergScanTask task, Schema tableSchema, Schema requestedSchema) {
@@ -159,7 +160,7 @@ public abstract class CombinedDeleteFilter<T> {
   }
 
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return new CloseableIterableWithOtherCloseable<>(applyEqDeletes(applyPosDeletes(records)));
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records)), eqPredicate);
   }
 
   public CloseableIterable<T> filterNegate(CloseableIterable<T> records) {
@@ -173,7 +174,7 @@ public abstract class CombinedDeleteFilter<T> {
       }
     };
 
-    return new CloseableIterableWithOtherCloseable<>(remainingRowsFilter.filter(records));
+    return new CloseableIterableWrapper<>(remainingRowsFilter.filter(records), eqPredicate);
   }
 
   private Predicate<T> applyEqDeletes() {
@@ -200,7 +201,7 @@ public abstract class CombinedDeleteFilter<T> {
 
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
 
-    StructLikeBaseMap<Long> structLikeMap = structLikeFactory.createStructLikeMap(pkSchema.asStruct());
+    StructLikeBaseMap<Long> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
 
     //init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
@@ -428,53 +429,6 @@ public abstract class CombinedDeleteFilter<T> {
     public RecordWithLsn recordCopy() {
       record = record.copy();
       return this;
-    }
-  }
-
-  private class CloseableIterableWithOtherCloseable<T> implements CloseableIterable<T> {
-
-    private CloseableIterable<T> inner;
-
-    public CloseableIterableWithOtherCloseable(CloseableIterable<T> inner) {
-      this.inner = inner;
-    }
-
-    @Override
-    public CloseableIterator<T> iterator() {
-      CloseableIterator<T> closeableIterator = inner.iterator();
-      return new CloseableIteratorWithOtherCloseable<>(closeableIterator);
-    }
-
-    @Override
-    public void close() throws IOException {
-      inner.close();
-      if (eqPredicate != null) {
-        eqPredicate.close();
-      }
-    }
-  }
-
-  private class CloseableIteratorWithOtherCloseable<T> implements CloseableIterator<T> {
-
-    private CloseableIterator<T> closeableIterator;
-
-    public CloseableIteratorWithOtherCloseable(CloseableIterator<T> closeableIterator) {
-      this.closeableIterator = closeableIterator;
-    }
-
-    @Override
-    public void close() throws IOException {
-      closeableIterator.close();
-    }
-
-    @Override
-    public boolean hasNext() {
-      return closeableIterator.hasNext();
-    }
-
-    @Override
-    public T next() {
-      return closeableIterator.next();
     }
   }
 }

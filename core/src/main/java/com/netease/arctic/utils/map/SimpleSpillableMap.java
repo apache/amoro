@@ -18,38 +18,38 @@
 
 package com.netease.arctic.utils.map;
 
-import org.apache.commons.lang.Validate;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.openjdk.jol.info.GraphLayout;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
-public class SimpleSpillableMap<T, K> implements SimpleMap<T, K> {
+public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
 
   private static final int RECORDS_TO_SKIP_FOR_ESTIMATING = 200;
   private final long maxInMemorySizeInBytes;
-  private final String mapIdentifier;
-  private Map<T, K> memoryMap;
-  private Optional<SimpleSpilledMap<T, K>> diskBasedMap = Optional.empty();
+  private Map<K, T> memoryMap;
+  private Optional<SimpleSpilledMap<K, T>> diskBasedMap = Optional.empty();
   private Long currentInMemoryMapSize;
   private long estimatedPayloadSize = 0;
   private int putCount = 0;
 
-  private final Serializer<T> keySerializer;
-  private final Serializer<K> valueSerializer;
+  private SerializationUtils.SimpleSerializer<K> keySerializer;
 
-  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier) {
-    this(maxInMemorySizeInBytes, mapIdentifier, JavaSerializer.INSTANT, JavaSerializer.INSTANT);
+  private SerializationUtils.SimpleSerializer<T> valueSerializer;
+
+  protected SimpleSpillableMap(Long maxInMemorySizeInBytes) {
+    this(maxInMemorySizeInBytes, SerializationUtils.createJavaSimpleSerializer(),
+        SerializationUtils.createJavaSimpleSerializer());
   }
 
-  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, String mapIdentifier,
-      Serializer<T> keySerializer, Serializer<K> valueSerializer) {
-    Validate.isTrue(mapIdentifier != null, "Map identifier can not be null");
+  protected SimpleSpillableMap(Long maxInMemorySizeInBytes, SerializationUtils.SimpleSerializer<K> keySerializer,
+      SerializationUtils.SimpleSerializer<T> valueSerializer) {
     this.memoryMap = Maps.newHashMap();
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
     this.currentInMemoryMapSize = 0L;
-    this.mapIdentifier = mapIdentifier;
     this.keySerializer = keySerializer;
     this.valueSerializer = valueSerializer;
   }
@@ -75,17 +75,17 @@ public class SimpleSpillableMap<T, K> implements SimpleMap<T, K> {
     return currentInMemoryMapSize;
   }
 
-  public boolean containsKey(T key) {
+  public boolean containsKey(K key) {
     return memoryMap.containsKey(key) ||
             diskBasedMap.map(diskMap -> diskMap.containsKey(key)).orElse(false);
   }
 
-  public K get(T key) {
+  public T get(K key) {
     return Optional.ofNullable(memoryMap.get(key))
             .orElse(diskBasedMap.map(diskMap -> diskMap.get(key)).orElse(null));
   }
 
-  public void put(T key, K value) {
+  public void put(K key, T value) {
     if (estimatedPayloadSize == 0) {
       this.estimatedPayloadSize = estimateSize(key) + estimateSize(value);
     } else if (++putCount % RECORDS_TO_SKIP_FOR_ESTIMATING == 0) {
@@ -106,7 +106,7 @@ public class SimpleSpillableMap<T, K> implements SimpleMap<T, K> {
     }
   }
 
-  public void delete(T key) {
+  public void delete(K key) {
     if (memoryMap.containsKey(key)) {
       currentInMemoryMapSize -= estimatedPayloadSize;
       memoryMap.remove(key);
@@ -125,34 +125,43 @@ public class SimpleSpillableMap<T, K> implements SimpleMap<T, K> {
     return obj == null ? 0 : GraphLayout.parseInstance(obj).totalSize();
   }
 
-  protected class SimpleSpilledMap<T, K>
-          implements SimpleMap<T, K> {
+  protected class SimpleSpilledMap<K, T>
+          implements SimpleMap<K, T> {
 
-    private final RocksDBBackend<T, K> rocksDB;
+    private final RocksDBBackend rocksDB;
 
-    public SimpleSpilledMap(Serializer<T> keySerializer, Serializer<K> valueSerializer) {
-      rocksDB = RocksDBBackend.getOrCreateInstance(keySerializer, valueSerializer);
-      rocksDB.addColumnFamily(mapIdentifier);
+    private final String columnFamily = UUID.randomUUID().toString();
+
+    private SerializationUtils.SimpleSerializer<K> keySerializer;
+
+    private SerializationUtils.SimpleSerializer<T> valueSerializer;
+
+    public SimpleSpilledMap(SerializationUtils.SimpleSerializer<K> keySerializer,
+        SerializationUtils.SimpleSerializer<T> valueSerializer) {
+      rocksDB = RocksDBBackend.getOrCreateInstance();
+      rocksDB.addColumnFamily(columnFamily);
+      this.keySerializer = keySerializer;
+      this.valueSerializer = valueSerializer;
     }
 
-    public boolean containsKey(T key) {
-      return rocksDB.get(mapIdentifier, key) != null;
+    public boolean containsKey(K key) {
+      return rocksDB.get(columnFamily, keySerializer.serialize(key)) != null;
     }
 
-    public K get(T key) {
-      return rocksDB.get(mapIdentifier, key);
+    public T get(K key) {
+      return valueSerializer.deserialize(rocksDB.get(columnFamily, keySerializer.serialize(key)));
     }
 
-    public void put(T key, K value) {
-      rocksDB.put(mapIdentifier, key, value);
+    public void put(K key, T value) {
+      rocksDB.put(columnFamily, keySerializer.serialize(key), valueSerializer.serialize(value));
     }
 
-    public void delete(T key) {
-      rocksDB.delete(mapIdentifier, key);
+    public void delete(K key) {
+      rocksDB.delete(columnFamily, keySerializer.serialize(key));
     }
 
     public void close() {
-      rocksDB.dropColumnFamily(mapIdentifier);
+      rocksDB.dropColumnFamily(columnFamily);
     }
 
     public long sizeOfFileOnDiskInBytes() {

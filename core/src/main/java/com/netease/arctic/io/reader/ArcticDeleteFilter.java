@@ -24,6 +24,7 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.CloseableIterableWrapper;
 import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
@@ -31,7 +32,7 @@ import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.NodeFilter;
 import com.netease.arctic.utils.map.StructLikeBaseMap;
-import com.netease.arctic.utils.map.StructLikeFactory;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
@@ -99,7 +100,7 @@ public abstract class ArcticDeleteFilter<T> {
   private String currentDataPath;
   private Set<Long> currentPosSet;
 
-  private StructLikeFactory structLikeFactory = new StructLikeFactory();
+  private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
 
   protected ArcticDeleteFilter(
           KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
@@ -110,9 +111,9 @@ public abstract class ArcticDeleteFilter<T> {
   protected ArcticDeleteFilter(
       KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
       Schema requestedSchema, PrimaryKeySpec primaryKeySpec,
-      Set<DataTreeNode> sourceNodes, StructLikeFactory structLikeFactory) {
+      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections) {
     this(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-    this.structLikeFactory = structLikeFactory;
+    this.structLikeCollections = structLikeCollections;
   }
 
   protected ArcticDeleteFilter(
@@ -183,15 +184,15 @@ public abstract class ArcticDeleteFilter<T> {
    * @return The data not in equity delete file
    */
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return new CloseableIterableWithOtherCloseable<>(applyEqDeletes(applyPosDeletes(records),
-        applyEqDeletes().negate()));
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records),
+        applyEqDeletes().negate()), eqPredicate);
   }
 
   /**
    * @return The data in equity delete file
    */
   public CloseableIterable<T> filterNegate(CloseableIterable<T> records) {
-    return new CloseableIterableWithOtherCloseable<>(applyEqDeletes(applyPosDeletes(records), applyEqDeletes()));
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records), applyEqDeletes()), eqPredicate);
   }
 
   public void setCurrentDataPath(String currentDataPath) {
@@ -239,7 +240,7 @@ public abstract class ArcticDeleteFilter<T> {
     CloseableIterable<StructLike> structLikeIterable = CloseableIterable.transform(
             records, record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
 
-    StructLikeBaseMap<ChangedLsn> structLikeMap = structLikeFactory.createStructLikeMap(pkSchema.asStruct());
+    StructLikeBaseMap<ChangedLsn> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
     //init map
     try (CloseableIterable<StructLike> deletes = structLikeIterable) {
       Iterator<StructLike> it = getArcticFileIo() == null ? deletes.iterator()
@@ -457,52 +458,5 @@ public abstract class ArcticDeleteFilter<T> {
     }
 
     return new Schema(columns);
-  }
-
-  private class CloseableIterableWithOtherCloseable<T> implements CloseableIterable<T> {
-
-    private CloseableIterable<T> inner;
-
-    public CloseableIterableWithOtherCloseable(CloseableIterable<T> inner) {
-      this.inner = inner;
-    }
-
-    @Override
-    public CloseableIterator<T> iterator() {
-      CloseableIterator<T> closeableIterator = inner.iterator();
-      return new CloseableIteratorWithOtherCloseable<>(closeableIterator);
-    }
-
-    @Override
-    public void close() throws IOException {
-      inner.close();
-    }
-  }
-
-  private class CloseableIteratorWithOtherCloseable<T> implements CloseableIterator<T> {
-
-    private CloseableIterator<T> closeableIterator;
-
-    public CloseableIteratorWithOtherCloseable(CloseableIterator<T> closeableIterator) {
-      this.closeableIterator = closeableIterator;
-    }
-
-    @Override
-    public void close() throws IOException {
-      closeableIterator.close();
-      if (eqPredicate != null) {
-        eqPredicate.close();
-      }
-    }
-
-    @Override
-    public boolean hasNext() {
-      return closeableIterator.hasNext();
-    }
-
-    @Override
-    public T next() {
-      return closeableIterator.next();
-    }
   }
 }

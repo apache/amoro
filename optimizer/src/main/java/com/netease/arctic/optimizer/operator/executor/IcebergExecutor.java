@@ -25,7 +25,6 @@ import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.utils.map.StructLikeFactory;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
@@ -81,13 +80,9 @@ public class IcebergExecutor extends BaseExecutor {
   private List<? extends ContentFile<?>> optimizeDeleteFiles() throws Exception {
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
 
-    StructLikeFactory structLikeFactory = new StructLikeFactory();
-    if (config.isEnableSpillMap()) {
-      structLikeFactory = new StructLikeFactory(maxInMemorySizeInBytes, mapIdentifier);
-    }
     GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
             table.io(), table.schema(), requiredSchema, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-            false, IdentityPartitionConverters::convertConstant, false, structLikeFactory);
+            false, IdentityPartitionConverters::convertConstant, false, structLikeCollections);
 
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
@@ -136,13 +131,9 @@ public class IcebergExecutor extends BaseExecutor {
 
   private List<? extends ContentFile<?>> optimizeDataFiles() throws Exception {
     List<DataFile> result = Lists.newArrayList();
-    StructLikeFactory structLikeFactory = new StructLikeFactory();
-    if (config.isEnableSpillMap()) {
-      structLikeFactory = new StructLikeFactory(maxInMemorySizeInBytes, mapIdentifier);
-    }
     GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
         table.io(), table.schema(), table.schema(), table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-        false, IdentityPartitionConverters::convertConstant, false, structLikeFactory);
+        false, IdentityPartitionConverters::convertConstant, false, structLikeCollections);
 
     String formatAsString = table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
     long targetSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
