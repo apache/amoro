@@ -61,9 +61,9 @@ public class GenericArcticDataReader extends BaseArcticDataReader<Record> {
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       Set<DataTreeNode> sourceNodes, boolean reuseContainer,
-      StructLikeCollections structLikeFactory) {
+      StructLikeCollections structLikeCollections) {
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
-        nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer, structLikeFactory);
+        nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer, structLikeCollections);
   }
 
   public GenericArcticDataReader(

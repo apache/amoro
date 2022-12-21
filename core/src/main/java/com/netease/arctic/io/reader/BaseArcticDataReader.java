@@ -188,9 +188,9 @@ public abstract class BaseArcticDataReader<T> {
         Schema requestedSchema,
         PrimaryKeySpec primaryKeySpec,
         Set<DataTreeNode> sourceNodes,
-        StructLikeCollections structLikeFactory) {
+        StructLikeCollections structLikeCollections) {
       super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
-          sourceNodes, structLikeFactory);
+          sourceNodes, structLikeCollections);
       this.asStructLike = BaseArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
     }
 

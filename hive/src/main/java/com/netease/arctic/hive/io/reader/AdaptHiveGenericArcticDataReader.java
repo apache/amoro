@@ -52,9 +52,9 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
       BiFunction<Type, Object, Object> convertConstant,
       Set<DataTreeNode> sourceNodes,
       boolean reuseContainer,
-      StructLikeCollections structLikeFactory) {
+      StructLikeCollections structLikeCollections) {
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec, nameMapping, caseSensitive, convertConstant,
-        sourceNodes, reuseContainer, structLikeFactory);
+        sourceNodes, reuseContainer, structLikeCollections);
   }
 
   public AdaptHiveGenericArcticDataReader(

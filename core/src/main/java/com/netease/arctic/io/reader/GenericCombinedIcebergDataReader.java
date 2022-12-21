@@ -160,8 +160,8 @@ public class GenericCombinedIcebergDataReader {
         CombinedIcebergScanTask task,
         Schema tableSchema,
         Schema requestedSchema,
-        StructLikeCollections structLikeFactory) {
-      super(task, tableSchema, requestedSchema, structLikeFactory);
+        StructLikeCollections structLikeCollections) {
+      super(task, tableSchema, requestedSchema, structLikeCollections);
       internalRecordWrapper = new InternalRecordWrapper(requiredSchema().asStruct());
     }
 

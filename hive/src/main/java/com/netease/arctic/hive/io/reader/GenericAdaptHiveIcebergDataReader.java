@@ -45,9 +45,9 @@ public class GenericAdaptHiveIcebergDataReader extends AdaptHiveBaseIcebergDataR
       String nameMapping,
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant, boolean reuseContainer,
-      StructLikeCollections structLikeFactory) {
+      StructLikeCollections structLikeCollections) {
     super(fileIO, tableSchema, projectedSchema, nameMapping, caseSensitive,
-        convertConstant, reuseContainer, structLikeFactory);
+        convertConstant, reuseContainer, structLikeCollections);
   }
 
   public GenericAdaptHiveIcebergDataReader(

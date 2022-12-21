@@ -56,7 +56,7 @@ public class GenericIcebergDataReader extends BaseIcebergDataReader<Record> {
       boolean caseSensitive,
       BiFunction<Type, Object, Object> convertConstant,
       boolean reuseContainer,
-      StructLikeCollections structLikeFactory) {
+      StructLikeCollections structLikeCollections) {
     super(
         fileIO,
         tableSchema,
@@ -65,7 +65,7 @@ public class GenericIcebergDataReader extends BaseIcebergDataReader<Record> {
         caseSensitive,
         convertConstant,
         reuseContainer,
-        structLikeFactory);
+        structLikeCollections);
   }
 
 

@@ -49,7 +49,7 @@ public abstract class AdaptHiveBaseArcticDataReader<T> extends BaseArcticDataRea
       BiFunction<Type, Object, Object> convertConstant,
       Set<DataTreeNode> sourceNodes,
       boolean reuseContainer,
-      StructLikeCollections structLikeFactory) {
+      StructLikeCollections structLikeCollections) {
     super(
         fileIO,
         tableSchema,
@@ -60,7 +60,7 @@ public abstract class AdaptHiveBaseArcticDataReader<T> extends BaseArcticDataRea
         convertConstant,
         sourceNodes,
         reuseContainer,
-        structLikeFactory);
+        structLikeCollections);
   }
 
   public AdaptHiveBaseArcticDataReader(
