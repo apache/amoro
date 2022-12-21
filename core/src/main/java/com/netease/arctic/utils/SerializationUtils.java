@@ -23,7 +23,6 @@ import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.netease.arctic.data.IcebergContentFile;
-import com.netease.arctic.iceberg.optimize.StructLikeCopy;
 import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
 import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
 import org.apache.avro.util.Utf8;
@@ -210,7 +209,7 @@ public class SerializationUtils {
     @Override
     public byte[] serialize(StructLikeWrapper structLikeWrapper) {
       checkNotNull(structLikeWrapper);
-      StructLike copy = StructLikeCopy.copy(structLikeWrapper.get());
+      StructLike copy = SerializationUtils.StructLikeCopy.copy(structLikeWrapper.get());
       try {
         return SerializationUtils.serialize(copy);
       } catch (IOException e) {
@@ -223,7 +222,7 @@ public class SerializationUtils {
       if (bytes == null) {
         return null;
       }
-      StructLikeCopy structLike = SerializationUtils.deserialize(bytes);
+      SerializationUtils.StructLikeCopy structLike = SerializationUtils.deserialize(bytes);
       return structLikeWrapperFactory.create().set(structLike);
     }
   }
@@ -248,6 +247,44 @@ public class SerializationUtils {
         return null;
       }
       return SerializationUtils.deserialize(bytes);
+    }
+  }
+
+  private static class StructLikeCopy implements StructLike {
+
+    public static StructLike copy(StructLike struct) {
+      return struct != null ? new StructLikeCopy(struct) : null;
+    }
+
+    private final Object[] values;
+
+    private StructLikeCopy(StructLike toCopy) {
+      this.values = new Object[toCopy.size()];
+
+      for (int i = 0; i < values.length; i += 1) {
+        Object value = toCopy.get(i, Object.class);
+
+        if (value instanceof StructLike) {
+          values[i] = copy((StructLike) value);
+        } else {
+          values[i] = value;
+        }
+      }
+    }
+
+    @Override
+    public int size() {
+      return values.length;
+    }
+
+    @Override
+    public <T> T get(int pos, Class<T> javaClass) {
+      return javaClass.cast(values[pos]);
+    }
+
+    @Override
+    public <T> void set(int pos, T value) {
+      throw new UnsupportedOperationException("Struct copy cannot be modified");
     }
   }
 }
