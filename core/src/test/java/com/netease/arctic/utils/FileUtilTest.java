@@ -56,11 +56,11 @@ public class FileUtilTest {
 
   @Test
   public void testGetUriPath() {
-    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("hdfs://xxxxx/a/b/c"));
-    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("hdfs://localhost:8888/a/b/c"));
-    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("file://xxxxx/a/b/c"));
-    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("/a/b/c"));
-    Assert.assertEquals("/a/b/c", FileUtil.getUriPath("hdfs:/a/b/c"));
-    Assert.assertEquals("a/b/c", FileUtil.getUriPath("a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("hdfs://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("hdfs://localhost:8888/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("file://xxxxx/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("/a/b/c"));
+    Assert.assertEquals("/a/b/c", TableFileUtils.getUriPath("hdfs:/a/b/c"));
+    Assert.assertEquals("a/b/c", TableFileUtils.getUriPath("a/b/c"));
   }
 }
