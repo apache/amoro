@@ -89,6 +89,7 @@ public class TableEntriesScan {
 
     /**
      * Set the filter
+     *
      * @param dataFilter default is always true
      * @return this for chain
      */
@@ -99,6 +100,7 @@ public class TableEntriesScan {
 
     /**
      * If only return the Existing, Add entries
+     *
      * @param aliveEntry true for only Existing, Add
      * @return this for chain
      */
@@ -109,6 +111,7 @@ public class TableEntriesScan {
 
     /**
      * Set the fileContent
+     *
      * @param fileContent default is nothing
      * @return this for chain
      */
@@ -119,6 +122,7 @@ public class TableEntriesScan {
 
     /**
      * Set the snapshotId
+     *
      * @param snapshotId snapshotId
      * @return this for chain
      */
@@ -130,6 +134,7 @@ public class TableEntriesScan {
     /**
      * Set if loads the column stats with each file.
      * <p>Column stats include: value count, null value count, lower bounds, and upper bounds.
+     *
      * @return this for chain
      */
     public Builder includeColumnStats() {
@@ -205,7 +210,7 @@ public class TableEntriesScan {
     }
     throw new IllegalArgumentException("not support content id " + contentId);
   }
-  
+
   private boolean needMetrics() {
     return dataFilter != null || includeColumnStats;
   }
@@ -236,7 +241,7 @@ public class TableEntriesScan {
     }
     return file;
   }
-  
+
   private PartitionSpec spec() {
     if (spec == null) {
       spec = table.spec();
@@ -254,7 +259,7 @@ public class TableEntriesScan {
         .withFileSizeInBytes(fileSize)
         .withRecordCount(recordCount);
     if (needMetrics()) {
-        builder.withMetrics(buildMetrics(fileRecord));
+      builder.withMetrics(buildMetrics(fileRecord));
     }
     if (spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
@@ -272,7 +277,7 @@ public class TableEntriesScan {
         .withFileSizeInBytes(fileSize)
         .withRecordCount(recordCount);
     if (needMetrics()) {
-        builder.withMetrics(buildMetrics(fileRecord));
+      builder.withMetrics(buildMetrics(fileRecord));
     }
     if (spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
@@ -333,7 +338,7 @@ public class TableEntriesScan {
     }
     return lazyMetricsEvaluator;
   }
-  
+
   private static class AlwaysTrueEvaluator extends InclusiveMetricsEvaluator {
     public AlwaysTrueEvaluator(Schema schema) {
       super(schema, Expressions.alwaysTrue());
