@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.URI;
 import java.util.Collections;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -167,5 +168,14 @@ public class TableFileUtils {
       nodeId = Long.parseLong(matcher.group(1));
     }
     return DataTreeNode.ofId(nodeId);
+  }
+
+  /**
+   * remove Uniform Resource Identifier (URI) in file path
+   * @param path file path with Uniform Resource Identifier (URI)
+   * @return file path without Uniform Resource Identifier (URI)
+   */
+  public static String getUriPath(String path) {
+    return URI.create(path).getPath();
   }
 }
