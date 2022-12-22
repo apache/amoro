@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.UpdatePartitionProperties;
@@ -42,8 +43,10 @@ import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.RewriteFiles;
+import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.exceptions.ValidationException;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.util.SnapshotUtil;
 import org.apache.iceberg.util.StructLikeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,17 +151,22 @@ public class BaseOptimizeCommit {
       String foundNewDeleteMessage = "found new delete for replaced data file";
       if (e.getMessage().contains(missFileMessage) ||
           e.getMessage().contains(foundNewDeleteMessage)) {
-        LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
-        for (ContentFile<?> majorAddFile : majorAddFiles) {
-          if (arcticTable.io().exists(majorAddFile.path().toString())) {
-            arcticTable.io().deleteFile(majorAddFile.path().toString());
-            LOG.warn("Delete orphan file {} when optimize commit failed", majorAddFile.path().toString());
-          }
+        UnkeyedTable baseArcticTable;
+        if (arcticTable.isKeyedTable()) {
+          baseArcticTable = arcticTable.asKeyedTable().baseTable();
+        } else {
+          baseArcticTable = arcticTable.asUnkeyedTable();
         }
-        for (ContentFile<?> minorAddFile : minorAddFiles) {
-          if (arcticTable.io().exists(minorAddFile.path().toString())) {
-            arcticTable.io().deleteFile(minorAddFile.path().toString());
-            LOG.warn("Delete orphan file {} when optimize commit failed", minorAddFile.path().toString());
+        LOG.warn("Optimize commit table {} failed, give up commit and clear files in location.", arcticTable.id(), e);
+        // only delete data files are produced by major optimize, because the major optimize maybe support hive
+        // and produce redundant data files in hive location.(don't produce DeleteFile)
+        // minor produced files will be clean by orphan file clean
+        Set<String> committedFilePath = getCommittedDataFilesFromSnapshotId(baseArcticTable, baseSnapshotId);
+        for (ContentFile<?> majorAddFile : majorAddFiles) {
+          String filePath = TableFileUtils.getUriPath(majorAddFile.path().toString());
+          if (!committedFilePath.contains(filePath) && arcticTable.io().exists(filePath)) {
+            arcticTable.io().deleteFile(filePath);
+            LOG.warn("Delete orphan file {} when optimize commit failed", filePath);
           }
         }
         return false;
@@ -421,5 +429,25 @@ public class BaseOptimizeCommit {
     }
 
     return result;
+  }
+
+  private static Set<String> getCommittedDataFilesFromSnapshotId(UnkeyedTable table, Long snapshotId) {
+    long currentSnapshotId = UnKeyedTableUtil.getSnapshotId(table);
+    if (currentSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+      return Collections.emptySet();
+    }
+
+    if (snapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+      snapshotId = null;
+    }
+
+    Set<String> committedFilePath = new HashSet<>();
+    for (Snapshot snapshot : SnapshotUtil.ancestorsBetween(currentSnapshotId, snapshotId, table::snapshot)) {
+      for (DataFile dataFile : snapshot.addedFiles()) {
+        committedFilePath.add(TableFileUtils.getUriPath(dataFile.path().toString()));
+      }
+    }
+
+    return committedFilePath;
   }
 }
