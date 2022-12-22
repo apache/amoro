@@ -84,24 +84,26 @@ public class MinorExecutor extends BaseExecutor {
           .buildBasePosDeleteWriter(treeNode.mask(), treeNode.index(), task.getPartition());
 
       table.io().doAs(() -> {
-        CloseableIterator<Record> iterator =
-            openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes());
 
-        while (iterator.hasNext()) {
-          checkIfTimeout(posDeleteWriter);
+        try (CloseableIterator<Record> iterator =
+                 openTask(dataFiles, posDeleteList, requiredSchema, task.getSourceNodes())) {
+          while (iterator.hasNext()) {
+            checkIfTimeout(posDeleteWriter);
 
-          Record record = iterator.next();
-          String filePath = (String) record.get(recordStruct.fields()
-              .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
-          Long rowPosition = (Long) record.get(recordStruct.fields()
-              .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
-          posDeleteWriter.delete(filePath, rowPosition);
-          insertCount.incrementAndGet();
-          if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
-            LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
-                task.getTaskId(), insertCount.get(), filePath, rowPosition);
+            Record record = iterator.next();
+            String filePath = (String) record.get(recordStruct.fields()
+                .indexOf(recordStruct.field(MetadataColumns.FILE_PATH.name())));
+            Long rowPosition = (Long) record.get(recordStruct.fields()
+                .indexOf(recordStruct.field(MetadataColumns.ROW_POSITION.name())));
+            posDeleteWriter.delete(filePath, rowPosition);
+            insertCount.incrementAndGet();
+            if (insertCount.get() % SAMPLE_DATA_INTERVAL == 1) {
+              LOG.info("task {} insert records number {} and data sampling path:{}, pos:{}",
+                  task.getTaskId(), insertCount.get(), filePath, rowPosition);
+            }
           }
         }
+
         return null;
       });
 
@@ -110,15 +112,17 @@ public class MinorExecutor extends BaseExecutor {
         BaseIcebergPosDeleteReader posDeleteReader = new BaseIcebergPosDeleteReader(table.io(), posDeleteList);
         table.io().doAs(() -> {
           CloseableIterable<Record> posDeleteIterable = posDeleteReader.readDeletes();
-          CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator();
-          while (posDeleteIterator.hasNext()) {
-            checkIfTimeout(posDeleteWriter);
+          try (CloseableIterator<Record> posDeleteIterator = posDeleteIterable.iterator()) {
+            while (posDeleteIterator.hasNext()) {
+              checkIfTimeout(posDeleteWriter);
 
-            Record record = posDeleteIterator.next();
-            String filePath = posDeleteReader.readPath(record);
-            Long rowPosition = posDeleteReader.readPos(record);
-            posDeleteWriter.delete(filePath, rowPosition);
+              Record record = posDeleteIterator.next();
+              String filePath = posDeleteReader.readPath(record);
+              Long rowPosition = posDeleteReader.readPos(record);
+              posDeleteWriter.delete(filePath, rowPosition);
+            }
           }
+
           return null;
         });
       }
@@ -150,11 +154,11 @@ public class MinorExecutor extends BaseExecutor {
       KeyedTable keyedTable = table.asKeyedTable();
       primaryKeySpec = keyedTable.primaryKeySpec();
     }
+
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema,
             primaryKeySpec, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-            false, IdentityPartitionConverters::convertConstant, sourceNodes, false);
-
+            false, IdentityPartitionConverters::convertConstant, sourceNodes, false, structLikeCollections);
     KeyedTableScanTask keyedTableScanTask = new NodeFileScanTask(fileScanTasks);
     return arcticDataReader.readDeletedData(keyedTableScanTask);
   }

@@ -64,7 +64,7 @@ public class IcebergExecutor extends BaseExecutor {
     LOG.info("Start processing iceberg table optimize task: {}", task);
 
 
-    List<? extends ContentFile<?>> targetFiles = null;
+    List<? extends ContentFile<?>> targetFiles;
 
     if (task.getOptimizeType().equals(OptimizeType.Minor) && task.icebergDataFiles().size() > 0) {
       // optimize iceberg delete files only in minor process
@@ -79,9 +79,10 @@ public class IcebergExecutor extends BaseExecutor {
 
   private List<? extends ContentFile<?>> optimizeDeleteFiles() throws Exception {
     Schema requiredSchema = new Schema(MetadataColumns.FILE_PATH, MetadataColumns.ROW_POSITION);
+
     GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
-        table.io(), table.schema(), requiredSchema, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-        false, IdentityPartitionConverters::convertConstant, false);
+            table.io(), table.schema(), requiredSchema, table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
+            false, IdentityPartitionConverters::convertConstant, false, structLikeCollections);
 
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
@@ -132,13 +133,12 @@ public class IcebergExecutor extends BaseExecutor {
     List<DataFile> result = Lists.newArrayList();
     GenericCombinedIcebergDataReader icebergDataReader = new GenericCombinedIcebergDataReader(
         table.io(), table.schema(), table.schema(), table.properties().get(TableProperties.DEFAULT_NAME_MAPPING),
-        false, IdentityPartitionConverters::convertConstant, false);
+        false, IdentityPartitionConverters::convertConstant, false, structLikeCollections);
 
     String formatAsString = table.properties().getOrDefault(DEFAULT_FILE_FORMAT, DEFAULT_FILE_FORMAT_DEFAULT);
     long targetSizeByBytes = PropertyUtil.propertyAsLong(table.properties(),
         com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE,
         com.netease.arctic.table.TableProperties.SELF_OPTIMIZING_TARGET_SIZE_DEFAULT);
-
 
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(table.asUnkeyedTable(), table.spec().specId(),
         task.getAttemptId()).build();

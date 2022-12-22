@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,32 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.utils.map;
+package com.netease.arctic.io;
+
+import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.CloseableIterator;
 
 import java.io.Closeable;
+import java.io.IOException;
 
-public interface SimpleMap<T, K> extends Closeable {
+public class CloseableIterableWrapper<T> implements CloseableIterable<T> {
 
-  void put(T key, K value);
+  private Closeable[] closeables;
+  private CloseableIterable<T> inner;
 
-  void delete(T key);
+  public CloseableIterableWrapper(CloseableIterable<T> inner, Closeable... closeables) {
+    this.inner = inner;
+    this.closeables = closeables;
+  }
 
-  K get(T key);
+  @Override
+  public CloseableIterator<T> iterator() {
+    CloseableIterator<T> closeableIterator = inner.iterator();
+    return new CloseableIteratorWrapper<>(closeableIterator, closeables);
+  }
+
+  @Override
+  public void close() throws IOException {
+    inner.close();
+  }
 }

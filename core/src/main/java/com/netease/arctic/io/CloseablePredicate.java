@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,30 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.utils.map;
+package com.netease.arctic.io;
 
 import java.io.Closeable;
+import java.io.IOException;
+import java.util.function.Predicate;
 
-public interface SimpleMap<T, K> extends Closeable {
+public class CloseablePredicate<T> implements Predicate<T>, Closeable {
 
-  void put(T key, K value);
+  private Predicate<T> predicate;
 
-  void delete(T key);
+  private Closeable closeable;
 
-  K get(T key);
+  public CloseablePredicate(Predicate<T> predicate, Closeable closeable) {
+    this.predicate = predicate;
+    this.closeable = closeable;
+  }
+
+  @Override
+  public boolean test(T t) {
+    return predicate.test(t);
+  }
+
+  @Override
+  public void close() throws IOException {
+    closeable.close();
+  }
 }

@@ -1,7 +1,6 @@
 package com.netease.arctic.utils.map;
 
 import com.google.common.collect.Maps;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,8 +48,7 @@ public class TestSimpleSpillableMap {
 
   private SimpleSpillableMap testMap(long expectMemorySize, int expectKeyCount) {
     SimpleSpillableMap actualMap =
-            new SimpleSpillableMap(expectMemorySize * (keySize + valueSize),
-                    TestRocksDBBackend.CF_NAME);
+            new SimpleSpillableMap(expectMemorySize * (keySize + valueSize));
     Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() == 0);
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < expectKeyCount; i++) {

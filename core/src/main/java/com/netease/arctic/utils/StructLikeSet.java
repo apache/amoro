@@ -24,15 +24,18 @@ import com.netease.arctic.utils.map.StructLikeSpillableMap;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 
-public class StructLikeSet {
+import java.io.Closeable;
+import java.io.IOException;
+
+public class StructLikeSet implements Closeable {
 
   public static StructLikeSet createMemorySet(Types.StructType type) {
     return new StructLikeSet(type);
   }
 
   public static StructLikeSet createSpillableSet(Types.StructType type,
-                                                 Long maxInMemorySizeInBytes, String mapIdentifier) {
-    return new StructLikeSet(type, maxInMemorySizeInBytes, mapIdentifier);
+                                                 Long maxInMemorySizeInBytes) {
+    return new StructLikeSet(type, maxInMemorySizeInBytes);
   }
 
   private static final Integer _V = 0;
@@ -42,8 +45,8 @@ public class StructLikeSet {
     this.structLikeMap =  StructLikeMemoryMap.create(type);
   }
 
-  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes, String mapIdentifier) {
-    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, mapIdentifier);
+  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes) {
+    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes);
   }
 
   public boolean contains(StructLike key) {
@@ -58,7 +61,7 @@ public class StructLikeSet {
     structLikeMap.delete(struct);
   }
 
-  public void close() {
+  public void close() throws IOException {
     structLikeMap.close();
   }
 }

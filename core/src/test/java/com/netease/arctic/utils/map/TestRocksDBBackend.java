@@ -1,5 +1,6 @@
 package com.netease.arctic.utils.map;
 
+import com.netease.arctic.ArcticIOException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,7 +26,6 @@ public class TestRocksDBBackend {
     int originalCfCount = rocksDBBackend.listColumnFamilies().size();
     rocksDBBackend.addColumnFamily(CF_NAME);
     Assert.assertEquals(originalCfCount + 1, rocksDBBackend.listColumnFamilies().size());
-    Assert.assertEquals(CF_NAME, new String(rocksDBBackend.listColumnFamilies().get(originalCfCount).getName(), "utf8"));
     rocksDBBackend.dropColumnFamily(CF_NAME);
     Assert.assertEquals(originalCfCount, rocksDBBackend.listColumnFamilies().size());
   }
@@ -50,10 +50,10 @@ public class TestRocksDBBackend {
     Assert.assertEquals("mj", rocksDBBackend.get(CF_NAME, "name"));
     rocksDBBackend.dropColumnFamily(CF_NAME);
     try {
-      String value = rocksDBBackend.get(CF_NAME, "name");
+      rocksDBBackend.get(CF_NAME, "name");
       Assert.assertTrue(false);
     } catch (Throwable t) {
-      Assert.assertTrue(t instanceof IllegalArgumentException);
+      Assert.assertTrue(t instanceof ArcticIOException);
     }
   }
 
@@ -70,7 +70,7 @@ public class TestRocksDBBackend {
     rocksDBBackend.put(CF_NAME, "name", expect.get(0));
     rocksDBBackend.put(CF_NAME, 2, expect.get(1));
     rocksDBBackend.put(CF_NAME, 4556, expect.get(2));
-    Iterator<String> values = rocksDBBackend.iterator(CF_NAME);
+    Iterator<String> values = rocksDBBackend.valuesForTest(CF_NAME);
     List<String> valueList = new ArrayList<>();
     for ( ; values.hasNext(); ) {
       valueList.add(values.next());
@@ -82,7 +82,7 @@ public class TestRocksDBBackend {
     
     rocksDBBackend.delete(CF_NAME, "name");
     valueList = new ArrayList<>();
-    values = rocksDBBackend.iterator(CF_NAME);
+    values = rocksDBBackend.valuesForTest(CF_NAME);
     for ( ; values.hasNext(); ) {
       valueList.add(values.next());
     }

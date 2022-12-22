@@ -29,6 +29,7 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -56,11 +57,15 @@ public abstract class BaseExecutor implements Executor {
   protected final OptimizerConfig config;
   protected double factor = 0.9;
 
+  protected final StructLikeCollections structLikeCollections;
+
   public BaseExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
     this.task = task;
     this.table = table;
     this.startTime = startTime;
     this.config = config;
+    this.structLikeCollections = new StructLikeCollections(config.isEnableSpillMap(),
+          config.getMaxInMemorySizeInBytes());
   }
 
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {

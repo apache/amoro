@@ -46,6 +46,15 @@ public class OptimizerConfig implements Serializable {
   @Option(name = "-m", aliases = "--memory-size", usage = "memory size")
   private int executorMemory;
 
+  @Option(name = "-es", aliases = "--enable-spill-map", usage = "whether enable spill map in optimizer")
+  private boolean enableSpillMap = false;
+
+  @Option(name = "-mm", aliases = "--max-delete-memory-size", usage = "max delete map byte size in memory")
+  private long maxInMemorySizeInBytes = 524288000; // 500 M
+
+  @Option(name = "-rp", aliases = "--rock-base-path", usage = "rocks db base path")
+  private String rocksDBBasePath;
+
   public OptimizerConfig() {
   }
 
@@ -110,6 +119,30 @@ public class OptimizerConfig implements Serializable {
     this.executorMemory = executorMemory;
   }
 
+  public long getMaxInMemorySizeInBytes() {
+    return maxInMemorySizeInBytes;
+  }
+
+  public void setMaxInMemorySizeInBytes(long maxInMemorySizeInBytes) {
+    this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
+  }
+
+  public boolean isEnableSpillMap() {
+    return enableSpillMap;
+  }
+
+  public void setEnableSpillMap(boolean enableSpillMap) {
+    this.enableSpillMap = enableSpillMap;
+  }
+
+  public String getRocksDBBasePath() {
+    return rocksDBBasePath;
+  }
+
+  public void setRocksDBBasePath(String rocksDBBasePath) {
+    this.rocksDBBasePath = rocksDBBasePath;
+  }
+
   @Override
   public String toString() {
     return "OptimizerConfig{" +
@@ -120,4 +153,5 @@ public class OptimizerConfig implements Serializable {
         ", heartBeat=" + heartBeat +
         '}';
   }
+
 }
