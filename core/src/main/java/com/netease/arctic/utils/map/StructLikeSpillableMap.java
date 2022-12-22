@@ -19,6 +19,7 @@
 package com.netease.arctic.utils.map;
 
 import com.netease.arctic.iceberg.optimize.StructLikeWrapper;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
@@ -30,46 +31,22 @@ import java.util.HashMap;
 public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
 
   public static <T> StructLikeSpillableMap<T> create(Types.StructType type,
-                                                     Long maxInMemorySizeInBytes, String mapIdentifier) {
-    return new StructLikeSpillableMap<>(type, maxInMemorySizeInBytes, mapIdentifier);
+                                                     Long maxInMemorySizeInBytes) {
+    return new StructLikeSpillableMap<>(type, maxInMemorySizeInBytes);
   }
 
   private final SimpleMap<StructLikeWrapper, T> wrapperMap;
 
-  private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes,
-                                 String mapIdentifier) {
+  private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes) {
     super(type);
-    this.wrapperMap = new SimpleSpillableMap(maxInMemorySizeInBytes, mapIdentifier);
+    this.wrapperMap = new SimpleSpillableMap(maxInMemorySizeInBytes,
+        SerializationUtils.createStructLikeWrapperSerializer(structLikeWrapperFactory),
+        SerializationUtils.createJavaSimpleSerializer());
   }
 
   @Override
   protected SimpleMap<StructLikeWrapper, T> getInternalMap() {
     return wrapperMap;
-  }
-
-  private class SimpleMemoryMap<T> implements SimpleMap<StructLikeWrapper, T> {
-
-    HashMap<StructLikeWrapper, T> map = Maps.newHashMap();
-
-    @Override
-    public void put(StructLikeWrapper key, T value) {
-      map.put(key, value);
-    }
-
-    @Override
-    public void delete(StructLikeWrapper key) {
-      map.remove(key);
-    }
-
-    @Override
-    public T get(StructLikeWrapper key) {
-      return map.get(key);
-    }
-
-    @Override
-    public void close() {
-      //do nothing and gc will digard it
-    }
   }
 }
 

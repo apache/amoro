@@ -23,6 +23,8 @@ import com.netease.arctic.iceberg.optimize.StructLikeWrapperFactory;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 
+import java.io.IOException;
+
 public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
 
   protected final ThreadLocal<StructLikeWrapper> wrappers;
@@ -54,7 +56,7 @@ public abstract class StructLikeBaseMap<T> implements SimpleMap<StructLike, T> {
   }
 
   @Override
-  public void close() {
+  public void close() throws IOException {
     getInternalMap().close();
   }
 

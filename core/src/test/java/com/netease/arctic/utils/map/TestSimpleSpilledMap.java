@@ -1,6 +1,7 @@
 package com.netease.arctic.utils.map;
 
 import com.netease.arctic.ArcticIOException;
+import com.netease.arctic.utils.SerializationUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -31,9 +32,8 @@ public class TestSimpleSpilledMap {
   private SimpleSpillableMap.SimpleSpilledMap map;
   @Before
   public void createMap() {
-    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L,
-            TestRocksDBBackend.CF_NAME);
-    map = spillableMap.new SimpleSpilledMap();
+    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L);
+    map = spillableMap.new SimpleSpilledMap(SerializationUtils.createJavaSimpleSerializer(), SerializationUtils.createJavaSimpleSerializer());
   }
 
   @After
@@ -65,15 +65,7 @@ public class TestSimpleSpilledMap {
     Value value = new Value();
     map.put(key, value);
     Assert.assertEquals(value, map.get(key));
-    try {
-      map.put(key, null);
-    } catch (Throwable t) {
-      Assert.assertTrue(t instanceof ArcticIOException);
-    }
-    try {
-      map.put(null, value);
-    } catch (Throwable t) {
-      Assert.assertTrue(t instanceof ArcticIOException);
-    }
+    Assert.assertThrows(Exception.class, () -> map.put(key, null));
+    Assert.assertThrows(Exception.class, () -> map.put(null, value));
   }
 }
