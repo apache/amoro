@@ -32,6 +32,7 @@ import org.apache.iceberg.HasTableOperations;
 import org.apache.iceberg.MetadataTableType;
 import org.apache.iceberg.MetadataTableUtils;
 import org.apache.iceberg.Metrics;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.Table;
@@ -61,9 +62,11 @@ public class TableEntriesScan {
   private final Expression dataFilter;
   private final boolean aliveEntry;
   private final boolean allFileContent;
+  private final boolean includeColumnStats;
   private final Set<FileContent> validFileContent;
 
   private Table entriesTable;
+  private PartitionSpec spec;
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
   private Map<String, Integer> lazyIndexOfDataFileType;
   private Map<String, Integer> lazyIndexOfEntryType;
@@ -77,6 +80,7 @@ public class TableEntriesScan {
     private Long snapshotId;
     private Expression dataFilter;
     private boolean aliveEntry = true;
+    private boolean includeColumnStats = false;
     private final Set<FileContent> fileContents = Sets.newHashSet();
 
     public Builder(Table table) {
@@ -123,20 +127,31 @@ public class TableEntriesScan {
       return this;
     }
 
+    /**
+     * Set if loads the column stats with each file.
+     * <p>Column stats include: value count, null value count, lower bounds, and upper bounds.
+     * @return this for chain
+     */
+    public Builder includeColumnStats() {
+      this.includeColumnStats = true;
+      return this;
+    }
+
     public TableEntriesScan build() {
-      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents);
+      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents, includeColumnStats);
     }
   }
 
 
   public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-                          Set<FileContent> validFileContent) {
+                          Set<FileContent> validFileContent, boolean includeColumnStats) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
     this.allFileContent = validFileContent.containsAll(Arrays.asList(FileContent.values()));
     this.validFileContent = validFileContent;
     this.snapshotId = snapshotId;
+    this.includeColumnStats = includeColumnStats;
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
@@ -162,7 +177,10 @@ public class TableEntriesScan {
           if (shouldKeep(status, fileContent)) {
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {
-              return new IcebergFileEntry(snapshotId, sequence, contentFile);
+              ContentFile<?> copyFile = includeColumnStats ?
+                  (ContentFile<?>) contentFile.copy() :
+                  (ContentFile<?>) contentFile.copyWithoutStats();
+              return new IcebergFileEntry(snapshotId, sequence, copyFile);
             }
           }
           return null;
@@ -186,6 +204,10 @@ public class TableEntriesScan {
       }
     }
     throw new IllegalArgumentException("not support content id " + contentId);
+  }
+  
+  private boolean needMetrics() {
+    return dataFilter != null || includeColumnStats;
   }
 
   private boolean shouldKeep(ManifestEntryFields.Status status, FileContent fileContent) {
@@ -214,18 +236,27 @@ public class TableEntriesScan {
     }
     return file;
   }
+  
+  private PartitionSpec spec() {
+    if (spec == null) {
+      spec = table.spec();
+    }
+    return spec;
+  }
 
 
   private DataFile buildDataFile(StructLike fileRecord) {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    DataFiles.Builder builder = DataFiles.builder(table.spec())
+    DataFiles.Builder builder = DataFiles.builder(spec())
         .withPath(filePath)
         .withFileSizeInBytes(fileSize)
-        .withRecordCount(recordCount)
-        .withMetrics(buildMetrics(fileRecord));
-    if (table.spec().isPartitioned()) {
+        .withRecordCount(recordCount);
+    if (needMetrics()) {
+        builder.withMetrics(buildMetrics(fileRecord));
+    }
+    if (spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
     }
@@ -236,12 +267,14 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(table.spec())
+    FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(spec())
         .withPath(filePath)
         .withFileSizeInBytes(fileSize)
-        .withRecordCount(recordCount)
-        .withMetrics(buildMetrics(fileRecord));
-    if (table.spec().isPartitioned()) {
+        .withRecordCount(recordCount);
+    if (needMetrics()) {
+        builder.withMetrics(buildMetrics(fileRecord));
+    }
+    if (spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
     }
@@ -293,9 +326,9 @@ public class TableEntriesScan {
     if (lazyMetricsEvaluator == null) {
       if (dataFilter != null) {
         this.lazyMetricsEvaluator =
-            new InclusiveMetricsEvaluator(table.spec().schema(), dataFilter);
+            new InclusiveMetricsEvaluator(spec().schema(), dataFilter);
       } else {
-        this.lazyMetricsEvaluator = new AlwaysTrueEvaluator(table.spec().schema());
+        this.lazyMetricsEvaluator = new AlwaysTrueEvaluator(spec().schema());
       }
     }
     return lazyMetricsEvaluator;
