@@ -59,6 +59,7 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
 
   protected long currentSnapshotId = TableOptimizeRuntime.INVALID_SNAPSHOT_ID;
   protected List<FileScanTask> fileScanTasks;
+  protected SequenceNumberFetcher sequenceNumberFetcher;
 
   public BaseIcebergOptimizePlan(ArcticTable arcticTable, TableOptimizeRuntime tableOptimizeRuntime,
                                  List<FileScanTask> fileScanTasks,
@@ -106,7 +107,6 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
                                                List<DataFile> baseFiles,
                                                List<DeleteFile> eqDeleteFiles,
                                                List<DeleteFile> posDeleteFiles,
-                                               SequenceNumberFetcher sequenceNumberFetcher,
                                                TaskConfig taskConfig) {
     // build task
     BaseOptimizeTask optimizeTask = new BaseOptimizeTask();
@@ -117,25 +117,25 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
     List<ByteBuffer> baseFileBytesList =
         baseFiles.stream().map(dataFile -> {
           IcebergContentFile icebergContentFile =
-              new IcebergContentFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
+              new IcebergContentFile(dataFile, seqNumberFetcher().sequenceNumberOf(dataFile.path().toString()));
           return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     List<ByteBuffer> insertFileBytesList =
         insertFiles.stream().map(dataFile -> {
           IcebergContentFile icebergContentFile =
-              new IcebergContentFile(dataFile, sequenceNumberFetcher.sequenceNumberOf(dataFile.path().toString()));
+              new IcebergContentFile(dataFile, seqNumberFetcher().sequenceNumberOf(dataFile.path().toString()));
           return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     List<ByteBuffer> eqDeleteFileBytesList =
         eqDeleteFiles.stream().map(deleteFile -> {
           IcebergContentFile icebergContentFile =
-              new IcebergContentFile(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
+              new IcebergContentFile(deleteFile, seqNumberFetcher().sequenceNumberOf(deleteFile.path().toString()));
           return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     List<ByteBuffer> posDeleteFileBytesList =
         posDeleteFiles.stream().map(deleteFile -> {
           IcebergContentFile icebergContentFile =
-              new IcebergContentFile(deleteFile, sequenceNumberFetcher.sequenceNumberOf(deleteFile.path().toString()));
+              new IcebergContentFile(deleteFile, seqNumberFetcher().sequenceNumberOf(deleteFile.path().toString()));
           return SerializationUtils.toByteBuffer(icebergContentFile);
         }).collect(Collectors.toList());
     optimizeTask.setBaseFiles(baseFileBytesList);
@@ -190,6 +190,13 @@ public abstract class BaseIcebergOptimizePlan extends BaseOptimizePlan {
   public boolean tableNeedPlan() {
     this.currentSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
     return true;
+  }
+
+  protected SequenceNumberFetcher seqNumberFetcher() {
+    if (null == sequenceNumberFetcher) {
+      sequenceNumberFetcher = new SequenceNumberFetcher(arcticTable.asUnkeyedTable(), currentSnapshotId);
+    }
+    return sequenceNumberFetcher;
   }
 
   public long getCurrentSnapshotId() {
