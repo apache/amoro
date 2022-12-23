@@ -46,7 +46,6 @@ import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.FilesStatisticsBuilder;
-import com.netease.arctic.ams.server.utils.TableOptimizeStatusUtil;
 import com.netease.arctic.ams.server.utils.TableStatCollector;
 import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.catalog.ArcticCatalog;
@@ -441,10 +440,7 @@ public class TableOptimizeItem extends IJDBCService {
               getIcebergMinorPlan(fileScanTasks, -1, System.currentTimeMillis(), partitionIsRunning);
           List<BaseOptimizeTask> minorTasks = minorPlan.plan();
           // pending for minor optimize
-          if (CollectionUtils.isNotEmpty(minorTasks) && TableOptimizeStatusUtil.in(
-              tableOptimizeRuntime.getOptimizeStatus(),
-              TableOptimizeRuntime.OptimizeStatus.Idle,
-              TableOptimizeRuntime.OptimizeStatus.Pending)) {
+          if (CollectionUtils.isNotEmpty(minorTasks)) {
             tryUpdateOptimizeInfo(
                 TableOptimizeRuntime.OptimizeStatus.Pending, minorTasks, OptimizeType.Minor);
           } else {
@@ -470,10 +466,7 @@ public class TableOptimizeItem extends IJDBCService {
             if (isKeyedTable()) {
               MinorOptimizePlan minorPlan = getMinorPlan(-1, System.currentTimeMillis(), partitionIsRunning);
               List<BaseOptimizeTask> minorTasks = minorPlan.plan();
-              if (CollectionUtils.isNotEmpty(minorTasks) && TableOptimizeStatusUtil.in(
-                  tableOptimizeRuntime.getOptimizeStatus(),
-                  TableOptimizeRuntime.OptimizeStatus.Idle,
-                  TableOptimizeRuntime.OptimizeStatus.Pending)) {
+              if (CollectionUtils.isNotEmpty(minorTasks)) {
                 tryUpdateOptimizeInfo(
                     TableOptimizeRuntime.OptimizeStatus.Pending, minorTasks, OptimizeType.Minor);
                 return;
