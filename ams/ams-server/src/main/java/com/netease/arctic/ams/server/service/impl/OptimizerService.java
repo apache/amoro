@@ -19,20 +19,26 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
+import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
+import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
+import com.netease.arctic.ams.server.model.BaseOptimizeTask;
+import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.Optimizer;
 import com.netease.arctic.ams.server.model.OptimizerGroup;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.model.OptimizerResourceInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
+import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.optimizer.StatefulOptimizer;
@@ -103,27 +109,31 @@ public class OptimizerService extends IJDBCService {
       return;
     }
     Optimizer optimizer = getOptimizer(reportData.optimizerId);
+    byte[] optimizerinstance = null;
     if (optimizer != null) {
       OptimizerGroupInfo optimizerGroupInfo = getOptimizerGroupInfo(optimizer.getGroupName());
       Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
-      if (container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
-        updateOptimizerStatus(reportData.getOptimizerId(), TableTaskStatus.RUNNING);
-        return;
-      }
-      OptimizerFactory factory =
-          ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
-      com.netease.arctic.optimizer.Optimizer instance = factory.deserialize(optimizer.getInstance());
-      if (instance instanceof StatefulOptimizer) {
-        Map<String, String> state = ((StatefulOptimizer) instance).getState();
-        if (state.containsKey(OPTIMIZER_LAUNCHER_INFO)) {
-          JSONObject old = JSONObject.parseObject(state.get(OPTIMIZER_LAUNCHER_INFO));
-          old.putAll(reportData.optimizerState);
-          state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(old));
-        } else {
-          state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(reportData.optimizerState));
+
+      checkOptimizerRetry(reportData,optimizer);
+
+      if (!container.getType().equals(ConfigFileProperties.EXTERNAL_CONTAINER_TYPE)) {
+        OptimizerFactory factory =
+                ServiceContainer.getOptimizeExecuteService().findOptimizerFactory(container.getType());
+        com.netease.arctic.optimizer.Optimizer instance = factory.deserialize(optimizer.getInstance());
+        if (instance instanceof StatefulOptimizer) {
+          Map<String, String> state = ((StatefulOptimizer) instance).getState();
+          if (state.containsKey(OPTIMIZER_LAUNCHER_INFO)) {
+            JSONObject old = JSONObject.parseObject(state.get(OPTIMIZER_LAUNCHER_INFO));
+            old.putAll(reportData.optimizerState);
+            state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(old));
+          } else {
+            state.put(OPTIMIZER_LAUNCHER_INFO, JSONObject.toJSONString(reportData.optimizerState));
+          }
+          ((StatefulOptimizer) instance).updateState(state);
+          optimizerinstance = factory.serialize(instance);
         }
-        ((StatefulOptimizer) instance).updateState(state);
       }
+
       try (SqlSession sqlSession = getSqlSession(true)) {
         OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
         Map<String, String> stateInfo = optimizer.getStateInfo();
@@ -132,8 +142,9 @@ public class OptimizerService extends IJDBCService {
         } else {
           stateInfo = reportData.optimizerState;
         }
-        optimizerMapper.updateOptimizerState(reportData.optimizerId, factory.serialize(instance),
-            stateInfo, TableTaskStatus.RUNNING.name());
+
+        optimizerMapper.updateOptimizerState(reportData.optimizerId, optimizerinstance,
+                stateInfo, TableTaskStatus.RUNNING.name());
       }
     }
   }
@@ -182,12 +193,12 @@ public class OptimizerService extends IJDBCService {
 
 
   public void insertOptimizer(
-      String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
-      int coreNumber, long memory, int parallelism, String container) {
+          String optimizerName, int queueId, String queueName, TableTaskStatus status, String startTime,
+          int coreNumber, long memory, int parallelism, String container) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
       optimizerMapper.insertOptimizer(optimizerName, queueId, queueName, status, startTime, coreNumber, memory,
-          parallelism, container);
+              parallelism, container);
     }
   }
 
@@ -213,8 +224,8 @@ public class OptimizerService extends IJDBCService {
     String currentTime = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date());
     String optimizerName = "arctic_optimizer_" + currentTime;
     insertOptimizer(optimizerName, optimizerGroupInfo.getId(), optimizerGroupInfo.getName(),
-        TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
-        registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
+            TableTaskStatus.STARTING, currentTime, registerInfo.getCoreNumber(), registerInfo.getMemorySize(),
+            registerInfo.getCoreNumber(), optimizerGroupInfo.getContainer());
     return getOptimizer(optimizerName).convertToDescriptor();
   }
 
@@ -226,6 +237,39 @@ public class OptimizerService extends IJDBCService {
     Container container = ServiceContainer.getContainerMetaService().getContainer(optimizerGroupInfo.getContainer());
     optimizer.setContainerType(container.getType());
     return optimizer;
+  }
+
+  /**
+   * If lastmodification is not null and is not the same as before, then the task has occurred retry and returns true.
+   */
+  private void checkOptimizerRetry(OptimizerStateReport newReportData,Optimizer oldOptimizer) {
+
+    LOG.info("checkOptimizerRetry");
+
+    String lastmodification = newReportData.optimizerState.get("lastmodification");
+    Map<String, String> stateInfo = oldOptimizer.getStateInfo();
+    if (lastmodification.equals(stateInfo.get("lastmodification")) && stateInfo.get("lastmodification") != null) {
+
+      LOG.info("checkOptimizerRetry retry");
+      //出问题，任务重试过
+      //通过optimizer的id
+      long optimizerId = newReportData.optimizerId;
+      try (SqlSession sqlSession = getSqlSession(true)) {
+        OptimizeTasksMapper optimizeTasksMapper = getMapper(sqlSession, OptimizeTasksMapper.class);
+        //年月日时分秒
+        List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper.selectOptimizeTasksByJobID(optimizerId);
+        for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
+
+          long nowTimeStamp = System.currentTimeMillis();
+          OptimizeTaskItem optimizeTaskItem = new OptimizeTaskItem(baseOptimizeTask,
+                  new BaseOptimizeTaskRuntime(baseOptimizeTask.getTaskId()));
+          optimizeTaskItem.onFailed(new ErrorMessage(nowTimeStamp,"optimizer job has occurred retry"),
+                  nowTimeStamp - baseOptimizeTask.getCreateTime());
+        }
+      }
+
+    }
+    LOG.info("checkOptimizerRetry Finish");
   }
 }
 
