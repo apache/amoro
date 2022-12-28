@@ -245,9 +245,11 @@ public class OptimizerService extends IJDBCService {
   private void checkOptimizerRetry(OptimizerStateReport newReportData,Optimizer oldOptimizer) {
 
     LOG.info("checkOptimizerRetry");
-
-    String lastmodification = newReportData.optimizerState.get("lastmodification");
     Map<String, String> stateInfo = oldOptimizer.getStateInfo();
+    if (stateInfo == null){
+      return;
+    }
+    String lastmodification = newReportData.optimizerState.get("lastmodification");
     if (lastmodification.equals(stateInfo.get("lastmodification")) && stateInfo.get("lastmodification") != null) {
 
       LOG.info("checkOptimizerRetry retry");
