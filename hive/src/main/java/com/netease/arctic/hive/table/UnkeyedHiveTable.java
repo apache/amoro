@@ -32,17 +32,12 @@ import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.table.BaseTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.TableIdentifier;
-import org.apache.hadoop.hive.metastore.PartitionDropOptions;
 import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.util.PropertyUtil;
-import org.apache.thrift.TException;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.netease.arctic.hive.HiveTableProperties.BASE_HIVE_LOCATION_ROOT;
 
@@ -55,7 +50,6 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   private final String tableLocation;
 
   private boolean syncHiveChange = true;
-  private TableIdentifier tableIdentifier;
 
   public UnkeyedHiveTable(
       TableIdentifier tableIdentifier,
@@ -76,7 +70,6 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
       HMSClientPool hiveClient,
       boolean syncHiveChange) {
     super(tableIdentifier, icebergTable, arcticFileIO, client);
-    this.tableIdentifier = tableIdentifier;
     this.hiveClient = hiveClient;
     this.tableLocation = tableLocation;
     this.syncHiveChange = syncHiveChange;
@@ -117,27 +110,6 @@ public class UnkeyedHiveTable extends BaseUnkeyedTable implements BaseTable, Sup
   @Override
   public HMSClientPool getHMSClient() {
     return hiveClient;
-  }
-
-  @Override
-  public void dropPartitions(String partitions) throws TException, InterruptedException {
-    super.dropPartitions(partitions);
-    List<String> partitionList = new ArrayList<>();
-    for (String p : partitions.split("/")) {
-      String[] paramSplit = p.split("=");
-      if (paramSplit.length == 2) {
-        partitionList.add(paramSplit[1]);
-      }
-    }
-    hiveClient.run(client -> {
-      PartitionDropOptions options = PartitionDropOptions.instance()
-          .deleteData(false)
-          .ifExists(true)
-          .purgeData(false)
-          .returnResults(false);
-      return client.dropPartition(tableIdentifier.getDatabase(),
-          tableIdentifier.getTableName(), partitionList, options);
-    });
   }
 
   @Override

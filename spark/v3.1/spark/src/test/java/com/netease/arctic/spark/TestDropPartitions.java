@@ -18,13 +18,23 @@
 
 package com.netease.arctic.spark;
 
+import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.TableIdentifier;
+import com.netease.arctic.table.UnkeyedTable;
+import org.apache.hadoop.fs.FileStatus;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 public class TestDropPartitions extends SparkTestBase {
   private final String database = "db_arctic";
+
+  private final String dropPartitionTable = "drop_partition_table";
+
+  private final TableIdentifier identifier = TableIdentifier.of(catalogNameArctic, database, dropPartitionTable);
 
   @Before
   public void prepare() {
@@ -39,7 +49,6 @@ public class TestDropPartitions extends SparkTestBase {
 
   @Test
   public void testAlterKeyedTableDropPartitions() {
-    String dropPartitionTable = "drop_partition_table";
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
@@ -60,16 +69,18 @@ public class TestDropPartitions extends SparkTestBase {
         "(6, ''ccc'', 3) ", database, dropPartitionTable);
     rows = sql("select * from {0}.{1}", database,dropPartitionTable);
     Assert.assertEquals(6, rows.size());
+    KeyedTable keyedTable = loadTable(identifier).asKeyedTable();
+    List<FileStatus> exceptList = keyedTable.changeTable().io().list(keyedTable.changeLocation());
 
     sql("alter table {0}.{1} drop if exists partition (ts=1, name=''aaa'')", database, dropPartitionTable);
     sql("select * from {0}.{1}", database,dropPartitionTable);
     Assert.assertEquals(4, rows.size());
+    Assert.assertEquals(exceptList.size(), keyedTable.changeTable().io().list(keyedTable.changeLocation()).size());
     sql("drop table {0}.{1}", database, dropPartitionTable);
   }
 
   @Test
   public void testAlterUnKeyedTableDropPartitions() {
-    String dropPartitionTable = "drop_partition_table";
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " name string , \n " +
@@ -90,10 +101,13 @@ public class TestDropPartitions extends SparkTestBase {
         "(6, ''ccc'', 3) ", database, dropPartitionTable);
     rows = sql("select * from {0}.{1}", database,dropPartitionTable);
     Assert.assertEquals(6, rows.size());
+    UnkeyedTable unkeyedTable = loadTable(identifier).asUnkeyedTable();
+    List<FileStatus> exceptList = unkeyedTable.io().list(unkeyedTable.location());
 
     sql("alter table {0}.{1} drop if exists partition (ts=1, name=''aaa'')", database, dropPartitionTable);
     sql("select * from {0}.{1}", database,dropPartitionTable);
     Assert.assertEquals(4, rows.size());
+    Assert.assertEquals(exceptList.size(), unkeyedTable.io().list(unkeyedTable.location()).size());
     sql("drop table {0}.{1}", database, dropPartitionTable);
   }
 }

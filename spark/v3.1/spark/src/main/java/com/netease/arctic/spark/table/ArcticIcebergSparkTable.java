@@ -21,11 +21,10 @@ package com.netease.arctic.spark.table;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.spark.source.SparkTable;
-import org.apache.thrift.TException;
 
 import java.util.Map;
 
-public class ArcticIcebergSparkTable extends SparkTable implements SupportDropPartitions {
+public class ArcticIcebergSparkTable extends SparkTable {
   private final UnkeyedTable unkeyedTable;
 
   public ArcticIcebergSparkTable(UnkeyedTable unkeyedTable, boolean refreshEagerly) {
@@ -44,9 +43,5 @@ public class ArcticIcebergSparkTable extends SparkTable implements SupportDropPa
     properties.putAll(super.properties());
     properties.put("provider", "arctic");
     return properties;
-  }
-
-  public void dropPartitions(String partitions) throws TException, InterruptedException {
-    this.unkeyedTable.dropPartitions(partitions);
   }
 }

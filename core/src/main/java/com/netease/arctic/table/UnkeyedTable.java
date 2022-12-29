@@ -58,6 +58,4 @@ public interface UnkeyedTable extends ArcticTable, Table {
   default UnkeyedTable asUnkeyedTable() {
     return this;
   }
-
-  void dropPartitions(String partitions) throws TException, InterruptedException;
 }

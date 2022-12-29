@@ -61,7 +61,6 @@ import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.LocationProvider;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.StructLikeMap;
-import org.apache.thrift.TException;
 
 import java.util.List;
 import java.util.Map;
@@ -351,11 +350,6 @@ public class ArcticCatalogSupportTableSuffix implements ArcticCatalog {
     @Override
     public UpdatePartitionProperties updatePartitionProperties(Transaction transaction) {
       return table.updatePartitionProperties(transaction);
-    }
-
-    @Override
-    public void dropPartitions(String partitions) throws TException, InterruptedException {
-      table.dropPartitions(partitions);
     }
 
     @Override

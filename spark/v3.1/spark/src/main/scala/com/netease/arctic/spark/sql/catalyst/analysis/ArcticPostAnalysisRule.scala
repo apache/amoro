@@ -18,8 +18,10 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
-import com.netease.arctic.spark.sql.catalyst.plans.AlterArcticTableDropPartition
+import com.netease.arctic.spark.sql.execution.AlterArcticTableDropPartitionExec
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.ResolvedTable
 import org.apache.spark.sql.catalyst.plans.logical.{AlterTableDropPartition, LogicalPlan}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -31,8 +33,13 @@ case class ArcticPostAnalysisRule(sparkSession: SparkSession) extends Rule[Logic
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
       // Rewrite the AlterTableDropPartitionCommand to AlterArcticTableDropPartitionCommand
-      case AlterTableDropPartition(child, specs, ifExists, purge, retainData) =>
-        AlterArcticTableDropPartition(child, specs, ifExists, purge, retainData)
+      case d@AlterTableDropPartition(r: ResolvedTable, _, _, _, _) =>
+        r.table match {
+          case arctic: ArcticSparkTable =>
+            AlterArcticTableDropPartitionExec(arctic, d.parts, d.retainData)
+          case arctic: ArcticIcebergSparkTable =>
+            AlterArcticTableDropPartitionExec(arctic, d.parts, d.retainData)
+        }
       case _ => plan
     }
   }

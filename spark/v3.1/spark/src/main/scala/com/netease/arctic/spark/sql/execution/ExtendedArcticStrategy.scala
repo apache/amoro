@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.ArcticSparkCatalog
-import com.netease.arctic.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.table.ArcticTable
@@ -27,7 +27,7 @@ import org.apache.iceberg.Table
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable, UnresolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
 import org.apache.spark.sql.catalyst.plans.CreateArcticTableAsSelect
-import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan, OneRowRelation}
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
@@ -105,10 +105,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       val writeOptions = new CaseInsensitiveStringMap(options.asJava)
       CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
         props, writeOptions, ifNotExists) :: Nil
-
-    case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
-      AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData) :: Nil
-
 
     case _ => Nil
   }

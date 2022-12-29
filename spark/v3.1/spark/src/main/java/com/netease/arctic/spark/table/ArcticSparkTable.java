@@ -19,24 +19,17 @@
 package com.netease.arctic.spark.table;
 
 import com.netease.arctic.hive.table.SupportHive;
-import com.netease.arctic.hive.table.UnkeyedHiveTable;
-import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.spark.reader.SparkScanBuilder;
 import com.netease.arctic.spark.writer.ArcticSparkWriteBuilder;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import org.apache.iceberg.DeleteFiles;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.StructLike;
-import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableSet;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.spark.Spark3Util;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.util.StructLikeMap;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.sql.catalyst.analysis.UnresolvedPartitionSpec;
 import org.apache.spark.sql.connector.catalog.SupportsRead;
 import org.apache.spark.sql.connector.catalog.SupportsWrite;
 import org.apache.spark.sql.connector.catalog.Table;
@@ -47,13 +40,11 @@ import org.apache.spark.sql.connector.write.LogicalWriteInfo;
 import org.apache.spark.sql.connector.write.WriteBuilder;
 import org.apache.spark.sql.types.StructType;
 import org.apache.spark.sql.util.CaseInsensitiveStringMap;
-import org.apache.thrift.TException;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsUpsert, SupportDropPartitions {
+public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, SupportsUpsert {
   private static final Set<String> RESERVED_PROPERTIES = Sets.newHashSet("provider", "format", "current-snapshot-id");
   private static final Set<TableCapability> CAPABILITIES = ImmutableSet.of(
       TableCapability.BATCH_READ,
@@ -210,15 +201,5 @@ public class ArcticSparkTable implements Table, SupportsRead, SupportsWrite, Sup
     return arcticTable.isKeyedTable() &&
         Boolean.parseBoolean(arcticTable.properties().getOrDefault(
                 TableProperties.UPSERT_ENABLED, "false"));
-  }
-
-  public void dropPartitions(String partitions) throws TException, InterruptedException {
-    if (arcticTable.isUnkeyedTable()) {
-      arcticTable.asUnkeyedTable().dropPartitions(partitions);
-    } else {
-      arcticTable.asKeyedTable().changeTable().dropPartitions(partitions);
-      arcticTable.asKeyedTable().baseTable().dropPartitions(partitions);
-    }
-
   }
 }
