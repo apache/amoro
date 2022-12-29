@@ -38,29 +38,6 @@ import java.util
 case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPlan] {
 
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
-
-  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
-    r.table match {
-      case arctic: ArcticSparkTable =>
-        if (arctic.table().isKeyedTable) {
-          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
-          val alias = Alias(than, "count")()
-          val attributes = query.output.filter(p => primaries.contains(p.name))
-          Aggregate(attributes, Seq(alias), query)
-        } else {
-          throw new UnsupportedOperationException(s"UnKeyed table can not validate")
-        }
-    }
-  }
-
-  def checkDuplicatesEnabled(): Boolean = {
-    java.lang.Boolean.valueOf(spark.sessionState.conf.
-      getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
-      SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT))
-  }
-
-
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case AppendData(r: DataSourceV2Relation, query, writeOptions, isByName) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
@@ -142,6 +119,27 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         }
   }
 
+  def buildValidatePrimaryKeyDuplication(r: DataSourceV2Relation, query: LogicalPlan): LogicalPlan = {
+    r.table match {
+      case arctic: ArcticSparkTable =>
+        if (arctic.table().isKeyedTable) {
+          val primaries = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+          val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
+          val alias = Alias(than, "count")()
+          val attributes = query.output.filter(p => primaries.contains(p.name))
+          Aggregate(attributes, Seq(alias), query)
+        } else {
+          throw new UnsupportedOperationException(s"UnKeyed table can not validate")
+        }
+    }
+  }
+
+  def checkDuplicatesEnabled(): Boolean = {
+    java.lang.Boolean.valueOf(spark.sessionState.conf.
+      getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
+        SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT))
+  }
+
   def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression =  {
     var i = 0
     var joinCondition: Expression = null
@@ -185,22 +183,5 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         Alias(a, "_arctic_after_" + a.name)()
     })
     Project(outputWithValues, relation)
-  }
-
-  private def distributionQuery(query: LogicalPlan, table: ArcticSparkTable): LogicalPlan =  {
-    val distribution = ArcticSparkUtils.buildRequiredDistribution(table) match {
-      case d: ClusteredDistribution =>
-        d.clustering.map(e => ArcticExpressionUtils.toCatalyst(e, query))
-      case _ =>
-        Array.empty[Expression]
-    }
-    val queryWithDistribution = if (distribution.nonEmpty) {
-      val partitionNum = conf.numShufflePartitions
-      val pp = RepartitionByExpression(distribution, query, partitionNum)
-      pp
-    } else {
-      query
-    }
-    queryWithDistribution
   }
 }
