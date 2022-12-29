@@ -354,6 +354,7 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
     kafkaProperties.put("advertised.host.name", KAFKA_HOST);
     kafkaProperties.put("broker.id", Integer.toString(brokerId));
     kafkaProperties.put("log.dir", tmpFolder.toString());
+    
     kafkaProperties.put("zookeeper.connect", zookeeperConnectionString);
     kafkaProperties.put("message.max.bytes", String.valueOf(50 * 1024 * 1024));
     kafkaProperties.put("replica.fetch.max.bytes", String.valueOf(50 * 1024 * 1024));
