@@ -22,7 +22,6 @@ import com.netease.arctic.op.UpdatePartitionProperties;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.util.StructLikeMap;
-import org.apache.thrift.TException;
 
 import java.util.Map;
 
