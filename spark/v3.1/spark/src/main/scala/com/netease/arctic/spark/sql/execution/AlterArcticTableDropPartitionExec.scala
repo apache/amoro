@@ -19,12 +19,13 @@
 package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.op.OverwriteBaseFiles
-import com.netease.arctic.spark.table.ArcticSparkTable
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.spark.SparkFilters
 import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, UnresolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeReference, EqualNullSafe, Expression, Literal}
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
+import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, CalendarIntervalType, DataType, DateType, DoubleType, FloatType, IntegerType, LongType, NullType, ShortType, StringType, TimestampType}
 import org.apache.spark.sql.{Row, SparkSession}
@@ -32,34 +33,9 @@ import org.apache.spark.sql.{Row, SparkSession}
 import java.util
 import scala.collection.JavaConverters.asJavaIterableConverter
 
-case class AlterArcticTableDropPartitionExec(table: ArcticSparkTable,
+case class AlterArcticTableDropPartitionExec(table: Table,
                                              parts: Seq[PartitionSpec],
                                              retainData: Boolean) extends RunnableCommand {
-
-  def splitConjunctivePredicates(condition: Expression): Seq[Expression] = {
-    condition match {
-      case And(cond1, cond2) =>
-        splitConjunctivePredicates(cond1) ++ splitConjunctivePredicates(cond2)
-      case other => other :: Nil
-    }
-  }
-
-  def convertDataByType(dataType: DataType, data: String): Any = {
-    dataType match {
-      case BinaryType => data.toByte
-      case IntegerType => data.toInt
-      case BooleanType => data.toBoolean
-      case LongType => data.toLong
-      case DoubleType => data.toDouble
-      case FloatType => data.toFloat
-      case ShortType => data.toShort
-      case ByteType => data.toByte
-      case StringType => data
-      case _ =>
-        throw new UnsupportedOperationException("Cannot convert data by this type")
-    }
-  }
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
     // build partitions
     val specs = parts.map {
@@ -99,18 +75,49 @@ case class AlterArcticTableDropPartitionExec(table: ArcticSparkTable,
           throw new UnsupportedOperationException("Cannot translate expression to source filter"))
     }.toArray
     val expression = SparkFilters.convert(filters)
-    if (table.table().isKeyedTable) {
-      val overwriteBaseFiles: OverwriteBaseFiles = table.table().asKeyedTable().newOverwriteBaseFiles()
-      overwriteBaseFiles.overwriteByRowFilter(expression)
-      overwriteBaseFiles.withTransactionIdForChangedPartition(
-        TablePropertyUtil.allocateTransactionId(table.table().asKeyedTable()))
-      overwriteBaseFiles.commit()
-    } else {
-      val overwriteFiles = table.table().asUnkeyedTable().newOverwrite()
-      overwriteFiles.overwriteByRowFilter(expression)
-      overwriteFiles.commit()
+    table match {
+      case arctic: ArcticSparkTable =>
+        if (arctic.table().isKeyedTable) {
+          val overwriteBaseFiles: OverwriteBaseFiles = arctic.table().asKeyedTable().newOverwriteBaseFiles()
+          overwriteBaseFiles.overwriteByRowFilter(expression)
+          overwriteBaseFiles.withTransactionIdForChangedPartition(
+            TablePropertyUtil.allocateTransactionId(arctic.table().asKeyedTable()))
+          overwriteBaseFiles.commit()
+        } else {
+          val overwriteFiles = arctic.table().asUnkeyedTable().newOverwrite()
+          overwriteFiles.overwriteByRowFilter(expression)
+          overwriteFiles.commit()
+        }
+      case arctic: ArcticIcebergSparkTable =>
+        val overwriteFiles = arctic.table().newOverwrite()
+        overwriteFiles.overwriteByRowFilter(expression)
+        overwriteFiles.commit()
     }
     Nil
+  }
+
+  def splitConjunctivePredicates(condition: Expression): Seq[Expression] = {
+    condition match {
+      case And(cond1, cond2) =>
+        splitConjunctivePredicates(cond1) ++ splitConjunctivePredicates(cond2)
+      case other => other :: Nil
+    }
+  }
+
+  def convertDataByType(dataType: DataType, data: String): Any = {
+    dataType match {
+      case BinaryType => data.toByte
+      case IntegerType => data.toInt
+      case BooleanType => data.toBoolean
+      case LongType => data.toLong
+      case DoubleType => data.toDouble
+      case FloatType => data.toFloat
+      case ShortType => data.toShort
+      case ByteType => data.toByte
+      case StringType => data
+      case _ =>
+        throw new UnsupportedOperationException("Cannot convert data by this type")
+    }
   }
 
   override def output: Seq[Attribute] = Nil

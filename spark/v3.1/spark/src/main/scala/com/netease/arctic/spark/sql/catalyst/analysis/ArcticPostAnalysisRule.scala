@@ -34,12 +34,7 @@ case class ArcticPostAnalysisRule(sparkSession: SparkSession) extends Rule[Logic
     plan match {
       // Rewrite the AlterTableDropPartitionCommand to AlterArcticTableDropPartitionCommand
       case d@AlterTableDropPartition(r: ResolvedTable, _, _, _, _) =>
-        r.table match {
-          case arctic: ArcticSparkTable =>
-            AlterArcticTableDropPartitionExec(arctic, d.parts, d.retainData)
-          case arctic: ArcticIcebergSparkTable =>
-            AlterArcticTableDropPartitionExec(arctic, d.parts, d.retainData)
-        }
+        AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData)
       case _ => plan
     }
   }
