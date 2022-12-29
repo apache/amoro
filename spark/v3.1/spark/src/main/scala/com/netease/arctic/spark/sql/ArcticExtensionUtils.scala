@@ -62,12 +62,17 @@ object ArcticExtensionUtils {
     }
   }
 
-  def isArcticRelation(catalog: TableCatalog): Boolean = {
+  def isArcticCatalog(catalog: TableCatalog): Boolean = {
     catalog match {
       case _: ArcticSparkCatalog => true
       case _: ArcticSparkSessionCatalog[_] => true
       case _ => false
     }
+  }
+
+  def isArcticTable(table: Table): Boolean = table match {
+    case _: ArcticSparkTable => true
+    case _ => false
   }
 
   def asTableRelation(plan: LogicalPlan): DataSourceV2Relation = {

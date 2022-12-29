@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.execution
 
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticCatalog, isArcticTable}
 import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
@@ -29,6 +29,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, Describ
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
 import org.apache.spark.sql.execution.datasources.v2.{AppendDataExec, AppendInsertDataExec, CreateArcticTableAsSelectExec, CreateTableAsSelectExec, DataSourceV2Relation, OverwriteArcticByExpressionExec, OverwriteArcticDataExec}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
@@ -40,7 +41,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
-      if isArcticRelation(catalog) =>
+      if isArcticCatalog(catalog) =>
         var propertiesMap: Map[String, String] = props
         var optionsMap: Map[String, String] = options
         if (options.contains("primary.keys")) {
@@ -59,13 +60,13 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
 
     case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists)
-      if isArcticRelation(catalog) =>
+      if isArcticCatalog(catalog) =>
         val writeOptions = new CaseInsensitiveStringMap(options.asJava)
         CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
           props, writeOptions, ifNotExists) :: Nil
 
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended)
-      if isArcticRelation(r.catalog) =>
+      if isArcticTable(r.table) =>
         if (partitionSpec.nonEmpty) {
           throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
         }
@@ -76,12 +77,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       MigrateToArcticExec(command)::Nil
 
     case ReplaceArcticData(d: DataSourceV2Relation, query, options) =>
-      d.table match {
-        case t: ArcticSparkTable =>
-          AppendDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query), refreshCache(d)) :: Nil
-        case table =>
-          throw new UnsupportedOperationException(s"Cannot replace data to non-Arctic table: $table")
-      }
+      AppendDataExec(d.table.asWritable, new CaseInsensitiveStringMap(options.asJava), planLater(query), refreshCache(d)) :: Nil
 
     case AppendArcticData(d: DataSourceV2Relation, query, validateQuery, options) =>
       d.table match {
