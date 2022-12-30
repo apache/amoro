@@ -18,12 +18,16 @@
 
 package com.netease.arctic.ams.server.utils;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Maps;
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Table;
-import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
-import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.io.CloseableIterable;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Map;
 
 /**
@@ -64,7 +68,11 @@ public class SequenceNumberFetcher {
           .includeFileContent(FileContent.DATA, FileContent.POSITION_DELETES, FileContent.EQUALITY_DELETES)
           .useSnapshot(snapshotId)
           .build();
-      manifestReader.entries().forEach(e -> cached.put(e.getFile().path().toString(), e.getSequenceNumber()));
+      try (CloseableIterable<IcebergFileEntry> entries = manifestReader.entries()) {
+        entries.forEach(e -> cached.put(e.getFile().path().toString(), e.getSequenceNumber()));
+      } catch (IOException e) {
+        throw new UncheckedIOException("Failed to close manifest entry scan of " + table.name(), e);
+      }
     }
     return cached;
   }

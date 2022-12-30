@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.sql.catalyst.plans.AlterArcticTableDropPartition
 import com.netease.arctic.spark.sql.execution.AlterArcticTableDropPartitionExec
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import org.apache.spark.sql.SparkSession
@@ -29,12 +30,12 @@ import org.apache.spark.sql.catalyst.rules.Rule
  * Rule for rewrite some spark commands to arctic's implementation.
  * @param sparkSession
  */
-case class ArcticPostAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
+case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
-      // Rewrite the AlterTableDropPartitionCommand to AlterArcticTableDropPartitionCommand
-      case d@AlterTableDropPartition(r: ResolvedTable, _, _, _, _) =>
-        AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData)
+      // Rewrite the AlterTableDropPartition to AlterArcticTableDropPartition
+      case AlterTableDropPartition(child, parts, ifExists, purge, retainData) =>
+        AlterArcticTableDropPartition(child, parts, ifExists, purge, retainData)
       case _ => plan
     }
   }

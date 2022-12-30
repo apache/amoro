@@ -31,11 +31,10 @@ import com.netease.arctic.hive.table.HiveLocationKind;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.hive.metastore.api.Table;
@@ -122,7 +121,7 @@ public class HiveMetaSynchronizerTest extends HiveTableTestBase {
     Assert.assertEquals(1, newFiles.size());
     partition3FilePath = newFiles.get(0).path().toString();
     Partition newPartition = HivePartitionUtil.newPartition(hiveTable, Lists.newArrayList("p3"),
-        FileUtil.getFileDir(newFiles.get(0).path().toString()), newFiles,
+        TableFileUtils.getFileDir(newFiles.get(0).path().toString()), newFiles,
         (int) (System.currentTimeMillis() / 1000));
     newPartition.getParameters().remove(HiveTableProperties.ARCTIC_TABLE_FLAG);
     hms.getClient().add_partition(newPartition);

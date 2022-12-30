@@ -278,8 +278,3 @@ skip-name-resolve
 skip-slave-start
 skip_external_locking
 ```
-
-
-
-
-

@@ -18,6 +18,10 @@
 
 package com.netease.arctic.iceberg.optimize;
 
+import com.netease.arctic.io.CloseableIterableWrapper;
+import com.netease.arctic.io.CloseablePredicate;
+import com.netease.arctic.utils.StructLikeSet;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
@@ -47,6 +51,7 @@ import org.apache.iceberg.util.Filter;
 import org.apache.iceberg.util.StructProjection;
 import org.apache.parquet.Preconditions;
 
+import java.io.Closeable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -64,17 +69,25 @@ public abstract class DeleteFilter<T> {
       MetadataColumns.DELETE_FILE_PATH,
       MetadataColumns.DELETE_FILE_POS);
 
-  private final long setFilterThreshold;
   private final DataFile dataFile;
   private final List<DeleteFile> posDeletes;
   private final List<DeleteFile> eqDeletes;
   private final Schema requiredSchema;
   private final Accessor<StructLike> posAccessor;
-  private List<Predicate<T>> eqDeletePredicate;
+  private List<CloseablePredicate<T>> eqDeletePredicate;
   private Set<Long> positionSet;
 
+  private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
+
+  protected DeleteFilter(FileScanTask task,
+                         Schema tableSchema,
+                         Schema requestedSchema,
+                         StructLikeCollections structLikeCollections) {
+    this(task, tableSchema, requestedSchema);
+    this.structLikeCollections = structLikeCollections;
+  }
+
   protected DeleteFilter(FileScanTask task, Schema tableSchema, Schema requestedSchema) {
-    this.setFilterThreshold = DEFAULT_SET_FILTER_THRESHOLD;
     this.dataFile = task.file();
     ImmutableList.Builder<DeleteFile> posDeleteBuilder = ImmutableList.builder();
     ImmutableList.Builder<DeleteFile> eqDeleteBuilder = ImmutableList.builder();
@@ -114,14 +127,15 @@ public abstract class DeleteFilter<T> {
   }
 
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return applyEqDeletes(applyPosDeletes(records));
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records)), eqDeletePredicate == null ? null
+        : eqDeletePredicate.toArray(new Closeable[0]));
   }
 
-  private List<Predicate<T>> applyEqDeletes() {
+  private List<CloseablePredicate<T>> applyEqDeletes() {
     if (eqDeletePredicate != null) {
       return eqDeletePredicate;
     }
-    List<Predicate<T>> isInDeleteSets = Lists.newArrayList();
+    List<CloseablePredicate<T>> isInDeleteSets = Lists.newArrayList();
     if (eqDeletes.isEmpty()) {
       this.eqDeletePredicate = isInDeleteSets;
       return isInDeleteSets;
@@ -146,10 +160,11 @@ public abstract class DeleteFilter<T> {
       StructLikeSet deleteSet = Deletes.toEqualitySet(
           // copy the delete records because they will be held in a set
           CloseableIterable.transform(CloseableIterable.concat(deleteRecords), Record::copy),
-          deleteSchema.asStruct());
+          deleteSchema.asStruct(), structLikeCollections);
 
       Predicate<T> isInDeleteSet = record -> deleteSet.contains(projectRow.wrap(asStructLike(record)));
-      isInDeleteSets.add(isInDeleteSet);
+      CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, deleteSet);
+      isInDeleteSets.add(closeablePredicate);
     }
     this.eqDeletePredicate = isInDeleteSets;
     return isInDeleteSets;
@@ -175,6 +190,7 @@ public abstract class DeleteFilter<T> {
   public CloseableIterable<T> findEqualityDeleteRows(CloseableIterable<T> records) {
     // Predicate to test whether a row has been deleted by equality deletions.
     Predicate<T> deletedRows = applyEqDeletes().stream()
+        .map(s -> (Predicate<T>)s)
         .reduce(Predicate::or)
         .orElse(t -> false);
 

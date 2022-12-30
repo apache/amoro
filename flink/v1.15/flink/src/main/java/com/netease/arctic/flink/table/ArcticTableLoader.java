@@ -22,7 +22,6 @@ import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.flink.InternalCatalogBuilder;
 import com.netease.arctic.flink.interceptor.FlinkTablePropertiesInvocationHandler;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.flink.TableLoader;

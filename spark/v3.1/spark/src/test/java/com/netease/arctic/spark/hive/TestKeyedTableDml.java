@@ -328,24 +328,4 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql("drop table " + database + "." + "testTable");
     sql("set `spark.sql.check-data-duplicates.enabled` = `true`");
   }
-
-  @Test
-  public void testAlterDropPartitions() {
-    sql("create table {0}.{1} ( \n" +
-        " id int , \n" +
-        " name string , \n " +
-        " ts int " +
-        ") using arctic \n" +
-        " partitioned by (ts) \n" +
-        " tblproperties ( \n" +
-        " ''props.test1'' = ''val1'', \n" +
-        " ''props.test2'' = ''val2'' ) ", database, "table_test");
-    sql("insert overwrite {0}.{1} "+
-        " values (1, ''aaa'', 1 ) , " +
-        "(4, ''bbb'', 2), " +
-        "(5, ''ccc'', 3) ", database, "table_test");
-
-    sql("alter table {0}.{1} drop if exists partition (ts=1)", database, "table_test");
-    sql("select * from {0}.{1}", database, "table_test");
-  }
 }

@@ -22,21 +22,21 @@ import com.netease.arctic.op.OverwriteBaseFiles
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import com.netease.arctic.utils.TablePropertyUtil
 import org.apache.iceberg.spark.SparkFilters
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.analysis.{PartitionSpec, UnresolvedPartitionSpec}
 import org.apache.spark.sql.catalyst.expressions.{And, Attribute, AttributeReference, EqualNullSafe, Expression, Literal}
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.execution.command.RunnableCommand
-import org.apache.spark.sql.types.{BinaryType, BooleanType, ByteType, CalendarIntervalType, DataType, DateType, DoubleType, FloatType, IntegerType, LongType, NullType, ShortType, StringType, TimestampType}
-import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.execution.datasources.v2.V2CommandExec
+import org.apache.spark.sql.types._
 
 import java.util
 import scala.collection.JavaConverters.asJavaIterableConverter
 
 case class AlterArcticTableDropPartitionExec(table: Table,
                                              parts: Seq[PartitionSpec],
-                                             retainData: Boolean) extends RunnableCommand {
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+                                             retainData: Boolean) extends V2CommandExec {
+  override protected def run(): Seq[InternalRow] = {
     // build partitions
     val specs = parts.map {
       case part: UnresolvedPartitionSpec =>

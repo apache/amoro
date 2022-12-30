@@ -33,10 +33,9 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.Snapshot;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,19 +102,19 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
 
     List<ByteBuffer> baseFileBytesList =
         baseFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     List<ByteBuffer> insertFileBytesList =
         insertFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     List<ByteBuffer> deleteFileBytesList =
         deleteFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     List<ByteBuffer> posDeleteFileBytesList =
         posDeleteFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     optimizeTask.setBaseFiles(baseFileBytesList);
     optimizeTask.setInsertFiles(insertFileBytesList);
@@ -182,13 +181,12 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
     return optimizeTask;
   }
 
-  public boolean baseTableCacheAll() {
-    Snapshot snapshot;
+  private boolean baseTableCacheAll() {
     if (arcticTable.isKeyedTable()) {
-      snapshot = arcticTable.asKeyedTable().baseTable().currentSnapshot();
-      if (snapshot != null && !snapshotIsCached.test(snapshot.snapshotId())) {
+      if (currentBaseSnapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID &&
+          !snapshotIsCached.test(currentBaseSnapshotId)) {
         LOG.debug("File cache don't have cache snapshotId:{}," +
-            "wait file cache sync latest file info", snapshot.snapshotId());
+            "wait file cache sync latest file info", currentBaseSnapshotId);
         return false;
       }
     }
@@ -197,15 +195,15 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
   }
 
   public boolean tableNeedPlan() {
-    if (!baseTableCacheAll()) {
-      return false;
-    }
-
     if (arcticTable.isKeyedTable()) {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().baseTable());
       this.currentChangeSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asKeyedTable().changeTable());
     } else {
       this.currentBaseSnapshotId = UnKeyedTableUtil.getSnapshotId(arcticTable.asUnkeyedTable());
+    }
+
+    if (!baseTableCacheAll()) {
+      return false;
     }
 
     return tableChanged();

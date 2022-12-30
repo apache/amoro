@@ -7,7 +7,7 @@ import com.netease.arctic.hive.table.UnkeyedHiveTable;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.op.UpdatePartitionProperties;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.hadoop.fs.FileStatus;
@@ -30,6 +30,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Types;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,6 +47,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private static final Logger LOG = LoggerFactory.getLogger(UpdateHiveFiles.class);
 
   public static final String PROPERTIES_VALIDATE_LOCATION = "validate-location";
+  public static final String DELETE_UNTRACKED_HIVE_FILE = "delete-untracked-hive-file";
 
   protected final Transaction transaction;
   protected final boolean insideTransaction;
@@ -67,6 +69,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   protected String unpartitionTableLocation;
   protected long txId = -1;
   protected boolean validateLocation = true;
+  protected boolean checkOrphanFiles = false;
   protected int commitTimestamp; // in seconds
 
   public UpdateHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
@@ -98,6 +101,9 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
       this.partitionToCreate = getCreatePartition(this.partitionToDelete);
     }
 
+    if (checkOrphanFiles) {
+      checkOrphanFilesAndDelete();
+    }
     // if no DataFiles to add or delete in Hive location, only commit to iceberg
     boolean noHiveDataFilesChanged = CollectionUtils.isEmpty(addFiles) && CollectionUtils.isEmpty(deleteFiles) &&
         expr != Expressions.alwaysTrue();
@@ -167,7 +173,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     for (DataFile d : addFiles) {
       List<String> partitionValues = HivePartitionUtil.partitionValuesAsList(d.partition(), partitionSchema);
       String value = Joiner.on("/").join(partitionValues);
-      String location = FileUtil.getFileDir(d.path().toString());
+      String location = TableFileUtils.getFileDir(d.path().toString());
       partitionLocationMap.put(value, location);
       if (!partitionDataFileMap.containsKey(value)) {
         partitionDataFileMap.put(value, Lists.newArrayList());
@@ -250,13 +256,35 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
   private void checkCreatePartitionDataFiles(List<DataFile> addFiles, String partitionLocation) {
     Path partitionPath = new Path(partitionLocation);
     for (DataFile df : addFiles) {
-      String fileDir = FileUtil.getFileDir(df.path().toString());
+      String fileDir = TableFileUtils.getFileDir(df.path().toString());
       Path dirPath = new Path(fileDir);
       if (!partitionPath.equals(dirPath)) {
         throw new CannotAlterHiveLocationException(
             "can't create new hive location: " + partitionLocation + " for data file: " + df.path().toString() +
                 " is not under partition location path"
         );
+      }
+    }
+  }
+
+  /**
+   * check files in the partition, and delete orphan files
+   */
+  private void checkOrphanFilesAndDelete() {
+    List<String> partitionsToCheck = this.partitionToCreate.values()
+        .stream().map(partition -> partition.getSd().getLocation()).collect(Collectors.toList());
+    for (String partitionLocation: partitionsToCheck) {
+      List<String> addFilesPathCollect = addFiles.stream()
+          .map(dataFile -> dataFile.path().toString()).collect(Collectors.toList());
+      List<String> deleteFilesPathCollect = deleteFiles.stream()
+          .map(deleteFile -> deleteFile.path().toString()).collect(Collectors.toList());
+      List<FileStatus> exisitedFiles = table.io().list(partitionLocation);
+      for (FileStatus filePath: exisitedFiles) {
+        if (!addFilesPathCollect.contains(filePath.getPath().toString()) &&
+            !deleteFilesPathCollect.contains(filePath.getPath().toString())) {
+          table.io().deleteFile(String.valueOf(filePath.getPath().toString()));
+          LOG.warn("Delete orphan file path: {}", filePath.getPath().toString());
+        }
       }
     }
   }
@@ -368,7 +396,7 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
     if (this.addFiles.isEmpty()) {
       unpartitionTableLocation = createUnpartitionEmptyLocationForHive();
     } else {
-      unpartitionTableLocation = FileUtil.getFileDir(this.addFiles.get(0).path().toString());
+      unpartitionTableLocation = TableFileUtils.getFileDir(this.addFiles.get(0).path().toString());
     }
   }
 

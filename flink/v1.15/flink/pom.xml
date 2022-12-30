@@ -23,7 +23,7 @@
     <parent>
         <artifactId>arctic-flink</artifactId>
         <groupId>com.netease.arctic</groupId>
-        <version>0.4.0-SNAPSHOT</version>
+        <version>0.5.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -51,6 +51,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-hive</artifactId>
@@ -80,7 +81,7 @@
         <dependency>
             <groupId>com.netease.arctic</groupId>
             <artifactId>arctic-flink-format-1.15</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
@@ -306,12 +307,6 @@
             <classifier>tests</classifier>
             <version>${project.version}</version>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.netease.arctic</groupId>
-            <artifactId>arctic-hive</artifactId>
-            <version>${project.version}</version>
         </dependency>
 
         <dependency>
