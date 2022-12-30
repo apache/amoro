@@ -197,6 +197,4 @@ public class TestKeyedTableDDL extends SparkTestBase {
     sql("drop table {0}.{1}", database, table);
     assertTableNotExist(identifier);
   }
-
-
 }
