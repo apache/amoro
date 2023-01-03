@@ -97,14 +97,7 @@ public class ArcticDataFiles {
   }
 
   public static GenericRecord data(PartitionSpec spec, String partitionPath) {
-    List<String> collect = spec.fields().stream().map(s -> {
-      if (s.name().endsWith("_" + s.transform().toString())) {
-        return s.name().substring(0, s.name().lastIndexOf("_" + s.transform().toString()));
-      } else {
-        return s.name();
-      }
-    }).collect(Collectors.toList());
-    GenericRecord data = GenericRecord.create(spec.schema().select(collect));
+    GenericRecord data = genericRecord(spec);
     String[] partitions = partitionPath.split("/", -1);
     Preconditions.checkArgument(partitions.length <= spec.fields().size(),
         "Invalid partition data, too many fields (expecting %s): %s",
@@ -125,5 +118,20 @@ public class ArcticDataFiles {
     }
 
     return data;
+  }
+
+  private static GenericRecord genericRecord(PartitionSpec spec) {
+    List<String> collect = spec.fields().stream().map(s -> {
+      if (s.name().endsWith("_" + s.transform().toString())) {
+        return s.name().substring(0, s.name().lastIndexOf("_" + s.transform().toString()));
+      } else if (s.name().endsWith("_bucket")) {
+        return s.name().substring(0, s.name().lastIndexOf("_bucket"));
+      } else if (s.name().endsWith("_trunc")) {
+        return s.name().substring(0, s.name().lastIndexOf("_trunc"));
+      } else {
+        return s.name();
+      }
+    }).collect(Collectors.toList());
+    return GenericRecord.create(spec.schema().select(collect));
   }
 }
