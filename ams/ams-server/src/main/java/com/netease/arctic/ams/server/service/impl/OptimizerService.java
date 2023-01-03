@@ -249,8 +249,8 @@ public class OptimizerService extends IJDBCService {
     if (stateInfo == null) {
       return;
     }
-    String lastmodification = newReportData.optimizerState.get("lastmodification");
-    if (lastmodification.equals(stateInfo.get("lastmodification")) && stateInfo.get("lastmodification") != null) {
+    String lastmodification = newReportData.optimizerState.get("last-modefication");
+    if (lastmodification.equals(stateInfo.get("last-modefication")) && stateInfo.get("last-modefication") != null) {
 
       LOG.info("checkOptimizerRetry retry");
       //出问题，任务重试过

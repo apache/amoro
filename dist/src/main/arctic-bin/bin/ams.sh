@@ -45,6 +45,7 @@ JAVA_OPTS="-server -Xloggc:$ARCTIC_HOME/logs/gc.log -XX:+UseGCLogFileRotation -X
 -Dcom.sun.management.jmxremote \
 -Dcom.sun.management.jmxremote.ssl=false \
 -Dcom.sun.management.jmxremote.authenticate=false \
+-Xdebug -Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=11000 \
 "
 
 
