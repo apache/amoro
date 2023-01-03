@@ -18,8 +18,10 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ArcticDataFiles {
   public static final OffsetDateTime EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC);
@@ -95,7 +97,8 @@ public class ArcticDataFiles {
   }
 
   public static GenericRecord data(PartitionSpec spec, String partitionPath) {
-    GenericRecord data = GenericRecord.create(spec.schema());
+    List<String> collect = spec.fields().stream().map(PartitionField::name).collect(Collectors.toList());
+    GenericRecord data = GenericRecord.create(spec.schema().select(collect));
     String[] partitions = partitionPath.split("/", -1);
     Preconditions.checkArgument(partitions.length <= spec.fields().size(),
         "Invalid partition data, too many fields (expecting %s): %s",
