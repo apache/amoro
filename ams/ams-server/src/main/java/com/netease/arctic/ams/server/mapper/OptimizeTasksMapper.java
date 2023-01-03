@@ -144,5 +144,5 @@ public interface OptimizeTasksMapper {
           @Result(property = "createTime", column = "create_time",
                   typeHandler = Long2TsConvertor.class)
   })
-  List<BaseOptimizeTask> selectOptimizeTasksByJobID(@Param("job_id") long jobId);
+  List<BaseOptimizeTask> selectOptimizeTasksByJobID(@Param("jobId") long jobId);
 }
