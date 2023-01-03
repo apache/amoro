@@ -28,6 +28,7 @@ import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
+import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -52,6 +53,7 @@ import org.apache.iceberg.deletes.EqualityDeleteWriter;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.DataWriter;
@@ -92,6 +94,10 @@ public class TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
   protected static final TableIdentifier NO_PARTITION_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_no_partition_table");
+  protected static final TableIdentifier PK_UPSERT_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_upsert_table");
+  protected static final TableIdentifier PK_NO_PARTITION_UPSERT_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_no_partition_pk_upsert_table");
   public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
@@ -137,6 +143,8 @@ public class TableTestBase {
   protected UnkeyedTable testTable;
   protected KeyedTable testKeyedTable;
   protected KeyedTable testNoPartitionTable;
+  protected KeyedTable testKeyedUpsertTable;
+  protected KeyedTable testKeyedNoPartitionUpsertTable;
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -173,6 +181,21 @@ public class TableTestBase {
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
+    testKeyedUpsertTable = testCatalog
+        .newTableBuilder(PK_UPSERT_TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_upsert_table")
+        .withProperty(TableProperties.UPSERT_ENABLED, "true")
+        .withPartitionSpec(SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    testKeyedNoPartitionUpsertTable = testCatalog
+        .newTableBuilder(PK_NO_PARTITION_UPSERT_TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_no_partition_upsert_table")
+        .withProperty(TableProperties.UPSERT_ENABLED, "true")
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
     this.before();
     LOG.info("setupTables end");
   }
@@ -192,6 +215,12 @@ public class TableTestBase {
 
     testCatalog.dropTable(NO_PARTITION_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(NO_PARTITION_TABLE_ID.buildTableIdentifier());
+
+    testCatalog.dropTable(PK_UPSERT_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(PK_UPSERT_TABLE_ID.buildTableIdentifier());
+
+    testCatalog.dropTable(PK_NO_PARTITION_UPSERT_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(PK_NO_PARTITION_UPSERT_TABLE_ID.buildTableIdentifier());
     LOG.info("clearTable end");
   }
 
@@ -254,6 +283,37 @@ public class TableTestBase {
     );
     List<Record> result = Lists.newArrayList();
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTable.newScan().planTasks()) {
+      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
+        try (CloseableIterator<Record> records = reader.readData(scTask)) {
+          while (records.hasNext()) {
+            result.add(records.next());
+          }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return result;
+  }
+
+  public static List<Record> readKeyedTableWithFilters(KeyedTable keyedTable, List<Expression> filters) {
+    GenericArcticDataReader reader = new GenericArcticDataReader(
+        keyedTable.io(),
+        keyedTable.schema(),
+        keyedTable.schema(),
+        keyedTable.primaryKeySpec(),
+        null,
+        true,
+        IdentityPartitionConverters::convertConstant
+    );
+    List<Record> result = Lists.newArrayList();
+    KeyedTableScan keyedTableScan = keyedTable.newScan();
+    for (Expression filter : filters) {
+      keyedTableScan = keyedTableScan.filter(filter);
+    }
+    try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTableScan.planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
         try (CloseableIterator<Record> records = reader.readData(scTask)) {
           while (records.hasNext()) {

@@ -123,9 +123,6 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
         .fromTransaction(partitionMaxTransactionId)
         .fromLegacyTransaction(legacyPartitionMaxTransactionId);
-    if (expression != null) {
-      changeTableScan = changeTableScan.filter(expression);
-    }
     return changeTableScan.planTasks();
   }
 
