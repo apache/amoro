@@ -97,9 +97,13 @@ public class ArcticDataFiles {
   }
 
   public static GenericRecord data(PartitionSpec spec, String partitionPath) {
-    List<String> collect = spec.fields().stream().map(s ->
-        s.name().substring(0, s.name().lastIndexOf("_" + s.transform().toString())))
-        .collect(Collectors.toList());
+    List<String> collect = spec.fields().stream().map(s -> {
+      if (s.name().endsWith("_" + s.transform().toString())) {
+        return s.name().substring(0, s.name().lastIndexOf("_" + s.transform().toString()));
+      } else {
+        return s.name();
+      }
+    }).collect(Collectors.toList());
     GenericRecord data = GenericRecord.create(spec.schema().select(collect));
     String[] partitions = partitionPath.split("/", -1);
     Preconditions.checkArgument(partitions.length <= spec.fields().size(),
