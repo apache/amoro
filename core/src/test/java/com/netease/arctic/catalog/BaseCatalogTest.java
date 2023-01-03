@@ -40,21 +40,23 @@ public class BaseCatalogTest extends CatalogTestBase {
 
   @Test
   public void testCreateAndDropDatabase() {
-    Assert.assertEquals(Lists.newArrayList(), getCatalog().listDatabases());
-    getCatalog().createDatabase("create_db");
-    Assert.assertEquals(Lists.newArrayList( "create_db"), getCatalog().listDatabases());
-    getCatalog().dropDatabase("create_db");
-    Assert.assertEquals(Lists.newArrayList(), getCatalog().listDatabases());
+    String createDbName = "create_db";
+    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
+    getCatalog().createDatabase(createDbName);
+    Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
+    getCatalog().dropDatabase(createDbName);
+    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
   }
 
   @Test
   public void testCreateDuplicateDatabase() {
-    Assert.assertEquals(Lists.newArrayList(), getCatalog().listDatabases());
-    getCatalog().createDatabase("create_db");
-    Assert.assertEquals(Lists.newArrayList( "create_db"), getCatalog().listDatabases());
+    String createDbName = "create_db";
+    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
+    getCatalog().createDatabase(createDbName);
+    Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
     Assert.assertThrows(
         AlreadyExistsException.class,
-        () -> getCatalog().createDatabase("create_db"));
-    getCatalog().dropDatabase("create_db");
+        () -> getCatalog().createDatabase(createDbName));
+    getCatalog().dropDatabase(createDbName);
   }
 }

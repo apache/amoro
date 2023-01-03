@@ -19,13 +19,15 @@
 package com.netease.arctic.catalog;
 
 import com.google.common.collect.Maps;
-import com.netease.arctic.AmsTestBase;
 import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.TestAms;
 import com.netease.arctic.ams.api.CatalogMeta;
+import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
@@ -34,8 +36,12 @@ import java.util.Map;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
+import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
 
-public abstract class CatalogTestBase extends AmsTestBase {
+public abstract class CatalogTestBase {
+
+  @ClassRule
+  public static TestAms TEST_AMS = new TestAms();
 
   protected static final String TEST_CATALOG_NAME = TableTestHelpers.TEST_CATALOG_NAME;
 
@@ -48,6 +54,10 @@ public abstract class CatalogTestBase extends AmsTestBase {
 
   public CatalogTestBase(TableFormat testFormat) {
     this.testFormat = testFormat;
+  }
+
+  public static MockArcticMetastoreServer.AmsHandler getAmsHandler() {
+    return TEST_AMS.getAmsHandler();
   }
 
   @Before
@@ -66,6 +76,7 @@ public abstract class CatalogTestBase extends AmsTestBase {
       case MIXED_ICEBERG:
         return CATALOG_TYPE_AMS;
       case MIXED_HIVE:
+        return CATALOG_TYPE_HIVE;
       default:
         throw new UnsupportedOperationException("Unsupported table format:" + testFormat);
     }
@@ -84,6 +95,6 @@ public abstract class CatalogTestBase extends AmsTestBase {
   }
 
   protected String getCatalogUrl() {
-    return AMS.getServerUrl() + "/" + TEST_CATALOG_NAME;
+    return TEST_AMS.getServerUrl() + "/" + TEST_CATALOG_NAME;
   }
 }

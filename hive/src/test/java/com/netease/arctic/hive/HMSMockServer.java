@@ -93,6 +93,7 @@ public class HMSMockServer {
   private HiveClientPool clientPool;
   private int port;
   private HiveMetaStoreClient client;
+  private boolean started = false;
 
   public HMSMockServer() {
     this(new File("hive_warehouse"));
@@ -100,9 +101,6 @@ public class HMSMockServer {
 
   public HMSMockServer(File file) {
     this.hiveLocalDir = file;
-    // if (file.exists()){
-    //
-    // }
     int port = new Random().nextInt(4000);
     this.port = port + 24000;
     this.hiveConf = newHiveConf(this.port);
@@ -141,6 +139,7 @@ public class HMSMockServer {
       System.setProperty(HiveConf.ConfVars.METASTOREURIS.varname, hiveConf.getVar(HiveConf.ConfVars.METASTOREURIS));
 
       this.clientPool = new HiveClientPool(1, hiveConf);
+      started = true;
     } catch (Exception e) {
       throw new RuntimeException("Cannot start TestHiveMetastore", e);
     }
@@ -175,10 +174,15 @@ public class HMSMockServer {
     if (client != null) {
       client.close();
     }
+    started = false;
 
     LOG.info("-------------------------------------------------------------------------");
     LOG.info("    HiveMetastoreServer finished");
     LOG.info("-------------------------------------------------------------------------");
+  }
+
+  public boolean isStarted() {
+    return started;
   }
 
   public HiveConf hiveConf() {

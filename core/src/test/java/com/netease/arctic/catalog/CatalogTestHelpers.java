@@ -21,7 +21,11 @@ package com.netease.arctic.catalog;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import org.apache.hadoop.conf.Configuration;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
@@ -54,6 +58,38 @@ public class CatalogTestHelpers {
           Arrays.stream(tableFormats).map(TableFormat::name).collect(Collectors.joining(",")));
     }
     return new CatalogMeta(catalogName, type, storageConfig, authConfig, properties);
+  }
+
+  public static CatalogMeta buildHiveCatalogMeta(String catalogName, Map<String, String> properties,
+      Configuration hiveConfiguration) {
+    Map<String, String> storageConfig = new HashMap<>();
+    storageConfig.put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
+        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
+    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, HADOOP_EMPTY_CONFIG_BASE64);
+    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, HADOOP_EMPTY_CONFIG_BASE64);
+    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
+        encodeHadoopConfiguration(hiveConfiguration));
+
+    Map<String, String> authConfig = new HashMap<>();
+    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+        CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
+    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+        System.getProperty("user.name"));
+
+    properties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
+    return new CatalogMeta(catalogName, CatalogMetaProperties.CATALOG_TYPE_HIVE, storageConfig, authConfig, properties);
+  }
+
+  public static String encodeHadoopConfiguration(Configuration conf) {
+    try {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      conf.writeXml(out);
+      String configurationString = out.toString();
+      return Base64.getEncoder().encodeToString(configurationString.getBytes(StandardCharsets.UTF_8));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
 }

@@ -28,6 +28,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+
 public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
 
   protected GenericCombinedIcebergDataReader dataReader;
@@ -58,42 +60,47 @@ public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
   }
 
   @Test
-  public void readAllData(){
-    CloseableIterable<Record> records = dataReader.readData(unPartitionAllFileTask);
-    Assert.assertTrue(Iterables.size(records) == 1);
-    Record record = Iterables.getFirst(records, null);
-    Assert.assertEquals(record.get(0), 3L);
+  public void readAllData() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readData(unPartitionAllFileTask)) {
+      Assert.assertTrue(Iterables.size(records) == 1);
+      Record record = Iterables.getFirst(records, null);
+      Assert.assertEquals(record.get(0), 3L);
+    }
   }
 
   @Test
-  public void readAllDataNegate(){
-    CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionAllFileTask);
-    Assert.assertTrue(Iterables.size(records) == 2);
-    Record first = Iterables.getFirst(records, null);
-    Assert.assertEquals(first.get(0), 1L);
-    Record last = Iterables.getLast(records);
-    Assert.assertEquals(last.get(0), 2L);
+  public void readAllDataNegate() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionAllFileTask)) {
+      Assert.assertTrue(Iterables.size(records) == 2);
+      Record first = Iterables.getFirst(records, null);
+      Assert.assertEquals(first.get(0), 1L);
+      Record last = Iterables.getLast(records);
+      Assert.assertEquals(last.get(0), 2L);
+    }
   }
 
   @Test
-  public void readOnlyData(){
-    CloseableIterable<Record> records = dataReader.readData(unPartitionOnlyDataTask);
-    Assert.assertEquals(Iterables.size(records), 3);
+  public void readOnlyData() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readData(unPartitionOnlyDataTask)) {
+      Assert.assertEquals(Iterables.size(records), 3);
+    }
   }
 
   @Test
-  public void readOnlyDataNegate(){
-    CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionOnlyDataTask);
-    Assert.assertEquals(Iterables.size(records), 0);
+  public void readOnlyDataNegate() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionOnlyDataTask)) {
+      Assert.assertEquals(Iterables.size(records), 0);
+    }
   }
 
   @Test
-  public void readPartitionAllData(){
-    CloseableIterable<Record> records = partitionDataReader.readData(partitionAllFileTask);
-    records.forEach(System.out::println);
-    Assert.assertTrue(Iterables.size(records) == 1);
-    Record record = Iterables.getFirst(records, null);
-    Assert.assertEquals(record.get(0), 3L);
-    Assert.assertEquals(record.get(1), "3");
+  public void readPartitionAllData() throws IOException {
+    try (CloseableIterable<Record> records = partitionDataReader.readData(partitionAllFileTask)) {
+      records.forEach(System.out::println);
+      Assert.assertTrue(Iterables.size(records) == 1);
+      Record record = Iterables.getFirst(records, null);
+      Assert.assertEquals(record.get(0), 3L);
+      Assert.assertEquals(record.get(1), "3");
+    }
   }
 }
