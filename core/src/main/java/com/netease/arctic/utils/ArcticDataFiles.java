@@ -122,11 +122,13 @@ public class ArcticDataFiles {
 
   private static GenericRecord genericRecord(PartitionSpec spec) {
     List<String> collect = spec.fields().stream().map(s -> {
-      if (s.name().endsWith("_" + s.transform().toString())) {
+      if (s.transform().toString().equals("identity")) {
+        return s.name();
+      } else if (s.name().endsWith("_" + s.transform().toString())) {
         return s.name().substring(0, s.name().lastIndexOf("_" + s.transform().toString()));
-      } else if (s.name().endsWith("_bucket")) {
+      } else if (s.transform().toString().contains("bucket")) {
         return s.name().substring(0, s.name().lastIndexOf("_bucket"));
-      } else if (s.name().endsWith("_trunc")) {
+      } else if (s.transform().toString().contains("truncate")) {
         return s.name().substring(0, s.name().lastIndexOf("_trunc"));
       } else {
         return s.name();
