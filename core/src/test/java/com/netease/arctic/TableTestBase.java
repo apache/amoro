@@ -298,7 +298,7 @@ public class TableTestBase {
     return result;
   }
 
-  public static List<Record> readKeyedTableWithFilters(KeyedTable keyedTable, List<Expression> filters) {
+  public static List<Record> readKeyedTableWithFilters(KeyedTable keyedTable, Expression expr) {
     GenericArcticDataReader reader = new GenericArcticDataReader(
         keyedTable.io(),
         keyedTable.schema(),
@@ -310,9 +310,7 @@ public class TableTestBase {
     );
     List<Record> result = Lists.newArrayList();
     KeyedTableScan keyedTableScan = keyedTable.newScan();
-    for (Expression filter : filters) {
-      keyedTableScan = keyedTableScan.filter(filter);
-    }
+    keyedTableScan = keyedTableScan.filter(expr);
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTableScan.planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
         try (CloseableIterator<Record> records = reader.readData(scTask)) {
@@ -431,7 +429,7 @@ public class TableTestBase {
   }
 
   public static DeleteFile writePosDeleteFile(Table table, Multimap<String, Long> file2Positions,
-                                               StructLike partitionData) throws IOException {
+                                              StructLike partitionData) throws IOException {
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
     OutputFileFactory outputFileFactory =

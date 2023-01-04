@@ -22,6 +22,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import com.netease.arctic.utils.BasePartitionEvaluator;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;
@@ -123,6 +124,10 @@ public class BaseKeyedTableScan implements KeyedTableScan {
     ChangeTableIncrementalScan changeTableScan = table.changeTable().newChangeScan()
         .fromTransaction(partitionMaxTransactionId)
         .fromLegacyTransaction(legacyPartitionMaxTransactionId);
+    if (expression != null) {
+      Expression partitionExpression = new BasePartitionEvaluator(table.spec()).project(expression);
+      changeTableScan.filter(partitionExpression);
+    }
     return changeTableScan.planTasks();
   }
 
