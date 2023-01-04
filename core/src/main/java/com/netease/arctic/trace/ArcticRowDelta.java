@@ -25,17 +25,15 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.RowDelta;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
-import java.util.function.Consumer;
 
 /**
  * Wrap {@link RowDelta} with {@link TableTracer}.
  */
-public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
+public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
 
   private final RowDelta rowDelta;
 
@@ -44,13 +42,13 @@ public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
   }
 
   private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta, TableTracer tracer) {
-    super(arcticTable, tracer);
+    super(arcticTable, rowDelta, tracer);
     this.rowDelta = rowDelta;
   }
 
   private ArcticRowDelta(ArcticTable arcticTable, RowDelta rowDelta, TableTracer tracer,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, rowDelta, tracer, transaction, autoCommitTransaction);
     this.rowDelta = rowDelta;
   }
 
@@ -93,12 +91,6 @@ public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
   }
 
   @Override
-  public RowDelta validateNoConflictingAppends(Expression conflictDetectionFilter) {
-    rowDelta.validateNoConflictingAppends(conflictDetectionFilter);
-    return this;
-  }
-
-  @Override
   public RowDelta conflictDetectionFilter(Expression conflictDetectionFilter) {
     rowDelta.conflictDetectionFilter(conflictDetectionFilter);
     return this;
@@ -117,32 +109,8 @@ public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
   }
 
   @Override
-  public RowDelta set(String property, String value) {
-    rowDelta.set(property, value);
-    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
+  protected RowDelta self() {
     return this;
-  }
-
-  @Override
-  public RowDelta deleteWith(Consumer<String> deleteFunc) {
-    rowDelta.deleteWith(deleteFunc);
-    return this;
-  }
-
-  @Override
-  public RowDelta stageOnly() {
-    rowDelta.stageOnly();
-    return this;
-  }
-
-  @Override
-  public Snapshot apply() {
-    return rowDelta.apply();
-  }
-
-  @Override
-  public void doCommit() {
-    rowDelta.commit();
   }
 
   public static class Builder extends ArcticUpdate.Builder<ArcticRowDelta> {

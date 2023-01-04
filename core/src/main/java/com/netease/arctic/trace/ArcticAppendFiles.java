@@ -25,16 +25,13 @@ import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.ManifestFile;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
-
-import java.util.function.Consumer;
 
 /**
  * Implementation of {@link AppendFiles} for arctic table, adding tracing and watermark generating logics.
  */
-public class ArcticAppendFiles extends ArcticUpdate<Snapshot> implements AppendFiles {
+public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements AppendFiles {
 
   private final AppendFiles appendFiles;
 
@@ -43,13 +40,13 @@ public class ArcticAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
   }
 
   private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer) {
-    super(arcticTable, tracer);
+    super(arcticTable, appendFiles, tracer);
     this.appendFiles = appendFiles;
   }
 
   private ArcticAppendFiles(ArcticTable arcticTable, AppendFiles appendFiles, TableTracer tracer,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, appendFiles, tracer, transaction, autoCommitTransaction);
     this.appendFiles = appendFiles;
   }
 
@@ -68,42 +65,13 @@ public class ArcticAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
   }
 
   @Override
-  public AppendFiles set(String property, String value) {
-    appendFiles.set(property, value);
-    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
+  protected AppendFiles self() {
     return this;
-  }
-
-  @Override
-  public AppendFiles deleteWith(Consumer<String> deleteFunc) {
-    appendFiles.deleteWith(deleteFunc);
-    return this;
-  }
-
-  @Override
-  public AppendFiles stageOnly() {
-    appendFiles.stageOnly();
-    return this;
-  }
-
-  @Override
-  public Snapshot apply() {
-    return appendFiles.apply();
-  }
-
-  @Override
-  public void doCommit() {
-    appendFiles.commit();
-  }
-
-  @Override
-  public Object updateEvent() {
-    return appendFiles.updateEvent();
   }
 
   public static class Builder extends ArcticUpdate.Builder<ArcticAppendFiles> {
 
-    private boolean fastAppend;
+    private final boolean fastAppend;
 
     private Builder(ArcticTable table, boolean fastAppend) {
       super(table);

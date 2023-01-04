@@ -52,10 +52,10 @@ public class SnapshotFileUtil {
     Preconditions.checkNotNull(addFiles, "Add files to delete can not be null");
     Preconditions.checkNotNull(deleteFiles, "Delete files to delete can not be null");
 
-    for (DataFile file : snapshot.addedFiles()) {
+    for (DataFile file : snapshot.addedDataFiles(table.io())) {
       addFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
     }
-    for (DataFile file : snapshot.deletedFiles()) {
+    for (DataFile file : snapshot.removedDataFiles(table.io())) {
       deleteFiles.add(ConvertStructUtil.convertToAmsDatafile(file, table));
     }
 

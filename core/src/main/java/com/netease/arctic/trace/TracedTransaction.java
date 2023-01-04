@@ -34,7 +34,6 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -381,11 +380,6 @@ public class TracedTransaction implements Transaction {
     @Override
     public ExpireSnapshots expireSnapshots() {
       return transactionTable.expireSnapshots();
-    }
-
-    @Override
-    public Rollback rollback() {
-      return transactionTable.rollback();
     }
 
     @Override

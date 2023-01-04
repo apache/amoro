@@ -47,7 +47,6 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -265,11 +264,6 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public ExpireSnapshots expireSnapshots() {
     return icebergTable.expireSnapshots();
-  }
-
-  @Override
-  public Rollback rollback() {
-    return icebergTable.rollback();
   }
 
   @Override

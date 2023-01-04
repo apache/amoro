@@ -36,7 +36,6 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -57,8 +56,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
 
 public class CreateTableTransaction implements Transaction {
 
@@ -137,6 +138,11 @@ public class CreateTableTransaction implements Transaction {
       @Override
       public AppendFiles stageOnly() {
         throw new UnsupportedOperationException("create table transaction AppendFiles unsupported stageOnly");
+      }
+
+      @Override
+      public AppendFiles scanManifestsWith(ExecutorService executorService) {
+        throw new UnsupportedOperationException("create table transaction AppendFiles unsupported scanManifestsWith");
       }
 
       @Override
@@ -423,10 +429,6 @@ public class CreateTableTransaction implements Transaction {
       return transactionTable.expireSnapshots();
     }
 
-    @Override
-    public Rollback rollback() {
-      return transactionTable.rollback();
-    }
 
     @Override
     public ManageSnapshots manageSnapshots() {

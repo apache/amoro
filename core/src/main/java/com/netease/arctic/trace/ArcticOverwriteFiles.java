@@ -24,17 +24,14 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.OverwriteFiles;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
-import java.util.function.Consumer;
-
 /**
  * Wrap {@link OverwriteFiles} with {@link TableTracer}.
  */
-public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements OverwriteFiles {
+public class ArcticOverwriteFiles extends ArcticUpdate<OverwriteFiles> implements OverwriteFiles {
 
   private final OverwriteFiles overwriteFiles;
 
@@ -43,13 +40,13 @@ public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements Over
   }
 
   private ArcticOverwriteFiles(ArcticTable arcticTable, OverwriteFiles overwriteFiles, TableTracer tracer) {
-    super(arcticTable, tracer);
+    super(arcticTable, overwriteFiles, tracer);
     this.overwriteFiles = overwriteFiles;
   }
 
   private ArcticOverwriteFiles(ArcticTable arcticTable, OverwriteFiles overwriteFiles, TableTracer tracer,
       Transaction transaction, boolean autoCommitTransaction) {
-    super(arcticTable, tracer, transaction, autoCommitTransaction);
+    super(arcticTable, overwriteFiles, tracer, transaction, autoCommitTransaction);
     this.overwriteFiles = overwriteFiles;
   }
 
@@ -92,12 +89,6 @@ public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements Over
   }
 
   @Override
-  public OverwriteFiles validateNoConflictingAppends(Expression conflictDetectionFilter) {
-    overwriteFiles.validateNoConflictingAppends(conflictDetectionFilter);
-    return this;
-  }
-
-  @Override
   public OverwriteFiles conflictDetectionFilter(Expression conflictDetectionFilter) {
     overwriteFiles.conflictDetectionFilter(conflictDetectionFilter);
     return this;
@@ -116,37 +107,8 @@ public class ArcticOverwriteFiles extends ArcticUpdate<Snapshot> implements Over
   }
 
   @Override
-  public OverwriteFiles set(String property, String value) {
-    overwriteFiles.set(property, value);
-    tracer().ifPresent(tracer -> tracer.setSnapshotSummary(property, value));
+  protected OverwriteFiles self() {
     return this;
-  }
-
-  @Override
-  public OverwriteFiles deleteWith(Consumer<String> deleteFunc) {
-    overwriteFiles.deleteWith(deleteFunc);
-    return this;
-  }
-
-  @Override
-  public OverwriteFiles stageOnly() {
-    overwriteFiles.stageOnly();
-    return this;
-  }
-
-  @Override
-  public Snapshot apply() {
-    return overwriteFiles.apply();
-  }
-
-  @Override
-  public void doCommit() {
-    overwriteFiles.commit();
-  }
-
-  @Override
-  public Object updateEvent() {
-    return overwriteFiles.updateEvent();
   }
 
   public static class Builder extends ArcticUpdate.Builder<ArcticOverwriteFiles> {
