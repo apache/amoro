@@ -124,7 +124,8 @@ public class TracedTransaction implements Transaction {
   @Override
   public RewriteFiles newRewrite() {
     tracer.setAction(DataOperations.REPLACE);
-    return new TracedRewriteFiles(transaction.newRewrite(), new TransactionTracker());
+    return TracedRewriteFiles.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override
@@ -156,7 +157,8 @@ public class TracedTransaction implements Transaction {
   @Override
   public DeleteFiles newDelete() {
     tracer.setAction(DataOperations.DELETE);
-    return new TracedDeleteFiles(transaction.newDelete(), new TransactionTracker());
+    return TracedDeleteFiles.buildFor(arcticTable).inTransaction(transaction)
+        .traceTable(new TransactionTracker()).build();
   }
 
   @Override

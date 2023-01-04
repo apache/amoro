@@ -218,13 +218,8 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public RewriteFiles newRewrite() {
-    RewriteFiles rewriteFiles = icebergTable.newRewrite();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.REPLACE, client);
-      return new TracedRewriteFiles(rewriteFiles, tracer);
-    } else {
-      return rewriteFiles;
-    }
+    return TracedRewriteFiles.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override
@@ -252,13 +247,8 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
 
   @Override
   public DeleteFiles newDelete() {
-    DeleteFiles deleteFiles = icebergTable.newDelete();
-    if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.DELETE, client);
-      return new TracedDeleteFiles(deleteFiles, tracer);
-    } else {
-      return deleteFiles;
-    }
+    return TracedDeleteFiles.buildFor(this)
+        .traceTable(client, this).onTableStore(icebergTable).build();
   }
 
   @Override

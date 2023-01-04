@@ -65,7 +65,8 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
     this.delegate = delegate;
   }
 
-  public ArcticUpdate(ArcticTable arcticTable, SnapshotUpdate<T> delegate, TableTracer tracer, Transaction transaction,
+  public ArcticUpdate(
+      ArcticTable arcticTable, SnapshotUpdate<T> delegate, TableTracer tracer, Transaction transaction,
       boolean autoCommitTransaction) {
     this.arcticTable = arcticTable;
     this.tracer = tracer;
@@ -245,14 +246,18 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
           return updateWithWatermark(tableTracer, transaction, true);
         }
       } else {
-        return updateWithoutWatermark(tableTracer, tableStore);
+        if (insideTransaction != null) {
+          return updateWithWatermark(tableTracer, insideTransaction, false);
+        } else {
+          return updateWithoutWatermark(tableTracer, tableStore);
+        }
       }
     }
 
-    protected abstract T updateWithWatermark(TableTracer tableTracer, Transaction transaction,
+    protected abstract T updateWithWatermark(
+        TableTracer tableTracer, Transaction transaction,
         boolean autoCommitTransaction);
 
     protected abstract T updateWithoutWatermark(TableTracer tableTracer, Table tableStore);
   }
-
 }
