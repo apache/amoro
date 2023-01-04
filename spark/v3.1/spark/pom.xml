@@ -170,7 +170,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark3</artifactId>
+            <artifactId>iceberg-spark-3.1_2.12</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
@@ -182,7 +182,7 @@
 
         <dependency>
             <groupId>org.apache.iceberg</groupId>
-            <artifactId>iceberg-spark3-extensions</artifactId>
+            <artifactId>iceberg-spark-extensions-3.1_2.12</artifactId>
             <version>${iceberg.version}</version>
             <exclusions>
                 <exclusion>
