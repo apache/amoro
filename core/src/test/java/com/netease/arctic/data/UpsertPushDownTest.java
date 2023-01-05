@@ -117,12 +117,48 @@ public class UpsertPushDownTest extends TableTestBase {
     Assert.assertTrue(recordToNameList(records3).containsAll(Arrays.asList(new String[]{"ccc"})));
   }
 
+  @Test
+  public void testUpsertUnionPartitionKeyedTable() {
+    writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeUnionRecords(1, "aaa", "2023-1-1",1));
+    writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeUnionRecords(1, "aaa", "2023-1-1",1));
+    writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeUnionRecords(1, "bbb", "2023-1-1",2));
+    writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeUnionRecords(1, "bbb", "2023-1-1",2));
+    writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeUnionRecords(1, "ccc", "2023-1-1",2));
+    writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeUnionRecords(1, "ccc", "2023-1-1",2));
+    List<Record> records1 = readKeyedTable(testKeyedUnionPartitionUpsertTable);
+    Assert.assertEquals(records1.size(), 2);
+    Assert.assertTrue(recordToNameList(records1).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
+
+    Expression partition_and_np = Expressions.and(
+        Expressions.and(
+            Expressions.notNull("num"),
+            Expressions.greaterThan("num", 1)
+        ),
+        Expressions.and(
+            Expressions.notNull("name"),
+            Expressions.equal("name", "bbb")
+        )
+    );
+    List<Record> records2 = readKeyedTableWithFilters(testKeyedUnionPartitionUpsertTable, partition_and_np);
+    Assert.assertEquals(records2.size(), 1);
+    Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"ccc"})));
+  }
+
   private List<Record> writeRecords(int id, String name, int day) {
     GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
     builder.add(record.copy(ImmutableMap.of("id", id, "name", name, "op_time",
         LocalDateTime.of(2022, 1, day, 12, 0, 0))));
+
+    return builder.build();
+  }
+
+  private List<Record> writeUnionRecords(int id, String name, String time, int num) {
+    GenericRecord record = GenericRecord.create(UNION_TABLE_SCHEMA);
+
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(record.copy(ImmutableMap.of("id", id, "name", name, "time", time, "num", num)));
 
     return builder.build();
   }

@@ -98,13 +98,24 @@ public class TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_upsert_table");
   protected static final TableIdentifier PK_NO_PARTITION_UPSERT_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_no_partition_pk_upsert_table");
+  protected static final TableIdentifier PK_UNION_PARTITION_UPSERT_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_union_partition_pk_upsert_table");
   public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
   );
+  public static final Schema UNION_TABLE_SCHEMA = new Schema(
+      Types.NestedField.required(1, "id", Types.IntegerType.get()),
+      Types.NestedField.required(2, "name", Types.StringType.get()),
+      Types.NestedField.required(3, "time", Types.StringType.get()),
+      Types.NestedField.required(4, "num", Types.IntegerType.get())
+  );
   public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
       .day("op_time").build();
+
+  public static final PartitionSpec UNION_SPEC = PartitionSpec.builderFor(UNION_TABLE_SCHEMA)
+      .identity("time").identity("num").build();
 
   protected static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);
   protected static final Schema POS_DELETE_SCHEMA = new Schema(
@@ -145,6 +156,7 @@ public class TableTestBase {
   protected KeyedTable testNoPartitionTable;
   protected KeyedTable testKeyedUpsertTable;
   protected KeyedTable testKeyedNoPartitionUpsertTable;
+  protected KeyedTable testKeyedUnionPartitionUpsertTable;
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -196,6 +208,14 @@ public class TableTestBase {
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
+    testKeyedUnionPartitionUpsertTable = testCatalog
+        .newTableBuilder(PK_UNION_PARTITION_UPSERT_TABLE_ID, UNION_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_union_partition_upsert_table")
+        .withProperty(TableProperties.UPSERT_ENABLED, "true")
+        .withPartitionSpec(UNION_SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
     this.before();
     LOG.info("setupTables end");
   }
@@ -221,6 +241,8 @@ public class TableTestBase {
 
     testCatalog.dropTable(PK_NO_PARTITION_UPSERT_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(PK_NO_PARTITION_UPSERT_TABLE_ID.buildTableIdentifier());
+    testCatalog.dropTable(PK_UNION_PARTITION_UPSERT_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(PK_UNION_PARTITION_UPSERT_TABLE_ID.buildTableIdentifier());
     LOG.info("clearTable end");
   }
 
