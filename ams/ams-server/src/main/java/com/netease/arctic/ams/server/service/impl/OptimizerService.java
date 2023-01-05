@@ -249,7 +249,7 @@ public class OptimizerService extends IJDBCService {
 
     Map<String, String> stateInfo = oldOptimizer.getStateInfo();
     if (stateInfo == null || newReportData.optimizerState == null ||
-            newReportData.optimizerState.get("STATUS_IDENTIFICATION") == null) {
+            newReportData.optimizerState.get(STATUS_IDENTIFICATION) == null) {
       return;
     }
 
