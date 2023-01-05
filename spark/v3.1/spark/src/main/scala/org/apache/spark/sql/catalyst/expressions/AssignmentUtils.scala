@@ -59,26 +59,4 @@ object AssignmentUtils extends SQLConfHelper {
     case other =>
       throw new AnalysisException(s"Cannot convert to a reference, unsupported expression: $other")
   }
-
-//  def handleCharVarcharLimits(assignment: Assignment): Assignment = {
-//    val key = assignment.key
-//    val value = assignment.value
-//
-//    val rawKeyType = key.transform {
-//      case attr: AttributeReference =>
-//        CharVarcharUtils.getRawType(attr.metadata)
-//          .map(attr.withDataType)
-//          .getOrElse(attr)
-//    }.dataType
-//
-//    if (CharVarcharUtils.hasCharVarchar(rawKeyType)) {
-//      val newKey = key.transform {
-//        case attr: AttributeReference => CharVarcharUtils.cleanAttrMetadata(attr)
-//      }
-//      val newValue = CharVarcharUtils.stringLengthCheck(value, rawKeyType)
-//      Assignment(newKey, newValue)
-//    } else {
-//      assignment
-//    }
-//  }
 }
