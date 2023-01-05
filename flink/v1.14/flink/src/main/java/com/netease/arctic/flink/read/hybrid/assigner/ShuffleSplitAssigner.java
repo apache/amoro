@@ -196,6 +196,22 @@ public class ShuffleSplitAssigner implements SplitAssigner {
     }
   }
 
+  /**
+   * <p>
+   * |mask=0          o
+   * |             /     \
+   * |mask=1     o        o
+   * |         /   \    /   \
+   * |mask=3  o     o  o     o
+   * <p>
+   * Different data files may locate in different layers when multi snapshots are committed, so arctic source reading
+   * should consider emitting the records and keeping ordering. According to the dataTreeNode of the arctic split and
+   * the currentMaskOfTreeNode, return the exact tree node list which may move up or go down layers in the arctic tree.
+   * </p>
+   *
+   * @param arcticSplit arctic split.
+   * @return the exact tree node list.
+   */
   public List<DataTreeNode> getExactlyTreeNodes(ArcticSplit arcticSplit) {
     DataTreeNode dataTreeNode = arcticSplit.dataTreeNode();
     long mask = dataTreeNode.mask();
