@@ -27,6 +27,7 @@ import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
@@ -270,9 +271,14 @@ public class OptimizerService extends IJDBCService {
         List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper.selectOptimizeTasksByJobID(optimizerId);
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
+          OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper = getMapper(sqlSession,
+                  OptimizeTaskRuntimesMapper.class);
+
+          BaseOptimizeTaskRuntime baseOptimizeTaskRuntime = optimizeTaskRuntimesMapper
+                  .selectAllOptimizeTaskRuntimesByTraceId(baseOptimizeTask.taskId.getTraceId());
+
           long nowTimeStamp = System.currentTimeMillis();
-          OptimizeTaskItem optimizeTaskItem = new OptimizeTaskItem(baseOptimizeTask,
-                  new BaseOptimizeTaskRuntime(baseOptimizeTask.getTaskId()));
+          OptimizeTaskItem optimizeTaskItem = new OptimizeTaskItem(baseOptimizeTask, baseOptimizeTaskRuntime);
           optimizeTaskItem.onFailed(new ErrorMessage(nowTimeStamp,"optimizer job has occurred retry"),
                   nowTimeStamp - baseOptimizeTask.getCreateTime());
         }

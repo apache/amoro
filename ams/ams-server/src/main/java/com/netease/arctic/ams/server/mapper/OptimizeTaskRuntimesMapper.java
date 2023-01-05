@@ -86,4 +86,35 @@ public interface OptimizeTaskRuntimesMapper {
       " where trace_id = #{optimizeTaskRuntime.optimizeTaskId.traceId}")
   void updateOptimizeTaskRuntime(
       @Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
+
+
+  @Select("select trace_id, optimize_type, status, pending_time, execute_time, prepared_time, report_time," +
+          " commit_time, job_type, job_id, retry, attempt_id, fail_reason, fail_time, new_file_size," +
+          " new_file_cnt, cost_time from " + TABLE_NAME + " where trace_id = #{traceId}")
+  @Results({
+          @Result(property = "optimizeTaskId.traceId", column = "trace_id"),
+          @Result(property = "optimizeTaskId.type", column = "optimize_type"),
+          @Result(property = "status", column = "status"),
+          @Result(property = "pendingTime", column = "pending_time",
+                  typeHandler = Long2TsConvertor.class),
+          @Result(property = "executeTime", column = "execute_time",
+                  typeHandler = Long2TsConvertor.class),
+          @Result(property = "preparedTime", column = "prepared_time",
+                  typeHandler = Long2TsConvertor.class),
+          @Result(property = "reportTime", column = "report_time",
+                  typeHandler = Long2TsConvertor.class),
+          @Result(property = "commitTime", column = "commit_time",
+                  typeHandler = Long2TsConvertor.class),
+          @Result(property = "costTime", column = "cost_time"),
+          @Result(property = "jobId.type", column = "job_type"),
+          @Result(property = "jobId.id", column = "job_id"),
+          @Result(property = "retry", column = "retry"),
+          @Result(property = "newFileSize", column = "new_file_size"),
+          @Result(property = "newFileCnt", column = "new_file_cnt"),
+          @Result(property = "attemptId", column = "attempt_id"),
+          @Result(property = "errorMessage.failTime", column = "fail_time",
+                  typeHandler = Long2TsConvertor.class),
+          @Result(property = "errorMessage.failReason", column = "fail_reason")
+  })
+  BaseOptimizeTaskRuntime selectAllOptimizeTaskRuntimesByTraceId(@Param("traceId") String traceId);
 }
