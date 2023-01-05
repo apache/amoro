@@ -16,25 +16,40 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write.hidden.kafka;
+package com.netease.arctic.flink.read.hidden.kafka;
 
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
-import com.netease.arctic.flink.read.source.log.LogSourceHelper;
+import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
 import com.netease.arctic.flink.read.source.log.LogKafkaPartitionSplitReader;
 import com.netease.arctic.flink.read.source.log.LogRecordWithRetractInfo;
-import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
+import com.netease.arctic.flink.read.source.log.LogSourceHelper;
+import com.netease.arctic.flink.shuffle.LogRecordV1;
+import com.netease.arctic.log.FormatVersion;
+import com.netease.arctic.log.LogData;
+import com.netease.arctic.log.LogDataJsonDeserialization;
+import com.netease.arctic.log.LogDataJsonSerialization;
 import com.netease.arctic.utils.IdGenerator;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
+import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
-import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
+import org.apache.flink.connector.testutils.source.reader.TestingReaderContext;
+import org.apache.flink.metrics.groups.SourceReaderMetricGroup;
+import org.apache.flink.metrics.groups.UnregisteredMetricsGroup;
 import org.apache.flink.table.data.RowData;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -47,23 +62,28 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
+import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
+import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createProducer;
 import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
 import static org.junit.Assert.assertEquals;
 
 public class LogKafkaPartitionSplitReaderTest {
 
-  public static final int TOPIC1_STOP_OFFSET = 17;
-  public static final int TOPIC2_STOP_OFFSET = 22;
+  private static final Logger LOG = LoggerFactory.getLogger(LogKafkaPartitionSplitReaderTest.class);
+
+  public static final int TOPIC1_STOP_OFFSET = 16;
+  public static final int TOPIC2_STOP_OFFSET = 21;
   public static final String TOPIC1 = "topic1";
   public static final String TOPIC2 = "topic2";
   private static Map<Integer, Map<String, KafkaPartitionSplit>> splitsByOwners;
+  private static final byte[] JOB_ID = IdGenerator.generateUpstreamId();
 
   @BeforeClass
   public static void prepare() throws Exception {
     KAFKA_CONTAINER.start();
-    
+
     Map<TopicPartition, Long> earliestOffsets = new HashMap<>();
     earliestOffsets.put(new TopicPartition(TOPIC1, 0), 0L);
     earliestOffsets.put(new TopicPartition(TOPIC2, 0), 5L);
@@ -90,47 +110,66 @@ public class LogKafkaPartitionSplitReaderTest {
     assignSplitsAndFetchUntilFinish(reader, 1, 20);
   }
 
-  private void write(String topic, int offset) throws Exception {
-    OperatorSubtaskState state0;
-    byte[] jobId = IdGenerator.generateUpstreamId();
-    int i = offset;
-    OneInputStreamOperatorInternTest<RowData, RowData> harness0 =
-        createProducer(1, 0, jobId, topic);
-    harness0.setup();
-    harness0.initializeEmptyState();
-    harness0.open();
+  private ProducerRecord<byte[], byte[]> createLogData(String topic, int i, int epicNo, boolean flip,
+                                                       LogDataJsonSerialization<RowData> serialization) {
+    RowData rowData = createRowData(i);
+    LogData<RowData> logData = new LogRecordV1(
+        FormatVersion.FORMAT_VERSION_V1,
+        JOB_ID,
+        epicNo,
+        flip,
+        transformFromFlinkRowKind(rowData.getRowKind()),
+        rowData
+    );
+    byte[] message = serialization.serialize(logData);
+    int partition = 0;
+    ProducerRecord<byte[], byte[]> producerRecord =
+        new ProducerRecord<>(topic, partition, null, null, message);
+    return producerRecord;
+  }
 
+  private void write(String topic, int offset) throws Exception {
+    KafkaProducer producer = KafkaContainerTest.getProducer();
+    LogDataJsonSerialization<RowData> serialization =
+        new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
     for (int j = 0; j < offset; j++) {
-      harness0.processElement(createRowData(0), 0);
+      producer.send(createLogData(topic, 0, 1, false, serialization));
     }
 
+    int i = offset;
     // 0-4 + offset success
     for (; i < offset + 5; i++) {
-      harness0.processElement(createRowData(i), 0);
+      producer.send(createLogData(topic, i, 1, false, serialization));
     }
 
-    // chp-1 success.
-    state0 = harness0.snapshot(1, 0);
     // 5-9 + offset fail
     for (; i < offset + 10; i++) {
-      harness0.processElement(createRowData(i), 1);
+      producer.send(createLogData(topic, i, 2, false, serialization));
     }
 
-    OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
-        createProducer(1, 0, jobId, 1L, topic);
-    harness1.setup();
-    harness1.initializeState(state0);
-    harness1.open();
+    producer.send(createLogData(topic, i, 1, true, serialization));
 
     // 10-14 + offset success
     for (; i < offset + 15; i++) {
-      harness1.processElement(createRowData(i), 2);
+      producer.send(createLogData(topic, i, 2, false, serialization));
     }
-    harness1.snapshot(2, 2);
 
     for (; i < offset + 20; i++) {
-      harness1.processElement(createRowData(i), 3);
+      producer.send(createLogData(topic, i, 3, false, serialization));
     }
+    printDataInTopic(topic);
+  }
+
+  public static void printDataInTopic(String topic) {
+    ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
+    LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
+    consumerRecords.forEach(consumerRecord -> {
+      try {
+        LOG.info("data in kafka: {}", deserialization.deserialize(consumerRecord.value()));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    });
   }
 
   private void assignSplitsAndFetchUntilFinish(
@@ -142,16 +181,24 @@ public class LogKafkaPartitionSplitReaderTest {
     Set<String> finishedSplits = new HashSet<>();
     int flipCount = 0;
     while (finishedSplits.size() < splits.size()) {
-      RecordsWithSplitIds<LogRecordWithRetractInfo<RowData>> recordsBySplitIds = reader.fetch();
+      RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> recordsBySplitIds = reader.fetch();
       String splitId = recordsBySplitIds.nextSplit();
       while (splitId != null) {
         // Collect the records in this split.
         List<LogRecordWithRetractInfo<RowData>> splitFetch = new ArrayList<>();
-        LogRecordWithRetractInfo<RowData> record;
+        ConsumerRecord<byte[], byte[]> record;
+        boolean hasFlip = false;
         while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
-          splitFetch.add(record);
+          LOG.info("read: {}, offset: {}", ((LogRecordWithRetractInfo) record).getLogData().getActualValue(),
+              record.offset());
+          if (((LogRecordWithRetractInfo<?>) record).isRetracting()) {
+            hasFlip = true;
+          }
+          splitFetch.add((LogRecordWithRetractInfo<RowData>) record);
         }
-
+        if (hasFlip) {
+          flipCount++;
+        }
         // verify the consumed records.
         if (verifyConsumed(splits.get(splitId), splitFetch, flipCount)) {
           finishedSplits.add(splitId);
@@ -164,7 +211,6 @@ public class LogKafkaPartitionSplitReaderTest {
                     : recordCount + splitFetch.size());
         splitId = recordsBySplitIds.nextSplit();
       }
-      flipCount++;
     }
 
     // Verify the number of records consumed from each split.
@@ -209,10 +255,11 @@ public class LogKafkaPartitionSplitReaderTest {
     if (!additionalProperties.isEmpty()) {
       props.putAll(additionalProperties);
     }
+    SourceReaderMetricGroup sourceReaderMetricGroup = UnregisteredMetricsGroup.createSourceReaderMetricGroup();
     return new LogKafkaPartitionSplitReader(
         props,
-        null,
-        0,
+        new TestingReaderContext(new Configuration(), sourceReaderMetricGroup),
+        new KafkaSourceReaderMetrics(sourceReaderMetricGroup),
         userSchema,
         true,
         new LogSourceHelper(),
@@ -228,13 +275,13 @@ public class LogKafkaPartitionSplitReaderTest {
 
     for (LogRecordWithRetractInfo<RowData> record : consumed) {
       if (record.isRetracting()) {
-        assertEquals(record.getConsumerRecord().offset(), record.getActualValue().getInt(1));
+        assertEquals(record.offset(), record.getActualValue().getInt(1));
       } else {
-        assertEquals(record.getConsumerRecord().offset(),
+        assertEquals(record.offset(),
             record.getActualValue().getInt(1) + valueOffsetDiffInOrderedRead);
       }
 
-      currentOffset = Math.max(currentOffset, record.getConsumerRecord().offset());
+      currentOffset = Math.max(currentOffset, record.offset());
     }
     if (split.getStoppingOffset().isPresent()) {
       return currentOffset == split.getStoppingOffset().get() - 1;

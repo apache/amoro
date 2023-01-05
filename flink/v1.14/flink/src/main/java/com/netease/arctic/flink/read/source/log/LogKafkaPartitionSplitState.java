@@ -23,8 +23,6 @@ import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 import org.apache.flink.table.data.RowData;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -81,7 +79,8 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
     } else {
       setCurrentOffset(record.offset() + 1);
     }
-    initEpicStartOffsetIfEmpty(record.getLogData().getUpstreamId(), record.getLogData().getEpicNo(), record.offset());
+    initEpicStartOffsetIfEmpty(record.getLogData().getUpstreamId(), record.getLogData().getEpicNo(),
+        record.offset());
     
     // todo: clear useless epic start offset in state
     retracting = record.isRetracting();

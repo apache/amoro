@@ -18,12 +18,12 @@
 
 package com.netease.arctic.flink.kafka.testutils;
 
-import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -35,7 +35,6 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,5 +121,11 @@ public class KafkaContainerTest {
     return consumer.partitionsFor(topic).stream()
         .map(pi -> new TopicPartition(pi.topic(), pi.partition()))
         .collect(Collectors.toList());
+  }
+
+  public static KafkaProducer getProducer() {
+    Properties properties = getPropertiesWithByteArray();
+    KafkaProducer producer = new KafkaProducer<>(properties);
+    return producer;
   }
 }

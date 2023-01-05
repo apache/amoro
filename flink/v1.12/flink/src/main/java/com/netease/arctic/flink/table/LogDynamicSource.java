@@ -81,10 +81,6 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
    */
   protected final int[] valueProjection;
 
-  // --------------------------------------------------------------------------------------------
-  // Kafka-specific attributes
-  // --------------------------------------------------------------------------------------------
-
   /**
    * The logStore message queue's topics
    */

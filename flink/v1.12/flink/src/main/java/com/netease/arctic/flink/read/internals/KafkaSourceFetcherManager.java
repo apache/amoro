@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.internals;
 
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.SourceReaderBase;
@@ -27,7 +27,7 @@ import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connector.kafka.source.reader.KafkaPartitionSplitReader;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
-import org.apache.flink.table.data.RowData;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.TopicPartition;
@@ -35,7 +35,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -43,9 +45,9 @@ import java.util.function.Supplier;
  * Kafka using the KafkaConsumer inside the {@link
  * KafkaPartitionSplitReader}.
  */
-public class LogKafkaSourceFetcherManager<T> extends SingleThreadFetcherManager<LogRecordWithRetractInfo<RowData>,
-    KafkaPartitionSplit> {
-  private static final Logger LOG = LoggerFactory.getLogger(LogKafkaSourceFetcherManager.class);
+public class KafkaSourceFetcherManager
+    extends SingleThreadFetcherManager<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> {
+  private static final Logger LOG = LoggerFactory.getLogger(KafkaSourceFetcherManager.class);
 
   /**
    * Creates a new SplitFetcherManager with a single I/O threads.
@@ -56,9 +58,11 @@ public class LogKafkaSourceFetcherManager<T> extends SingleThreadFetcherManager<
    * @param splitReaderSupplier The factory for the split reader that connects to the source
    *                            system.
    */
-  public LogKafkaSourceFetcherManager(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<LogRecordWithRetractInfo<RowData>>> elementsQueue,
-      Supplier<SplitReader<LogRecordWithRetractInfo<RowData>, KafkaPartitionSplit>> splitReaderSupplier) {
+  public KafkaSourceFetcherManager(
+      FutureCompletingBlockingQueue<RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>>>
+          elementsQueue,
+      Supplier<SplitReader<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit>>
+          splitReaderSupplier) {
     super(elementsQueue, splitReaderSupplier);
   }
 
@@ -68,7 +72,8 @@ public class LogKafkaSourceFetcherManager<T> extends SingleThreadFetcherManager<
     if (offsetsToCommit.isEmpty()) {
       return;
     }
-    SplitFetcher<LogRecordWithRetractInfo<RowData>, KafkaPartitionSplit> splitFetcher = fetchers.get(0);
+    SplitFetcher<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> splitFetcher =
+        fetchers.get(0);
     if (splitFetcher != null) {
       // The fetcher thread is still running. This should be the majority of the cases.
       enqueueOffsetsCommitTask(splitFetcher, offsetsToCommit, callback);
@@ -80,11 +85,11 @@ public class LogKafkaSourceFetcherManager<T> extends SingleThreadFetcherManager<
   }
 
   private void enqueueOffsetsCommitTask(
-      SplitFetcher<LogRecordWithRetractInfo<RowData>, KafkaPartitionSplit> splitFetcher,
+      SplitFetcher<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> splitFetcher,
       Map<TopicPartition, OffsetAndMetadata> offsetsToCommit,
       OffsetCommitCallback callback) {
-    LogKafkaPartitionSplitReader kafkaReader =
-        (LogKafkaPartitionSplitReader) splitFetcher.getSplitReader();
+    KafkaPartitionSplitReader kafkaReader =
+        (KafkaPartitionSplitReader) splitFetcher.getSplitReader();
 
     splitFetcher.enqueueTask(
         new SplitFetcherTask() {

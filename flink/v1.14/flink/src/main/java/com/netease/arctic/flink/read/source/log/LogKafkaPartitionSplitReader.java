@@ -22,8 +22,9 @@ import com.netease.arctic.flink.read.internals.KafkaPartitionSplitReader;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
+import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
-import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializer;
+import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
@@ -49,7 +50,7 @@ import java.util.Set;
 import static com.netease.arctic.flink.read.source.log.LogSourceHelper.checkMagicNum;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CONSUMER_CHANGELOG_MODE_APPEND_ONLY;
 
-public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowData> {
+public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader {
 
   private static final Logger LOG = LoggerFactory.getLogger(LogKafkaPartitionSplitReader.class);
 
@@ -58,13 +59,13 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowD
   private final boolean logRetractionEnable;
   private final boolean logConsumerAppendOnly;
 
-  public LogKafkaPartitionSplitReader(Properties props, KafkaRecordDeserializer<RowData> deserializationSchema,
-                                      int subtaskId,
+  public LogKafkaPartitionSplitReader(Properties props, SourceReaderContext context,
+                                      KafkaSourceReaderMetrics kafkaSourceReaderMetrics,
                                       Schema schema,
                                       boolean logRetractionEnable,
                                       LogSourceHelper logReadHelper,
                                       String logConsumerChangelogMode) {
-    super(props, deserializationSchema, subtaskId);
+    super(props, context, kafkaSourceReaderMetrics);
 
     this.logDataJsonDeserialization = new LogDataJsonDeserialization<>(
         schema,
@@ -103,13 +104,15 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowD
       // stopping offset). We just mark empty partitions as finished and return an empty
       // record container, and this consumer will be closed by SplitFetcherManager.
       KafkaPartitionSplitRecords recordsBySplits =
-          new KafkaPartitionSplitRecords(ConsumerRecords.empty());
+          new KafkaPartitionSplitRecords(
+              ConsumerRecords.empty(), kafkaSourceReaderMetrics);
       markEmptySplitsAsFinished(recordsBySplits);
       return recordsBySplits;
     }
 
     ConsumerRecords<byte[], byte[]> logRecords = convertToLogRecord(consumerRecords);
-    KafkaPartitionSplitRecords recordsBySplits = new KafkaPartitionSplitRecords(logRecords);
+    KafkaPartitionSplitRecords recordsBySplits = new KafkaPartitionSplitRecords(
+        logRecords, kafkaSourceReaderMetrics);
 
     List<TopicPartition> finishedPartitions = new ArrayList<>();
     for (TopicPartition tp : logRecords.partitions()) {
@@ -134,14 +137,20 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowD
               recordsBySplits);
         }
       }
+      // Track this partition's record lag if it never appears before
+      kafkaSourceReaderMetrics.maybeAddRecordsLagMetric(consumer, tp);
     }
 
     markEmptySplitsAsFinished(recordsBySplits);
 
     // Unassign the partitions that has finished.
     if (!finishedPartitions.isEmpty()) {
+      finishedPartitions.forEach(kafkaSourceReaderMetrics::removeRecordsLagMetric);
       unassignPartitions(finishedPartitions);
     }
+
+    // Update numBytesIn
+    kafkaSourceReaderMetrics.updateNumBytesInCounter();
 
     return recordsBySplits;
   }
@@ -264,7 +273,8 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowD
     suspendRetracting(finishRetract);
     consumer.assign(origin);
 
-    return new KafkaPartitionSplitRecords(new ConsumerRecords<>(logRecords));
+    return new KafkaPartitionSplitRecords(new ConsumerRecords<>(logRecords),
+        kafkaSourceReaderMetrics);
   }
 
   private void suspendRetracting(Set<TopicPartition> finishRetract) {

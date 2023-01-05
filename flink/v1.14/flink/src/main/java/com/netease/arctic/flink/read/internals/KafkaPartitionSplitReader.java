@@ -18,16 +18,14 @@
 
 package com.netease.arctic.flink.read.internals;
 
-import com.netease.arctic.flink.read.source.log.LogRecordWithRetractInfo;
+import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
 import org.apache.flink.connector.kafka.source.KafkaSourceOptions;
-import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializer;
+import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.util.Collector;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -58,38 +56,39 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * Copy From Flink. To support overwrite in this module.
- * <p>
  * A {@link SplitReader} implementation that reads records from Kafka partitions.
- *
- * <p>The returned type are in the format of {@code tuple3(record, offset and timestamp}.
- *
- * @param <T> the type of the record to be emitted from the Source.
  */
-public class KafkaPartitionSplitReader<T>
+public class KafkaPartitionSplitReader
     implements SplitReader<ConsumerRecord<byte[], byte[]>, KafkaPartitionSplit> {
   private static final Logger LOG = LoggerFactory.getLogger(KafkaPartitionSplitReader.class);
   protected static final long POLL_TIMEOUT = 10000L;
 
   protected final KafkaConsumer<byte[], byte[]> consumer;
-  protected final KafkaRecordDeserializer<T> deserializationSchema;
-  protected final Map<TopicPartition, Long> stoppingOffsets;
-  protected final String groupId;
-  protected final int subtaskId;
+  private final Map<TopicPartition, Long> stoppingOffsets;
+  private final String groupId;
+  private final int subtaskId;
+
+  protected final KafkaSourceReaderMetrics kafkaSourceReaderMetrics;
 
   // Tracking empty splits that has not been added to finished splits in fetch()
   private final Set<String> emptySplits = new HashSet<>();
 
   public KafkaPartitionSplitReader(
-      Properties props, KafkaRecordDeserializer<T> deserializationSchema, int subtaskId) {
-    this.subtaskId = subtaskId;
+      Properties props,
+      SourceReaderContext context,
+      KafkaSourceReaderMetrics kafkaSourceReaderMetrics) {
+    this.subtaskId = context.getIndexOfSubtask();
+    this.kafkaSourceReaderMetrics = kafkaSourceReaderMetrics;
     Properties consumerProps = new Properties();
     consumerProps.putAll(props);
     consumerProps.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, createConsumerClientId(props));
     this.consumer = new KafkaConsumer<>(consumerProps);
     this.stoppingOffsets = new HashMap<>();
-    this.deserializationSchema = deserializationSchema;
     this.groupId = consumerProps.getProperty(ConsumerConfig.GROUP_ID_CONFIG);
+
+    // Metric registration
+    maybeRegisterKafkaConsumerMetrics(props, kafkaSourceReaderMetrics, consumer);
+    this.kafkaSourceReaderMetrics.registerNumBytesIn(consumer);
   }
 
   @Override
@@ -103,11 +102,13 @@ public class KafkaPartitionSplitReader<T>
       // stopping offset). We just mark empty partitions as finished and return an empty
       // record container, and this consumer will be closed by SplitFetcherManager.
       KafkaPartitionSplitRecords recordsBySplits =
-          new KafkaPartitionSplitRecords(ConsumerRecords.empty());
+          new KafkaPartitionSplitRecords(
+              ConsumerRecords.empty(), kafkaSourceReaderMetrics);
       markEmptySplitsAsFinished(recordsBySplits);
       return recordsBySplits;
     }
-    KafkaPartitionSplitRecords recordsBySplits = new KafkaPartitionSplitRecords(consumerRecords);
+    KafkaPartitionSplitRecords recordsBySplits =
+        new KafkaPartitionSplitRecords(consumerRecords, kafkaSourceReaderMetrics);
     List<TopicPartition> finishedPartitions = new ArrayList<>();
     for (TopicPartition tp : consumerRecords.partitions()) {
       long stoppingOffset = getStoppingOffset(tp);
@@ -131,14 +132,20 @@ public class KafkaPartitionSplitReader<T>
               recordsBySplits);
         }
       }
+      // Track this partition's record lag if it never appears before
+      kafkaSourceReaderMetrics.maybeAddRecordsLagMetric(consumer, tp);
     }
 
     markEmptySplitsAsFinished(recordsBySplits);
 
     // Unassign the partitions that has finished.
     if (!finishedPartitions.isEmpty()) {
+      finishedPartitions.forEach(kafkaSourceReaderMetrics::removeRecordsLagMetric);
       unassignPartitions(finishedPartitions);
     }
+
+    // Update numBytesIn
+    kafkaSourceReaderMetrics.updateNumBytesInCounter();
 
     return recordsBySplits;
   }
@@ -185,6 +192,8 @@ public class KafkaPartitionSplitReader<T>
                   partitionsStartingFromSpecifiedOffsets);
               parseStoppingOffsets(
                   s, partitionsStoppingAtLatest, partitionsStoppingAtCommitted);
+              // Track the new topic partition in metrics
+              kafkaSourceReaderMetrics.registerTopicPartition(s.getTopicPartition());
             });
 
     // Assign new partitions.
@@ -356,7 +365,7 @@ public class KafkaPartitionSplitReader<T>
     }
   }
 
-  protected void unassignPartitions(Collection<TopicPartition> partitionsToUnassign) {
+  public void unassignPartitions(Collection<TopicPartition> partitionsToUnassign) {
     Collection<TopicPartition> newAssignment = new HashSet<>(consumer.assignment());
     newAssignment.removeAll(partitionsToUnassign);
     consumer.assign(newAssignment);
@@ -382,8 +391,22 @@ public class KafkaPartitionSplitReader<T>
     recordsBySplits.addFinishedSplit(KafkaPartitionSplit.toSplitId(tp));
   }
 
-  public long getStoppingOffset(TopicPartition tp) {
+  protected long getStoppingOffset(TopicPartition tp) {
     return stoppingOffsets.getOrDefault(tp, Long.MAX_VALUE);
+  }
+
+  private void maybeRegisterKafkaConsumerMetrics(
+      Properties props,
+      KafkaSourceReaderMetrics kafkaSourceReaderMetrics,
+      KafkaConsumer<?, ?> consumer) {
+    final Boolean needToRegister =
+        KafkaSourceOptions.getOption(
+            props,
+            KafkaSourceOptions.REGISTER_KAFKA_CONSUMER_METRICS,
+            Boolean::parseBoolean);
+    if (needToRegister) {
+      kafkaSourceReaderMetrics.registerKafkaConsumerMetrics(consumer);
+    }
   }
 
   /**
@@ -421,15 +444,17 @@ public class KafkaPartitionSplitReader<T>
     private final Set<String> finishedSplits = new HashSet<>();
     private final Map<TopicPartition, Long> stoppingOffsets = new HashMap<>();
     private final ConsumerRecords<byte[], byte[]> consumerRecords;
+    private final KafkaSourceReaderMetrics metrics;
     private final Iterator<TopicPartition> splitIterator;
     private Iterator<ConsumerRecord<byte[], byte[]>> recordIterator;
     private TopicPartition currentTopicPartition;
     private Long currentSplitStoppingOffset;
 
     public KafkaPartitionSplitRecords(
-        ConsumerRecords<byte[], byte[]> consumerRecords) {
+        ConsumerRecords<byte[], byte[]> consumerRecords, KafkaSourceReaderMetrics metrics) {
       this.consumerRecords = consumerRecords;
       this.splitIterator = consumerRecords.partitions().iterator();
+      this.metrics = metrics;
     }
 
     public void setPartitionStoppingOffset(
@@ -468,6 +493,7 @@ public class KafkaPartitionSplitReader<T>
         final ConsumerRecord<byte[], byte[]> record = recordIterator.next();
         // Only emit records before stopping offset
         if (record.offset() < currentSplitStoppingOffset) {
+          metrics.recordCurrentOffset(currentTopicPartition, record.offset());
           return record;
         }
       }
