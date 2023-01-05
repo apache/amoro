@@ -57,6 +57,9 @@ import static com.netease.arctic.ams.api.properties.OptimizerProperties.OPTIMIZE
 public class OptimizerService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerService.class);
 
+  // identify whether a retry has occurred in the optimizer task
+  private static final String STATUS_IDENTIFICATION = "status_identification";
+
   public List<Optimizer> getOptimizers(String optimizerGroup) {
     try (SqlSession sqlSession = getSqlSession(true)) {
       OptimizerMapper optimizerMapper = getMapper(sqlSession, OptimizerMapper.class);
@@ -244,13 +247,18 @@ public class OptimizerService extends IJDBCService {
    */
   private void checkOptimizerRetry(OptimizerStateReport newReportData,Optimizer oldOptimizer) {
 
-    LOG.info("checkOptimizerRetry");
     Map<String, String> stateInfo = oldOptimizer.getStateInfo();
-    if (stateInfo == null) {
+    if (stateInfo == null || newReportData.optimizerState == null ||
+            newReportData.optimizerState.get("STATUS_IDENTIFICATION") == null) {
       return;
     }
-    String lastmodification = newReportData.optimizerState.get("last-modefication");
-    if (!lastmodification.equals(stateInfo.get("last-modefication")) && stateInfo.get("last-modefication") != null) {
+
+    LOG.info("checkOptimizerRetry");
+    //考虑新的也为null的情况
+    String lastmodification = newReportData.optimizerState
+            .get(STATUS_IDENTIFICATION);
+    if (!lastmodification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
+            stateInfo.get(STATUS_IDENTIFICATION) != null) {
 
       LOG.info("checkOptimizerRetry retry");
       //出问题，任务重试过
@@ -271,7 +279,6 @@ public class OptimizerService extends IJDBCService {
       }
 
     }
-    LOG.info("checkOptimizerRetry Finish");
   }
 }
 
