@@ -24,7 +24,6 @@ import com.netease.arctic.hive.utils.CatalogUtil;
 import com.netease.arctic.spark.table.ArcticSparkChangeTable;
 import com.netease.arctic.spark.table.ArcticSparkTable;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.BaseUnkeyedTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
