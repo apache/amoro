@@ -136,7 +136,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
     dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
-    if (ChangeAction.DELETE.equals(changeAction)) {
+    if (ChangeAction.DELETE.equals(changeAction) || ChangeAction.UPDATE_BEFORE.equals(changeAction)) {
       return buildSimpleInternalRow(row, schema, 1, schema.size());
     } else if (ChangeAction.UPDATE_AFTER.equals(changeAction) || ChangeAction.INSERT.equals(changeAction)) {
       List<Object> rows = new ArrayList<>();
