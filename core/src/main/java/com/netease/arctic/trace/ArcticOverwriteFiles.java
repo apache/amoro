@@ -28,6 +28,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
+import java.util.function.Supplier;
+
 /**
  * Wrap {@link OverwriteFiles} with {@link TableTracer}.
  */
@@ -111,7 +113,7 @@ public class ArcticOverwriteFiles extends ArcticUpdate<OverwriteFiles> implement
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<ArcticOverwriteFiles> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticOverwriteFiles, OverwriteFiles> {
 
     private Builder(ArcticTable table) {
       super(table);
@@ -119,7 +121,7 @@ public class ArcticOverwriteFiles extends ArcticUpdate<OverwriteFiles> implement
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticOverwriteFiles> traceTable(
+    public ArcticUpdate.Builder<ArcticOverwriteFiles, OverwriteFiles> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
@@ -136,8 +138,19 @@ public class ArcticOverwriteFiles extends ArcticUpdate<OverwriteFiles> implement
     }
 
     @Override
-    protected ArcticOverwriteFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new ArcticOverwriteFiles(table, tableStore.newOverwrite(), tableTracer);
+    protected ArcticOverwriteFiles updateWithoutWatermark(
+        TableTracer tableTracer, Supplier<OverwriteFiles> delegateSupplier) {
+      return new ArcticOverwriteFiles(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    protected Supplier<OverwriteFiles> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newOverwrite;
+    }
+
+    @Override
+    protected Supplier<OverwriteFiles> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newOverwrite;
     }
   }
 }

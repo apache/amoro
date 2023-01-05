@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Abstract implementation of {@link PendingUpdate}, adding arctic logics like tracing and watermark generating for
@@ -181,7 +182,7 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
     }
   }
 
-  public abstract static class Builder<T> {
+  public abstract static class Builder<T extends I, I> {
 
     protected final ArcticTable table;
     protected Table tableStore;
@@ -194,32 +195,32 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
       this.table = table;
     }
 
-    public Builder<T> onChange() {
+    public Builder<T, I> onChange() {
       this.onChangeStore = true;
       return this;
     }
 
-    public Builder<T> onTableStore(Table tableStore) {
+    public Builder<T, I> onTableStore(Table tableStore) {
       this.tableStore = tableStore;
       return this;
     }
 
-    public Builder<T> inTransaction(Transaction transaction) {
+    public Builder<T, I> inTransaction(Transaction transaction) {
       this.insideTransaction = transaction;
       return this;
     }
 
-    public Builder<T> generateWatermark() {
+    public Builder<T, I> generateWatermark() {
       this.generateWatermark = true;
       return this;
     }
 
-    public Builder<T> traceTable(TableTracer tableTracer) {
+    public Builder<T, I> traceTable(TableTracer tableTracer) {
       this.tableTracer = tableTracer;
       return this;
     }
 
-    public abstract Builder<T> traceTable(AmsClient client, UnkeyedTable traceTable);
+    public abstract Builder<T, I> traceTable(AmsClient client, UnkeyedTable traceTable);
 
     protected Table getTableStore() {
       if (tableStore == null) {
@@ -247,9 +248,9 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
         }
       } else {
         if (insideTransaction != null) {
-          return updateWithWatermark(tableTracer, insideTransaction, false);
+          return updateWithoutWatermark(tableTracer, transactionDelegateSupplier(insideTransaction));
         } else {
-          return updateWithoutWatermark(tableTracer, tableStore);
+          return updateWithoutWatermark(tableTracer, tableStoreDelegateSupplier(tableStore));
         }
       }
     }
@@ -258,6 +259,10 @@ public abstract class ArcticUpdate<T> implements SnapshotUpdate<T> {
         TableTracer tableTracer, Transaction transaction,
         boolean autoCommitTransaction);
 
-    protected abstract T updateWithoutWatermark(TableTracer tableTracer, Table tableStore);
+    protected abstract T updateWithoutWatermark(TableTracer tableTracer, Supplier<I> delegateSupplier);
+
+    protected abstract Supplier<I> transactionDelegateSupplier(Transaction transaction);
+
+    protected abstract Supplier<I> tableStoreDelegateSupplier(Table tableStore);
   }
 }

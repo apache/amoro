@@ -29,6 +29,8 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
+import java.util.function.Supplier;
+
 
 /**
  * Wrap {@link RowDelta} with {@link TableTracer}.
@@ -113,7 +115,7 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<ArcticRowDelta> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticRowDelta, RowDelta> {
 
     private Builder(ArcticTable table) {
       super(table);
@@ -121,7 +123,7 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticRowDelta> traceTable(
+    public ArcticUpdate.Builder<ArcticRowDelta, RowDelta> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
@@ -138,8 +140,18 @@ public class ArcticRowDelta extends ArcticUpdate<RowDelta> implements RowDelta {
     }
 
     @Override
-    protected ArcticRowDelta updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new ArcticRowDelta(table, tableStore.newRowDelta(), tableTracer);
+    protected ArcticRowDelta updateWithoutWatermark(TableTracer tableTracer, Supplier<RowDelta> delegateSupplier) {
+      return new ArcticRowDelta(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    protected Supplier<RowDelta> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newRowDelta;
+    }
+
+    @Override
+    protected Supplier<RowDelta> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newRowDelta;
     }
   }
 }

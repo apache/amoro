@@ -28,6 +28,8 @@ import org.apache.iceberg.ManifestFile;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 
+import java.util.function.Supplier;
+
 /**
  * Implementation of {@link AppendFiles} for arctic table, adding tracing and watermark generating logics.
  */
@@ -69,7 +71,7 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<ArcticAppendFiles> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticAppendFiles, AppendFiles> {
 
     private final boolean fastAppend;
 
@@ -86,12 +88,23 @@ public class ArcticAppendFiles extends ArcticUpdate<AppendFiles> implements Appe
     }
 
     @Override
-    protected ArcticAppendFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new ArcticAppendFiles(table, newAppendFiles(tableStore), tableTracer);
+    protected Supplier<AppendFiles> transactionDelegateSupplier(Transaction transaction) {
+      return () -> newAppendFiles(transaction);
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticAppendFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
+    protected Supplier<AppendFiles> tableStoreDelegateSupplier(Table tableStore) {
+      return () -> newAppendFiles(tableStore);
+    }
+
+    @Override
+    protected ArcticAppendFiles updateWithoutWatermark(
+        TableTracer tableTracer, Supplier<AppendFiles> delegateSupplier) {
+      return new ArcticAppendFiles(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    public ArcticUpdate.Builder<ArcticAppendFiles, AppendFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.APPEND, client);
         traceTable(tracer);

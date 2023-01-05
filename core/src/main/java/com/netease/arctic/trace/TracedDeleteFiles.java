@@ -24,12 +24,11 @@ import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFiles;
-import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 import org.apache.iceberg.expressions.Expression;
 
-import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Wrap {@link DeleteFiles} with {@link TableTracer}.
@@ -76,14 +75,14 @@ public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<TracedDeleteFiles> {
+  public static class Builder extends ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> {
 
     protected Builder(ArcticTable table) {
       super(table);
     }
 
     @Override
-    public ArcticUpdate.Builder<TracedDeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
+    public ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.DELETE, client);
         traceTable(tracer);
@@ -100,8 +99,20 @@ public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     }
 
     @Override
-    protected TracedDeleteFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new TracedDeleteFiles(table, tableStore.newDelete(), tableTracer);
+    protected TracedDeleteFiles updateWithoutWatermark(
+        TableTracer tableTracer, Supplier<DeleteFiles> delegateSupplier) {
+      return new TracedDeleteFiles(table, delegateSupplier.get(), tableTracer);
     }
+
+    @Override
+    protected Supplier<DeleteFiles> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newDelete;
+    }
+
+    @Override
+    protected Supplier<DeleteFiles> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newDelete;
+    }
+
   }
 }

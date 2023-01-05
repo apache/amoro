@@ -33,7 +33,6 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.ReplaceSortOrder;
 import org.apache.iceberg.RewriteFiles;
 import org.apache.iceberg.RewriteManifests;
-import org.apache.iceberg.Rollback;
 import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Snapshot;
@@ -331,11 +330,6 @@ public class HiveOperationTransaction implements Transaction {
     @Override
     public ExpireSnapshots expireSnapshots() {
       return HiveOperationTransaction.this.expireSnapshots();
-    }
-
-    @Override
-    public Rollback rollback() {
-      throw new UnsupportedOperationException("Transaction tables do not support rollback");
     }
 
     @Override

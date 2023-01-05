@@ -29,6 +29,7 @@ import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Wrap {@link RewriteFiles} with {@link TableTracer}.
@@ -84,14 +85,15 @@ public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<TracedRewriteFiles> {
+  public static class Builder extends ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> {
 
     private Builder(ArcticTable table) {
       super(table);
     }
 
     @Override
-    public ArcticUpdate.Builder<TracedRewriteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
+    public ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> traceTable(
+        AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.REPLACE, client);
         traceTable(tracer);
@@ -108,8 +110,20 @@ public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
     }
 
     @Override
-    protected TracedRewriteFiles updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new TracedRewriteFiles(table, tableStore.newRewrite(), tableTracer);
+    protected TracedRewriteFiles updateWithoutWatermark(
+        TableTracer tableTracer, Supplier<RewriteFiles> delegateSupplier) {
+      return new TracedRewriteFiles(table, delegateSupplier.get(), tableTracer);
     }
+
+    @Override
+    protected Supplier<RewriteFiles> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newRewrite;
+    }
+
+    @Override
+    protected Supplier<RewriteFiles> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newRewrite;
+    }
+
   }
 }

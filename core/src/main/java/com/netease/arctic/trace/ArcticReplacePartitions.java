@@ -27,6 +27,8 @@ import org.apache.iceberg.ReplacePartitions;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.Transaction;
 
+import java.util.function.Supplier;
+
 public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> implements ReplacePartitions {
 
   private final ReplacePartitions replacePartitions;
@@ -83,7 +85,7 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     return this;
   }
 
-  public static class Builder extends ArcticUpdate.Builder<ArcticReplacePartitions> {
+  public static class Builder extends ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> {
 
     private Builder(ArcticTable table) {
       super(table);
@@ -91,7 +93,7 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     }
 
     @Override
-    public ArcticUpdate.Builder<ArcticReplacePartitions> traceTable(
+    public ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
         TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
@@ -108,8 +110,20 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     }
 
     @Override
-    protected ArcticReplacePartitions updateWithoutWatermark(TableTracer tableTracer, Table tableStore) {
-      return new ArcticReplacePartitions(table, tableStore.newReplacePartitions(), tableTracer);
+    protected ArcticReplacePartitions updateWithoutWatermark(
+        TableTracer tableTracer,
+        Supplier<ReplacePartitions> delegateSupplier) {
+      return new ArcticReplacePartitions(table, delegateSupplier.get(), tableTracer);
+    }
+
+    @Override
+    protected Supplier<ReplacePartitions> transactionDelegateSupplier(Transaction transaction) {
+      return transaction::newReplacePartitions;
+    }
+
+    @Override
+    protected Supplier<ReplacePartitions> tableStoreDelegateSupplier(Table tableStore) {
+      return tableStore::newReplacePartitions;
     }
   }
 }
