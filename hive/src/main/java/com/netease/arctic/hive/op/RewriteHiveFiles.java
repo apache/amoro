@@ -13,12 +13,9 @@ import java.util.Set;
 
 public class RewriteHiveFiles extends UpdateHiveFiles<RewriteFiles> implements RewriteFiles {
 
-  private final RewriteFiles delegate;
-
   public RewriteHiveFiles(Transaction transaction, boolean insideTransaction, UnkeyedHiveTable table,
                       HMSClientPool hmsClient, HMSClientPool transactionClient) {
     super(transaction, insideTransaction, table, transaction.newRewrite(), hmsClient, transactionClient);
-    this.delegate = transaction.newRewrite();
   }
 
   @Override
