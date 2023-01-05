@@ -136,26 +136,14 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
         .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
     dataTypeList = Arrays.stream(schema.fields())
         .map(StructField::dataType).collect(Collectors.toList());
-    if (Arrays.stream(schema.fieldNames()).findFirst().get().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)) {
-      mergedRow = buildSimpleInternalRow(row, schema, 1, schema.size());
-    }
     if (ChangeAction.DELETE.equals(changeAction)) {
+      return buildSimpleInternalRow(row, schema, 1, schema.size());
+    } else if (ChangeAction.UPDATE_AFTER.equals(changeAction) || ChangeAction.INSERT.equals(changeAction)) {
       List<Object> rows = new ArrayList<>();
-      for (int i = 0; i < newSchema.size() / 2; i++) {
-        rows.add(mergedRow.get(i, dataTypeList.get(i)));
-      }
-      return new GenericInternalRow(rows.toArray());
-    } else if (ChangeAction.INSERT.equals(changeAction)) {
-      List<Object> rows = new ArrayList<>();
-      for (int i = 0; i < newSchema.size() / 2; i++) {
-        rows.add(mergedRow.get(i, dataTypeList.get(i)));
-      }
-      return new GenericInternalRow(rows.toArray());
-    } else if (ChangeAction.UPDATE_AFTER.equals(changeAction)) {
-      List<Object> rows = new ArrayList<>();
-      int middle = newSchema.size() / 2;
-      for (int i = middle; i < newSchema.size(); i++) {
-        rows.add(mergedRow.get(i, dataTypeList.get(i)));
+      dataTypeList = Arrays.stream(newSchema.fields())
+          .map(StructField::dataType).collect(Collectors.toList());
+      for (int i = schema.size(); i < schema.size() + newSchema.size(); i++) {
+        rows.add(mergedRow.get(i, dataTypeList.get(i - schema.size())));
       }
       return new GenericInternalRow(rows.toArray());
     } else {
@@ -409,6 +397,14 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
           .map(StructField::dataType).collect(Collectors.toList());
       rows = new ArrayList<>(schema.size());
       for (int i = 0; i < schema.size(); i++) {
+        rows.add(row.get(i, dataTypeList.get(i)));
+      }
+    } else if (isMerge) {
+      StructType newSchema = new StructType(Arrays.stream(schema.fields())
+          .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME)).toArray(StructField[]::new));
+      dataTypeList = Arrays.stream(newSchema.fields()).map(StructField::dataType).collect(Collectors.toList());
+      rows = new ArrayList<>(newSchema.size() + 1);
+      for (int i = 0; i < newSchema.size(); i++) {
         rows.add(row.get(i, dataTypeList.get(i)));
       }
     } else {
