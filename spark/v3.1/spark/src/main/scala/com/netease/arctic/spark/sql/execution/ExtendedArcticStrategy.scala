@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticCatalog, isArcticTable}
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, MigrateToArcticLogicalPlan, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.execution.command.CreateTableLikeCommand
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Implicits.TableHelper
-import org.apache.spark.sql.execution.datasources.v2.{AppendDataExec, AppendInsertDataExec, CreateArcticTableAsSelectExec, CreateTableAsSelectExec, DataSourceV2Relation, OverwriteArcticByExpressionExec, OverwriteArcticDataExec}
+import org.apache.spark.sql.execution.datasources.v2._
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.sql.{SparkSession, Strategy}
 
@@ -110,6 +110,8 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         case table =>
           throw new UnsupportedOperationException(s"Cannot overwrite by filter to non-Arctic table: $table")
       }
+    case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
+      AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData):: Nil
 
     case _ => Nil
   }
