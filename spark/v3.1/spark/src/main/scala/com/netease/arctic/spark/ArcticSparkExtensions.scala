@@ -53,6 +53,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     extensions.injectOptimizerRule { _ => PullupCorrelatedPredicatesInRowLevelOperations }
     extensions.injectOptimizerRule { spark => RewriteDelete(spark) }
     extensions.injectOptimizerRule { spark => RewriteUpdate(spark) }
+    extensions.injectOptimizerRule { spark => RewriteMergeInto(spark) }
 
     // arctic optimizer rules
     extensions.injectPreCBORule(OptimizeWriteRule)
