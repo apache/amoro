@@ -18,6 +18,7 @@
 
 package com.netease.arctic.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.PartitionField;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.expressions.BoundPredicate;
@@ -72,13 +73,11 @@ public class BasePartitionEvaluator extends Projections.ProjectionEvaluator {
   public <T> Expression predicate(UnboundPredicate<T> pred) {
     Expression result = Expressions.alwaysTrue();
     String expressionName = pred.ref().name();
-    if (expressionName != null) {
+    if (StringUtils.isNotEmpty(expressionName)) {
       List<PartitionField> parts = spec().getFieldsBySourceId(
           spec().schema().asStruct().field(expressionName).fieldId()
       );
-      if (parts.size() > 0) {
-        result = pred;
-      }
+      return parts.size() > 0 ? pred : result;
     }
     return result;
   }
