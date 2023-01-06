@@ -35,38 +35,35 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Tasks;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Abstract implementation of writer for {@link com.netease.arctic.table.BaseTable}.
  * @param <T> to indicate the record data type.
  */
 public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
-  private final FileFormat format;
-  private final FileAppenderFactory<T> appenderFactory;
-  private final OutputFileFactory outputFileFactory;
-  private final ArcticFileIO io;
-  private final long targetFileSize;
+
   private final long mask;
 
   private final PartitionKey partitionKey;
   private final PrimaryKeyData primaryKey;
+  private final ArcticFileIO io;
+  private final WriterHolder<T> writerHolder;
 
-  private final Map<TaskWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
-  private final List<DataFile> completedFiles = Lists.newArrayList();
-
-  protected BaseTaskWriter(FileFormat format, FileAppenderFactory<T> appenderFactory,
-                           OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize, long mask,
-                           Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec) {
-    this.format = format;
-    this.appenderFactory = appenderFactory;
-    this.outputFileFactory = outputFileFactory;
+  protected BaseTaskWriter(
+      FileFormat format, FileAppenderFactory<T> appenderFactory,
+      OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize, long mask,
+      Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec
+  ) {
+    this.writerHolder = new FanoutWriterHolder<>(
+        format, appenderFactory, outputFileFactory, io, targetFileSize);
     this.io = io;
-    this.targetFileSize = targetFileSize;
     this.mask = mask;
     this.partitionKey = new PartitionKey(spec, schema);
     this.primaryKey = primaryKeySpec == null ? null : new PrimaryKeyData(primaryKeySpec, schema);
@@ -75,22 +72,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   @Override
   public void write(T row) throws IOException {
     TaskWriterKey writerKey = buildWriterKey(row);
-    DataWriter<T> writer;
-    if (!dataWriterMap.containsKey(writerKey)) {
-      TaskWriterKey key = new TaskWriterKey(partitionKey.copy(), writerKey.getTreeNode(), writerKey.getFileType());
-      writer = io.doAs(() -> appenderFactory.newDataWriter(
-          outputFileFactory.newOutputFile(writerKey), format, key.getPartitionKey()));
-      dataWriterMap.put(key, writer);
-    } else {
-      writer = dataWriterMap.get(writerKey);
-    }
+    DataWriter<T> writer = writerHolder.get(writerKey);
     write(writer, row);
-
-    if (shouldRollToNewFile(writer)) {
-      writer.close();
-      completedFiles.add(writer.toDataFile());
-      dataWriterMap.remove(writerKey);
-    }
   }
 
   protected void write(DataWriter<T> writer, T row) throws IOException {
@@ -110,14 +93,10 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     return new TaskWriterKey(partitionKey, node, DataFileType.BASE_FILE);
   }
 
-  private boolean shouldRollToNewFile(DataWriter<T> dataWriter) {
-    // TODO: ORC file now not support target file size before closed
-    return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
-  }
-
   @Override
   public void abort() throws IOException {
-    close();
+    writerHolder.close();
+    List<DataFile> completedFiles = writerHolder.completedFiles();
 
     // clean up files created by this writer
     Tasks.foreach(completedFiles)
@@ -128,23 +107,145 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
   @Override
   public WriteResult complete() throws IOException {
-    close();
-    List<DataFile> files = Lists.newArrayList(completedFiles);
-    completedFiles.clear();
+    writerHolder.close();
+    List<DataFile> files = writerHolder.completedFiles();
     return WriteResult.builder().addDataFiles(files.toArray(new DataFile[]{})).build();
   }
 
   @Override
   public void close() throws IOException {
-    for (DataWriter<T> dataWriter : dataWriterMap.values()) {
-      dataWriter.close();
-      completedFiles.add(dataWriter.toDataFile());
-    }
-    dataWriterMap.clear();
+    writerHolder.close();
   }
 
   /**
    * Wrap the data as a {@link StructLike}.
    */
   protected abstract StructLike asStructLike(T data);
+
+  protected abstract static class WriterHolder<T> {
+
+    protected final FileFormat format;
+    protected final FileAppenderFactory<T> appenderFactory;
+    protected final OutputFileFactory outputFileFactory;
+    protected final ArcticFileIO io;
+    protected final long targetFileSize;
+    protected final List<DataFile> completedFiles = Lists.newArrayList();
+
+    public WriterHolder(FileFormat format, FileAppenderFactory<T> appenderFactory,
+        OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize) {
+      this.format = format;
+      this.appenderFactory = appenderFactory;
+      this.outputFileFactory = outputFileFactory;
+      this.io = io;
+      this.targetFileSize = targetFileSize;
+    }
+
+    public abstract DataWriter<T> get(TaskWriterKey writerKey) throws IOException;
+
+    public abstract void close() throws IOException;
+
+    public List<DataFile> completedFiles() {
+      return Lists.newArrayList(completedFiles);
+    }
+
+    protected boolean shouldRollToNewFile(DataWriter<T> dataWriter) {
+      // TODO: ORC file now not support target file size before closed
+      return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
+    }
+
+    protected DataWriter<T> newWriter(TaskWriterKey writerKey) {
+      return io.doAs(() -> appenderFactory.newDataWriter(
+          outputFileFactory.newOutputFile(writerKey), format, writerKey.getPartitionKey()));
+    }
+  }
+
+
+  protected static class FanoutWriterHolder<T> extends WriterHolder<T> {
+    private final Map<TaskWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
+
+    public FanoutWriterHolder(FileFormat format, FileAppenderFactory<T> appenderFactory,
+        OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize) {
+      super(format, appenderFactory, outputFileFactory, io, targetFileSize);
+    }
+
+    @Override
+    public DataWriter<T> get(TaskWriterKey writerKey) throws IOException {
+      DataWriter<T> writer;
+      writer = dataWriterMap.get(writerKey);
+      if (writer != null && shouldRollToNewFile(writer)) {
+        writer.close();
+        completedFiles.add(writer.toDataFile());
+        dataWriterMap.remove(writerKey);
+      }
+
+      if (!dataWriterMap.containsKey(writerKey)) {
+        writer = newWriter(writerKey);
+        dataWriterMap.put(writerKey, writer);
+      } else {
+        writer = dataWriterMap.get(writerKey);
+      }
+      return writer;
+    }
+
+    @Override
+    public void close() throws IOException {
+      for (DataWriter<T> dataWriter : dataWriterMap.values()) {
+        dataWriter.close();
+        completedFiles.add(dataWriter.toDataFile());
+      }
+      dataWriterMap.clear();
+    }
+
+  }
+
+
+  protected static class OrderedWriterHolder<T> extends WriterHolder<T> {
+
+    private DataWriter<T> currentWriter ;
+    private TaskWriterKey currentKey ;
+    private final Set<TaskWriterKey> completedKeys = Sets.newHashSet();
+
+
+    public OrderedWriterHolder(
+        FileFormat format,
+        FileAppenderFactory<T> appenderFactory,
+        OutputFileFactory outputFileFactory,
+        ArcticFileIO io,
+        long targetFileSize) {
+      super(format, appenderFactory, outputFileFactory, io, targetFileSize);
+    }
+
+    @Override
+    public DataWriter<T> get(TaskWriterKey writerKey) throws IOException {
+      if (!writerKey.equals(currentKey)){
+        if (currentKey != null){
+          closeCurrentWriter();
+          completedKeys.add(currentKey);
+        }
+
+        if (completedKeys.contains(writerKey)){
+          throw new IllegalStateException();
+        }
+
+        currentKey = writerKey;
+        currentWriter = newWriter(writerKey);
+      } else if (shouldRollToNewFile(currentWriter)){
+        closeCurrentWriter();
+        currentWriter = newWriter(writerKey);
+      }
+
+      return currentWriter;
+    }
+
+    private void closeCurrentWriter(){
+
+    }
+
+    @Override
+    public void close() throws IOException {
+
+    }
+
+  }
+
 }
