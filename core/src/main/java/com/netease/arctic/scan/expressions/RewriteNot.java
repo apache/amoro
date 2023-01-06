@@ -16,32 +16,26 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.utils;
+package com.netease.arctic.scan.expressions;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.iceberg.PartitionField;
-import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.expressions.BoundPredicate;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.ExpressionVisitors;
 import org.apache.iceberg.expressions.Expressions;
-import org.apache.iceberg.expressions.Projections;
 import org.apache.iceberg.expressions.UnboundPredicate;
 
-import java.util.List;
+/**
+ * Copy form iceberg-api 0.13.2 to assume that there are no NOT nodes in the expression tree.
+ */
 
+class RewriteNot extends ExpressionVisitors.ExpressionVisitor<Expression> {
+  private static final RewriteNot INSTANCE = new RewriteNot();
 
-public class BasePartitionEvaluator extends Projections.ProjectionEvaluator {
-
-  private final PartitionSpec spec;
-
-  public BasePartitionEvaluator(PartitionSpec spec) {
-    this.spec = spec;
+  static RewriteNot get() {
+    return INSTANCE;
   }
 
-  @Override
-  public Expression project(Expression expr) {
-    return ExpressionVisitors.visit(ExpressionVisitors.visit(expr, RewriteNot.get()), this);
+  private RewriteNot() {
   }
 
   @Override
@@ -56,7 +50,7 @@ public class BasePartitionEvaluator extends Projections.ProjectionEvaluator {
 
   @Override
   public Expression not(Expression result) {
-    throw new UnsupportedOperationException("[BUG] project called on expression with a not");
+    return result.negate();
   }
 
   @Override
@@ -70,25 +64,12 @@ public class BasePartitionEvaluator extends Projections.ProjectionEvaluator {
   }
 
   @Override
-  public <T> Expression predicate(UnboundPredicate<T> pred) {
-    Expression result = Expressions.alwaysTrue();
-    String expressionName = pred.ref().name();
-    if (StringUtils.isNotEmpty(expressionName)) {
-      List<PartitionField> parts = spec().getFieldsBySourceId(
-          spec().schema().asStruct().field(expressionName).fieldId()
-      );
-      return parts.size() > 0 ? pred : result;
-    }
-    return result;
+  public <T> Expression predicate(BoundPredicate<T> pred) {
+    return pred;
   }
 
   @Override
-  public <T> Expression predicate(BoundPredicate<T> pred) {
-    throw new IllegalStateException("Found already bound predicate: " + pred);
+  public <T> Expression predicate(UnboundPredicate<T> pred) {
+    return pred;
   }
-
-  PartitionSpec spec() {
-    return spec;
-  }
-
 }

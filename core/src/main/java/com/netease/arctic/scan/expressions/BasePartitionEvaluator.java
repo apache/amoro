@@ -16,22 +16,37 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.utils;
+package com.netease.arctic.scan.expressions;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.iceberg.PartitionField;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.expressions.BoundPredicate;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.ExpressionVisitors;
 import org.apache.iceberg.expressions.Expressions;
+import org.apache.iceberg.expressions.Projections;
 import org.apache.iceberg.expressions.UnboundPredicate;
 
-class RewriteNot extends ExpressionVisitors.ExpressionVisitor<Expression> {
-  private static final RewriteNot INSTANCE = new RewriteNot();
+import java.util.List;
 
-  static RewriteNot get() {
-    return INSTANCE;
+
+public class BasePartitionEvaluator extends Projections.ProjectionEvaluator {
+
+  private final PartitionSpec spec;
+
+  public BasePartitionEvaluator(PartitionSpec spec) {
+    this.spec = spec;
   }
 
-  private RewriteNot() {
+  @Override
+  public Expression project(Expression expr) {
+    // projections assume that there are no NOT nodes in the expression tree. to ensure that this
+    // is the case, the expression is rewritten to push all NOT nodes down to the expression
+    // leaf nodes.
+    // this is necessary to ensure that the default expression returned when a predicate can't be
+    // projected is correct.
+    return ExpressionVisitors.visit(ExpressionVisitors.visit(expr, RewriteNot.get()), this);
   }
 
   @Override
@@ -46,7 +61,7 @@ class RewriteNot extends ExpressionVisitors.ExpressionVisitor<Expression> {
 
   @Override
   public Expression not(Expression result) {
-    return result.negate();
+    throw new UnsupportedOperationException("[BUG] project called on expression with a not");
   }
 
   @Override
@@ -60,12 +75,25 @@ class RewriteNot extends ExpressionVisitors.ExpressionVisitor<Expression> {
   }
 
   @Override
-  public <T> Expression predicate(BoundPredicate<T> pred) {
-    return pred;
+  public <T> Expression predicate(UnboundPredicate<T> pred) {
+    Expression result = Expressions.alwaysTrue();
+    String expressionName = pred.ref().name();
+    if (StringUtils.isNotEmpty(expressionName)) {
+      List<PartitionField> parts = spec().getFieldsBySourceId(
+          spec().schema().asStruct().field(expressionName).fieldId()
+      );
+      return parts.size() > 0 ? pred : result;
+    }
+    return result;
   }
 
   @Override
-  public <T> Expression predicate(UnboundPredicate<T> pred) {
-    return pred;
+  public <T> Expression predicate(BoundPredicate<T> pred) {
+    throw new IllegalStateException("Found already bound predicate: " + pred);
   }
+
+  PartitionSpec spec() {
+    return spec;
+  }
+
 }

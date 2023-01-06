@@ -22,6 +22,7 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
@@ -34,6 +35,8 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -320,7 +323,7 @@ public class TableTestBase {
     return result;
   }
 
-  public static List<Record> readKeyedTableWithFilters(KeyedTable keyedTable, Expression expr) {
+  public static Pair<List<Record>,List<String>>  readKeyedTableWithFilters(KeyedTable keyedTable, Expression expr) {
     GenericArcticDataReader reader = new GenericArcticDataReader(
         keyedTable.io(),
         keyedTable.schema(),
@@ -331,10 +334,13 @@ public class TableTestBase {
         IdentityPartitionConverters::convertConstant
     );
     List<Record> result = Lists.newArrayList();
+    List<String> path = Lists.newArrayList();
     KeyedTableScan keyedTableScan = keyedTable.newScan();
     keyedTableScan = keyedTableScan.filter(expr);
     try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTableScan.planTasks()) {
       combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
+        scTask.insertTasks().stream().forEach(fst -> path.add(fst.file().path().toString()));
+        scTask.arcticEquityDeletes().stream().forEach(fst -> path.add(fst.file().path().toString()));
         try (CloseableIterator<Record> records = reader.readData(scTask)) {
           while (records.hasNext()) {
             result.add(records.next());
@@ -346,7 +352,7 @@ public class TableTestBase {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return result;
+    return new ImmutablePair<>(result,path);
   }
 
   public static Record newGenericRecord(Schema schema, Object... fields) {
