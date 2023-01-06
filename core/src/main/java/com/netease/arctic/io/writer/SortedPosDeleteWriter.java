@@ -114,10 +114,7 @@ public class SortedPosDeleteWriter<T> implements Closeable {
   }
 
   public List<DeleteFile> complete() throws IOException {
-    io.doAs(() -> {
-      close();
-      return null;
-    });
+    close();
 
     return completedFiles;
   }
@@ -132,7 +129,10 @@ public class SortedPosDeleteWriter<T> implements Closeable {
 
   @Override
   public void close() throws IOException {
-    flushDeletes();
+    io.doAs(() -> {
+      flushDeletes();
+      return null;
+    });
   }
 
   private void flushDeletes() {
