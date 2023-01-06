@@ -19,10 +19,10 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.scan.expressions.BasePartitionEvaluator;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.scan.expressions.BasePartitionEvaluator;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.StructLike;

@@ -45,7 +45,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair1 = readKeyedTableWithFilters(testKeyedUpsertTable, partition_and_np);
     List<Record> records1 = pair1.getLeft();
     List<String> path1 = pair1.getRight();
-    assertPath(Lists.newArrayList(dataFiles3,dataFiles4,dataFiles5,dataFiles6),path1);
+    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path1);
     Assert.assertEquals(records1.size(), 1);
     Assert.assertTrue(recordToNameList(records1).containsAll(Arrays.asList(new String[]{"ccc"})));
 
@@ -62,7 +62,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair2 = readKeyedTableWithFilters(testKeyedUpsertTable, partition_or_np);
     List<Record> records2 = pair2.getLeft();
     List<String> path2 = pair2.getRight();
-    assertPath(Lists.newArrayList(dataFiles1,dataFiles2,dataFiles3,dataFiles4,dataFiles5,dataFiles6),path2);
+    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path2);
     Assert.assertEquals(records2.size(), 2);
     Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
 
@@ -73,7 +73,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair3 = readKeyedTableWithFilters(testKeyedUpsertTable, only_partition);
     List<Record> records3 = pair3.getLeft();
     List<String> path3 = pair3.getRight();
-    assertPath(Lists.newArrayList(dataFiles3,dataFiles4,dataFiles5,dataFiles6),path3);
+    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path3);
     Assert.assertEquals(records3.size(), 1);
     Assert.assertTrue(recordToNameList(records3).containsAll(Arrays.asList(new String[]{"ccc"})));
 
@@ -84,7 +84,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair4 = readKeyedTableWithFilters(testKeyedUpsertTable, only_np);
     List<Record> records4 = pair4.getLeft();
     List<String> path4 = pair4.getRight();
-    assertPath(Lists.newArrayList(dataFiles1,dataFiles2,dataFiles3,dataFiles4,dataFiles5,dataFiles6),path4);
+    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path4);
     Assert.assertEquals(records4.size(), 2);
     Assert.assertTrue(recordToNameList(records4).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
 
@@ -101,7 +101,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair5 = readKeyedTableWithFilters(testKeyedUpsertTable, partition_and_np_gt);
     List<Record> records5 = pair5.getLeft();
     List<String> path5 = pair5.getRight();
-    assertPath(Lists.newArrayList(dataFiles3,dataFiles4,dataFiles5,dataFiles6),path5);
+    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path5);
     Assert.assertEquals(records5.size(), 1);
     Assert.assertTrue(recordToNameList(records5).containsAll(Arrays.asList(new String[]{"ccc"})));
   }
@@ -125,7 +125,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair1 = readKeyedTableWithFilters(testKeyedNoPartitionUpsertTable, exp_bbb);
     List<Record> records1 = pair1.getLeft();
     List<String> path1 = pair1.getRight();
-    assertPath(Lists.newArrayList(dataFiles1,dataFiles2,dataFiles3,dataFiles4,dataFiles5,dataFiles6),path1);
+    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path1);
     Assert.assertEquals(records1.size(), 1);
     Assert.assertTrue(recordToNameList(records1).containsAll(Arrays.asList(new String[]{"ccc"})));
 
@@ -136,7 +136,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair2 = readKeyedTableWithFilters(testKeyedNoPartitionUpsertTable, exp_aaa);
     List<Record> records2 = pair2.getLeft();
     List<String> path2 = pair2.getRight();
-    assertPath(Lists.newArrayList(dataFiles1,dataFiles2,dataFiles3,dataFiles4,dataFiles5,dataFiles6),path2);
+    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path2);
     Assert.assertEquals(records2.size(), 1);
     Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"ccc"})));
   }
@@ -166,7 +166,7 @@ public class UpsertPushDownTest extends TableTestBase {
     Pair<List<Record>, List<String>> pair = readKeyedTableWithFilters(testKeyedUnionPartitionUpsertTable, partition_and_np);
     List<Record> records2 = pair.getLeft();
     List<String> path = pair.getRight();
-    assertPath(Lists.newArrayList(dataFiles3,dataFiles4,dataFiles5,dataFiles6),path);
+    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path);
     Assert.assertEquals(records2.size(), 1);
     Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"ccc"})));
   }
