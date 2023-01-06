@@ -76,6 +76,13 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         TableProperties.SPLIT_LOOKBACK, TableProperties.SPLIT_LOOKBACK_DEFAULT);
   }
 
+  /**
+   * Config this scan with filter by the {@link Expression}.
+   * For Change Table, only filters related to partition will take effect.
+   *
+   * @param expr a filter expression
+   * @return scan based on this with results filtered by the expression
+   */
   @Override
   public KeyedTableScan filter(Expression expr) {
     if (expression == null) {
