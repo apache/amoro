@@ -22,11 +22,11 @@ import com.alibaba.fastjson.JSONObject;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
+import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
-import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
 import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
@@ -58,7 +58,7 @@ import static com.netease.arctic.ams.api.properties.OptimizerProperties.OPTIMIZE
 public class OptimizerService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(OptimizerService.class);
 
-  // identify whether a retry has occurred in the optimizer task
+  //identify whether a retry has occurred in the optimizer task
   private static final String STATUS_IDENTIFICATION = "status_identification";
 
   public List<Optimizer> getOptimizers(String optimizerGroup) {
@@ -256,9 +256,9 @@ public class OptimizerService extends IJDBCService {
 
     LOG.info("checkOptimizerRetry");
     //考虑新的也为null的情况
-    String lastmodification = newReportData.optimizerState
+    String statusIdentification = newReportData.optimizerState
             .get(STATUS_IDENTIFICATION);
-    if (!lastmodification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
+    if (!statusIdentification.equals(stateInfo.get(STATUS_IDENTIFICATION)) &&
             stateInfo.get(STATUS_IDENTIFICATION) != null) {
 
       LOG.info("checkOptimizerRetry retry");
@@ -267,8 +267,9 @@ public class OptimizerService extends IJDBCService {
       long optimizerId = newReportData.optimizerId;
       try (SqlSession sqlSession = getSqlSession(true)) {
         OptimizeTasksMapper optimizeTasksMapper = getMapper(sqlSession, OptimizeTasksMapper.class);
-        //年月日时分秒
-        List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper.selectOptimizeTasksByJobID(optimizerId);
+        //获取运行中的任务
+        List<BaseOptimizeTask> baseOptimizeTasks = optimizeTasksMapper
+                .selectOptimizeTasksByJobIDAndStatus(optimizerId, OptimizeStatus.Executing.name());
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
           OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper = getMapper(sqlSession,

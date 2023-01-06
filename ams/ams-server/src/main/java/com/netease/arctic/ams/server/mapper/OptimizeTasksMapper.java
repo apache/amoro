@@ -134,7 +134,7 @@ public interface OptimizeTasksMapper {
   void deleteOptimizeTask(@Param("traceId") String traceId);
 
   @Select("select trace_id, optimize_type, catalog_name, db_name, table_name, create_time from " +
-          TABLE_NAME + " where job_id = #{jobId}")
+          TABLE_NAME + " where job_id = #{jobId} and status = #{status} ")
   @Results({
           @Result(property = "tableIdentifier.catalog", column = "catalog_name"),
           @Result(property = "tableIdentifier.database", column = "db_name"),
@@ -144,5 +144,5 @@ public interface OptimizeTasksMapper {
           @Result(property = "createTime", column = "create_time",
                   typeHandler = Long2TsConvertor.class)
   })
-  List<BaseOptimizeTask> selectOptimizeTasksByJobID(@Param("jobId") long jobId);
+  List<BaseOptimizeTask> selectOptimizeTasksByJobIDAndStatus(@Param("jobId") long jobId,@Param("status") String status);
 }
