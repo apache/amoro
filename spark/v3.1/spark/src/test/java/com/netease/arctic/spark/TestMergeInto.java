@@ -1,5 +1,6 @@
 package com.netease.arctic.spark;
 
+import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.After;
 import org.junit.Before;
@@ -21,8 +22,6 @@ public class TestMergeInto extends SparkTestBase{
     sql("CREATE TABLE {0}.{1} (" +
         "id int, data string, primary key(id)) " +
         "USING arctic", database, srcTableA) ;
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA) ;
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA) ;
   }
 
   @After
@@ -32,7 +31,9 @@ public class TestMergeInto extends SparkTestBase{
   }
 
   @Test
-  public void testMergeInto() {
+  public void testMergeWithAllCauses() {
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA) ;
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA) ;
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
         "WHEN MATCHED AND t.id = 1 THEN " +
@@ -43,13 +44,107 @@ public class TestMergeInto extends SparkTestBase{
         "  UPDATE SET * " +
         "WHEN NOT MATCHED AND s.id != 1 THEN " +
         "  INSERT *", database, tgTableA, srcTableA);
-    rows = sql("select * from {0}.{1} order by id", database, tgTableA);
-    Assert.assertEquals(4, rows.size());
-    Assert.assertEquals(2, rows.get(0)[0]);
-    Assert.assertEquals("g", rows.get(1)[1]);
-    Assert.assertEquals("e", rows.get(2)[1]);
-    Assert.assertEquals("f", rows.get(3)[1]);
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(2, "e"), // new
+        row(4, "g"), // new
+        row(5, "e"), // new
+        row(6, "f")  // new
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
   }
 
+  @Test
+  public void testMergeIntoEmptyTargetInsertAllNonMatchingRows() {
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA) ;
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id " +
+        "WHEN NOT MATCHED THEN " +
+        "  INSERT *", database, tgTableA, srcTableA);
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(1, "d"), // new
+        row(2, "e"), // new
+        row(4, "g"), // new
+        row(6, "f")  // new
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
+
+  @Test
+  public void testMergeIntoEmptyTargetInsertOnlyMatchingRows() {
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA) ;
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id " +
+        "WHEN NOT MATCHED AND (s.id >=2) THEN " +
+        "  INSERT *", database, tgTableA, srcTableA);
+
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(2, "e"), // new
+        row(4, "g"), // new
+        row(6, "f")  // new
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
+
+  @Test
+  public void testMergeWithOnlyUpdateClause() {
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id " +
+        "WHEN MATCHED AND t.id = 1 THEN " +
+        "  UPDATE SET *", database, tgTableA, srcTableA);
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(1, "d"), // new
+        row(4, "d"), // new
+        row(5, "e"), // new
+        row(6, "c")  // new
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
+
+  @Test
+  public void testMergeWithOnlyDeleteClause() {
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id " +
+        "WHEN MATCHED AND t.id = 6 THEN" +
+        "  DELETE", database, tgTableA, srcTableA);
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(1, "a"), // new
+        row(4, "d"), // new
+        row(5, "e")  // new
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
+
+  @Test
+  public void testMergeWithAllCausesWithExplicitColumnSpecification() {
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA) ;
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA) ;
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id " +
+        "WHEN MATCHED AND t.id = 1 THEN " +
+        "  DELETE " +
+        "WHEN MATCHED AND t.id = 6 THEN " +
+        "  UPDATE SET t.id = s.id, t.data = s.data  " +
+        "WHEN MATCHED AND t.id = 4 THEN " +
+        "  UPDATE SET t.id = s.id, t.data = s.data  " +
+        "WHEN NOT MATCHED AND s.id != 1 THEN " +
+        "  INSERT (t.id, t.data) VALUES (s.id, s.data)", database, tgTableA, srcTableA);
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(2, "e"), // new
+        row(4, "g"), // new
+        row(5, "e"), // new
+        row(6, "f")  // new
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
 
 }
