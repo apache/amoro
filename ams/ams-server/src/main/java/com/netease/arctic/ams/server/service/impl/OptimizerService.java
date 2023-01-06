@@ -19,27 +19,26 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.alibaba.fastjson.JSONObject;
-import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OptimizeStatus;
+import com.netease.arctic.ams.api.OptimizeTaskId;
 import com.netease.arctic.ams.api.OptimizerDescriptor;
 import com.netease.arctic.ams.api.OptimizerRegisterInfo;
 import com.netease.arctic.ams.api.OptimizerStateReport;
+import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.server.config.ConfigFileProperties;
-import com.netease.arctic.ams.server.mapper.OptimizeTaskRuntimesMapper;
 import com.netease.arctic.ams.server.mapper.OptimizeTasksMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerGroupMapper;
 import com.netease.arctic.ams.server.mapper.OptimizerMapper;
 import com.netease.arctic.ams.server.model.BaseOptimizeTask;
-import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.model.Container;
 import com.netease.arctic.ams.server.model.Optimizer;
 import com.netease.arctic.ams.server.model.OptimizerGroup;
 import com.netease.arctic.ams.server.model.OptimizerGroupInfo;
 import com.netease.arctic.ams.server.model.OptimizerResourceInfo;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
-import com.netease.arctic.ams.server.optimize.OptimizeTaskItem;
+import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.optimizer.StatefulOptimizer;
@@ -272,17 +271,17 @@ public class OptimizerService extends IJDBCService {
                 .selectOptimizeTasksByJobIDAndStatus(optimizerId, OptimizeStatus.Executing.name());
         for (BaseOptimizeTask baseOptimizeTask : baseOptimizeTasks) {
 
-          OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper = getMapper(sqlSession,
-                  OptimizeTaskRuntimesMapper.class);
+          OptimizeTaskId taskId = baseOptimizeTask.taskId;
 
-          BaseOptimizeTaskRuntime baseOptimizeTaskRuntime = optimizeTaskRuntimesMapper
-                  .selectAllOptimizeTaskRuntimesByTraceId(baseOptimizeTask.taskId.getTraceId());
+          TableIdentifier tableIdentifier = baseOptimizeTask.getTableIdentifier();
 
-          long nowTimeStamp = System.currentTimeMillis();
-          OptimizeTaskItem optimizeTaskItem = new OptimizeTaskItem(baseOptimizeTask, baseOptimizeTaskRuntime);
-          optimizeTaskItem.onFailed(new ErrorMessage(nowTimeStamp,"optimizer job has occurred retry"),
-                  nowTimeStamp - baseOptimizeTask.getCreateTime());
+          TableOptimizeItem tableOptimizeItem = ServiceContainer.getOptimizeService()
+                  .getTableOptimizeItem(com.netease.arctic.table.TableIdentifier.of(tableIdentifier));
+
+          tableOptimizeItem.taskFailedForOptimizerRetry(taskId);
         }
+      } catch (NoSuchObjectException e) {
+        throw new RuntimeException(e);
       }
 
     }

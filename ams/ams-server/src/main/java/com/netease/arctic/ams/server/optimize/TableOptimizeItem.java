@@ -1084,4 +1084,13 @@ public class TableOptimizeItem extends IJDBCService {
     OptimizeTaskItem optimizeTaskItem = new ArrayList<>(optimizeTasks.values()).get(0);
     return optimizeTaskItem.getTaskId().getType() == OptimizeType.Minor;
   }
+
+  public void taskFailedForOptimizerRetry(OptimizeTaskId optimizeTaskId) {
+    OptimizeTaskItem optimizeTaskItem = optimizeTasks.get(optimizeTaskId);
+
+    optimizeTaskItem.onFailed(new ErrorMessage(System.currentTimeMillis(), "optimizer job has occurred retry"),
+            System.currentTimeMillis() - optimizeTaskItem.getOptimizeRuntime().getExecuteTime());
+    LOG.error("{} optimizer job has occurred retry, change to Failed", optimizeTaskItem.getTaskId());
+
+  }
 }
