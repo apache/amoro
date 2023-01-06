@@ -25,7 +25,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.trace.SnapshotSummary;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -77,14 +77,14 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
           // tasks in partition
           if (task.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor) {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtil::toInternalTableFile)
+                .map(SerializationUtils::toInternalTableFile)
                 .forEach(minorAddFiles::add);
 
             minorDeleteFiles.addAll(selectDeletedFiles(task));
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
           } else {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtil::toInternalTableFile)
+                .map(SerializationUtils::toInternalTableFile)
                 .forEach(majorAddFiles::add);
             majorDeleteFiles.addAll(selectDeletedFiles(task));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
@@ -102,8 +102,10 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     } catch (ValidationException e) {
       String missFileMessage = "Missing required files to delete";
       String foundNewDeleteMessage = "found new delete for replaced data file";
+      String foundNewPosDeleteMessage = "found new position delete for replaced data file";
       if (e.getMessage().contains(missFileMessage) ||
-          e.getMessage().contains(foundNewDeleteMessage)) {
+          e.getMessage().contains(foundNewDeleteMessage) ||
+          e.getMessage().contains(foundNewPosDeleteMessage)) {
         LOG.warn("Optimize commit table {} failed, give up commit.", arcticTable.id(), e);
         return false;
       } else {
@@ -246,15 +248,15 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     if (CollectionUtils.isNotEmpty(optimizeTask.getInsertFiles())) {
       // small data files
       for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
-        deletedFiles.add(SerializationUtil.toIcebergContentFile(insertFile).asDataFile());
+        deletedFiles.add(SerializationUtils.toIcebergContentFile(insertFile).asDataFile());
       }
     } else {
       // delete files
       for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {
-        deletedFiles.add(SerializationUtil.toIcebergContentFile(eqDeleteFile).asDeleteFile());
+        deletedFiles.add(SerializationUtils.toIcebergContentFile(eqDeleteFile).asDeleteFile());
       }
       for (ByteBuffer posDeleteFile : optimizeTask.getPosDeleteFiles()) {
-        deletedFiles.add(SerializationUtil.toIcebergContentFile(posDeleteFile).asDeleteFile());
+        deletedFiles.add(SerializationUtils.toIcebergContentFile(posDeleteFile).asDeleteFile());
       }
     }
 
@@ -265,18 +267,18 @@ public class IcebergOptimizeCommit extends BaseOptimizeCommit {
     Set<ContentFile<?>> deletedFiles = new HashSet<>();
     // data files
     for (ByteBuffer insertFile : optimizeTask.getInsertFiles()) {
-      deletedFiles.add(SerializationUtil.toIcebergContentFile(insertFile).asDataFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(insertFile).asDataFile());
     }
     for (ByteBuffer baseFile : optimizeTask.getBaseFiles()) {
-      deletedFiles.add(SerializationUtil.toIcebergContentFile(baseFile).asDataFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(baseFile).asDataFile());
     }
 
     // delete files
     for (ByteBuffer eqDeleteFile : optimizeTask.getDeleteFiles()) {
-      deletedFiles.add(SerializationUtil.toIcebergContentFile(eqDeleteFile).asDeleteFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(eqDeleteFile).asDeleteFile());
     }
     for (ByteBuffer posDeleteFile : optimizeTask.getPosDeleteFiles()) {
-      deletedFiles.add(SerializationUtil.toIcebergContentFile(posDeleteFile).asDeleteFile());
+      deletedFiles.add(SerializationUtils.toIcebergContentFile(posDeleteFile).asDeleteFile());
     }
 
     return deletedFiles;

@@ -22,14 +22,11 @@ import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asT
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
 import com.netease.arctic.spark.sql.utils.ArcticRewriteHelper
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsExtendIdentColumns, SupportsUpsert}
-import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, AttributeReference, Cast, EqualTo, Expression, Literal}
-import org.apache.spark.sql.catalyst.plans.Inner
+import org.apache.spark.sql.catalyst.expressions.{Alias, And, AttributeReference, Cast, EqualTo, Expression, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
 import org.apache.spark.sql.types.StructType
 
@@ -42,12 +39,6 @@ import java.util
 case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPlan] with ArcticRewriteHelper{
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan match {
-    case UpdateTable(table: DataSourceV2Relation, assignments, condition) =>
-      val pre = Filter(condition.get, table)
-      val after = Filter(condition.get, table)
-
-      val newQuery = Union(pre, after)
-      newQuery
     case u: UpdateTable if isArcticRelation(u.table) =>
       val arcticRelation = asTableRelation(u.table)
       val upsertWrite = arcticRelation.table.asUpsertWrite
@@ -65,23 +56,6 @@ case class RewriteUpdateArcticTable(spark: SparkSession) extends Rule[LogicalPla
       ReplaceArcticData(arcticRelation, query, options)
 
     case _ => plan
-  }
-
-  private def distributionQuery(query: LogicalPlan, table: ArcticSparkTable): LogicalPlan =  {
-    val distribution = ArcticSparkUtils.buildRequiredDistribution(table) match {
-      case d: ClusteredDistribution =>
-        d.clustering.map(e => ArcticExpressionUtils.toCatalyst(e, query))
-      case _ =>
-        Array.empty[Expression]
-    }
-    val queryWithDistribution = if (distribution.nonEmpty) {
-      val partitionNum = conf.numShufflePartitions
-      val pp = RepartitionByExpression(distribution, query, partitionNum)
-      pp
-    } else {
-      query
-    }
-    queryWithDistribution
   }
 
   def buildUpsertQuery(r: DataSourceV2Relation, upsert: SupportsUpsert, scanBuilder: SupportsExtendIdentColumns,

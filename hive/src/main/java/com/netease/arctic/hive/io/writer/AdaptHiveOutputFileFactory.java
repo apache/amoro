@@ -32,7 +32,7 @@ import org.apache.iceberg.io.OutputFile;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import static com.netease.arctic.utils.FileUtil.getFileName;
+import static com.netease.arctic.utils.TableFileUtils.getFileName;
 
 /**
  * For adapt hive table with partitions the dir construct is :

@@ -26,6 +26,8 @@ import com.netease.arctic.ams.api.Constants;
 public class TableNameResolve {
 
   private static final String SPLIT = "#";
+  private static final String DOT_SPIT = ".";
+  private static final String REGEX_DOT_SPLIT = "\\.";
 
   private String original;
   private String tableName;
@@ -34,7 +36,18 @@ public class TableNameResolve {
   public TableNameResolve(String original) {
     this.original = original;
     if (original.contains(SPLIT)) {
+      //use actual db name
+      if (original.contains(DOT_SPIT)) {
+        String[] tableString = original.split(REGEX_DOT_SPLIT);
+        if (tableString.length == 2) {
+          original = tableString[1];
+        } else if (tableString.length == 3) {
+          original = tableString[2];
+        }
+      }
+
       String[] sts = original.split(SPLIT);
+
       this.tableName = sts[0];
       if (Constants.INNER_TABLE_BASE.equalsIgnoreCase(sts[1])) {
         isBase = true;

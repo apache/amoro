@@ -22,14 +22,17 @@ import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.CloseableIterableWrapper;
+import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.utils.NodeFilter;
+import com.netease.arctic.utils.map.StructLikeBaseMap;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Schema;
@@ -70,13 +73,13 @@ import java.util.stream.Collectors;
 public abstract class ArcticDeleteFilter<T> {
 
   private static final Schema POS_DELETE_SCHEMA = new Schema(
-      org.apache.iceberg.MetadataColumns.DELETE_FILE_PATH,
-      org.apache.iceberg.MetadataColumns.DELETE_FILE_POS);
+          org.apache.iceberg.MetadataColumns.DELETE_FILE_PATH,
+          org.apache.iceberg.MetadataColumns.DELETE_FILE_POS);
 
   private static final Accessor<StructLike> FILENAME_ACCESSOR = POS_DELETE_SCHEMA
-      .accessorForField(org.apache.iceberg.MetadataColumns.DELETE_FILE_PATH.fieldId());
+          .accessorForField(org.apache.iceberg.MetadataColumns.DELETE_FILE_PATH.fieldId());
   private static final Accessor<StructLike> POSITION_ACCESSOR = POS_DELETE_SCHEMA
-      .accessorForField(org.apache.iceberg.MetadataColumns.DELETE_FILE_POS.fieldId());
+          .accessorForField(org.apache.iceberg.MetadataColumns.DELETE_FILE_POS.fieldId());
 
   private final Set<PrimaryKeyedFile> eqDeletes;
   private final List<DeleteFile> posDeletes;
@@ -88,7 +91,7 @@ public abstract class ArcticDeleteFilter<T> {
   private final Set<Integer> primaryKeyId;
   private final Schema deleteSchema;
   private final Filter<Record> deleteNodeFilter;
-  private Predicate<T> eqPredicate;
+  private CloseablePredicate<T> eqPredicate;
   private Map<String, Set<Long>> positionMap;
   private final Accessor<StructLike> posAccessor;
   private final Accessor<StructLike> filePathAccessor;
@@ -97,20 +100,30 @@ public abstract class ArcticDeleteFilter<T> {
   private String currentDataPath;
   private Set<Long> currentPosSet;
 
+  private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
+
   protected ArcticDeleteFilter(
-      KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
-      Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
+          KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
+          Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
     this(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, null);
   }
 
   protected ArcticDeleteFilter(
       KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
       Schema requestedSchema, PrimaryKeySpec primaryKeySpec,
-      Set<DataTreeNode> sourceNodes) {
+      Set<DataTreeNode> sourceNodes, StructLikeCollections structLikeCollections) {
+    this(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
+    this.structLikeCollections = structLikeCollections;
+  }
+
+  protected ArcticDeleteFilter(
+          KeyedTableScanTask keyedTableScanTask, Schema tableSchema,
+          Schema requestedSchema, PrimaryKeySpec primaryKeySpec,
+          Set<DataTreeNode> sourceNodes) {
     this.eqDeletes = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file)
-        .sorted(Comparator.comparingLong(PrimaryKeyedFile::transactionId))
-        .collect(Collectors.toSet());
+            .map(ArcticFileScanTask::file)
+            .sorted(Comparator.comparingLong(PrimaryKeyedFile::transactionId))
+            .collect(Collectors.toSet());
 
     Map<String, DeleteFile> map = new HashMap<>();
     for (ArcticFileScanTask arcticFileScanTask : keyedTableScanTask.dataTasks()) {
@@ -121,10 +134,10 @@ public abstract class ArcticDeleteFilter<T> {
     this.posDeletes = map.values().stream().collect(Collectors.toList());
 
     this.pathSets =
-        keyedTableScanTask.dataTasks().stream().map(s -> s.file().path().toString()).collect(Collectors.toSet());
+            keyedTableScanTask.dataTasks().stream().map(s -> s.file().path().toString()).collect(Collectors.toSet());
 
     this.primaryKeyId = primaryKeySpec.primaryKeyStruct().fields().stream()
-        .map(Types.NestedField::fieldId).collect(Collectors.toSet());
+            .map(Types.NestedField::fieldId).collect(Collectors.toSet());
     this.requiredSchema = fileProjection(tableSchema, requestedSchema, eqDeletes, posDeletes);
     Set<Integer> deleteIds = Sets.newHashSet(primaryKeyId);
     deleteIds.add(MetadataColumns.TRANSACTION_ID_FILED.fieldId());
@@ -171,14 +184,15 @@ public abstract class ArcticDeleteFilter<T> {
    * @return The data not in equity delete file
    */
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return applyEqDeletes(applyPosDeletes(records), applyEqDeletes().negate());
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records),
+        applyEqDeletes().negate()), eqPredicate);
   }
 
   /**
    * @return The data in equity delete file
    */
   public CloseableIterable<T> filterNegate(CloseableIterable<T> records) {
-    return applyEqDeletes(applyPosDeletes(records), applyEqDeletes());
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records), applyEqDeletes()), eqPredicate);
   }
 
   public void setCurrentDataPath(String currentDataPath) {
@@ -213,20 +227,20 @@ public abstract class ArcticDeleteFilter<T> {
     StructProjection dataPKProjectRow = StructProjection.create(requiredSchema, pkSchema);
 
     Iterable<CloseableIterable<Record>> deleteRecords = Iterables.transform(
-        eqDeletes,
-        this::openDeletes);
+            eqDeletes,
+            this::openDeletes);
 
     // copy the delete records because they will be held in a map
     CloseableIterable<Record> records = CloseableIterable.transform(
-        CloseableIterable.concat(deleteRecords), Record::copy);
+            CloseableIterable.concat(deleteRecords), Record::copy);
     if (deleteNodeFilter != null) {
       records = deleteNodeFilter.filter(records);
     }
 
     CloseableIterable<StructLike> structLikeIterable = CloseableIterable.transform(
-        records, record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
+            records, record -> new InternalRecordWrapper(deleteSchema.asStruct()).wrap(record));
 
-    StructLikeMap<ChangedLsn> structLikeMap = StructLikeMap.create(pkSchema.asStruct());
+    StructLikeBaseMap<ChangedLsn> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
     //init map
     try (CloseableIterable<StructLike> deletes = structLikeIterable) {
       Iterator<StructLike> it = getArcticFileIo() == null ? deletes.iterator()
@@ -256,8 +270,9 @@ public abstract class ArcticDeleteFilter<T> {
 
       return deleteLsn.compareTo(dataLSN) > 0;
     };
+    CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
 
-    this.eqPredicate = isInDeleteSet;
+    this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
 
@@ -283,24 +298,25 @@ public abstract class ArcticDeleteFilter<T> {
     switch (deleteFile.format()) {
       case AVRO:
         return Avro.read(input)
-            .project(deleteSchema)
-            .reuseContainers()
-            .createReaderFunc(fileSchema -> DataReader.create(deleteSchema, fileSchema, idToConstant))
-            .build();
+                .project(deleteSchema)
+                .reuseContainers()
+                .createReaderFunc(fileSchema -> DataReader.create(deleteSchema, fileSchema, idToConstant))
+                .build();
 
       case PARQUET:
         Parquet.ReadBuilder builder = Parquet.read(input)
-            .project(deleteSchema)
-            .reuseContainers()
-            .createReaderFunc(fileSchema ->
-                GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
+                .project(deleteSchema)
+                .reuseContainers()
+                .createReaderFunc(fileSchema ->
+                        GenericParquetReaders.buildReader(deleteSchema, fileSchema, idToConstant));
 
         return builder.build();
 
       case ORC:
       default:
         throw new UnsupportedOperationException(String.format(
-            "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
+                "Cannot read deletes, %s is not a supported format: %s",
+                deleteFile.format().name(), deleteFile.path()));
     }
   }
 
@@ -365,29 +381,30 @@ public abstract class ArcticDeleteFilter<T> {
     switch (deleteFile.format()) {
       case AVRO:
         return Avro.read(input)
-            .project(deleteSchema)
-            .reuseContainers()
-            .createReaderFunc(DataReader::create)
-            .build();
+                .project(deleteSchema)
+                .reuseContainers()
+                .createReaderFunc(DataReader::create)
+                .build();
 
       case PARQUET:
         Parquet.ReadBuilder builder = Parquet.read(input)
-            .project(deleteSchema)
-            .reuseContainers()
-            .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
+                .project(deleteSchema)
+                .reuseContainers()
+                .createReaderFunc(fileSchema -> GenericParquetReaders.buildReader(deleteSchema, fileSchema));
 
         return builder.build();
 
       case ORC:
       default:
         throw new UnsupportedOperationException(String.format(
-            "Cannot read deletes, %s is not a supported format: %s", deleteFile.format().name(), deleteFile.path()));
+                "Cannot read deletes, %s is not a supported format: %s",
+                deleteFile.format().name(), deleteFile.path()));
     }
   }
 
   private Schema fileProjection(
-      Schema tableSchema, Schema requestedSchema, Collection<PrimaryKeyedFile> eqDeletes,
-      Collection<DeleteFile> posDeletes) {
+          Schema tableSchema, Schema requestedSchema, Collection<PrimaryKeyedFile> eqDeletes,
+          Collection<DeleteFile> posDeletes) {
     if (eqDeletes.isEmpty() && posDeletes.isEmpty()) {
       return requestedSchema;
     }
@@ -405,15 +422,15 @@ public abstract class ArcticDeleteFilter<T> {
     }
 
     Set<Integer> missingIds = Sets.newLinkedHashSet(
-        Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
+            Sets.difference(requiredIds, TypeUtil.getProjectedIds(requestedSchema)));
 
     // TODO: support adding nested columns. this will currently fail when finding nested columns to add
     List<Types.NestedField> columns = Lists.newArrayList(requestedSchema.columns());
     for (int fieldId : missingIds) {
       if (fieldId == org.apache.iceberg.MetadataColumns.ROW_POSITION.fieldId() ||
-          fieldId == org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId() ||
-          fieldId == MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
-          fieldId == MetadataColumns.FILE_OFFSET_FILED.fieldId()
+              fieldId == org.apache.iceberg.MetadataColumns.FILE_PATH.fieldId() ||
+              fieldId == MetadataColumns.TRANSACTION_ID_FILED.fieldId() ||
+              fieldId == MetadataColumns.FILE_OFFSET_FILED.fieldId()
       ) {
         continue;
       }
