@@ -20,6 +20,7 @@ package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.sql.catalyst.plans.{AlterArcticTableDropPartition, TruncateArcticTable}
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.analysis.ResolvedTable
 import org.apache.spark.sql.catalyst.plans.logical.{AlterTableDropPartition, LogicalPlan, TruncateTable}
 import org.apache.spark.sql.catalyst.rules.Rule
 
@@ -31,10 +32,10 @@ case class RewriteArcticCommand(sparkSession: SparkSession) extends Rule[Logical
   override def apply(plan: LogicalPlan): LogicalPlan = {
     plan match {
       // Rewrite the AlterTableDropPartition to AlterArcticTableDropPartition
-      case AlterTableDropPartition(child, parts, ifExists, purge, retainData) =>
-        AlterArcticTableDropPartition(child, parts, ifExists, purge, retainData)
-      case TruncateTable(child, partitionSpec) =>
-        TruncateArcticTable(child, partitionSpec)
+      case a@AlterTableDropPartition(r: ResolvedTable, parts, ifExists, purge, retainData) =>
+        AlterArcticTableDropPartition(a.child, parts, ifExists, purge, retainData)
+      case t@TruncateTable(r: ResolvedTable, partitionSpec) =>
+        TruncateArcticTable(t.child, partitionSpec)
       case _ => plan
     }
   }

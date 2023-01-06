@@ -116,4 +116,32 @@ public class TestTruncate extends SparkTestBase {
         (short) -1).size());
     sql("drop table if exists {0}.{1}", database, truncateTable);
   }
+
+  @Test
+  public void testTruncateNotArcticTable() {
+    sql("use spark_catalog");
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts int" +
+        ") STORED AS parquet\n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, truncateTable);
+    sql("insert overwrite {0}.{1} "+
+        " values (1, ''aaa'', 1 ) , " +
+        "(4, ''bbb'', 2), " +
+        "(5, ''ccc'', 3) ", database, truncateTable);
+
+    sql("insert into {0}.{1} "+
+        " values (2, ''aaa'', 1 ) , " +
+        "(3, ''bbb'', 2), " +
+        "(6, ''ccc'', 3) ", database, truncateTable);
+    rows = sql("select * from {0}.{1}", database,truncateTable);
+    Assert.assertEquals(6, rows.size());
+    sql("truncate table {0}.{1}", database, truncateTable);
+    rows = sql("select * from {0}.{1}", database, truncateTable);
+    Assert.assertEquals(0, rows.size());
+    sql("drop table if exists {0}.{1}", database, truncateTable);
+  }
 }
