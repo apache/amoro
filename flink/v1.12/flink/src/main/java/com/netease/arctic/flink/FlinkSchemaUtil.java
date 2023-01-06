@@ -112,7 +112,7 @@ public class FlinkSchemaUtil {
         .getTableColumns()
         .forEach(
             tableColumn -> {
-              if (!filter.apply(tableColumn)) {
+              if (!filter.apply(tableColumn) || !tableColumn.isPhysical()) {
                 return;
               }
               builder.field(tableColumn.getName(), tableColumn.getType());

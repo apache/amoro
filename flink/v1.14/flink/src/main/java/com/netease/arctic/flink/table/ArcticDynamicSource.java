@@ -20,6 +20,7 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.shuffle.ReadShuffleRulePolicy;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.DistributionHashMode;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
@@ -57,6 +58,7 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
 import static com.netease.arctic.flink.FlinkSchemaUtil.filterWatermark;
+import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_HASH_MODE_DEFAULT;
 import static com.netease.arctic.table.TableProperties.READ_DISTRIBUTION_MODE;
@@ -116,8 +118,14 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       readSchema = arcticTable.schema();
       flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     } else {
-      readSchema = TypeUtil.reassignIds(
+      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
+          DIM_TABLE_ENABLE.defaultValue());
+      if (dimTable) {
+        readSchema = TypeUtil.reassignIds(
           FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema());
+      } else {
+        readSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(projectedSchema), arcticTable.schema());
+      }
       flinkSchemaRowType = (RowType) projectedSchema.toRowDataType().getLogicalType();
     }
   }
