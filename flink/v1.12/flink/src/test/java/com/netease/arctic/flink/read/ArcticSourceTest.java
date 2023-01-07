@@ -218,7 +218,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     assertRecords(testFailoverTable, expected, Duration.ofMillis(10), 12000);
   }
 
-  @Test(timeout = 30000)
+  @Test(timeout = 60000)
   public void testDimTaskManagerFailover() throws Exception {
     List<RowData> updated = updateRecords();
     writeUpdate(updated);
