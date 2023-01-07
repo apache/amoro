@@ -90,9 +90,9 @@ public class KafkaSource<OUT>
   private final Boundedness boundedness;
   private final KafkaRecordDeserializationSchema<OUT> deserializationSchema;
   // The configurations.
-  private final Properties props;
+  protected final Properties props;
 
-  KafkaSource(
+  protected KafkaSource(
       KafkaSubscriber subscriber,
       OffsetsInitializer startingOffsetsInitializer,
       @Nullable OffsetsInitializer stoppingOffsetsInitializer,
