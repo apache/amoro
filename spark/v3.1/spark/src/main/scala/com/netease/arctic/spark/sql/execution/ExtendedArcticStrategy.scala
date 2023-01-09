@@ -131,7 +131,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       val unMatchedRowCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
         getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
           SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty
-      v2.MergeRowsExec(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
+      MergeRowsExec(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
         notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 

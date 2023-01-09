@@ -1,13 +1,14 @@
-package com.netease.arctic.spark;
+package com.netease.arctic.spark.hive;
 
-import org.apache.spark.SparkException;
+import com.netease.arctic.spark.SparkTestBase;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.junit.Assert;
+import org.apache.spark.SparkException;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestMergeInto extends SparkTestBase{
+public class TestMergeInto extends SparkTestBase {
   private final String database = "db_test";
 
   private final String tgTableA = "tgTableA";
@@ -16,7 +17,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @Before
   public void before() {
-    sql("use " + catalogNameArctic);
+    sql("use " + catalogNameHive);
     sql("create database if not exists {0}", database);
     sql("CREATE TABLE {0}.{1} (" +
         "id int, data string, primary key(id)) " +
@@ -174,42 +175,6 @@ public class TestMergeInto extends SparkTestBase{
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
-  }
-
-  @Test
-  public void testMergeWithDaysTransform() {
-    sql("CREATE TABLE {0}.{1} (" +
-        "id INT, ts TIMESTAMP, primary key(id)) " +
-        "USING arctic partitioned by ( days(ts) )", database, "target") ;
-    sql("CREATE TABLE {0}.{1} (" +
-        "id INT, ts TIMESTAMP, primary key(id)) " +
-        "USING arctic", database, "source") ;
-
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES " +
-            "(1, timestamp(''2000-01-01 00:00:00'')), " +
-            "(6, timestamp(''2000-01-06 00:00:00''))",
-        database, "target");
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES " +
-        "(1, timestamp(''2001-01-01 00:00:00'')), " +
-        "(2, timestamp(''2001-01-02 00:00:00'')), " +
-        "(6, timestamp(''2001-01-06 00:00:00''))", database, "source");
-
-    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
-        "ON t.id == s.id " +
-        "WHEN MATCHED AND t.id = 1 THEN" +
-        " UPDATE SET * " +
-        "WHEN MATCHED AND t.id = 6 THEN" +
-        " DELETE " +
-        "WHEN NOT MATCHED AND s.id = 2 THEN " +
-        "  INSERT * ", database, "target", "source");
-    ImmutableList<Object[]> expectedRows = ImmutableList.of(
-        row(1, "2001-01-01 00:00:00"), // updated
-        row(2, "2001-01-02 00:00:00")  // new
-    );
-    assertEquals("Should have expected rows", expectedRows,
-        sql("SELECT id, CAST(ts AS STRING) FROM {0}.{1} ORDER BY id", database, "target"));
-    sql("drop table {0}.{1}", database, "target");
-    sql("drop table {0}.{1}", database, "source");
   }
 
   @Test

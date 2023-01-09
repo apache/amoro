@@ -1,4 +1,4 @@
-package org.apache.spark.sql.execution.datasources.v2
+package com.netease.arctic.spark.sql.execution
 
 import org.apache.spark.SparkException
 import org.apache.spark.rdd.RDD

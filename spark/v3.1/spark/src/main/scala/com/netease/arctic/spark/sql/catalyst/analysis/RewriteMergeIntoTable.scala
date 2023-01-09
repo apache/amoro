@@ -1,29 +1,27 @@
-package org.apache.spark.sql.catalyst.analysis
+package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.SparkSQLProperties
-import com.netease.arctic.spark.sql.catalyst.analysis.RewriteRowLevelCommand
 import com.netease.arctic.spark.sql.catalyst.plans
-import com.netease.arctic.spark.sql.catalyst.plans.{MergeRows, WriteMerge}
-import com.netease.arctic.spark.writer.WriteMode
-import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExtendedV2ExpressionUtils, IsNotNull, Literal}
+import com.netease.arctic.spark.sql.catalyst.plans.WriteMerge
+import com.netease.arctic.spark.sql.utils.FieldReference
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
+import com.netease.arctic.spark.writer.WriteMode
+import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
+import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, ExtendedV2ExpressionUtils, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{Inner, MergeIntoArcticTable, RightOuter}
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.connector.expressions.{FieldReference, NamedReference}
+import org.apache.spark.sql.connector.expressions.NamedReference
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.IntegerType
 
-/**
- * Assigns a rewrite plan for v2 tables that support rewriting data to handle MERGE statements.
- *
- * This rule assumes the commands have been fully resolved and all assignments have been aligned.
- * That's why it must be run after AlignRowLevelCommandAssignments.
- */
-object RewriteMergeIntoTable extends RewriteRowLevelCommand {
+import scala.collection.mutable
+
+
+object RewriteMergeIntoTable extends Rule[LogicalPlan] {
 
   private final val ROW_FROM_SOURCE = "__row_from_source"
   private final val ROW_FROM_TARGET = "__row_from_target"
@@ -47,12 +45,13 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
   }
 
   def checkConditionIsPrimaryKey(table: Table, cond: Expression): Unit = {
+    var validate: Boolean = true
     table match {
       case arctic: ArcticSparkTable =>
         val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
         val condRefs = cond.references.filter(f => primarys.contains(f.name))
-        if (!condRefs.isEmpty) {
-          throw new UnsupportedOperationException(s"Condition ${condRefs.mkString}. is not allowed because is not a primary key")
+        if (condRefs.isEmpty) {
+          throw new UnsupportedOperationException(s"Condition ${cond.references}. is not allowed because is not a primary key")
         }
     }
   }
@@ -134,6 +133,26 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
     action.condition.getOrElse(TrueLiteral)
   }
 
+  def buildRelationWithAttrs(
+                                        relation: DataSourceV2Relation,
+                                        table: Table): DataSourceV2Relation = {
+
+    val attrs = dedupAttrs(relation.output)
+    relation.copy(table = table, output = attrs)
+  }
+
+  def dedupAttrs(attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
+    val exprIds = mutable.Set.empty[ExprId]
+    attrs.flatMap { attr =>
+      if (exprIds.contains(attr.exprId)) {
+        None
+      } else {
+        exprIds += attr.exprId
+        Some(attr)
+      }
+    }
+  }
+
 
   private def deltaActionOutput(
                                  action: MergeAction,
@@ -151,7 +170,7 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
         Seq(Literal(INSERT_OPERATION)) ++ targetOutput ++ sourceOutput
 
       case other =>
-        throw new AnalysisException(s"Unexpected action: $other")
+        throw new UnsupportedOperationException(s"Unexpected action: $other")
     }
   }
 

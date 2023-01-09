@@ -22,7 +22,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           val resolvedCond = cond.map(resolveCond("DELETE", _, m))
           DeleteAction(resolvedCond)
 
-        case UpdateAction(cond, assignments) =>
+        case UpdateAction(cond, _) =>
           val resolvedUpdateCondition = cond.map(resolveCond("UPDATE", _, m))
           val assignments = aliasedTable.output.map { attr =>
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
@@ -36,7 +36,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
       }
 
       val resolvedNotMatchedActions = notMatchedActions.map {
-        case InsertAction(cond, assignments) =>
+        case InsertAction(cond, _) =>
           val resolvedCond = cond.map(resolveCond("INSERT", _, Project(Nil, m.sourceTable)))
           val assignments = aliasedTable.output.map { attr =>
             Assignment(attr, UnresolvedAttribute(Seq(attr.name)))
