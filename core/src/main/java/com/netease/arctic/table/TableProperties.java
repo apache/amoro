@@ -226,10 +226,12 @@ public class TableProperties {
   /**
    * table read related properties
    */
+  @Deprecated
   public static final String READ_DISTRIBUTION_MODE = "read.distribution-mode";
   public static final String READ_DISTRIBUTION_MODE_NONE = "none";
   public static final String READ_DISTRIBUTION_MODE_HASH = "hash";
   public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_NONE;
+  @Deprecated
   public static final String READ_DISTRIBUTION_HASH_MODE = "read.distribution.hash-mode";
   public static final String READ_DISTRIBUTION_HASH_PARTITION = "partition-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
