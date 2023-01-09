@@ -180,10 +180,10 @@ public class TableEntriesScan {
           if (shouldKeep(status, fileContent)) {
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {
-              ContentFile<?> copyFile = includeColumnStats ?
-                  (ContentFile<?>) contentFile.copy() :
-                  (ContentFile<?>) contentFile.copyWithoutStats();
-              return new IcebergFileEntry(snapshotId, sequence, copyFile);
+              if (needMetrics() && !includeColumnStats) {
+                contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
+              }
+              return new IcebergFileEntry(snapshotId, sequence, contentFile);
             }
           }
           return null;
