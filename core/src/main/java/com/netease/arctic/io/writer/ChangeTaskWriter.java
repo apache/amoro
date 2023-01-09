@@ -38,10 +38,21 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
 
   private long fileOffset = 0L;
 
-  protected ChangeTaskWriter(FileFormat format, FileAppenderFactory<T> appenderFactory,
-                             OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                             long mask, Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
+  protected ChangeTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<T> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      boolean orderedWriter) {
+    super(
+        format, appenderFactory, outputFileFactory, io, targetFileSize,
+        mask, schema, spec, primaryKeySpec, orderedWriter
+    );
   }
 
   @Override

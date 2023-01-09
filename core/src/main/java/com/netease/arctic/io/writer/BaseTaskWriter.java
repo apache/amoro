@@ -59,10 +59,15 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   protected BaseTaskWriter(
       FileFormat format, FileAppenderFactory<T> appenderFactory,
       OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize, long mask,
-      Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec
+      Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec, boolean orderedWriter
   ) {
-    this.writerHolder = new FanoutWriterHolder<>(
-        format, appenderFactory, outputFileFactory, io, targetFileSize);
+    if (orderedWriter) {
+      this.writerHolder = new OrderedWriterHolder<>(
+          format, appenderFactory, outputFileFactory, io, targetFileSize);
+    } else {
+      this.writerHolder = new FanoutWriterHolder<>(
+          format, appenderFactory, outputFileFactory, io, targetFileSize);
+    }
     this.io = io;
     this.mask = mask;
     this.partitionKey = new PartitionKey(spec, schema);
@@ -159,7 +164,10 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
   }
 
-
+  /**
+   * a fan-out writer holder which will keep an opened writer for all write key.
+   * This holder does not require records have been sorted, but will keep open files as many as write keys.
+   */
   protected static class FanoutWriterHolder<T> extends WriterHolder<T> {
     private final Map<TaskWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
 
@@ -198,11 +206,15 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
   }
 
-
+  /**
+   * a writer holder which require records had been sorted before write.
+   * The holder will hold only one writer in open, and will throw an IllegalStateException exception
+   * if TaskWriter request a data writer via a write key which has been already closed.
+   */
   protected static class OrderedWriterHolder<T> extends WriterHolder<T> {
 
-    private DataWriter<T> currentWriter ;
-    private TaskWriterKey currentKey ;
+    private DataWriter<T> currentWriter;
+    private TaskWriterKey currentKey;
     private final Set<TaskWriterKey> completedKeys = Sets.newHashSet();
 
 
@@ -217,19 +229,19 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
     @Override
     public DataWriter<T> get(TaskWriterKey writerKey) throws IOException {
-      if (!writerKey.equals(currentKey)){
-        if (currentKey != null){
+      if (!writerKey.equals(currentKey)) {
+        if (currentKey != null) {
           closeCurrentWriter();
           completedKeys.add(currentKey);
         }
 
-        if (completedKeys.contains(writerKey)){
+        if (completedKeys.contains(writerKey)) {
           throw new IllegalStateException();
         }
 
         currentKey = writerKey;
         currentWriter = newWriter(writerKey);
-      } else if (shouldRollToNewFile(currentWriter)){
+      } else if (shouldRollToNewFile(currentWriter)) {
         closeCurrentWriter();
         currentWriter = newWriter(writerKey);
       }
@@ -237,13 +249,17 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       return currentWriter;
     }
 
-    private void closeCurrentWriter(){
-
+    private void closeCurrentWriter() throws IOException {
+      if (currentWriter != null) {
+        currentWriter.close();
+        completedFiles.add(currentWriter.toDataFile());
+        currentWriter = null;
+      }
     }
 
     @Override
     public void close() throws IOException {
-
+      closeCurrentWriter();
     }
 
   }
