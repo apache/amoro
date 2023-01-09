@@ -18,6 +18,7 @@
 
 package com.netease.arctic.spark.sql.execution
 
+import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticCatalog, isArcticTable}
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
@@ -125,11 +126,13 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         props, writeOptions, ifNotExists) :: Nil
 
     case MergeRows(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-    notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, emitNotMatchedTargetRows,
+    notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
     output, child) =>
-
+      val unMatchedRowCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
+        getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
+          SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty
       v2.MergeRowsExec(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-        notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, emitNotMatchedTargetRows,
+        notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
     case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>

@@ -1,5 +1,6 @@
 package org.apache.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.catalyst.analysis.RewriteRowLevelCommand
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.{MergeRows, WriteMerge}
@@ -8,6 +9,7 @@ import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Expression, ExtendedV2ExpressionUtils, IsNotNull, Literal}
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
+import com.netease.arctic.spark.table.ArcticSparkTable
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{Inner, MergeIntoArcticTable, RightOuter}
 import org.apache.spark.sql.connector.catalog.Table
@@ -44,6 +46,25 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
       }
   }
 
+  def checkConditionIsPrimaryKey(table: Table, cond: Expression): Unit = {
+    table match {
+      case arctic: ArcticSparkTable =>
+        val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+        val condRefs = cond.references.filter(f => !primarys.contains(f.name))
+        if (!condRefs.isEmpty) {
+          throw new UnsupportedOperationException(s"Condition ${condRefs.mkString}. is not allowed because is not a primary key")
+        }
+    }
+  }
+
+  def resolveRowIdAttrs(relation: DataSourceV2Relation, cond: Expression): Seq[Attribute] = {
+    relation.table match {
+      case arctic: ArcticSparkTable =>
+        val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+        cond.references.filter(p => primarys.contains(p.name)).toSeq
+    }
+  }
+
   // build a rewrite plan for sources that support row deltas
   private def buildWriteDeltaPlan(
                                    relation: DataSourceV2Relation,
@@ -52,8 +73,9 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
                                    cond: Expression,
                                    matchedActions: Seq[MergeAction],
                                    notMatchedActions: Seq[MergeAction]): WriteMerge = {
-
+    checkConditionIsPrimaryKey(relation.table, cond)
     // construct a scan relation and include all required metadata columns
+    val keyAttrs = resolveRowIdAttrs(relation, cond)
     val readRelation = buildRelationWithAttrs(relation, operationTable)
     val readAttrs = readRelation.output
 
@@ -94,8 +116,9 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
       notMatchedOutputs = notMatchedOutputs,
       // only needed if emitting unmatched target rows
       targetOutput = Nil,
-      rowIdAttrs = Nil,
-      performCardinalityCheck = false,
+      rowIdAttrs = keyAttrs,
+      performCardinalityCheck = isCardinalityCheckNeeded(matchedActions),
+      unMatchedRowCheck = java.lang.Boolean.valueOf(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT),
       emitNotMatchedTargetRows = false,
       output = mergeRowsOutput,
       joinPlan)

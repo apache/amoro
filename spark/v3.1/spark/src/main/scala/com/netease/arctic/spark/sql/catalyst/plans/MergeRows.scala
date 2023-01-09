@@ -14,6 +14,7 @@ case class MergeRows(
                       targetOutput: Seq[Expression],
                       rowIdAttrs: Seq[Attribute],
                       performCardinalityCheck: Boolean,
+                      unMatchedRowCheck: Boolean,
                       emitNotMatchedTargetRows: Boolean,
                       output: Seq[Attribute],
                       child: LogicalPlan) extends UnaryNode {

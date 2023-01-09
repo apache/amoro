@@ -18,6 +18,7 @@ case class MergeRowsExec(
                           targetOutput: Seq[Expression],
                           rowIdAttrs: Seq[Attribute],
                           performCardinalityCheck: Boolean,
+                          unMatchedRowCheck: Boolean,
                           emitNotMatchedTargetRows: Boolean,
                           output: Seq[Attribute],
                           child: SparkPlan) extends UnaryExecNode {
@@ -126,7 +127,8 @@ case class MergeRowsExec(
       val isSourceRowPresent = isSourceRowPresentPred.eval(inputRow)
       val isTargetRowPresent = isTargetRowPresentPred.eval(inputRow)
 
-      if (isSourceRowPresent && isTargetRowPresent) {
+      if ((isSourceRowPresent && isTargetRowPresent) ||
+        (isSourceRowPresent && !isTargetRowPresent && unMatchedRowCheck)) {
         val currentRowId = rowIdProj.apply(inputRow)
         if (currentRowId == lastMatchedRowId) {
           throw new SparkException(

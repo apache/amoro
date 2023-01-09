@@ -1,5 +1,6 @@
 package com.netease.arctic.spark;
 
+import org.apache.spark.SparkException;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.After;
@@ -22,6 +23,7 @@ public class TestMergeInto extends SparkTestBase{
     sql("CREATE TABLE {0}.{1} (" +
         "id int, data string, primary key(id)) " +
         "USING arctic", database, srcTableA) ;
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d'')", database, tgTableA);
   }
 
   @After
@@ -32,7 +34,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithAllCauses() {
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -56,11 +58,14 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeIntoEmptyTargetInsertAllNonMatchingRows() {
+    sql("CREATE TABLE {0}.{1} (" +
+        "id int, data string, primary key(id)) " +
+        "USING arctic", database, "emptyTable") ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
         "WHEN NOT MATCHED THEN " +
-        "  INSERT *", database, tgTableA, srcTableA);
+        "  INSERT *", database, "emptyTable", srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
         row(1, "d"), // new
         row(2, "e"), // new
@@ -68,16 +73,20 @@ public class TestMergeInto extends SparkTestBase{
         row(6, "f")  // new
     );
     assertEquals("Should have expected rows", expectedRows,
-        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, "emptyTable"));
+    sql("drop table {0}.{1}", database, "emptyTable");
   }
 
   @Test
   public void testMergeIntoEmptyTargetInsertOnlyMatchingRows() {
+    sql("CREATE TABLE {0}.{1} (" +
+        "id int, data string, primary key(id)) " +
+        "USING arctic", database, "emptyTable") ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
         "WHEN NOT MATCHED AND (s.id >=2) THEN " +
-        "  INSERT *", database, tgTableA, srcTableA);
+        "  INSERT *", database, "emptyTable", srcTableA);
 
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
         row(2, "e"), // new
@@ -85,12 +94,13 @@ public class TestMergeInto extends SparkTestBase{
         row(6, "f")  // new
     );
     assertEquals("Should have expected rows", expectedRows,
-        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, "emptyTable"));
+    sql("drop table {0}.{1}", database, "emptyTable");
   }
 
   @Test
   public void testMergeWithOnlyUpdateClause() {
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -108,7 +118,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithOnlyDeleteClause() {
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -125,7 +135,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithAllCausesWithExplicitColumnSpecification() {
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -149,7 +159,7 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithUnconditionalDelete() {
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d''), (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -216,7 +226,6 @@ public class TestMergeInto extends SparkTestBase{
         "(1, ''v1_1'', -1), " +
         "(3, ''v3'', -1), " +
         "(4, ''v4'' ,-1)", database, "source");
-
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
         "WHEN MATCHED THEN " +
@@ -235,4 +244,85 @@ public class TestMergeInto extends SparkTestBase{
     sql("drop table {0}.{1}", database, "source");
   }
 
+  @Test
+  public void testMergeOnColumnWithoutPrimaryKey() {
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
+    Assert.assertThrows(UnsupportedOperationException.class,
+        () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id +1 and t.data==s.data " +
+        "WHEN MATCHED THEN " +
+        "  DELETE " +
+        "WHEN NOT MATCHED THEN " +
+        "  INSERT * ", database, tgTableA, srcTableA));
+  }
+
+  @Test
+  public void testMergeMatchedMulitRowsForOneKey() {
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (6, ''d'')", database, srcTableA);
+    Assert.assertThrows(SparkException.class,
+        () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+        "ON t.id == s.id " +
+        "WHEN MATCHED AND t.id = 1 THEN " +
+        "  DELETE " +
+        "WHEN MATCHED AND t.id = 6 THEN " +
+        "  UPDATE SET t.id = s.id, t.data = s.data  " +
+        "WHEN MATCHED AND t.id = 4 THEN " +
+        "  UPDATE SET t.id = s.id, t.data = s.data  " +
+        "WHEN NOT MATCHED AND s.id != 1 THEN " +
+        "  INSERT (t.id, t.data) VALUES (s.id, s.data)", database, tgTableA, srcTableA));
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(1, "a"), // kept
+        row(4, "d"), // kept
+        row(5, "e"), // kept
+        row(6, "c")  // kept
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
+
+  @Test
+  public void testMergeNotMatchedMulitRowsForOneKey() {
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (2, ''e'')", database, srcTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (2, ''c'')", database, srcTableA);
+    Assert.assertThrows(SparkException.class,
+        () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+            "ON t.id == s.id " +
+            "WHEN MATCHED THEN " +
+            "  UPDATE SET * " +
+            "WHEN NOT MATCHED THEN " +
+            "  INSERT (t.id, t.data) VALUES (s.id, s.data)", database, tgTableA, srcTableA));
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(1, "a"), // kept
+        row(4, "d"), // kept
+        row(5, "e"), // kept
+        row(6, "c")  // kept
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
+
+  @Test
+  public void testMergeSourceTableIsNonArcticTable() {
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
+    sql("CREATE TABLE {0}.{1} (" +
+        "id INT, data STRING) " +
+        "STORED AS parquet", database, "source") ;
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, "source");
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+            "ON t.id == s.id " +
+            "WHEN MATCHED THEN " +
+            "  DELETE " +
+            "WHEN NOT MATCHED THEN " +
+            "  INSERT * ", database, tgTableA, "source");
+    ImmutableList<Object[]> expectedRows = ImmutableList.of(
+        row(2, "e"), // new
+        row(5, "e") // kept
+    );
+    assertEquals("Should have expected rows", expectedRows,
+        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+  }
 }
