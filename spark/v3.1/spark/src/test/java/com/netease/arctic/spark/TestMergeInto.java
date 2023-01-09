@@ -28,6 +28,7 @@ public class TestMergeInto extends SparkTestBase{
         "id INT, data STRING) " +
         "STORED AS parquet", database, hiveTable) ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d'')", database, tgTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
   }
 
   @After
@@ -39,7 +40,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithAllCauses() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -105,7 +105,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithOnlyUpdateClause() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -123,7 +122,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithOnlyDeleteClause() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -140,7 +138,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithAllCausesWithExplicitColumnSpecification() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -164,7 +161,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeWithUnconditionalDelete() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
@@ -251,7 +247,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeOnColumnWithoutPrimaryKey() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     Assert.assertThrows(UnsupportedOperationException.class,
         () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
@@ -264,7 +259,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeMatchedMulitRowsForOneKey() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("INSERT INTO TABLE {0}.{1} VALUES (6, ''d'')", database, srcTableA);
     Assert.assertThrows(SparkException.class,
@@ -290,7 +284,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeNotMatchedMulitRowsForOneKey() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (2, ''e'')", database, srcTableA);
     sql("INSERT INTO TABLE {0}.{1} VALUES (2, ''c'')", database, srcTableA);
     Assert.assertThrows(SparkException.class,
@@ -312,7 +305,6 @@ public class TestMergeInto extends SparkTestBase{
 
   @Test
   public void testMergeSourceTableIsNonArcticTable() {
-    sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, hiveTable);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
             "ON t.id == s.id " +
