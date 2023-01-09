@@ -135,6 +135,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
   @After
   public void dropTable() {
+    miniClusterResource.cancelAllJobs();
     testCatalog.dropTable(FAIL_TABLE_ID, true);
   }
 
