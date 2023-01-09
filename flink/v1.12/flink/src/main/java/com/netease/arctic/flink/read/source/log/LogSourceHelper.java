@@ -174,10 +174,6 @@ public class LogSourceHelper implements Serializable {
     upstreamEpicStartOffsets.putIfAbsent(key, startOffset);
   }
 
-  private String combineUpstreamIdAndPartition(String upstreamId, int partition) {
-    return upstreamId + "_" + partition;
-  }
-
   private String combineTopicPartitionAndUpstreamIdAndEpicNo(TopicPartition tp, String upstreamId, long epicNo) {
     return combineTopicPartitionAndUpstreamId(tp, upstreamId) + "_" + epicNo;
   }
@@ -204,7 +200,13 @@ public class LogSourceHelper implements Serializable {
     private static final long serialVersionUID = 1L;
     private final long epicNo;
     private final String upstreamId;
+    /**
+     * @see LogKafkaPartitionSplit#retractStopOffset
+     */
     private final long retractStoppingOffset;
+    /**
+     * @see LogKafkaPartitionSplit#revertStartOffset
+     */
     private final long revertStartingOffset;
 
     public EpicRetractingInfo(long epicNo, String upstreamId, long retractStoppingOffset, long revertStartingOffset) {

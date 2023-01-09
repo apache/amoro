@@ -174,10 +174,6 @@ public class LogSourceHelper implements Serializable {
     upstreamEpicStartOffsets.putIfAbsent(key, startOffset);
   }
 
-  private String combineUpstreamIdAndPartition(String upstreamId, int partition) {
-    return upstreamId + "_" + partition;
-  }
-
   private String combineTopicPartitionAndUpstreamIdAndEpicNo(TopicPartition tp, String upstreamId, long epicNo) {
     return combineTopicPartitionAndUpstreamId(tp, upstreamId) + "_" + epicNo;
   }

@@ -28,8 +28,17 @@ public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> 
    * In this mode, data would be read in reverse order and opposite RowKind.
    */
   private final boolean retracting;
+  /**
+   * @see LogKafkaPartitionSplit#retractStopOffset
+   */
   private final Long retractStoppingOffset;
+  /**
+   * @see LogKafkaPartitionSplit#revertStartOffset
+   */
   private final Long revertStartingOffset;
+  /**
+   * @see LogKafkaPartitionSplit#retractingEpicNo
+   */
   private final Long retractingEpicNo;
   private final LogData<T> logData;
   private final T actualValue;

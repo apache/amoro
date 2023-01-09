@@ -23,8 +23,6 @@ import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 import org.apache.flink.table.data.RowData;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 
@@ -35,12 +33,24 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
    * In this mode, data would be read in reverse order and opposite RowKind.
    */
   private boolean retracting;
+  /**
+   * @see LogKafkaPartitionSplit#retractStopOffset
+   */
   @Nullable
   private Long retractStopOffset;
+  /**
+   * @see LogKafkaPartitionSplit#revertStartOffset
+   */
   @Nullable
   private Long revertStartOffset;
+  /**
+   * @see LogKafkaPartitionSplit#retractingEpicNo
+   */
   @Nullable
   private Long retractingEpicNo;
+  /**
+   * @see LogKafkaPartitionSplit#retractingUpstreamId
+   */
   @Nullable
   private String retractingUpstreamId;
   /**

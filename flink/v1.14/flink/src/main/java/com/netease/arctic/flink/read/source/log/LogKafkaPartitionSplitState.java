@@ -33,12 +33,24 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
    * In this mode, data would be read in reverse order and opposite RowKind.
    */
   private boolean retracting;
+  /**
+   * @see LogKafkaPartitionSplit#retractStopOffset
+   */
   @Nullable
   private Long retractStopOffset;
+  /**
+   * @see LogKafkaPartitionSplit#revertStartOffset
+   */
   @Nullable
   private Long revertStartOffset;
+  /**
+   * @see LogKafkaPartitionSplit#retractingEpicNo
+   */
   @Nullable
   private Long retractingEpicNo;
+  /**
+   * @see LogKafkaPartitionSplit#retractingUpstreamId
+   */
   @Nullable
   private String retractingUpstreamId;
   /**
