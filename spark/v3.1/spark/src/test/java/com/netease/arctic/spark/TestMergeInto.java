@@ -46,9 +46,9 @@ public class TestMergeInto extends SparkTestBase{
         "  INSERT *", database, tgTableA, srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
         row(2, "e"), // new
-        row(4, "g"), // new
-        row(5, "e"), // new
-        row(6, "f")  // new
+        row(4, "g"), // update
+        row(5, "e"), // kept
+        row(6, "f")  // update
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
@@ -97,10 +97,10 @@ public class TestMergeInto extends SparkTestBase{
         "WHEN MATCHED AND t.id = 1 THEN " +
         "  UPDATE SET *", database, tgTableA, srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
-        row(1, "d"), // new
-        row(4, "d"), // new
-        row(5, "e"), // new
-        row(6, "c")  // new
+        row(1, "d"), // update
+        row(4, "d"), // kept
+        row(5, "e"), // kept
+        row(6, "c")  // kept
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
@@ -115,9 +115,9 @@ public class TestMergeInto extends SparkTestBase{
         "WHEN MATCHED AND t.id = 6 THEN" +
         "  DELETE", database, tgTableA, srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
-        row(1, "a"), // new
-        row(4, "d"), // new
-        row(5, "e")  // new
+        row(1, "a"), // kept
+        row(4, "d"), // kept
+        row(5, "e")  // kept
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
@@ -139,9 +139,9 @@ public class TestMergeInto extends SparkTestBase{
         "  INSERT (t.id, t.data) VALUES (s.id, s.data)", database, tgTableA, srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
         row(2, "e"), // new
-        row(4, "g"), // new
-        row(5, "e"), // new
-        row(6, "f")  // new
+        row(4, "g"), // update
+        row(5, "e"), // kept
+        row(6, "f")  // update
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
@@ -159,7 +159,7 @@ public class TestMergeInto extends SparkTestBase{
         "  INSERT * ", database, tgTableA, srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
         row(2, "e"), // new
-        row(5, "e") // new
+        row(5, "e") // kept
     );
     assertEquals("Should have expected rows", expectedRows,
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
