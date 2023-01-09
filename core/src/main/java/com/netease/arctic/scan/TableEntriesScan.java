@@ -66,7 +66,6 @@ public class TableEntriesScan {
   private final Set<FileContent> validFileContent;
 
   private Table entriesTable;
-  private PartitionSpec spec;
   private InclusiveMetricsEvaluator lazyMetricsEvaluator = null;
   private Map<String, Integer> lazyIndexOfDataFileType;
   private Map<String, Integer> lazyIndexOfEntryType;
@@ -242,26 +241,18 @@ public class TableEntriesScan {
     return file;
   }
 
-  private PartitionSpec spec() {
-    if (spec == null) {
-      spec = table.spec();
-    }
-    return spec;
-  }
-
-
   private DataFile buildDataFile(StructLike fileRecord) {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    DataFiles.Builder builder = DataFiles.builder(spec())
+    DataFiles.Builder builder = DataFiles.builder(table.spec())
         .withPath(filePath)
         .withFileSizeInBytes(fileSize)
         .withRecordCount(recordCount);
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
-    if (spec().isPartitioned()) {
+    if (table.spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
     }
@@ -272,14 +263,14 @@ public class TableEntriesScan {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
     Long recordCount = fileRecord.get(dataFileFieldIndex(DataFile.RECORD_COUNT.name()), Long.class);
-    FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(spec())
+    FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(table.spec())
         .withPath(filePath)
         .withFileSizeInBytes(fileSize)
         .withRecordCount(recordCount);
     if (needMetrics()) {
       builder.withMetrics(buildMetrics(fileRecord));
     }
-    if (spec().isPartitioned()) {
+    if (table.spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
     }
@@ -331,9 +322,9 @@ public class TableEntriesScan {
     if (lazyMetricsEvaluator == null) {
       if (dataFilter != null) {
         this.lazyMetricsEvaluator =
-            new InclusiveMetricsEvaluator(spec().schema(), dataFilter);
+            new InclusiveMetricsEvaluator(table.spec().schema(), dataFilter);
       } else {
-        this.lazyMetricsEvaluator = new AlwaysTrueEvaluator(spec().schema());
+        this.lazyMetricsEvaluator = new AlwaysTrueEvaluator(table.spec().schema());
       }
     }
     return lazyMetricsEvaluator;
