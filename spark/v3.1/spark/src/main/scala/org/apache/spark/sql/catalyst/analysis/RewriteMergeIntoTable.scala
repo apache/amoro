@@ -50,7 +50,7 @@ object RewriteMergeIntoTable extends RewriteRowLevelCommand {
     table match {
       case arctic: ArcticSparkTable =>
         val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-        val condRefs = cond.references.filter(f => !primarys.contains(f.name))
+        val condRefs = cond.references.filter(f => primarys.contains(f.name))
         if (!condRefs.isEmpty) {
           throw new UnsupportedOperationException(s"Condition ${condRefs.mkString}. is not allowed because is not a primary key")
         }

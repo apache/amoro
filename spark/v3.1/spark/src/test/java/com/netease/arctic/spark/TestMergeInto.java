@@ -12,6 +12,7 @@ public class TestMergeInto extends SparkTestBase{
 
   private final String tgTableA = "tgTableA";
   private final String srcTableA = "srcTableA";
+  private final String hiveTable = "hiveTable";
 
   @Before
   public void before() {
@@ -23,6 +24,9 @@ public class TestMergeInto extends SparkTestBase{
     sql("CREATE TABLE {0}.{1} (" +
         "id int, data string, primary key(id)) " +
         "USING arctic", database, srcTableA) ;
+    sql("CREATE TABLE {0}.{1} (" +
+        "id INT, data STRING) " +
+        "STORED AS parquet", database, hiveTable) ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''a''), (4, ''d'')", database, tgTableA);
   }
 
@@ -30,6 +34,7 @@ public class TestMergeInto extends SparkTestBase{
   public void cleanUp() {
     sql("drop table {0}.{1}", database, tgTableA);
     sql("drop table {0}.{1}", database, srcTableA);
+    sql("drop table {0}.{1}", database, hiveTable);
   }
 
   @Test
@@ -308,16 +313,13 @@ public class TestMergeInto extends SparkTestBase{
   @Test
   public void testMergeSourceTableIsNonArcticTable() {
     sql("INSERT INTO TABLE {0}.{1} VALUES (5, ''e''), (6, ''c'')", database, tgTableA);
-    sql("CREATE TABLE {0}.{1} (" +
-        "id INT, data STRING) " +
-        "STORED AS parquet", database, "source") ;
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, "source");
+    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, hiveTable);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
             "ON t.id == s.id " +
             "WHEN MATCHED THEN " +
             "  DELETE " +
             "WHEN NOT MATCHED THEN " +
-            "  INSERT * ", database, tgTableA, "source");
+            "  INSERT * ", database, tgTableA, hiveTable);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
         row(2, "e"), // new
         row(5, "e") // kept
