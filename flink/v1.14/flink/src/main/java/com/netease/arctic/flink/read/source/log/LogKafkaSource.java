@@ -50,19 +50,14 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSUMER_CHANGELOG_MODE;
 
 /**
- * The Source implementation of Kafka. Please use a {@link KafkaSourceBuilder} to construct a {@link
- * KafkaSource}. The following example shows how to create a KafkaSource emitting records of <code>
- * String</code> type.
+ * The Source implementation of LogKafka.
  *
  * <pre>{@code
- * KafkaSource<String> source = KafkaSource
- *     .<String>builder()
- *     .setBootstrapServers(KafkaSourceTestEnv.brokerConnectionStrings)
- *     .setGroupId("MyGroup")
- *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
- *     .setDeserializer(new TestingKafkaRecordDeserializer())
- *     .setStartingOffsets(OffsetsInitializer.earliest())
- *     .build();
+ * LogKafkaSource source = LogKafkaSource.builder(arcticSchema, configuration)
+ *    .setTopics(Arrays.asList(TOPIC1))
+ *    .setStartingOffsets(OffsetsInitializer.earliest())
+ *    .setProperties(properties)
+ *    .build();
  * }</pre>
  *
  * <p>See {@link KafkaSourceBuilder} for more details.
@@ -96,9 +91,9 @@ public class LogKafkaSource extends KafkaSource<RowData> {
   }
 
   /**
-   * Get a kafkaSourceBuilder to build a {@link KafkaSource}.
+   * Get a logKafkaSourceBuilder to build a {@link LogKafkaSource}.
    *
-   * @return a Kafka source builder.
+   * @return a Log Kafka source builder.
    */
   public static LogKafkaSourceBuilder builder(Schema schema, Map<String, String> tableProperties) {
     return new LogKafkaSourceBuilder(schema, tableProperties);

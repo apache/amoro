@@ -35,7 +35,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -46,47 +45,16 @@ import java.util.regex.Pattern;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
- * The @builder class for {@link KafkaSource} to make it easier for the users to construct a {@link
- * KafkaSource}.
- *
- * <p>The following example shows the minimum setup to create a KafkaSource that reads the String
- * values from a Kafka topic.
+ * The @builder class for {@link LogKafkaSource} to make it easier for the users to construct a {@link
+ * LogKafkaSource}.
  *
  * <pre>{@code
- * KafkaSource<String> source = KafkaSource
- *     .<String>builder()
- *     .setBootstrapServers(MY_BOOTSTRAP_SERVERS)
- *     .setGroupId("myGroup")
- *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
- *     .setDeserializer(KafkaRecordDeserializer.valueOnly(StringDeserializer.class))
- *     .build();
+ * LogKafkaSource source = LogKafkaSource.builder(arcticSchema, configuration)
+ *    .setTopics(Arrays.asList(TOPIC1))
+ *    .setStartingOffsets(OffsetsInitializer.earliest())
+ *    .setProperties(properties)
+ *    .build();
  * }</pre>
- *
- * <p>The bootstrap servers, group id, topics/partitions to consume, and the record deserializer are
- * required fields that must be set.
- *
- * <p>To specify the starting offsets of the KafkaSource, one can call {@link
- * #setStartingOffsets(OffsetsInitializer)}.
- *
- * <p>By default the KafkaSource runs in an {@link Boundedness#CONTINUOUS_UNBOUNDED} mode and never
- * stops until the Flink job is canceled or fails. To let the KafkaSource run in {@link
- * Boundedness#CONTINUOUS_UNBOUNDED} but stops at some given offsets, one can call {@link
- * #setUnbounded(OffsetsInitializer)}. For example the following KafkaSource stops after it consumes
- * up to the latest partition offsets at the point when the Flink started.
- *
- * <pre>{@code
- * KafkaSource<String> source = KafkaSource
- *     .<String>builder()
- *     .setBootstrapServers(MY_BOOTSTRAP_SERVERS)
- *     .setGroupId("myGroup")
- *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
- *     .setDeserializer(KafkaRecordDeserializer.valueOnly(StringDeserializer.class))
- *     .setUnbounded(OffsetsInitializer.latest())
- *     .build();
- * }</pre>
- *
- * <p>Check the Java docs of each individual methods to learn more about the settings to build a
- * KafkaSource.
  */
 public class LogKafkaSourceBuilder {
   private static final Logger LOG = LoggerFactory.getLogger(KafkaSourceBuilder.class);
@@ -123,33 +91,29 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Sets the bootstrap servers for the KafkaConsumer of the KafkaSource.
+   * Sets the bootstrap servers for the KafkaConsumer of the LogKafkaSource.
    *
    * @param bootstrapServers the bootstrap servers of the Kafka cluster.
-   * @return this KafkaSourceBuilder.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setBootstrapServers(String bootstrapServers) {
     return setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
   }
 
   /**
-   * Sets the consumer group id of the KafkaSource.
+   * Sets the consumer group id of the LogKafkaSource.
    *
-   * @param groupId the group id of the KafkaSource.
-   * @return this KafkaSourceBuilder.
+   * @param groupId the group id of the LogKafkaSource.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setGroupId(String groupId) {
     return setProperty(ConsumerConfig.GROUP_ID_CONFIG, groupId);
   }
 
   /**
-   * Set a list of topics the KafkaSource should consume from. All the topics in the list should
+   * Set a list of topics the LogKafkaSource should consume from. All the topics in the list should
    * have existed in the Kafka cluster. Otherwise an exception will be thrown. To allow some of
    * the topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
-   *
-   * @param topics the list of topics to consume from.
-   * @return this KafkaSourceBuilder.
-   * @see org.apache.kafka.clients.consumer.KafkaConsumer#subscribe(Collection)
    */
   public LogKafkaSourceBuilder setTopics(List<String> topics) {
     ensureSubscriberIsNull("topics");
@@ -158,13 +122,12 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Set a list of topics the KafkaSource should consume from. All the topics in the list should
+   * Set a list of topics the LogKafkaSource should consume from. All the topics in the list should
    * have existed in the Kafka cluster. Otherwise an exception will be thrown. To allow some of
    * the topics to be created lazily, please use {@link #setTopicPattern(Pattern)} instead.
    *
    * @param topics the list of topics to consume from.
-   * @return this KafkaSourceBuilder.
-   * @see org.apache.kafka.clients.consumer.KafkaConsumer#subscribe(Collection)
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setTopics(String... topics) {
     return setTopics(Arrays.asList(topics));
@@ -174,8 +137,7 @@ public class LogKafkaSourceBuilder {
    * Set a topic pattern to consume from use the java {@link Pattern}.
    *
    * @param topicPattern the pattern of the topic name to consume from.
-   * @return this KafkaSourceBuilder.
-   * @see org.apache.kafka.clients.consumer.KafkaConsumer#subscribe(Pattern)
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setTopicPattern(Pattern topicPattern) {
     ensureSubscriberIsNull("topic pattern");
@@ -187,8 +149,7 @@ public class LogKafkaSourceBuilder {
    * Set a set of partitions to consume from.
    *
    * @param partitions the set of partitions to consume from.
-   * @return this KafkaSourceBuilder.
-   * @see org.apache.kafka.clients.consumer.KafkaConsumer#assign(Collection)
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setPartitions(Set<TopicPartition> partitions) {
     ensureSubscriberIsNull("partitions");
@@ -197,7 +158,7 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Specify from which offsets the KafkaSource should start consume from by providing an {@link
+   * Specify from which offsets the LogKafkaSource should start consume from by providing an {@link
    * OffsetsInitializer}.
    *
    * <p>The following {@link OffsetsInitializer}s are commonly used and provided out of the box.
@@ -226,7 +187,7 @@ public class LogKafkaSourceBuilder {
    *
    * @param startingOffsetsInitializer the {@link OffsetsInitializer} setting the starting offsets
    *                                   for the Source.
-   * @return this KafkaSourceBuilder.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setStartingOffsets(
       OffsetsInitializer startingOffsetsInitializer) {
@@ -235,7 +196,7 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * By default the KafkaSource is set to run in {@link Boundedness#CONTINUOUS_UNBOUNDED} manner
+   * By default the LogKafkaSource is set to run in {@link Boundedness#CONTINUOUS_UNBOUNDED} manner
    * and thus never stops until the Flink job fails or is canceled. To let the KafkaSource run as
    * a streaming source but still stops at some point, one can set an {@link OffsetsInitializer}
    * to specify the stopping offsets for each partition. When all the partitions have reached
@@ -266,7 +227,7 @@ public class LogKafkaSourceBuilder {
    *
    * @param stoppingOffsetsInitializer The {@link OffsetsInitializer} to specify the stopping
    *                                   offset.
-   * @return this KafkaSourceBuilder.
+   * @return this LogKafkaSourceBuilder.
    * @see #setBounded(OffsetsInitializer)
    */
   public LogKafkaSourceBuilder setUnbounded(OffsetsInitializer stoppingOffsetsInitializer) {
@@ -276,7 +237,7 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * By default the KafkaSource is set to run in {@link Boundedness#CONTINUOUS_UNBOUNDED} manner
+   * By default the LogKafkaSource is set to run in {@link Boundedness#CONTINUOUS_UNBOUNDED} manner
    * and thus never stops until the Flink job fails or is canceled. To let the KafkaSource run in
    * {@link Boundedness#BOUNDED} manner and stops at some point, one can set an {@link
    * OffsetsInitializer} to specify the stopping offsets for each partition. When all the
@@ -306,7 +267,7 @@ public class LogKafkaSourceBuilder {
    *
    * @param stoppingOffsetsInitializer the {@link OffsetsInitializer} to specify the stopping
    *                                   offsets.
-   * @return this KafkaSourceBuilder.
+   * @return this LogKafkaSourceBuilder.
    * @see #setUnbounded(OffsetsInitializer)
    */
   public LogKafkaSourceBuilder setBounded(OffsetsInitializer stoppingOffsetsInitializer) {
@@ -317,11 +278,11 @@ public class LogKafkaSourceBuilder {
 
   /**
    * Sets the {@link KafkaRecordDeserializationSchema deserializer} of the {@link
-   * org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord} for KafkaSource.
+   * org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord} for LogKafkaSource.
    *
    * @param recordDeserializer the deserializer for Kafka {@link
    *     org.apache.kafka.clients.consumer.ConsumerRecord ConsumerRecord}.
-   * @return this KafkaSourceBuilder.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setDeserializer(
       KafkaRecordDeserializationSchema<RowData> recordDeserializer) {
@@ -330,17 +291,17 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Sets the client id prefix of this KafkaSource.
+   * Sets the client id prefix of this LogKafkaSource.
    *
-   * @param prefix the client id prefix to use for this KafkaSource.
-   * @return this KafkaSourceBuilder.
+   * @param prefix the client id prefix to use for this LogKafkaSource.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setClientIdPrefix(String prefix) {
     return setProperty(KafkaSourceOptions.CLIENT_ID_PREFIX.key(), prefix);
   }
 
   /**
-   * Set an arbitrary property for the KafkaSource and KafkaConsumer. The valid keys can be found
+   * Set an arbitrary property for the LogKafkaSource and LogKafkaConsumer. The valid keys can be found
    * in {@link ConsumerConfig} and {@link KafkaSourceOptions}.
    *
    * <p>Note that the following keys will be overridden by the builder when the KafkaSource is
@@ -358,7 +319,7 @@ public class LogKafkaSourceBuilder {
    *
    * @param key   the key of the property.
    * @param value the value of the property.
-   * @return this KafkaSourceBuilder.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setProperty(String key, String value) {
     props.setProperty(key, value);
@@ -366,7 +327,7 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Set arbitrary properties for the KafkaSource and KafkaConsumer. The valid keys can be found
+   * Set arbitrary properties for the LogKafkaSource and LogKafkaConsumer. The valid keys can be found
    * in {@link ConsumerConfig} and {@link KafkaSourceOptions}.
    *
    * <p>Note that the following keys will be overridden by the builder when the KafkaSource is
@@ -384,8 +345,8 @@ public class LogKafkaSourceBuilder {
    *       "group.id-RANDOM_LONG" if the client id prefix is not set.
    * </ul>
    *
-   * @param props the properties to set for the KafkaSource.
-   * @return this KafkaSourceBuilder.
+   * @param props the properties to set for the LogKafkaSource.
+   * @return this LogKafkaSourceBuilder.
    */
   public LogKafkaSourceBuilder setProperties(Properties props) {
     this.props.putAll(props);
@@ -393,9 +354,9 @@ public class LogKafkaSourceBuilder {
   }
 
   /**
-   * Build the {@link KafkaSource}.
+   * Build the {@link LogKafkaSource}.
    *
-   * @return a KafkaSource with the settings made for this builder.
+   * @return a LogKafkaSource with the settings made for this builder.
    */
   public LogKafkaSource build() {
     sanityCheck();
