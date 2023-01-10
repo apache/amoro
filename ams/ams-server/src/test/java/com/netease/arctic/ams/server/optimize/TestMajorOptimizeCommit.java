@@ -30,7 +30,7 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.Snapshot;
@@ -110,7 +110,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
       optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
       if (targetFiles != null) {
         optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
-        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtil::toByteBuffer).collect(Collectors.toList()));
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
       }
       // 1min
       optimizeRuntime.setCostTime(60 * 1000);
@@ -197,6 +197,136 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     Assert.assertEquals(0, newDeleteFilesPath.size());
     Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
     Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
+  }
+
+  @Test
+  public void testMajorOptimizeRepeatCommit() throws Exception {
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
+    baseDataFilesInfo.addAll(baseDataFiles.stream()
+        .map(dataFile ->
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+        .collect(Collectors.toList()));
+
+    Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
+            testKeyedTable.asKeyedTable()))
+        .collect(Collectors.toList()));
+
+    Set<String> oldDataFilesPath = new HashSet<>();
+    Set<String> oldDeleteFilesPath = new HashSet<>();
+    testKeyedTable.baseTable().newScan().planFiles()
+        .forEach(fileScanTask -> {
+          oldDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> oldDeleteFilesPath.add((String) deleteFile.path()));
+        });
+
+    testKeyedTable.updateProperties().
+        set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
+    TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
+        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
+    List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
+      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      List<DataFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
+      optimizeRuntime.setPreparedTime(System.currentTimeMillis());
+      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
+      optimizeRuntime.setReportTime(System.currentTimeMillis());
+      optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
+      if (targetFiles != null) {
+        optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
+      }
+      // 1min
+      optimizeRuntime.setCostTime(60 * 1000);
+      return new OptimizeTaskItem(task, optimizeRuntime);
+    }).collect(Collectors.toList());
+    Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
+        .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
+
+    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    long baseSnapshotId = testKeyedTable.baseTable().currentSnapshot().snapshotId();
+    optimizeCommit.commit(baseSnapshotId);
+
+    Set<String> newDataFilesPath = new HashSet<>();
+    Set<String> newDeleteFilesPath = new HashSet<>();
+    testKeyedTable.baseTable().newScan().planFiles()
+        .forEach(fileScanTask -> {
+          newDataFilesPath.add((String) fileScanTask.file().path());
+          fileScanTask.deletes().forEach(deleteFile -> newDeleteFilesPath.add((String) deleteFile.path()));
+        });
+    Assert.assertNotEquals(oldDataFilesPath, newDataFilesPath);
+    Assert.assertNotEquals(oldDeleteFilesPath, newDeleteFilesPath);
+
+    optimizeCommit.commit(baseSnapshotId);
+    Assert.assertTrue(testKeyedTable.io().exists(newDataFilesPath.iterator().next()));
+  }
+
+  @Test
+  public void testMajorOptimizeConflictCommit() throws Exception {
+    Pair<Snapshot, List<DataFile>> insertBaseResult = insertTableBaseDataFiles(testKeyedTable, 1L);
+    List<DataFile> baseDataFiles = insertBaseResult.second();
+    baseDataFilesInfo.addAll(baseDataFiles.stream()
+        .map(dataFile ->
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+        .collect(Collectors.toList()));
+
+    Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
+        .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex())).collect(Collectors.toSet());
+    Pair<Snapshot, List<DeleteFile>> deleteResult =
+        insertBasePosDeleteFiles(testKeyedTable, 2L, baseDataFiles, targetNodes);
+    List<DeleteFile> deleteFiles = deleteResult.second();
+    posDeleteFilesInfo.addAll(deleteFiles.stream()
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, deleteResult.first(),
+            testKeyedTable.asKeyedTable()))
+        .collect(Collectors.toList()));
+
+    testKeyedTable.updateProperties().
+        set(TableProperties.SELF_OPTIMIZING_MAJOR_TRIGGER_DUPLICATE_RATIO, "0").commit();
+    TableOptimizeRuntime tableOptimizeRuntime = new TableOptimizeRuntime(testKeyedTable.id());
+    MajorOptimizePlan majorOptimizePlan = new MajorOptimizePlan(testKeyedTable,
+        tableOptimizeRuntime, baseDataFilesInfo, posDeleteFilesInfo,
+        new HashMap<>(), 1, System.currentTimeMillis(), snapshotId -> true);
+    List<BaseOptimizeTask> tasks = majorOptimizePlan.plan();
+
+    Map<TreeNode, List<DataFile>> resultFiles = generateTargetFiles(testKeyedTable);
+    List<OptimizeTaskItem> taskItems = tasks.stream().map(task -> {
+      BaseOptimizeTaskRuntime optimizeRuntime = new BaseOptimizeTaskRuntime(task.getTaskId());
+      List<DataFile> targetFiles = resultFiles.get(task.getSourceNodes().get(0));
+      optimizeRuntime.setPreparedTime(System.currentTimeMillis());
+      optimizeRuntime.setStatus(OptimizeStatus.Prepared);
+      optimizeRuntime.setReportTime(System.currentTimeMillis());
+      optimizeRuntime.setNewFileCnt(targetFiles == null ? 0 : targetFiles.size());
+      if (targetFiles != null) {
+        optimizeRuntime.setNewFileSize(targetFiles.get(0).fileSizeInBytes());
+        optimizeRuntime.setTargetFiles(targetFiles.stream().map(SerializationUtils::toByteBuffer).collect(Collectors.toList()));
+      }
+      // 1min
+      optimizeRuntime.setCostTime(60 * 1000);
+      return new OptimizeTaskItem(task, optimizeRuntime);
+    }).collect(Collectors.toList());
+    Map<String, List<OptimizeTaskItem>> partitionTasks = taskItems.stream()
+        .collect(Collectors.groupingBy(taskItem -> taskItem.getOptimizeTask().getPartition()));
+
+    testKeyedTable.asKeyedTable().baseTable().newDelete().deleteFile(baseDataFiles.get(0)).commit();
+    BaseOptimizeCommit optimizeCommit = new BaseOptimizeCommit(testKeyedTable, partitionTasks);
+    long baseSnapshotId = testKeyedTable.baseTable().currentSnapshot().snapshotId();
+    optimizeCommit.commit(baseSnapshotId);
+
+    for (List<DataFile> value : resultFiles.values()) {
+      for (DataFile dataFile : value) {
+        Assert.assertFalse(testKeyedTable.io().exists(dataFile.path().toString()));
+      }
+    }
   }
 
   private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable) throws Exception {

@@ -33,10 +33,9 @@ import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
-import org.apache.iceberg.Snapshot;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,19 +102,19 @@ public abstract class BaseArcticOptimizePlan extends BaseOptimizePlan {
 
     List<ByteBuffer> baseFileBytesList =
         baseFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     List<ByteBuffer> insertFileBytesList =
         insertFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     List<ByteBuffer> deleteFileBytesList =
         deleteFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     List<ByteBuffer> posDeleteFileBytesList =
         posDeleteFiles.stream()
-            .map(SerializationUtil::toByteBuffer)
+            .map(SerializationUtils::toByteBuffer)
             .collect(Collectors.toList());
     optimizeTask.setBaseFiles(baseFileBytesList);
     optimizeTask.setInsertFiles(insertFileBytesList);

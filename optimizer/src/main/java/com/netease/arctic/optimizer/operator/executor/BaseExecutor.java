@@ -27,8 +27,9 @@ import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.FileUtil;
-import com.netease.arctic.utils.SerializationUtil;
+import com.netease.arctic.utils.SerializationUtils;
+import com.netease.arctic.utils.TableFileUtils;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -56,26 +57,30 @@ public abstract class BaseExecutor implements Executor {
   protected final OptimizerConfig config;
   protected double factor = 0.9;
 
+  protected final StructLikeCollections structLikeCollections;
+
   public BaseExecutor(NodeTask task, ArcticTable table, long startTime, OptimizerConfig config) {
     this.task = task;
     this.table = table;
     this.startTime = startTime;
     this.config = config;
+    this.structLikeCollections = new StructLikeCollections(config.isEnableSpillMap(),
+          config.getMaxInMemorySizeInBytes());
   }
 
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
     return new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(dataFile ->
-        FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
+        TableFileUtils.parseFileNodeFromFileName(dataFile.path().toString()))));
   }
 
   protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<DeleteFile> deleteFiles) {
     return new HashMap<>(deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->
-        FileUtil.parseFileNodeFromFileName(deleteFile.path().toString()))));
+        TableFileUtils.parseFileNodeFromFileName(deleteFile.path().toString()))));
   }
 
   protected long getMaxTransactionId(List<DataFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> FileUtil.parseFileTidFromFileName(file.path().toString())).max();
+        .mapToLong(file -> TableFileUtils.parseFileTidFromFileName(file.path().toString())).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }
@@ -89,7 +94,7 @@ public abstract class BaseExecutor implements Executor {
     List<ByteBuffer> baseFileBytesList = new ArrayList<>();
     for (ContentFile<?> targetFile : targetFiles) {
       totalFileSize += targetFile.fileSizeInBytes();
-      baseFileBytesList.add(SerializationUtil.toByteBuffer(targetFile));
+      baseFileBytesList.add(SerializationUtils.toByteBuffer(targetFile));
     }
 
     OptimizeTaskStat optimizeTaskStat = new OptimizeTaskStat();

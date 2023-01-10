@@ -22,17 +22,21 @@ import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.reader.GenericArcticDataReader;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
+import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
@@ -52,6 +56,7 @@ import org.apache.iceberg.deletes.EqualityDeleteWriter;
 import org.apache.iceberg.deletes.PositionDelete;
 import org.apache.iceberg.deletes.PositionDeleteWriter;
 import org.apache.iceberg.encryption.EncryptedOutputFile;
+import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 import org.apache.iceberg.io.DataWriter;
@@ -96,13 +101,28 @@ public class TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_table");
   protected static final TableIdentifier NO_PARTITION_TABLE_ID =
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_no_partition_table");
+  protected static final TableIdentifier PK_UPSERT_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_pk_upsert_table");
+  protected static final TableIdentifier PK_NO_PARTITION_UPSERT_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_no_partition_pk_upsert_table");
+  protected static final TableIdentifier PK_UNION_PARTITION_UPSERT_TABLE_ID =
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_union_partition_pk_upsert_table");
   public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
       Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
   );
+  public static final Schema UNION_TABLE_SCHEMA = new Schema(
+      Types.NestedField.required(1, "id", Types.IntegerType.get()),
+      Types.NestedField.required(2, "name", Types.StringType.get()),
+      Types.NestedField.required(3, "time", Types.StringType.get()),
+      Types.NestedField.required(4, "num", Types.IntegerType.get())
+  );
   public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
       .day("op_time").build();
+
+  public static final PartitionSpec UNION_SPEC = PartitionSpec.builderFor(UNION_TABLE_SCHEMA)
+      .identity("time").identity("num").build();
 
   protected static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);
   protected static final Schema POS_DELETE_SCHEMA = new Schema(
@@ -141,6 +161,9 @@ public class TableTestBase {
   protected UnkeyedTable testTable;
   protected KeyedTable testKeyedTable;
   protected KeyedTable testNoPartitionTable;
+  protected KeyedTable testKeyedUpsertTable;
+  protected KeyedTable testKeyedNoPartitionUpsertTable;
+  protected KeyedTable testKeyedUnionPartitionUpsertTable;
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -177,6 +200,29 @@ public class TableTestBase {
         .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
 
+    testKeyedUpsertTable = testCatalog
+        .newTableBuilder(PK_UPSERT_TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_upsert_table")
+        .withProperty(TableProperties.UPSERT_ENABLED, "true")
+        .withPartitionSpec(SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    testKeyedNoPartitionUpsertTable = testCatalog
+        .newTableBuilder(PK_NO_PARTITION_UPSERT_TABLE_ID, TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_no_partition_upsert_table")
+        .withProperty(TableProperties.UPSERT_ENABLED, "true")
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
+    testKeyedUnionPartitionUpsertTable = testCatalog
+        .newTableBuilder(PK_UNION_PARTITION_UPSERT_TABLE_ID, UNION_TABLE_SCHEMA)
+        .withProperty(TableProperties.LOCATION, tableDir.getPath() + "/pk_union_partition_upsert_table")
+        .withProperty(TableProperties.UPSERT_ENABLED, "true")
+        .withPartitionSpec(UNION_SPEC)
+        .withPrimaryKeySpec(PRIMARY_KEY_SPEC)
+        .create().asKeyedTable();
+
     this.before();
     LOG.info("setupTables end");
   }
@@ -196,6 +242,14 @@ public class TableTestBase {
 
     testCatalog.dropTable(NO_PARTITION_TABLE_ID, true);
     AMS.handler().getTableCommitMetas().remove(NO_PARTITION_TABLE_ID.buildTableIdentifier());
+
+    testCatalog.dropTable(PK_UPSERT_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(PK_UPSERT_TABLE_ID.buildTableIdentifier());
+
+    testCatalog.dropTable(PK_NO_PARTITION_UPSERT_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(PK_NO_PARTITION_UPSERT_TABLE_ID.buildTableIdentifier());
+    testCatalog.dropTable(PK_UNION_PARTITION_UPSERT_TABLE_ID, true);
+    AMS.handler().getTableCommitMetas().remove(PK_UNION_PARTITION_UPSERT_TABLE_ID.buildTableIdentifier());
     LOG.info("clearTable end");
   }
 
@@ -271,6 +325,38 @@ public class TableTestBase {
       throw new RuntimeException(e);
     }
     return result;
+  }
+
+  public static Pair<List<Record>,List<String>>  readKeyedTableWithFilters(KeyedTable keyedTable, Expression expr) {
+    GenericArcticDataReader reader = new GenericArcticDataReader(
+        keyedTable.io(),
+        keyedTable.schema(),
+        keyedTable.schema(),
+        keyedTable.primaryKeySpec(),
+        null,
+        true,
+        IdentityPartitionConverters::convertConstant
+    );
+    List<Record> result = Lists.newArrayList();
+    List<String> path = Lists.newArrayList();
+    KeyedTableScan keyedTableScan = keyedTable.newScan();
+    keyedTableScan = keyedTableScan.filter(expr);
+    try (CloseableIterable<CombinedScanTask> combinedScanTasks = keyedTableScan.planTasks()) {
+      combinedScanTasks.forEach(combinedTask -> combinedTask.tasks().forEach(scTask -> {
+        scTask.insertTasks().stream().forEach(fst -> path.add(fst.file().path().toString()));
+        scTask.arcticEquityDeletes().stream().forEach(fst -> path.add(fst.file().path().toString()));
+        try (CloseableIterator<Record> records = reader.readData(scTask)) {
+          while (records.hasNext()) {
+            result.add(records.next());
+          }
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      }));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return new ImmutablePair<>(result,path);
   }
 
   public static Record newGenericRecord(Schema schema, Object... fields) {
@@ -375,7 +461,7 @@ public class TableTestBase {
   }
 
   public static DeleteFile writePosDeleteFile(Table table, Multimap<String, Long> file2Positions,
-                                               StructLike partitionData) throws IOException {
+                                              StructLike partitionData) throws IOException {
     GenericAppenderFactory appenderFactory =
         new GenericAppenderFactory(table.schema(), table.spec());
     OutputFileFactory outputFileFactory =

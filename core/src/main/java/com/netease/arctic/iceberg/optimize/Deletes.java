@@ -18,13 +18,14 @@
 
 package com.netease.arctic.iceberg.optimize;
 
+import com.netease.arctic.utils.StructLikeSet;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.types.Comparators;
@@ -64,10 +65,14 @@ public class Deletes {
     return filter.filter(rows);
   }
 
-  public static StructLikeSet toEqualitySet(CloseableIterable<StructLike> eqDeletes, Types.StructType eqType) {
+  public static StructLikeSet toEqualitySet(CloseableIterable<StructLike> eqDeletes,
+                                            Types.StructType eqType,
+                                            StructLikeCollections structLikeCollections) {
     try (CloseableIterable<StructLike> deletes = eqDeletes) {
-      StructLikeSet deleteSet = StructLikeSet.create(eqType);
-      Iterables.addAll(deleteSet, deletes);
+      StructLikeSet deleteSet = structLikeCollections.createStructLikeSet(eqType);
+      for (StructLike delete : deletes) {
+        deleteSet.add(delete);
+      }
       return deleteSet;
     } catch (IOException e) {
       throw new UncheckedIOException("Failed to close equality delete source", e);

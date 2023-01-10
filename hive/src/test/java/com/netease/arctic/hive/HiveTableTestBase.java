@@ -18,6 +18,8 @@
 
 package com.netease.arctic.hive;
 
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.CatalogMeta;
@@ -239,5 +241,23 @@ public class HiveTableTestBase extends TableTestBase {
           p.getParameters().get("transient_lastDdlTime"),
           properties.get(HiveTableProperties.PARTITION_PROPERTIES_KEY_TRANSIENT_TIME));
     }
+  }
+
+  public static void asserFilesName(List<String> exceptedFiles, ArcticTable table) throws TException {
+    TableIdentifier identifier = table.id();
+    final String database = identifier.getDatabase();
+    final String tableName = identifier.getTableName();
+
+    List<Partition> partitions = hms.getClient().listPartitions(
+        database,
+        tableName,
+        (short) -1);
+
+    List<String> fileNameList = new ArrayList<> ();
+    for (Partition p : partitions) {
+      fileNameList.addAll(table.io().list(p.getSd().
+          getLocation()).stream().map(f -> f.getPath().getName()).collect(Collectors.toList()));
+    }
+    Assert.assertEquals(exceptedFiles, fileNameList);
   }
 }

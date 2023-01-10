@@ -61,6 +61,7 @@ public class TableEntriesScan {
   private final Expression dataFilter;
   private final boolean aliveEntry;
   private final boolean allFileContent;
+  private final boolean includeColumnStats;
   private final Set<FileContent> validFileContent;
 
   private Table entriesTable;
@@ -77,6 +78,7 @@ public class TableEntriesScan {
     private Long snapshotId;
     private Expression dataFilter;
     private boolean aliveEntry = true;
+    private boolean includeColumnStats = false;
     private final Set<FileContent> fileContents = Sets.newHashSet();
 
     public Builder(Table table) {
@@ -85,6 +87,7 @@ public class TableEntriesScan {
 
     /**
      * Set the filter
+     *
      * @param dataFilter default is always true
      * @return this for chain
      */
@@ -95,6 +98,7 @@ public class TableEntriesScan {
 
     /**
      * If only return the Existing, Add entries
+     *
      * @param aliveEntry true for only Existing, Add
      * @return this for chain
      */
@@ -105,6 +109,7 @@ public class TableEntriesScan {
 
     /**
      * Set the fileContent
+     *
      * @param fileContent default is nothing
      * @return this for chain
      */
@@ -115,6 +120,7 @@ public class TableEntriesScan {
 
     /**
      * Set the snapshotId
+     *
      * @param snapshotId snapshotId
      * @return this for chain
      */
@@ -123,20 +129,32 @@ public class TableEntriesScan {
       return this;
     }
 
+    /**
+     * Set if loads the column stats with each file.
+     * <p>Column stats include: value count, null value count, lower bounds, and upper bounds.
+     *
+     * @return this for chain
+     */
+    public Builder includeColumnStats() {
+      this.includeColumnStats = true;
+      return this;
+    }
+
     public TableEntriesScan build() {
-      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents);
+      return new TableEntriesScan(table, snapshotId, dataFilter, aliveEntry, fileContents, includeColumnStats);
     }
   }
 
 
   public TableEntriesScan(Table table, Long snapshotId, Expression dataFilter, boolean aliveEntry,
-                          Set<FileContent> validFileContent) {
+                          Set<FileContent> validFileContent, boolean includeColumnStats) {
     this.table = table;
     this.dataFilter = dataFilter;
     this.aliveEntry = aliveEntry;
     this.allFileContent = validFileContent.containsAll(Arrays.asList(FileContent.values()));
     this.validFileContent = validFileContent;
     this.snapshotId = snapshotId;
+    this.includeColumnStats = includeColumnStats;
   }
 
   public CloseableIterable<IcebergFileEntry> entries() {
@@ -162,6 +180,9 @@ public class TableEntriesScan {
           if (shouldKeep(status, fileContent)) {
             ContentFile<?> contentFile = buildContentFile(fileContent, fileRecord);
             if (metricsEvaluator().eval(contentFile)) {
+              if (needMetrics() && !includeColumnStats) {
+                contentFile = (ContentFile<?>) contentFile.copyWithoutStats();
+              }
               return new IcebergFileEntry(snapshotId, sequence, contentFile);
             }
           }
@@ -186,6 +207,10 @@ public class TableEntriesScan {
       }
     }
     throw new IllegalArgumentException("not support content id " + contentId);
+  }
+
+  private boolean needMetrics() {
+    return dataFilter != null || includeColumnStats;
   }
 
   private boolean shouldKeep(ManifestEntryFields.Status status, FileContent fileContent) {
@@ -215,7 +240,6 @@ public class TableEntriesScan {
     return file;
   }
 
-
   private DataFile buildDataFile(StructLike fileRecord) {
     String filePath = fileRecord.get(dataFileFieldIndex(DataFile.FILE_PATH.name()), String.class);
     Long fileSize = fileRecord.get(dataFileFieldIndex(DataFile.FILE_SIZE.name()), Long.class);
@@ -223,8 +247,10 @@ public class TableEntriesScan {
     DataFiles.Builder builder = DataFiles.builder(table.spec())
         .withPath(filePath)
         .withFileSizeInBytes(fileSize)
-        .withRecordCount(recordCount)
-        .withMetrics(buildMetrics(fileRecord));
+        .withRecordCount(recordCount);
+    if (needMetrics()) {
+      builder.withMetrics(buildMetrics(fileRecord));
+    }
     if (table.spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
@@ -239,8 +265,10 @@ public class TableEntriesScan {
     FileMetadata.Builder builder = FileMetadata.deleteFileBuilder(table.spec())
         .withPath(filePath)
         .withFileSizeInBytes(fileSize)
-        .withRecordCount(recordCount)
-        .withMetrics(buildMetrics(fileRecord));
+        .withRecordCount(recordCount);
+    if (needMetrics()) {
+      builder.withMetrics(buildMetrics(fileRecord));
+    }
     if (table.spec().isPartitioned()) {
       StructLike partition = fileRecord.get(dataFileFieldIndex(DataFile.PARTITION_NAME), StructLike.class);
       builder.withPartition(partition);
@@ -300,7 +328,7 @@ public class TableEntriesScan {
     }
     return lazyMetricsEvaluator;
   }
-  
+
   private static class AlwaysTrueEvaluator extends InclusiveMetricsEvaluator {
     public AlwaysTrueEvaluator(Schema schema) {
       super(schema, Expressions.alwaysTrue());

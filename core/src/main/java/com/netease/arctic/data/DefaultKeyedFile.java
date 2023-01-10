@@ -18,7 +18,7 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -44,7 +44,8 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   private void parse() {
-    this.meta = FileUtil.parseFileMetaFromFileName(FileUtil.getFileName(internalFile.path().toString()));
+    this.meta = TableFileUtils.parseFileMetaFromFileName(TableFileUtils
+            .getFileName(internalFile.path().toString()));
   }
 
   @Override

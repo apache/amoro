@@ -26,7 +26,6 @@ import com.netease.arctic.flink.read.hybrid.split.ChangelogSplit;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BaseArcticFileScanTask;
-import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.data.GenericRowData;

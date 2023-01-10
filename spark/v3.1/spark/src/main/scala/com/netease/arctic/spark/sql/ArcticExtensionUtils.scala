@@ -18,8 +18,9 @@
 
 package com.netease.arctic.spark.sql
 
+import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsUpsert}
-import org.apache.spark.sql.connector.catalog.Table
+import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
@@ -59,6 +60,19 @@ object ArcticExtensionUtils {
       case p: DataSourceV2Relation => isArcticTable(p)
       case s: SubqueryAlias => s.child.children.exists{ case p: DataSourceV2Relation => isArcticTable(p)}
     }
+  }
+
+  def isArcticCatalog(catalog: TableCatalog): Boolean = {
+    catalog match {
+      case _: ArcticSparkCatalog => true
+      case _: ArcticSparkSessionCatalog[_] => true
+      case _ => false
+    }
+  }
+
+  def isArcticTable(table: Table): Boolean = table match {
+    case _: ArcticSparkTable => true
+    case _ => false
   }
 
   def asTableRelation(plan: LogicalPlan): DataSourceV2Relation = {
