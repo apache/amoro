@@ -25,7 +25,6 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.io.DataWriter;
 import org.apache.iceberg.io.FileAppenderFactory;
 
 import java.io.IOException;
@@ -61,7 +60,7 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
   }
 
   @Override
-  protected void write(DataWriter<T> writer, T row) throws IOException {
+  protected void write(TaskDataWriter writer, T row) throws IOException {
     super.write(writer, appendFileOffset(row));
   }
 
