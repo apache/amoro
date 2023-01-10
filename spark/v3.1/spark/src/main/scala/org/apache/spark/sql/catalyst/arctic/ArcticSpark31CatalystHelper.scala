@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.catalyst.expressions
+package org.apache.spark.sql.catalyst.arctic
 
 import org.apache.iceberg.spark.SparkSchemaUtil
 import org.apache.iceberg.transforms.Transforms
@@ -24,8 +24,8 @@ import org.apache.iceberg.types.{Type, Types}
 import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant, UnaryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.utils.DistributionAndOrderingUtils.TruncateTransform
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 import org.apache.spark.sql.connector.expressions.{BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, MonthsTransform, NamedReference, Transform, YearsTransform, Expression => V2Expression}
 import org.apache.spark.sql.types._
@@ -33,9 +33,10 @@ import org.apache.spark.unsafe.types.UTF8String
 
 import java.nio.ByteBuffer
 
-object ArcticExpressionUtils extends SQLConfHelper{
+object ArcticSpark31CatalystHelper extends SQLConfHelper {
   val resolver = conf.resolver
-  def toCatalyst(expr: V2Expression, query: LogicalPlan): Expression =  {
+
+  def toCatalyst(expr: V2Expression, query: LogicalPlan): Expression = {
     def resolve(parts: Seq[String]): NamedExpression = {
       query.resolve(parts, resolver) match {
         case Some(attr) =>
@@ -67,6 +68,7 @@ object ArcticExpressionUtils extends SQLConfHelper{
   }
 
   import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.MultipartIdentifierHelper
+
   def resolveRef[T <: NamedExpression](ref: NamedReference, plan: LogicalPlan): T = {
     plan.resolve(ref.fieldNames.toSeq, conf.resolver) match {
       case Some(namedExpr) =>
@@ -74,7 +76,7 @@ object ArcticExpressionUtils extends SQLConfHelper{
       case None =>
         val name = ref.fieldNames.toSeq.quoted
         val outputString = plan.output.map(_.name).mkString(",")
-        throw new AnalysisException(s"Cannot resolve '$ref' using ${name}")
+        throw new AnalysisException(s"Cannot resolve '$ref' using ${outputString}")
     }
   }
 
@@ -93,7 +95,6 @@ object ArcticExpressionUtils extends SQLConfHelper{
 }
 
 
-
 abstract class ArcticTransformExpression
   extends UnaryExpression with CodegenFallback with NullIntolerant {
 
@@ -103,7 +104,7 @@ abstract class ArcticTransformExpression
 }
 
 
-case class ArcticBucketTransform(numBuckets: Int, child: Expression)  extends ArcticTransformExpression {
+case class ArcticBucketTransform(numBuckets: Int, child: Expression) extends ArcticTransformExpression {
 
   @transient lazy val bucketFunc: Any => Int = child.dataType match {
     case _: DecimalType =>
