@@ -84,7 +84,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     } else {
       writer = dataWriterMap.get(writerKey);
     }
-    writer.write(row);
+    write(writer, row);
 
     if (shouldRollToNewFile(writer)) {
       writer.close();
