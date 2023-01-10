@@ -52,14 +52,8 @@ public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
 
   @Override
   public void insert(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper insert;
-    if (isKeyedTable) {
-      insert = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.INSERT, true);
-    } else {
-      insert = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.INSERT, false);
-    }
+    SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.INSERT, isKeyedTable);
     writer.write(insert);
 
   }

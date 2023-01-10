@@ -119,6 +119,14 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
     this.isMerge = false;
   }
 
+  /**
+   * build merge row to internal row
+   * @param isMerge
+   * @param row
+   * @param schema
+   * @param changeAction
+   * @param isKeyedTable
+   */
   public SparkInternalRowCastWrapper(boolean isMerge, InternalRow row, StructType schema,
                                      ChangeAction changeAction, boolean isKeyedTable) {
     this.schema = schema;
@@ -170,7 +178,6 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
    +-----------------+---+----+----+-----+
    * @param mergedRow
    * @param newSchema
-   * @param isUpsert
    * @return InternalRow like
    * +---+----+
    * | id|name|
