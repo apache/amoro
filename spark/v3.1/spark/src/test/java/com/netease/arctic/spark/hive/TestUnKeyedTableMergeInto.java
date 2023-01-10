@@ -8,7 +8,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestMergeInto extends SparkTestBase {
+public class TestUnKeyedTableMergeInto extends SparkTestBase {
   private final String database = "db_test";
 
   private final String tgTableA = "tgTableA";
@@ -20,11 +20,11 @@ public class TestMergeInto extends SparkTestBase {
     sql("use " + catalogNameHive);
     sql("create database if not exists {0}", database);
     sql("CREATE TABLE {0}.{1} (" +
-        "id int, data string, primary key(id)) " +
-        "USING arctic", database, tgTableA) ;
+        "id int, data string) " +
+        "USING arctic", database, tgTableA);
     sql("CREATE TABLE {0}.{1} (" +
-        "id int, data string, primary key(id)) " +
-        "USING arctic", database, srcTableA) ;
+        "id int, data string) " +
+        "USING arctic", database, srcTableA);
     sql("CREATE TABLE {0}.{1} (" +
         "id INT, data STRING) " +
         "STORED AS parquet", database, hiveTable) ;
@@ -65,7 +65,7 @@ public class TestMergeInto extends SparkTestBase {
   @Test
   public void testMergeIntoEmptyTargetInsertAllNonMatchingRows() {
     sql("CREATE TABLE {0}.{1} (" +
-        "id int, data string, primary key(id)) " +
+        "id int, data string) " +
         "USING arctic", database, "emptyTable") ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
@@ -86,7 +86,7 @@ public class TestMergeInto extends SparkTestBase {
   @Test
   public void testMergeIntoEmptyTargetInsertOnlyMatchingRows() {
     sql("CREATE TABLE {0}.{1} (" +
-        "id int, data string, primary key(id)) " +
+        "id int, data string) " +
         "USING arctic", database, "emptyTable") ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
@@ -180,10 +180,10 @@ public class TestMergeInto extends SparkTestBase {
   @Test
   public void testMergeWithExtraColumnsInSource() {
     sql("CREATE TABLE {0}.{1} (" +
-        "id INT, v STRING, primary key(id)) " +
+        "id INT, v STRING) " +
         "USING arctic", database, "target") ;
     sql("CREATE TABLE {0}.{1} (" +
-        "id INT, v STRING, extra_col INT, primary key(id)) " +
+        "id INT, v STRING, extra_col INT) " +
         "USING arctic", database, "source") ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES " +
         "(1, ''v1''), " +
@@ -208,18 +208,6 @@ public class TestMergeInto extends SparkTestBase {
         sql("SELECT * FROM {0}.{1} ORDER BY id", database, "target"));
     sql("drop table {0}.{1}", database, "target");
     sql("drop table {0}.{1}", database, "source");
-  }
-
-  @Test
-  public void testMergeOnColumnWithoutPrimaryKey() {
-    sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
-    Assert.assertThrows(UnsupportedOperationException.class,
-        () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
-        "ON t.data==s.data " +
-        "WHEN MATCHED THEN " +
-        "  DELETE " +
-        "WHEN NOT MATCHED THEN " +
-        "  INSERT * ", database, tgTableA, srcTableA));
   }
 
   @Test

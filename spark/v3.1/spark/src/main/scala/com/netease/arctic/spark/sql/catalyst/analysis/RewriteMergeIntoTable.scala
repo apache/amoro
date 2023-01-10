@@ -7,18 +7,19 @@ import com.netease.arctic.spark.sql.utils.FieldReference
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
+import org.apache.iceberg.MetadataColumns
+import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, NamedRelation}
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, ExtendedV2ExpressionUtils, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{Inner, RightOuter}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.connector.expressions.NamedReference
-import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.connector.expressions.{Expressions, NamedReference}
+import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
 
-import scala.collection.mutable
+import scala.collection.{Seq, mutable}
 
 
 object RewriteMergeIntoTable extends Rule[LogicalPlan] {
@@ -48,10 +49,12 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
     var validate: Boolean = true
     table match {
       case arctic: ArcticSparkTable =>
-        val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-        val condRefs = cond.references.filter(f => primarys.contains(f.name))
-        if (condRefs.isEmpty) {
-          throw new UnsupportedOperationException(s"Condition ${cond.references}. is not allowed because is not a primary key")
+        if (arctic.table().isKeyedTable) {
+          val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+          val condRefs = cond.references.filter(f => primarys.contains(f.name))
+          if (condRefs.isEmpty) {
+            throw new UnsupportedOperationException(s"Condition ${cond.references}. is not allowed because is not a primary key")
+          }
         }
     }
   }
@@ -61,6 +64,51 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
       case arctic: ArcticSparkTable =>
         val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
         cond.references.filter(p => primarys.contains(p.name)).toSeq
+    }
+  }
+
+  def buildRelationAndAttrs(relation: DataSourceV2Relation, cond: Expression, operationTable: Table):
+  (Seq[Attribute], LogicalPlan) = {
+    relation.table match {
+      case arctic: ArcticSparkTable =>
+        if (arctic.table().isKeyedTable) {
+          val keyAttrs = {
+            val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+            cond.references.filter(p => primarys.contains(p.name)).toSeq
+          }
+          val attrs = dedupAttrs(relation.output)
+          (keyAttrs, relation.copy(table = operationTable, output = attrs))
+        } else {
+          val (keyAttrs, valuesRelation) = {
+            if (arctic.requireAdditionIdentifierColumns()) {
+              val scanBuilder = arctic.newUpsertScanBuilder(relation.options)
+              scanBuilder.withIdentifierColumns()
+              val scan = scanBuilder.build()
+              val outputAttr = toOutputAttrs(scan.readSchema(), relation.output)
+              val valuesRelation = DataSourceV2ScanRelation(relation, scan, outputAttr)
+              val references = outputAttr.filter(o => o.name.equals("_pos") || o.name.equals("_file"))
+              (references, valuesRelation)
+            } else {
+              throw new UnsupportedOperationException("error")
+            }
+          }
+          (keyAttrs, valuesRelation)
+        }
+    }
+  }
+
+  protected def toOutputAttrs(schema: StructType, attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
+    val nameToAttr = attrs.map(_.name).zip(attrs).toMap
+    schema.map(f => AttributeReference(f.name, f.dataType, f.nullable, f.metadata)()).map {
+      a =>
+        nameToAttr.get(a.name) match {
+          case Some(ref) =>
+            // keep the attribute id if it was present in the relation
+            a.withExprId(ref.exprId)
+          case _ =>
+            // if the field is new, create a new attribute
+            AttributeReference(a.name, a.dataType, a.nullable, a.metadata)()
+        }
     }
   }
 
@@ -74,8 +122,7 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
                                    notMatchedActions: Seq[MergeAction]): WriteMerge = {
     checkConditionIsPrimaryKey(relation.table, cond)
     // construct a scan relation and include all required metadata columns
-    val keyAttrs = resolveRowIdAttrs(relation, cond)
-    val readRelation = buildRelationWithAttrs(relation, operationTable)
+    val (keyAttrs, readRelation) = buildRelationAndAttrs(relation, cond, operationTable)
     val readAttrs = readRelation.output
 
     // project an extra column to check if a target row exists after the join
@@ -94,10 +141,10 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
     val joinPlan = Join(targetTableProj, sourceTableProj, joinType, Some(cond), joinHint)
 
     val matchedConditions = matchedActions.map(actionCondition)
-    val matchedOutputs = matchedActions.map(deltaActionOutput(_, relation.output, source.output))
+    val matchedOutputs = matchedActions.map(deltaActionOutput(_, readRelation.output, source.output))
 
     val notMatchedConditions = notMatchedActions.map(actionCondition)
-    val notMatchedOutputs = notMatchedActions.map(deltaActionOutput(_, relation.output, source.output))
+    val notMatchedOutputs = notMatchedActions.map(deltaActionOutput(_, readRelation.output, source.output))
 
     val operationTypeAttr = AttributeReference(OPERATION_COLUMN, IntegerType, nullable = false)()
     val rowFromSourceAttr = resolveAttrRef(ROW_FROM_SOURCE_REF, joinPlan)
@@ -115,7 +162,7 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
       notMatchedOutputs = notMatchedOutputs,
       // only needed if emitting unmatched target rows
       targetOutput = Nil,
-      rowIdAttrs = keyAttrs,
+      rowIdAttrs = cond.references.toSeq,
       performCardinalityCheck = isCardinalityCheckNeeded(matchedActions),
       unMatchedRowCheck = java.lang.Boolean.valueOf(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT),
       emitNotMatchedTargetRows = false,

@@ -29,6 +29,7 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   private final boolean isDelete;
   private final boolean isUpsert;
   private final boolean isMerge;
+  private boolean isKeyedTable;
   private ChangeAction changeAction = ChangeAction.INSERT;
   private List<DataType> dataTypeList;
 
@@ -119,17 +120,76 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   public SparkInternalRowCastWrapper(boolean isMerge, InternalRow row, StructType schema,
-                                     ChangeAction changeAction) {
-    this.row = buildMergeInternalRow(row, schema, changeAction);
+                                     ChangeAction changeAction, boolean isKeyedTable) {
     this.schema = schema;
     this.middle = schema.size() / 2;
     this.changeAction = changeAction;
     this.isDelete = false;
     this.isUpsert = false;
     this.isMerge = isMerge;
+    this.isKeyedTable = isKeyedTable;
+    if (isKeyedTable) {
+      this.row = buildMergeKeyedInternalRow(row, schema, changeAction);
+    } else {
+      this.row = buildMergeUnkeyedInternalRow(row, schema, changeAction);
+    }
   }
 
-  private InternalRow buildMergeInternalRow(InternalRow row, StructType schema,
+  private InternalRow buildMergeUnkeyedInternalRow(InternalRow row, StructType schema, ChangeAction changeAction) {
+    InternalRow mergedRow = row;
+    StructType newSchema = new StructType(Arrays.stream(schema.fields())
+        .filter(field -> !field.name().equals(SupportsUpsert.UPSERT_OP_COLUMN_NAME) &&
+            !field.name().equals("_pos") &&
+            !field.name().equals("_file")).toArray(StructField[]::new));
+    dataTypeList = Arrays.stream(schema.fields())
+        .map(StructField::dataType).collect(Collectors.toList());
+    if (ChangeAction.DELETE.equals(changeAction)) {
+      return buildMergeUnkeyedDelete(row, schema, 1, schema.size());
+    } else {
+      return buildMergeUnkeyedInsert(mergedRow, newSchema);
+    }
+  }
+
+  private InternalRow buildMergeUnkeyedDelete(InternalRow row, StructType schema, int start, int end) {
+    dataTypeList = Arrays.stream(schema.fields())
+        .map(StructField::dataType).collect(Collectors.toList());
+    List<Object> rows = new ArrayList<>();
+    for (int i = start; i < end; i++) {
+      rows.add(row.get(i, dataTypeList.get(i)));
+    }
+    return new GenericInternalRow(rows.toArray());
+  }
+
+  /**
+   * Insert unKeyed table merge row
+   * unkeyed merge row like
+   +-----------------+---+----+----+-----+
+   |_arctic_upsert_op| id|name|id  | name|
+   +-----------------+---+----+----+-----+
+   |                I|null|null|  1|    c|
+   +-----------------+---+----+----+-----+
+   * @param mergedRow
+   * @param newSchema
+   * @param isUpsert
+   * @return InternalRow like
+   * +---+----+
+   * | id|name|
+   * +---+----+
+   * |  1|   c|
+   * +---+----+
+   */
+  private InternalRow buildMergeUnkeyedInsert(InternalRow mergedRow, StructType newSchema) {
+    List<DataType> dataTypeList = Arrays.stream(newSchema.fields())
+        .map(StructField::dataType).collect(Collectors.toList());
+    List<Object> rows = new ArrayList<>();
+    int offset = dataTypeList.size() + 3;
+    for (int i = 0; i < dataTypeList.size(); i++) {
+      rows.add(mergedRow.get(i + offset, dataTypeList.get(i)));
+    }
+    return new GenericInternalRow(rows.toArray());
+  }
+
+  private InternalRow buildMergeKeyedInternalRow(InternalRow row, StructType schema,
                                             ChangeAction changeAction) {
     InternalRow mergedRow = row;
     StructType newSchema = new StructType(Arrays.stream(schema.fields())

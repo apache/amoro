@@ -311,7 +311,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withTaskId(taskId)
           .withDataSourceSchema(dsSchema)
           .newChangeWriter();
-      return new SimpleMergeRowDataWriter(writer, dsSchema);
+      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
 }

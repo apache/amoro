@@ -20,6 +20,8 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
+import com.netease.arctic.spark.writer.merge.MergeWriter;
+import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.AppendFiles;
@@ -90,7 +92,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   @Override
   public BatchWrite asMergeBatchWrite() {
-    return null;
+    return new MergeIntoWrite();
   }
 
   private abstract class BaseBatchWrite implements BatchWrite {
@@ -250,6 +252,55 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .newBasePosDeleteWriter();
 
       return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedPosDeleteSparkWriter, dsSchema);
+    }
+  }
+
+  private static class MergeWriteFactory extends WriterFactory {
+
+    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, Long transactionId) {
+      super(table, dsSchema, false, transactionId, null);
+    }
+
+    @Override
+    public MergeWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
+          !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newBasePosDeleteWriter();
+      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
+    }
+  }
+
+  private class MergeIntoWrite extends BaseBatchWrite {
+
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new MergeWriteFactory(table, dsSchema, transactionId);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      RowDelta rowDelta = table.newRowDelta();
+      if (WriteTaskDeleteFilesCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+          rowDelta.addDeletes(file);
+        }
+        rowDelta.commit();
+      }
+
+
+      AppendFiles appendFiles = table.newAppend();
+      if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
+          appendFiles.appendFile(file);
+        }
+        appendFiles.commit();
+      }
     }
   }
 }

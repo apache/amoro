@@ -15,35 +15,61 @@ public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   
   final StructType schema;
+  final boolean isKeyedTable;
 
-  public SimpleMergeRowDataWriter(TaskWriter<InternalRow> writer, StructType schema) {
+  public SimpleMergeRowDataWriter(TaskWriter<InternalRow> writer, StructType schema, boolean isKeyedTable) {
     this.writer = writer;
     this.schema = schema;
+    this.isKeyedTable = isKeyedTable;
   }
 
   @Override
   public void delete(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.DELETE);
+    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(
+        true, row, schema, ChangeAction.DELETE, isKeyedTable);
     writer.write(delete);
   }
 
   @Override
   public void update(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.UPDATE_BEFORE);
-    SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.UPDATE_AFTER);
+    SparkInternalRowCastWrapper delete;
+    SparkInternalRowCastWrapper insert;
+    if (isKeyedTable) {
+      delete = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.UPDATE_BEFORE, true);
+      insert = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.UPDATE_AFTER, true);
+    } else {
+      delete = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.DELETE, false);
+      insert = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.INSERT, false);
+    }
     writer.write(delete);
     writer.write(insert);
+
   }
 
   @Override
   public void insert(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(true, row, schema, ChangeAction.INSERT);
+    SparkInternalRowCastWrapper insert;
+    if (isKeyedTable) {
+      insert = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.INSERT, true);
+    } else {
+      insert = new SparkInternalRowCastWrapper(
+          true, row, schema, ChangeAction.INSERT, false);
+    }
     writer.write(insert);
+
   }
 
   @Override
   public WriterCommitMessage commit() throws IOException {
     WriteResult result = writer.complete();
+    if (!isKeyedTable) {
+      return new WriteTaskDeleteFilesCommit(result.deleteFiles(), result.dataFiles());
+    }
     return new WriteTaskCommit(result.dataFiles());
   }
 

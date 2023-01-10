@@ -221,11 +221,8 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
     }
 
     private def isArcticKeyedTable(table: Table): Boolean = table match {
-      case arctic: ArcticSparkTable =>
-        if (arctic.table().isKeyedTable)
+      case _: ArcticSparkTable =>
           true
-        else
-          false
       case _ => false
     }
   }
