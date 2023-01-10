@@ -21,9 +21,12 @@ package com.netease.arctic.ams.server.handler.impl;
 import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.AlreadyExistsException;
 import com.netease.arctic.ams.api.ArcticTableMetastore;
+import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Blocker;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.NotSupportedException;
+import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
@@ -200,5 +203,29 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
     }
     return ServiceContainer.getArcticTransactionService().allocateTransactionId(tableIdentifier,
         transactionSignature);
+  }
+
+  @Override
+  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
+      throws OperationConflictException, TException {
+    // TODO
+    return null;
+  }
+
+  @Override
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+    // TODO
+  }
+
+  @Override
+  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+    // TODO
+
+  }
+
+  @Override
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
+    // TODO
+    return null;
   }
 }

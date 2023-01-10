@@ -328,7 +328,30 @@ public class MockArcticMetastoreServer implements Runnable {
       }
     }
 
-     public void updateMeta(CatalogMeta meta, String key, String value) {
+    @Override
+    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
+        throws OperationConflictException, TException {
+      // TODO
+      return null;
+    }
+
+    @Override
+    public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      // TODO
+    }
+
+    @Override
+    public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
+      // TODO
+    }
+
+    @Override
+    public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
+      // TODO
+      return null;
+    }
+
+    public void updateMeta(CatalogMeta meta, String key, String value) {
       meta.getCatalogProperties().replace(key, value);
      }
   }

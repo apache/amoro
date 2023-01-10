@@ -83,6 +83,17 @@ enum CommitMetaProducer {
     INGESTION
 }
 
+struct Blocker {
+    1:string blockerId;
+    2:list<BlockableOperation> operations;
+    3:map<string, string> properties;
+}
+
+enum BlockableOperation {
+   OPTIMIZE,
+   BATCH_WRITE
+}
+
 /**
 * replace TableContainer、ArcticTableItem
 **/
@@ -125,4 +136,13 @@ service ArcticTableMetastore {
     void tableCommit(1: TableCommitMeta commit) throws (1: arctic_commons.MetaException e1)
 
     i64 allocateTransactionId(1:arctic_commons.TableIdentifier tableIdentifier, 2:string transactionSignature)
+    
+    Blocker block(1:arctic_commons.TableIdentifier tableIdentifier, 2:list<BlockableOperation> operations) 
+        throws (1: arctic_commons.OperationConflictException e1)
+        
+    void releaseBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
+    
+    void renewBlocker(1:arctic_commons.TableIdentifier tableIdentifier, 2:string blockerId)
+    
+    list<Blocker> getBlockers(1:arctic_commons.TableIdentifier tableIdentifier)
 }

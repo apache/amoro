@@ -18,6 +18,10 @@
 
 package com.netease.arctic.table.blocker;
 
+import com.netease.arctic.ams.api.BlockableOperation;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.util.PropertyUtil;
+
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +30,8 @@ import java.util.Map;
  * This Blocker has expiration time, after which it will be invalid.
  */
 public class BaseBlocker implements Blocker {
+  private static final String CREATE_TIME_PROPERTY = "create.time";
+  private static final String EXPIRATION_TIME_PROPERTY = "expiration.time";
   private final String blockerId;
   private final List<BlockableOperation> operations;
   private final long createTime;
@@ -39,6 +45,22 @@ public class BaseBlocker implements Blocker {
     this.createTime = createTime;
     this.expirationTime = expirationTime;
     this.properties = properties;
+  }
+
+  public static BaseBlocker of(com.netease.arctic.ams.api.Blocker blocker) {
+    Map<String, String> properties = Maps.newHashMap(blocker.getProperties());
+    long createTime = PropertyUtil.propertyAsLong(properties, CREATE_TIME_PROPERTY, 0);
+    long expirationTime = PropertyUtil.propertyAsLong(properties, EXPIRATION_TIME_PROPERTY, 0);
+    properties.remove(CREATE_TIME_PROPERTY);
+    properties.remove(EXPIRATION_TIME_PROPERTY);
+    return new BaseBlocker(blocker.getBlockerId(), blocker.getOperations(), createTime, expirationTime, properties);
+  }
+
+  public com.netease.arctic.ams.api.Blocker buildBlocker() {
+    Map<String, String> properties = this.properties == null ? Maps.newHashMap() : this.properties;
+    properties.put(CREATE_TIME_PROPERTY, createTime + "");
+    properties.put(EXPIRATION_TIME_PROPERTY, expirationTime + "");
+    return new com.netease.arctic.ams.api.Blocker(blockerId, operations, properties);
   }
 
   @Override

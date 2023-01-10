@@ -297,8 +297,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
 
   @Override
   public TableBlockerManager getTableBlockerManager(TableIdentifier tableIdentifier) {
-    // TODO 
-    return new BaseTableBlockerManager(tableIdentifier);
+    ArcticTable arcticTable = loadTable(tableIdentifier);
+    long blockerTimeout = PropertyUtil.propertyAsLong(arcticTable.properties(),
+        TableProperties.TABLE_BLOCKER_TIMEOUT, TableProperties.TABLE_BLOCKER_TIMEOUT_DEFAULT);
+    return BaseTableBlockerManager.build(tableIdentifier, client, blockerTimeout);
   }
 
   public TableMetaStore getTableMetaStore() {
