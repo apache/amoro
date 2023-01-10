@@ -86,7 +86,21 @@ public class TestWatermark extends FlinkTestBase {
   }
 
   @Test(timeout = 30000)
-  public void testWatermark() throws Exception {
+  public void testWatermarkWithoutPKs() throws Exception {
+    testWatermark(0);
+  }
+
+  @Test(timeout = 30000)
+  public void testWatermarkWithPartialPKs() throws Exception {
+    testWatermark(1);
+  }
+
+  @Test(timeout = 30000)
+  public void testWatermarkWithFullPKs() throws Exception {
+    testWatermark(2);
+  }
+
+  public void testWatermark(int selectType) throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
@@ -121,7 +135,16 @@ public class TestWatermark extends FlinkTestBase {
 
     sql("create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s", table);
 
-    Table source = getTableEnv().sqlQuery("select is_true from d");
+    Table source;
+    if (selectType == 0) {
+      source = getTableEnv().sqlQuery("select is_true from d");
+    } else if (selectType == 1) {
+      source = getTableEnv().sqlQuery("select id, is_true from d");
+    } else if (selectType == 2) {
+      source = getTableEnv().sqlQuery("select id, is_true, user_id from d");
+    } else {
+      throw new IllegalArgumentException("Unsupported select type " + selectType);
+    }
 
     WatermarkTestOperator op = new WatermarkTestOperator();
     getTableEnv().toRetractStream(source, RowData.class)
