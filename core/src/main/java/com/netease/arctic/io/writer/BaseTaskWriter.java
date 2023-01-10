@@ -87,7 +87,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     write(writer, row);
 
     if (shouldRollToNewFile(writer)) {
-      writer.close();
+      closeWriter(writer);
       completedFiles.add(writer.toDataFile());
       dataWriterMap.remove(writerKey);
     }
@@ -137,7 +137,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   @Override
   public void close() throws IOException {
     for (DataWriter<T> dataWriter : dataWriterMap.values()) {
-      dataWriter.close();
+      closeWriter(dataWriter);
       completedFiles.add(dataWriter.toDataFile());
     }
     dataWriterMap.clear();
@@ -147,4 +147,11 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
    * Wrap the data as a {@link StructLike}.
    */
   protected abstract StructLike asStructLike(T data);
+
+  private void closeWriter(DataWriter<T> dataWriter) {
+    io.doAs(() -> {
+      dataWriter.close();
+      return null;
+    });
+  }
 }
