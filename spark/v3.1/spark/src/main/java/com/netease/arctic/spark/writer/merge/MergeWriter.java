@@ -27,28 +27,10 @@ import java.io.IOException;
  * A data writer responsible for writing a delta of rows.
  */
 public interface MergeWriter<T> extends DataWriter<T> {
-  /**
-   * Passes information for a row that must be deleted.
-   *
-   * @param row values for metadata columns that were projected but are not part of the row ID
-   * @throws IOException if the write process encounters an error
-   */
   void delete(T row) throws IOException;
 
-  /**
-   * Passes information for a row that must be updated together with the updated row.
-   *
-   * @param row values for metadata columns that were projected but are not part of the row ID
-   * @throws IOException if the write process encounters an error
-   */
   void update(T row) throws IOException;
 
-  /**
-   * Passes a row to insert.
-   *
-   * @param row a row to insert
-   * @throws IOException if the write process encounters an error
-   */
   void insert(T row) throws IOException;
 
   @Override
