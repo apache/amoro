@@ -25,6 +25,8 @@ import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
 import com.netease.arctic.ams.api.properties.TableFormat;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.iceberg.catalog.Catalog;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -37,6 +39,8 @@ import java.util.Map;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_AMS;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HIVE;
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE;
+import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 public abstract class CatalogTestBase {
 
@@ -48,6 +52,10 @@ public abstract class CatalogTestBase {
   private final TableFormat testFormat;
 
   private ArcticCatalog catalog;
+
+  private CatalogMeta catalogMeta;
+
+  private Catalog icebergCatalog;
 
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
@@ -64,7 +72,7 @@ public abstract class CatalogTestBase {
   public void setupCatalog() throws IOException {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, temp.newFolder().getPath());
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
+    catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
         properties, testFormat);
     getAmsHandler().createCatalog(catalogMeta);
   }
@@ -85,6 +93,7 @@ public abstract class CatalogTestBase {
   @After
   public void dropCatalog() {
     getAmsHandler().dropCatalog(TEST_CATALOG_NAME);
+    catalog = null;
   }
 
   protected ArcticCatalog getCatalog() {
@@ -96,5 +105,31 @@ public abstract class CatalogTestBase {
 
   protected String getCatalogUrl() {
     return TEST_AMS.getServerUrl() + "/" + TEST_CATALOG_NAME;
+  }
+
+  protected CatalogMeta getCatalogMeta() {
+    return catalogMeta;
+  }
+
+  protected TableFormat getTestFormat() {
+    return testFormat;
+  }
+
+  protected Catalog getIcebergCatalog() {
+    if (TableFormat.ICEBERG.equals(testFormat)) {
+      if (icebergCatalog == null) {
+        icebergCatalog = buildIcebergCatalog();
+      }
+      return icebergCatalog;
+    } else {
+      throw new UnsupportedOperationException("Cannot get iceberg catalog for table format:" + testFormat);
+    }
+  }
+
+  protected Catalog buildIcebergCatalog() {
+    Map<String, String> catalogProperties = Maps.newHashMap(catalogMeta.getCatalogProperties());
+    catalogProperties.put(ICEBERG_CATALOG_TYPE, ICEBERG_CATALOG_TYPE_HADOOP);
+    return org.apache.iceberg.CatalogUtil.buildIcebergCatalog(TEST_CATALOG_NAME,
+        catalogProperties, new Configuration());
   }
 }

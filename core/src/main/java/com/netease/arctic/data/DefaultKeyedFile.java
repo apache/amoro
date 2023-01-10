@@ -18,13 +18,10 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.utils.FileUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
-import org.apache.iceberg.types.Conversions;
-import org.apache.iceberg.types.Types;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;

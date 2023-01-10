@@ -337,7 +337,7 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
      public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().replace(key, value);
+      meta.getCatalogProperties().put(key, value);
      }
   }
 

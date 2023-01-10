@@ -18,6 +18,7 @@
 
 package com.netease.arctic;
 
+import com.google.common.collect.Maps;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.DataFile;
@@ -28,13 +29,19 @@ import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
 
+import java.util.Map;
+
 public class TableTestHelpers {
 
   public static final String TEST_CATALOG_NAME = "test_catalog";
   public static final String TEST_DB_NAME = "test_db";
+  public static final String TEST_TABLE_NAME = "test_table";
 
   public static final TableIdentifier TEST_TABLE_ID =
-      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, "test_table");
+      TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, TEST_TABLE_NAME);
+
+  public static final org.apache.iceberg.catalog.TableIdentifier TEST_TABLE_ICEBERG_ID =
+      org.apache.iceberg.catalog.TableIdentifier.of(TEST_DB_NAME, TEST_TABLE_NAME);
 
   public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
@@ -45,36 +52,44 @@ public class TableTestHelpers {
   public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
       .day("op_time").build();
 
+  public static final PartitionSpec IDENTIFY_SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
+      .identity("op_time").build();
+
   public static final Record RECORD = GenericRecord.create(TABLE_SCHEMA);
 
   public static final PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(TABLE_SCHEMA)
       .addColumn("id").build();
 
-  public static final DataFile FILE_A = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-a.parquet")
-      .withFileSizeInBytes(10)
-      .withPartitionPath("op_time_day=2022-01-01") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
+  private static final Map<String, DataFile> DATA_FILE_MAP = Maps.newHashMap();
 
-  public static final DataFile FILE_B = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-b.parquet")
-      .withFileSizeInBytes(10)
-      .withPartitionPath("op_time_day=2022-01-02") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
+  public static DataFile getFile(String basePath, int number, String partitionValue) {
+    String filePath = String.format("%s/data-%d-%s.parquet", basePath, number, partitionValue != null ?
+        "partitioned" : "unpartitioned");
+    return DATA_FILE_MAP.computeIfAbsent(filePath, path -> {
+      if (partitionValue != null) {
+        return DataFiles.builder(SPEC)
+            .withPath(path)
+            .withFileSizeInBytes(10)
+            .withRecordCount(2)
+            .withPartitionPath("op_time_day=" + partitionValue)
+            .build();
+      } else {
+        return DataFiles.builder(PartitionSpec.unpartitioned())
+            .withPath(path)
+            .withFileSizeInBytes(10)
+            .withRecordCount(2)
+            .build();
+      }
+    });
+  }
 
-  public static final DataFile FILE_C = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-c.parquet")
-      .withFileSizeInBytes(10)
-      .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
-
-  public static final DataFile FILE_D = DataFiles.builder(SPEC)
-      .withPath("/path/to/data-d.parquet")
-      .withFileSizeInBytes(10)
-      .withPartitionPath("op_time_day=2022-01-03") // easy way to set partition data for now
-      .withRecordCount(2) // needs at least one record or else metrics will filter it out
-      .build();
+  public static DataFile getFile(int number, PartitionSpec partitionSpec) {
+    if (partitionSpec.isUnpartitioned()) {
+      return getFile("/data", number, null);
+    } else if (partitionSpec.equals(SPEC)) {
+      return getFile("/data", number, "2022-08-30");
+    } else {
+      throw new IllegalArgumentException("Unknown partition spec:" + partitionSpec);
+    }
+  }
 }

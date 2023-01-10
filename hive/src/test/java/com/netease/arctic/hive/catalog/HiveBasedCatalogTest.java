@@ -26,25 +26,30 @@ import com.netease.arctic.catalog.CatalogTestHelpers;
 import com.netease.arctic.hive.TestHMS;
 import org.junit.ClassRule;
 import org.junit.runner.RunWith;
-import org.junit.runners.JUnit4;
+import org.junit.runners.Parameterized;
 
 import java.util.Map;
 
-@RunWith(JUnit4.class)
-public class ArcticHiveCatalogTest extends BaseCatalogTest {
+@RunWith(Parameterized.class)
+public class HiveBasedCatalogTest extends BaseCatalogTest {
+
+  @Parameterized.Parameters(name = "testFormat = {0}")
+  public static Object[] parameters() {
+    return new Object[] {TableFormat.ICEBERG, TableFormat.MIXED_HIVE};
+  }
 
   @ClassRule
   public static TestHMS TEST_HMS = new TestHMS();
+
+  public HiveBasedCatalogTest(TableFormat testFormat) {
+    super(testFormat);
+  }
 
   @Override
   public void setupCatalog() {
     Map<String, String> properties = Maps.newHashMap();
     CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
-        properties, TEST_HMS.getHiveConf());
+        properties, TEST_HMS.getHiveConf(), getTestFormat());
     getAmsHandler().createCatalog(catalogMeta);
-  }
-
-  public ArcticHiveCatalogTest() {
-    super(TableFormat.MIXED_HIVE);
   }
 }

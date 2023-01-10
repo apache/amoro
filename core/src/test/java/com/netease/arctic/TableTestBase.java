@@ -81,6 +81,10 @@ import java.util.Set;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
 import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
 
+/**
+ * @deprecated since 0.4.1, will be removed in 0.5.0; use {@link com.netease.arctic.catalog.TableTestBase} instead.
+ */
+@Deprecated
 public class TableTestBase {
 
   private static final Logger LOG = LoggerFactory.getLogger(TableTestBase.class);

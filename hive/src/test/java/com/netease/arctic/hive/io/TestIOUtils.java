@@ -19,7 +19,6 @@
 package com.netease.arctic.hive.io;
 
 import com.netease.arctic.data.DefaultKeyedFile;
-import com.netease.arctic.hive.io.reader.AdaptHiveBaseIcebergDataReader;
 import com.netease.arctic.hive.io.reader.AdaptHiveGenericArcticDataReader;
 import com.netease.arctic.hive.io.reader.GenericAdaptHiveIcebergDataReader;
 import com.netease.arctic.hive.io.writer.AdaptHiveGenericTaskWriterBuilder;
@@ -31,13 +30,6 @@ import com.netease.arctic.scan.NodeFileScanTask;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.PrimaryKeySpec;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Files;
 import org.apache.iceberg.PartitionSpec;
@@ -54,6 +46,14 @@ import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.parquet.AdaptHiveParquet;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterators;
 import org.junit.Assert;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class TestIOUtils {
 

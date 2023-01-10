@@ -61,24 +61,11 @@ public class CatalogTestHelpers {
   }
 
   public static CatalogMeta buildHiveCatalogMeta(String catalogName, Map<String, String> properties,
-      Configuration hiveConfiguration) {
-    Map<String, String> storageConfig = new HashMap<>();
-    storageConfig.put(
-        CatalogMetaProperties.STORAGE_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.STORAGE_CONFIGS_VALUE_TYPE_HDFS);
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_CORE_SITE, HADOOP_EMPTY_CONFIG_BASE64);
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, HADOOP_EMPTY_CONFIG_BASE64);
-    storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
+      Configuration hiveConfiguration, TableFormat... tableFormats) {
+    CatalogMeta meta = buildCatalogMeta(catalogName, CatalogMetaProperties.CATALOG_TYPE_HIVE, properties, tableFormats);
+    meta.getStorageConfigs().put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
         encodeHadoopConfiguration(hiveConfiguration));
-
-    Map<String, String> authConfig = new HashMap<>();
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
-        CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
-        System.getProperty("user.name"));
-
-    properties.put(CatalogMetaProperties.TABLE_FORMATS, TableFormat.MIXED_HIVE.name());
-    return new CatalogMeta(catalogName, CatalogMetaProperties.CATALOG_TYPE_HIVE, storageConfig, authConfig, properties);
+    return meta;
   }
 
   public static String encodeHadoopConfiguration(Configuration conf) {

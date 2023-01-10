@@ -22,18 +22,30 @@ import com.netease.arctic.SingletonResourceUtil;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.junit.rules.ExternalResource;
+import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.io.UncheckedIOException;
 
 public class TestHMS extends ExternalResource {
   private static final Logger LOG = LoggerFactory.getLogger(TestHMS.class);
   private static HMSMockServer SINGLETON;
+  private static TemporaryFolder SINGLETON_FOLDER;
 
   private final HMSMockServer mockHms;
+  private TemporaryFolder hmsFolder;
 
   static {
-    if (SingletonResourceUtil.isUseSingletonResource()) {
-      SINGLETON = new HMSMockServer();
+    try {
+      if (SingletonResourceUtil.isUseSingletonResource()) {
+        SINGLETON_FOLDER = new TemporaryFolder();
+        SINGLETON_FOLDER.create();
+        SINGLETON = new HMSMockServer(SINGLETON_FOLDER.newFile());
+      }
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 
@@ -41,7 +53,13 @@ public class TestHMS extends ExternalResource {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       mockHms = SINGLETON;
     } else {
-      mockHms = new HMSMockServer();
+      try {
+        hmsFolder = new TemporaryFolder();
+        hmsFolder.create();
+        mockHms = new HMSMockServer(hmsFolder.newFile());
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
     }
   }
 
@@ -70,6 +88,7 @@ public class TestHMS extends ExternalResource {
   protected void after() {
     if (!SingletonResourceUtil.isUseSingletonResource()) {
       mockHms.stop();
+      hmsFolder.delete();
       LOG.info("Stop mock HMS after testing.");
     }
   }

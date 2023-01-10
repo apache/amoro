@@ -20,7 +20,6 @@ package com.netease.arctic.catalog;
 
 import com.netease.arctic.ams.api.properties.TableFormat;
 import org.apache.iceberg.exceptions.AlreadyExistsException;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
