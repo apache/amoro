@@ -86,7 +86,7 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
               val scan = scanBuilder.build()
               val outputAttr = toOutputAttrs(scan.readSchema(), relation.output)
               val valuesRelation = DataSourceV2ScanRelation(relation, scan, outputAttr)
-              val references = outputAttr.filter(o => o.name.equals("_pos") || o.name.equals("_file"))
+              val references = cond.references.toSeq
               (references, valuesRelation)
             } else {
               throw new UnsupportedOperationException("error")
@@ -109,6 +109,13 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
             // if the field is new, create a new attribute
             AttributeReference(a.name, a.dataType, a.nullable, a.metadata)()
         }
+    }
+  }
+
+  def isKeyedTable(relation: DataSourceV2Relation): Boolean = {
+    relation.table match {
+      case arctic: ArcticSparkTable =>
+        arctic.table().isKeyedTable
     }
   }
 
@@ -162,9 +169,9 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
       notMatchedOutputs = notMatchedOutputs,
       // only needed if emitting unmatched target rows
       targetOutput = Nil,
-      rowIdAttrs = cond.references.toSeq,
+      rowIdAttrs = keyAttrs,
       performCardinalityCheck = isCardinalityCheckNeeded(matchedActions),
-      unMatchedRowCheck = java.lang.Boolean.valueOf(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT),
+      unMatchedRowCheck = isKeyedTable(relation),
       emitNotMatchedTargetRows = false,
       output = mergeRowsOutput,
       joinPlan)

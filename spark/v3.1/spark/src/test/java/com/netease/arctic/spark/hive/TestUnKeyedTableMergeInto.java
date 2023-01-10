@@ -239,21 +239,22 @@ public class TestUnKeyedTableMergeInto extends SparkTestBase {
   public void testMergeNotMatchedMulitRowsForOneKey() {
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (2, ''e'')", database, srcTableA);
     sql("INSERT INTO TABLE {0}.{1} VALUES (2, ''c'')", database, srcTableA);
-    Assert.assertThrows(SparkException.class,
-        () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
+    sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
             "ON t.id == s.id " +
             "WHEN MATCHED THEN " +
             "  UPDATE SET * " +
             "WHEN NOT MATCHED THEN " +
-            "  INSERT (t.id, t.data) VALUES (s.id, s.data)", database, tgTableA, srcTableA));
+            "  INSERT (t.id, t.data) VALUES (s.id, s.data)", database, tgTableA, srcTableA);
     ImmutableList<Object[]> expectedRows = ImmutableList.of(
-        row(1, "a"), // kept
+        row(1, "d"), // kept
+        row(2, "c"), // new
+        row(2, "e"), // new
         row(4, "d"), // kept
         row(5, "e"), // kept
         row(6, "c")  // kept
     );
     assertEquals("Should have expected rows", expectedRows,
-        sql("SELECT * FROM {0}.{1} ORDER BY id", database, tgTableA));
+        sql("SELECT * FROM {0}.{1} ORDER BY id, data", database, tgTableA));
   }
 
   @Test

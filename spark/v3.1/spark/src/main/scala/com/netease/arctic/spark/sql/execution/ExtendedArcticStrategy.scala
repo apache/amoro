@@ -128,11 +128,11 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
     case MergeRows(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
     notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
     output, child) =>
-      val unMatchedRowCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
+      val unMatchedRowNeedCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
         getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
-          SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty
+          SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty && unMatchedRowCheck
       MergeRowsExec(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-        notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
+        notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowNeedCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
     case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
