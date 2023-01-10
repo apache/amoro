@@ -43,7 +43,9 @@ public class SimpleSpillableMap<K, T> implements SimpleMap<K, T> {
   private SerializationUtils.SimpleSerializer<T> valueSerializer;
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
-    this(maxInMemorySizeInBytes, backendBaseDir, SerializationUtils.JavaSerializer.INSTANT, SerializationUtils.JavaSerializer.INSTANT);
+    this(maxInMemorySizeInBytes, backendBaseDir,
+        SerializationUtils.JavaSerializer.INSTANT,
+        SerializationUtils.JavaSerializer.INSTANT);
   }
 
   protected SimpleSpillableMap(Long maxInMemorySizeInBytes,
