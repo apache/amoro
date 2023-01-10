@@ -20,6 +20,8 @@ package com.netease.arctic.spark.sql.catalyst.parser
 
 //import com.netease.arctic.spark.sql.parser.{ArcticSqlBaseBaseListener, ArcticSqlBaseLexer, ArcticSqlBaseParser}
 
+import com.netease.arctic.spark.sql.catalyst.plans
+import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
 import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlBaseListener, ArcticExtendSparkSqlLexer, ArcticExtendSparkSqlParser, ArcticSqlCommandLexer, ArcticSqlCommandParser}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
@@ -33,7 +35,6 @@ import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, Unresol
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
 import org.apache.spark.sql.catalyst.parser.{ArcticExtendSparkSqlAstBuilder, ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.plans.MergeIntoArcticTable
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, MergeIntoTable}
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
@@ -192,7 +193,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
   private def replaceMergeIntoCommands(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsDown {
 
     case m@MergeIntoTable(UnresolvedArcticTable(aliasedTable), _, _, _, _) =>
-      MergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
+      plans.MergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
   }
 
   object UnresolvedArcticTable {

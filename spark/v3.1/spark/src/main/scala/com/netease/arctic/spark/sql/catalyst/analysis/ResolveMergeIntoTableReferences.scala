@@ -1,10 +1,13 @@
-package org.apache.spark.sql.catalyst.analysis
+package com.netease.arctic.spark.sql.catalyst.analysis
 
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, Expression, ExtractValue, LambdaFunction}
-import org.apache.spark.sql.catalyst.plans.MergeIntoArcticTable
+import com.netease.arctic.spark.sql.catalyst.plans
+import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
+import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
+import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 /**
@@ -32,7 +35,7 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
           UpdateAction(resolvedUpdateCondition, resolvedAssignments)
 
         case _ =>
-          throw new AnalysisException("Matched actions can only contain UPDATE or DELETE")
+          throw new UnsupportedOperationException("Matched actions can only contain UPDATE or DELETE")
       }
 
       val resolvedNotMatchedActions = notMatchedActions.map {
@@ -46,12 +49,12 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
 
 
         case _ =>
-          throw new AnalysisException("Not matched actions can only contain INSERT")
+          throw new UnsupportedOperationException("Not matched actions can only contain INSERT")
       }
 
       val resolvedMergeCondition = resolveCond("SEARCH", cond, m)
 
-      MergeIntoArcticTable(
+      plans.MergeIntoArcticTable(
         aliasedTable,
         source,
         mergeCondition = resolvedMergeCondition,
@@ -59,12 +62,61 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
         notMatchedActions = resolvedNotMatchedActions)
   }
 
+  private def resolveLiteralFunction(
+                                      nameParts: Seq[String],
+                                      attribute: UnresolvedAttribute,
+                                      plan: LogicalPlan): Option[Expression] = {
+    if (nameParts.length != 1) return None
+    val isNamedExpression = plan match {
+      case Aggregate(_, aggregateExpressions, _) => aggregateExpressions.contains(attribute)
+      case Project(projectList, _) => projectList.contains(attribute)
+      case Window(windowExpressions, _, _, _) => windowExpressions.contains(attribute)
+      case _ => false
+    }
+    val wrapper: Expression => Expression =
+      if (isNamedExpression) f => Alias(f, toPrettySQL(f))() else identity
+    // support CURRENT_DATE and CURRENT_TIMESTAMP
+    val literalFunctions = Seq(CurrentDate(), CurrentTimestamp())
+    val name = nameParts.head
+    val func = literalFunctions.find(e => caseInsensitiveResolution(e.prettyName, name))
+    func.map(wrapper)
+  }
+
+  def resolveExpressionBottomUp(
+                                 expr: Expression,
+                                 plan: LogicalPlan,
+                                 throws: Boolean = false): Expression = {
+    if (expr.resolved) return expr
+    // Resolve expression in one round.
+    // If throws == false or the desired attribute doesn't exist
+    // (like try to resolve `a.b` but `a` doesn't exist), fail and return the origin one.
+    // Else, throw exception.
+    try {
+      expr transformUp {
+        case GetColumnByOrdinal(ordinal, _) => plan.output(ordinal)
+        case u@UnresolvedAttribute(nameParts) =>
+          val result =
+            withPosition(u) {
+              plan.resolve(nameParts, resolver)
+                .orElse(resolveLiteralFunction(nameParts, u, plan))
+                .getOrElse(u)
+            }
+          logDebug(s"Resolving $u to $result")
+          result
+        case UnresolvedExtractValue(child, fieldName) if child.resolved =>
+          ExtractValue(child, fieldName, resolver)
+      }
+    } catch {
+      case a: AnalysisException if !throws => expr
+    }
+  }
+
   private def resolveCond(condName: String, cond: Expression, plan: LogicalPlan): Expression = {
-    val resolvedCond = analyzer.resolveExpressionBottomUp(cond, plan)
+    val resolvedCond = resolveExpressionBottomUp(cond, plan)
 
     val unresolvedAttrs = resolvedCond.references.filter(!_.resolved)
     if (unresolvedAttrs.nonEmpty) {
-      throw new AnalysisException(
+      throw new UnsupportedOperationException(
         s"Cannot resolve ${unresolvedAttrs.map(_.sql).mkString("[", ",", "]")} in $condName condition " +
           s"of MERGE operation given input columns: ${plan.inputSet.toSeq.map(_.sql).mkString("[", ",", "]")}")
     }

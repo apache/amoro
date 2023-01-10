@@ -2,7 +2,7 @@ package com.netease.arctic.spark.sql.catalyst.analysis
 
 import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.catalyst.plans
-import com.netease.arctic.spark.sql.catalyst.plans.WriteMerge
+import com.netease.arctic.spark.sql.catalyst.plans.{MergeIntoArcticTable, WriteMerge}
 import com.netease.arctic.spark.sql.utils.FieldReference
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
 import com.netease.arctic.spark.table.ArcticSparkTable
@@ -11,7 +11,7 @@ import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, ExtendedV2ExpressionUtils, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.plans.{Inner, MergeIntoArcticTable, RightOuter}
+import org.apache.spark.sql.catalyst.plans.{Inner, RightOuter}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.connector.expressions.NamedReference
