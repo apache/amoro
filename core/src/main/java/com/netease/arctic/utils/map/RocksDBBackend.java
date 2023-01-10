@@ -50,17 +50,29 @@ import java.util.stream.Collectors;
 
 public class RocksDBBackend {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBBackend.class);
-  private static final String BACKEND_BASE_DIR = System.getProperty("rocksdb.dir");
+  private static final String BACKEND_BASE_DIR = System.getProperty("java.io.tmpdir");
   private static final ThreadLocal<RocksDBBackend> instance =
           new ThreadLocal<>();
 
   public static RocksDBBackend getOrCreateInstance() {
     RocksDBBackend backend = instance.get();
     if (backend == null) {
-      backend = create();
+      backend = create(BACKEND_BASE_DIR);
     }
     if (backend.closed) {
-      backend = create();
+      backend = create(BACKEND_BASE_DIR);
+      instance.set(backend);
+    }
+    return backend;
+  }
+
+  public static RocksDBBackend getOrCreateInstance(String backendBaseDir) {
+    RocksDBBackend backend = instance.get();
+    if (backend == null) {
+      backend = create(backendBaseDir);
+    }
+    if (backend.closed) {
+      backend = create(backendBaseDir);
       instance.set(backend);
     }
     return backend;
@@ -73,13 +85,13 @@ public class RocksDBBackend {
   private final String rocksDBBasePath;
   private long totalBytesWritten;
 
-  private static RocksDBBackend create() {
-    return new RocksDBBackend();
+  private static RocksDBBackend create(String backendBaseDir) {
+    return new RocksDBBackend(backendBaseDir);
   }
 
-  private RocksDBBackend() {
-    this.rocksDBBasePath = BACKEND_BASE_DIR == null ? UUID.randomUUID().toString() :
-        String.format("%s/%s", BACKEND_BASE_DIR, UUID.randomUUID().toString());
+  private RocksDBBackend(String backendBaseDir) {
+    this.rocksDBBasePath = backendBaseDir == null ? UUID.randomUUID().toString() :
+        String.format("%s/%s", backendBaseDir, UUID.randomUUID());
     totalBytesWritten = 0L;
     setup();
   }

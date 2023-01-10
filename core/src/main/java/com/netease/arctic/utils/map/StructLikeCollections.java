@@ -26,6 +26,7 @@ public class StructLikeCollections {
   public static final StructLikeCollections DEFAULT = new StructLikeCollections(false, 0L);
 
   private Long maxInMemorySizeInBytes;
+  private String backendBaseDir;
 
   public StructLikeCollections(boolean enableSpillableMap, Long maxInMemorySizeInBytes) {
     if (enableSpillableMap) {
@@ -33,11 +34,18 @@ public class StructLikeCollections {
     }
   }
 
+  public StructLikeCollections(boolean enableSpillableMap, Long maxInMemorySizeInBytes, String backendBaseDir) {
+    if (enableSpillableMap) {
+      this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
+      this.backendBaseDir = backendBaseDir;
+    }
+  }
+
   public StructLikeBaseMap createStructLikeMap(Types.StructType type) {
     if (maxInMemorySizeInBytes == null) {
       return StructLikeMemoryMap.create(type);
     } else {
-      return StructLikeSpillableMap.create(type, maxInMemorySizeInBytes);
+      return StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, backendBaseDir);
     }
   }
 
@@ -45,7 +53,7 @@ public class StructLikeCollections {
     if (maxInMemorySizeInBytes == null) {
       return StructLikeSet.createMemorySet(type);
     } else {
-      return StructLikeSet.createSpillableSet(type, maxInMemorySizeInBytes);
+      return StructLikeSet.createSpillableSet(type, maxInMemorySizeInBytes, backendBaseDir);
     }
   }
 }
