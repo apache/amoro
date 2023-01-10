@@ -92,6 +92,10 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
   }
 
+  protected void write(TaskDataWriter writer, T row) throws IOException {
+    writer.write(row);
+  }
+
   protected TaskWriterKey buildWriterKey(T row) {
     StructLike structLike = asStructLike(row);
     partitionKey.partition(structLike);
