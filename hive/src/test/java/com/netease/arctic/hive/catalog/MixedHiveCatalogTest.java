@@ -39,11 +39,10 @@ public class MixedHiveCatalogTest extends MixedCatalogTest {
   public static TestHMS TEST_HMS = new TestHMS();
 
   @Override
-  public void setupCatalog() {
+  protected CatalogMeta buildCatalogMeta() {
     Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
+    return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, TEST_HMS.getHiveConf());
-    getAmsHandler().createCatalog(catalogMeta);
   }
 
   public MixedHiveCatalogTest() {

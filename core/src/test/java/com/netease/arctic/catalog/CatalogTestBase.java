@@ -70,11 +70,15 @@ public abstract class CatalogTestBase {
 
   @Before
   public void setupCatalog() throws IOException {
+    catalogMeta = buildCatalogMeta();
+    getAmsHandler().createCatalog(catalogMeta);
+  }
+
+  protected CatalogMeta buildCatalogMeta() throws IOException {
     Map<String, String> properties = Maps.newHashMap();
     properties.put(CatalogMetaProperties.KEY_WAREHOUSE, temp.newFolder().getPath());
-    catalogMeta = CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
+    return CatalogTestHelpers.buildCatalogMeta(TEST_CATALOG_NAME, getCatalogType(),
         properties, testFormat);
-    getAmsHandler().createCatalog(catalogMeta);
   }
 
   private String getCatalogType() {

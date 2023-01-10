@@ -25,6 +25,7 @@ import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
@@ -62,16 +63,20 @@ public class TableTestHelpers {
 
   private static final Map<String, DataFile> DATA_FILE_MAP = Maps.newHashMap();
 
-  public static DataFile getFile(String basePath, int number, String partitionValue) {
-    String filePath = String.format("%s/data-%d-%s.parquet", basePath, number, partitionValue != null ?
-        "partitioned" : "unpartitioned");
+  public static DataFile getFile(String basePath, int number, String partitionPath) {
+    String filePath;
+    if (partitionPath != null) {
+      filePath = String.format("%s/%s/data-%d.parquet", basePath, partitionPath, number);
+    } else {
+      filePath = String.format("%s/data-%d.parquet", basePath, number);
+    }
     return DATA_FILE_MAP.computeIfAbsent(filePath, path -> {
-      if (partitionValue != null) {
+      if (partitionPath != null) {
         return DataFiles.builder(SPEC)
             .withPath(path)
             .withFileSizeInBytes(10)
             .withRecordCount(2)
-            .withPartitionPath("op_time_day=" + partitionValue)
+            .withPartitionPath(partitionPath)
             .build();
       } else {
         return DataFiles.builder(PartitionSpec.unpartitioned())
@@ -83,13 +88,11 @@ public class TableTestHelpers {
     });
   }
 
-  public static DataFile getFile(int number, PartitionSpec partitionSpec) {
-    if (partitionSpec.isUnpartitioned()) {
-      return getFile("/data", number, null);
-    } else if (partitionSpec.equals(SPEC)) {
-      return getFile("/data", number, "2022-08-30");
-    } else {
-      throw new IllegalArgumentException("Unknown partition spec:" + partitionSpec);
-    }
+  public static DataFile getFile(int number) {
+    return getFile("/data", number, null);
+  }
+
+  public static DataFile getFile(int number, String partitionPath) {
+    return getFile("/data", number, partitionPath);
   }
 }

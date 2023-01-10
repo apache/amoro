@@ -28,14 +28,20 @@ import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.properties.TableFormat;
 import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.io.writer.GenericTaskWriters;
+import com.netease.arctic.io.writer.SortedPosDeleteWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.DataOperations;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.DeleteFiles;
+import org.apache.iceberg.OverwriteFiles;
+import org.apache.iceberg.RowDelta;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Transaction;
+import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
@@ -89,7 +95,11 @@ public class TableTracerTest extends TableTestBase {
   }
 
   private org.apache.iceberg.DataFile getDataFile(int number) {
-    return TableTestHelpers.getFile(number, getArcticTable().spec());
+    if (isPartitionedTable()) {
+      return TableTestHelpers.getFile(number, "op_time_day=2022-08-30");
+    } else {
+      return TableTestHelpers.getFile(number);
+    }
   }
 
   @Before
@@ -260,28 +270,6 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
-  public void testTracedReplacePartitions() {
-    Assume.assumeTrue(isPartitionedTable());
-    UnkeyedTable operationTable = getOperationTable();
-    operationTable.newFastAppend()
-        .appendFile(getDataFile(1))
-        .appendFile(getDataFile(2))
-        .appendFile(getDataFile(3))
-        .commit();
-
-    operationTable.newReplacePartitions()
-        .addFile(getDataFile(4))
-        .commit();
-
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
-        .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
-    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[]{getDataFile(4)},
-        new org.apache.iceberg.DataFile[]{getDataFile(3)});
-  }
-
-  @Test
   public void testTraceOverwriteByOptimize() {
     UnkeyedTable operationTable = getOperationTable();
     operationTable.newFastAppend()
@@ -444,68 +432,93 @@ public class TableTracerTest extends TableTestBase {
         new org.apache.iceberg.DataFile[]{getDataFile(1)});
   }
 
-  // @Test
-  // public void testTraceRemovePosDeleteInternal() throws Exception {
-  //   UnkeyedTable operationTable = getOperationTable();
-  //   operationTable.newAppend().appendFile(getDataFile(1)).commit();
-  //
-  //   SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-  //       .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, getDataFile(1).partition());
-  //   writer.delete(getDataFile(1).path(), 1);
-  //   writer.delete(getDataFile(1).path(), 3);
-  //   writer.delete(getDataFile(1).path(), 5);
-  //   List<DeleteFile> result = writer.complete();
-  //   RowDelta rowDelta = testKeyedTable.baseTable().newRowDelta();
-  //   result.forEach(rowDelta::addDeletes);
-  //   rowDelta.commit();
-  //
-  //   testKeyedTable.baseTable().newAppend().appendFile(getDataFile(3)).commit();
-  //   OverwriteFiles overwriteFiles = testKeyedTable.baseTable().newOverwrite();
-  //   overwriteFiles.deleteFile(getDataFile(1));
-  //   overwriteFiles.addFile(getDataFile(2));
-  //   overwriteFiles.commit();
-  //
-  //   List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas().get(PK_operationTable.id().buildTableIdentifier());
-  //   Assert.assertEquals(4, tableCommitMetas.size());
-  //   TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
-  //   Assert.assertEquals(1, commitMeta.getChanges().size());
-  //   TableChange tableChange = commitMeta.getChanges().get(0);
-  //   Assert.assertEquals(2, tableChange.deleteFiles.size());
-  // }
-  //
-  // @Test
-  // public void testTraceRemovePosDeleteInternalInTransaction() throws Exception {
-  //   UnkeyedTable operationTable = getOperationTable();
-  //   testKeyedTable.baseTable().newAppend().appendFile(getDataFile(1)).commit();
-  //
-  //   SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-  //       .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, getDataFile(1).partition());
-  //   writer.delete(getDataFile(1).path(), 1);
-  //   writer.delete(getDataFile(1).path(), 3);
-  //   writer.delete(getDataFile(1).path(), 5);
-  //   List<DeleteFile> result = writer.complete();
-  //   RowDelta rowDelta = testKeyedTable.baseTable().newRowDelta();
-  //   result.forEach(rowDelta::addDeletes);
-  //   rowDelta.commit();
-  //
-  //   testKeyedTable.baseTable().newAppend().appendFile(getDataFile(3)).commit();
-  //   Transaction transaction = testKeyedTable.baseTable().newTransaction();
-  //   OverwriteFiles overwriteFiles = transaction.newOverwrite();
-  //   overwriteFiles.deleteFile(getDataFile(1));
-  //   overwriteFiles.addFile(getDataFile(2));
-  //   overwriteFiles.commit();
-  //   DeleteFiles deleteFiles = transaction.newDelete();
-  //   deleteFiles.deleteFile(getDataFile(3));
-  //   deleteFiles.commit();
-  //   transaction.commitTransaction();
-  //
-  //   List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas().get(PK_TABLE_ID.buildTableIdentifier());
-  //   Assert.assertEquals(4, tableCommitMetas.size());
-  //   TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
-  //   Assert.assertEquals(2, commitMeta.getChanges().size());
-  //   TableChange tableChange = commitMeta.getChanges().get(0);
-  //   Assert.assertEquals(2, tableChange.deleteFiles.size());
-  // }
+  @Test
+  public void testTracedReplacePartitions() {
+    Assume.assumeTrue(isPartitionedTable());
+    UnkeyedTable operationTable = getOperationTable();
+    operationTable.newFastAppend()
+        .appendFile(TableTestHelpers.getFile(1, "op_time_day=2022-01-01"))
+        .appendFile(TableTestHelpers.getFile(2, "op_time_day=2022-01-01"))
+        .appendFile(TableTestHelpers.getFile(3, "op_time_day=2022-01-02"))
+        .commit();
+
+    operationTable.newReplacePartitions()
+        .addFile(TableTestHelpers.getFile(4, "op_time_day=2022-01-02"))
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+        .get(operationTable.id().buildTableIdentifier());
+    Assert.assertEquals(2, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    validateCommitMeta(commitMeta, DataOperations.OVERWRITE,
+        new org.apache.iceberg.DataFile[]{TableTestHelpers.getFile(4, "op_time_day=2022-01-02")},
+        new org.apache.iceberg.DataFile[]{TableTestHelpers.getFile(3, "op_time_day=2022-01-02")});
+  }
+
+  @Test
+  public void testTraceRemovePosDeleteInternal() throws Exception {
+    Assume.assumeTrue(isKeyedTable() && onBaseTable);
+    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
+
+    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, getDataFile(1).partition());
+    writer.delete(getDataFile(1).path(), 1);
+    writer.delete(getDataFile(1).path(), 3);
+    writer.delete(getDataFile(1).path(), 5);
+    List<DeleteFile> result = writer.complete();
+    RowDelta rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+
+    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(3)).commit();
+    OverwriteFiles overwriteFiles = getArcticTable().asKeyedTable().baseTable().newOverwrite();
+    overwriteFiles.deleteFile(getDataFile(1));
+    overwriteFiles.addFile(getDataFile(2));
+    overwriteFiles.commit();
+
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
+        .get(getArcticTable().id().buildTableIdentifier());
+    Assert.assertEquals(4, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
+    Assert.assertEquals(1, commitMeta.getChanges().size());
+    TableChange tableChange = commitMeta.getChanges().get(0);
+    Assert.assertEquals(2, tableChange.deleteFiles.size());
+  }
+
+  @Test
+  public void testTraceRemovePosDeleteInternalInTransaction() throws Exception {
+    Assume.assumeTrue(isKeyedTable() && onBaseTable);
+    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(1)).commit();
+
+    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, getDataFile(1).partition());
+    writer.delete(getDataFile(1).path(), 1);
+    writer.delete(getDataFile(1).path(), 3);
+    writer.delete(getDataFile(1).path(), 5);
+    List<DeleteFile> result = writer.complete();
+    RowDelta rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
+    result.forEach(rowDelta::addDeletes);
+    rowDelta.commit();
+
+    getArcticTable().asKeyedTable().baseTable().newAppend().appendFile(getDataFile(3)).commit();
+    Transaction transaction = getArcticTable().asKeyedTable().baseTable().newTransaction();
+    OverwriteFiles overwriteFiles = transaction.newOverwrite();
+    overwriteFiles.deleteFile(getDataFile(1));
+    overwriteFiles.addFile(getDataFile(2));
+    overwriteFiles.commit();
+    DeleteFiles deleteFiles = transaction.newDelete();
+    deleteFiles.deleteFile(getDataFile(3));
+    deleteFiles.commit();
+    transaction.commitTransaction();
+
+    List<TableCommitMeta> tableCommitMetas =
+        getAmsHandler().getTableCommitMetas().get(getArcticTable().id().buildTableIdentifier());
+    Assert.assertEquals(4, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(tableCommitMetas.size() - 1);
+    Assert.assertEquals(2, commitMeta.getChanges().size());
+    TableChange tableChange = commitMeta.getChanges().get(0);
+    Assert.assertEquals(2, tableChange.deleteFiles.size());
+  }
 
   private String getExpectedInnerTable() {
     if (onBaseTable) {

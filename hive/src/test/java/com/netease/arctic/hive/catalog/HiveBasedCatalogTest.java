@@ -46,10 +46,9 @@ public class HiveBasedCatalogTest extends BaseCatalogTest {
   }
 
   @Override
-  public void setupCatalog() {
+  protected CatalogMeta buildCatalogMeta() {
     Map<String, String> properties = Maps.newHashMap();
-    CatalogMeta catalogMeta = CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
+    return CatalogTestHelpers.buildHiveCatalogMeta(TEST_CATALOG_NAME,
         properties, TEST_HMS.getHiveConf(), getTestFormat());
-    getAmsHandler().createCatalog(catalogMeta);
   }
 }

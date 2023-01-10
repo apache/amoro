@@ -18,13 +18,20 @@
 
 package com.netease.arctic.hive;
 
+import com.netease.arctic.hive.catalog.HiveBasedCatalogTest;
+import com.netease.arctic.hive.catalog.HiveCatalogLoaderTest;
+import com.netease.arctic.hive.catalog.IcebergHiveCatalogTest;
+import com.netease.arctic.hive.catalog.MixedHiveCatalogTest;
+import com.netease.arctic.hive.io.TestAdaptHiveReader;
 import com.netease.arctic.hive.io.TestAdaptHiveWriter;
 import com.netease.arctic.hive.op.AutoSyncHiveTest;
 import com.netease.arctic.hive.op.TestHiveSchemaUpdate;
 import com.netease.arctic.hive.op.TestOverwriteFiles;
 import com.netease.arctic.hive.op.TestRewriteFiles;
 import com.netease.arctic.hive.op.TestRewritePartitions;
+import com.netease.arctic.hive.utils.CompatibleHivePropertyUtilTest;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizerTest;
+import com.netease.arctic.hive.utils.HiveSchemaUtilTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -38,7 +45,14 @@ import org.junit.runners.Suite;
     TestHiveSchemaUpdate.class,
     HiveMetaSynchronizerTest.class,
     TestAdaptHiveWriter.class,
-    AutoSyncHiveTest.class
+    AutoSyncHiveTest.class,
+    HiveBasedCatalogTest.class,
+    HiveCatalogLoaderTest.class,
+    IcebergHiveCatalogTest.class,
+    MixedHiveCatalogTest.class,
+    TestAdaptHiveReader.class,
+    CompatibleHivePropertyUtilTest.class,
+    HiveSchemaUtilTest.class
 })
 public class ArcticHiveTestMain {
 
