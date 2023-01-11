@@ -18,9 +18,12 @@
 
 package com.netease.arctic.spark.util;
 
+import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.spark.SparkAdapterLoader;
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.table.TableProperties;
 import org.apache.curator.shaded.com.google.common.collect.ObjectArrays;
 import org.apache.iceberg.MetadataColumns;
 import org.apache.iceberg.PartitionField;
@@ -28,11 +31,16 @@ import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.transforms.SortOrderVisitor;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.NamedReference;
+import org.apache.spark.sql.connector.expressions.Transform;
 
+import java.util.Arrays;
 import java.util.List;
+
+import static org.apache.iceberg.spark.Spark3Util.toTransforms;
 
 public class DistributionAndOrderingUtil {
 
@@ -51,6 +59,33 @@ public class DistributionAndOrderingUtil {
       PARTITION_ORDER, FILE_PATH_ORDER, ROW_POSITION_ORDER
   };
 
+
+  public static Expression[] buildTableRequiredDistribution(ArcticTable table) {
+    DistributionHashMode distributionHashMode = DistributionHashMode.autoSelect(
+        table.isKeyedTable(),
+        !table.spec().isUnpartitioned());
+
+    List<Expression> distributionExpressions = Lists.newArrayList();
+
+    if (distributionHashMode.isSupportPrimaryKey()) {
+      Transform transform = toTransformsFromPrimary(table, table.asKeyedTable().primaryKeySpec());
+      distributionExpressions.add(transform);
+      if (distributionHashMode.isSupportPartition()) {
+        distributionExpressions.addAll(Arrays.asList(toTransforms(table.spec())));
+      }
+    } else {
+      if (distributionHashMode.isSupportPartition()) {
+        distributionExpressions.addAll(Arrays.asList(toTransforms(table.spec())));
+      }
+    }
+    return distributionExpressions.toArray(new Expression[0]);
+  }
+
+  private static Transform toTransformsFromPrimary(ArcticTable table, PrimaryKeySpec primaryKeySpec) {
+    int numBucket = PropertyUtil.propertyAsInt(table.properties(),
+        TableProperties.BASE_FILE_INDEX_HASH_BUCKET, TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+    return Expressions.bucket(numBucket, primaryKeySpec.fieldNames().get(0));
+  }
 
   public static Expression[] buildTableRequiredSortOrder(ArcticTable table, boolean rowLevelOperation) {
     Schema schema = table.schema();

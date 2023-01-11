@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.sql.optimize
 
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticDataByExpression, OverwriteArcticPartitionsDynamic, ReplaceArcticData}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
@@ -68,7 +68,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         case table: ArcticSparkTable =>
           if (table.table().isKeyedTable) {
             val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
-            OverwriteArcticData(arcticRelation, query, validateQuery, writeOptions)
+            OverwriteArcticPartitionsDynamic(arcticRelation, query, validateQuery, writeOptions)
           } else {
             a
           }

@@ -37,44 +37,44 @@ import org.apache.spark.sql.{SparkSession, Strategy}
 import scala.collection.JavaConverters
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper{
+case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with PredicateHelper {
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
     case CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
       if isArcticCatalog(catalog) =>
-        var propertiesMap: Map[String, String] = props
-        var optionsMap: Map[String, String] = options
-        if (options.contains("primary.keys")) {
-          propertiesMap += ("primary.keys" -> options("primary.keys"))
-        }
-        if(propertiesMap.contains("primary.keys")) {
-          optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
-        }
+      var propertiesMap: Map[String, String] = props
+      var optionsMap: Map[String, String] = options
+      if (options.contains("primary.keys")) {
+        propertiesMap += ("primary.keys" -> options("primary.keys"))
+      }
+      if (propertiesMap.contains("primary.keys")) {
+        optionsMap += (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
+      }
 
       val writeOptions = new CaseInsensitiveStringMap(JavaConverters.mapAsJavaMap(optionsMap))
       CreateTableAsSelectExec(catalog, ident, parts, query, planLater(query),
         propertiesMap, writeOptions, ifNotExists) :: Nil
 
     case CreateTableLikeCommand(targetTable, sourceTable, storage, provider, properties, ifNotExists)
-      if provider.get != null && provider.get.equals("arctic")=>
-        CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
+      if provider.get != null && provider.get.equals("arctic") =>
+      CreateArcticTableLikeExec(spark, targetTable, sourceTable, storage, provider, properties, ifNotExists) :: Nil
 
     case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists)
       if isArcticCatalog(catalog) =>
-        val writeOptions = new CaseInsensitiveStringMap(options.asJava)
-        CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
-          props, writeOptions, ifNotExists) :: Nil
+      val writeOptions = new CaseInsensitiveStringMap(options.asJava)
+      CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
+        props, writeOptions, ifNotExists) :: Nil
 
     case DescribeRelation(r: ResolvedTable, partitionSpec, isExtended)
       if isArcticTable(r.table) =>
-        if (partitionSpec.nonEmpty) {
-          throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
-        }
-        DescribeKeyedTableExec(r.table, r.catalog, r.identifier, isExtended) :: Nil
+      if (partitionSpec.nonEmpty) {
+        throw new RuntimeException("DESCRIBE does not support partition for v2 tables.")
+      }
+      DescribeKeyedTableExec(r.table, r.catalog, r.identifier, isExtended) :: Nil
 
     case MigrateToArcticLogicalPlan(command) =>
       println("create migrate to arctic command logical")
-      MigrateToArcticExec(command)::Nil
+      MigrateToArcticExec(command) :: Nil
 
     case ReplaceArcticData(d: DataSourceV2Relation, query, options) =>
       AppendDataExec(d.table.asWritable, new CaseInsensitiveStringMap(options.asJava), planLater(query), refreshCache(d)) :: Nil
@@ -88,7 +88,7 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
           throw new UnsupportedOperationException(s"Cannot append data to non-Arctic table: $table")
       }
 
-    case OverwriteArcticData(d: DataSourceV2Relation, query, validateQuery, options) =>
+    case OverwriteArcticPartitionsDynamic(d: DataSourceV2Relation, query, validateQuery, options) =>
       d.table match {
         case t: ArcticSparkTable =>
           OverwriteArcticDataExec(t, new CaseInsensitiveStringMap(options.asJava), planLater(query),
@@ -110,8 +110,8 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
         case table =>
           throw new UnsupportedOperationException(s"Cannot overwrite by filter to non-Arctic table: $table")
       }
-    case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
-      AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData):: Nil
+    case d @ AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
+      AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData) :: Nil
 
     case _ => Nil
   }

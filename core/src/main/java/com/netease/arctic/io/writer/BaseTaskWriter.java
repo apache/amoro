@@ -82,7 +82,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   }
 
   protected void write(DataWriter<T> writer, T row) throws IOException {
-    writer.add(row);
+    writer.write(row);
   }
 
   protected DataWriterKey buildWriterKey(T row) {
@@ -145,6 +145,11 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     @Override
     public PartitionKey getPartitionKey() {
       return partitionKey;
+    }
+
+    @Override
+    public String toString() {
+      return "[" + partitionKey.toString() + " " + getTreeNode().toString() + "]";
     }
   }
 
@@ -266,7 +271,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
         }
 
         if (completedKeys.contains(writerKey)) {
-          throw new IllegalStateException();
+          throw new IllegalStateException("The write key " + writerKey + " has already been completed");
         }
 
         currentKey = writerKey.copy();

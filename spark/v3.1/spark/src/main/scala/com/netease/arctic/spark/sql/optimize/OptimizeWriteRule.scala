@@ -19,14 +19,14 @@
 package com.netease.arctic.spark.sql.optimize
 
 import com.netease.arctic.spark.SupportSparkAdapter
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticData, ReplaceArcticData}
-import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.util.{ArcticSparkUtils, DistributionAndOrderingUtil}
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticPartitionsDynamic, ReplaceArcticData}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
+import com.netease.arctic.spark.util.DistributionAndOrderingUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, SortOrder}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OverwritePartitionsDynamic, RepartitionByExpression, Sort}
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
+import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 
 case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with SupportSparkAdapter {
@@ -59,7 +59,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
         case _ =>
           replace
       }
-    case overwrite @ OverwriteArcticData(r: DataSourceV2Relation, query, _, _) =>
+    case overwrite @ OverwriteArcticPartitionsDynamic(r: DataSourceV2Relation, query, _, _) =>
       r.table match {
         case table: ArcticSparkTable =>
           val newQuery = distributionQuery(query, table, rowLevelOperation = false)
@@ -70,17 +70,20 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       }
   }
 
-  private def distributionQuery(query: LogicalPlan, table: ArcticSparkTable, rowLevelOperation: Boolean): LogicalPlan = {
+  private def distributionQuery(query: LogicalPlan, table: Table, rowLevelOperation: Boolean): LogicalPlan = {
     import org.apache.spark.sql.connector.expressions.{Expression => Expr}
 
     def toCatalyst(expr: Expr): Expression = sparkAdapter.expressions().toCatalyst(expr, query)
 
-    val distribution = ArcticSparkUtils.buildRequiredDistribution(table) match {
-      case d: ClusteredDistribution =>
-        d.clustering.map(e => toCatalyst(e))
-      case _ =>
-        Array.empty[Expression]
+    val arcticTable = table match {
+      case t: ArcticSparkTable => t.table()
+      case t: ArcticIcebergSparkTable => t.table()
     }
+
+    val distribution = DistributionAndOrderingUtil.buildTableRequiredDistribution(arcticTable)
+      .toSeq.map(e => toCatalyst(e))
+      .asInstanceOf[Seq[Expression]]
+
     val queryWithDistribution = if (distribution.nonEmpty) {
       val partitionNum = conf.numShufflePartitions
       val pp = RepartitionByExpression(distribution, query, partitionNum)
@@ -89,9 +92,8 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       query
     }
 
-    val ordering = DistributionAndOrderingUtil.buildTableRequiredSortOrder(
-      table.table(), rowLevelOperation
-    ).toSeq
+    val ordering = DistributionAndOrderingUtil.buildTableRequiredSortOrder(arcticTable, rowLevelOperation)
+      .toSeq
       .map(e => toCatalyst(e))
       .asInstanceOf[Seq[SortOrder]]
 
