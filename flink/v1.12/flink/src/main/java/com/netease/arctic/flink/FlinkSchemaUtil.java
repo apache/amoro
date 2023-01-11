@@ -194,7 +194,7 @@ public class FlinkSchemaUtil {
       throw new ValidationException(
         String.format(
           "Invalid data type of expression for watermark definition. " +
-            "The field must be of type TIMESTAMP(p) or TIMESTAMP_LTZ(p)," +
+            "The field must be of type TIMESTAMP(p)," +
             " the supported precision 'p' is from 0 to 3, but the watermark expression type is %s",
           watermarkType));
     }
@@ -202,8 +202,7 @@ public class FlinkSchemaUtil {
 
   public static boolean canBeTimeAttributeType(LogicalType logicalType) {
     LogicalTypeRoot typeRoot = logicalType.getTypeRoot();
-    if (typeRoot == LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE ||
-        typeRoot == LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+    if (typeRoot == LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE) {
       return true;
     }
     return false;
