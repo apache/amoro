@@ -50,7 +50,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
@@ -60,7 +59,7 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
     SupportsProjectionPushDown, SupportsLimitPushDown, SupportsWatermarkPushDown {
 
   private static final Logger LOG = LoggerFactory.getLogger(ArcticFileSource.class);
-  
+
   private int[] projectedFields;
   private long limit;
   private List<Expression> filters;
@@ -138,7 +137,6 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
           projectedColumns,
           Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new));
 
-      addPrimaryKey(builder, table, tableSchema, projectedColumns);
       TableSchema ts = builder.build();
       LOG.info("TableSchema builder after addPrimaryKey, schema:{}", ts);
       return ts;

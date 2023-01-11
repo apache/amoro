@@ -314,10 +314,15 @@ public class FlinkTestBase extends TableTestBase {
 
   protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
                                                              boolean base) {
+    return createKeyedTaskWriter(keyedTable, rowType, transactionId, base, 3);
+  }
+
+  protected static TaskWriter<RowData> createKeyedTaskWriter(KeyedTable keyedTable, RowType rowType, long transactionId,
+                                                             boolean base, long mask) {
     ArcticRowDataTaskWriterFactory taskWriterFactory =
         new ArcticRowDataTaskWriterFactory(keyedTable, rowType, base);
     taskWriterFactory.setTransactionId(transactionId);
-    taskWriterFactory.setMask(3);
+    taskWriterFactory.setMask(mask);
     taskWriterFactory.initialize(0, 0);
     return taskWriterFactory.create();
   }

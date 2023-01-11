@@ -75,7 +75,7 @@ public class TableProperties {
 
   public static final String OPTIMIZE_EXECUTE_TIMEOUT = "optimize.execute.timeout";
   public static final int OPTIMIZE_EXECUTE_TIMEOUT_DEFAULT = 1800000; // 30 min
-  
+
   public static final String OPTIMIZE_MAX_FILE_COUNT = "optimize.max-file-count";
   public static final int OPTIMIZE_MAX_FILE_COUNT_DEFAULT = 100000;
 
@@ -184,11 +184,19 @@ public class TableProperties {
 
   /**
    * table read related properties
+   * TODO
+   * This Configuration will be removed in the v0.5.0 version.
    */
+  @Deprecated
   public static final String READ_DISTRIBUTION_MODE = "read.distribution-mode";
   public static final String READ_DISTRIBUTION_MODE_NONE = "none";
   public static final String READ_DISTRIBUTION_MODE_HASH = "hash";
-  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_HASH;
+  public static final String READ_DISTRIBUTION_MODE_DEFAULT = READ_DISTRIBUTION_MODE_NONE;
+  /**
+   * TODO
+   * This Configuration will be removed in the v0.5.0 version.
+   */
+  @Deprecated
   public static final String READ_DISTRIBUTION_HASH_MODE = "read.distribution.hash-mode";
   public static final String READ_DISTRIBUTION_HASH_PARTITION = "partition-key";
   public static final String READ_DISTRIBUTION_HASH_PRIMARY = "primary-key";
