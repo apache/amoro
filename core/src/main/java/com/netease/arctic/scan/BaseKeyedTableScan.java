@@ -19,6 +19,7 @@
 package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.scan.expressions.BasePartitionEvaluator;
 import com.netease.arctic.table.BaseKeyedTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -75,6 +76,13 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         TableProperties.SPLIT_LOOKBACK, TableProperties.SPLIT_LOOKBACK_DEFAULT);
   }
 
+  /**
+   * Config this scan with filter by the {@link Expression}.
+   * For Change Table, only filters related to partition will take effect.
+   *
+   * @param expr a filter expression
+   * @return scan based on this with results filtered by the expression
+   */
   @Override
   public KeyedTableScan filter(Expression expr) {
     if (expression == null) {
@@ -124,7 +132,9 @@ public class BaseKeyedTableScan implements KeyedTableScan {
         .fromTransaction(partitionMaxTransactionId)
         .fromLegacyTransaction(legacyPartitionMaxTransactionId);
     if (expression != null) {
-      changeTableScan = changeTableScan.filter(expression);
+      //Only push down filters related to partition
+      Expression partitionExpression = new BasePartitionEvaluator(table.spec()).project(expression);
+      changeTableScan.filter(partitionExpression);
     }
     return changeTableScan.planTasks();
   }
