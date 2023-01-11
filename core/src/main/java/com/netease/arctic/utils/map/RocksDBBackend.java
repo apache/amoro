@@ -37,6 +37,7 @@ import org.rocksdb.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -58,6 +59,7 @@ public class RocksDBBackend {
     RocksDBBackend backend = instance.get();
     if (backend == null) {
       backend = create(BACKEND_BASE_DIR);
+      instance.set(backend);
     }
     if (backend.closed) {
       backend = create(BACKEND_BASE_DIR);
@@ -66,10 +68,18 @@ public class RocksDBBackend {
     return backend;
   }
 
-  public static RocksDBBackend getOrCreateInstance(String backendBaseDir) {
+  public static RocksDBBackend getOrCreateInstance(@Nullable String backendBaseDir) {
+    if (backendBaseDir == null) {
+      return getOrCreateInstance();
+    }
     RocksDBBackend backend = instance.get();
+    // if backend base dir has changed, close old backend
+    if (backend != null && !backend.getRocksDBBasePath().startsWith(backendBaseDir)) {
+      backend.close();
+    }
     if (backend == null) {
       backend = create(backendBaseDir);
+      instance.set(backend);
     }
     if (backend.closed) {
       backend = create(backendBaseDir);
@@ -85,11 +95,11 @@ public class RocksDBBackend {
   private final String rocksDBBasePath;
   private long totalBytesWritten;
 
-  private static RocksDBBackend create(String backendBaseDir) {
+  private static RocksDBBackend create(@Nullable String backendBaseDir) {
     return new RocksDBBackend(backendBaseDir);
   }
 
-  private RocksDBBackend(String backendBaseDir) {
+  private RocksDBBackend(@Nullable String backendBaseDir) {
     this.rocksDBBasePath = backendBaseDir == null ? UUID.randomUUID().toString() :
         String.format("%s/%s", backendBaseDir, UUID.randomUUID());
     totalBytesWritten = 0L;

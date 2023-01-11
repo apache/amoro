@@ -25,24 +25,23 @@ public class StructLikeCollections {
 
   public static final StructLikeCollections DEFAULT = new StructLikeCollections(false, 0L);
 
-  private Long maxInMemorySizeInBytes;
+  private final boolean enableSpillableMap;
+  private final long maxInMemorySizeInBytes;
   private String backendBaseDir;
 
-  public StructLikeCollections(boolean enableSpillableMap, Long maxInMemorySizeInBytes) {
-    if (enableSpillableMap) {
-      this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
-    }
+  public StructLikeCollections(boolean enableSpillableMap, long maxInMemorySizeInBytes) {
+    this.enableSpillableMap = enableSpillableMap;
+    this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
   }
 
-  public StructLikeCollections(boolean enableSpillableMap, Long maxInMemorySizeInBytes, String backendBaseDir) {
-    if (enableSpillableMap) {
-      this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
-      this.backendBaseDir = backendBaseDir;
-    }
+  public StructLikeCollections(boolean enableSpillableMap, long maxInMemorySizeInBytes, String backendBaseDir) {
+    this.enableSpillableMap = enableSpillableMap;
+    this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
+    this.backendBaseDir = backendBaseDir;
   }
 
   public StructLikeBaseMap createStructLikeMap(Types.StructType type) {
-    if (maxInMemorySizeInBytes == null) {
+    if (!enableSpillableMap) {
       return StructLikeMemoryMap.create(type);
     } else {
       return StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, backendBaseDir);
@@ -50,7 +49,7 @@ public class StructLikeCollections {
   }
 
   public StructLikeSet createStructLikeSet(Types.StructType type) {
-    if (maxInMemorySizeInBytes == null) {
+    if (!enableSpillableMap) {
       return StructLikeSet.createMemorySet(type);
     } else {
       return StructLikeSet.createSpillableSet(type, maxInMemorySizeInBytes, backendBaseDir);
