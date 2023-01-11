@@ -39,6 +39,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.Tasks;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,11 +78,11 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   @Override
   public void write(T row) throws IOException {
     DataWriterKey writerKey = buildWriterKey(row);
-    DataWriter<T> writer = writerHolder.get(writerKey);
+    TaskDataWriter<T> writer = writerHolder.get(writerKey);
     write(writer, row);
   }
 
-  protected void write(DataWriter<T> writer, T row) throws IOException {
+  protected void write(TaskDataWriter<T> writer, T row) throws IOException {
     writer.write(row);
   }
 
@@ -176,7 +177,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       this.targetFileSize = targetFileSize;
     }
 
-    public abstract DataWriter<T> get(DataWriterKey writerKey) throws IOException;
+    public abstract TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException;
 
     public abstract void close() throws IOException;
 
@@ -184,16 +185,17 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       return Lists.newArrayList(completedFiles);
     }
 
-    protected boolean shouldRollToNewFile(DataWriter<T> dataWriter) {
+    protected boolean shouldRollToNewFile(TaskDataWriter<T> dataWriter) {
       // TODO: ORC file now not support target file size before closed
       return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
     }
 
 
 
-    protected DataWriter<T> newWriter(TaskWriterKey writerKey) {
-      return io.doAs(() -> appenderFactory.newDataWriter(
+    protected TaskDataWriter<T> newWriter(TaskWriterKey writerKey) {
+      DataWriter<T> dataWriter = io.doAs(() -> appenderFactory.newDataWriter(
           outputFileFactory.newOutputFile(writerKey), format, writerKey.getPartitionKey()));
+      return new TaskDataWriter<>(dataWriter, io);
     }
   }
 
@@ -202,7 +204,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
    * This holder does not require records have been sorted, but will keep open files as many as write keys.
    */
   protected static class FanoutWriterHolder<T> extends WriterHolder<T> {
-    private final Map<DataWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
+    private final Map<DataWriterKey, TaskDataWriter<T>> dataWriterMap = Maps.newHashMap();
 
     public FanoutWriterHolder(
         FileFormat format, FileAppenderFactory<T> appenderFactory,
@@ -211,8 +213,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public DataWriter<T> get(DataWriterKey writerKey) throws IOException {
-      DataWriter<T> writer;
+    public TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException {
+      TaskDataWriter<T> writer;
       writer = dataWriterMap.get(writerKey);
       if (writer != null && shouldRollToNewFile(writer)) {
         writer.close();
@@ -232,9 +234,12 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
     @Override
     public void close() throws IOException {
-      for (DataWriter<T> dataWriter : dataWriterMap.values()) {
+      for (TaskDataWriter<T> dataWriter : dataWriterMap.values()) {
         dataWriter.close();
-        completedFiles.add(dataWriter.toDataFile());
+        DataFile dataFile = dataWriter.toDataFile();
+        if (dataFile != null) {
+          completedFiles.add(dataWriter.toDataFile());
+        }
       }
       dataWriterMap.clear();
     }
@@ -248,7 +253,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
    */
   protected static class OrderedWriterHolder<T> extends WriterHolder<T> {
 
-    private DataWriter<T> currentWriter;
+    private TaskDataWriter<T> currentWriter;
     private DataWriterKey currentKey;
     private final Set<DataWriterKey> completedKeys = Sets.newHashSet();
 
@@ -263,7 +268,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public DataWriter<T> get(DataWriterKey writerKey) throws IOException {
+    public TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException {
       if (!writerKey.equals(currentKey)) {
         if (currentKey != null) {
           closeCurrentWriter();
@@ -287,7 +292,10 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     private void closeCurrentWriter() throws IOException {
       if (currentWriter != null) {
         currentWriter.close();
-        completedFiles.add(currentWriter.toDataFile());
+        DataFile dataFile = currentWriter.toDataFile();
+        if (dataFile != null) {
+          completedFiles.add(currentWriter.toDataFile());
+        }
         currentWriter = null;
       }
     }
@@ -298,4 +306,46 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
   }
 
+  protected static class TaskDataWriter<T> {
+    private final DataWriter<T> dataWriter;
+    private long currentRows = 0;
+
+    private final ArcticFileIO io;
+
+    protected TaskDataWriter(DataWriter<T> dataWriter, ArcticFileIO io) {
+      this.dataWriter = dataWriter;
+      this.io = io;
+    }
+
+    protected void write(T record) {
+      dataWriter.write(record);
+      currentRows++;
+    }
+
+    protected void close() {
+      io.doAs(() -> {
+        dataWriter.close();
+        return null;
+      });
+      if (currentRows <= 0) {
+        try {
+          io.deleteFile(dataWriter.toDataFile().path().toString());
+        } catch (UncheckedIOException e) {
+          // the file may not have been created, and it isn't worth failing the job to clean up, skip deleting
+        }
+      }
+    }
+
+    protected DataFile toDataFile() {
+      if (currentRows > 0) {
+        return dataWriter.toDataFile();
+      } else {
+        return null;
+      }
+    }
+
+    protected long length() {
+      return dataWriter.length();
+    }
+  }
 }

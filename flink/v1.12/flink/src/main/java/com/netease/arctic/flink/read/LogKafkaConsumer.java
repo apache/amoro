@@ -48,6 +48,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
 /**
  * An arctic log consumer that consume arctic log data from kafka.
  */
+@Deprecated
 public class LogKafkaConsumer extends FlinkKafkaConsumer<RowData> {
   private static final long serialVersionUID = 7855676094345921722L;
   private KafkaDeserializationSchemaWrapper<RowData> logRecordDeserializationSchemaWrapper;

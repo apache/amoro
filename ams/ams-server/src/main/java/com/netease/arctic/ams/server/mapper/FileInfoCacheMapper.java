@@ -145,8 +145,8 @@ public interface FileInfoCacheMapper {
           @Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("partition") String partition);
 
   @Select("select file_path, file_type, file_size, file_mask, file_index, record_count, spec_id, partition_name, " +
-      "commit_time from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, typeHandler=com.netease.arctic" +
-      ".ams.server.mybatis.TableIdentifier2StringConverter} and " +
+      "commit_time, add_snapshot_sequence from " + TABLE_NAME + " where table_identifier = #{tableIdentifier, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.TableIdentifier2StringConverter} and " +
       "commit_time <= #{ttl, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor} " +
       "and inner_table = #{innerTable} and " +
       "delete_snapshot_id is null  ")
@@ -160,7 +160,8 @@ public interface FileInfoCacheMapper {
       @Result(column = "spec_id", property = "specId"),
       @Result(column = "partition_name", property = "partition"),
       @Result(column = "commit_time", property = "commitTime",
-          typeHandler = Long2TsConvertor.class)
+          typeHandler = Long2TsConvertor.class),
+      @Result(column = "add_snapshot_sequence", property = "sequence")
   })
   List<DataFileInfo> getChangeTableTTLDataFiles(@Param("tableIdentifier") TableIdentifier tableIdentifier,
                                                 @Param("innerTable") String innerTable,

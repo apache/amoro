@@ -49,15 +49,18 @@ public class DataIterator<T> implements CloseableIterator<T> {
   private long recordOffset;
   private long currentArcticFileOffset;
   private final Function<T, Long> arcticFileOffsetGetter;
+  private final Function<T, T> arcticMetaColumnRemover;
 
   public DataIterator(
       FileScanTaskReader<T> fileScanTaskReader,
       Collection<ArcticFileScanTask> tasks,
-      Function<T, Long> arcticFileOffsetGetter) {
+      Function<T, Long> arcticFileOffsetGetter,
+      Function<T, T> arcticMetaColumnRemover) {
     this.fileScanTaskReader = fileScanTaskReader;
     this.tasks = tasks.iterator();
     this.taskSize = tasks.size();
     this.arcticFileOffsetGetter = arcticFileOffsetGetter;
+    this.arcticMetaColumnRemover = arcticMetaColumnRemover;
 
     this.currentIterator = CloseableIterator.empty();
 
@@ -119,7 +122,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
     recordOffset += 1;
     T row = currentIterator.next();
     currentArcticFileOffset = arcticFileOffsetGetter.apply(row);
-    return row;
+    return arcticMetaColumnRemover.apply(row);
   }
 
   public boolean currentFileHasNext() {
@@ -173,7 +176,7 @@ public class DataIterator<T> implements CloseableIterator<T> {
   private static class EmptyIterator<T> extends DataIterator<T> {
 
     public EmptyIterator() {
-      super(null, Collections.emptyList(), t -> Long.MIN_VALUE);
+      super(null, Collections.emptyList(), t -> Long.MIN_VALUE, t -> t);
     }
 
     @Override
