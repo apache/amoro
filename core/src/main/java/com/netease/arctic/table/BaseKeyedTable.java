@@ -19,6 +19,7 @@
 package com.netease.arctic.table;
 
 import com.netease.arctic.AmsClient;
+import com.netease.arctic.TransactionSequence;
 import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.op.KeyedPartitionRewrite;
@@ -31,6 +32,7 @@ import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.utils.TablePropertyUtil;
+import com.netease.arctic.utils.TransactionUtil;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
@@ -169,12 +171,8 @@ public class BaseKeyedTable implements KeyedTable {
   }
 
   @Override
-  public long beginTransaction(String signature) {
-    try {
-      return client.allocateTransactionId(this.tableMeta.getTableIdentifier(), signature);
-    } catch (TException e) {
-      throw new IllegalStateException("failed begin transaction", e);
-    }
+  public TransactionSequence beginTransaction(String signature) {
+    return TransactionUtil.getCurrentTransactionSequence(this);
   }
 
   @Override

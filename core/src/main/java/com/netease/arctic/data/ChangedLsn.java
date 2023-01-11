@@ -18,6 +18,8 @@
 
 package com.netease.arctic.data;
 
+import com.netease.arctic.TransactionSequence;
+
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -34,22 +36,28 @@ import java.util.Objects;
 
 public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
 
-  private final long transactionId;
+  private final TransactionSequence transactionSequence;
   private final long fileOffset;
 
-  public static ChangedLsn of(long transactionId, long fileOffset) {
-    return new ChangedLsn(transactionId, fileOffset);
+  public static ChangedLsn of(TransactionSequence transactionSequence, long fileOffset) {
+    return new ChangedLsn(transactionSequence, fileOffset);
+  }
+
+  // TODO remove
+  public static ChangedLsn of(long txId, long fileOffset) {
+    return new ChangedLsn(TransactionSequence.of(txId), fileOffset);
   }
 
   public static ChangedLsn of(byte[] bytes) {
-    return of(((long) bytes[15] << 56) |
+    // TODO fix
+    return of(TransactionSequence.of(((long) bytes[15] << 56) |
                     ((long) bytes[14] & 0xff) << 48 |
                     ((long) bytes[13] & 0xff) << 40 |
                     ((long) bytes[12] & 0xff) << 32 |
                     ((long) bytes[11] & 0xff) << 24 |
                     ((long) bytes[10] & 0xff) << 16 |
                     ((long) bytes[9] & 0xff) << 8 |
-                    ((long) bytes[8] & 0xff),
+                    ((long) bytes[8] & 0xff)),
             ((long) bytes[7] << 56) |
                     ((long) bytes[6] & 0xff) << 48 |
                     ((long) bytes[5] & 0xff) << 40 |
@@ -60,13 +68,13 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
                     ((long) bytes[0] & 0xff));
   }
 
-  private ChangedLsn(long transactionId, long fileOffset) {
-    this.transactionId = transactionId;
+  private ChangedLsn(TransactionSequence transactionSequence, long fileOffset) {
+    this.transactionSequence = transactionSequence;
     this.fileOffset = fileOffset;
   }
 
-  public long transactionId() {
-    return transactionId;
+  public TransactionSequence transactionSequence() {
+    return transactionSequence;
   }
 
   public long fileOffset() {
@@ -76,10 +84,9 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
 
   @Override
   public int compareTo(ChangedLsn another) {
-    if (transactionId > another.transactionId()) {
-      return 1;
-    } else if (transactionId < another.transactionId) {
-      return -1;
+    int compare = this.transactionSequence.compareTo(another.transactionSequence);
+    if (compare != 0) {
+      return compare;
     } else {
       if (fileOffset > another.fileOffset()) {
         return 1;
@@ -96,31 +103,32 @@ public class ChangedLsn implements Comparable<ChangedLsn>, Serializable {
     if (this == o) return true;
     if (o == null || getClass() != o.getClass()) return false;
     ChangedLsn recordLsn = (ChangedLsn) o;
-    return transactionId == recordLsn.transactionId &&
+    return transactionSequence == recordLsn.transactionSequence &&
             fileOffset == recordLsn.fileOffset;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(transactionId, fileOffset);
+    return Objects.hash(transactionSequence, fileOffset);
   }
 
   @Override
   public String toString() {
-    return new StringBuilder("RecordLsn(").append(transactionId)
+    return new StringBuilder("RecordLsn(").append(transactionSequence)
             .append(", ").append(fileOffset).append(")").toString();
   }
 
   public byte[] toBytes() {
+    // TODO fix
     return new byte[] {
-        (byte) transactionId,
-        (byte) (transactionId >> 8),
-        (byte) (transactionId >> 16),
-        (byte) (transactionId >> 24),
-        (byte) (transactionId >> 32),
-        (byte) (transactionId >> 40),
-        (byte) (transactionId >> 48),
-        (byte) (transactionId >> 56),
+        (byte) transactionSequence.getChangeSequence(),
+        (byte) (transactionSequence.getChangeSequence() >> 8),
+        (byte) (transactionSequence.getChangeSequence() >> 16),
+        (byte) (transactionSequence.getChangeSequence() >> 24),
+        (byte) (transactionSequence.getChangeSequence() >> 32),
+        (byte) (transactionSequence.getChangeSequence() >> 40),
+        (byte) (transactionSequence.getChangeSequence() >> 48),
+        (byte) (transactionSequence.getChangeSequence() >> 56),
         (byte) fileOffset,
         (byte) (fileOffset >> 8),
         (byte) (fileOffset >> 16),

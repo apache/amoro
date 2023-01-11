@@ -145,7 +145,23 @@ public class TableFileUtils {
    * @param fileName fileName
    * @return transaction id
    */
+  @Deprecated
   public static long parseFileTidFromFileName(String fileName) {
+    fileName = TableFileUtils.getFileName(fileName);
+    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+    long transactionId = 0L;
+    if (matcher.matches()) {
+      transactionId = Long.parseLong(matcher.group(3));
+    }
+    return transactionId;
+  }
+
+  /**
+   * parse keyed file transaction id from file name
+   * @param fileName
+   * @return
+   */
+  public static long parseTransactionSequenceFromFileName(String fileName) {
     fileName = TableFileUtils.getFileName(fileName);
     Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
     long transactionId = 0L;

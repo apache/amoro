@@ -18,6 +18,7 @@
 
 package com.netease.arctic.table;
 
+import com.netease.arctic.TransactionSequence;
 import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.scan.KeyedTableScan;
@@ -70,7 +71,7 @@ public interface KeyedTable extends ArcticTable {
    *                  Requests with signature NULL will always get different transaction id.
    * @return a new transaction id
    */
-  long beginTransaction(String signature);
+  TransactionSequence beginTransaction(String signature);
 
   @Override
   default boolean isKeyedTable() {

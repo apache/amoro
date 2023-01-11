@@ -18,11 +18,12 @@
 
 package com.netease.arctic.hive.io.writer;
 
+import com.netease.arctic.TransactionSequence;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
-import com.netease.arctic.utils.IdGenerator;
+import com.netease.arctic.utils.TransactionUtil;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.StructLike;
@@ -30,6 +31,7 @@ import org.apache.iceberg.encryption.EncryptedOutputFile;
 import org.apache.iceberg.encryption.EncryptionManager;
 import org.apache.iceberg.io.OutputFile;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.netease.arctic.utils.TableFileUtils.getFileName;
@@ -42,14 +44,14 @@ import static com.netease.arctic.utils.TableFileUtils.getFileName;
  *            -| hive
  *                 -| ${partition_name1}
  *                 -| ${partition_name2}
- *                            -| ${timestamp}_{txid}
+ *                            -| ${timestamp}_{transaction_sequence}
  *
  * For adapt hive table without partitions the dir construct is :
  *    ${table_location}
  *            -| change
  *            -| base
  *            -| hive
- *                  -| ${timestamp}_{txid}
+ *                  -| ${timestamp}_{transaction_sequence}
  * txId of unkeyed table is random long.
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
@@ -68,8 +70,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final int partitionId;
   private final long taskId;
-  private final long transactionId;
+  private final String operationId;
 
+  private final String formattedTransactionSequence;
   private final AtomicLong fileCount = new AtomicLong(0);
 
   public AdaptHiveOutputFileFactory(
@@ -80,8 +83,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,
-      Long transactionId) {
-    this(baseLocation, partitionSpec, format, io, encryptionManager, partitionId, taskId, transactionId, null);
+      TransactionSequence transactionSequence) {
+    this(baseLocation, partitionSpec, format, io, encryptionManager, partitionId, taskId, transactionSequence, null,
+        null);
   }
 
   public AdaptHiveOutputFileFactory(
@@ -92,7 +96,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       EncryptionManager encryptionManager,
       int partitionId,
       long taskId,
-      Long transactionId,
+      TransactionSequence transactionSequence,
+      String operationId,
       String hiveSubDirectory) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
@@ -101,9 +106,10 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.encryptionManager = encryptionManager;
     this.partitionId = partitionId;
     this.taskId = taskId;
-    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
+    this.operationId = operationId == null ? UUID.randomUUID().toString() : operationId;
+    this.formattedTransactionSequence = TransactionUtil.formatTransactionSequence(transactionSequence);
     if (hiveSubDirectory == null) {
-      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
+      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(transactionSequence);
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }
@@ -111,8 +117,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private String generateFilename(TaskWriterKey key) {
     return format.addExtension(
-        String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, fileCount.incrementAndGet()));
+        String.format("%d-%s-%s-%05d-%d-%s-%05d", key.getTreeNode().getId(), key.getFileType().shortName(),
+            formattedTransactionSequence, partitionId, taskId, operationId, fileCount.incrementAndGet()));
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
@@ -126,6 +132,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     return encryptionManager.encrypt(outputFile);
   }
 
+  // TODO remove
   /**
    * extract transactionId from data path name.
    */

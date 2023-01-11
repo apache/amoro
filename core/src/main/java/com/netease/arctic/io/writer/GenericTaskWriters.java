@@ -18,6 +18,7 @@
 
 package com.netease.arctic.io.writer;
 
+import com.netease.arctic.TransactionSequence;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.TableProperties;
@@ -47,7 +48,7 @@ public class GenericTaskWriters {
 
     private final KeyedTable table;
 
-    private Long transactionId;
+    private TransactionSequence transactionSequence;
     private int partitionId = 0;
     private int taskId = 0;
     private ChangeAction changeAction = ChangeAction.INSERT;
@@ -56,8 +57,8 @@ public class GenericTaskWriters {
       this.table = table;
     }
 
-    public Builder withTransactionId(Long transactionId) {
-      this.transactionId = transactionId;
+    public Builder withTransactionSequence(TransactionSequence transactionSequence) {
+      this.transactionSequence = transactionSequence;
       return this;
     }
 
@@ -86,7 +87,7 @@ public class GenericTaskWriters {
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
       return new GenericBaseTaskWriter(fileFormat, new GenericAppenderFactory(table.baseTable().schema(), table.spec()),
           new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-              table.baseTable().encryption(), partitionId, taskId, transactionId),
+              table.baseTable().encryption(), partitionId, taskId, transactionSequence),
           table.io(), fileSizeBytes, mask, table.baseTable().schema(), table.spec(), table.primaryKeySpec());
     }
 
@@ -104,7 +105,7 @@ public class GenericTaskWriters {
           MetricsModes.Full.get().toString());
       return new SortedPosDeleteWriter<>(appenderFactory,
           new CommonOutputFileFactory(table.baseLocation(), table.spec(), fileFormat, table.io(),
-              table.baseTable().encryption(), partitionId, taskId, transactionId), table.io(),
+              table.baseTable().encryption(), partitionId, taskId, transactionSequence), table.io(),
           fileFormat, mask, index, partitionKey);
     }
 
@@ -120,16 +121,16 @@ public class GenericTaskWriters {
       return new GenericChangeTaskWriter(fileFormat,
           new GenericAppenderFactory(changeWriteSchema, table.spec()),
           new CommonOutputFileFactory(table.changeLocation(), table.spec(), fileFormat, table.io(),
-              table.changeTable().encryption(), partitionId, taskId, transactionId),
+              table.changeTable().encryption(), partitionId, taskId, transactionSequence),
           table.io(), fileSizeBytes, mask, table.changeTable().schema(), table.spec(), table.primaryKeySpec(),
           changeAction);
     }
 
     private void preconditions() {
       if (table.isKeyedTable()) {
-        Preconditions.checkNotNull(transactionId);
+        Preconditions.checkNotNull(transactionSequence);
       } else {
-        Preconditions.checkArgument(transactionId == null);
+        Preconditions.checkArgument(transactionSequence == null);
       }
     }
   }

@@ -97,13 +97,13 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  public OverwriteBaseFiles withTransactionId(StructLike partitionData, long transactionId) {
-    this.partitionTransactionId.put(partitionData, transactionId);
+  public OverwriteBaseFiles withChangeSequence(StructLike partitionData, long changeSequence) {
+    this.partitionTransactionId.put(partitionData, changeSequence);
     return this;
   }
 
-  public OverwriteBaseFiles withTransactionIdForChangedPartition(long transactionId) {
-    this.transactionId = transactionId;
+  public OverwriteBaseFiles withChangeSequenceForChangedPartition(long changeSequence) {
+    this.transactionId = changeSequence;
     return this;
   }
 
