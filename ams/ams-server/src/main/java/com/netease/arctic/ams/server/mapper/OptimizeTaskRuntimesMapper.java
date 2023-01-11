@@ -88,8 +88,8 @@ public interface OptimizeTaskRuntimesMapper {
   void updateOptimizeTaskRuntime(@Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
 
   @Update("update " + TABLE_NAME + " set" +
-      " property = #{optimizeTask.properties, " +
+      " properties = #{optimizeTask.properties, " +
       "typeHandler=com.netease.arctic.ams.server.mybatis.Map2StringConverter}" +
-      " where trace_id = #{BaseOptimizeTask.taskId.traceId}")
+      " where trace_id = #{optimizeTask.taskId.traceId}")
   void updateOptimizeTaskProperty(@Param("optimizeTask") BaseOptimizeTask optimizeTask);
 }
