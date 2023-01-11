@@ -65,9 +65,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.getPropertiesByTopic;
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;

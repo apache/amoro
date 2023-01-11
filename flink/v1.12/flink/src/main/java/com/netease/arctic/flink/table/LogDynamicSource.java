@@ -20,13 +20,17 @@ package com.netease.arctic.flink.table;
 
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSourceBuilder;
+import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarSource;
+import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarSourceBuilder;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.connector.source.Boundedness;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.config.StartupMode;
@@ -211,6 +215,36 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
     kafkaSourceBuilder.setProperties(properties);
 
     return kafkaSourceBuilder.build();
+  }
+
+  protected LogPulsarSource createPulsarSource() {
+    Schema projectedSchema = schema;
+    if (valueProjection != null) {
+      final List<Types.NestedField> columns = schema.columns();
+      projectedSchema = new Schema(Arrays.stream(valueProjection).mapToObj(columns::get).collect(Collectors.toList()));
+    }
+
+    LogPulsarSourceBuilder pulsarSourceBuilder = LogPulsarSource.builder(projectedSchema, arcticTable.properties());
+    if (topics != null) {
+      pulsarSourceBuilder.setTopics(topics);
+    } else {
+      pulsarSourceBuilder.setTopicPattern(topicPattern);
+    }
+
+    switch (startupMode) {
+      case EARLIEST:
+        pulsarSourceBuilder.setStartCursor(StartCursor.earliest());
+        break;
+      case LATEST:
+        pulsarSourceBuilder.setStartCursor(StartCursor.latest());
+        break;
+      case TIMESTAMP:
+        pulsarSourceBuilder.setStartCursor(StartCursor.fromPublishTime(startupTimestampMillis));
+        break;
+    }
+    pulsarSourceBuilder.setConfig(Configuration.fromMap(arcticTable.properties()));
+
+    return pulsarSourceBuilder.build();
   }
 
   @Override

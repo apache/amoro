@@ -1,0 +1,202 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.netease.arctic.flink.read.source.log.pulsar;
+
+import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.api.connector.source.Boundedness;
+import org.apache.flink.connector.pulsar.source.PulsarSource;
+import org.apache.flink.connector.pulsar.source.PulsarSourceBuilder;
+import org.apache.flink.connector.pulsar.source.PulsarSourceOptions;
+import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.FullRangeGenerator;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.UniformRangeGenerator;
+import org.apache.flink.table.data.RowData;
+import org.apache.iceberg.Schema;
+import org.apache.pulsar.client.api.SubscriptionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+
+import static java.lang.Boolean.FALSE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_CONSUMER_NAME;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
+import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
+import static org.apache.flink.util.InstantiationUtil.isSerializable;
+import static org.apache.flink.util.Preconditions.checkNotNull;
+import static org.apache.flink.util.Preconditions.checkState;
+
+/**
+ * The builder class for {@link PulsarSource} to make it easier for the users to construct a {@link
+ * PulsarSource}.
+ *
+ * <p>The following example shows the minimum setup to create a PulsarSource that reads the String
+ * values from a Pulsar topic.
+ *
+ * <pre>{@code
+ * PulsarSource<String> source = PulsarSource
+ *     .builder()
+ *     .setServiceUrl(PULSAR_BROKER_URL)
+ *     .setAdminUrl(PULSAR_BROKER_HTTP_URL)
+ *     .setSubscriptionName("flink-source-1")
+ *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
+ *     .setDeserializationSchema(PulsarDeserializationSchema.flinkSchema(new SimpleStringSchema()))
+ *     .build();
+ * }</pre>
+ *
+ * <p>The service url, admin url, subscription name, topics to consume, and the record deserializer
+ * are required fields that must be set.
+ *
+ * <p>To specify the starting position of PulsarSource, one can call {@link
+ * #setStartCursor(StartCursor)}.
+ *
+ * <p>By default, the PulsarSource runs in an {@link Boundedness#CONTINUOUS_UNBOUNDED} mode and
+ * never stop until the Flink job is canceled or fails. To let the PulsarSource run in {@link
+ * Boundedness#CONTINUOUS_UNBOUNDED} but stops at some given offsets, one can call {@link
+ * #setUnboundedStopCursor(StopCursor)} and disable auto partition discovery as described below. For
+ * example the following PulsarSource stops after it consumes up to a event time when the Flink
+ * started.
+ *
+ * <p>To stop the connector user has to disable the auto partition discovery. As auto partition
+ * discovery always expected new splits to come and not exiting. To disable auto partition
+ * discovery, use builder.setConfig({@link
+ * PulsarSourceOptions#PULSAR_PARTITION_DISCOVERY_INTERVAL_MS}, -1).
+ *
+ * <pre>{@code
+ * PulsarSource<String> source = PulsarSource
+ *     .builder()
+ *     .setServiceUrl(PULSAR_BROKER_URL)
+ *     .setAdminUrl(PULSAR_BROKER_HTTP_URL)
+ *     .setSubscriptionName("flink-source-1")
+ *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
+ *     .setDeserializationSchema(PulsarDeserializationSchema.flinkSchema(new SimpleStringSchema()))
+ *     .setUnboundedStopCursor(StopCursor.atEventTime(System.currentTimeMillis()))
+ *     .build();
+ * }</pre>
+ */
+@PublicEvolving
+public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
+  private static final Logger LOG = LoggerFactory.getLogger(LogPulsarSourceBuilder.class);
+
+  private Schema schema;
+  private Map<String, String> tableProperties;
+
+  /**
+   * @param schema read schema, only contains the selected fields
+   * @param tableProperties Arctic table properties
+   */
+  LogPulsarSourceBuilder(Schema schema, Map<String, String> tableProperties) {
+    super();
+    this.schema = schema;
+    this.tableProperties = tableProperties;
+  }
+
+  /**
+   * Build the {@link PulsarSource}.
+   *
+   * @return a PulsarSource with the settings made for this builder.
+   */
+  @SuppressWarnings("java:S3776")
+  public LogPulsarSource build() {
+
+    // Ensure the topic subscriber for pulsar.
+    checkNotNull(subscriber, "No topic names or topic pattern are provided.");
+
+    SubscriptionType subscriptionType = configBuilder.get(PULSAR_SUBSCRIPTION_TYPE);
+    if (subscriptionType == SubscriptionType.Key_Shared) {
+      if (rangeGenerator == null) {
+        LOG.warn(
+            "No range generator provided for key_shared subscription,"
+                + " we would use the UniformRangeGenerator as the default range generator.");
+        this.rangeGenerator = new UniformRangeGenerator();
+      }
+    } else {
+      // Override the range generator.
+      this.rangeGenerator = new FullRangeGenerator();
+    }
+
+    if (boundedness == null) {
+      LOG.warn("No boundedness was set, mark it as a endless stream.");
+      this.boundedness = Boundedness.CONTINUOUS_UNBOUNDED;
+    }
+    if (boundedness == Boundedness.BOUNDED && configBuilder.get(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS) >= 0) {
+      LOG.warn(
+          "{} property is overridden to -1 because the source is bounded.",
+          PULSAR_PARTITION_DISCOVERY_INTERVAL_MS);
+      configBuilder.override(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS, -1L);
+    }
+
+    // Enable transaction if the cursor auto commit is disabled for Key_Shared & Shared.
+    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE))
+        && (subscriptionType == SubscriptionType.Key_Shared || subscriptionType == SubscriptionType.Shared)) {
+      LOG.info(
+          "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled " +
+              "and your pulsar cluster is support the transaction.");
+      configBuilder.override(PULSAR_ENABLE_TRANSACTION, true);
+
+      if (!configBuilder.contains(PULSAR_READ_TRANSACTION_TIMEOUT)) {
+        LOG.warn(
+            "The default pulsar transaction timeout is 3 hours, " +
+                "make sure it was greater than your checkpoint interval.");
+      } else {
+        Long timeout = configBuilder.get(PULSAR_READ_TRANSACTION_TIMEOUT);
+        LOG.warn(
+            "The configured transaction timeout is {} mille seconds, " +
+                "make sure it was greater than your checkpoint interval.",
+            timeout);
+      }
+    }
+
+    if (!configBuilder.contains(PULSAR_CONSUMER_NAME)) {
+      LOG.warn(
+          "We recommend set a readable consumer name through setConsumerName(String) in production mode.");
+    } else {
+      String consumerName = configBuilder.get(PULSAR_CONSUMER_NAME);
+      if (!consumerName.contains("%s")) {
+        configBuilder.override(PULSAR_CONSUMER_NAME, consumerName + " - %s");
+      }
+    }
+
+    // Since these implementation could be a lambda, make sure they are serializable.
+    checkState(isSerializable(startCursor), "StartCursor isn't serializable");
+    checkState(isSerializable(stopCursor), "StopCursor isn't serializable");
+    checkState(isSerializable(rangeGenerator), "RangeGenerator isn't serializable");
+
+    // Check builder configuration.
+    SourceConfiguration sourceConfiguration =
+        configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
+
+    return new LogPulsarSource(
+        sourceConfiguration,
+        subscriber,
+        rangeGenerator,
+        startCursor,
+        stopCursor,
+        boundedness,
+        deserializationSchema,
+        schema,
+        tableProperties);
+  }
+}

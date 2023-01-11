@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
+import com.netease.arctic.flink.util.kafka.KafkaTestBase;
 import com.netease.arctic.flink.write.hidden.kafka.BaseLogTest;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -43,8 +43,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
+import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.topic;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;

@@ -18,12 +18,12 @@
 
 package com.netease.arctic.flink.read.hidden.kafka;
 
-import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
-import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
+import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitReader;
 import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
-import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
+import com.netease.arctic.flink.util.kafka.KafkaConfigGenerate;
+import com.netease.arctic.flink.util.kafka.KafkaContainerTest;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
@@ -56,12 +56,11 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
-import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createProducer;
 import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
 import static org.junit.Assert.assertEquals;
 
