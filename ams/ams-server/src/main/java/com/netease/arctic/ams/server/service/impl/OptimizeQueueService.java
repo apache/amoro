@@ -559,8 +559,6 @@ public class OptimizeQueueService extends IJDBCService {
                 task.onFailed(new ErrorMessage(System.currentTimeMillis(), "failed to put task back into queue"), 0);
               }
             }
-            // update max execute time
-            task.setMaxExecuteTime();
             TableTaskHistory tableTaskHistory = task.onExecuting(jobId, attemptId);
             try {
               insertTableTaskHistory(tableTaskHistory);

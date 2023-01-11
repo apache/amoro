@@ -120,6 +120,9 @@ public class OptimizeTaskItem extends IJDBCService {
       newRuntime.setPreparedTime(BaseOptimizeTaskRuntime.INVALID_TIME);
       newRuntime.setCostTime(0);
       newRuntime.setErrorMessage(null);
+      // update max execute time
+      setMaxExecuteTime();
+      updateTaskProperty();
       persistTaskRuntime(newRuntime, false);
       optimizeRuntime = newRuntime;
       return constructNewTableTaskHistory(currentTime);
@@ -258,7 +261,7 @@ public class OptimizeTaskItem extends IJDBCService {
         .map(SerializationUtils::byteArrayToByteBuffer).collect(Collectors.toList()));
   }
 
-  public void setMaxExecuteTime() {
+  private void setMaxExecuteTime() {
     // can update max execute time on optimizing
     try {
       ArcticTable arcticTable = ServiceContainer.getOptimizeService()
@@ -268,6 +271,14 @@ public class OptimizeTaskItem extends IJDBCService {
       optimizeTask.getProperties().put(OptimizeTaskProperties.MAX_EXECUTE_TIME, String.valueOf(maxExecuteTime));
     } catch (Exception e) {
       LOG.error("update task max execute time failed.", e);
+    }
+  }
+
+  private void updateTaskProperty() {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizeTaskRuntimesMapper optimizeTaskRuntimesMapper =
+          getMapper(sqlSession, OptimizeTaskRuntimesMapper.class);
+      optimizeTaskRuntimesMapper.updateOptimizeTaskProperty(optimizeTask);
     }
   }
 

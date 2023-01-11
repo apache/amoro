@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.mapper;
 
+import com.netease.arctic.ams.server.model.BaseOptimizeTask;
 import com.netease.arctic.ams.server.model.BaseOptimizeTaskRuntime;
 import com.netease.arctic.ams.server.mybatis.Long2TsConvertor;
 import org.apache.ibatis.annotations.Param;
@@ -84,6 +85,11 @@ public interface OptimizeTaskRuntimesMapper {
       " new_file_cnt = #{optimizeTaskRuntime.newFileCnt}," +
       " cost_time = #{optimizeTaskRuntime.costTime}" +
       " where trace_id = #{optimizeTaskRuntime.optimizeTaskId.traceId}")
-  void updateOptimizeTaskRuntime(
-      @Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
+  void updateOptimizeTaskRuntime(@Param("optimizeTaskRuntime") BaseOptimizeTaskRuntime optimizeTaskRuntime);
+
+  @Update("update " + TABLE_NAME + " set" +
+      " property = #{optimizeTask.properties, " +
+      "typeHandler=com.netease.arctic.ams.server.mybatis.Map2StringConverter}" +
+      " where trace_id = #{BaseOptimizeTask.taskId.traceId}")
+  void updateOptimizeTaskProperty(@Param("optimizeTask") BaseOptimizeTask optimizeTask);
 }
