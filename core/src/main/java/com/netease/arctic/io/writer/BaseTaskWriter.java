@@ -76,7 +76,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
   @Override
   public void write(T row) throws IOException {
-    TaskWriterKey writerKey = buildWriterKey(row);
+    DataWriterKey writerKey = buildWriterKey(row);
     DataWriter<T> writer = writerHolder.get(writerKey);
     write(writer, row);
   }
@@ -85,7 +85,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     writer.add(row);
   }
 
-  protected TaskWriterKey buildWriterKey(T row) {
+  protected DataWriterKey buildWriterKey(T row) {
     StructLike structLike = asStructLike(row);
     partitionKey.partition(structLike);
     DataTreeNode node;
@@ -95,7 +95,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     } else {
       node = DataTreeNode.ROOT;
     }
-    return new TaskWriterKey(partitionKey, node, DataFileType.BASE_FILE);
+    return new DataWriterKey(partitionKey, node, DataFileType.BASE_FILE);
   }
 
   @Override
@@ -127,6 +127,28 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
    */
   protected abstract StructLike asStructLike(T data);
 
+
+
+  protected static class DataWriterKey extends TaskWriterKey {
+
+    final PartitionKey partitionKey;
+
+    public DataWriterKey(PartitionKey partitionKey, DataTreeNode treeNode, DataFileType fileType) {
+      super(partitionKey, treeNode, fileType);
+      this.partitionKey = partitionKey;
+    }
+
+    public DataWriterKey copy() {
+      return new DataWriterKey(partitionKey.copy(), getTreeNode().copy(), getFileType());
+    }
+
+    @Override
+    public PartitionKey getPartitionKey() {
+      return partitionKey;
+    }
+  }
+
+
   protected abstract static class WriterHolder<T> {
 
     protected final FileFormat format;
@@ -136,8 +158,12 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     protected final long targetFileSize;
     protected final List<DataFile> completedFiles = Lists.newArrayList();
 
-    public WriterHolder(FileFormat format, FileAppenderFactory<T> appenderFactory,
-        OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize) {
+    public WriterHolder(
+        FileFormat format,
+        FileAppenderFactory<T> appenderFactory,
+        OutputFileFactory outputFileFactory,
+        ArcticFileIO io,
+        long targetFileSize) {
       this.format = format;
       this.appenderFactory = appenderFactory;
       this.outputFileFactory = outputFileFactory;
@@ -145,7 +171,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       this.targetFileSize = targetFileSize;
     }
 
-    public abstract DataWriter<T> get(TaskWriterKey writerKey) throws IOException;
+    public abstract DataWriter<T> get(DataWriterKey writerKey) throws IOException;
 
     public abstract void close() throws IOException;
 
@@ -158,6 +184,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
     }
 
+
+
     protected DataWriter<T> newWriter(TaskWriterKey writerKey) {
       return io.doAs(() -> appenderFactory.newDataWriter(
           outputFileFactory.newOutputFile(writerKey), format, writerKey.getPartitionKey()));
@@ -169,15 +197,16 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
    * This holder does not require records have been sorted, but will keep open files as many as write keys.
    */
   protected static class FanoutWriterHolder<T> extends WriterHolder<T> {
-    private final Map<TaskWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
+    private final Map<DataWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
 
-    public FanoutWriterHolder(FileFormat format, FileAppenderFactory<T> appenderFactory,
+    public FanoutWriterHolder(
+        FileFormat format, FileAppenderFactory<T> appenderFactory,
         OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize) {
       super(format, appenderFactory, outputFileFactory, io, targetFileSize);
     }
 
     @Override
-    public DataWriter<T> get(TaskWriterKey writerKey) throws IOException {
+    public DataWriter<T> get(DataWriterKey writerKey) throws IOException {
       DataWriter<T> writer;
       writer = dataWriterMap.get(writerKey);
       if (writer != null && shouldRollToNewFile(writer)) {
@@ -187,8 +216,9 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       }
 
       if (!dataWriterMap.containsKey(writerKey)) {
-        writer = newWriter(writerKey);
-        dataWriterMap.put(writerKey, writer);
+        DataWriterKey copiedWriterKey = writerKey.copy();
+        writer = newWriter(copiedWriterKey);
+        dataWriterMap.put(copiedWriterKey, writer);
       } else {
         writer = dataWriterMap.get(writerKey);
       }
@@ -214,8 +244,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   protected static class OrderedWriterHolder<T> extends WriterHolder<T> {
 
     private DataWriter<T> currentWriter;
-    private TaskWriterKey currentKey;
-    private final Set<TaskWriterKey> completedKeys = Sets.newHashSet();
+    private DataWriterKey currentKey;
+    private final Set<DataWriterKey> completedKeys = Sets.newHashSet();
 
 
     public OrderedWriterHolder(
@@ -228,7 +258,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public DataWriter<T> get(TaskWriterKey writerKey) throws IOException {
+    public DataWriter<T> get(DataWriterKey writerKey) throws IOException {
       if (!writerKey.equals(currentKey)) {
         if (currentKey != null) {
           closeCurrentWriter();
@@ -239,7 +269,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
           throw new IllegalStateException();
         }
 
-        currentKey = writerKey;
+        currentKey = writerKey.copy();
         currentWriter = newWriter(writerKey);
       } else if (shouldRollToNewFile(currentWriter)) {
         closeCurrentWriter();
@@ -261,7 +291,6 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     public void close() throws IOException {
       closeCurrentWriter();
     }
-
   }
 
 }

@@ -56,16 +56,16 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
   }
 
   @Override
-  protected TaskWriterKey buildWriterKey(T row) {
-    TaskWriterKey key = super.buildWriterKey(row);
+  protected DataWriterKey buildWriterKey(T row) {
+    DataWriterKey key = super.buildWriterKey(row);
     ChangeAction action = action(row);
     switch (action) {
       case INSERT:
       case UPDATE_AFTER:
-        return new TaskWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.INSERT_FILE);
+        return new DataWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.INSERT_FILE);
       case DELETE:
       case UPDATE_BEFORE:
-        return new TaskWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.EQ_DELETE_FILE);
+        return new DataWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.EQ_DELETE_FILE);
       default:
         throw new IllegalArgumentException("Unknown action:" + action.name());
     }
