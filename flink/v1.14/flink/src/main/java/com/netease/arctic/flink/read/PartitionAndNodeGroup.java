@@ -75,7 +75,7 @@ public class PartitionAndNodeGroup {
    *
    * @param insert if plan insert files or not
    * @param nodes  the key of nodes is partition info which the file located, the value of nodes is hashmap of
-   *               transactionId and {@link Node}
+   *               arctic tree node id and {@link Node}
    */
   private void plan(boolean insert, Map<String, Map<Long, Node>> nodes) {
     Collection<ArcticFileScanTask> tasks = insert ? insertTasks : deleteTasks;
@@ -85,15 +85,15 @@ public class PartitionAndNodeGroup {
 
     tasks.forEach(task -> {
       String partitionKey = task.file().partition().toString();
-      Long index = task.file().node().index();
+      Long nodeId = task.file().node().getId();
       Map<Long, Node> indexNodes = nodes.getOrDefault(partitionKey, new HashMap<>());
-      Node node = indexNodes.getOrDefault(index, new Node());
+      Node node = indexNodes.getOrDefault(nodeId, new Node());
       if (insert) {
         node.addInsert(task);
       } else {
         node.addDelete(task);
       }
-      indexNodes.put(index, node);
+      indexNodes.put(nodeId, node);
       nodes.put(partitionKey, indexNodes);
     });
   }
