@@ -50,7 +50,6 @@ import org.junit.runners.Suite;
     HiveCatalogLoaderTest.class,
     IcebergHiveCatalogTest.class,
     MixedHiveCatalogTest.class,
-    TestAdaptHiveReader.class,
     CompatibleHivePropertyUtilTest.class,
     HiveSchemaUtilTest.class
 })
