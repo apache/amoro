@@ -113,6 +113,9 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
     case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
       AlterArcticTableDropPartitionExec(r.table, d.parts, d.retainData):: Nil
 
+    case TruncateArcticTable(r: ResolvedTable, spec) =>
+      TruncateArcticTableExec(r.table, spec) :: Nil
+
     case _ => Nil
   }
 
