@@ -54,12 +54,12 @@ jobs:
 
       - name: test for flink 1.12
         if: steps.changed-files.outputs.flink1_12 == 'true'
-        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.12' -am -Dsingleton-test-resource=true
+        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.12' -am
 
       - name: test for flink 1.14
         if: steps.changed-files.outputs.flink1_14 == 'true'
-        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.14' -am -Dsingleton-test-resource=true
+        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.14' -am
 
       - name: test for flink 1.15
         if: steps.changed-files.outputs.flink1_15 == 'true'
-        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.15' -am -Dsingleton-test-resource=true
+        run: mvn clean package -pl 'com.netease.arctic:arctic-flink-runtime-1.15' -am

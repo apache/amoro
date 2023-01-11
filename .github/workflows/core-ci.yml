@@ -36,4 +36,4 @@ jobs:
           distribution: 'temurin'
           cache: maven
       - name: Build all module with Maven
-        run: mvn install -pl '!trino' -Dsingleton-test-resource=true
+        run: mvn install -pl '!trino'
