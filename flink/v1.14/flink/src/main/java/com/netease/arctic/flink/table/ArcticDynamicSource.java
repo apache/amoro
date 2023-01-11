@@ -118,14 +118,8 @@ public class ArcticDynamicSource implements ScanTableSource, SupportsFilterPushD
       readSchema = arcticTable.schema();
       flinkSchemaRowType = FlinkSchemaUtil.convert(readSchema);
     } else {
-      boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(properties, DIM_TABLE_ENABLE.key(),
-          DIM_TABLE_ENABLE.defaultValue());
-      if (dimTable) {
-        readSchema = TypeUtil.reassignIds(
+      readSchema = TypeUtil.reassignIds(
           FlinkSchemaUtil.convert(filterWatermark(projectedSchema)), arcticTable.schema());
-      } else {
-        readSchema = TypeUtil.reassignIds(FlinkSchemaUtil.convert(projectedSchema), arcticTable.schema());
-      }
       flinkSchemaRowType = (RowType) projectedSchema.toRowDataType().getLogicalType();
     }
   }

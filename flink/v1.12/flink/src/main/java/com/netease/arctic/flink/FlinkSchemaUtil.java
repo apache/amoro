@@ -26,6 +26,7 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.iceberg.types.Types;
@@ -40,6 +41,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static org.apache.flink.table.types.logical.utils.LogicalTypeChecks.getPrecision;
 
 /**
  * An util that converts flink table schema.
@@ -94,6 +97,8 @@ public class FlinkSchemaUtil {
       for (WatermarkSpec spec : watermarkSpecs) {
         if (spec.getRowtimeAttribute().equals(tableColumn.getName())) {
           isWatermark = true;
+          final LogicalType timeFieldType = tableColumn.getType().getLogicalType();
+          validateWatermarkExpression(timeFieldType);
           break;
         }
       }
@@ -112,7 +117,7 @@ public class FlinkSchemaUtil {
         .getTableColumns()
         .forEach(
             tableColumn -> {
-              if (!filter.apply(tableColumn) || !tableColumn.isPhysical()) {
+              if (!filter.apply(tableColumn)) {
                 return;
               }
               builder.field(tableColumn.getName(), tableColumn.getType());
@@ -182,6 +187,26 @@ public class FlinkSchemaUtil {
       builder.field(pk, tableSchema.getFieldDataType(pk)
           .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
     });
+  }
+
+  private static void validateWatermarkExpression(LogicalType watermarkType) {
+    if (!canBeTimeAttributeType(watermarkType) || getPrecision(watermarkType) > 3) {
+      throw new ValidationException(
+        String.format(
+          "Invalid data type of expression for watermark definition. " +
+            "The field must be of type TIMESTAMP(p) or TIMESTAMP_LTZ(p)," +
+            " the supported precision 'p' is from 0 to 3, but the watermark expression type is %s",
+          watermarkType));
+    }
+  }
+
+  public static boolean canBeTimeAttributeType(LogicalType logicalType) {
+    LogicalTypeRoot typeRoot = logicalType.getTypeRoot();
+    if (typeRoot == LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE ||
+        typeRoot == LogicalTypeRoot.TIMESTAMP_WITH_LOCAL_TIME_ZONE) {
+      return true;
+    }
+    return false;
   }
 
 }
