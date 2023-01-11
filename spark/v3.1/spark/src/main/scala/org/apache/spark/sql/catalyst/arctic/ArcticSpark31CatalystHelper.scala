@@ -21,23 +21,25 @@ package org.apache.spark.sql.catalyst.arctic
 import org.apache.iceberg.spark.SparkSchemaUtil
 import org.apache.iceberg.transforms.Transforms
 import org.apache.iceberg.types.{Type, Types}
-import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant, UnaryExpression}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 import org.apache.spark.sql.connector.expressions.{BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, MonthsTransform, NamedReference, Transform, YearsTransform, Expression => V2Expression}
+import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder => SortValue}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.{AnalysisException, catalyst}
 import org.apache.spark.unsafe.types.UTF8String
 
 import java.nio.ByteBuffer
 
 object ArcticSpark31CatalystHelper extends SQLConfHelper {
-  val resolver = conf.resolver
+
 
   def toCatalyst(expr: V2Expression, query: LogicalPlan): Expression = {
     def resolve(parts: Seq[String]): NamedExpression = {
+      val resolver = conf.resolver
       query.resolve(parts, resolver) match {
         case Some(attr) =>
           attr
@@ -62,8 +64,29 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         IcebergHourTransform(resolve(ht.ref.fieldNames))
       case ref: FieldReference =>
         resolve(ref.fieldNames)
+      case sort: SortValue =>
+        val catalystChild = toCatalyst(sort.expression(), query)
+        catalyst.expressions.SortOrder(
+          catalystChild,
+          toCatalystSortDirection(sort.direction()),
+          toCatalystNullOrdering(sort.nullOrdering()),
+          Seq.empty)
       case _ =>
         throw new RuntimeException(s"$expr is not currently supported")
+    }
+  }
+
+  private def toCatalystSortDirection(direction: SortDirection): catalyst.expressions.SortDirection = {
+    direction match {
+      case SortDirection.ASCENDING => catalyst.expressions.Ascending
+      case SortDirection.DESCENDING => catalyst.expressions.Descending
+    }
+  }
+
+  private def toCatalystNullOrdering(nullOrdering: NullOrdering): catalyst.expressions.NullOrdering = {
+    nullOrdering match {
+      case NullOrdering.NULLS_FIRST => catalyst.expressions.NullsFirst
+      case NullOrdering.NULLS_LAST => catalyst.expressions.NullsLast
     }
   }
 
@@ -76,7 +99,7 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
       case None =>
         val name = ref.fieldNames.toSeq.quoted
         val outputString = plan.output.map(_.name).mkString(",")
-        throw new AnalysisException(s"Cannot resolve '$ref' using ${outputString}")
+        throw new AnalysisException(s"Cannot resolve '$name' using $outputString")
     }
   }
 

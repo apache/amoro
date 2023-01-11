@@ -32,7 +32,7 @@ import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with SupportSparkAdapter {
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transformDown {
-    case overwrite@OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _) =>
+    case overwrite @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _) =>
       r.table match {
         case table: ArcticSparkTable =>
           val newQuery = distributionQuery(query, table, rowLevelOperation = false)
@@ -41,7 +41,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
         case _ =>
           overwrite
       }
-    case append@AppendArcticData(r: DataSourceV2Relation, query, _, _) =>
+    case append @ AppendArcticData(r: DataSourceV2Relation, query, _, _) =>
       r.table match {
         case table: ArcticSparkTable =>
           val newQuery = distributionQuery(query, table, rowLevelOperation = false)
@@ -50,7 +50,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
         case _ =>
           append
       }
-    case replace@ReplaceArcticData(r: DataSourceV2Relation, query, _) =>
+    case replace @ ReplaceArcticData(r: DataSourceV2Relation, query, _) =>
       r.table match {
         case table: ArcticSparkTable =>
           val newQuery = distributionQuery(query, table, rowLevelOperation = true)
@@ -59,7 +59,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
         case _ =>
           replace
       }
-    case overwrite@OverwriteArcticData(r: DataSourceV2Relation, query, _, _) =>
+    case overwrite @ OverwriteArcticData(r: DataSourceV2Relation, query, _, _) =>
       r.table match {
         case table: ArcticSparkTable =>
           val newQuery = distributionQuery(query, table, rowLevelOperation = false)
