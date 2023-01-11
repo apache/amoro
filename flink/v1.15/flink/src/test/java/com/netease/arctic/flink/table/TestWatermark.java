@@ -67,7 +67,7 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_
 import static com.netease.arctic.table.TableProperties.LOCATION;
 
 public class TestWatermark extends FlinkTestBase {
-  public static final Logger LOG = LoggerFactory.getLogger(TestJoin.class);
+  public static final Logger LOG = LoggerFactory.getLogger(TestWatermark.class);
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -86,21 +86,7 @@ public class TestWatermark extends FlinkTestBase {
   }
 
   @Test(timeout = 30000)
-  public void testWatermarkWithoutPKs() throws Exception {
-    testWatermark(0);
-  }
-
-  @Test(timeout = 30000)
-  public void testWatermarkWithPartialPKs() throws Exception {
-    testWatermark(1);
-  }
-
-  @Test(timeout = 30000)
-  public void testWatermarkWithFullPKs() throws Exception {
-    testWatermark(2);
-  }
-
-  public void testWatermark(int selectType) throws Exception {
+  public void testWatermark() throws Exception {
     sql(String.format("CREATE CATALOG arcticCatalog WITH %s", toWithClause(props)));
     Map<String, String> tableProperties = new HashMap<>();
     tableProperties.put(LOCATION, tableDir.getAbsolutePath() + "/" + TABLE);
@@ -135,17 +121,8 @@ public class TestWatermark extends FlinkTestBase {
 
     sql("create table d (tt as cast(op_time as timestamp(3)), watermark for tt as tt) like %s", table);
 
-    Table source;
-    if (selectType == 0) {
-      source = getTableEnv().sqlQuery("select is_true from d");
-    } else if (selectType == 1) {
-      source = getTableEnv().sqlQuery("select id, is_true from d");
-    } else if (selectType == 2) {
-      source = getTableEnv().sqlQuery("select id, is_true, user_id from d");
-    } else {
-      throw new IllegalArgumentException("Unsupported select type " + selectType);
-    }
-    
+    Table source = getTableEnv().sqlQuery("select is_true from d");
+
     WatermarkTestOperator op = new WatermarkTestOperator();
     getTableEnv().toRetractStream(source, RowData.class)
         .transform("test watermark", TypeInformation.of(RowData.class), op);

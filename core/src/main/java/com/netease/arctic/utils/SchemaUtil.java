@@ -41,11 +41,11 @@ public class SchemaUtil {
    * <p>
    * This fill-up does not assign new ids; it uses ids from the base schema.
    * <p>
-   * If the toSchema does contain the identifierFields of the based schema, it will fill-up the identifierFields to
+   * If the fromSchema does contain the identifierFields of the based schema, it will fill-up the identifierFields to
    * a new schema.
    *
    * @param baseSchema a Schema on which loading is based
-   * @param fromSchema   a Schema on which compared to
+   * @param fromSchema a Schema on which compared to
    * @return a new Schema on which contain the identifier fields of the base Schema and column fields of the fromSchema
    */
   public static Schema fillUpIdentifierFields(Schema baseSchema, Schema fromSchema) {
