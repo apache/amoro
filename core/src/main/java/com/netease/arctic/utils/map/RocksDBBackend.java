@@ -73,10 +73,6 @@ public class RocksDBBackend {
       return getOrCreateInstance();
     }
     RocksDBBackend backend = instance.get();
-    // if backend base dir has changed, close old backend
-    if (backend != null && !backend.getRocksDBBasePath().startsWith(backendBaseDir)) {
-      backend.close();
-    }
     if (backend == null) {
       backend = create(backendBaseDir);
       instance.set(backend);
