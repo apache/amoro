@@ -19,10 +19,9 @@
 package com.netease.arctic.flink.read.hidden.pulsar;
 
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
-import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitReader;
 import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
+import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarOrderedPartitionSplitReader;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.util.kafka.KafkaConfigGenerate;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeOperator;
@@ -31,18 +30,24 @@ import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.log.LogDataJsonSerialization;
 import com.netease.arctic.utils.IdGenerator;
+import org.apache.flink.api.connector.source.Boundedness;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
-import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
+import org.apache.flink.connector.pulsar.common.config.PulsarConfigBuilder;
+import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
+import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
+import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.table.data.RowData;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.common.TopicPartition;
+import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.api.Message;
+import org.apache.pulsar.client.api.MessageId;
+import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Schema;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -52,48 +57,36 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.function.Supplier;
+import java.util.concurrent.TimeUnit;
 
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
+import static java.util.Collections.singletonList;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
+import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 public class LogPulsarPartitionSplitReaderTest {
 
   private static final Logger LOG = LoggerFactory.getLogger(LogPulsarPartitionSplitReaderTest.class);
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
-  public static final int TOPIC1_STOP_OFFSET = 16;
-  public static final int TOPIC2_STOP_OFFSET = 21;
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
   public static final String TOPIC1 = "topic1";
-  public static final String TOPIC2 = "topic2";
-  private static Map<Integer, Map<String, KafkaPartitionSplit>> splitsByOwners;
+  public static final int DEFAULT_SIZE = 21;
   private static final byte[] JOB_ID = IdGenerator.generateUpstreamId();
-
-  @BeforeClass
-  public static void prepare() throws Exception {
-    Map<TopicPartition, Long> earliestOffsets = new HashMap<>();
-    earliestOffsets.put(new TopicPartition(TOPIC1, 0), 0L);
-    earliestOffsets.put(new TopicPartition(TOPIC2, 0), 5L);
-    splitsByOwners = getSplitsByOwners(earliestOffsets);
-  }
 
   @Before
   public void initData() throws Exception {
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
     write(TOPIC1, 0);
-    // 0 0 0 0 0 |5 6 7 8 9 10 11 12 13 14 Flip 15 16 17 18 19| 20 21 22 23 24
-    write(TOPIC2, 5);
   }
 
   public PulsarRuntimeOperator op() {
@@ -102,9 +95,10 @@ public class LogPulsarPartitionSplitReaderTest {
 
   @Test
   public void testHandleSplitChangesAndFetch() throws IOException {
-    LogKafkaPartitionSplitReader reader = createReader(new Properties());
-    assignSplitsAndFetchUntilFinish(reader, 0, 20);
-    assignSplitsAndFetchUntilFinish(reader, 1, 20);
+    LogPulsarOrderedPartitionSplitReader reader = createReader(null, false);
+
+    handleSplit(reader, TOPIC1, 0, MessageId.earliest);
+    fetchedMessages(reader, DEFAULT_SIZE, true);
   }
 
   private byte[] createLogData(int i, int epicNo, boolean flip, LogDataJsonSerialization<RowData> serialization) {
@@ -120,8 +114,8 @@ public class LogPulsarPartitionSplitReaderTest {
     return serialization.serialize(logData);
   }
 
-  private void write(String topic, int offset) throws Exception {
-    Collection<byte[]> data = new ArrayList<>(21 + offset);
+  private void write(String topic, int offset) {
+    Collection<byte[]> data = new ArrayList<>(DEFAULT_SIZE + offset);
 
     LogDataJsonSerialization<RowData> serialization =
         new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
@@ -129,25 +123,25 @@ public class LogPulsarPartitionSplitReaderTest {
       data.add(createLogData(0, 1, false, serialization));
     }
 
-    int i = offset;
+    int i = offset, batch = 5;
     // 0-4 + offset success
-    for (; i < offset + 5; i++) {
+    for (; i < offset + batch; i++) {
       data.add(createLogData(i, 1, false, serialization));
     }
 
     // 5-9 + offset fail
-    for (; i < offset + 10; i++) {
+    for (; i < offset + batch * 2; i++) {
       data.add(createLogData(i, 2, false, serialization));
     }
 
     data.add(createLogData(i, 1, true, serialization));
 
     // 10-14 + offset success
-    for (; i < offset + 15; i++) {
+    for (; i < offset + batch * 3; i++) {
       data.add(createLogData(i, 2, false, serialization));
     }
 
-    for (; i < offset + 20; i++) {
+    for (; i < offset + batch * 4; i++) {
       data.add(createLogData(i, 3, false, serialization));
     }
     op().setupTopic(topic, Schema.BYTES, () -> data.iterator().next(), data.size());
@@ -167,98 +161,93 @@ public class LogPulsarPartitionSplitReaderTest {
     });
   }
 
-  private void assignSplitsAndFetchUntilFinish(
-      LogKafkaPartitionSplitReader reader, int readerId, int expectedRecordCount) throws IOException {
-    Map<String, KafkaPartitionSplit> splits =
-        assignSplits(reader, splitsByOwners.get(readerId));
+  protected List<PulsarMessage<RowData>> fetchedMessages(
+      LogPulsarOrderedPartitionSplitReader splitReader, int expectedCount, boolean verify) {
+    return fetchedMessages(
+        splitReader, expectedCount, verify, Boundedness.CONTINUOUS_UNBOUNDED);
+  }
 
-    Map<String, Integer> numConsumedRecords = new HashMap<>();
-    Set<String> finishedSplits = new HashSet<>();
-    int flipCount = 0;
-    while (finishedSplits.size() < splits.size()) {
-      RecordsWithSplitIds<ConsumerRecord<byte[], byte[]>> recordsBySplitIds = reader.fetch();
-      String splitId = recordsBySplitIds.nextSplit();
-      while (splitId != null) {
-        // Collect the records in this split.
-        List<LogRecordWithRetractInfo<RowData>> splitFetch = new ArrayList<>();
-        ConsumerRecord<byte[], byte[]> record;
-        boolean hasFlip = false;
-        while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
-          LOG.info("read: {}, offset: {}", ((LogRecordWithRetractInfo) record).getLogData().getActualValue(),
-              record.offset());
-          if (((LogRecordWithRetractInfo<?>) record).isRetracting()) {
-            hasFlip = true;
+  private List<PulsarMessage<RowData>> fetchedMessages(
+      LogPulsarOrderedPartitionSplitReader splitReader,
+      int expectedCount,
+      boolean verify,
+      Boundedness boundedness) {
+    List<PulsarMessage<RowData>> messages = new ArrayList<>(expectedCount);
+    List<String> finishedSplits = new ArrayList<>();
+    for (int i = 0; i < 3; ) {
+      try {
+        RecordsWithSplitIds<PulsarMessage<RowData>> recordsBySplitIds = splitReader.fetch();
+        if (recordsBySplitIds.nextSplit() != null) {
+          // Collect the records in this split.
+          PulsarMessage<RowData> record;
+          while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
+            messages.add(record);
           }
-          splitFetch.add((LogRecordWithRetractInfo<RowData>) record);
+          finishedSplits.addAll(recordsBySplitIds.finishedSplits());
+        } else {
+          i++;
         }
-        if (hasFlip) {
-          flipCount++;
-        }
-        // verify the consumed records.
-        if (verifyConsumed(splits.get(splitId), splitFetch, flipCount)) {
-          finishedSplits.add(splitId);
-        }
-        numConsumedRecords.compute(
-            splitId,
-            (ignored, recordCount) ->
-                recordCount == null
-                    ? splitFetch.size()
-                    : recordCount + splitFetch.size());
-        splitId = recordsBySplitIds.nextSplit();
+      } catch (IOException e) {
+        i++;
+      }
+      sleepUninterruptibly(1, TimeUnit.SECONDS);
+    }
+    if (verify) {
+      assertThat(messages).as("We should fetch the expected size").hasSize(expectedCount);
+      if (boundedness == Boundedness.CONTINUOUS_UNBOUNDED) {
+        assertThat(finishedSplits).as("Split should not be marked as finished").isEmpty();
+      } else {
+        assertThat(finishedSplits).as("Split should be marked as finished").hasSize(1);
       }
     }
 
-    // Verify the number of records consumed from each split.
-    numConsumedRecords.forEach(
-        (splitId, recordCount) -> {
-          assertEquals(
-              String.format(
-                  "%s should have %d records.",
-                  splits.get(splitId), expectedRecordCount),
-              expectedRecordCount,
-              (long) recordCount);
-        });
+    return messages;
   }
 
-  public static Map<Integer, Map<String, KafkaPartitionSplit>> getSplitsByOwners(
-      Map<TopicPartition, Long> earliestOffsets) {
-    final Map<Integer, Map<String, KafkaPartitionSplit>> splitsByOwners = new HashMap<>();
-    splitsByOwners.put(0, new HashMap<String, KafkaPartitionSplit>() {{
-      TopicPartition tp = new TopicPartition(TOPIC1, 0);
-      put(KafkaPartitionSplit.toSplitId(tp), new KafkaPartitionSplit(tp, earliestOffsets.get(tp), TOPIC1_STOP_OFFSET));
-    }});
-    splitsByOwners.put(1, new HashMap<String, KafkaPartitionSplit>() {{
-      TopicPartition tp = new TopicPartition(TOPIC2, 0);
-      put(KafkaPartitionSplit.toSplitId(tp), new KafkaPartitionSplit(tp, earliestOffsets.get(tp), TOPIC2_STOP_OFFSET));
-    }});
-    return splitsByOwners;
+  protected void handleSplit(
+      LogPulsarOrderedPartitionSplitReader reader, String topicName, int partitionId) {
+    handleSplit(reader, topicName, partitionId, null);
   }
 
-  private Map<String, KafkaPartitionSplit> assignSplits(
-      LogKafkaPartitionSplitReader reader, Map<String, KafkaPartitionSplit> splits) {
-    SplitsChange<KafkaPartitionSplit> splitsChange =
-        new SplitsAddition<>(new ArrayList<>(splits.values()));
-    reader.handleSplitsChanges(splitsChange);
-    return splits;
+  protected void handleSplit(
+      LogPulsarOrderedPartitionSplitReader reader,
+      String topicName,
+      int partitionId,
+      MessageId startPosition) {
+    TopicPartition partition = new TopicPartition(topicName, partitionId);
+    PulsarPartitionSplit split =
+        new PulsarPartitionSplit(partition, StopCursor.never(), startPosition, null);
+    SplitsAddition<PulsarPartitionSplit> addition = new SplitsAddition<>(singletonList(split));
+    reader.handleSplitsChanges(addition);
   }
 
-  private LogKafkaPartitionSplitReader createReader(
-      Properties additionalProperties) {
-    Properties props = KafkaConfigGenerate.getPropertiesWithByteArray();
-    props.put("group.id", "test");
-    props.put("auto.offset.reset", "earliest");
-    if (!additionalProperties.isEmpty()) {
-      props.putAll(additionalProperties);
+  private LogPulsarOrderedPartitionSplitReader createReader(Configuration conf, boolean logRetractionEnable) {
+    PulsarClient pulsarClient = op().client();
+    PulsarAdmin pulsarAdmin = op().admin();
+    PulsarConfigBuilder configBuilder = new PulsarConfigBuilder();
+
+    if (conf != null) {
+      configBuilder.set(conf);
     }
-    return new LogKafkaPartitionSplitReader(
-        props,
+    configBuilder.set(PULSAR_SERVICE_URL, op().serviceUrl());
+    configBuilder.set(PULSAR_ADMIN_URL, op().adminUrl());
+    configBuilder.set(PULSAR_SUBSCRIPTION_NAME, "test-split-reader");
+    
+    SourceConfiguration sourceConfiguration =
+        configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
+
+    String logConsumerChangelogMode = "all-kinds";
+    
+    LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
+    return new LogPulsarOrderedPartitionSplitReader(
+        pulsarClient,
+        pulsarAdmin,
+        sourceConfiguration,
         null,
-        0,
         userSchema,
-        true,
-        new LogSourceHelper(),
-        "all-kinds"
-    );
+        false,
+        logReadHelper,
+        logConsumerChangelogMode);
   }
 
   private boolean verifyConsumed(

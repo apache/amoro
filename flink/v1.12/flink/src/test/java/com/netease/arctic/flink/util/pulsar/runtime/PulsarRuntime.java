@@ -18,7 +18,9 @@
 
 package com.netease.arctic.flink.util.pulsar.runtime;
 
+import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.container.PulsarContainerRuntime;
+import com.netease.arctic.flink.util.pulsar.runtime.mock.PulsarMockRuntime;
 import org.testcontainers.containers.GenericContainer;
 
 /**
@@ -27,20 +29,33 @@ import org.testcontainers.containers.GenericContainer;
  */
 public interface PulsarRuntime {
 
-    /** Start up this pulsar runtime, block the thread until everytime is ready for this runtime. */
-    void startUp();
+  /**
+   * Start up this pulsar runtime, block the thread until everytime is ready for this runtime.
+   */
+  void startUp();
 
-    /** Shutdown this pulsar runtime. */
-    void tearDown();
+  /**
+   * Shutdown this pulsar runtime.
+   */
+  void tearDown();
 
-    /** Return a operator for operating this pulsar runtime. */
-    PulsarRuntimeOperator operator();
-    
-    static PulsarRuntime container() {
-        return new PulsarContainerRuntime();
-    }
+  /**
+   * Return a operator for operating this pulsar runtime.
+   */
+  PulsarRuntimeOperator operator();
 
-    static PulsarRuntime container(GenericContainer<?> flinkContainer) {
-        return new PulsarContainerRuntime().bindWithFlinkContainer(flinkContainer);
-    }
+  /**
+   * Create a Pulsar instance which would mock all the backends.
+   */
+  static PulsarRuntime mock() {
+    return new PulsarMockRuntime();
+  }
+
+  static PulsarRuntime container() {
+    return new PulsarContainerRuntime();
+  }
+
+  static PulsarRuntime container(GenericContainer<?> flinkContainer) {
+    return new PulsarContainerRuntime().bindWithFlinkContainer(flinkContainer);
+  }
 }

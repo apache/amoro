@@ -104,10 +104,8 @@ public final class LogPulsarSource extends PulsarSource<RowData> {
 
   @Override
   public SourceReader<RowData, PulsarPartitionSplit> createReader(SourceReaderContext readerContext) {
-    LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
     return LogPulsarSourceReaderFactory.create(
-        readerContext, sourceConfiguration, schema, logRetractionEnable, logConsumerChangelogMode,
-        logReadHelper);
+        readerContext, sourceConfiguration, schema, logRetractionEnable, logConsumerChangelogMode);
   }
 
   @Override

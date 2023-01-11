@@ -65,8 +65,7 @@ public final class LogPulsarSourceReaderFactory {
       SourceConfiguration sourceConfiguration,
       Schema schema,
       boolean logRetractionEnable,
-      String logConsumerChangelogMode,
-      LogSourceHelper logReadHelper) {
+      String logConsumerChangelogMode) {
     PulsarClient pulsarClient = PulsarClientFactory.createClient(sourceConfiguration);
     PulsarAdmin pulsarAdmin = PulsarClientFactory.createAdmin(sourceConfiguration);
 
@@ -77,8 +76,9 @@ public final class LogPulsarSourceReaderFactory {
 
     // Create different pulsar source reader by subscription type.
     SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
-    if (subscriptionType == SubscriptionType.Failover
-        || subscriptionType == SubscriptionType.Exclusive) {
+    if (subscriptionType == SubscriptionType.Failover || subscriptionType == SubscriptionType.Exclusive) {
+      LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
+      
       // Create an ordered split reader supplier.
       Supplier<PulsarOrderedPartitionSplitReader<RowData>> splitReaderSupplier =
           () ->

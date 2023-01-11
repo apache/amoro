@@ -24,7 +24,6 @@ import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.api.common.time.Deadline;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordsBySplits;
 import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
@@ -56,8 +55,6 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
 /**
  * The split reader a given {@link PulsarPartitionSplit}, it would be closed once the {@link
  * PulsarOrderedSourceReader} is closed.
- *
- * @param <OUT> the type of the pulsar source message that would be serialized to downstream.
  */
 @Internal
 public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartitionSplitReader<RowData> {
@@ -126,8 +123,8 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
         if (condition == StopCursor.StopCondition.CONTINUE || condition == StopCursor.StopCondition.EXACTLY) {
           if (logData.getFlip()) {
             if (logRetractionEnable) {
-//              logReadHelper.startRetracting(tp, logData.getUpstreamId(), logData.getEpicNo(),
-//                  currentOffset + 1);
+              //              logReadHelper.startRetracting(tp, logData.getUpstreamId(), logData.getEpicNo(),
+              //                  currentOffset + 1);
               break;
             } else {
               // Acknowledge message if need.

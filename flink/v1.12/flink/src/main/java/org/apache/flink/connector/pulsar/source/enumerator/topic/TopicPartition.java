@@ -142,10 +142,10 @@ public class TopicPartition implements Serializable {
     }
     TopicPartition partition = (TopicPartition) o;
 
-    return partitionId == partition.partitionId
-        && topic.equals(partition.topic)
-        && ranges.equals(partition.ranges)
-        && mode == partition.mode;
+    return partitionId == partition.partitionId &&
+        topic.equals(partition.topic) &&
+        ranges.equals(partition.ranges) &&
+        mode == partition.mode;
   }
 
   @Override

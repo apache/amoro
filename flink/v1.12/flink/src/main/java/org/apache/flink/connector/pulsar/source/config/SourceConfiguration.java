@@ -204,12 +204,7 @@ public class SourceConfiguration extends PulsarConfiguration {
    * Convert the subscription into a readable str.
    */
   public String getSubscriptionDesc() {
-    return getSubscriptionName()
-        + "("
-        + getSubscriptionType()
-        + ","
-        + getSubscriptionMode()
-        + ")";
+    return getSubscriptionName() + "(" + getSubscriptionType() + "," + getSubscriptionMode() + ")";
   }
 
   @Override
@@ -224,17 +219,17 @@ public class SourceConfiguration extends PulsarConfiguration {
       return false;
     }
     SourceConfiguration that = (SourceConfiguration) o;
-    return partitionDiscoveryIntervalMs == that.partitionDiscoveryIntervalMs
-        && enableAutoAcknowledgeMessage == that.enableAutoAcknowledgeMessage
-        && autoCommitCursorInterval == that.autoCommitCursorInterval
-        && transactionTimeoutMillis == that.transactionTimeoutMillis
-        && maxFetchRecords == that.maxFetchRecords
-        && Objects.equals(maxFetchTime, that.maxFetchTime)
-        && verifyInitialOffsets == that.verifyInitialOffsets
-        && Objects.equals(subscriptionName, that.subscriptionName)
-        && subscriptionType == that.subscriptionType
-        && subscriptionMode == that.subscriptionMode
-        && allowKeySharedOutOfOrderDelivery == that.allowKeySharedOutOfOrderDelivery;
+    return partitionDiscoveryIntervalMs == that.partitionDiscoveryIntervalMs &&
+        enableAutoAcknowledgeMessage == that.enableAutoAcknowledgeMessage &&
+        autoCommitCursorInterval == that.autoCommitCursorInterval &&
+        transactionTimeoutMillis == that.transactionTimeoutMillis &&
+        maxFetchRecords == that.maxFetchRecords &&
+        Objects.equals(maxFetchTime, that.maxFetchTime) &&
+        verifyInitialOffsets == that.verifyInitialOffsets &&
+        Objects.equals(subscriptionName, that.subscriptionName) &&
+        subscriptionType == that.subscriptionType &&
+        subscriptionMode == that.subscriptionMode &&
+        allowKeySharedOutOfOrderDelivery == that.allowKeySharedOutOfOrderDelivery;
   }
 
   @Override

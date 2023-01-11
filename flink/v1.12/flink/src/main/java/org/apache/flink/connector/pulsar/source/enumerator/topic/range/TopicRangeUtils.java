@@ -64,8 +64,8 @@ public final class TopicRangeUtils {
 
     if (!isFullTopicRanges(ranges) && KeySharedMode.SPLIT == sharedMode) {
       LOG.warn(
-          "You have provided a partial key hash range with KeySharedMode.SPLIT. "
-              + "You can't consume any message if there are any messages with keys that are out of the given ranges.");
+          "You have provided a partial key hash range with KeySharedMode.SPLIT. " +
+              "You can't consume any message if there are any messages with keys that are out of the given ranges.");
     }
   }
 
@@ -110,6 +110,20 @@ public final class TopicRangeUtils {
   }
 
   /**
+   * Pulsar didn't expose the key hash range method. We have to manually define it here.
+   *
+   * @param keyBytes The key bytes of Pulsar's {@link Message}. Pulsar would try to use {@link
+   *                 Message#getOrderingKey()} first. If it doesn't exist Pulsar will use {@link
+   *                 Message#getKey()} instead. Remember that the {@link Message#getOrderingKey()} could be
+   *                 configured by {@link PulsarMessageBuilder#orderingKey(byte[])} and the {@link
+   *                 Message#getKey()} could be configured by {@link PulsarMessageBuilder#key(String)}.
+   */
+  public static int keyHash(byte[] keyBytes) {
+    int stickyKeyHash = Murmur3_32Hash.getInstance().makeHash(checkNotNull(keyBytes));
+    return stickyKeyHash % TopicRange.RANGE_SIZE;
+  }
+
+  /**
    * This method is a bit of different compared to the {@link #keyHash(byte[])}. We only define
    * this method when you set the message key by using {@link
    * TypedMessageBuilder#keyBytes(byte[])}. Because the Pulsar would calculate the message key
@@ -122,19 +136,5 @@ public final class TopicRangeUtils {
     String encodedKey = Base64.getEncoder().encodeToString(checkNotNull(keyBytes));
     byte[] encodedKeyBytes = encodedKey.getBytes(StandardCharsets.UTF_8);
     return keyHash(encodedKeyBytes);
-  }
-
-  /**
-   * Pulsar didn't expose the key hash range method. We have to manually define it here.
-   *
-   * @param keyBytes The key bytes of Pulsar's {@link Message}. Pulsar would try to use {@link
-   *                 Message#getOrderingKey()} first. If it doesn't exist Pulsar will use {@link
-   *                 Message#getKey()} instead. Remember that the {@link Message#getOrderingKey()} could be
-   *                 configured by {@link PulsarMessageBuilder#orderingKey(byte[])} and the {@link
-   *                 Message#getKey()} could be configured by {@link PulsarMessageBuilder#key(String)}.
-   */
-  public static int keyHash(byte[] keyBytes) {
-    int stickyKeyHash = Murmur3_32Hash.getInstance().makeHash(checkNotNull(keyBytes));
-    return stickyKeyHash % TopicRange.RANGE_SIZE;
   }
 }

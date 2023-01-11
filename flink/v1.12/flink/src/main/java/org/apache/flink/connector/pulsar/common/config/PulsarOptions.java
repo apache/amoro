@@ -131,9 +131,11 @@ public final class PulsarOptions {
               Description.builder()
                   .text("Operation timeout (in ms).")
                   .text(
-                      " Operations such as creating producers, subscribing or unsubscribing topics are retried during this interval.")
+                      " Operations such as creating producers, subscribing or unsubscribing topics" +
+                          " are retried during this interval.")
                   .text(
-                      " If the operation is not completed during this interval, the operation will be marked as failed.")
+                      " If the operation is not completed during this interval, the operation" +
+                          " will be marked as failed.")
                   .build());
 
   public static final ConfigOption<Long> PULSAR_STATS_INTERVAL_SECONDS =
@@ -169,7 +171,8 @@ public final class PulsarOptions {
                   .text(
                       "The number of threads used for handling message listeners.")
                   .text(
-                      " The listener thread pool is shared across all the consumers and readers that are using a %s model to get messages.",
+                      " The listener thread pool is shared across all the consumers and readers " +
+                          "that are using a %s model to get messages.",
                       code("listener"))
                   .text(
                       " For a given consumer, the listener is always invoked from the same thread to ensure ordering.")
@@ -185,9 +188,11 @@ public final class PulsarOptions {
                       "The maximum number of connections that the client library will open to a single broker.")
                   .linebreak()
                   .text(
-                      " By default, the connection pool will use a single connection for all the producers and consumers.")
+                      " By default, the connection pool will use a single connection for all the producers and" +
+                          " consumers.")
                   .text(
-                      " Increasing this parameter may improve throughput when using many producers over a high latency connection.")
+                      " Increasing this parameter may improve throughput when using many producers over" +
+                          " a high latency connection.")
                   .build());
 
   public static final ConfigOption<Boolean> PULSAR_USE_TCP_NO_DELAY =
@@ -203,7 +208,8 @@ public final class PulsarOptions {
                       "No-delay features ensures that packets are sent out on the network as soon as possible,")
                   .text(" and it is critical to achieve low latency publishes.")
                   .text(
-                      " On the other hand, sending out a huge number of small packets might limit the overall throughput.")
+                      " On the other hand, sending out a huge number of small packets might limit" +
+                          " the overall throughput.")
                   .text(
                       " Therefore, if latency is not a concern, it is recommended to set this option to %s.",
                       code("false"))
@@ -234,7 +240,8 @@ public final class PulsarOptions {
                   .text(
                       " It allows to validate hostname verification when a client connects to the broker over TLS.")
                   .text(
-                      " It validates incoming x509 certificate and matches provided hostname (CN/SAN) with the expected broker's host name.")
+                      " It validates incoming x509 certificate and matches provided hostname (CN/SAN) with" +
+                          " the expected broker's host name.")
                   .text(
                       " It follows RFC 2818, 3.1. Server Identity hostname verification.")
                   .build());
@@ -246,9 +253,11 @@ public final class PulsarOptions {
           .withDescription(
               Description.builder()
                   .text(
-                      "The number of concurrent lookup requests allowed to send on each broker connection to prevent overload on the broker.")
+                      "The number of concurrent lookup requests allowed to send on each broker connection to" +
+                          " prevent overload on the broker.")
                   .text(
-                      " It should be configured with a higher value only in case of it requires to produce or subscribe on thousands of topic using a created %s",
+                      " It should be configured with a higher value only in case of it requires to" +
+                          " produce or subscribe on thousands of topic using a created %s",
                       code("PulsarClient"))
                   .build());
 
@@ -259,7 +268,8 @@ public final class PulsarOptions {
           .withDescription(
               Description.builder()
                   .text(
-                      "The maximum number of lookup requests allowed on each broker connection to prevent overload on the broker.")
+                      "The maximum number of lookup requests allowed on each broker connection to" +
+                          " prevent overload on the broker.")
                   .text(
                       " It should be greater than %s.",
                       code("pulsar.client.concurrentLookupRequest"))
@@ -286,7 +296,8 @@ public final class PulsarOptions {
           .withDescription(
               Description.builder()
                   .text(
-                      "The maximum number of rejected requests of a broker in a certain period (30s) after the current connection is closed")
+                      "The maximum number of rejected requests of a broker in a certain period (30s)" +
+                          " after the current connection is closed")
                   .text(
                       " and the client creates a new connection to connect to a different broker.")
                   .build());
@@ -316,7 +327,8 @@ public final class PulsarOptions {
           .intType()
           .defaultValue(60000)
           .withDescription(
-              "Maximum duration (in ms) for completing a request. This config option is not supported before Pulsar 2.8.1");
+              "Maximum duration (in ms) for completing a request. This config option is not" +
+                  " supported before Pulsar 2.8.1");
 
   public static final ConfigOption<Long> PULSAR_INITIAL_BACKOFF_INTERVAL_NANOS =
       ConfigOptions.key(CLIENT_CONFIG_PREFIX + "initialBackoffIntervalNanos")
@@ -340,11 +352,13 @@ public final class PulsarOptions {
                   .text("Option to enable busy-wait settings.")
                   .linebreak()
                   .text(
-                      "This option will enable spin-waiting on executors and IO threads in order to reduce latency during context switches.")
+                      "This option will enable spin-waiting on executors and IO threads in order to reduce" +
+                          " latency during context switches.")
                   .text(
                       " The spinning will consume 100% CPU even when the broker is not doing any work.")
                   .text(
-                      " It is recommended to reduce the number of IO threads and BookKeeper client threads to only have fewer CPU cores busy.")
+                      " It is recommended to reduce the number of IO threads and BookKeeper client threads" +
+                          " to only have fewer CPU cores busy.")
                   .build());
 
   public static final ConfigOption<String> PULSAR_LISTENER_NAME =
@@ -413,7 +427,8 @@ public final class PulsarOptions {
                   .text(
                       " This is a named combination of authentication, encryption,")
                   .text(
-                      " MAC and the key exchange algorithm used to negotiate the security settings for a network connection using the TLS or SSL network protocol.")
+                      " MAC and the key exchange algorithm used to negotiate the security settings " +
+                          "for a network connection using the TLS or SSL network protocol.")
                   .text(
                       " By default all the available cipher suites are supported.")
                   .build());
@@ -439,7 +454,8 @@ public final class PulsarOptions {
           .withDescription(
               Description.builder()
                   .text(
-                      "The limit (in bytes) on the amount of direct memory that will be allocated by this client instance.")
+                      "The limit (in bytes) on the amount of direct memory that will be allocated " +
+                          "by this client instance.")
                   .linebreak()
                   .text(
                       "Note: at this moment this is only limiting the memory for producers.")
@@ -464,7 +480,8 @@ public final class PulsarOptions {
           .withDescription(
               Description.builder()
                   .text(
-                      "Protocol type to determine the type of proxy routing when a client connects to the proxy using %s.",
+                      "Protocol type to determine the type of proxy routing when a client" +
+                          " connects to the proxy using %s.",
                       code("pulsar.client.proxyServiceUrl"))
                   .build());
 

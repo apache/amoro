@@ -49,9 +49,7 @@ public class MessageIdStartCursor implements StartCursor {
    *                  MessageId#latest}.
    */
   public MessageIdStartCursor(MessageId messageId, boolean inclusive) {
-    if (MessageId.earliest.equals(messageId)
-        || MessageId.latest.equals(messageId)
-        || inclusive) {
+    if (MessageId.earliest.equals(messageId) || MessageId.latest.equals(messageId) || inclusive) {
       this.messageId = unwrapMessageId(messageId);
     } else {
       this.messageId = nextMessageId(messageId);

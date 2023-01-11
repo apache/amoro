@@ -90,6 +90,17 @@ public class PulsarSchemaTypeSerializer<T> extends TypeSerializer<T> {
   }
 
   @Override
+  public void copy(DataInputView source, DataOutputView target) throws IOException {
+    int len = source.readInt();
+    byte[] bytes = new byte[len];
+    int readLen = source.read(bytes);
+    checkState(len == readLen);
+
+    target.writeInt(bytes.length);
+    target.write(bytes);
+  }
+
+  @Override
   public int getLength() {
     return 0;
   }
@@ -117,17 +128,6 @@ public class PulsarSchemaTypeSerializer<T> extends TypeSerializer<T> {
   @Override
   public T deserialize(T reuse, DataInputView source) throws IOException {
     return deserialize(source);
-  }
-
-  @Override
-  public void copy(DataInputView source, DataOutputView target) throws IOException {
-    int len = source.readInt();
-    byte[] bytes = new byte[len];
-    int readLen = source.read(bytes);
-    checkState(len == readLen);
-
-    target.writeInt(bytes.length);
-    target.write(bytes);
   }
 
   @Override

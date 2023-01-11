@@ -83,8 +83,7 @@ public class PulsarOrderedPartitionSplitReader<OUT> extends PulsarPartitionSplit
       LOG.info("Reset subscription position by the checkpoint {}", latestConsumedId);
       try {
         MessageId initialPosition;
-        if (latestConsumedId == MessageId.latest
-            || latestConsumedId == MessageId.earliest) {
+        if (latestConsumedId == MessageId.latest || latestConsumedId == MessageId.earliest) {
           // for compatibility
           initialPosition = latestConsumedId;
         } else {

@@ -121,7 +121,8 @@ public final class TopicNameUtils {
    * version bump.
    *
    * @see <a
-   * href="https://github.com/apache/pulsar/blob/7075a5ce0d4a70f52625ac8c3d0c48894442b72a/pulsar-broker/src/main/java/org/apache/pulsar/broker/service/BrokerService.java#L3024">BrokerService#isSystemTopic</a>
+   * href="https://github.com/apache/pulsar/blob/7075a5ce0d4a70f52625ac8c3d0c48894442b72a/pulsar-broker/
+   * src/main/java/org/apache/pulsar/broker/service/BrokerService.java#L3024">BrokerService#isSystemTopic</a>
    */
   public static boolean isInternal(String topic) {
     // A topic name instance without partition information.
@@ -130,14 +131,14 @@ public final class TopicNameUtils {
     String localName = topicInstance.getLocalName();
     String namespace = topicInstance.getNamespace();
 
-    return namespace.equals(SYSTEM_NAMESPACE.toString())
-        || SLA_NAMESPACE_PATTERN.matcher(namespace).matches()
-        || HEARTBEAT_NAMESPACE_PATTERN.matcher(namespace).matches()
-        || HEARTBEAT_NAMESPACE_PATTERN_V2.matcher(namespace).matches()
-        || EVENTS_TOPIC_NAMES.contains(localName)
-        || topicName.startsWith(TRANSACTION_COORDINATOR_ASSIGN_PREFIX)
-        || topicName.startsWith(TRANSACTION_COORDINATOR_LOG_PREFIX)
-        || localName.endsWith(PENDING_ACK_STORE_SUFFIX)
-        || localName.endsWith(PENDING_ACK_STORE_CURSOR_SUFFIX);
+    return namespace.equals(SYSTEM_NAMESPACE.toString()) ||
+        SLA_NAMESPACE_PATTERN.matcher(namespace).matches() ||
+        HEARTBEAT_NAMESPACE_PATTERN.matcher(namespace).matches() ||
+        HEARTBEAT_NAMESPACE_PATTERN_V2.matcher(namespace).matches() ||
+        EVENTS_TOPIC_NAMES.contains(localName) ||
+        topicName.startsWith(TRANSACTION_COORDINATOR_ASSIGN_PREFIX) ||
+        topicName.startsWith(TRANSACTION_COORDINATOR_LOG_PREFIX) ||
+        localName.endsWith(PENDING_ACK_STORE_SUFFIX) ||
+        localName.endsWith(PENDING_ACK_STORE_CURSOR_SUFFIX);
   }
 }

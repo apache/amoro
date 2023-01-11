@@ -65,13 +65,13 @@ public class PulsarMessage<T> {
 
   @Override
   public String toString() {
-    return "PulsarMessage{"
-        + "id="
-        + id
-        + ", value="
-        + value
-        + ", eventTime="
-        + eventTime
-        + '}';
+    return "PulsarMessage{" +
+        "id=" +
+        id +
+        ", value=" +
+        value +
+        ", eventTime=" +
+        eventTime +
+        '}';
   }
 }

@@ -423,8 +423,8 @@ public class PulsarSourceBuilder<OUT> {
     if (subscriptionType == SubscriptionType.Key_Shared) {
       if (rangeGenerator == null) {
         LOG.warn(
-            "No range generator provided for key_shared subscription,"
-                + " we would use the SplitRangeGenerator as the default range generator.");
+            "No range generator provided for key_shared subscription," +
+                " we would use the SplitRangeGenerator as the default range generator.");
         this.rangeGenerator = new SplitRangeGenerator();
       }
     } else {
@@ -436,8 +436,7 @@ public class PulsarSourceBuilder<OUT> {
       LOG.warn("No boundedness was set, mark it as a endless stream.");
       this.boundedness = Boundedness.CONTINUOUS_UNBOUNDED;
     }
-    if (boundedness == Boundedness.BOUNDED
-        && configBuilder.get(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS) >= 0) {
+    if (boundedness == Boundedness.BOUNDED && configBuilder.get(PULSAR_PARTITION_DISCOVERY_INTERVAL_MS) >= 0) {
       LOG.warn(
           "{} property is overridden to -1 because the source is bounded.",
           PULSAR_PARTITION_DISCOVERY_INTERVAL_MS);
@@ -447,23 +446,22 @@ public class PulsarSourceBuilder<OUT> {
     checkNotNull(deserializationSchema, "deserializationSchema should be set.");
 
     // Enable transaction if the cursor auto commit is disabled for Key_Shared & Shared.
-    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE))
-        && (subscriptionType == SubscriptionType.Key_Shared
-        || subscriptionType == SubscriptionType.Shared)) {
+    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE)) &&
+        (subscriptionType == SubscriptionType.Key_Shared || subscriptionType == SubscriptionType.Shared)) {
       LOG.info(
-          "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled "
-              + "and your pulsar cluster is support the transaction.");
+          "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled " +
+              "and your pulsar cluster is support the transaction.");
       configBuilder.override(PULSAR_ENABLE_TRANSACTION, true);
 
       if (!configBuilder.contains(PULSAR_READ_TRANSACTION_TIMEOUT)) {
         LOG.warn(
-            "The default pulsar transaction timeout is 3 hours, "
-                + "make sure it was greater than your checkpoint interval.");
+            "The default pulsar transaction timeout is 3 hours, " +
+                "make sure it was greater than your checkpoint interval.");
       } else {
         Long timeout = configBuilder.get(PULSAR_READ_TRANSACTION_TIMEOUT);
         LOG.warn(
-            "The configured transaction timeout is {} mille seconds, "
-                + "make sure it was greater than your checkpoint interval.",
+            "The configured transaction timeout is {} mille seconds, " +
+                "make sure it was greater than your checkpoint interval.",
             timeout);
       }
     }

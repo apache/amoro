@@ -152,9 +152,8 @@ public final class PulsarSourceConfigUtils {
 
   private static Optional<DeadLetterPolicy> createDeadLetterPolicy(
       SourceConfiguration configuration) {
-    if (configuration.contains(PULSAR_MAX_REDELIVER_COUNT)
-        || configuration.contains(PULSAR_RETRY_LETTER_TOPIC)
-        || configuration.contains(PULSAR_DEAD_LETTER_TOPIC)) {
+    if (configuration.contains(PULSAR_MAX_REDELIVER_COUNT) || configuration.contains(PULSAR_RETRY_LETTER_TOPIC) ||
+        configuration.contains(PULSAR_DEAD_LETTER_TOPIC)) {
       DeadLetterPolicy.DeadLetterPolicyBuilder builder = DeadLetterPolicy.builder();
 
       configuration.useOption(PULSAR_MAX_REDELIVER_COUNT, builder::maxRedeliverCount);

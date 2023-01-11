@@ -128,8 +128,8 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     if (subscriptionType == SubscriptionType.Key_Shared) {
       if (rangeGenerator == null) {
         LOG.warn(
-            "No range generator provided for key_shared subscription,"
-                + " we would use the UniformRangeGenerator as the default range generator.");
+            "No range generator provided for key_shared subscription," + 
+                " we would use the UniformRangeGenerator as the default range generator.");
         this.rangeGenerator = new UniformRangeGenerator();
       }
     } else {
@@ -149,8 +149,8 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     }
 
     // Enable transaction if the cursor auto commit is disabled for Key_Shared & Shared.
-    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE))
-        && (subscriptionType == SubscriptionType.Key_Shared || subscriptionType == SubscriptionType.Shared)) {
+    if (FALSE.equals(configBuilder.get(PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE)) &&
+        (subscriptionType == SubscriptionType.Key_Shared || subscriptionType == SubscriptionType.Shared)) {
       LOG.info(
           "Pulsar cursor auto commit is disabled, make sure checkpoint is enabled " +
               "and your pulsar cluster is support the transaction.");

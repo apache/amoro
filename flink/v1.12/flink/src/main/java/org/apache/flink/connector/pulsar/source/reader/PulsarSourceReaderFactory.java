@@ -74,8 +74,7 @@ public final class PulsarSourceReaderFactory {
 
     // Create different pulsar source reader by subscription type.
     SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
-    if (subscriptionType == SubscriptionType.Failover
-        || subscriptionType == SubscriptionType.Exclusive) {
+    if (subscriptionType == SubscriptionType.Failover || subscriptionType == SubscriptionType.Exclusive) {
       // Create an ordered split reader supplier.
       Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier =
           () ->
@@ -92,12 +91,10 @@ public final class PulsarSourceReaderFactory {
           sourceConfiguration,
           pulsarClient,
           pulsarAdmin);
-    } else if (subscriptionType == SubscriptionType.Shared
-        || subscriptionType == SubscriptionType.Key_Shared) {
+    } else if (subscriptionType == SubscriptionType.Shared || subscriptionType == SubscriptionType.Key_Shared) {
       TransactionCoordinatorClient coordinatorClient =
           ((PulsarClientImpl) pulsarClient).getTcClient();
-      if (coordinatorClient == null
-          && !sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
+      if (coordinatorClient == null && !sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
         throw new IllegalStateException("Transaction is required but didn't enabled");
       }
 

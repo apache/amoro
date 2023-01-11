@@ -97,13 +97,11 @@ public class PulsarSourceEnumStateSerializer
 
   // ----------------- private methods -------------------
 
-  private FunctionWithException<DataInputStream, TopicPartition, IOException>
-  deserializePartition(int version) {
+  private FunctionWithException<DataInputStream, TopicPartition, IOException> deserializePartition(int version) {
     return in -> SPLIT_SERIALIZER.deserializeTopicPartition(version, in);
   }
 
-  private FunctionWithException<DataInputStream, PulsarPartitionSplit, IOException>
-  deserializeSplit(int version) {
+  private FunctionWithException<DataInputStream, PulsarPartitionSplit, IOException> deserializeSplit(int version) {
     return in -> SPLIT_SERIALIZER.deserializePulsarPartitionSplit(version, in);
   }
 }

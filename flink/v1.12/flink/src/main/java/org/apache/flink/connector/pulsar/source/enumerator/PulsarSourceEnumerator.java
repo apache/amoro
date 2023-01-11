@@ -105,8 +105,7 @@ public class PulsarSourceEnumerator
     // Check the pulsar topic information and convert it into source split.
     if (sourceConfiguration.isEnablePartitionDiscovery()) {
       LOG.info(
-          "Starting the PulsarSourceEnumerator for subscription {} "
-              + "with partition discovery interval of {} ms.",
+          "Starting the PulsarSourceEnumerator for subscription {} with partition discovery interval of {} ms.",
           sourceConfiguration.getSubscriptionDesc(),
           sourceConfiguration.getPartitionDiscoveryIntervalMs());
       context.callAsync(
@@ -116,8 +115,7 @@ public class PulsarSourceEnumerator
           sourceConfiguration.getPartitionDiscoveryIntervalMs());
     } else {
       LOG.info(
-          "Starting the PulsarSourceEnumerator for subscription {} "
-              + "without periodic partition discovery.",
+          "Starting the PulsarSourceEnumerator for subscription {} without periodic partition discovery.",
           sourceConfiguration.getSubscriptionDesc());
       context.callAsync(this::getSubscribedTopicPartitions, this::checkPartitionChanges);
     }
@@ -277,8 +275,7 @@ public class PulsarSourceEnumerator
     for (Integer reader : pendingReaders) {
       if (splitAssigner.noMoreSplits(reader)) {
         LOG.debug(
-            "No more PulsarPartitionSplits to assign."
-                + " Sending NoMoreSplitsEvent to reader {} in subscription {}.",
+            "No more PulsarPartitionSplits to assign. Sending NoMoreSplitsEvent to reader {} in subscription {}.",
             reader,
             sourceConfiguration.getSubscriptionDesc());
         context.signalNoMoreSplits(reader);

@@ -86,9 +86,7 @@ abstract class SplitAssignerBase implements SplitAssigner {
 
   @Override
   public boolean noMoreSplits(Integer reader) {
-    return !enablePartitionDiscovery
-        && initialized
-        && !pendingPartitionSplits.containsKey(reader);
+    return !enablePartitionDiscovery && initialized && !pendingPartitionSplits.containsKey(reader);
   }
 
   @Override

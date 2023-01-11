@@ -194,9 +194,9 @@ public final class PulsarSchema<T> implements Serializable {
     }
     SchemaInfo that = ((PulsarSchema<?>) o).getPulsarSchema().getSchemaInfo();
 
-    return Objects.equals(schemaInfo.getType(), that.getType())
-        && Arrays.equals(schemaInfo.getSchema(), that.getSchema())
-        && Objects.equals(schemaInfo.getProperties(), that.getProperties());
+    return Objects.equals(schemaInfo.getType(), that.getType()) &&
+        Arrays.equals(schemaInfo.getSchema(), that.getSchema()) &&
+        Objects.equals(schemaInfo.getProperties(), that.getProperties());
   }
 
   @Override
