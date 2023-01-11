@@ -188,7 +188,7 @@ public class SparkTestContext extends ExternalResource {
     sparkConfigs.put("spark.cores.max", "6");
     sparkConfigs.put("spark.executor.cores", "2");
     sparkConfigs.put("spark.default.parallelism", "12");
-    sparkConfigs.put("spark.network.timeout", "500s");
+    sparkConfigs.put("spark.network.timeout", "600s");
     sparkConfigs.put("spark.sql.warehouse.dir", testSparkDir.getAbsolutePath());
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
     sparkConfigs.put("spark.testing.memory", "943718400");
