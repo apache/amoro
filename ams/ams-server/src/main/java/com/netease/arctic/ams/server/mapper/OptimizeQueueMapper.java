@@ -33,26 +33,30 @@ import java.util.List;
 public interface OptimizeQueueMapper {
   String TABLE_NAME = "optimize_group";
 
-  @Select("select group_id, name, properties, container from " + TABLE_NAME)
+  @Select("select group_id, name, scheduling_policy, properties, container from " + TABLE_NAME)
   @Results({
       @Result(property = "queueId", column = "group_id"),
       @Result(property = "name", column = "name"),
+      @Result(property = "schedulingPolicy", column = "scheduling_policy"),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
       @Result(property = "container", column = "container")
   })
   List<OptimizeQueueMeta> selectOptimizeQueues();
 
-  @Select("select group_id, name, properties, container from " + TABLE_NAME + " where name = #{queueName}")
+  @Select("select group_id, name, scheduling_policy, properties, container from " + TABLE_NAME + " where name = " +
+      "#{queueName}")
   @Results({
       @Result(property = "queueId", column = "group_id"),
       @Result(property = "name", column = "name"),
+      @Result(property = "schedulingPolicy", column = "scheduling_policy"),
       @Result(property = "properties", column = "properties", typeHandler = Map2StringConverter.class),
       @Result(property = "container", column = "container")
   })
   OptimizeQueueMeta selectOptimizeQueue(@Param("queueName") String queueName);
 
-  @Insert("insert into " + TABLE_NAME + " (name,properties,container) values " +
-      "(#{optimizeQueue.name}, #{optimizeQueue.properties, typeHandler=com.netease.arctic" +
+  @Insert("insert into " + TABLE_NAME + " (name,scheduling_policy,properties,container) values " +
+      "(#{optimizeQueue.name}, #{optimizeQueue.schedulingPolicy}, " +
+      "#{optimizeQueue.properties, typeHandler=com.netease.arctic" +
       ".ams.server.mybatis.Map2StringConverter}, #{optimizeQueue.container})")
   void insertQueue(@Param("optimizeQueue") OptimizeQueueMeta optimizeQueue);
 
@@ -66,6 +70,7 @@ public interface OptimizeQueueMapper {
   @Update("update " + TABLE_NAME + " set" +
       " properties = #{optimizeQueue.properties, typeHandler=com.netease.arctic.ams.server.mybatis" +
       ".Map2StringConverter}," +
+      " scheduling_policy = #{optimizeQueue.schedulingPolicy}," +
       " container = #{optimizeQueue.container}" +
       " where group_id = #{optimizeQueue.queueId}")
   void updateQueue(@Param("optimizeQueue") OptimizeQueueMeta optimizeQueue);

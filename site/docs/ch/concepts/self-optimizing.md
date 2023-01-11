@@ -63,7 +63,7 @@ Major optimizing 和 minor optimizing 的设计参考了垃圾回收算法的分
 | full    | fragment, segment    | segment    | insert, eq-delete, pos-delete   | insert    |
 
 
-## Self-optimizing quota
+## Self-optimizing scheduling policy
 
 如果你使用的是不可更新的表，如日志，传感器数据，并且已经习惯于 Iceberg 提供的 optimize 指令，可以考虑通过下面的配置关闭表上的 self-optimizing 功能：
 
@@ -71,7 +71,11 @@ Major optimizing 和 minor optimizing 的设计参考了垃圾回收算法的分
 self-optimizing.enabled = false;
 ```
 
-如果表配置了主键，支持 CDC 摄取和流式更新，比如数据库同步表，或者按照维度聚合过的表，建议开启 self-optimizing 功能。单张表的 self-optimizing 资源用量通过在表上配置 quota 参数来管理：
+如果表配置了主键，支持 CDC 摄取和流式更新，比如数据库同步表，或者按照维度聚合过的表，建议开启 self-optimizing 功能。
+
+### quota
+可以设置 optimizer group 的调度策略为 quota 见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)，
+那么单张表的 self-optimizing 资源用量通过在表上配置 quota 参数来管理：
 
 ```SQL
 -- self-optimizing 能够使用的最大 CPU 数量，可以取小数
@@ -84,3 +88,6 @@ Quota 定义了单张表可以使用的最大 CPU 用量，但 self-optimizing �
 
 - 超买 — 若所有 optimizer 配置超过所有表配置的 quota 总和，quota occupy 可能动态趋于 100% 以上
 - 超卖 — 若所有 optimizer 配置低于所有配置表的 quota 总和，quota occupy 应当动态趋于 100% 以下
+
+### balanced
+可以设置 optimizer group 的调度策略为 balanced 见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)，此策略会均衡的调度每张表，使得每张表的 optimize 进度处于相同水平。

@@ -163,7 +163,7 @@ mixed iceberg without self-optimizing：表示的是不带自优化的 Mixed Ice
 
 mixed iceberg with self-optimizing：表示的是带自优化的 Mixed Iceberg 表
 
-native iceberg with self-optimizing：表示的是带自优化的 Native Iceberg 表
+iceberg format with self-optimizing：表示的是带 balanced 策略的自优化的 Iceberg Format 表
 
 hudi with inline-compaction：表示的是带有 Compaction 的 Hudi 表
 
@@ -181,5 +181,5 @@ hudi with inline-compaction：表示的是带有 Compaction 的 Hudi 表
 
 - 静态数据情况下 Mixed Iceberg 和 Iceberg 的查询性能几乎相同，但是随着 TPCC 的进行，CDC 数据的增多，不带 Self-Optimizing 的 Mixed Iceberg 和 Iceberg 的性能都会线性增长，
   而带有 Self-Optimizing 的表都能稳定在一个合理的范围内
-- Hudi 的性能因为写入任务自带 Self-Optimizing，所以查询性能也能很好的收敛，总体是优于不带 Self-Optimizing 的 Mix Iceberg，弱于带 Self-Optimizing 的 Mixed Iceberg 和 Native Iceberg。
+- Hudi 的性能因为写入任务自带 Self-Optimizing，所以查询性能也能很好的收敛，总体是优于不带 Self-Optimizing 的 Mix Iceberg，弱于带 Self-Optimizing 的 Mixed Iceberg 和 Iceberg Format。
    
