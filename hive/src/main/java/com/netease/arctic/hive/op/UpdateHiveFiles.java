@@ -321,7 +321,9 @@ public abstract class UpdateHiveFiles<T extends SnapshotUpdate<T>> implements Sn
               "partition will be " +
               "delete and re-create with same location");
         } else {
-          partitions.put(entry.getKey(), entry.getValue());
+          // this partition is need to alter, rather than delete
+          partitionToAlter.put(entry.getKey(), entry.getValue());
+          partitionToDelete.remove(entry.getKey());
           continue;
         }
       }
