@@ -81,6 +81,11 @@ public class SnapshotSplit extends ArcticSplit {
     insertRecordOffset = (long) offsets[1];
   }
 
+  @Override
+  public ArcticSplit copy() {
+    return new SnapshotSplit(insertScanTasks, taskIndex);
+  }
+
   public int insertFileOffset() {
     return insertFileOffset;
   }

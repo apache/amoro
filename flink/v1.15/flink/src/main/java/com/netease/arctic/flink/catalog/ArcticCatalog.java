@@ -294,7 +294,7 @@ public class ArcticCatalog extends AbstractCatalog {
     validateFlinkTable(table);
 
     TableSchema tableSchema = table.getSchema();
-    TableSchema.Builder b = TableSchema.builder();
+    TableSchema.Builder flinkSchemaBuilder = TableSchema.builder();
 
     tableSchema.getTableColumns().forEach(c -> {
       List<WatermarkSpec> ws = tableSchema.getWatermarkSpecs();
@@ -303,9 +303,12 @@ public class ArcticCatalog extends AbstractCatalog {
           return;
         }
       }
-      b.field(c.getName(), c.getType());
+      flinkSchemaBuilder.field(c.getName(), c.getType());
     });
-    TableSchema tableSchemaWithoutWatermark = b.build();
+    if (tableSchema.getPrimaryKey().isPresent()) {
+      flinkSchemaBuilder.primaryKey(tableSchema.getPrimaryKey().get().getColumns().toArray(new String[0]));
+    }
+    TableSchema tableSchemaWithoutWatermark = flinkSchemaBuilder.build();
 
     Schema icebergSchema = FlinkSchemaUtil.convert(tableSchemaWithoutWatermark);
 

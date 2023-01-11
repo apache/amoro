@@ -154,8 +154,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         arcticDynamicSource = createLogSource(arcticTable, context, confWithAll);
     }
 
-    return new ArcticDynamicSource(identifier.getObjectName(), arcticDynamicSource, arcticTable, tableSchema,
-        arcticTable.properties());
+    return new ArcticDynamicSource(
+        identifier.getObjectName(), arcticDynamicSource, arcticTable, arcticTable.properties());
   }
 
   @Override
