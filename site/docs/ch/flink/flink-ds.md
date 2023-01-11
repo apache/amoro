@@ -81,7 +81,7 @@ Configuration configuration = new Configuration();
 // 开启保证数据一致性的低延迟读
 configuration.set(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
 
-LogKafkaSource kafkaSource = LogKafkaSource.builder(userSchema, configuration)
+LogKafkaSource kafkaSource = LogKafkaSource.builder(schema, configuration)
     .setTopics(topics)
     .setStartingOffsets(OffsetsInitializer.earliest())
     .setProperties(properties)
