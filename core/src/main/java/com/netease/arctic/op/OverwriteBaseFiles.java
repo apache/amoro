@@ -58,7 +58,7 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private Expression deleteExpression = Expressions.alwaysFalse();
   private final StructLikeMap<Long> partitionTransactionId;
 
-  private Long transactionId;
+  private Long changeSequence;
   private Expression conflictDetectionFilter = null;
 
   public OverwriteBaseFiles(KeyedTable table) {
@@ -97,13 +97,27 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
     return this;
   }
 
-  public OverwriteBaseFiles withChangeSequence(StructLike partitionData, long changeSequence) {
+  /**
+   * Overwrite the change files whose sequence <= changeSequence in the partition.
+   *
+   * @param partitionData - files in the partition are affected
+   * @param changeSequence - change table snapshot sequence
+   * @return
+   */
+  public OverwriteBaseFiles overwriteChangeBefore(StructLike partitionData, long changeSequence) {
     this.partitionTransactionId.put(partitionData, changeSequence);
     return this;
   }
 
-  public OverwriteBaseFiles withChangeSequenceForChangedPartition(long changeSequence) {
-    this.transactionId = changeSequence;
+  /**
+   * Overwrite the change files whose sequence <= changeSequence.
+   * Only the files in the changed partitions are affected.
+   *
+   * @param changeSequence - change table snapshot sequence
+   * @return this for chain
+   */
+  public OverwriteBaseFiles overwriteChangeBefore(long changeSequence) {
+    this.changeSequence = changeSequence;
     return this;
   }
 
@@ -140,8 +154,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
         partitionData = keyedTable.spec().isUnpartitioned() ? TablePropertyUtil.EMPTY_STRUCT : d.partition();
         partitionMaxTxId.put(partitionData, getPartitionMaxTxId(partitionData));
       }
-      if (transactionId != null && transactionId > 0) {
-        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, transactionId + "");
+      if (changeSequence != null && changeSequence > 0) {
+        overwriteFiles.set(PROPERTIES_TRANSACTION_ID, changeSequence + "");
       }
 
       if (MapUtils.isNotEmpty(properties)) {
@@ -235,8 +249,8 @@ public class OverwriteBaseFiles extends PartitionTransactionOperation {
   private long getPartitionMaxTxId(StructLike partitionData) {
     long txId =
         partitionTransactionId.getOrDefault(partitionData, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-    if (this.transactionId != null) {
-      txId = Math.max(txId, this.transactionId);
+    if (this.changeSequence != null) {
+      txId = Math.max(txId, this.changeSequence);
     }
     return txId;
   }

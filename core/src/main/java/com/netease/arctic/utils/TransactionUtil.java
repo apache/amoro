@@ -24,6 +24,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 
+/**
+ * Utils to handle table transaction.
+ */
 public class TransactionUtil {
   private TransactionUtil() {
   }

@@ -18,15 +18,19 @@
 
 package com.netease.arctic;
 
+import com.netease.arctic.table.KeyedTable;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
+/**
+ * Define the sequence number of Transaction for {@link KeyedTable}
+ */
 public class TransactionSequence implements Comparable<TransactionSequence> {
-  
+
   public static long VOID_SEQUENCE_NUMBER = -1L;
-  
+
   private final long changeSequence;
   private final long baseSequence;
 
@@ -36,7 +40,7 @@ public class TransactionSequence implements Comparable<TransactionSequence> {
     this.changeSequence = changeSequence;
     this.baseSequence = baseSequence;
   }
-  
+
   public static TransactionSequence of(long changeSequence, long baseSequence) {
     return new TransactionSequence(changeSequence, baseSequence);
   }
@@ -73,5 +77,10 @@ public class TransactionSequence implements Comparable<TransactionSequence> {
   @Override
   public int hashCode() {
     return Objects.hash(changeSequence, baseSequence);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("TransactionSequence(%s,%s)", changeSequence, baseSequence);
   }
 }

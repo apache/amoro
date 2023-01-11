@@ -37,7 +37,7 @@ import java.util.List;
 public class KeyedPartitionRewrite extends PartitionTransactionOperation implements RewritePartitions {
 
   protected List<DataFile> addFiles = Lists.newArrayList();
-  private Long transactionId;
+  private Long changeSequence;
   
   public KeyedPartitionRewrite(KeyedTable keyedTable) {
     super(keyedTable);
@@ -50,8 +50,8 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
   }
 
   @Override
-  public KeyedPartitionRewrite withTransactionId(long transactionId) {
-    this.transactionId = transactionId;
+  public KeyedPartitionRewrite rewriteChangeBefore(long changeSequence) {
+    this.changeSequence = changeSequence;
     return this;
   }
 
@@ -61,8 +61,8 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
       return partitionMaxTxId;
     }
 
-    Preconditions.checkNotNull(transactionId, "transaction-Id must be set.");
-    Preconditions.checkArgument(transactionId >= -1, "transaction-Id must >= -1.");
+    Preconditions.checkNotNull(changeSequence, "change sequence must be set.");
+    Preconditions.checkArgument(changeSequence >= 0, "change sequence must >= 0.");
 
     ReplacePartitions replacePartitions = transaction.newReplacePartitions();
     addFiles.forEach(replacePartitions::addFile);
@@ -71,7 +71,7 @@ public class KeyedPartitionRewrite extends PartitionTransactionOperation impleme
     addFiles.forEach(f -> {
       StructLike pd = f.partition();
       long txId = partitionMaxTxId.getOrDefault(pd, TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT);
-      txId = Math.max(txId, transactionId);
+      txId = Math.max(txId, changeSequence);
       partitionMaxTxId.put(pd, txId);
     });
     return partitionMaxTxId;
