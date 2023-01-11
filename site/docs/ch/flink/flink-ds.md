@@ -69,13 +69,6 @@ ArcticTable table = ArcticUtils.load(tableLoader);
 // }});
 Schema schema = table.schema();
 
-RowType flinkUserSchema = FlinkSchemaUtil.convert(schema);
-
-JsonRowDataDeserializationSchema deserializationSchema =
-    new JsonRowDataDeserializationSchema(
-        flinkUserSchema,
-        InternalTypeInfo.of(flinkUserSchema), false, false, TimestampFormat.ISO_8601);
-
 List<String> topics = new ArrayList<>();
 topics.add("topic_name");
 
@@ -88,17 +81,13 @@ Configuration configuration = new Configuration();
 // 开启保证数据一致性的低延迟读
 configuration.set(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, true);
 
-LogKafkaConsumer kafkaConsumer = new LogKafkaConsumer(
-            topics,
-            new KafkaDeserializationSchemaWrapper<>(deserializationSchema),
-            properties,
-            schema,
-            configuration
-        );
-// 配置读的起始位置
-kafkaConsumer.setStartFromEarliest();
+LogKafkaSource kafkaSource = LogKafkaSource.builder(schema, configuration)
+    .setTopics(topics)
+    .setStartingOffsets(OffsetsInitializer.earliest())
+    .setProperties(properties)
+    .build();
 
-DataStream<RowData> stream = env.addSource(kafkaConsumer);
+DataStream<RowData> stream = env.fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "Log Source");
 // 打印读出的所有数据
 stream.print();
 

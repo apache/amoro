@@ -47,6 +47,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * According to upstreamId and partition topic dealing with the flip message, when should begin to retract message and
  * when to end it.
  */
+@Deprecated
 public class LogReadHelper implements Serializable {
   private static final Logger LOG = LoggerFactory.getLogger(LogReadHelper.class);
   private static final long serialVersionUID = 1L;

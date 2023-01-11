@@ -63,6 +63,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * an indirection to the KafkaConsumer calls that change signature.
  */
 @Internal
+@Deprecated
 public class KafkaConsumerThread<T> extends Thread {
 
   /**
