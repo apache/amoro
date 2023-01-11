@@ -31,6 +31,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -94,8 +96,9 @@ class AdaptHiveParquetConversions {
 
         if (!((Types.TimestampType) icebergType).shouldAdjustToUTC()) {
           //iceberg org.apache.iceberg.expressions.Literals resolve timestamp without tz use UTC, but in fact it is
-          // local time zone, so the Literals time will plus 8 hours
-          instant = instant.plus(8, ChronoUnit.HOURS);
+          // local time zone
+          instant = instant.atZone(ZoneId.systemDefault()).toLocalDateTime().toInstant(
+              ZoneOffset.UTC);
         }
         return ChronoUnit.MICROS.between(EPOCH, instant);
       };
