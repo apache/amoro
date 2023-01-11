@@ -53,8 +53,8 @@ jobs:
 
       - name: test for ams server
         if: steps.changed-files.outputs.ams_server == 'true'
-        run: mvn install -pl 'ams/ams-server' -am -e -Dsingleton-resource-test=true
+        run: mvn install -pl 'ams/ams-server' -am -e -Dsingleton-test-resource=true
 
       - name: test for optimizer
         if: steps.changed-files.outputs.optimizer == 'true'
-        run: mvn install -pl 'optimizer' -am -e -Dsingleton-resource-test=true
+        run: mvn install -pl 'optimizer' -am -e -Dsingleton-test-resource=true
