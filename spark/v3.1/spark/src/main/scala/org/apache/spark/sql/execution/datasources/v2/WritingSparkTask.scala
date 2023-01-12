@@ -18,7 +18,7 @@
 
 package org.apache.spark.sql.execution.datasources.v2
 
-import com.netease.arctic.spark.writer.merge.MergeWriter
+import com.netease.arctic.spark.writer.RowLevelWriter
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
@@ -28,7 +28,7 @@ import org.apache.spark.{SparkEnv, TaskContext}
 
 trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serializable {
 
-  protected def writeFunc(writer: MergeWriter[InternalRow], row: InternalRow): Unit
+  protected def writeFunc(writer: RowLevelWriter[InternalRow], row: InternalRow): Unit
   def run(
            writerFactory: DataWriterFactory,
            context: TaskContext,
@@ -39,7 +39,7 @@ trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serial
     val partId = context.partitionId()
     val taskId = context.taskAttemptId()
     val attemptId = context.attemptNumber()
-    val dataWriter = writerFactory.createWriter(partId, taskId).asInstanceOf[MergeWriter[InternalRow]]
+    val dataWriter = writerFactory.createWriter(partId, taskId).asInstanceOf[RowLevelWriter[InternalRow]]
 
     var count = 0L
     // write the data and commit this writer.

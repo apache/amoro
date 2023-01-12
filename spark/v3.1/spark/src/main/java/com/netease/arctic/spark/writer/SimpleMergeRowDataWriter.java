@@ -2,7 +2,6 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
-import com.netease.arctic.spark.writer.merge.MergeWriter;
 import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.spark.sql.catalyst.InternalRow;
@@ -11,7 +10,7 @@ import org.apache.spark.sql.types.StructType;
 
 import java.io.IOException;
 
-public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
+public class SimpleMergeRowDataWriter implements RowLevelWriter<InternalRow> {
   final TaskWriter<InternalRow> writer;
   
   final StructType schema;

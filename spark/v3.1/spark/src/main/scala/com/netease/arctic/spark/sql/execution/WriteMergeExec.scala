@@ -2,7 +2,7 @@ package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.sql.utils.WriteQueryProjections
 import com.netease.arctic.spark.table.ArcticSparkTable
-import com.netease.arctic.spark.writer.merge.MergeWriter
+import com.netease.arctic.spark.writer.RowLevelWriter
 import org.apache.spark.SparkException
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
@@ -18,7 +18,7 @@ case class WriteMergeExec(
                            query: SparkPlan,
                            writeOptions: CaseInsensitiveStringMap,
                            projections: WriteQueryProjections,
-                           refreshCache: () => Unit) extends ExtendedV2ExistingTableWriteExec[MergeWriter[InternalRow]] with BatchWriteHelper {
+                           refreshCache: () => Unit) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] with BatchWriteHelper {
 
   override protected def run(): Seq[InternalRow] = {
     val writtenRows = writeWithV2(newWriteBuilder().buildForBatch())
@@ -30,18 +30,18 @@ case class WriteMergeExec(
 
   override def child: SparkPlan = query
 
-  override lazy val writingTask: WritingSparkTask[MergeWriter[InternalRow]] = {
+  override lazy val writingTask: WritingSparkTask[RowLevelWriter[InternalRow]] = {
     DeltaWithMetadataWritingSparkTask(projections)
   }
 }
 
 case class DeltaWithMetadataWritingSparkTask(
-                                              projs: WriteQueryProjections) extends WritingSparkTask[MergeWriter[InternalRow]] {
+                                              projs: WriteQueryProjections) extends WritingSparkTask[RowLevelWriter[InternalRow]] {
 
   private lazy val frontRowProjection = projs.frontRowProjection.orNull
   private lazy val backRowProjection = projs.backRowProjection
 
-  override protected def writeFunc(writer: MergeWriter[InternalRow], row: InternalRow): Unit = {
+  override protected def writeFunc(writer: RowLevelWriter[InternalRow], row: InternalRow): Unit = {
     val operation = row.getString(0)
 
     operation match {

@@ -23,7 +23,6 @@ import com.netease.arctic.op.OverwriteBaseFiles;
 import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.table.SupportsUpsert;
-import com.netease.arctic.spark.writer.merge.MergeWriter;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
@@ -304,7 +303,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     }
 
     @Override
-    public MergeWriter<InternalRow> createWriter(int partitionId, long taskId) {
+    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
           .withTransactionId(transactionId)
           .withPartitionId(partitionId)

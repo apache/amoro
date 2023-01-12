@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package com.netease.arctic.spark.writer.merge;
+package com.netease.arctic.spark.writer;
 
 import org.apache.spark.sql.connector.write.DataWriter;
 
@@ -26,7 +26,7 @@ import java.io.IOException;
 /**
  * A data writer responsible for writing a delta of rows.
  */
-public interface MergeWriter<T> extends DataWriter<T> {
+public interface RowLevelWriter<T> extends DataWriter<T> {
   void delete(T row) throws IOException;
 
   void update(T updateBefore, T updateAfter) throws IOException;

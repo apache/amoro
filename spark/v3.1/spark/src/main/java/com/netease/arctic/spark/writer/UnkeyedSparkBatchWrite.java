@@ -20,7 +20,6 @@ package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
-import com.netease.arctic.spark.writer.merge.MergeWriter;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.AppendFiles;
@@ -259,7 +258,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     }
 
     @Override
-    public MergeWriter<InternalRow> createWriter(int partitionId, long taskId) {
+    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
       TaskWriter<InternalRow> writer = TaskWriters.of(table)
