@@ -19,12 +19,13 @@
 package com.netease.arctic.spark.sql.optimize
 
 import com.netease.arctic.spark.SupportSparkAdapter
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticIcebergRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticPartitionsDynamic, ReplaceArcticData}
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable}
 import com.netease.arctic.spark.util.DistributionAndOrderingUtil
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.{Expression, SortOrder}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, OverwritePartitionsDynamic, RepartitionByExpression, Sort}
+import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.catalog.Table
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
@@ -32,42 +33,38 @@ import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with SupportSparkAdapter {
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transformDown {
-    case overwrite @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _) =>
-      r.table match {
-        case table: ArcticSparkTable =>
-          val newQuery = distributionQuery(query, table, rowLevelOperation = false)
-          val optimizedAppend = overwrite.copy(query = newQuery)
-          optimizedAppend
-        case _ =>
-          overwrite
-      }
-    case append @ AppendArcticData(r: DataSourceV2Relation, query, _, _) =>
-      r.table match {
-        case table: ArcticSparkTable =>
-          val newQuery = distributionQuery(query, table, rowLevelOperation = false)
-          val optimizedAppend = append.copy(query = newQuery)
-          optimizedAppend
-        case _ =>
-          append
-      }
-    case replace @ ReplaceArcticData(r: DataSourceV2Relation, query, _) =>
-      r.table match {
-        case table: ArcticSparkTable =>
-          val newQuery = distributionQuery(query, table, rowLevelOperation = true)
-          val optimizedAppend = replace.copy(query = newQuery)
-          optimizedAppend
-        case _ =>
-          replace
-      }
-    case overwrite @ OverwriteArcticPartitionsDynamic(r: DataSourceV2Relation, query, _, _) =>
-      r.table match {
-        case table: ArcticSparkTable =>
-          val newQuery = distributionQuery(query, table, rowLevelOperation = false)
-          val optimizedAppend = overwrite.copy(query = newQuery)
-          optimizedAppend
-        case _ =>
-          overwrite
-      }
+    case o @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
+      o.copy(query = newQuery, writeOptions = options)
+
+    case a @ AppendArcticData(r: DataSourceV2Relation, query, _, writeOptions) if isArcticRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
+      a.copy(query = newQuery, writeOptions = options)
+
+    case rp @ ReplaceArcticData(r: DataSourceV2Relation, query, writeOptions) if isArcticRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = true)
+      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
+      rp.copy(query = newQuery, writeOptions = options)
+
+    case o @ OverwriteArcticPartitionsDynamic(r: DataSourceV2Relation, query, _, writeOptions) if isArcticRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
+      o.copy(query = newQuery, writeOptions = options)
+
+    case a @ AppendData(r: DataSourceV2Relation, query, _, _) if isArcticIcebergRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      a.copy(query = newQuery)
+
+    case o @ OverwriteByExpression(r: DataSourceV2Relation, _, query, _, _) if isArcticIcebergRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      o.copy(query = newQuery)
+
+    case o @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, _, _) if isArcticIcebergRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      o.copy(query = newQuery)
+
   }
 
   private def distributionQuery(query: LogicalPlan, table: Table, rowLevelOperation: Boolean): LogicalPlan = {

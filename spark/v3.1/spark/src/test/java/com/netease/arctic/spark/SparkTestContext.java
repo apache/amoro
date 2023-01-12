@@ -18,12 +18,12 @@
 
 package com.netease.arctic.spark;
 
-import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.CatalogMetaTestUtil;
 import com.netease.arctic.ams.api.CatalogMeta;
 import com.netease.arctic.ams.api.MockArcticMetastoreServer;
 import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.client.AmsClientPools;
 import com.netease.arctic.catalog.ArcticCatalog;
 import com.netease.arctic.catalog.CatalogLoader;
 import com.netease.arctic.data.ChangeAction;
@@ -376,12 +376,13 @@ public class SparkTestContext extends ExternalResource {
       return ImmutableList.of();
     }
     result.show();
-    this.rows = rows.stream()
+    List<Object[]> rs = rows.stream()
         .map(row -> IntStream.range(0, row.size())
             .mapToObj(pos -> row.isNullAt(pos) ? null : row.get(pos))
             .toArray(Object[]::new)
         ).collect(Collectors.toList());
-    return this.rows;
+    this.rows = rs;
+    return rs;
   }
 
   protected void assertEquals(String context, List<Object[]> expectedRows, List<Object[]> actualRows) {

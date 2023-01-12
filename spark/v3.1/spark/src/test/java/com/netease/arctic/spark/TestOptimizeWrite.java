@@ -139,4 +139,15 @@ public class TestOptimizeWrite extends SparkTestBase {
     return dfMap.values().stream().map(List::size)
         .reduce(0, Integer::sum).longValue();
   }
+
+
+  public void testUnkeyedTablePartitioned() {
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " column1 string , \n " +
+        " column2 string, \n" +
+        ") using arctic \n" +
+        " partitioned by ( column1 ) \n" );
+
+  }
 }

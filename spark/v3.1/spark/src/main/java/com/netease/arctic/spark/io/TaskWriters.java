@@ -51,11 +51,13 @@ public class TaskWriters {
   private long taskId = 0;
   private StructType dsSchema;
   private String hiveSubdirectory;
+  private boolean orderedWriter = false;
 
   private final boolean isHiveTable;
   private final FileFormat fileFormat;
   private final long fileSize;
   private final long mask;
+
 
   protected TaskWriters(ArcticTable table) {
     this.table = table;
@@ -99,6 +101,11 @@ public class TaskWriters {
     return this;
   }
 
+  public TaskWriters withOrderedWriter() {
+    this.orderedWriter = true;
+    return this;
+  }
+
   public TaskWriter<InternalRow> newBaseWriter(boolean isOverwrite) {
     preconditions();
 
@@ -139,9 +146,10 @@ public class TaskWriters {
           encryptionManager, partitionId, taskId, transactionId);
     }
 
-    return new ArcticSparkBaseTaskWriter(fileFormat, appenderFactory,
-        outputFileFactory,
-        table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
+    return new ArcticSparkBaseTaskWriter(
+        fileFormat, appenderFactory,
+        outputFileFactory, table.io(), fileSize, mask, schema,
+        table.spec(), primaryKeySpec, orderedWriter);
   }
 
   public ChangeTaskWriter<InternalRow> newChangeWriter() {

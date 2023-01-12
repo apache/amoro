@@ -293,7 +293,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
         }
 
         currentKey = writerKey.copy();
-        currentWriter = newWriter(writerKey);
+        currentWriter = newWriter(currentKey);
       } else if (shouldRollToNewFile(currentWriter)) {
         closeCurrentWriter();
         currentWriter = newWriter(writerKey);

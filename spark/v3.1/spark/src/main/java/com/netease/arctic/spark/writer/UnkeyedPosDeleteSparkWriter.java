@@ -97,7 +97,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
           TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
       ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter = new ArcticSparkBaseTaskWriter(format, appenderFactory,
           fileFactory,
-          table.io(), fileSizeBytes, mask, schema, table.spec(), null);
+          table.io(), fileSizeBytes, mask, schema, table.spec(), null, false);
       arcticSparkBaseTaskWriter.write(internalRow.getRow());
       completedDataFiles.addAll(Arrays.asList(arcticSparkBaseTaskWriter.complete().dataFiles()));
     }
