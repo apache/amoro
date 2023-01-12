@@ -28,6 +28,7 @@ import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.trino.ArcticConfig;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import io.airlift.json.JsonCodec;
+import io.trino.FeaturesConfig;
 import io.trino.memory.context.AggregatedMemoryContext;
 import io.trino.orc.OrcColumn;
 import io.trino.orc.OrcCorruptionException;
@@ -94,6 +95,7 @@ import io.trino.spi.type.RowType;
 import io.trino.spi.type.StandardTypes;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -202,6 +204,7 @@ public class IcebergPageSourceProvider
   private final JsonCodec<CommitTaskData> jsonCodec;
   private final IcebergFileWriterFactory fileWriterFactory;
   private final ArcticConfig arcticConfig;
+  private final String trinoSpillPath;
 
   @Inject
   public IcebergPageSourceProvider(
@@ -213,7 +216,8 @@ public class IcebergPageSourceProvider
       FileIoProvider fileIoProvider,
       JsonCodec<CommitTaskData> jsonCodec,
       IcebergFileWriterFactory fileWriterFactory,
-      ArcticConfig arcticConfig) {
+      ArcticConfig arcticConfig,
+      FeaturesConfig featuresConfig) {
     this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
     this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
     this.orcReaderOptions = requireNonNull(orcReaderConfig, "orcReaderConfig is null").toOrcReaderOptions();
@@ -224,6 +228,7 @@ public class IcebergPageSourceProvider
     this.jsonCodec = requireNonNull(jsonCodec, "jsonCodec is null");
     this.fileWriterFactory = requireNonNull(fileWriterFactory, "fileWriterFactory is null");
     this.arcticConfig = arcticConfig;
+    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths().get(0).toString();
   }
 
   @Override
@@ -281,8 +286,8 @@ public class IcebergPageSourceProvider
                 tableSchema,
                 ImmutableList.of(),
                 fileIO,
-                new StructLikeCollections(arcticConfig.isEnableSpillMap(),
-                    arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath()))
+                new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
+                    StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath))
                 .requiredSchema() : tableSchema,
         typeManager);
 
@@ -340,8 +345,8 @@ public class IcebergPageSourceProvider
         tableSchema,
         requiredColumns,
         fileIO,
-        new StructLikeCollections(arcticConfig.isEnableSpillMap(),
-            arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath()));
+        new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
+            StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath));
 
     Optional<PartitionData> partition = partitionSpec.isUnpartitioned() ? Optional.empty() : Optional.of(partitionData);
     LocationProvider locationProvider =

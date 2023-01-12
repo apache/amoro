@@ -27,6 +27,7 @@ import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.trino.ArcticConfig;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
 import com.netease.arctic.utils.map.StructLikeCollections;
+import io.trino.FeaturesConfig;
 import io.trino.plugin.hive.HdfsEnvironment;
 import io.trino.plugin.iceberg.FileIoProvider;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -41,6 +42,7 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.TypeManager;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 
@@ -56,17 +58,20 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
   private final TypeManager typeManager;
   private final FileIoProvider fileIoProvider;
   private final ArcticConfig arcticConfig;
+  private final String trinoSpillPath;
 
   @Inject
   public KeyedPageSourceProvider(
       IcebergPageSourceProvider icebergPageSourceProvider,
       TypeManager typeManager,
       FileIoProvider fileIoProvider,
-      ArcticConfig arcticConfig) {
+      ArcticConfig arcticConfig,
+      FeaturesConfig featuresConfig) {
     this.icebergPageSourceProvider = icebergPageSourceProvider;
     this.typeManager = typeManager;
     this.fileIoProvider = fileIoProvider;
     this.arcticConfig = arcticConfig;
+    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths().get(0).toString();
   }
 
   @Override
@@ -91,8 +96,8 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         ImmutableList.of(),
         keyedTableHandle.getPrimaryKeySpec(),
         fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), null),
-        new StructLikeCollections(arcticConfig.isEnableSpillMap(),
-            arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath())
+        new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
+            StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath)
     ).requiredSchema(), typeManager);
     ImmutableList.Builder<IcebergColumnHandle> requiredColumnsBuilder = ImmutableList.builder();
     requiredColumnsBuilder.addAll(icebergColumnHandles);
@@ -106,8 +111,8 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         requiredColumns,
         keyedTableHandle.getPrimaryKeySpec(),
         fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), session.getQueryId()),
-        new StructLikeCollections(arcticConfig.isEnableSpillMap(),
-            arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath())
+        new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
+            StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath)
     );
 
     return new KeyedConnectorPageSource(
