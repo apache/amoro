@@ -64,30 +64,33 @@ Major optimizing 和 minor optimizing 的设计参考了垃圾回收算法的分
 
 
 ## Self-optimizing scheduling policy
-
-如果你使用的是不可更新的表，如日志，传感器数据，并且已经习惯于 Iceberg 提供的 optimize 指令，可以考虑通过下面的配置关闭表上的 self-optimizing 功能：
+scheduling policy 表示 AMS 在分发任务给 optimizer 时候的策略，可以决定本次调度哪些表的任务给 optimizer 执行。
+不同 optimizer group 可以配置不同的 scheduling policy 以满足不同的优化需求，见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)。
+用户也可以通过表上的下列配置来关闭 self-optimizing 功能，这样该表就不会被调度执行：
 
 ```SQL
 self-optimizing.enabled = false;
 ```
-
+如果你使用的是不可更新的表，如日志，传感器数据，并且已经习惯于 Iceberg 提供的 optimize 指令，可以关闭 self-optimizing 功能。
 如果表配置了主键，支持 CDC 摄取和流式更新，比如数据库同步表，或者按照维度聚合过的表，建议开启 self-optimizing 功能。
 
+目前主要提供两种 scheduling policy 分别是 quota 和 balanced。
 ### quota
-可以设置 optimizer group 的调度策略为 quota 见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)，
-那么单张表的 self-optimizing 资源用量通过在表上配置 quota 参数来管理：
+quota 是一种按资源使用量调度的策略，单张表的 self-optimizing 资源用量通过在表上配置 quota 参数来管理：
 
 ```SQL
 -- self-optimizing 能够使用的最大 CPU 数量，可以取小数
 self-optimizing.quota = 1;
 ```
 
-Quota 定义了单张表可以使用的最大 CPU 用量，但 self-optimizing 实际是分布式执行，真实的资源用量是按实际执行时间动态管理的过程，在 optimizing 管理界面，可以通过 quota occupy 这个指标查看单张表的动态 quota 占用，从设计目标看，quota occupy 指标应当动态趋于 100%。 
+Quota 定义了单张表可以使用的最大 CPU 用量，但 self-optimizing 实际是分布式执行，真实的资源用量是按实际执行时间动态管理的过程，在 optimizing 管理界面，
+可以通过 quota occupy 这个指标查看单张表的动态 quota 占用，从设计目标看，quota occupy 指标应当动态趋于 100%。 
 
 在平台中可能出现超售和超买两种情况：
 
 - 超买 — 若所有 optimizer 配置超过所有表配置的 quota 总和，quota occupy 可能动态趋于 100% 以上
 - 超卖 — 若所有 optimizer 配置低于所有配置表的 quota 总和，quota occupy 应当动态趋于 100% 以下
-
 ### balanced
-可以设置 optimizer group 的调度策略为 balanced 见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)，此策略会均衡的调度每张表，使得每张表的 optimize 进度处于相同水平。
+balanced 是一种按照时间进度调度的策略，越久没有做 self-optimizing 的表在调度的时候具有越高的调度优先级，此策略会尽量使得每张表的 self-optimizing 进度处于相同水平。
+这样可以避免在 quota 调度策略场景下，资源消耗大的表长时间不做 self-optimizing 从而影响整体查询效率。
+如果一个 optimizer group 内的表对资源使用量没有特别要求，并且希望所有表都有一个不错的查询效率，那么 balanced 策略是一个很好的选择。
