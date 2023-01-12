@@ -74,7 +74,7 @@ public class ArcticConfig {
     this.maxInMemorySizeInBytes = maxInMemorySizeInBytes;
   }
 
-  @Config("arctic.rocksdb.base.path")
+  @Config("arctic.spill-map.path")
   @ConfigDescription("Rocks db base path")
   public void setRocksDBBasePath(String rocksDBBasePath) {
     this.rocksDBBasePath = rocksDBBasePath;

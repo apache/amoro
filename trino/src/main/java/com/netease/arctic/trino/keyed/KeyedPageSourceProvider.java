@@ -42,10 +42,10 @@ import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.type.TypeManager;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.SchemaParser;
 
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,7 +58,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
   private final TypeManager typeManager;
   private final FileIoProvider fileIoProvider;
   private final ArcticConfig arcticConfig;
-  private final String trinoSpillPath;
+  private final List<Path> trinoSpillPath;
 
   @Inject
   public KeyedPageSourceProvider(
@@ -71,7 +71,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
     this.typeManager = typeManager;
     this.fileIoProvider = fileIoProvider;
     this.arcticConfig = arcticConfig;
-    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths().get(0).toString();
+    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths();
   }
 
   @Override
@@ -97,7 +97,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         keyedTableHandle.getPrimaryKeySpec(),
         fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), null),
         new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
-            StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath)
+            trinoSpillPath.isEmpty() ? arcticConfig.getRocksDBBasePath() : trinoSpillPath.get(0).toString())
     ).requiredSchema(), typeManager);
     ImmutableList.Builder<IcebergColumnHandle> requiredColumnsBuilder = ImmutableList.builder();
     requiredColumnsBuilder.addAll(icebergColumnHandles);
@@ -112,7 +112,7 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         keyedTableHandle.getPrimaryKeySpec(),
         fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), session.getQueryId()),
         new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
-            StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath)
+            trinoSpillPath.isEmpty() ? arcticConfig.getRocksDBBasePath() : trinoSpillPath.get(0).toString())
     );
 
     return new KeyedConnectorPageSource(

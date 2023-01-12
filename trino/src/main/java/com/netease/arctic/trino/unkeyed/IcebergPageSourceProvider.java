@@ -95,7 +95,6 @@ import io.trino.spi.type.RowType;
 import io.trino.spi.type.StandardTypes;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -204,7 +203,7 @@ public class IcebergPageSourceProvider
   private final JsonCodec<CommitTaskData> jsonCodec;
   private final IcebergFileWriterFactory fileWriterFactory;
   private final ArcticConfig arcticConfig;
-  private final String trinoSpillPath;
+  private final List<java.nio.file.Path> trinoSpillPath;
 
   @Inject
   public IcebergPageSourceProvider(
@@ -228,7 +227,7 @@ public class IcebergPageSourceProvider
     this.jsonCodec = requireNonNull(jsonCodec, "jsonCodec is null");
     this.fileWriterFactory = requireNonNull(fileWriterFactory, "fileWriterFactory is null");
     this.arcticConfig = arcticConfig;
-    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths().get(0).toString();
+    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths();
   }
 
   @Override
@@ -287,7 +286,7 @@ public class IcebergPageSourceProvider
                 ImmutableList.of(),
                 fileIO,
                 new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
-                    StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath))
+                    trinoSpillPath.isEmpty() ? arcticConfig.getRocksDBBasePath() : trinoSpillPath.get(0).toString()))
                 .requiredSchema() : tableSchema,
         typeManager);
 
@@ -346,7 +345,7 @@ public class IcebergPageSourceProvider
         requiredColumns,
         fileIO,
         new StructLikeCollections(arcticConfig.isEnableSpillMap(), arcticConfig.getMaxInMemorySizeInBytes(),
-            StringUtils.isEmpty(trinoSpillPath) ? arcticConfig.getRocksDBBasePath() : trinoSpillPath));
+            trinoSpillPath.isEmpty() ? arcticConfig.getRocksDBBasePath() : trinoSpillPath.get(0).toString()));
 
     Optional<PartitionData> partition = partitionSpec.isUnpartitioned() ? Optional.empty() : Optional.of(partitionData);
     LocationProvider locationProvider =
