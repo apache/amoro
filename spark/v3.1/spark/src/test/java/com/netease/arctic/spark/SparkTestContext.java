@@ -39,9 +39,8 @@ import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.LocationKind;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.UnkeyedTable;
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.iceberg.AppendFiles;
@@ -126,7 +125,7 @@ public class SparkTestContext extends ExternalResource {
     }
 
     System.out.println("======================== start AMS  ========================= ");
-    FileUtils.deleteQuietly(testBaseDir);
+    org.apache.commons.io.FileUtils.deleteQuietly(testBaseDir);
     testBaseDir.mkdirs();
 
     AmsClientPools.cleanAll();
@@ -185,14 +184,14 @@ public class SparkTestContext extends ExternalResource {
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
-    sparkConfigs.put("spark.executor.heartbeatInterval", "300s");
+    sparkConfigs.put("spark.executor.heartbeatInterval", "500s");
     sparkConfigs.put("spark.cores.max", "6");
     sparkConfigs.put("spark.executor.cores", "2");
     sparkConfigs.put("spark.default.parallelism", "12");
-    sparkConfigs.put("spark.network.timeout", "500s");
+    sparkConfigs.put("spark.network.timeout", "600s");
     sparkConfigs.put("spark.sql.warehouse.dir", testSparkDir.getAbsolutePath());
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
-    sparkConfigs.put("spark.testing.memory", "471859200");
+    sparkConfigs.put("spark.testing.memory", "943718400");
     sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
     sparkConfigs.put("spark.sql.arctic.check-source-data-uniqueness.enabled", "true");
 
@@ -201,7 +200,7 @@ public class SparkTestContext extends ExternalResource {
 
     SparkConf sparkconf = new SparkConf()
         .setAppName("test")
-        .setMaster("local");
+        .setMaster("local[2]");
 
     sparkConfigs.forEach(sparkconf::set);
 
@@ -511,7 +510,7 @@ public class SparkTestContext extends ExternalResource {
       List<DataFile> partitionFiles = dataFilePartitionMap.getValue();
       Map<DataTreeNode, List<DataFile>> nodeFilesPartitionMap = new HashMap<>(partitionFiles.stream()
           .collect(Collectors.groupingBy(dataFile ->
-              FileUtil.parseFileNodeFromFileName(dataFile.path().toString()))));
+              TableFileUtils.parseFileNodeFromFileName(dataFile.path().toString()))));
       for (Map.Entry<DataTreeNode, List<DataFile>> nodeFilePartitionMap : nodeFilesPartitionMap.entrySet()) {
         DataTreeNode key = nodeFilePartitionMap.getKey();
         List<DataFile> nodeFiles = nodeFilePartitionMap.getValue();

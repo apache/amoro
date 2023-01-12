@@ -98,16 +98,20 @@ public class MajorExecutor extends BaseExecutor {
         .buildWriter(task.getOptimizeType() == OptimizeType.Major ?
             WriteOperationKind.MAJOR_OPTIMIZE : WriteOperationKind.FULL_OPTIMIZE);
     long insertCount = 0;
-    while (recordIterator.hasNext()) {
-      checkIfTimeout(writer);
+    try {
+      while (recordIterator.hasNext()) {
+        checkIfTimeout(writer);
 
-      Record baseRecord = recordIterator.next();
-      writer.write(baseRecord);
-      insertCount++;
-      if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
-        LOG.info("task {} insert records number {} and data sampling {}",
-            task.getTaskId(), insertCount, baseRecord);
+        Record baseRecord = recordIterator.next();
+        writer.write(baseRecord);
+        insertCount++;
+        if (insertCount % SAMPLE_DATA_INTERVAL == 1) {
+          LOG.info("task {} insert records number {} and data sampling {}",
+              task.getTaskId(), insertCount, baseRecord);
+        }
       }
+    } finally {
+      recordIterator.close();
     }
 
     LOG.info("task {} insert records number {}", task.getTaskId(), insertCount);
@@ -130,8 +134,8 @@ public class MajorExecutor extends BaseExecutor {
 
     AdaptHiveGenericArcticDataReader arcticDataReader =
         new AdaptHiveGenericArcticDataReader(table.io(), table.schema(), requiredSchema, primaryKeySpec,
-            table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
-            IdentityPartitionConverters::convertConstant, sourceNodes, false);
+        table.properties().get(TableProperties.DEFAULT_NAME_MAPPING), false,
+        IdentityPartitionConverters::convertConstant, sourceNodes, false, structLikeCollections);
 
     List<ArcticFileScanTask> fileScanTasks = dataFiles.stream()
         .map(file -> {

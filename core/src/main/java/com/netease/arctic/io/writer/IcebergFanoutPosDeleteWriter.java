@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io.writer;
 
-import com.netease.arctic.utils.FileUtil;
+import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -146,12 +146,12 @@ public class IcebergFanoutPosDeleteWriter<T> implements FileWriter<PositionDelet
         return;
       }
       posDeletes.sort(Comparator.comparingLong(PosRow::pos));
-      String fileName = FileUtil.getFileName(filePath.get().toString());
+      String fileName = TableFileUtils.getFileName(filePath.get().toString());
       FileFormat fileFormat = FileFormat.fromFileName(fileName);
       if (fileFormat != null) {
         fileName = fileName.substring(0, fileName.length() - fileFormat.name().length() - 1);
       }
-      String fileDir = FileUtil.getFileDir(filePath.get().toString());
+      String fileDir = TableFileUtils.getFileDir(filePath.get().toString());
       String deleteFilePath = format.addExtension(String.format("%s/%s-delete-%s", fileDir, fileName,
           fileNameSuffix));
       EncryptedOutputFile outputFile = encryptionManager.encrypt(fileIO.newOutputFile(deleteFilePath));

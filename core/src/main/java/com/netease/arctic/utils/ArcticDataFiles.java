@@ -18,8 +18,10 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class ArcticDataFiles {
   public static final OffsetDateTime EPOCH = Instant.ofEpochSecond(0).atOffset(ZoneOffset.UTC);
@@ -95,7 +97,7 @@ public class ArcticDataFiles {
   }
 
   public static GenericRecord data(PartitionSpec spec, String partitionPath) {
-    GenericRecord data = GenericRecord.create(spec.schema());
+    GenericRecord data = genericRecord(spec);
     String[] partitions = partitionPath.split("/", -1);
     Preconditions.checkArgument(partitions.length <= spec.fields().size(),
         "Invalid partition data, too many fields (expecting %s): %s",
@@ -116,5 +118,22 @@ public class ArcticDataFiles {
     }
 
     return data;
+  }
+
+  private static GenericRecord genericRecord(PartitionSpec spec) {
+    List<String> collect = spec.fields().stream().map(s -> {
+      if (s.transform().toString().equals("identity")) {
+        return s.name();
+      } else if (s.name().endsWith("_" + s.transform().toString())) {
+        return s.name().substring(0, s.name().lastIndexOf("_" + s.transform().toString()));
+      } else if (s.transform().toString().contains("bucket")) {
+        return s.name().substring(0, s.name().lastIndexOf("_bucket"));
+      } else if (s.transform().toString().contains("truncate")) {
+        return s.name().substring(0, s.name().lastIndexOf("_trunc"));
+      } else {
+        return s.name();
+      }
+    }).collect(Collectors.toList());
+    return GenericRecord.create(spec.schema().select(collect));
   }
 }

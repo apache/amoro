@@ -34,17 +34,25 @@ public class ArcticHdfsAuthentication implements HdfsAuthentication {
 
   private TableMetaStore tableMetaStore;
 
+  private ArcticConfig arcticConfig;
+
   @Inject
-  public ArcticHdfsAuthentication(ArcticCatalogFactory arcticCatalogFactory) {
+  public ArcticHdfsAuthentication(ArcticCatalogFactory arcticCatalogFactory, ArcticConfig arcticConfig) {
     this.arcticCatalogFactory = arcticCatalogFactory;
     this.tableMetaStore =
         ((ArcticCatalogSupportTableSuffix) arcticCatalogFactory.getArcticCatalog()).getTableMetaStore();
+    this.arcticConfig = arcticConfig;
   }
 
   @Override
   public <R, E extends Exception> R doAs(ConnectorIdentity identity, GenericExceptionAction<R, E> action) throws E {
+    boolean hdfsImpersonationEnabled = arcticConfig.getHdfsImpersonationEnabled();
     try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(this.getClass().getClassLoader())) {
-      return tableMetaStore.doAs(() -> action.run());
+      if (hdfsImpersonationEnabled && identity.getUser() != null) {
+        return tableMetaStore.doAsImpersonating(identity.getUser(), () -> action.run());
+      } else {
+        return tableMetaStore.doAs(() -> action.run());
+      }
     }
   }
 }

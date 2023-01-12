@@ -29,7 +29,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 
-import static com.netease.arctic.hive.HiveTableTestBase.*;
+import static com.netease.arctic.hive.HiveTableTestBase.COLUMN_NAME_D;
+import static com.netease.arctic.hive.HiveTableTestBase.COLUMN_NAME_ID;
+import static com.netease.arctic.hive.HiveTableTestBase.COLUMN_NAME_NAME;
+import static com.netease.arctic.hive.HiveTableTestBase.COLUMN_NAME_OP_TIME;
+import static com.netease.arctic.hive.HiveTableTestBase.COLUMN_NAME_OP_TIME_WITH_ZONE;
+import static com.netease.arctic.hive.HiveTableTestBase.HIVE_TABLE_SCHEMA;
 
 public class HiveTestRecords {
 

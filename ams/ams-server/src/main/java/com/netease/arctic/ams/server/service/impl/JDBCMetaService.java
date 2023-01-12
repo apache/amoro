@@ -24,7 +24,6 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
-import com.netease.arctic.ams.server.model.OptimizeQueueItem;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IInternalTableService;

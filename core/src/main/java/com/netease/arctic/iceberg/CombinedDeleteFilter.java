@@ -20,10 +20,13 @@ package com.netease.arctic.iceberg;
 
 import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
-import com.netease.arctic.iceberg.optimize.StructLikeMap;
 import com.netease.arctic.iceberg.optimize.StructProjection;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.CloseableIterableWrapper;
+import com.netease.arctic.io.CloseablePredicate;
 import com.netease.arctic.scan.CombinedIcebergScanTask;
+import com.netease.arctic.utils.map.StructLikeBaseMap;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import org.apache.iceberg.Accessor;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.MetadataColumns;
@@ -85,8 +88,18 @@ public abstract class CombinedDeleteFilter<T> {
   private Set<Integer> deleteIds = new HashSet<>();
   private final Set<String> pathSets;
 
-  private Predicate<T> eqPredicate;
+  private CloseablePredicate<T> eqPredicate;
   private final Schema deleteSchema;
+
+  private StructLikeCollections structLikeCollections = StructLikeCollections.DEFAULT;
+
+  protected CombinedDeleteFilter(CombinedIcebergScanTask task,
+                                 Schema tableSchema,
+                                 Schema requestedSchema,
+                                 StructLikeCollections structLikeCollections) {
+    this(task, tableSchema, requestedSchema);
+    this.structLikeCollections = structLikeCollections;
+  }
 
   protected CombinedDeleteFilter(CombinedIcebergScanTask task, Schema tableSchema, Schema requestedSchema) {
     ImmutableList.Builder<IcebergContentFile> posDeleteBuilder = ImmutableList.builder();
@@ -147,7 +160,7 @@ public abstract class CombinedDeleteFilter<T> {
   }
 
   public CloseableIterable<T> filter(CloseableIterable<T> records) {
-    return applyEqDeletes(applyPosDeletes(records));
+    return new CloseableIterableWrapper<>(applyEqDeletes(applyPosDeletes(records)), eqPredicate);
   }
 
   public CloseableIterable<T> filterNegate(CloseableIterable<T> records) {
@@ -161,7 +174,7 @@ public abstract class CombinedDeleteFilter<T> {
       }
     };
 
-    return remainingRowsFilter.filter(records);
+    return new CloseableIterableWrapper<>(remainingRowsFilter.filter(records), eqPredicate);
   }
 
   private Predicate<T> applyEqDeletes() {
@@ -188,7 +201,8 @@ public abstract class CombinedDeleteFilter<T> {
 
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(deleteSchema.asStruct());
 
-    StructLikeMap<Long> structLikeMap = StructLikeMap.create(pkSchema.asStruct());
+    StructLikeBaseMap<Long> structLikeMap = structLikeCollections.createStructLikeMap(pkSchema.asStruct());
+
     //init map
     try (CloseableIterable<RecordWithLsn> deletes = deleteRecords) {
       Iterator<RecordWithLsn> it = getArcticFileIo() == null ? deletes.iterator()
@@ -219,7 +233,8 @@ public abstract class CombinedDeleteFilter<T> {
       return deleteLsn.compareTo(dataLSN) > 0;
     };
 
-    this.eqPredicate = isInDeleteSet;
+    CloseablePredicate<T> closeablePredicate = new CloseablePredicate<>(isInDeleteSet, structLikeMap);
+    this.eqPredicate = closeablePredicate;
     return isInDeleteSet;
   }
 

@@ -72,13 +72,13 @@ public class ConvertStructUtil {
      */
     FileContent content = dataFile.content();
     if (content == FileContent.DATA) {
-      DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(dataFile.path().toString());
+      DefaultKeyedFile.FileMeta fileMeta = TableFileUtils.parseFileMetaFromFileName(dataFile.path().toString());
       validateArcticFileType(content, dataFile.path().toString(), fileMeta.type());
       amsDataFile.setFileType(fileMeta.type().name());
       amsDataFile.setIndex(fileMeta.node().index());
       amsDataFile.setMask(fileMeta.node().mask());
     } else if (content == FileContent.POSITION_DELETES) {
-      DefaultKeyedFile.FileMeta fileMeta = FileUtil.parseFileMetaFromFileName(dataFile.path().toString());
+      DefaultKeyedFile.FileMeta fileMeta = TableFileUtils.parseFileMetaFromFileName(dataFile.path().toString());
       amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
       if (fileMeta.type() == DataFileType.POS_DELETE_FILE || fileMeta.type() == DataFileType.BASE_FILE) {
         amsDataFile.setIndex(fileMeta.node().index());

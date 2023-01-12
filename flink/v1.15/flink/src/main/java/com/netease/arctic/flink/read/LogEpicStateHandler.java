@@ -26,6 +26,7 @@ import java.util.Optional;
 /**
  * This Handler contains the topic offsets of upstream job id, epicNo, topic.
  */
+@Deprecated
 public class LogEpicStateHandler implements Serializable {
   private static final String SEPARATOR = "_";
   private static final long serialVersionUID = 203036690144637883L;

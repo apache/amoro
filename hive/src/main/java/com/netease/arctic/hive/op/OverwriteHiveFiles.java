@@ -133,6 +133,10 @@ public class OverwriteHiveFiles extends UpdateHiveFiles<OverwriteFiles> implemen
       this.validateLocation = Boolean.parseBoolean(value);
     }
 
+    if (DELETE_UNTRACKED_HIVE_FILE.equals(property)) {
+      this.checkOrphanFiles = Boolean.parseBoolean(value);
+    }
+
     delegate.set(property, value);
     return this;
   }

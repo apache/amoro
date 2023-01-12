@@ -52,8 +52,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static com.netease.arctic.flink.FlinkSchemaUtil.addPrimaryKey;
-import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.DIM_TABLE_ENABLE;
 
 /**
@@ -142,7 +140,6 @@ public class ArcticFileSource implements ScanTableSource, SupportsFilterPushDown
           projectedColumns,
           Arrays.stream(projectedFields).mapToObj(i -> fullTypes[i]).toArray(DataType[]::new));
 
-      addPrimaryKey(builder, table, tableSchema, projectedColumns);
       TableSchema ts = builder.build();
       LOG.info("TableSchema builder after addPrimaryKey, schema:{}", ts);
       return ts;

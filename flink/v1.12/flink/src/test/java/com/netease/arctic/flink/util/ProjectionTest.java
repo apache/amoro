@@ -19,7 +19,6 @@
 package com.netease.arctic.flink.util;
 
 import org.apache.flink.table.types.DataType;
-
 import org.junit.jupiter.api.Test;
 
 import static org.apache.flink.table.api.DataTypes.BIGINT;

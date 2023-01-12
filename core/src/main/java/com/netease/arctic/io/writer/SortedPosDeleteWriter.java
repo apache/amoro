@@ -129,7 +129,10 @@ public class SortedPosDeleteWriter<T> implements Closeable {
 
   @Override
   public void close() throws IOException {
-    flushDeletes();
+    io.doAs(() -> {
+      flushDeletes();
+      return null;
+    });
   }
 
   private void flushDeletes() {

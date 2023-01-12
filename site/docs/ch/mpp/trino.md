@@ -73,3 +73,17 @@ SELECT * FROM "{TABLE_NAME}#CHANGE"
 | `LIST(e)`      | `ARRAY(e)`                    |
 | `MAP(k,v)`     | `MAP(k,v)`                    |
 
+### Trino 使用代理用户访问 Hadoop 集群
+默认情况下，Trino 查询 Arctic 时，使用 [创建catalog](../guides/managing-catalogs.md#catalog) 中配置的 Hadoop 用户去访问 Hadoop 集群。
+若想使用 Trino 查询中的用户去访问 Hadoop 集群，可开启 Hadoop 代理功能， 在 {trino_home}/etc/catalog 目录下 Arctic 的 Catalog 配置文件中增加 `arctic.hdfs.impersonation.enabled=true` 参数，如下
+
+```tex
+connector.name=arctic
+arctic.url=thrift://{ip}:{port}/{catalogName}
+arctic.hdfs.impersonation.enabled=true
+```
+`arctic.hdfs.impersonation.enabled` 默认为 false
+
+???+ 注意
+
+    使用 Hadoop 代理功能，需提前在 Hadoop 集群对 [创建catalog](../guides/managing-catalogs.md#catalog) 中配置的 Hadoop 用户开启 proxy 功能，并保证能够代理该 Trino 查询用户，参考 [Hadoop Proxy User](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/Superusers.html#Configurations)

@@ -26,15 +26,12 @@ import com.netease.arctic.ams.server.service.IQuotaService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
-import com.netease.arctic.utils.CompatiblePropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Map;
 
 public class QuotaService implements IQuotaService {
 
