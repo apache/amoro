@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
+import com.netease.arctic.table.TableProperties;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.connector.pulsar.source.PulsarSource;
@@ -120,7 +121,10 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
    */
   @SuppressWarnings("java:S3776")
   public LogPulsarSource build() {
-
+    if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
+      this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
+    }
+    
     // Ensure the topic subscriber for pulsar.
     checkNotNull(subscriber, "No topic names or topic pattern are provided.");
 

@@ -316,8 +316,8 @@ public class HiddenLogOperatorsTest {
     sub.setField(8, (int) LocalDate.of(2022, 5, 5).toEpochDay());
     sub.setField(9, TimestampData.fromLocalDateTime(LocalDateTime.of(2022, 12, 12, 13, 14, 14, 987654234)));
     sub.setField(10, TimestampData.fromInstant(Instant.parse("2022-12-13T13:33:44.98765432Z")));
-    sub.setField(11, new byte[]{1});
-    sub.setField(12, new byte[]{'1'});
+    sub.setField(11, new byte[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+    sub.setField(12, new byte[]{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
     sub.setField(13, new byte[]{2});
 
     GenericArrayData fSubList = new GenericArrayData(new long[]{112L, 123L});
@@ -483,5 +483,5 @@ public class HiddenLogOperatorsTest {
     harness.getStreamConfig().setTimeCharacteristic(TimeCharacteristic.ProcessingTime);
     return harness;
   }
-  
+
 }

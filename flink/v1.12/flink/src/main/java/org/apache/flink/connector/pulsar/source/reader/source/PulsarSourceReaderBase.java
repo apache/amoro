@@ -50,11 +50,12 @@ abstract class PulsarSourceReaderBase<OUT>
       SourceReaderContext context,
       SourceConfiguration sourceConfiguration,
       PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin) {
+      PulsarAdmin pulsarAdmin,
+      PulsarRecordEmitter<OUT> emitter) {
     super(
         elementsQueue,
         splitFetcherManager,
-        new PulsarRecordEmitter<>(),
+        emitter,
         sourceConfiguration,
         context);
 

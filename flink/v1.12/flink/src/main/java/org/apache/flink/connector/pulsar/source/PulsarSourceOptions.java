@@ -231,7 +231,7 @@ public final class PulsarSourceOptions {
   public static final ConfigOption<SubscriptionType> PULSAR_SUBSCRIPTION_TYPE =
       ConfigOptions.key(CONSUMER_CONFIG_PREFIX + "subscriptionType")
           .enumType(SubscriptionType.class)
-          .defaultValue(SubscriptionType.Shared)
+          .defaultValue(SubscriptionType.Exclusive)
           .withDescription(
               Description.builder()
                   .text("Subscription type.")

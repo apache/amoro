@@ -242,7 +242,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
         pulsarSourceBuilder.setStartCursor(StartCursor.fromPublishTime(startupTimestampMillis));
         break;
     }
-    pulsarSourceBuilder.setConfig(Configuration.fromMap(arcticTable.properties()));
+    pulsarSourceBuilder.setProperties(properties);
 
     return pulsarSourceBuilder.build();
   }

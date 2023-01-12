@@ -40,7 +40,7 @@ import static com.netease.arctic.flink.shuffle.LogRecordV1.mapFactory;
 public class BaseLogTest {
   public final static Schema userSchema = new Schema(new ArrayList<Types.NestedField>() {{
     add(Types.NestedField.optional(0, "f_boolean", Types.BooleanType.get()));
-    add(Types.NestedField.optional(1, "f_int", Types.IntegerType.get()));
+    add(Types.NestedField.required(1, "f_int", Types.IntegerType.get()));
     add(Types.NestedField.optional(2, "f_long", Types.LongType.get()));
     add(Types.NestedField.optional(3, "f_struct", Types.StructType.of(
         Types.NestedField.optional(4, "f_sub_boolean", Types.BooleanType.get()),
@@ -108,6 +108,7 @@ public class BaseLogTest {
       Types.NestedField.optional(28, "f_sub_date", Types.DateType.get()),
       Types.NestedField.optional(29, "f_sub_timestamp_local", Types.TimestampType.withoutZone()),
       Types.NestedField.optional(30, "f_sub_timestamp_tz", Types.TimestampType.withZone()),
+      // need fixed length 16 for byte[]
       Types.NestedField.optional(31, "f_sub_uuid", Types.UUIDType.get()),
       Types.NestedField.optional(32, "f_sub_fixed", Types.FixedType.ofLength(18)),
       Types.NestedField.optional(33, "f_sub_binary", Types.BinaryType.get()),
@@ -129,9 +130,9 @@ public class BaseLogTest {
     )));
   }});
 
-  private PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(userSchema).addColumn(1).build();
+  public static PrimaryKeySpec PRIMARY_KEY_SPEC = PrimaryKeySpec.builderFor(userSchema).addColumn(1).build();
 
-  public final RowType flinkUserSchema = FlinkSchemaUtil.convert(userSchema);
+  public static final RowType FLINK_USER_SCHEMA = FlinkSchemaUtil.convert(userSchema);
 
   public final LogData<RowData> FLIP_LOG =
       new LogRecordV1(
