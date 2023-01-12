@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write.hidden.kafka;
+package com.netease.arctic.flink.write.hidden;
 
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.flink.shuffle.LogRecordV1;

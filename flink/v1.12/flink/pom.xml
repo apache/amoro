@@ -474,7 +474,6 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
             <version>${pulsar-commons-lang3.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- Pulsar use a newer zookeeper in broker. -->

@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read.hidden.kafka;
 
 import com.netease.arctic.flink.util.kafka.KafkaTestBase;
-import com.netease.arctic.flink.write.hidden.kafka.BaseLogTest;
+import com.netease.arctic.flink.write.hidden.BaseLogTest;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;

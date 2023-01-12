@@ -155,6 +155,27 @@ public class PulsarRuntimeOperator implements Closeable {
   }
 
   /**
+   * Create a topic with default {@link #DEFAULT_PARTITIONS} partitions and send a fixed number of
+   * records to this topic.
+   *
+   * @param topic              Pulsar topic name, it couldn't be a name with partition index.
+   * @param schema             The Pulsar schema for serializing records into bytes.
+   * @param collection         The records in collection which would be sent to Pulsar.
+   */
+  public <T> void setupTopic(String topic, Schema<T> schema, Collection<T> collection) {
+    String topicName = topicName(topic);
+    createTopic(topicName, DEFAULT_PARTITIONS);
+
+    // Make sure every topic partition has messages.
+    for (int i = 0; i < DEFAULT_PARTITIONS; i++) {
+      String partitionName = topicNameWithPartition(topic, i);
+      List<T> messages = new ArrayList<>(collection);
+
+      sendMessages(partitionName, schema, messages);
+    }
+  }
+
+  /**
    * Create a pulsar topic with given partition number if the topic doesn't exist. We won't do
    * anything for the existing topic. Make sure correctly used in the testing code.
    *

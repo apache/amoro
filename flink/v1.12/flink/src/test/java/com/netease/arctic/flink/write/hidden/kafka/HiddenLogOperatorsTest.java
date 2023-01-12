@@ -69,8 +69,8 @@ import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTA
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
 
 /**
  * Hidden log operator tests.
@@ -78,6 +78,7 @@ import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema
 public class HiddenLogOperatorsTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static final String topic = "produce-consume-topic";
+  public static final int DATA_INDEX = 1;
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
 
   @BeforeClass
@@ -301,7 +302,7 @@ public class HiddenLogOperatorsTest {
   public static RowData createRowData(int i) {
     GenericRowData rowData = new GenericRowData(userSchema.columns().size());
     rowData.setField(0, true);
-    rowData.setField(1, i);
+    rowData.setField(DATA_INDEX, i);
     rowData.setField(2, 1L);
     GenericRowData sub = new GenericRowData(18);
     sub.setField(0, true);

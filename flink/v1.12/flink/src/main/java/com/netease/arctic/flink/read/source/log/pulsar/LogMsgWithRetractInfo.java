@@ -42,8 +42,11 @@ public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
    * @see LogKafkaPartitionSplit#retractingEpicNo
    */
   private final Long retractingEpicNo;
+  /**
+   * Data in source, whose {@link LogData#getActualValue()} is the value in log-store.
+   */
   private final LogData<T> logData;
-  private final T actualValue;
+  private final T valueToBeSent;
 
   public LogMsgWithRetractInfo(MessageId id, long eventTime,
                                boolean retracting,
@@ -51,14 +54,14 @@ public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
                                Long revertStartingOffset,
                                Long retractingEpicNo,
                                LogData<T> logData,
-                               T actualValue) {
+                               T valueToBeSent) {
     super(id, null, eventTime);
     this.retracting = retracting;
     this.retractStoppingOffset = retractStoppingOffset;
     this.revertStartingOffset = revertStartingOffset;
     this.retractingEpicNo = retractingEpicNo;
     this.logData = logData;
-    this.actualValue = actualValue;
+    this.valueToBeSent = valueToBeSent;
   }
 
   public static <T> LogMsgWithRetractInfo<T> ofRetract(MessageId id, long eventTime,
@@ -66,9 +69,9 @@ public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
                                                        Long revertStartingOffset,
                                                        Long retractingEpicNo,
                                                        LogData<T> logData,
-                                                       T actualValue) {
+                                                       T valueToBeSent) {
     return new LogMsgWithRetractInfo<>(id, eventTime, true, retractStoppingOffset,
-        revertStartingOffset, retractingEpicNo, logData, actualValue);
+        revertStartingOffset, retractingEpicNo, logData, valueToBeSent);
   }
 
   public static <T> LogMsgWithRetractInfo<T> of(MessageId id, long eventTime,
@@ -97,7 +100,19 @@ public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
     return retractingEpicNo;
   }
 
-  public T getActualValue() {
-    return actualValue;
+  public T getValueToBeSent() {
+    return valueToBeSent;
+  }
+
+  @Override
+  public String toString() {
+    return "LogMsgWithRetractInfo{" +
+        "retracting=" + retracting +
+        ", retractStoppingOffset=" + retractStoppingOffset +
+        ", revertStartingOffset=" + revertStartingOffset +
+        ", retractingEpicNo=" + retractingEpicNo +
+        ", logData=" + logData +
+        ", actualValue=" + valueToBeSent +
+        '}';
   }
 }

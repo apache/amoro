@@ -20,6 +20,7 @@ package com.netease.arctic.flink.read.hidden.pulsar;
 
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
+import com.netease.arctic.flink.read.source.log.pulsar.LogMsgWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarOrderedPartitionSplitReader;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
@@ -58,17 +59,18 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
-import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
-import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
+import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.DATA_INDEX;
 import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
 import static java.util.Collections.singletonList;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
 import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,7 +82,6 @@ public class LogPulsarPartitionSplitReaderTest {
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
   public static final String TOPIC1 = "topic1";
-  public static final int DEFAULT_SIZE = 21;
   private static final byte[] JOB_ID = IdGenerator.generateUpstreamId();
 
   @Before
@@ -96,9 +97,8 @@ public class LogPulsarPartitionSplitReaderTest {
   @Test
   public void testHandleSplitChangesAndFetch() throws IOException {
     LogPulsarOrderedPartitionSplitReader reader = createReader(null, false);
-
     handleSplit(reader, TOPIC1, 0, MessageId.earliest);
-    fetchedMessages(reader, DEFAULT_SIZE, true);
+    fetchedMessages(reader, 20, true);
   }
 
   private byte[] createLogData(int i, int epicNo, boolean flip, LogDataJsonSerialization<RowData> serialization) {
@@ -115,7 +115,7 @@ public class LogPulsarPartitionSplitReaderTest {
   }
 
   private void write(String topic, int offset) {
-    Collection<byte[]> data = new ArrayList<>(DEFAULT_SIZE + offset);
+    Collection<byte[]> data = new ArrayList<>(20 + offset);
 
     LogDataJsonSerialization<RowData> serialization =
         new LogDataJsonSerialization<>(userSchema, LogRecordV1.fieldGetterFactory);
@@ -144,7 +144,7 @@ public class LogPulsarPartitionSplitReaderTest {
     for (; i < offset + batch * 4; i++) {
       data.add(createLogData(i, 3, false, serialization));
     }
-    op().setupTopic(topic, Schema.BYTES, () -> data.iterator().next(), data.size());
+    op().setupTopic(topic, Schema.BYTES, data);
     printDataInTopic(topic);
   }
 
@@ -181,6 +181,8 @@ public class LogPulsarPartitionSplitReaderTest {
           // Collect the records in this split.
           PulsarMessage<RowData> record;
           while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
+            LOG.info("read msg: {}, msgId: {}, idx: {}",
+                ((LogMsgWithRetractInfo) record).getValueToBeSent(), record.getId(), messages.size());
             messages.add(record);
           }
           finishedSplits.addAll(recordsBySplitIds.finishedSplits());
@@ -199,9 +201,20 @@ public class LogPulsarPartitionSplitReaderTest {
       } else {
         assertThat(finishedSplits).as("Split should be marked as finished").hasSize(1);
       }
+      for (int i = 0; i < messages.size(); i++) {
+        verifyMsg(((LogMsgWithRetractInfo<RowData>) messages.get(i)), i);
+      }
     }
 
     return messages;
+  }
+
+  private void verifyMsg(LogMsgWithRetractInfo<RowData> msg, int index) {
+    if (msg.isRetracting()) {
+
+    } else {
+      assertEquals(index, msg.getValueToBeSent().getInt(DATA_INDEX));
+    }
   }
 
   protected void handleSplit(
@@ -232,12 +245,13 @@ public class LogPulsarPartitionSplitReaderTest {
     configBuilder.set(PULSAR_SERVICE_URL, op().serviceUrl());
     configBuilder.set(PULSAR_ADMIN_URL, op().adminUrl());
     configBuilder.set(PULSAR_SUBSCRIPTION_NAME, "test-split-reader");
-    
+    configBuilder.set(PULSAR_MAX_FETCH_TIME, Duration.ofSeconds(1).toMillis());
+
     SourceConfiguration sourceConfiguration =
         configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
 
     String logConsumerChangelogMode = "all-kinds";
-    
+
     LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
     return new LogPulsarOrderedPartitionSplitReader(
         pulsarClient,
