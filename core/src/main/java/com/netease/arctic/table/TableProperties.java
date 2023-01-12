@@ -39,6 +39,10 @@ public class TableProperties {
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
 
   public static final String PARTITION_MAX_TRANSACTION_ID = "max-txId";
+
+  public static final String GAP_BETWEEN_TRANSACTION_ID_AND_SEQUENCE = "txId.sequence.gap";
+  public static final long GAP_BETWEEN_TRANSACTION_ID_AND_SEQUENCE_DEFAULT = 0;
+
   public static final long PARTITION_MAX_TRANSACTION_ID_DEFAULT = -1L;
 
   public static final String LOCATION = "location";

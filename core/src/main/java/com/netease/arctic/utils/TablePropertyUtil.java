@@ -30,6 +30,7 @@ import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
+import org.apache.iceberg.util.PropertyUtil;
 import org.apache.iceberg.util.StructLikeMap;
 
 import java.io.UncheckedIOException;
@@ -150,5 +151,10 @@ public class TablePropertyUtil {
     } else {
       return Long.parseLong(watermarkValue);
     }
+  }
+
+  public static long getTransactionId(Map<String, String> properties, long sequence) {
+    return sequence + PropertyUtil.propertyAsLong(properties, TableProperties.GAP_BETWEEN_TRANSACTION_ID_AND_SEQUENCE,
+        TableProperties.GAP_BETWEEN_TRANSACTION_ID_AND_SEQUENCE_DEFAULT);
   }
 }

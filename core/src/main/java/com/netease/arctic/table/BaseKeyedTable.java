@@ -31,11 +31,13 @@ import com.netease.arctic.scan.BaseKeyedTableScan;
 import com.netease.arctic.scan.ChangeTableIncrementalScan;
 import com.netease.arctic.scan.KeyedTableScan;
 import com.netease.arctic.utils.TablePropertyUtil;
+import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
+import org.apache.iceberg.events.CreateSnapshotEvent;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.apache.thrift.TException;
 
@@ -170,11 +172,11 @@ public class BaseKeyedTable implements KeyedTable {
 
   @Override
   public long beginTransaction(String signature) {
-    try {
-      return client.allocateTransactionId(this.tableMeta.getTableIdentifier(), signature);
-    } catch (TException e) {
-      throw new IllegalStateException("failed begin transaction", e);
-    }
+    AppendFiles appendFiles = changeTable.newAppend();
+    // TODO add summary, use fast append?
+    appendFiles.commit();
+    CreateSnapshotEvent createSnapshotEvent = (CreateSnapshotEvent) appendFiles.updateEvent();
+    return TablePropertyUtil.getTransactionId(properties(), createSnapshotEvent.sequenceNumber());
   }
 
   @Override
