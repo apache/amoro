@@ -64,9 +64,12 @@ Major optimizing 和 minor optimizing 的设计参考了垃圾回收算法的分
 
 
 ## Self-optimizing scheduling policy
-scheduling policy 表示 AMS 在分发任务给 optimizer 时候的策略，可以决定本次调度哪些表的任务给 optimizer 执行。
+Scheduling policy 是 AMS 决定不同表执行 self-optimizing 先后顺序的调度策略，通过不同的调度策略，
+决定了每张表实际可以占用的 self-optimizing 的资源，Arctic 用 Quota 定义每张表的预期资源用量，Quota occupation 代表了相比预期用量，实际占用的资源百分比。
+可以在 AMS 如下页面查看每张表 self-optimizing 的 quota 以及 Quota occupation：
+![quota_and_occupation](../images/concepts/quota-occupation.png)
 不同 optimizer group 可以配置不同的 scheduling policy 以满足不同的优化需求，见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)。
-用户也可以通过表上的下列配置来关闭 self-optimizing 功能，这样该表就不会被调度执行：
+用户也可以通过表上的下列配置来关闭 self-optimizing 功能，这样该表就不会被调度执行。
 
 ```SQL
 self-optimizing.enabled = false;
