@@ -183,15 +183,15 @@ public class TestUnKeyedTableMergeInto extends SparkTestBase {
         "id INT, v STRING) " +
         "USING arctic", database, "target") ;
     sql("CREATE TABLE {0}.{1} (" +
-        "id INT, v STRING, extra_col INT) " +
+        "id INT, extra_col INT, v STRING ) " +
         "USING arctic", database, "source") ;
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES " +
         "(1, ''v1''), " +
         "(2, ''v2'')", database, "target");
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES " +
-        "(1, ''v1_1'', -1), " +
-        "(3, ''v3'', -1), " +
-        "(4, ''v4'' ,-1)", database, "source");
+        "(1, -1, ''v1_1''), " +
+        "(3, -1, ''v3''), " +
+        "(4, -1, ''v4'')", database, "source");
     sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +
         "WHEN MATCHED THEN " +

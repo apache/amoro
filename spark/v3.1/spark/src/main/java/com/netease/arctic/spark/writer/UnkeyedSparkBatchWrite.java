@@ -21,7 +21,6 @@ package com.netease.arctic.spark.writer;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.writer.merge.MergeWriter;
-import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.UnkeyedTable;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.AppendFiles;
@@ -188,7 +187,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         rowDelta.commit();
       }
 
-
       AppendFiles appendFiles = table.newAppend();
       if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
         for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
@@ -241,17 +239,16 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      // TODO: issues-173 - support upsert data writer
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
-      UnkeyedPosDeleteSparkWriter<InternalRow> internalRowUnkeyedPosDeleteSparkWriter = TaskWriters.of(table)
+      TaskWriter<InternalRow> internalRowUnkeyedUpsertSparkWriter = TaskWriters.of(table)
           .withPartitionId(partitionId)
           .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
-          .newBasePosDeleteWriter();
+          .newUnkeyedUpsertWriter();
 
-      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedPosDeleteSparkWriter, dsSchema);
+      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedUpsertSparkWriter, dsSchema);
     }
   }
 
@@ -270,7 +267,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withPartitionId(partitionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
-          .newBasePosDeleteWriter();
+          .newUnkeyedUpsertWriter();
       return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
@@ -292,7 +289,6 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         }
         rowDelta.commit();
       }
-
 
       AppendFiles appendFiles = table.newAppend();
       if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {

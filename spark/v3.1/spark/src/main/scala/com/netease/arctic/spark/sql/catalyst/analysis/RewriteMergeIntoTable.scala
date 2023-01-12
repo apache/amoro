@@ -58,14 +58,6 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
     }
   }
 
-  def resolveRowIdAttrs(relation: DataSourceV2Relation, cond: Expression): Seq[Attribute] = {
-    relation.table match {
-      case arctic: ArcticSparkTable =>
-        val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
-        cond.references.filter(p => primarys.contains(p.name)).toSeq
-    }
-  }
-
   def buildRelationAndAttrs(relation: DataSourceV2Relation, cond: Expression, operationTable: Table):
   (Seq[Attribute], LogicalPlan) = {
     relation.table match {
@@ -127,13 +119,13 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
       val frontRowProjection =
         Some(TranslateUtils.newLazyProjection(plan, targetRowAttrs, isFront = true, 0))
       val backRowProjection =
-        TranslateUtils.newLazyProjection(source, targetRowAttrs, isFront = false, 1)
+        TranslateUtils.newLazyProjection(source, targetRowAttrs, isFront = false, 1 + rowIdAttrs.size)
       (frontRowProjection, backRowProjection)
     } else {
       val frontRowProjection =
         Some(TranslateUtils.newLazyProjection(plan, targetRowAttrs ++ rowIdAttrs, isFront = true, 0))
       val backRowProjection =
-        TranslateUtils.newLazyProjection(source, targetRowAttrs, isFront = false, 2)
+        TranslateUtils.newLazyProjection(source, targetRowAttrs, isFront = false, 1 + rowIdAttrs.size)
       (frontRowProjection, backRowProjection)
     }
     WriteQueryProjections(frontRowProjection, backRowProjection)
