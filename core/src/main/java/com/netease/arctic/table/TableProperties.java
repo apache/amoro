@@ -262,7 +262,9 @@ public class TableProperties {
   public static final String ENABLE_LOG_STORE_LEGACY = "log-store.enable";
 
   public static final String LOG_STORE_TYPE = "log-store.type";
-  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_KAFKA = "kafka";
+  public static final String LOG_STORE_STORAGE_TYPE_PULSAR = "pulsar";
+  public static final String LOG_STORE_STORAGE_TYPE_DEFAULT = LOG_STORE_STORAGE_TYPE_KAFKA;
 
   public static final String LOG_STORE_ADDRESS = "log-store.address";
 

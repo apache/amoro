@@ -27,6 +27,7 @@ import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.connector.source.Boundedness;
+import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
@@ -44,6 +45,8 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.types.RowKind;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
@@ -60,6 +63,10 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_EARLIEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_LATEST;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.SCAN_STARTUP_MODE_TIMESTAMP;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
 import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
 
 /**
@@ -67,6 +74,8 @@ import static org.apache.flink.table.connector.ChangelogMode.insertOnly;
  */
 public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushDown {
 
+  private static final Logger LOG = LoggerFactory.getLogger(LogDynamicSource.class);
+  
   private final ArcticTable arcticTable;
   private final Schema schema;
   private final ReadableConfig tableOptions;
@@ -213,7 +222,8 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
         break;
     }
     kafkaSourceBuilder.setProperties(properties);
-
+    
+    LOG.info("build log kafka source");
     return kafkaSourceBuilder.build();
   }
 
@@ -244,6 +254,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
     }
     pulsarSourceBuilder.setProperties(properties);
 
+    LOG.info("build log pulsar source");
     return pulsarSourceBuilder.build();
   }
 
@@ -274,9 +285,22 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
     }
   }
 
+  private Source<RowData, ?, ?> buildLogSource() {
+    String logType = CompatibleFlinkPropertyUtil.propertyAsString(arcticTable.properties(),
+        LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT).toLowerCase();
+    switch (logType) {
+      case LOG_STORE_STORAGE_TYPE_KAFKA:
+        return createKafkaSource();
+      case LOG_STORE_STORAGE_TYPE_PULSAR:
+        return createPulsarSource();
+      default:
+        throw new UnsupportedOperationException("only support 'kafka' or 'pulsar' now");
+    }
+  }
+
   @Override
   public ScanRuntimeProvider getScanRuntimeProvider(ScanContext scanContext) {
-    final LogKafkaSource kafkaSource = createKafkaSource();
+    final Source<RowData, ?, ?> logSource = buildLogSource();
 
     return new DataStreamScanProvider() {
       @Override
@@ -285,12 +309,12 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
           watermarkStrategy = WatermarkStrategy.noWatermarks();
         }
         return execEnv.fromSource(
-            kafkaSource, watermarkStrategy, "LogStoreSource-" + arcticTable.name());
+            logSource, watermarkStrategy, "LogStoreSource-" + arcticTable.name());
       }
 
       @Override
       public boolean isBounded() {
-        return kafkaSource.getBoundedness() == Boundedness.BOUNDED;
+        return logSource.getBoundedness() == Boundedness.BOUNDED;
       }
     };
   }
