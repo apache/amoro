@@ -1,6 +1,5 @@
 package com.netease.arctic.spark.writer;
 
-import javax.ws.rs.DELETE;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
 import com.netease.arctic.spark.writer.merge.MergeWriter;
