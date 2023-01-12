@@ -22,14 +22,12 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,25 +40,28 @@ public class BaseTableBlockerManager implements TableBlockerManager {
 
   private final TableIdentifier tableIdentifier;
   private final AmsClient client;
-  private final long blockerTimeout;
-  
-  private final Map<String, Blocker> validBlockers = Maps.newHashMap();
+
+  private final Map<String, Blocker> toRenewBlockers = Maps.newHashMap();
   private volatile boolean stop;
   private Thread renewWorker;
 
-  public BaseTableBlockerManager(TableIdentifier tableIdentifier, AmsClient client, long blockerTimeout) {
+  public BaseTableBlockerManager(TableIdentifier tableIdentifier, AmsClient client) {
     this.tableIdentifier = tableIdentifier;
     this.client = client;
-    this.blockerTimeout = blockerTimeout;
+  }
+
+  public static TableBlockerManager build(TableIdentifier tableIdentifier, AmsClient amsClient) {
+    return new BaseTableBlockerManager(tableIdentifier, amsClient);
   }
 
   @Override
   public Blocker block(List<BlockableOperation> operations) throws OperationConflictException {
     try {
       BaseBlocker blocker = BaseBlocker.of(client.block(tableIdentifier.buildTableIdentifier(), operations));
-      validBlockers.put(blocker.blockerId(), blocker);
+      toRenewBlockers.put(blocker.blockerId(), blocker);
       if (renewWorker == null) {
-        startRenewWorker();
+        long timeout = blocker.getExpirationTime() - blocker.getCreateTime();
+        startRenewWorker(timeout / 5);
       }
       return blocker;
     } catch (OperationConflictException e) {
@@ -74,8 +75,8 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public void release(Blocker blocker) {
     try {
       client.releaseBlocker(tableIdentifier.buildTableIdentifier(), blocker.blockerId());
-      validBlockers.remove(blocker.blockerId());
-      if (validBlockers.isEmpty()) {
+      toRenewBlockers.remove(blocker.blockerId());
+      if (toRenewBlockers.isEmpty()) {
         stopRenewWorker();
       }
     } catch (TException e) {
@@ -96,31 +97,31 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public TableIdentifier tableIdentifier() {
     return tableIdentifier;
   }
-  
-  private void checkValidBlockers() {
+
+  private void refreshToRenewBlockers() {
     List<String> blockerIds = getBlockers().stream().map(Blocker::blockerId).collect(Collectors.toList());
-    validBlockers.keySet().removeIf(blockerId -> !blockerIds.contains(blockerId));
+    toRenewBlockers.keySet().removeIf(blockerId -> !blockerIds.contains(blockerId));
   }
 
-  private synchronized void startRenewWorker() {
+  private synchronized void startRenewWorker(long interval) {
     if (renewWorker == null) {
       this.renewWorker = new Thread(() -> {
         try {
           while (!stop) {
-            Thread.sleep(blockerTimeout / 5);
+            Thread.sleep(interval);
             LOG.info("start renew blocker of {}", tableIdentifier);
-            checkValidBlockers();
-            if (validBlockers.isEmpty()) {
+            refreshToRenewBlockers();
+            if (toRenewBlockers.isEmpty()) {
               LOG.info("no valid blockers, stop renew blockers of {}", tableIdentifier);
               break;
             }
-            List<Blocker> blockers = new ArrayList<>(validBlockers.values());
+            List<Blocker> blockers = new ArrayList<>(toRenewBlockers.values());
             for (Blocker blocker : blockers) {
               try {
                 client.renewBlocker(tableIdentifier.buildTableIdentifier(), blocker.blockerId());
                 LOG.info("renew blocker {} success of {}", blocker.blockerId(), tableIdentifier);
               } catch (Throwable t) {
-                LOG.error("failed to renew block {} of table {}, ignore and continue", blocker.blockerId(),
+                LOG.warn("failed to renew block {} of table {}, ignore and continue", blocker.blockerId(),
                     tableIdentifier, t);
               }
             }
@@ -132,7 +133,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
         }
       }, "renew-blocker-thread");
       this.renewWorker.start();
-      LOG.info("start renew worker");
+      LOG.info("start renew worker with interval {}ms", interval);
     }
   }
 
@@ -143,49 +144,5 @@ public class BaseTableBlockerManager implements TableBlockerManager {
       renewWorker = null;
     }
     LOG.info("stop renew worker");
-  }
-
-
-  public static TableBlockerManager build(TableIdentifier tableIdentifier, AmsClient amsClient, long blockerTimeout) {
-    // TODO 
-    // return new BaseTableBlockerManager(tableIdentifier, amsClient, blockerTimeout);
-    return new DummyTableBlockerManager(tableIdentifier);
-  }
-
-  // TODO remove
-  public static class DummyTableBlockerManager implements TableBlockerManager {
-    private static final Blocker TEMP_BLOCKER = new BaseBlocker(
-        "temp",
-        Collections.emptyList(),
-        System.currentTimeMillis(),
-        System.currentTimeMillis() +
-            TableProperties.TABLE_BLOCKER_TIMEOUT_DEFAULT,
-        Maps.newHashMap());
-
-    private final TableIdentifier tableIdentifier;
-
-    public DummyTableBlockerManager(TableIdentifier tableIdentifier) {
-      this.tableIdentifier = tableIdentifier;
-    }
-
-    @Override
-    public TableIdentifier tableIdentifier() {
-      return tableIdentifier;
-    }
-
-    @Override
-    public Blocker block(List<BlockableOperation> operations) throws OperationConflictException {
-      return TEMP_BLOCKER;
-    }
-
-    @Override
-    public void release(Blocker blocker) {
-
-    }
-
-    @Override
-    public List<Blocker> getBlockers() {
-      return Collections.singletonList(TEMP_BLOCKER);
-    }
   }
 }

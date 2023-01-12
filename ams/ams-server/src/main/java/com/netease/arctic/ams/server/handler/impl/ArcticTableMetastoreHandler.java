@@ -37,6 +37,7 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
+import com.netease.arctic.table.blocker.BaseBlocker;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -207,25 +208,28 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
 
   @Override
   public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
-      throws OperationConflictException, TException {
-    // TODO
-    return null;
+      throws OperationConflictException {
+    BaseBlocker block = ServiceContainer.getTableBlockerService()
+        .block(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), operations);
+    return block.buildBlocker();
   }
 
   @Override
-  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-    // TODO
+  public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    ServiceContainer.getTableBlockerService()
+        .release(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), blockerId);
   }
 
   @Override
-  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-    // TODO
-
+  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
+    ServiceContainer.getTableBlockerService()
+        .renew(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), blockerId);
   }
 
   @Override
-  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-    // TODO
-    return null;
+  public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
+    return ServiceContainer.getTableBlockerService()
+        .getBlockers(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
+        .stream().map(BaseBlocker::buildBlocker).collect(Collectors.toList());
   }
 }
