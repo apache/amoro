@@ -17,24 +17,8 @@
  * under the License.
  */
 
-package com.netease.arctic.spark.writer.merge;
+package com.netease.arctic.spark.sql.utils
 
-import org.apache.spark.sql.connector.write.DataWriter;
-
-import java.io.IOException;
-
-/**
- * A data writer responsible for writing a delta of rows.
- */
-public interface MergeWriter<T> extends DataWriter<T> {
-  void delete(T row) throws IOException;
-
-  void update(T updateBefore, T updateAfter) throws IOException;
-
-  void insert(T row) throws IOException;
-
-  @Override
-  default void write(T row) throws IOException {
-    insert(row);
-  }
-}
+case class WriteQueryProjections(
+    frontRowProjection: Option[ProjectingInternalRow],
+    backRowProjection: ProjectingInternalRow)

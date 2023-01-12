@@ -1,5 +1,6 @@
 package com.netease.arctic.spark.writer;
 
+import javax.ws.rs.DELETE;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.spark.SparkInternalRowCastWrapper;
 import com.netease.arctic.spark.writer.merge.MergeWriter;
@@ -25,25 +26,19 @@ public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
 
   @Override
   public void delete(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper delete = new SparkInternalRowCastWrapper(
-        true, row, schema, ChangeAction.DELETE, isKeyedTable);
-    writer.write(delete);
+    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.DELETE));
   }
 
   @Override
-  public void update(InternalRow row) throws IOException {
+  public void update(InternalRow updateBefore, InternalRow updateAfter) throws IOException {
     SparkInternalRowCastWrapper delete;
     SparkInternalRowCastWrapper insert;
     if (isKeyedTable) {
-      delete = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.UPDATE_BEFORE, true);
-      insert = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.UPDATE_AFTER, true);
+      delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.UPDATE_BEFORE);
+      insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.UPDATE_AFTER);
     } else {
-      delete = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.DELETE, false);
-      insert = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.INSERT, false);
+      delete = new SparkInternalRowCastWrapper(updateBefore, ChangeAction.DELETE);
+      insert = new SparkInternalRowCastWrapper(updateAfter, ChangeAction.INSERT);
     }
     writer.write(delete);
     writer.write(insert);
@@ -52,9 +47,7 @@ public class SimpleMergeRowDataWriter implements MergeWriter<InternalRow> {
 
   @Override
   public void insert(InternalRow row) throws IOException {
-    SparkInternalRowCastWrapper insert = new SparkInternalRowCastWrapper(
-          true, row, schema, ChangeAction.INSERT, isKeyedTable);
-    writer.write(insert);
+    writer.write(new SparkInternalRowCastWrapper(row, ChangeAction.INSERT));
 
   }
 

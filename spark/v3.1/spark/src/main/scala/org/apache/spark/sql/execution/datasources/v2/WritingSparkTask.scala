@@ -19,33 +19,16 @@
 package org.apache.spark.sql.execution.datasources.v2
 
 import com.netease.arctic.spark.writer.merge.MergeWriter
-import org.apache.spark.{SparkEnv, SparkException, TaskContext}
 import org.apache.spark.executor.CommitDeniedException
 import org.apache.spark.internal.Logging
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.connector.write.{DataWriter, DataWriterFactory}
 import org.apache.spark.util.Utils
+import org.apache.spark.{SparkEnv, TaskContext}
 
-object WritingSparkTask extends Logging{
+trait WritingSparkTask[W <: DataWriter[InternalRow]] extends Logging with Serializable {
 
-  protected def writeFunc(writer: MergeWriter[InternalRow], row: InternalRow): Unit = {
-    val operation = row.getString(0)
-
-    operation match {
-      case "D" =>
-        writer.delete(row)
-
-      case "U" =>
-        writer.update(row)
-
-      case "I" =>
-        writer.insert(row)
-
-      case other =>
-        throw new SparkException(s"Unexpected operation ID: $other")
-    }
-  }
-
+  protected def writeFunc(writer: MergeWriter[InternalRow], row: InternalRow): Unit
   def run(
            writerFactory: DataWriterFactory,
            context: TaskContext,

@@ -1,23 +1,22 @@
 package com.netease.arctic.spark.sql.catalyst.analysis
 
-import com.netease.arctic.spark.SparkSQLProperties
 import com.netease.arctic.spark.sql.catalyst.plans
-import com.netease.arctic.spark.sql.catalyst.plans.{MergeIntoArcticTable, WriteMerge}
-import com.netease.arctic.spark.sql.utils.FieldReference
+import com.netease.arctic.spark.sql.catalyst.plans.{MergeIntoArcticTable, MergeRows, WriteMerge}
 import com.netease.arctic.spark.sql.utils.RowDeltaUtils.{DELETE_OPERATION, INSERT_OPERATION, OPERATION_COLUMN, UPDATE_OPERATION}
+import com.netease.arctic.spark.sql.utils.{FieldReference, WriteQueryProjections}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
-import org.apache.iceberg.MetadataColumns
-import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, NamedRelation}
+import org.apache.spark.sql.catalyst.analysis.EliminateSubqueryAliases
 import org.apache.spark.sql.catalyst.expressions.Literal.TrueLiteral
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, ExprId, Expression, ExtendedV2ExpressionUtils, IsNotNull, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.plans.{Inner, RightOuter}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.connector.catalog.Table
-import org.apache.spark.sql.connector.expressions.{Expressions, NamedReference}
+import org.apache.spark.sql.connector.expressions.NamedReference
 import org.apache.spark.sql.execution.datasources.v2.{DataSourceV2Relation, DataSourceV2ScanRelation}
-import org.apache.spark.sql.types.{IntegerType, StringType, StructType}
+import org.apache.spark.sql.types.{IntegerType, StructType}
 
 import scala.collection.{Seq, mutable}
 
@@ -119,6 +118,32 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
     }
   }
 
+  def buildWriteQueryProjections(plan: MergeRows,
+                                 source: LogicalPlan,
+                                 targetRowAttrs: Seq[AttributeReference],
+                                 rowIdAttrs: Seq[Attribute],
+                                 isKeyedTable: Boolean): WriteQueryProjections = {
+    val (frontRowProjection, backRowProjection) = if (isKeyedTable) {
+      val frontRowProjection =
+        Some(TranslateUtils.newLazyProjection(plan, targetRowAttrs, isFront = true, 0))
+      val backRowProjection =
+        TranslateUtils.newLazyProjection(source, targetRowAttrs, isFront = false, 1)
+      (frontRowProjection, backRowProjection)
+    } else {
+      val frontRowProjection =
+        Some(TranslateUtils.newLazyProjection(plan, targetRowAttrs ++ rowIdAttrs, isFront = true, 0))
+      val backRowProjection =
+        TranslateUtils.newLazyProjection(source, targetRowAttrs, isFront = false, 2)
+      (frontRowProjection, backRowProjection)
+    }
+    WriteQueryProjections(frontRowProjection, backRowProjection)
+  }
+
+  def buildRowIdAttrs(relation: LogicalPlan): Seq[Attribute] = {
+    val attributes = relation.output.filter(r => r.name.equals("_file") || r.name.equals("_pos"))
+    attributes
+  }
+
   // build a rewrite plan for sources that support row deltas
   private def buildWriteDeltaPlan(
                                    relation: DataSourceV2Relation,
@@ -129,7 +154,9 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
                                    notMatchedActions: Seq[MergeAction]): WriteMerge = {
     checkConditionIsPrimaryKey(relation.table, cond)
     // construct a scan relation and include all required metadata columns
+    val rowAttrs = relation.output
     val (keyAttrs, readRelation) = buildRelationAndAttrs(relation, cond, operationTable)
+    val rowIdAttrs = buildRowIdAttrs(readRelation)
     val readAttrs = readRelation.output
 
     // project an extra column to check if a target row exists after the join
@@ -180,7 +207,8 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
     val writeRelation = relation.copy(table = operationTable)
     var options: Map[String, String] = Map.empty
     options += (WriteMode.WRITE_MODE_KEY -> WriteMode.MERGE.toString)
-    WriteMerge(writeRelation, mergeRows, options)
+    val projections = buildWriteQueryProjections(mergeRows, source, rowAttrs, rowIdAttrs, isKeyedTable(relation))
+    WriteMerge(writeRelation, mergeRows, options, projections)
   }
 
   private def actionCondition(action: MergeAction): Expression = {

@@ -90,11 +90,11 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
           throw new UnsupportedOperationException(s"Cannot append data to non-Arctic table: $table")
       }
 
-    case WriteMerge(table: DataSourceV2Relation, query, options) =>
+    case WriteMerge(table: DataSourceV2Relation, query, options, projs) =>
       table.table match {
         case arctic: ArcticSparkTable =>
           WriteMergeExec(arctic, planLater(query),
-            new CaseInsensitiveStringMap(options.asJava), refreshCache(table)) :: Nil
+            new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table)) :: Nil
       }
 
     case OverwriteArcticData(d: DataSourceV2Relation, query, validateQuery, options) =>

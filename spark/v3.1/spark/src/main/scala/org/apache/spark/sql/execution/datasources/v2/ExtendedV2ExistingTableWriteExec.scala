@@ -1,17 +1,17 @@
 package org.apache.spark.sql.execution.datasources.v2
 
-import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.{SparkException, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.write.{BatchWrite, DataWriter, PhysicalWriteInfoImpl, WriterCommitMessage}
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.util.LongAccumulator
+import org.apache.spark.{SparkException, TaskContext}
 
 import scala.util.control.NonFatal
 
 trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2CommandExec with UnaryExecNode with Serializable{
+  def writingTask: WritingSparkTask[W]
   def query: SparkPlan
 
   var commitProgress: Option[StreamWriterCommitProgress] = None
@@ -31,6 +31,7 @@ trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2C
         tempRdd
       }
     }
+    val task = writingTask
     // introduce a local var to avoid serializing the whole class
     val writerFactory = batchWrite.createBatchWriterFactory(
       PhysicalWriteInfoImpl(rdd.getNumPartitions))
@@ -45,7 +46,7 @@ trait ExtendedV2ExistingTableWriteExec[W <: DataWriter[InternalRow]] extends V2C
       sparkContext.runJob(
         rdd,
         (context: TaskContext, iter: Iterator[InternalRow]) =>
-          WritingSparkTask.run(writerFactory, context, iter, useCommitCoordinator),
+          task.run(writerFactory, context, iter, useCommitCoordinator),
         rdd.partitions.indices,
         (index, result: DataWritingSparkTaskResult) => {
           val commitMessage = result.writerCommitMessage
