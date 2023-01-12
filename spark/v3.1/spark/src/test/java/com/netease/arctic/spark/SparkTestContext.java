@@ -184,14 +184,14 @@ public class SparkTestContext extends ExternalResource {
     Map<String, String> sparkConfigs = Maps.newHashMap();
 
     sparkConfigs.put(SQLConf.PARTITION_OVERWRITE_MODE().key(), "DYNAMIC");
-    sparkConfigs.put("spark.executor.heartbeatInterval", "300s");
+    sparkConfigs.put("spark.executor.heartbeatInterval", "500s");
     sparkConfigs.put("spark.cores.max", "6");
     sparkConfigs.put("spark.executor.cores", "2");
     sparkConfigs.put("spark.default.parallelism", "12");
-    sparkConfigs.put("spark.network.timeout", "500s");
+    sparkConfigs.put("spark.network.timeout", "600s");
     sparkConfigs.put("spark.sql.warehouse.dir", testSparkDir.getAbsolutePath());
     sparkConfigs.put("spark.sql.extensions", ArcticSparkExtensions.class.getName());
-    sparkConfigs.put("spark.testing.memory", "471859200");
+    sparkConfigs.put("spark.testing.memory", "943718400");
     sparkConfigs.put("spark.sql.arctic.use-timestamp-without-timezone-in-new-tables", "false");
     sparkConfigs.put("spark.sql.arctic.check-source-data-uniqueness.enabled", "true");
 
@@ -200,7 +200,7 @@ public class SparkTestContext extends ExternalResource {
 
     SparkConf sparkconf = new SparkConf()
         .setAppName("test")
-        .setMaster("local");
+        .setMaster("local[2]");
 
     sparkConfigs.forEach(sparkconf::set);
 

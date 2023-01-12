@@ -141,6 +141,7 @@ public class FlinkSchemaUtil {
    * Primary keys are the required fields to guarantee that readers can read keyed table in right order, due to the
    * automatic scaling in/out of nodes. The required fields should be added even though projection push down
    */
+  @Deprecated
   public static List<Types.NestedField> addPrimaryKey(
       List<Types.NestedField> projectedColumns, ArcticTable table) {
     List<String> primaryKeys = table.isUnkeyedTable() ? Collections.EMPTY_LIST
@@ -166,6 +167,7 @@ public class FlinkSchemaUtil {
    * Primary keys are the required fields to guarantee that readers can read keyed table in right order, due to the
    * automatic scaling in/out of nodes. The required fields should be added even though projection push down
    */
+  @Deprecated
   public static void addPrimaryKey(
       TableSchema.Builder builder, ArcticTable table, TableSchema tableSchema, String[] projectedColumns) {
     Set<String> projectedNames = Arrays.stream(projectedColumns).collect(Collectors.toSet());
@@ -183,5 +185,5 @@ public class FlinkSchemaUtil {
           .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
     });
   }
-  
+
 }

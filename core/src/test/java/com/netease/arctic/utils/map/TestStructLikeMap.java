@@ -46,7 +46,7 @@ public class TestStructLikeMap {
 
   @Test
   public void testSpillableMap() throws IOException {
-    testMap(StructLikeSpillableMap.create(PK_SCHEMA.asStruct(), 10L));
+    testMap(StructLikeSpillableMap.create(PK_SCHEMA.asStruct(), 10L, null));
   }
 
   private void testMap(StructLikeBaseMap actualMap) throws IOException {

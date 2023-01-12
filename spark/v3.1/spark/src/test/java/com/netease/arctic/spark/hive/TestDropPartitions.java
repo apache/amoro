@@ -128,4 +128,42 @@ public class TestDropPartitions extends SparkTestBase {
     Assert.assertEquals(exceptList.size(), unkeyedTable.io().list(unkeyedTable.location()).size());
     sql("drop table {0}.{1}", database, dropPartitionTable);
   }
+
+  @Test
+  public void testAlterNotArcticTableDropPartitions() throws TException {
+    sql("use spark_catalog");
+    sql("create table {0}.{1} ( \n" +
+        " id int , \n" +
+        " name string , \n " +
+        " ts int" +
+        ") STORED AS parquet \n" +
+        " partitioned by (ts) \n" +
+        " tblproperties ( \n" +
+        " ''props.test1'' = ''val1'', \n" +
+        " ''props.test2'' = ''val2'' ) ", database, dropPartitionTable);
+    sql("insert overwrite {0}.{1} "+
+        " values (1, ''aaa'', 1 ) , " +
+        "(4, ''bbb'', 2), " +
+        "(5, ''ccc'', 3) ", database, dropPartitionTable);
+
+    sql("insert into {0}.{1} "+
+        " values (2, ''aaa'', 1 ) , " +
+        "(3, ''bbb'', 2), " +
+        "(6, ''ccc'', 3) ", database, dropPartitionTable);
+    rows = sql("select * from {0}.{1}", database,dropPartitionTable);
+    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(3, hms.getClient().listPartitions(
+        database,
+        dropPartitionTable,
+        (short) -1).size());
+
+    sql("alter table {0}.{1} drop if exists partition (ts=1)", database, dropPartitionTable);
+    sql("select * from {0}.{1}", database,dropPartitionTable);
+    Assert.assertEquals(4, rows.size());
+    Assert.assertEquals(2, hms.getClient().listPartitions(
+        database,
+        dropPartitionTable,
+        (short) -1).size());
+    sql("drop table {0}.{1}", database, dropPartitionTable);
+  }
 }
