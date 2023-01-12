@@ -163,6 +163,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     protected final ArcticFileIO io;
     protected final long targetFileSize;
     protected final List<DataFile> completedFiles = Lists.newArrayList();
+    private boolean closed = false;
 
     public WriterHolder(
         FileFormat format,
@@ -177,9 +178,21 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
       this.targetFileSize = targetFileSize;
     }
 
-    public abstract TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException;
+    protected abstract TaskDataWriter<T> getDataWriter(DataWriterKey writerKey) throws IOException;
 
-    public abstract void close() throws IOException;
+    public TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException {
+      if (closed) {
+        throw new IllegalStateException("The task writer has already been closed.");
+      }
+      return getDataWriter(writerKey);
+    }
+
+    public void close() throws IOException {
+      this.closed = true;
+      doClose();
+    }
+
+    protected abstract void doClose() throws IOException;
 
     public List<DataFile> completedFiles() {
       return Lists.newArrayList(completedFiles);
@@ -213,7 +226,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException {
+    public TaskDataWriter<T> getDataWriter(DataWriterKey writerKey) throws IOException {
       TaskDataWriter<T> writer;
       writer = dataWriterMap.get(writerKey);
       if (writer != null && shouldRollToNewFile(writer)) {
@@ -233,7 +246,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public void close() throws IOException {
+    public void doClose() throws IOException {
       for (TaskDataWriter<T> dataWriter : dataWriterMap.values()) {
         dataWriter.close();
         DataFile dataFile = dataWriter.toDataFile();
@@ -268,7 +281,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public TaskDataWriter<T> get(DataWriterKey writerKey) throws IOException {
+    public TaskDataWriter<T> getDataWriter(DataWriterKey writerKey) throws IOException {
       if (!writerKey.equals(currentKey)) {
         if (currentKey != null) {
           closeCurrentWriter();
@@ -301,7 +314,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     @Override
-    public void close() throws IOException {
+    public void doClose() throws IOException {
       closeCurrentWriter();
     }
   }

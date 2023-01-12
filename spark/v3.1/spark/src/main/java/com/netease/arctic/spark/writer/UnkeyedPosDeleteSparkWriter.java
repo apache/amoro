@@ -46,6 +46,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
 
   private int records = 0;
+  private boolean closed = false;
 
   public UnkeyedPosDeleteSparkWriter(ArcticTable table,
                                      FileAppenderFactory<InternalRow> appenderFactory,
@@ -69,6 +70,10 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
 
   @Override
   public void write(T row) throws IOException {
+    if (closed) {
+      throw new IllegalStateException("Pos-delete writer for table " + table.id().toString() + " already closed");
+    }
+
     SparkInternalRowCastWrapper internalRow = (SparkInternalRowCastWrapper) row;
     StructLike structLike = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema)).wrap(internalRow.getRow());
     PartitionKey partitionKey = new PartitionKey(table.spec(), schema);
@@ -117,5 +122,6 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
 
   @Override
   public void close() throws IOException {
+    this.closed = true;
   }
 }
