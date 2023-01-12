@@ -24,7 +24,9 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.KeyedTableScanTask;
+import com.netease.arctic.trino.ArcticConfig;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import io.trino.plugin.hive.HdfsEnvironment;
 import io.trino.plugin.iceberg.FileIoProvider;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -53,15 +55,18 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
   private final IcebergPageSourceProvider icebergPageSourceProvider;
   private final TypeManager typeManager;
   private final FileIoProvider fileIoProvider;
+  private final ArcticConfig arcticConfig;
 
   @Inject
   public KeyedPageSourceProvider(
       IcebergPageSourceProvider icebergPageSourceProvider,
       TypeManager typeManager,
-      FileIoProvider fileIoProvider) {
+      FileIoProvider fileIoProvider,
+      ArcticConfig arcticConfig) {
     this.icebergPageSourceProvider = icebergPageSourceProvider;
     this.typeManager = typeManager;
     this.fileIoProvider = fileIoProvider;
+    this.arcticConfig = arcticConfig;
   }
 
   @Override
@@ -85,7 +90,9 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         tableSchema,
         ImmutableList.of(),
         keyedTableHandle.getPrimaryKeySpec(),
-        fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), null)
+        fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), null),
+        new StructLikeCollections(arcticConfig.isEnableSpillMap(),
+            arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath())
     ).requiredSchema(), typeManager);
     ImmutableList.Builder<IcebergColumnHandle> requiredColumnsBuilder = ImmutableList.builder();
     requiredColumnsBuilder.addAll(icebergColumnHandles);
@@ -98,7 +105,9 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
         tableSchema,
         requiredColumns,
         keyedTableHandle.getPrimaryKeySpec(),
-        fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), session.getQueryId())
+        fileIoProvider.createFileIo(new HdfsEnvironment.HdfsContext(session), session.getQueryId()),
+        new StructLikeCollections(arcticConfig.isEnableSpillMap(),
+            arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath())
     );
 
     return new KeyedConnectorPageSource(

@@ -18,9 +18,11 @@
 
 package com.netease.arctic.trino.keyed;
 
+import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.io.reader.ArcticDeleteFilter;
 import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.table.PrimaryKeySpec;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.TypeConverter;
 import io.trino.plugin.iceberg.delete.TrinoRow;
@@ -53,8 +55,10 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
       Schema tableSchema,
       List<IcebergColumnHandle> requestedSchema,
       PrimaryKeySpec primaryKeySpec,
-      FileIO fileIO) {
-    super(keyedTableScanTask, tableSchema, filterSchema(tableSchema, requestedSchema), primaryKeySpec);
+      FileIO fileIO,
+      StructLikeCollections structLikeCollections) {
+    super(keyedTableScanTask, tableSchema, filterSchema(tableSchema, requestedSchema),
+        primaryKeySpec, null, structLikeCollections);
     this.fileIO = fileIO;
   }
 
@@ -84,7 +88,7 @@ public class KeyedDeleteFilter extends ArcticDeleteFilter<TrinoRow> {
 
   private static Optional<Types.NestedField> filterField(
       IcebergColumnHandle requestedSchema, List<Types.NestedField> fields) {
-    for (Types.NestedField nestedField: fields) {
+    for (Types.NestedField nestedField : fields) {
       if (nestedField.fieldId() == requestedSchema.getId()) {
         return Optional.of(nestedField);
       }

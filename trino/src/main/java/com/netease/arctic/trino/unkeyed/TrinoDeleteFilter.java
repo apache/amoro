@@ -19,6 +19,7 @@
 package com.netease.arctic.trino.unkeyed;
 
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
 import io.trino.plugin.iceberg.delete.TrinoRow;
 import org.apache.iceberg.FileScanTask;
@@ -48,8 +49,9 @@ public class TrinoDeleteFilter
       FileScanTask task,
       Schema tableSchema,
       List<IcebergColumnHandle> requestedColumns,
-      FileIO fileIO) {
-    super(task, tableSchema, filterSchema(tableSchema, requestedColumns));
+      FileIO fileIO,
+      StructLikeCollections structLikeCollections) {
+    super(task, tableSchema, filterSchema(tableSchema, requestedColumns), structLikeCollections);
     this.fileIO = requireNonNull(fileIO, "fileIO is null");
   }
 

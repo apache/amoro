@@ -25,6 +25,8 @@ import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.iceberg.optimize.DeleteFilter;
 import com.netease.arctic.table.MetadataColumns;
+import com.netease.arctic.trino.ArcticConfig;
+import com.netease.arctic.utils.map.StructLikeCollections;
 import io.airlift.json.JsonCodec;
 import io.trino.memory.context.AggregatedMemoryContext;
 import io.trino.orc.OrcColumn;
@@ -199,6 +201,7 @@ public class IcebergPageSourceProvider
   private final FileIoProvider fileIoProvider;
   private final JsonCodec<CommitTaskData> jsonCodec;
   private final IcebergFileWriterFactory fileWriterFactory;
+  private final ArcticConfig arcticConfig;
 
   @Inject
   public IcebergPageSourceProvider(
@@ -209,7 +212,8 @@ public class IcebergPageSourceProvider
       TypeManager typeManager,
       FileIoProvider fileIoProvider,
       JsonCodec<CommitTaskData> jsonCodec,
-      IcebergFileWriterFactory fileWriterFactory) {
+      IcebergFileWriterFactory fileWriterFactory,
+      ArcticConfig arcticConfig) {
     this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
     this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
     this.orcReaderOptions = requireNonNull(orcReaderConfig, "orcReaderConfig is null").toOrcReaderOptions();
@@ -219,6 +223,7 @@ public class IcebergPageSourceProvider
     this.fileIoProvider = requireNonNull(fileIoProvider, "fileIoProvider is null");
     this.jsonCodec = requireNonNull(jsonCodec, "jsonCodec is null");
     this.fileWriterFactory = requireNonNull(fileWriterFactory, "fileWriterFactory is null");
+    this.arcticConfig = arcticConfig;
   }
 
   @Override
@@ -275,7 +280,9 @@ public class IcebergPageSourceProvider
                 dummyFileScanTask,
                 tableSchema,
                 ImmutableList.of(),
-                fileIO)
+                fileIO,
+                new StructLikeCollections(arcticConfig.isEnableSpillMap(),
+                    arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath()))
                 .requiredSchema() : tableSchema,
         typeManager);
 
@@ -332,7 +339,9 @@ public class IcebergPageSourceProvider
         dummyFileScanTask,
         tableSchema,
         requiredColumns,
-        fileIO);
+        fileIO,
+        new StructLikeCollections(arcticConfig.isEnableSpillMap(),
+            arcticConfig.getMaxInMemorySizeInBytes(), arcticConfig.getRocksDBBasePath()));
 
     Optional<PartitionData> partition = partitionSpec.isUnpartitioned() ? Optional.empty() : Optional.of(partitionData);
     LocationProvider locationProvider =
