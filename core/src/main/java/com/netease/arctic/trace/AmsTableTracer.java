@@ -247,45 +247,44 @@ public class AmsTableTracer implements TableTracer {
      * @return table change
      */
     public Optional<TableChange> toTableChange(ArcticTable arcticTable, Snapshot snapshot, String innerTable) {
-      // if (addedFiles.size() > 0 || deletedFiles.size() > 0 || addedDeleteFiles.size() > 0 ||
-      //     deletedDeleteFiles.size() > 0) {
-      long currentSnapshotId = snapshot.snapshotId();
-      long parentSnapshotId =
-          snapshot.parentId() == null ? -1 : snapshot.parentId();
-      Map<String, String> summary = snapshot.summary();
-      long realAddedDataFiles = summary.get(SnapshotSummary.ADDED_FILES_PROP) == null ?
-          0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_FILES_PROP));
-      long realDeletedDataFiles = summary.get(SnapshotSummary.DELETED_FILES_PROP) == null ?
-          0 : Long.parseLong(summary.get(SnapshotSummary.DELETED_FILES_PROP));
-      long realAddedDeleteFiles = summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP) == null ?
-          0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP));
-      long readRemovedDeleteFiles = summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP) == null ?
-          0 : Long.parseLong(summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP));
+      if (snapshot != null) {
+        long currentSnapshotId = snapshot.snapshotId();
+        long parentSnapshotId =
+            snapshot.parentId() == null ? -1 : snapshot.parentId();
+        Map<String, String> summary = snapshot.summary();
+        long realAddedDataFiles = summary.get(SnapshotSummary.ADDED_FILES_PROP) == null ?
+            0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_FILES_PROP));
+        long realDeletedDataFiles = summary.get(SnapshotSummary.DELETED_FILES_PROP) == null ?
+            0 : Long.parseLong(summary.get(SnapshotSummary.DELETED_FILES_PROP));
+        long realAddedDeleteFiles = summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP) == null ?
+            0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP));
+        long readRemovedDeleteFiles = summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP) == null ?
+            0 : Long.parseLong(summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP));
 
-      List<com.netease.arctic.ams.api.DataFile> addFiles = new ArrayList<>();
-      List<com.netease.arctic.ams.api.DataFile> deleteFiles = new ArrayList<>();
-      if (realAddedDataFiles == addedFiles.size() && realDeletedDataFiles == deletedFiles.size() &&
-          realAddedDeleteFiles == addedDeleteFiles.size() && readRemovedDeleteFiles == deletedDeleteFiles.size()) {
-        addFiles =
-            addedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
-                .collect(Collectors.toList());
-        deleteFiles =
-            deletedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
-                .collect(Collectors.toList());
-        addFiles.addAll(addedDeleteFiles.stream()
-            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
-        deleteFiles.addAll(deletedDeleteFiles.stream()
-            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
+        List<com.netease.arctic.ams.api.DataFile> addFiles = new ArrayList<>();
+        List<com.netease.arctic.ams.api.DataFile> deleteFiles = new ArrayList<>();
+        if (realAddedDataFiles == addedFiles.size() && realDeletedDataFiles == deletedFiles.size() &&
+            realAddedDeleteFiles == addedDeleteFiles.size() && readRemovedDeleteFiles == deletedDeleteFiles.size()) {
+          addFiles =
+              addedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
+                  .collect(Collectors.toList());
+          deleteFiles =
+              deletedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
+                  .collect(Collectors.toList());
+          addFiles.addAll(addedDeleteFiles.stream()
+              .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
+          deleteFiles.addAll(deletedDeleteFiles.stream()
+              .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
+        } else {
+          // tracer file change info is different from iceberg snapshot, should get iceberg real file change info
+          SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
+        }
+
+        return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
+            snapshot.sequenceNumber(), parentSnapshotId));
       } else {
-        // tracer file change info is different from iceberg snapshot, should get iceberg real file change info
-        SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
+        return Optional.empty();
       }
-
-      return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
-          snapshot.sequenceNumber(), parentSnapshotId));
-      // } else {
-      //   return Optional.empty();
-      // }
     }
   }
 
