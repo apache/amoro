@@ -137,6 +137,10 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     override def nullable: Boolean = true
 
     override def children: Seq[Expression] = Nil
+
+    override def toString(): String = {
+      s"ArcticFileIndexBucket($numBuckets)"
+    }
   }
 }
 

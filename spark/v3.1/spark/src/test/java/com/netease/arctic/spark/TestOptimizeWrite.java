@@ -141,13 +141,21 @@ public class TestOptimizeWrite extends SparkTestBase {
   }
 
 
+  @Test
   public void testUnkeyedTablePartitioned() {
     sql("create table {0}.{1} ( \n" +
         " id int , \n" +
         " column1 string , \n " +
-        " column2 string, \n" +
+        " column2 string \n" +
         ") using arctic \n" +
-        " partitioned by ( column1 ) \n" );
+        " partitioned by ( column1 ) \n" , database, sinkTable);
+    sql("insert overwrite {0}.{1} SELECT id, column1, column2 from {2}",
+        database, sinkTable, sourceTable);
+
+    rows = sql("select * from {0}.{1} order by id", database, sinkTable);
+    Assert.assertEquals(6, rows.size());
+    Assert.assertEquals(2,
+        baseTableSize(identifier));
 
   }
 }
