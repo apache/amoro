@@ -176,7 +176,7 @@ public class BaseKeyedTable implements KeyedTable {
     // TODO add summary, use fast append?
     appendFiles.commit();
     CreateSnapshotEvent createSnapshotEvent = (CreateSnapshotEvent) appendFiles.updateEvent();
-    return TablePropertyUtil.getTransactionId(properties(), createSnapshotEvent.sequenceNumber());
+    return createSnapshotEvent.sequenceNumber();
   }
 
   @Override
