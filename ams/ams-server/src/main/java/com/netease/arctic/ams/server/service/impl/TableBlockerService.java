@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.blocker.BaseBlocker;
 import org.apache.ibatis.session.SqlSession;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -174,6 +175,52 @@ public class TableBlockerService extends IJDBCService {
       throw new IllegalStateException("failed to check blocked for " + tableIdentifier + " " + operation, e);
     } finally {
       lock.unlock();
+    }
+  }
+
+  /**
+   * Expire blockers.
+   *
+   * @param tableIdentifier - table
+   */
+  public int expireBlockers(TableIdentifier tableIdentifier) {
+    Lock lock = getLock(tableIdentifier);
+    lock.lock();
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableBlockerMapper mapper = getMapper(sqlSession, TableBlockerMapper.class);
+      int deleted = mapper.deleteExpiredBlockers(tableIdentifier, System.currentTimeMillis());
+      if (deleted > 0) {
+        LOG.info("success to expire table blocker {} {}", deleted, tableIdentifier);
+      }
+      return deleted;
+    } catch (Exception e) {
+      LOG.error("failed to expire table blocker {}, ignore", tableIdentifier, e);
+      return 0;
+    } finally {
+      lock.unlock();
+    }
+  }
+
+  /**
+   * Clear blockers of table.
+   *
+   * @param tableIdentifier - table
+   */
+  public int clearBlockers(TableIdentifier tableIdentifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableBlockerMapper mapper = getMapper(sqlSession, TableBlockerMapper.class);
+      return mapper.deleteBlockers(tableIdentifier);
+    } catch (Exception e) {
+      LOG.error("failed to clear table blocker {}, ignore", tableIdentifier, e);
+      return 0;
+    }
+  }
+
+  @VisibleForTesting
+  void insertTableBlocker(TableBlocker blocker) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableBlockerMapper mapper = getMapper(sqlSession, TableBlockerMapper.class);
+      mapper.insertBlocker(blocker);
     }
   }
 

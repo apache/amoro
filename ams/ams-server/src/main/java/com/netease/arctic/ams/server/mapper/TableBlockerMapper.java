@@ -99,4 +99,15 @@ public interface TableBlockerMapper {
   @Delete("delete from " + TABLE_NAME + " " +
       "where blocker_id = #{blockerId}")
   void deleteBlocker(@Param("blockerId") long blockerId);
+
+  @Delete("delete from " + TABLE_NAME + " " +
+      "where catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName} " +
+      "and expiration_time <= #{now, typeHandler=com.netease.arctic.ams.server.mybatis.Long2TsConvertor}")
+  int deleteExpiredBlockers(@Param("tableIdentifier") TableIdentifier tableIdentifier, @Param("now") long now);
+
+  @Delete("delete from " + TABLE_NAME + " " +
+      "where catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName}")
+  int deleteBlockers(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 }
