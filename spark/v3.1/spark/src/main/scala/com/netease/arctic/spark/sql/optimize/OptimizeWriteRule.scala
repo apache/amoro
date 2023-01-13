@@ -49,7 +49,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       rp.copy(query = newQuery, writeOptions = options)
 
     case o @ OverwriteArcticPartitionsDynamic(r: DataSourceV2Relation, query, _, writeOptions) if isArcticRelation(r) =>
-      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false, writeBase = false)
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       o.copy(query = newQuery, writeOptions = options)
 
