@@ -28,6 +28,7 @@ import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
+import java.sql.Timestamp;
 import java.util.List;
 
 public interface OptimizeHistoryMapper {
@@ -85,6 +86,11 @@ public interface OptimizeHistoryMapper {
       @Result(column = "total_file_size_after", property = "totalFilesStatAfterOptimize.totalSize")
   })
   List<OptimizeHistory> selectOptimizeHistory(@Param("tableIdentifier") TableIdentifier tableIdentifier);
+
+  @Select("select max(commit_time) from " + TABLE_NAME + " where " +
+      "catalog_name = #{tableIdentifier.catalog} and db_name = #{tableIdentifier.database} " +
+      "and table_name = #{tableIdentifier.tableName}")
+  Timestamp latestCommitTime(@Param("tableIdentifier") TableIdentifier tableIdentifier);
 
   @Delete("delete from " + TABLE_NAME + " where catalog_name = #{tableIdentifier.catalog} and " +
       "db_name = #{tableIdentifier.database} and table_name = #{tableIdentifier.tableName}")
