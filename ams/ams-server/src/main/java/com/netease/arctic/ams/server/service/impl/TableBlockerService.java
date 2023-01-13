@@ -184,11 +184,13 @@ public class TableBlockerService extends IJDBCService {
 
   private boolean conflict(BlockableOperation blockableOperation, List<TableBlocker> blockers) {
     return blockers.stream()
-        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation));
+        .anyMatch(blocker -> blocker.getOperations().contains(blockableOperation.name()));
   }
 
   private BaseBlocker buildBaseBlocker(TableBlocker tableBlocker) {
-    return new BaseBlocker(tableBlocker.getBlockerId() + "", tableBlocker.getOperations(), tableBlocker.getCreateTime(),
+    List<BlockableOperation> operations =
+        tableBlocker.getOperations().stream().map(BlockableOperation::valueOf).collect(Collectors.toList());
+    return new BaseBlocker(tableBlocker.getBlockerId() + "", operations, tableBlocker.getCreateTime(),
         tableBlocker.getExpirationTime(), tableBlocker.getProperties());
   }
 
@@ -198,7 +200,7 @@ public class TableBlockerService extends IJDBCService {
     tableBlocker.setTableIdentifier(tableIdentifier);
     tableBlocker.setCreateTime(now);
     tableBlocker.setExpirationTime(now + blockerTimeout);
-    tableBlocker.setOperations(operations);
+    tableBlocker.setOperations(operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
     return tableBlocker;
   }
 

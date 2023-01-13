@@ -18,7 +18,6 @@
 
 package com.netease.arctic.ams.server.model;
 
-import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.table.TableIdentifier;
 
 import java.util.List;
@@ -27,7 +26,7 @@ import java.util.Map;
 public class TableBlocker {
   private TableIdentifier tableIdentifier;
   private long blockerId;
-  private List<BlockableOperation> operations;
+  private List<String> operations;
   private long createTime;
   private long expirationTime;
   private Map<String, String> properties;
@@ -51,11 +50,11 @@ public class TableBlocker {
     this.blockerId = blockerId;
   }
 
-  public List<BlockableOperation> getOperations() {
+  public List<String> getOperations() {
     return operations;
   }
 
-  public void setOperations(List<BlockableOperation> operations) {
+  public void setOperations(List<String> operations) {
     this.operations = operations;
   }
 
