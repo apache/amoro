@@ -30,10 +30,11 @@ public class ArcticSparkChangeTaskWriter extends ChangeTaskWriter<InternalRow> {
       long mask,
       Schema schema,
       PartitionSpec spec,
-      PrimaryKeySpec primaryKeySpec
+      PrimaryKeySpec primaryKeySpec,
+      boolean orderedWriter
   ) {
     super(format, appenderFactory, outputFileFactory, io,
-        targetFileSize, mask, schema, spec, primaryKeySpec, true);
+        targetFileSize, mask, schema, spec, primaryKeySpec, orderedWriter);
     this.schema = schema;
   }
 

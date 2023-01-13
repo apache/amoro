@@ -18,21 +18,20 @@
 
 package org.apache.spark.sql.catalyst.arctic
 
+import com.netease.arctic.data.PrimaryKeyData
+import com.netease.arctic.spark.SparkInternalRowWrapper
+import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket
+import org.apache.iceberg.Schema
 import org.apache.iceberg.spark.SparkSchemaUtil
-import org.apache.iceberg.transforms.Transforms
-import org.apache.iceberg.types.{Type, Types}
-import org.apache.spark.sql.catalyst.SQLConfHelper
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
-import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant, UnaryExpression}
+import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTransform, IcebergDayTransform, IcebergHourTransform, IcebergMonthTransform, IcebergYearTransform, NamedExpression, NullIntolerant}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
 import org.apache.spark.sql.connector.expressions.{BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, MonthsTransform, NamedReference, Transform, YearsTransform, Expression => V2Expression}
 import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder => SortValue}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{AnalysisException, catalyst}
-import org.apache.spark.unsafe.types.UTF8String
-
-import java.nio.ByteBuffer
 
 object ArcticSpark31CatalystHelper extends SQLConfHelper {
 
@@ -52,6 +51,8 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     expr match {
       case it: IdentityTransform =>
         resolve(it.ref.fieldNames)
+      case fbt: FileIndexBucket =>
+        ArcticFileIndexBucketTransform(fbt.mask(), fbt.primaryKeyData(), fbt.schema())
       case ArcticBucketTransform(n, r) =>
         IcebergBucketTransform(n, resolveRef[NamedExpression](r, query))
       case yt: YearsTransform =>
@@ -115,44 +116,29 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     }
   }
 
-}
+  case class ArcticFileIndexBucketTransform(numBuckets: Int, keyData: PrimaryKeyData, schema: Schema)
+    extends Expression with CodegenFallback with NullIntolerant {
 
+    @transient
+    lazy val internalRowToStruct: SparkInternalRowWrapper = new SparkInternalRowWrapper(SparkSchemaUtil.convert(schema))
 
-abstract class ArcticTransformExpression
-  extends UnaryExpression with CodegenFallback with NullIntolerant {
+    override def dataType: DataType = LongType
 
-  @transient lazy val icebergInputType: Type = SparkSchemaUtil.convert(child.dataType)
+    override def eval(input: InternalRow): Any = {
+      if (null == input) {
+        return null
+      }
+      internalRowToStruct.wrap(input)
+      keyData.primaryKey(internalRowToStruct)
+      val node = keyData.treeNode(numBuckets)
+      node.getId
+    }
 
-  protected def withNewChildInternal(newChild: Expression): Expression
-}
+    override def nullable: Boolean = true
 
-
-case class ArcticBucketTransform(numBuckets: Int, child: Expression) extends ArcticTransformExpression {
-
-  @transient lazy val bucketFunc: Any => Int = child.dataType match {
-    case _: DecimalType =>
-      val t = Transforms.bucket[Any](icebergInputType, numBuckets)
-      d: Any => t(d.asInstanceOf[Decimal].toJavaBigDecimal).toInt
-    case _: StringType =>
-      // the spec requires that the hash of a string is equal to the hash of its UTF-8 encoded bytes
-      // TODO: pass bytes without the copy out of the InternalRow
-      val t = Transforms.bucket[ByteBuffer](Types.BinaryType.get(), numBuckets)
-      s: Any => t(ByteBuffer.wrap(s.asInstanceOf[UTF8String].getBytes)).toInt
-    case _: IntegerType =>
-      s: Any => s.asInstanceOf[Int] % numBuckets
-    case _ =>
-      val t = Transforms.bucket[Any](icebergInputType, numBuckets)
-      a: Any => t(a).toInt
-  }
-
-  override protected def nullSafeEval(value: Any): Any = {
-    val a = bucketFunc(value)
-    a
-  }
-
-  override def dataType: DataType = IntegerType
-
-  override protected def withNewChildInternal(newChild: Expression): Expression = {
-    copy(child = newChild)
+    override def children: Seq[Expression] = Nil
   }
 }
+
+
+

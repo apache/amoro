@@ -39,17 +39,17 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       o.copy(query = newQuery, writeOptions = options)
 
     case a @ AppendArcticData(r: DataSourceV2Relation, query, _, writeOptions) if isArcticRelation(r) =>
-      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false, writeBase = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       a.copy(query = newQuery, writeOptions = options)
 
     case rp @ ReplaceArcticData(r: DataSourceV2Relation, query, writeOptions) if isArcticRelation(r) =>
-      val newQuery = distributionQuery(query, r.table, rowLevelOperation = true)
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = true, writeBase = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       rp.copy(query = newQuery, writeOptions = options)
 
     case o @ OverwriteArcticPartitionsDynamic(r: DataSourceV2Relation, query, _, writeOptions) if isArcticRelation(r) =>
-      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false, writeBase = false)
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       o.copy(query = newQuery, writeOptions = options)
 
@@ -67,7 +67,12 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
 
   }
 
-  private def distributionQuery(query: LogicalPlan, table: Table, rowLevelOperation: Boolean): LogicalPlan = {
+  private def distributionQuery(
+    query: LogicalPlan,
+    table: Table,
+    rowLevelOperation: Boolean,
+    writeBase: Boolean = true
+  ): LogicalPlan = {
     import org.apache.spark.sql.connector.expressions.{Expression => Expr}
 
     def toCatalyst(expr: Expr): Expression = sparkAdapter.expressions().toCatalyst(expr, query)
@@ -77,7 +82,7 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       case t: ArcticIcebergSparkTable => t.table()
     }
 
-    val distribution = DistributionAndOrderingUtil.buildTableRequiredDistribution(arcticTable)
+    val distribution = DistributionAndOrderingUtil.buildTableRequiredDistribution(arcticTable, writeBase)
       .toSeq.map(e => toCatalyst(e))
       .asInstanceOf[Seq[Expression]]
 
@@ -89,8 +94,9 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       query
     }
 
-    val ordering = DistributionAndOrderingUtil.buildTableRequiredSortOrder(arcticTable, rowLevelOperation)
-      .toSeq
+    val ordering = DistributionAndOrderingUtil.buildTableRequiredSortOrder(
+      arcticTable, rowLevelOperation, writeBase
+    ).toSeq
       .map(e => toCatalyst(e))
       .asInstanceOf[Seq[SortOrder]]
 

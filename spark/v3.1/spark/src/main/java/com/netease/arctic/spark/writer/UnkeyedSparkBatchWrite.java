@@ -228,11 +228,9 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
           .withPartitionId(partitionId)
           .withTransactionId(transactionId)
           .withTaskId(taskId)
+          .withOrderedWriter(orderedWriter)
           .withDataSourceSchema(dsSchema)
           .withHiveSubdirectory(hiveSubdirectory);
-      if (orderedWriter) {
-        builder = builder.withOrderedWriter();
-      }
 
       TaskWriter<InternalRow> writer = builder.newBaseWriter(this.isOverwrite);
       return new SimpleInternalRowDataWriter(writer);

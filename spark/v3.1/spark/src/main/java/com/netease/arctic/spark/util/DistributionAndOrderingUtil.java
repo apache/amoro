@@ -20,6 +20,7 @@ package com.netease.arctic.spark.util;
 
 import com.clearspring.analytics.util.Lists;
 import com.netease.arctic.spark.SparkAdapterLoader;
+import com.netease.arctic.spark.sql.connector.expressions.FileIndexBucket;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.DistributionHashMode;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -60,34 +61,45 @@ public class DistributionAndOrderingUtil {
   };
 
 
-  public static Expression[] buildTableRequiredDistribution(ArcticTable table) {
+  public static Expression[] buildTableRequiredDistribution(ArcticTable table, boolean writeBase) {
     DistributionHashMode distributionHashMode = DistributionHashMode.autoSelect(
         table.isKeyedTable(),
         !table.spec().isUnpartitioned());
 
     List<Expression> distributionExpressions = Lists.newArrayList();
 
-    if (distributionHashMode.isSupportPrimaryKey()) {
-      Transform transform = toTransformsFromPrimary(table, table.asKeyedTable().primaryKeySpec());
-      distributionExpressions.add(transform);
-      if (distributionHashMode.isSupportPartition()) {
-        distributionExpressions.addAll(Arrays.asList(toTransforms(table.spec())));
-      }
-    } else {
-      if (distributionHashMode.isSupportPartition()) {
-        distributionExpressions.addAll(Arrays.asList(toTransforms(table.spec())));
-      }
+    if (distributionHashMode.isSupportPartition()) {
+      distributionExpressions.addAll(Arrays.asList(toTransforms(table.spec())));
     }
+
+    if (distributionHashMode.isSupportPrimaryKey()) {
+      Transform transform = toTransformsFromPrimary(table, table.asKeyedTable().primaryKeySpec(), writeBase);
+      distributionExpressions.add(transform);
+    }
+
     return distributionExpressions.toArray(new Expression[0]);
   }
 
-  private static Transform toTransformsFromPrimary(ArcticTable table, PrimaryKeySpec primaryKeySpec) {
+  private static Transform toTransformsFromPrimary(
+      ArcticTable table,
+      PrimaryKeySpec primaryKeySpec,
+      boolean writeBase) {
     int numBucket = PropertyUtil.propertyAsInt(table.properties(),
-        TableProperties.BASE_FILE_INDEX_HASH_BUCKET, TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
-    return Expressions.bucket(numBucket, primaryKeySpec.fieldNames().get(0));
+        TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+
+    if (!writeBase) {
+      numBucket = PropertyUtil.propertyAsInt(table.properties(),
+          TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET,
+          TableProperties.CHANGE_FILE_INDEX_HASH_BUCKET_DEFAULT);
+    }
+    return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket);
   }
 
-  public static Expression[] buildTableRequiredSortOrder(ArcticTable table, boolean rowLevelOperation) {
+  public static Expression[] buildTableRequiredSortOrder(
+      ArcticTable table,
+      boolean rowLevelOperation,
+      boolean writeBase) {
     Schema schema = table.schema();
     PartitionSpec partitionSpec = table.spec();
     PrimaryKeySpec keySpec = PrimaryKeySpec.noPrimaryKey();
@@ -95,14 +107,7 @@ public class DistributionAndOrderingUtil {
       keySpec = table.asKeyedTable().primaryKeySpec();
     }
     boolean withMetaColumn = table.isUnkeyedTable() && rowLevelOperation;
-    return buildSortOrder(schema, partitionSpec, keySpec, withMetaColumn);
-  }
 
-  private static Expression[] buildSortOrder(
-      Schema schema,
-      PartitionSpec partitionSpec,
-      PrimaryKeySpec keySpec,
-      boolean withMetaColumn) {
     if (partitionSpec.isUnpartitioned() && !keySpec.primaryKeyExisted() && !withMetaColumn) {
       return new Expression[0];
     }
@@ -114,16 +119,14 @@ public class DistributionAndOrderingUtil {
         builder.asc(org.apache.iceberg.expressions.Expressions.transform(sourceName, field.transform()));
       }
     }
-
-
-    if (keySpec.primaryKeyExisted()) {
-      for (PrimaryKeySpec.PrimaryKeyField field: keySpec.fields()) {
-        builder.asc(org.apache.iceberg.expressions.Expressions.ref(field.fieldName()));
-      }
-    }
-
     SortOrder sortOrder = builder.build();
     List<Expression> converted = SortOrderVisitor.visit(sortOrder, new SortOrderToSpark(expressionHelper));
+
+    if (keySpec.primaryKeyExisted()) {
+      Transform fileIndexBucket = toTransformsFromPrimary(table, keySpec, writeBase);
+      converted.add(expressionHelper.sort(fileIndexBucket, true));
+    }
+
     Expression[] orders = converted.toArray(new Expression[0]);
 
     if (withMetaColumn) {
@@ -131,4 +134,5 @@ public class DistributionAndOrderingUtil {
     }
     return orders;
   }
+
 }

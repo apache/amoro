@@ -101,8 +101,8 @@ public class TaskWriters {
     return this;
   }
 
-  public TaskWriters withOrderedWriter() {
-    this.orderedWriter = true;
+  public TaskWriters withOrderedWriter(boolean orderedWriter) {
+    this.orderedWriter = this.orderedWriter;
     return this;
   }
 
@@ -182,7 +182,7 @@ public class TaskWriters {
 
     return new ArcticSparkChangeTaskWriter(fileFormat, appenderFactory,
         outputFileFactory,
-        table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
+        table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec, orderedWriter);
   }
 
   public UnkeyedPosDeleteSparkWriter<InternalRow> newBasePosDeleteWriter() {
