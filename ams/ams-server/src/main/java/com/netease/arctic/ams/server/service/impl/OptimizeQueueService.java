@@ -18,6 +18,7 @@
 
 package com.netease.arctic.ams.server.service.impl;
 
+import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -660,6 +661,11 @@ public class OptimizeQueueService extends IJDBCService {
             } else {
               continue;
             }
+          }
+
+          if (ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE)) {
+            LOG.debug("{} optimize is blocked continue", tableIdentifier);
+            continue;
           }
 
           BaseOptimizePlan optimizePlan;
