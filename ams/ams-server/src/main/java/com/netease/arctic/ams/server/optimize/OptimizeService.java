@@ -55,6 +55,7 @@ import org.apache.iceberg.util.PropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -435,6 +436,20 @@ public class OptimizeService extends IJDBCService implements IOptimizeService {
           getMapper(sqlSession, OptimizeHistoryMapper.class);
 
       return optimizeHistoryMapper.selectOptimizeHistory(identifier);
+    }
+  }
+
+  @Override
+  public Long getLatestCommitTime(TableIdentifier identifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      OptimizeHistoryMapper optimizeHistoryMapper =
+          getMapper(sqlSession, OptimizeHistoryMapper.class);
+
+      Timestamp latestCommitTime = optimizeHistoryMapper.latestCommitTime(identifier);
+      if (latestCommitTime == null) {
+        return 0L;
+      }
+      return latestCommitTime.getTime();
     }
   }
 
