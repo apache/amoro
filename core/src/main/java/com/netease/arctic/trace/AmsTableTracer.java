@@ -154,7 +154,7 @@ public class AmsTableTracer implements TableTracer {
       });
       update = true;
     }
-    //commit snapshot info
+    //commit snapshot info even if no new file is submitted
     if (commitMeta.getChanges() == null) {
       Table traceTable;
       if (table.isUnkeyedTable()) {
