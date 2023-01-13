@@ -111,6 +111,17 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
+  public void testTraceAppendNoneFiles() {
+    testTable.newAppend()
+        .commit();
+
+    List<TableCommitMeta> TableCommitMetas = AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(1, TableCommitMetas.size());
+    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertNotNull(TableCommitMetas.get(0).getChanges());
+  }
+
+  @Test
   public void testTraceFastAppendInTx() {
     Transaction transaction = testTable.newTransaction();
     transaction.newFastAppend()

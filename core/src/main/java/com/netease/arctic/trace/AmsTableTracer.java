@@ -154,6 +154,20 @@ public class AmsTableTracer implements TableTracer {
       });
       update = true;
     }
+    //commit snapshot info
+    if (commitMeta.getChanges() == null) {
+      Table traceTable;
+      if (table.isUnkeyedTable()) {
+        traceTable = table.asUnkeyedTable();
+        Optional<TableChange> tableChange =
+            getDefaultChange().toTableChange(table, traceTable.currentSnapshot(), innerTable);
+        if (tableChange.isPresent()) {
+          commitMeta.addToChanges(tableChange.get());
+          update = true;
+        }
+      }
+    }
+
     if (updateColumns.size() > 0 && Constants.INNER_TABLE_BASE.equals(innerTable)) {
       int schemaId = table.schema().schemaId();
       SchemaUpdateMeta ddlCommitMeta = new SchemaUpdateMeta();
@@ -232,8 +246,8 @@ public class AmsTableTracer implements TableTracer {
      * @return table change
      */
     public Optional<TableChange> toTableChange(ArcticTable arcticTable, Snapshot snapshot, String innerTable) {
-      if (addedFiles.size() > 0 || deletedFiles.size() > 0 || addedDeleteFiles.size() > 0 ||
-          deletedDeleteFiles.size() > 0) {
+      // if (addedFiles.size() > 0 || deletedFiles.size() > 0 || addedDeleteFiles.size() > 0 ||
+      //     deletedDeleteFiles.size() > 0) {
         long currentSnapshotId = snapshot.snapshotId();
         long parentSnapshotId =
             snapshot.parentId() == null ? -1 : snapshot.parentId();
@@ -268,9 +282,9 @@ public class AmsTableTracer implements TableTracer {
 
         return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
             snapshot.sequenceNumber(), parentSnapshotId));
-      } else {
-        return Optional.empty();
-      }
+      // } else {
+      //   return Optional.empty();
+      // }
     }
   }
 
