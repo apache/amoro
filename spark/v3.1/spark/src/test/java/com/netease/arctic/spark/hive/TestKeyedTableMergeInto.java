@@ -225,7 +225,7 @@ public class TestKeyedTableMergeInto extends SparkTestBase {
   @Test
   public void testMergeMatchedMulitRowsForOneKey() {
     sql("INSERT OVERWRITE TABLE {0}.{1} VALUES (1, ''d''), (4, ''g''), (2, ''e''), (6, ''f'')", database, srcTableA);
-    sql("INSERT INTO TABLE {0}.{1} VALUES (6, ''d'')", database, srcTableA);
+    sql("INSERT INTO TABLE {0}.{1} VALUES (6, ''d''), (2, ''e'')", database, srcTableA);
     Assert.assertThrows(SparkException.class,
         () -> sql("MERGE INTO {0}.{1} AS t USING {0}.{2} AS s " +
         "ON t.id == s.id " +

@@ -127,15 +127,20 @@ case class MergeRowsExec(
       val isSourceRowPresent = isSourceRowPresentPred.eval(inputRow)
       val isTargetRowPresent = isTargetRowPresentPred.eval(inputRow)
 
-      if ((isSourceRowPresent && isTargetRowPresent) ||
-        (isSourceRowPresent && !isTargetRowPresent && unMatchedRowCheck)) {
+      if (isSourceRowPresent && isTargetRowPresent) {
         val currentRowId = rowIdProj.apply(inputRow)
         if (currentRowId == lastMatchedRowId) {
           throw new SparkException(
             "The ON search condition of the MERGE statement matched a single row from " +
-              "the target table with multiple rows of the source table. This could result " +
-              "in the target row being operated on more than once with an update or delete " +
-              "operation and is not allowed.")
+              "the target table with multiple rows of the source table. ")
+        }
+        lastMatchedRowId = currentRowId.copy()
+      } else if (isSourceRowPresent && !isTargetRowPresent && unMatchedRowCheck){
+          val currentRowId = rowIdProj.apply(inputRow)
+          if (currentRowId == lastMatchedRowId) {
+            throw new SparkException(
+                "There are multiple duplicate primary key data in the inserted data, " +
+                "which cannot guarantee the uniqueness of the primary key. ")
         }
         lastMatchedRowId = currentRowId.copy()
       } else {
