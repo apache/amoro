@@ -123,6 +123,12 @@ public class TableOptimizeItem extends IJDBCService {
     }
   };
 
+  /**
+   * -1: not initialized
+   * 0: not committed
+   */
+  private volatile long latestCommitTime = -1L;
+
   public TableOptimizeItem(ArcticTable arcticTable, TableMetadata tableMetadata) {
     this.arcticTable = arcticTable;
     this.metaRefreshTime = -1;
@@ -251,6 +257,13 @@ public class TableOptimizeItem extends IJDBCService {
    */
   public double getQuotaCache() {
     return quotaCache;
+  }
+
+  public long getLatestCommitTime() {
+    if (latestCommitTime == -1L) {
+      latestCommitTime = ServiceContainer.getOptimizeService().getLatestCommitTime(tableIdentifier);
+    }
+    return latestCommitTime;
   }
 
   public String getGroupNameCache() {
@@ -697,6 +710,9 @@ public class TableOptimizeItem extends IJDBCService {
         // persist optimize task history
         OptimizeHistory record = buildOptimizeRecord(tasks, commitTime);
         optimizeHistoryMapper.insertOptimizeHistory(record);
+
+        // update the latest commit time in memory
+        latestCommitTime = Math.max(latestCommitTime, commitTime);
       } catch (Throwable t) {
         LOG.warn("failed to persist optimize history after commit, ignore. " + getTableIdentifier(), t);
         sqlSession.rollback(true);
@@ -823,17 +839,15 @@ public class TableOptimizeItem extends IJDBCService {
    * GetOptimizeTasksToExecute
    * include Init, Failed.
    *
-   * @param maxCnt - max task cnt to pool
    * @return List of OptimizeTaskItem
    */
-  public List<OptimizeTaskItem> getOptimizeTasksToExecute(int maxCnt) {
+  public List<OptimizeTaskItem> getOptimizeTasksToExecute() {
     // lock for conflict with add new tasks, because files with be removed from OptimizeTask after tasks added
     tasksLock.lock();
     try {
       return optimizeTasks.values().stream()
           .filter(taskItem -> taskItem.canExecute(this::optimizeMaxRetry))
           .sorted(Comparator.comparingLong(o -> o.getOptimizeTask().getCreateTime()))
-          .limit(maxCnt)
           .collect(Collectors.toList());
     } finally {
       tasksLock.unlock();

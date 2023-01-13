@@ -2,6 +2,7 @@
 CREATE TABLE optimize_group (
     group_id bigint NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 1, INCREMENT BY 1),
     name varchar(50) unique NOT NULL,
+    scheduling_policy varchar(20),
     properties clob(64m),
     container varchar(64) DEFAULT NULL,
     PRIMARY KEY (group_id)

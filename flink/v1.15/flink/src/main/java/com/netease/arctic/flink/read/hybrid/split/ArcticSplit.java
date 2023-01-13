@@ -102,4 +102,6 @@ public abstract class ArcticSplit implements SourceSplit, Serializable, Comparab
                 .add("transactionId", primaryKeyedFile.transactionId())
                 .toString()).collect(Collectors.toList()));
   }
+
+  public abstract ArcticSplit copy();
 }

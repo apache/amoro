@@ -84,6 +84,21 @@ public class FlinkOptimizer implements StatefulOptimizer {
     int jmMemory = groupProperties.getInteger("jobmanager.memory");
     cmd += " -yjm " + jmMemory;
 
+    // spill map config
+    Boolean enableSpillMap = groupProperties.getBoolean("enable_spill_map");
+    String backendBaseDir = groupProperties.getString("backend_base_dir");
+    Long maxDeleteMemorySize = groupProperties.getLong("max_delete_memory_size_in_byte");
+    String spillMapCmd = "";
+    if (enableSpillMap != null) {
+      spillMapCmd = spillMapCmd + " -es " + enableSpillMap;
+    }
+    if (backendBaseDir != null) {
+      spillMapCmd = spillMapCmd + " -rp " + backendBaseDir;
+    }
+    if (maxDeleteMemorySize != null) {
+      spillMapCmd = spillMapCmd + " -mm " + maxDeleteMemorySize;
+    }
+
     //add compact execute config
     String arcticHome = systemInfo.getString(OptimizerProperties.ARCTIC_HOME);
     String jarPath = " " + arcticHome + "/plugin/optimize/OptimizeJob.jar ";
@@ -104,7 +119,7 @@ public class FlinkOptimizer implements StatefulOptimizer {
         OptimizerProperties.OPTIMIZER_GROUP_HEART_BEAT_INTERVAL_DEFAULT;
     cmd +=
         " -a " + amsUrl + " -q " + groupInfo.get("id") + " -p " + parallelism + " --heart-beat " + heartBeatInterval +
-            " -id " + jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID);
+            " -id " + jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID) + spillMapCmd;
 
     String envCmd = "";
     if (containerProperties.containsKey(HADOOP_CONF_DIR)) {

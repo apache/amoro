@@ -54,6 +54,7 @@ import static org.apache.flink.util.Preconditions.checkState;
  * @param <T> The type of elements produced by the fetcher.
  */
 @Internal
+@Deprecated
 public class KafkaFetcher<T> extends AbstractFetcher<T, TopicPartition> {
 
   private static final Logger LOG = LoggerFactory.getLogger(KafkaFetcher.class);

@@ -64,8 +64,8 @@ public abstract class BaseExecutor implements Executor {
     this.table = table;
     this.startTime = startTime;
     this.config = config;
-    this.structLikeCollections = new StructLikeCollections(config.isEnableSpillMap(),
-          config.getMaxInMemorySizeInBytes());
+    this.structLikeCollections = new StructLikeCollections(Boolean.parseBoolean(config.getEnableSpillMap()),
+          config.getMaxInMemorySizeInBytes(), config.getRocksDBBasePath());
   }
 
   protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
