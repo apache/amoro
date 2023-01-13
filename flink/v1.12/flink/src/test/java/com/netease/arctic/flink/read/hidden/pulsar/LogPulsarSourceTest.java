@@ -26,6 +26,7 @@ import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.FailoverTestUtil;
 import com.netease.arctic.flink.util.TestUtil;
+import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import com.netease.arctic.flink.write.FlinkSink;
@@ -83,7 +84,7 @@ public class LogPulsarSourceTest extends TableTestBase {
   public static final String TOPIC = "LogPulsarSourceTest";
   public static final int PARALLELISM = 3;
   private List<LogData<RowData>> dataInPulsar;
-  public LogPulsarReadHelper logPulsarReadHelper;
+  public LogPulsarHelper logPulsarHelper;
 
   public static final String RESULT_TABLE = "result";
   private static final TableIdentifier RESULT_TABLE_ID =
@@ -104,9 +105,9 @@ public class LogPulsarSourceTest extends TableTestBase {
   @Before
   public void initData() throws Exception {
     TestUtil.cancelAllJobs(miniClusterResource.getMiniCluster());
-    logPulsarReadHelper = new LogPulsarReadHelper(environment);
+    logPulsarHelper = new LogPulsarHelper(environment);
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
-    dataInPulsar = logPulsarReadHelper.write(TOPIC, 0);
+    dataInPulsar = logPulsarHelper.write(TOPIC, 0);
 
     testCatalog = CatalogLoader.load(AMS.getUrl());
     result = testCatalog
@@ -128,7 +129,7 @@ public class LogPulsarSourceTest extends TableTestBase {
   }
 
   public void testArcticSource(FailoverTestUtil.FailoverType failoverType, boolean logRetractionEnabled) throws Exception {
-    LogPulsarSource source = createSource(null, logRetractionEnabled);
+    LogPulsarSource source = createSource(null, logRetractionEnabled, logPulsarHelper, TOPIC);
     List<RowData> excepted = getExcepted(logRetractionEnabled);
 
     StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -210,9 +211,10 @@ public class LogPulsarSourceTest extends TableTestBase {
     return excepted;
   }
 
-  private LogPulsarSource createSource(Properties conf, boolean logRetractionEnabled) {
+  public static LogPulsarSource createSource(Properties conf, boolean logRetractionEnabled,
+                                             LogPulsarHelper logPulsarHelper, String topic) {
     Map<String, String> tableProperties = new HashMap<>();
-    tableProperties.put(TableProperties.LOG_STORE_ADDRESS, logPulsarReadHelper.op().serviceUrl());
+    tableProperties.put(TableProperties.LOG_STORE_ADDRESS, logPulsarHelper.op().serviceUrl());
     tableProperties.put(ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(),
         String.valueOf(logRetractionEnabled));
 
@@ -220,13 +222,13 @@ public class LogPulsarSourceTest extends TableTestBase {
     if (conf != null) {
       properties.putAll(conf);
     }
-    properties.put(PULSAR_ADMIN_URL.key(), logPulsarReadHelper.op().adminUrl());
+    properties.put(PULSAR_ADMIN_URL.key(), logPulsarHelper.op().adminUrl());
     properties.put(PULSAR_SUBSCRIPTION_NAME.key(), "source-test");
     properties.put(PULSAR_MAX_FETCH_TIME.key(), Duration.ofSeconds(1).toMillis());
 
     return (LogPulsarSource) LogPulsarSource.builder(userSchema, tableProperties)
         .setProperties(properties)
-        .setTopics(TOPIC)
+        .setTopics(topic)
         .setStartCursor(StartCursor.earliest())
         .build();
   }

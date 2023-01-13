@@ -18,16 +18,25 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
+import com.netease.arctic.flink.read.hidden.pulsar.LogPulsarSourceTest;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
+import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
+import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
+import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
+import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
+import com.netease.arctic.flink.write.hidden.BaseLogTest;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
+import com.netease.arctic.flink.write.hidden.LogMsgFactory;
+import com.netease.arctic.flink.write.hidden.pulsar.HiddenPulsarFactory;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
+import org.apache.flink.api.connector.source.Source;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
@@ -45,11 +54,13 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.util.CloseableIterator;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,40 +71,61 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
-import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
-import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.readRecordsBytes;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.BaseLogTest.readRecordsBytesInLog;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 
 /**
  * Hidden log operator tests.
  */
+@RunWith(Parameterized.class)
 public class HiddenLogOperatorsTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static final String topic = "produce-consume-topic";
   public static final int DATA_INDEX = 1;
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
+  @ClassRule
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
+  private static LogPulsarHelper pulsarHelper;
+
+  @Parameterized.Parameter
+  public String logType;
+
+  @Parameterized.Parameters(name = "logType = {0}")
+  public static Collection<String> parameters() {
+    return Arrays.asList(
+//        LOG_STORE_STORAGE_TYPE_KAFKA,
+        LOG_STORE_STORAGE_TYPE_PULSAR);
+  }
 
   @BeforeClass
   public static void prepare() throws Exception {
-    KAFKA_CONTAINER.start();
+//    KAFKA_CONTAINER.start();
+    pulsarHelper = new LogPulsarHelper(environment);
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    KAFKA_CONTAINER.close();
+//    KAFKA_CONTAINER.close();
   }
 
   @Test
   public void testProduceAndConsume() throws Exception {
     String topic = "testProduceAndConsume";
+    pulsarHelper.op().setupTopic(topic);
     final int count = 20;
 
     String[] expect = new String[count];
@@ -117,11 +149,13 @@ public class HiddenLogOperatorsTest {
       e.printStackTrace();
       throw e;
     }
+    pulsarHelper.op().deleteTopic(topic);
   }
 
   @Test
   public void testProducerFailoverWithoutRetract() throws Exception {
     String topic = "testProducerFailoverWithoutRetract";
+    pulsarHelper.op().setupTopic(topic);
     OperatorSubtaskState state;
     try {
       OneInputStreamOperatorTestHarness<RowData, RowData> harness = createProducer(null, topic);
@@ -163,12 +197,13 @@ public class HiddenLogOperatorsTest {
     }
 
     createConsumerWithoutRetract(true, 10, "test-gid", topic);
+    pulsarHelper.op().deleteTopic(topic);
   }
 
   @Test
   public void testMultiParallelismFailoverConsistencyRead() throws Exception {
     String topic = "testMultiParallelismFailoverConsistencyRead";
-
+    pulsarHelper.op().createTopic(topic, 1);
     OperatorSubtaskState state0;
     OperatorSubtaskState state1;
     OperatorSubtaskState state2;
@@ -226,12 +261,12 @@ public class HiddenLogOperatorsTest {
       output.addAll(collect(harness1));
       output.addAll(collect(harness2));
       Assertions.assertEquals(11, output.size());
-      ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
-      Assertions.assertEquals(11, consumerRecords.count());
+      List<byte[]> consumerRecords = readRecordsBytesInLog(topic, logType, pulsarHelper);
+      Assertions.assertEquals(11, consumerRecords.size());
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
         try {
-          System.out.println(deserialization.deserialize(consumerRecord.value()));
+          System.out.println(deserialization.deserialize(consumerRecord));
         } catch (IOException e) {
           e.printStackTrace();
         }
@@ -243,7 +278,7 @@ public class HiddenLogOperatorsTest {
 
     // failover restore from chp-1
     try (OneInputStreamOperatorInternTest<RowData, RowData> harness0 =
-             createProducer(3, 0, jobId, 1L, topic);
+             this.createProducer(3, 0, jobId, 1L, topic);
          OneInputStreamOperatorInternTest<RowData, RowData> harness1 =
              createProducer(3, 1, jobId, 1L, topic);
          OneInputStreamOperatorInternTest<RowData, RowData> harness2 =
@@ -281,22 +316,26 @@ public class HiddenLogOperatorsTest {
       output.addAll(collect(harness1));
       output.addAll(collect(harness2));
       Assertions.assertEquals(8, output.size());
-      ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
+
+      List<byte[]> consumerRecords = BaseLogTest.readRecordsBytesInLog(topic, logType, pulsarHelper);
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
         try {
-          System.out.println(deserialization.deserialize(consumerRecord.value()));
+          System.out.println(deserialization.deserialize(consumerRecord));
         } catch (IOException e) {
           e.printStackTrace();
         }
       });
-      Assertions.assertEquals(20, consumerRecords.count());
+      Assertions.assertEquals(20, consumerRecords.size());
     } catch (Exception e) {
       e.printStackTrace();
       throw e;
     }
     createConsumerWithoutRetract(true, 19, "test-gid", topic);
-    createConsumerWithRetract(true, 27, "test-gid-2", topic);
+    if (logType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)) {
+      createConsumerWithRetract(true, 27, "test-gid-2", topic);
+    }
+    pulsarHelper.op().deleteTopic(topic);
   }
 
   public static RowData createRowData(int i) {
@@ -369,20 +408,21 @@ public class HiddenLogOperatorsTest {
     env.getConfig().setRestartStrategy(RestartStrategies.noRestart());
     List<String> topics = new ArrayList<>();
     topics.add(topic);
-    Properties properties = getPropertiesByTopic(topic);
-    properties.put("group.id", groupId);
-    properties.put("auto.offset.reset", "earliest");
-
-    Map<String, String> configuration = new HashMap<>();
-    configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
+    Source<RowData, ?, ?> source;
+    switch (logType) {
+      case LOG_STORE_STORAGE_TYPE_KAFKA:
+        source = createKafkaSource(groupId, retract, topics);
+        break;
+      case LOG_STORE_STORAGE_TYPE_PULSAR:
+        source = createPulsarSource(retract, topic);
+        break;
+      default:
+        throw new UnsupportedOperationException(logType);
+    }
 
     DataStream<RowData> streamWithTimestamps =
         env.fromSource(
-            LogKafkaSource.builder(userSchema, configuration)
-                .setTopics(topics)
-                .setStartingOffsets(OffsetsInitializer.earliest())
-                .setProperties(properties)
-                .build(),
+            source,
             WatermarkStrategy.noWatermarks(),
             "Log Source"
         );
@@ -410,7 +450,26 @@ public class HiddenLogOperatorsTest {
     jobClient.cancel();
   }
 
-  public static OneInputStreamOperatorTestHarness<RowData, RowData> createProducer(
+  private LogKafkaSource createKafkaSource(String groupId, boolean retract, List<String> topics) {
+    Properties properties = getPropertiesByTopic(topic);
+    properties.put("group.id", groupId);
+    properties.put("auto.offset.reset", "earliest");
+
+    Map<String, String> configuration = new HashMap<>();
+    configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
+
+    return LogKafkaSource.builder(userSchema, configuration)
+        .setTopics(topics)
+        .setStartingOffsets(OffsetsInitializer.earliest())
+        .setProperties(properties)
+        .build();
+  }
+
+  private LogPulsarSource createPulsarSource(boolean retract, String topic) {
+    return LogPulsarSourceTest.createSource(null, retract, pulsarHelper, topic);
+  }
+
+  public OneInputStreamOperatorTestHarness<RowData, RowData> createProducer(
       Long restoredCheckpoint, String topic) throws Exception {
     return createProducer(
         1,
@@ -419,10 +478,24 @@ public class HiddenLogOperatorsTest {
         restoredCheckpoint,
         IdGenerator.generateUpstreamId(),
         new TestGlobalAggregateManager(),
-        topic);
+        topic,
+        logType);
   }
 
-  public static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  public static OneInputStreamOperatorTestHarness<RowData, RowData> createProducer(
+      Long restoredCheckpoint, String topic, String type) throws Exception {
+    return createProducer(
+        1,
+        1,
+        0,
+        restoredCheckpoint,
+        IdGenerator.generateUpstreamId(),
+        new TestGlobalAggregateManager(),
+        topic,
+        type);
+  }
+
+  public OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
       int maxParallelism,
       int subTaskId,
       byte[] jobId,
@@ -435,10 +508,11 @@ public class HiddenLogOperatorsTest {
         restoredCheckpointId,
         jobId,
         globalAggregateManger,
-        topic);
+        topic,
+        logType);
   }
 
-  public static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  public OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
       int maxParallelism,
       int subTaskId,
       byte[] jobId,
@@ -450,7 +524,8 @@ public class HiddenLogOperatorsTest {
         null,
         jobId,
         globalAggregateManger,
-        topic);
+        topic,
+        logType);
   }
 
   private static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
@@ -460,13 +535,31 @@ public class HiddenLogOperatorsTest {
       Long restoredCheckpointId,
       byte[] jobId,
       TestGlobalAggregateManager testGlobalAggregateManager,
-      String topic) throws Exception {
+      String topic,
+      String type) throws Exception {
+    LogMsgFactory logMsgFactory;
+    Properties properties;
+    switch (type) {
+      case LOG_STORE_STORAGE_TYPE_KAFKA:
+        logMsgFactory = new HiddenKafkaFactory();
+        properties = getPropertiesByTopic(topic);
+        break;
+      case LOG_STORE_STORAGE_TYPE_PULSAR:
+        logMsgFactory = new HiddenPulsarFactory();
+        properties = new Properties();
+        properties.put(PULSAR_ADMIN_URL.key(), pulsarHelper.op().adminUrl());
+        properties.put(PULSAR_SERVICE_URL.key(), pulsarHelper.op().adminUrl());
+        break;
+      default:
+        throw new UnsupportedOperationException(type);
+    }
+
     HiddenLogWriter writer =
         new HiddenLogWriter(
             userSchema,
-            getPropertiesByTopic(topic),
+            properties,
             topic,
-            new HiddenKafkaFactory<>(),
+            logMsgFactory,
             LogRecordV1.fieldGetterFactory,
             jobId,
             ShuffleHelper.EMPTY

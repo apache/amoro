@@ -16,10 +16,9 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.hidden.pulsar;
+package com.netease.arctic.flink.util.pulsar;
 
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntimeOperator;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
@@ -42,14 +41,14 @@ import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDes
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
 import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
 
-public class LogPulsarReadHelper {
+public class LogPulsarHelper {
 
-  private static final Logger LOG = LoggerFactory.getLogger(LogPulsarReadHelper.class);
+  private static final Logger LOG = LoggerFactory.getLogger(LogPulsarHelper.class);
 
   private static byte[] jobId;
   private PulsarTestEnvironment environment;
 
-  public LogPulsarReadHelper(PulsarTestEnvironment environment) {
+  public LogPulsarHelper(PulsarTestEnvironment environment) {
     this.environment = environment;
     jobId = IdGenerator.generateUpstreamId();
   }
@@ -109,7 +108,7 @@ public class LogPulsarReadHelper {
   public List<LogData<RowData>> printDataInTopic(String topic) {
     List<Message<byte[]>> consumerRecords = op().receiveAllMessages(topic, Schema.BYTES, Duration.ofSeconds(10));
     List<LogData<RowData>> actual = new ArrayList<>(consumerRecords.size());
-    
+
     LOG.info("data in topic: {}", topic);
     LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
     consumerRecords.forEach(consumerRecord -> {
@@ -123,5 +122,5 @@ public class LogPulsarReadHelper {
     });
     return actual;
   }
-  
+
 }

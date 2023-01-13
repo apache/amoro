@@ -124,7 +124,7 @@ public class HiddenKafkaProducerTest extends BaseLogTest {
             topic,
             logDataJsonSerialization,
             null);
-    producer.open();
+    producer.open(null);
 
     int recoverNum = 3;
     for (int i = 0; i < recoverNum; i++) {

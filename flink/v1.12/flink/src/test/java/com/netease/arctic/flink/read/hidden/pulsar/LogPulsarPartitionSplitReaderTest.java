@@ -21,6 +21,7 @@ package com.netease.arctic.flink.read.hidden.pulsar;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.read.source.log.pulsar.LogMsgWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarOrderedPartitionSplitReader;
+import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
 import org.apache.flink.api.connector.source.Boundedness;
@@ -67,13 +68,13 @@ public class LogPulsarPartitionSplitReaderTest {
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
   public static final String TOPIC = "splitReaderTest";
-  public LogPulsarReadHelper logPulsarReadHelper;
+  public LogPulsarHelper logPulsarHelper;
 
   @Before
   public void initData() {
-    logPulsarReadHelper = new LogPulsarReadHelper(environment);
+    logPulsarHelper = new LogPulsarHelper(environment);
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
-    logPulsarReadHelper.write(TOPIC, 0);
+    logPulsarHelper.write(TOPIC, 0);
   }
 
   @Test
@@ -157,15 +158,15 @@ public class LogPulsarPartitionSplitReaderTest {
   }
 
   private LogPulsarOrderedPartitionSplitReader createReader(Configuration conf, boolean logRetractionEnable) {
-    PulsarClient pulsarClient = logPulsarReadHelper.op().client();
-    PulsarAdmin pulsarAdmin = logPulsarReadHelper.op().admin();
+    PulsarClient pulsarClient = logPulsarHelper.op().client();
+    PulsarAdmin pulsarAdmin = logPulsarHelper.op().admin();
     PulsarConfigBuilder configBuilder = new PulsarConfigBuilder();
 
     if (conf != null) {
       configBuilder.set(conf);
     }
-    configBuilder.set(PULSAR_SERVICE_URL, logPulsarReadHelper.op().serviceUrl());
-    configBuilder.set(PULSAR_ADMIN_URL, logPulsarReadHelper.op().adminUrl());
+    configBuilder.set(PULSAR_SERVICE_URL, logPulsarHelper.op().serviceUrl());
+    configBuilder.set(PULSAR_ADMIN_URL, logPulsarHelper.op().adminUrl());
     configBuilder.set(PULSAR_SUBSCRIPTION_NAME, "test-split-reader");
     configBuilder.set(PULSAR_MAX_FETCH_TIME, Duration.ofSeconds(1).toMillis());
 

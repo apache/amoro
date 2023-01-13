@@ -16,50 +16,46 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write.hidden;
+package com.netease.arctic.flink.write.hidden.pulsar;
 
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
-import com.netease.arctic.log.LogData;
+import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
+import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
+import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.LogDataJsonSerialization;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
+import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.Properties;
 
-/**
- * A factory creates log queue producers or consumers, e.g. kafka or pulsar distributed event streaming
- * platform.
- */
-public interface LogMsgFactory<T> extends Serializable {
+import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
-  Producer<T> createProducer(
+/**
+ * A factory creates Pulsar log queue producers or consumers.
+ */
+public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
+  private static final long serialVersionUID = -1L;
+
+  @Override
+  public Producer<T> createProducer(
       Properties producerConfig,
       String topic,
       LogDataJsonSerialization<T> logDataJsonSerialization,
-      ShuffleHelper helper);
+      ShuffleHelper helper) {
+    checkNotNull(topic);
+    Configuration conf = CompatibleFlinkPropertyUtil.convertToConfiguration(producerConfig);
 
-  Consumer<T> createConsumer();
-
-  interface Producer<T> {
-    void open(StreamingRuntimeContext context) throws Exception;
-
-    void send(LogData<T> logData) throws Exception;
-
-    void sendToAllPartitions(LogData<T> logData) throws Exception;
-
-    void flush() throws IOException;
-
-    void close() throws Exception;
+    return new HiddenPulsarProducer<>(
+        new SinkConfiguration(conf),
+        topic,
+        logDataJsonSerialization,
+        new ArcticLogPartitioner<>(
+            helper
+        ));
   }
 
-  interface Consumer<T> {
-
-    default void open(Configuration parameters) throws Exception {
-    }
-
-    default void close() throws Exception {
-    }
+  @Override
+  public Consumer createConsumer() {
+    throw new UnsupportedOperationException("not supported right now");
   }
 }

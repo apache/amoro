@@ -20,10 +20,13 @@ package com.netease.arctic.flink.util;
 
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.iceberg.util.PropertyUtil;
 
+import java.util.Enumeration;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * PropertyUtil compatible with legacy flink properties
@@ -106,5 +109,17 @@ public class CompatibleFlinkPropertyUtil {
       return ArcticValidator.DIM_TABLE_ENABLE_LEGACY;
     }
     return null;
+  }
+
+  public static Configuration convertToConfiguration(Properties properties) {
+    Configuration conf = new Configuration();
+    if (properties.isEmpty()) {
+      return conf;
+    }
+    for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();) {
+      String k = String.valueOf(e.nextElement());
+      conf.setString(k, String.valueOf(properties.getProperty(k)));
+    }
+    return conf;
   }
 }
