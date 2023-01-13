@@ -63,24 +63,37 @@ Major optimizing 和 minor optimizing 的设计参考了垃圾回收算法的分
 | full    | fragment, segment    | segment    | insert, eq-delete, pos-delete   | insert    |
 
 
-## Self-optimizing quota
-
-如果你使用的是不可更新的表，如日志，传感器数据，并且已经习惯于 Iceberg 提供的 optimize 指令，可以考虑通过下面的配置关闭表上的 self-optimizing 功能：
+## Self-optimizing scheduling policy
+Scheduling policy 是 AMS 决定不同表执行 self-optimizing 先后顺序的调度策略，通过不同的调度策略，
+决定了每张表实际可以占用的 self-optimizing 的资源，Arctic 用 Quota 定义每张表的预期资源用量，Quota occupation 代表了相比预期用量，实际占用的资源百分比。
+可以在 AMS 如下页面查看每张表 self-optimizing 的 quota 以及 Quota occupation：
+![quota_and_occupation](../images/concepts/quota-occupation.png)
+不同 optimizer group 可以配置不同的 scheduling policy 以满足不同的优化需求，见 [Optimizer Group 配置](../guides/managing-optimizers.md#optimizer-group)。
+用户也可以通过表上的下列配置来关闭 self-optimizing 功能，这样该表就不会被调度执行。
 
 ```SQL
 self-optimizing.enabled = false;
 ```
+如果你使用的是不可更新的表，如日志，传感器数据，并且已经习惯于 Iceberg 提供的 optimize 指令，可以关闭 self-optimizing 功能。
+如果表配置了主键，支持 CDC 摄取和流式更新，比如数据库同步表，或者按照维度聚合过的表，建议开启 self-optimizing 功能。
 
-如果表配置了主键，支持 CDC 摄取和流式更新，比如数据库同步表，或者按照维度聚合过的表，建议开启 self-optimizing 功能。单张表的 self-optimizing 资源用量通过在表上配置 quota 参数来管理：
+目前主要提供两种 scheduling policy 分别是 quota 和 balanced。
+### quota
+quota 是一种按资源使用量调度的策略，单张表的 self-optimizing 资源用量通过在表上配置 quota 参数来管理：
 
 ```SQL
 -- self-optimizing 能够使用的最大 CPU 数量，可以取小数
 self-optimizing.quota = 1;
 ```
 
-Quota 定义了单张表可以使用的最大 CPU 用量，但 self-optimizing 实际是分布式执行，真实的资源用量是按实际执行时间动态管理的过程，在 optimizing 管理界面，可以通过 quota occupy 这个指标查看单张表的动态 quota 占用，从设计目标看，quota occupy 指标应当动态趋于 100%。 
+Quota 定义了单张表可以使用的最大 CPU 用量，但 self-optimizing 实际是分布式执行，真实的资源用量是按实际执行时间动态管理的过程，在 optimizing 管理界面，
+可以通过 quota occupy 这个指标查看单张表的动态 quota 占用，从设计目标看，quota occupy 指标应当动态趋于 100%。 
 
 在平台中可能出现超售和超买两种情况：
 
 - 超买 — 若所有 optimizer 配置超过所有表配置的 quota 总和，quota occupy 可能动态趋于 100% 以上
 - 超卖 — 若所有 optimizer 配置低于所有配置表的 quota 总和，quota occupy 应当动态趋于 100% 以下
+### balanced
+balanced 是一种按照时间进度调度的策略，越久没有做 self-optimizing 的表在调度的时候具有越高的调度优先级，此策略会尽量使得每张表的 self-optimizing 进度处于相同水平。
+这样可以避免在 quota 调度策略场景下，资源消耗大的表长时间不做 self-optimizing 从而影响整体查询效率。
+如果一个 optimizer group 内的表对资源使用量没有特别要求，并且希望所有表都有一个不错的查询效率，那么 balanced 策略是一个很好的选择。

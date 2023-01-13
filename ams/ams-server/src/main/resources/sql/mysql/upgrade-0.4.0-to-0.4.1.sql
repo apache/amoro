@@ -9,3 +9,5 @@ CREATE TABLE `table_blocker` (
   PRIMARY KEY (`blocker_id`),
   KEY `table_index` (`catalog_name`,`db_name`,`table_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='Table blockers';
+
+ALTER TABLE `optimize_group` ADD COLUMN `scheduling_policy`   varchar(20) COMMENT 'Optimize group scheduling policy' after `name`;

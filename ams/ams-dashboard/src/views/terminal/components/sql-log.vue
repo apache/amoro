@@ -1,7 +1,7 @@
 
 <template>
   <div class="sql-log">
-    <div v-html="outputLog" style="white-space: pre-line;font-size: 12px;"></div>
+    <div v-html="outputLog" style="white-space: pre-wrap;font-size: 12px;"></div>
   </div>
 </template>
 

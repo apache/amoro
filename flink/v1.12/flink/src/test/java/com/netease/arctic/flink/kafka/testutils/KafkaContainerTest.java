@@ -23,6 +23,8 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,23 +44,24 @@ import java.util.stream.Collectors;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
 import static com.netease.arctic.flink.kafka.testutils.KafkaUtil.createKafkaContainer;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
 import static org.apache.kafka.clients.CommonClientConfigs.BOOTSTRAP_SERVERS_CONFIG;
 
 @Testcontainers
-public interface KafkaContainerTest {
-  Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
-  String INTER_CONTAINER_KAFKA_ALIAS = "kafka";
-  Network NETWORK = Network.newNetwork();
-  String KAFKA = "confluentinc/cp-kafka:6.2.2";
+public class KafkaContainerTest {
+  private static Logger LOG = LoggerFactory.getLogger(KafkaContainerTest.class);
+  public static String INTER_CONTAINER_KAFKA_ALIAS = "kafka";
+  public static Network NETWORK = Network.newNetwork();
+  public static String KAFKA = "confluentinc/cp-kafka:6.2.2";
 
   @Container
-  KafkaContainer KAFKA_CONTAINER =
+  public static KafkaContainer KAFKA_CONTAINER =
       createKafkaContainer(KAFKA, LOG)
           .withEmbeddedZookeeper()
           .withNetwork(NETWORK)
           .withNetworkAliases(INTER_CONTAINER_KAFKA_ALIAS);
-
-  default ConsumerRecords<String, String> readRecords(String topic) {
+  
+  public static ConsumerRecords<String, String> readRecords(String topic) {
     Properties properties = getProperties();
     properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
     KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
@@ -70,11 +73,11 @@ public interface KafkaContainerTest {
     return consumer.poll(Duration.ofMillis(1000));
   }
 
-  default ConsumerRecords<byte[], byte[]> readRecordsBytes(String topic) {
+  public static ConsumerRecords<byte[], byte[]> readRecordsBytes(String topic) {
     return (ConsumerRecords<byte[], byte[]>) readRecords(topic, getPropertiesWithByteArray());
   }
 
-  default ConsumerRecords<?, ?> readRecords(String topic, Properties properties) {
+  public static ConsumerRecords<?, ?> readRecords(String topic, Properties properties) {
     properties.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, "read_committed");
     KafkaConsumer<?, ?> consumer = new KafkaConsumer<>(properties);
     consumer.assign(
@@ -85,7 +88,7 @@ public interface KafkaContainerTest {
     return consumer.poll(Duration.ofMillis(1000));
   }
 
-  default void createTopics(int numPartitions, String... topics) {
+  public static void createTopics(int numPartitions, String... topics) {
     List<NewTopic> newTopics =
         Arrays.stream(topics)
             .map(topic -> new NewTopic(topic, numPartitions, (short) 1))
@@ -97,11 +100,32 @@ public interface KafkaContainerTest {
     }
   }
 
-  default void deleteTopics(String... topics) {
+  public static void deleteTopics(String... topics) {
     Map<String, Object> params = new HashMap<>();
     params.put(BOOTSTRAP_SERVERS_CONFIG, KAFKA_CONTAINER.getBootstrapServers());
     try (AdminClient admin = AdminClient.create(params)) {
       admin.deleteTopics(Arrays.asList(topics));
     }
+  }
+
+  public static Properties getPropertiesByTopic(String topic) {
+    Properties properties = getPropertiesWithByteArray(getProperties());
+    properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
+    properties.put(ProducerConfig.ACKS_CONFIG, "all");
+    return properties;
+  }
+
+  public static List<TopicPartition> getPartitionsForTopic(String topic) {
+    Properties properties = getProperties();
+    KafkaConsumer<String, String> consumer = new KafkaConsumer<>(properties);
+    return consumer.partitionsFor(topic).stream()
+        .map(pi -> new TopicPartition(pi.topic(), pi.partition()))
+        .collect(Collectors.toList());
+  }
+
+  public static KafkaProducer getProducer() {
+    Properties properties = getPropertiesWithByteArray();
+    KafkaProducer producer = new KafkaProducer<>(properties);
+    return producer;
   }
 }

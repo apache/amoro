@@ -24,6 +24,7 @@ public class OptimizeQueueMeta {
   public int queueId;
   public String name;
   public String container;
+  private String schedulingPolicy;
   public Map<String, String> properties;
 
   public int getQueueId() {
@@ -50,6 +51,14 @@ public class OptimizeQueueMeta {
     this.container = container;
   }
 
+  public String getSchedulingPolicy() {
+    return schedulingPolicy;
+  }
+
+  public void setSchedulingPolicy(String schedulingPolicy) {
+    this.schedulingPolicy = schedulingPolicy;
+  }
+
   public Map<String, String> getProperties() {
     return properties;
   }
@@ -64,6 +73,7 @@ public class OptimizeQueueMeta {
         "queueId=" + queueId +
         ", name='" + name + '\'' +
         ", container='" + container + '\'' +
+        ", schedulingPolicy='" + schedulingPolicy + '\'' +
         ", properties=" + properties +
         '}';
   }

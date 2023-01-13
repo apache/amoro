@@ -129,6 +129,7 @@ CREATE TABLE `optimize_group`
 (
     `group_id`   int(11) NOT NULL AUTO_INCREMENT  COMMENT 'Optimize group unique id',
     `name`       varchar(50) NOT NULL  COMMENT 'Optimize group name',
+    `scheduling_policy`   varchar(20) COMMENT 'Optimize group scheduling policy',
     `properties` mediumtext  COMMENT 'Properties',
     `container`  varchar(100) DEFAULT NULL  COMMENT 'Container: local, flink',
     PRIMARY KEY (`group_id`),
