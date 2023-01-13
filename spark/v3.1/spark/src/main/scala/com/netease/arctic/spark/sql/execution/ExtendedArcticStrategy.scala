@@ -120,11 +120,6 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
           throw new UnsupportedOperationException(s"Cannot overwrite by filter to non-Arctic table: $table")
       }
 
-    case CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery, props, options, ifNotExists) =>
-      val writeOptions = new CaseInsensitiveStringMap(options.asJava)
-      CreateArcticTableAsSelectExec(catalog, ident, parts, query, planLater(query), planLater(validateQuery),
-        props, writeOptions, ifNotExists) :: Nil
-
     case MergeRows(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
     notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
     output, child) =>
