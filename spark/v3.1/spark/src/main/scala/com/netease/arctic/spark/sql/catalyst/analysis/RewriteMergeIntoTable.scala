@@ -45,7 +45,6 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
   }
 
   def checkConditionIsPrimaryKey(table: Table, cond: Expression): Unit = {
-    var validate: Boolean = true
     table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
@@ -80,7 +79,7 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
               val references = cond.references.toSeq
               (references, valuesRelation)
             } else {
-              throw new UnsupportedOperationException("error")
+              throw new UnsupportedOperationException(s"Can not build relation and keyAttrs for table $arctic")
             }
           }
           (keyAttrs, valuesRelation)
@@ -207,14 +206,6 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
     action.condition.getOrElse(TrueLiteral)
   }
 
-  def buildRelationWithAttrs(
-                                        relation: DataSourceV2Relation,
-                                        table: Table): DataSourceV2Relation = {
-
-    val attrs = dedupAttrs(relation.output)
-    relation.copy(table = table, output = attrs)
-  }
-
   def dedupAttrs(attrs: Seq[AttributeReference]): Seq[AttributeReference] = {
     val exprIds = mutable.Set.empty[ExprId]
     attrs.flatMap { attr =>
@@ -226,7 +217,6 @@ object RewriteMergeIntoTable extends Rule[LogicalPlan] {
       }
     }
   }
-
 
   private def deltaActionOutput(
                                  action: MergeAction,
