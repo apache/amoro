@@ -206,6 +206,10 @@ ALTER TABLE arctic_catalog.db.sample ALTER COLUMN nested.col AFTER other_col;
 ALTER TABLE arctic_catalog.db.sample DROP COLUMN id;
 ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z;
 ```
+### ### ALTER TABLE ... DROP PARTITION
+```sql
+ALTER TABLE arctic_catalog.db.sample DROP IF EXISTS PARTITION (dt=2022);
+```
 
 
 
