@@ -19,10 +19,14 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.spark.hive.TestCreateTableDDL;
+import com.netease.arctic.spark.hive.TestHiveTableDropPartitions;
 import com.netease.arctic.spark.hive.TestHiveTableMergeOnRead;
+import com.netease.arctic.spark.hive.TestHiveTableTruncate;
 import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteDynamic;
 import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteStatic;
+import com.netease.arctic.spark.hive.TestKeyedTableMergeInto;
 import com.netease.arctic.spark.hive.TestMigrateHiveTable;
+import com.netease.arctic.spark.hive.TestUnKeyedTableMergeInto;
 import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteDynamic;
 import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteStatic;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
@@ -60,7 +64,14 @@ import org.junit.runners.Suite;
     TestUnKeyedTableDML.class,
     TestKeyedTableDataFrameAPI.class,
     TestUnKeyedTableDataFrameAPI.class,
-    TestCreateKeyedTableAsSelect.class})
+    TestCreateKeyedTableAsSelect.class,
+    TestDropPartitions.class,
+    TestTruncate.class,
+    TestMergeInto.class,
+    TestHiveTableDropPartitions.class,
+    TestHiveTableTruncate.class,
+    TestKeyedTableMergeInto.class,
+    TestUnKeyedTableMergeInto.class})
 public class ArcticSparkCatalogTestGroup {
 
   @BeforeClass

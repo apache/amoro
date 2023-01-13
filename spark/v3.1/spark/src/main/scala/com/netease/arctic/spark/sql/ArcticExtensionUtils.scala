@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql
 
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsUpsert}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
@@ -72,6 +72,7 @@ object ArcticExtensionUtils {
 
   def isArcticTable(table: Table): Boolean = table match {
     case _: ArcticSparkTable => true
+    case _: ArcticIcebergSparkTable => true
     case _ => false
   }
 
