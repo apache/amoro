@@ -18,14 +18,12 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
-import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
 import org.apache.flink.api.connector.source.SourceReader;
 import org.apache.flink.api.connector.source.SourceReaderContext;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.pulsar.source.PulsarSource;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;

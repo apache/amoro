@@ -294,7 +294,7 @@ public class LogDynamicSource implements ScanTableSource, SupportsWatermarkPushD
       case LOG_STORE_STORAGE_TYPE_PULSAR:
         return createPulsarSource();
       default:
-        throw new UnsupportedOperationException("only support 'kafka' or 'pulsar' now");
+        throw new UnsupportedOperationException("only support 'kafka' or 'pulsar' now, but input is " + logType);
     }
   }
 

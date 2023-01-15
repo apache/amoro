@@ -18,6 +18,7 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
+import com.netease.arctic.flink.table.descriptors.PulsarConfigurationConverter;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.Boundedness;
@@ -36,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Properties;
 
 import static java.lang.Boolean.FALSE;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
@@ -112,6 +114,11 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     super();
     this.schema = schema;
     this.tableProperties = tableProperties;
+  }
+
+  public LogPulsarSourceBuilder setProperties(Properties properties) {
+    configBuilder.set(PulsarConfigurationConverter.toSourceConf(properties));
+    return this;
   }
 
   /**

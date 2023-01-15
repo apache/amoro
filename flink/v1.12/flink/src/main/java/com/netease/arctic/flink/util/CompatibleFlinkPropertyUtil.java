@@ -19,12 +19,11 @@
 package com.netease.arctic.flink.util;
 
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
+import com.netease.arctic.table.TableProperties;
 import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ReadableConfig;
 import org.apache.iceberg.util.PropertyUtil;
 
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 
@@ -111,15 +110,23 @@ public class CompatibleFlinkPropertyUtil {
     return null;
   }
 
-  public static Configuration convertToConfiguration(Properties properties) {
-    Configuration conf = new Configuration();
-    if (properties.isEmpty()) {
-      return conf;
+  public static Properties getLogStoreProperties(Map<String, String> tableOptions) {
+    final Properties properties = new Properties();
+
+    if (hasPrefix(tableOptions, TableProperties.LOG_STORE_PROPERTIES_PREFIX)) {
+      tableOptions.keySet().stream()
+          .filter(key -> key.startsWith(TableProperties.LOG_STORE_PROPERTIES_PREFIX))
+          .forEach(
+              key -> {
+                final String value = tableOptions.get(key);
+                final String subKey = key.substring((TableProperties.LOG_STORE_PROPERTIES_PREFIX).length());
+                properties.put(subKey, value);
+              });
     }
-    for (Enumeration<?> e = properties.propertyNames(); e.hasMoreElements();) {
-      String k = String.valueOf(e.nextElement());
-      conf.setString(k, String.valueOf(properties.getProperty(k)));
-    }
-    return conf;
+    return properties;
+  }
+
+  public static boolean hasPrefix(Map<String, String> tableOptions, String prefix) {
+    return tableOptions.keySet().stream().anyMatch(k -> k.startsWith(prefix));
   }
 }

@@ -19,15 +19,14 @@
 package com.netease.arctic.flink.write.hidden.pulsar;
 
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
-import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.LogDataJsonSerialization;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 
 import java.util.Properties;
 
+import static com.netease.arctic.flink.table.descriptors.PulsarConfigurationConverter.toSinkConf;
 import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.checkNotNull;
 
 /**
@@ -36,6 +35,12 @@ import static org.apache.iceberg.relocated.com.google.common.base.Preconditions.
 public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
   private static final long serialVersionUID = -1L;
 
+  private final String serviceUrl;
+
+  public HiddenPulsarFactory(String serviceUrl) {
+    this.serviceUrl = serviceUrl;
+  }
+
   @Override
   public Producer<T> createProducer(
       Properties producerConfig,
@@ -43,10 +48,10 @@ public class HiddenPulsarFactory<T> implements LogMsgFactory<T> {
       LogDataJsonSerialization<T> logDataJsonSerialization,
       ShuffleHelper helper) {
     checkNotNull(topic);
-    Configuration conf = CompatibleFlinkPropertyUtil.convertToConfiguration(producerConfig);
+    SinkConfiguration conf = toSinkConf(producerConfig, serviceUrl);
 
     return new HiddenPulsarProducer<>(
-        new SinkConfiguration(conf),
+        conf,
         topic,
         logDataJsonSerialization,
         new ArcticLogPartitioner<>(

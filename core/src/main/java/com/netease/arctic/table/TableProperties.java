@@ -33,7 +33,7 @@ public class TableProperties {
 
   private TableProperties() {
   }
-
+  
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
@@ -275,6 +275,8 @@ public class TableProperties {
 
   public static final String LOG_STORE_DATA_VERSION = "log-store.data-version";
   public static final String LOG_STORE_DATA_VERSION_DEFAULT = "v1";
+  
+  public static final String LOG_STORE_PROPERTIES_PREFIX = "properties.";
 
   public static final String OWNER = "owner";
 
