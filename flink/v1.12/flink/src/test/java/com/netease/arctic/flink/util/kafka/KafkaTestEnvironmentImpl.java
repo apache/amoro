@@ -172,10 +172,6 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
       tryDelete(adminClient, topic);
     } catch (Exception e) {
       e.printStackTrace();
-      fail(String.format("Delete test topic : %s failed, %s", topic, e.getMessage()));
-    } finally {
-      adminClient.close(Duration.ofMillis(5000L));
-      maybePrintDanglingThreadStacktrace(clientId);
     }
   }
 

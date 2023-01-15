@@ -27,6 +27,12 @@ import org.apache.iceberg.util.PropertyUtil;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.netease.arctic.table.TableProperties.LOG_STORE_ADDRESS;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
+
 /**
  * PropertyUtil compatible with legacy flink properties
  */
@@ -122,6 +128,12 @@ public class CompatibleFlinkPropertyUtil {
                 final String subKey = key.substring((TableProperties.LOG_STORE_PROPERTIES_PREFIX).length());
                 properties.put(subKey, value);
               });
+    }
+
+    if (CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_DEFAULT)
+        .equals(LOG_STORE_STORAGE_TYPE_PULSAR)) {
+      properties.put(PULSAR_SERVICE_URL.key(),
+          CompatibleFlinkPropertyUtil.propertyAsString(tableOptions, LOG_STORE_ADDRESS, null));
     }
     return properties;
   }

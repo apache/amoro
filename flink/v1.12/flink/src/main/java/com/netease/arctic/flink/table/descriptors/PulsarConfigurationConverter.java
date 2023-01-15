@@ -20,6 +20,7 @@ package com.netease.arctic.flink.table.descriptors;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.pulsar.common.config.PulsarOptions;
 import org.apache.flink.connector.pulsar.sink.PulsarSinkOptions;
 import org.apache.flink.connector.pulsar.sink.config.SinkConfiguration;
 import org.apache.flink.connector.pulsar.source.PulsarSourceOptions;
@@ -30,10 +31,14 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.ADMIN_CONFIG_PREFIX;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.CLIENT_CONFIG_PREFIX;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.CONSUMER_CONFIG_PREFIX;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.SOURCE_CONFIG_PREFIX;
 
 /**
@@ -56,7 +61,11 @@ public class PulsarConfigurationConverter {
     arcticProperties.stringPropertyNames().forEach(k -> {
       String toKey;
       Object v = arcticProperties.get(k);
-      if (sourceKeys.contains(toKey = CONSUMER_CONFIG_PREFIX + k)) {
+      if (sourceKeys.contains(toKey = CLIENT_CONFIG_PREFIX + k)) {
+        props.put(toKey, v);
+      } else if (sourceKeys.contains(toKey = ADMIN_CONFIG_PREFIX + k)) {
+        props.put(toKey, v);
+      } else if (sourceKeys.contains(toKey = CONSUMER_CONFIG_PREFIX + k)) {
         props.put(toKey, v);
       } else if (sourceKeys.contains(toKey = SOURCE_CONFIG_PREFIX + k)) {
         props.put(toKey, v);
@@ -64,12 +73,14 @@ public class PulsarConfigurationConverter {
         props.put(k, v);
       }
     });
+
+    props.putIfAbsent(PULSAR_SUBSCRIPTION_NAME.key(), UUID.randomUUID());
     return props;
   }
 
   /**
    * @param arcticProperties The key has been trimmed of Arctic prefix
-   * @param serviceUrl       e.g. pulsar://localhost:
+   * @param serviceUrl       e.g. pulsar://localhost:6650
    * @return Properties with Flink Pulsar source keys
    */
   public static SinkConfiguration toSinkConf(Properties arcticProperties, String serviceUrl) {
@@ -80,7 +91,11 @@ public class PulsarConfigurationConverter {
     arcticProperties.stringPropertyNames().forEach(k -> {
       String toKey;
       String v = (String) arcticProperties.get(k);
-      if (sourceKeys.contains(toKey = CONSUMER_CONFIG_PREFIX + k)) {
+      if (sourceKeys.contains(toKey = CLIENT_CONFIG_PREFIX + k)) {
+        conf.setString(toKey, v);
+      } else if (sourceKeys.contains(toKey = ADMIN_CONFIG_PREFIX + k)) {
+        conf.setString(toKey, v);
+      } else if (sourceKeys.contains(toKey = CONSUMER_CONFIG_PREFIX + k)) {
         conf.setString(toKey, v);
       } else if (sourceKeys.contains(toKey = SOURCE_CONFIG_PREFIX + k)) {
         conf.setString(toKey, v);
@@ -92,11 +107,15 @@ public class PulsarConfigurationConverter {
   }
 
   public static Set<String> getPulsarSourceConf() {
-    return getPulsarConf(PulsarSourceOptions.class);
+    Set<String> keys = getPulsarConf(PulsarSourceOptions.class);
+    keys.addAll(getPulsarConf(PulsarOptions.class));
+    return keys;
   }
 
   public static Set<String> getPulsarSinkConf() {
-    return getPulsarConf(PulsarSinkOptions.class);
+    Set<String> keys = getPulsarConf(PulsarSinkOptions.class);
+    keys.addAll(getPulsarConf(PulsarOptions.class));
+    return keys;
   }
 
   public static Set<String> getPulsarConf(Class<?> clazz) {

@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil.getLogStoreProperties;
+
 /**
  * Flink table api that generates sink operators.
  */
@@ -75,7 +77,7 @@ public class ArcticDynamicSink implements DynamicTableSink, SupportsPartitioning
   @Override
   public SinkRuntimeProvider getSinkRuntimeProvider(Context context) {
     ArcticTable table = ArcticUtils.loadArcticTable(tableLoader);
-    Properties producerConfig = KafkaOptions.getKafkaProperties(table.properties());
+    Properties producerConfig = getLogStoreProperties(table.properties());
 
     return (DataStreamSinkProvider) dataStream -> {
       DataStreamSink<?> ds = FlinkSink

@@ -502,8 +502,9 @@ public class BaseArcticCatalog implements ArcticCatalog {
             "log-store.address must not be null when log-store.enabled is true.");
         String logStoreType = properties.get(TableProperties.LOG_STORE_TYPE);
         Preconditions.checkArgument(logStoreType == null ||
-                logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_DEFAULT),
-            "log-store.type support only kafka.");
+                logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA) ||
+                logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR),
+            "log-store.type support only kafka, pulsar.");
         properties.putIfAbsent(TableProperties.LOG_STORE_DATA_FORMAT, TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT);
       }
     }
