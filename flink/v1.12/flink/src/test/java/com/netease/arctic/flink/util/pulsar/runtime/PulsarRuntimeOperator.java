@@ -72,8 +72,7 @@ import static org.apache.pulsar.client.api.SubscriptionType.Exclusive;
 import static org.apache.pulsar.common.partition.PartitionedTopicMetadata.NON_PARTITIONED;
 
 /**
- * A pulsar cluster operator used for operating pulsar instance. It's serializable for using in
- * {@link ExternalContext}.
+ * A pulsar cluster operator used for operating pulsar instance.
  */
 public class PulsarRuntimeOperator implements Closeable {
 
@@ -213,11 +212,11 @@ public class PulsarRuntimeOperator implements Closeable {
   }
 
   /**
-   * Delete a Pulsar topic.
+   * Delete a Pulsar topic by force.
    *
    * @param topic The topic name.
    */
-  public void deleteTopic(String topic) {
+  public void deleteTopicByForce(String topic) {
     String topicName = topicName(topic);
     PartitionedTopicMetadata metadata;
 
@@ -232,9 +231,9 @@ public class PulsarRuntimeOperator implements Closeable {
     }
 
     if (metadata.partitions == NON_PARTITIONED) {
-      sneakyAdmin(() -> admin().topics().delete(topicName));
+      sneakyAdmin(() -> admin().topics().delete(topicName, true));
     } else {
-      sneakyAdmin(() -> admin().topics().deletePartitionedTopic(topicName));
+      sneakyAdmin(() -> admin().topics().deletePartitionedTopic(topicName, true));
     }
   }
 
@@ -398,7 +397,8 @@ public class PulsarRuntimeOperator implements Closeable {
   public <T> List<Message<T>> receiveAllMessages(
       String topic, Schema<T> schema, Duration timeout) {
     List<Message<T>> messages = new ArrayList<>();
-
+    // delete sub to reset cursor to earliest
+    deleteSubscription(topic);
     Message<T> message = receiveMessage(topic, schema, timeout);
     while (message != null) {
       messages.add(message);
@@ -406,6 +406,14 @@ public class PulsarRuntimeOperator implements Closeable {
     }
 
     return messages;
+  }
+
+  public void deleteSubscription(String topic) {
+    List<String> subscriptions = sneakyAdmin(() -> admin().topics().getSubscriptions(topic));
+    if (subscriptions.contains(SUBSCRIPTION_NAME)) {
+      sneakyAdmin(
+          () -> admin().topics().deleteSubscription(topic, SUBSCRIPTION_NAME));
+    }
   }
 
   /**

@@ -79,6 +79,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
+import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.util.kafka.KafkaContainerTest.getPropertiesByTopic;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.readRecordsBytesInLog;
@@ -107,25 +108,25 @@ public class HiddenLogOperatorsTest {
   @Parameterized.Parameters(name = "logType = {0}")
   public static Collection<String> parameters() {
     return Arrays.asList(
-//        LOG_STORE_STORAGE_TYPE_KAFKA,
+        LOG_STORE_STORAGE_TYPE_KAFKA,
         LOG_STORE_STORAGE_TYPE_PULSAR);
   }
 
   @BeforeClass
   public static void prepare() throws Exception {
-//    KAFKA_CONTAINER.start();
+    KAFKA_CONTAINER.start();
     pulsarHelper = new LogPulsarHelper(environment);
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-//    KAFKA_CONTAINER.close();
+    KAFKA_CONTAINER.close();
   }
 
   @Test
   public void testProduceAndConsume() throws Exception {
     String topic = "testProduceAndConsume";
-    pulsarHelper.op().setupTopic(topic);
+    pulsarHelper.op().createTopic(topic, 1);
     final int count = 20;
 
     String[] expect = new String[count];
@@ -149,13 +150,13 @@ public class HiddenLogOperatorsTest {
       e.printStackTrace();
       throw e;
     }
-    pulsarHelper.op().deleteTopic(topic);
+    pulsarHelper.op().deleteTopicByForce(topic);
   }
 
   @Test
   public void testProducerFailoverWithoutRetract() throws Exception {
     String topic = "testProducerFailoverWithoutRetract";
-    pulsarHelper.op().setupTopic(topic);
+    pulsarHelper.op().createTopic(topic, 1);
     OperatorSubtaskState state;
     try {
       OneInputStreamOperatorTestHarness<RowData, RowData> harness = createProducer(null, topic);
@@ -197,7 +198,7 @@ public class HiddenLogOperatorsTest {
     }
 
     createConsumerWithoutRetract(true, 10, "test-gid", topic);
-    pulsarHelper.op().deleteTopic(topic);
+    pulsarHelper.op().deleteTopicByForce(topic);
   }
 
   @Test
@@ -335,7 +336,7 @@ public class HiddenLogOperatorsTest {
     if (logType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)) {
       createConsumerWithRetract(true, 27, "test-gid-2", topic);
     }
-    pulsarHelper.op().deleteTopic(topic);
+    pulsarHelper.op().deleteTopicByForce(topic);
   }
 
   public static RowData createRowData(int i) {
