@@ -33,12 +33,15 @@ import java.net.BindException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -190,6 +193,8 @@ public class MockArcticMetastoreServer implements Runnable {
     private final Map<TableIdentifier, List<TableCommitMeta>> tableCommitMetas = new HashMap<>();
     private final Map<TableIdentifier, Map<String, Long>> tableTxId = new HashMap<>();
     private final Map<TableIdentifier, Long> tableCurrentTxId = new HashMap<>();
+    private final Map<TableIdentifier, Map<String, Blocker>> tableBlockers = new HashMap<>();
+    private final AtomicLong blockerId = new AtomicLong(1L);
 
     public void cleanUp() {
       catalogs.clear();
@@ -331,24 +336,33 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
         throws OperationConflictException, TException {
-      // TODO
-      return null;
+      Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
+      Blocker blocker = new Blocker(this.blockerId.getAndIncrement() + "", operations, new HashMap<>());
+      blockers.put(blocker.getBlockerId(), blocker);
+      return blocker;
     }
 
     @Override
     public void releaseBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-      // TODO
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers != null) {
+        blockers.remove(blockerId);
+      }
     }
 
     @Override
     public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws TException {
-      // TODO
+      
     }
 
     @Override
     public List<Blocker> getBlockers(TableIdentifier tableIdentifier) throws TException {
-      // TODO
-      return null;
+      Map<String, Blocker> blockers = this.tableBlockers.get(tableIdentifier);
+      if (blockers == null) {
+        return Collections.emptyList();
+      } else {
+        return new ArrayList<>(blockers.values());
+      }
     }
 
     public void updateMeta(CatalogMeta meta, String key, String value) {
