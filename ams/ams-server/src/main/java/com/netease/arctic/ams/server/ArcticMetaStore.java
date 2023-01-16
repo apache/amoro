@@ -48,6 +48,7 @@ import com.netease.arctic.ams.server.service.impl.RuntimeDataExpireService;
 import com.netease.arctic.ams.server.utils.AmsUtils;
 import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
+import com.netease.arctic.ams.server.utils.UpdateTool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
 import com.netease.arctic.utils.ConfigurationFileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -327,6 +328,7 @@ public class ArcticMetaStore {
         AmsRestServer.startRestServer(httpPort);
         startSyncDDl();
         syncAndExpiredFileInfoCache();
+        new UpdateTool().executeAsync();
         if (conf.getBoolean(ArcticMetaStoreConf.HA_ENABLE)) {
           checkLeader();
         }
