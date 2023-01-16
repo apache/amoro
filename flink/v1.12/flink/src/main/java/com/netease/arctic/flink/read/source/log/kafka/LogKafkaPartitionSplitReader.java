@@ -64,8 +64,8 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
  * <p> 
  * The implementation of reading consistently lists below:
  * 1. read data normally {@link #readNormal()}
- *    - convert data to {@link LogRecordKafkaWithRetractInfo} in {@link #convertToLogRecord(ConsumerRecords)}. If it comes to
- *    Flip, the data would be cut.
+ *    - convert data to {@link LogRecordKafkaWithRetractInfo} in {@link #convertToLogRecord(ConsumerRecords)}.
+ *    If it comes to Flip, the data would be cut.
  *    - save retracting info {@link LogSourceHelper.EpicRetractingInfo} in
  *    {@link LogSourceHelper#startRetracting(TopicPartition, String, long, long)}.
  *    - record the epic start offsets 
