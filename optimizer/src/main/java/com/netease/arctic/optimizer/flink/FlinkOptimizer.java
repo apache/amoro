@@ -78,16 +78,16 @@ public class FlinkOptimizer implements StatefulOptimizer {
     }
     String cmd = flinkHome + "/bin/flink run -m yarn-cluster ";
 
-    //add flink executor config
+    // add flink executor config
     int tmMemory = groupProperties.getInteger("taskmanager.memory");
     cmd += " -ytm " + tmMemory;
     int jmMemory = groupProperties.getInteger("jobmanager.memory");
     cmd += " -yjm " + jmMemory;
 
     // spill map config
-    Boolean enableSpillMap = groupProperties.getBoolean("enable_spill_map");
-    String backendBaseDir = groupProperties.getString("backend_base_dir");
-    Long maxDeleteMemorySize = groupProperties.getLong("max_delete_memory_size_in_byte");
+    Boolean enableSpillMap = groupProperties.getBoolean("spillable.map.enabled");
+    String backendBaseDir = groupProperties.getString("spillable.map.dir");
+    Long maxDeleteMemorySize = groupProperties.getLong("spillable.memory.limit");
     String spillMapCmd = "";
     if (enableSpillMap != null) {
       spillMapCmd = spillMapCmd + " -es " + enableSpillMap;
@@ -99,7 +99,7 @@ public class FlinkOptimizer implements StatefulOptimizer {
       spillMapCmd = spillMapCmd + " -mm " + maxDeleteMemorySize;
     }
 
-    //add compact execute config
+    // add compact execute config
     String arcticHome = systemInfo.getString(OptimizerProperties.ARCTIC_HOME);
     String jarPath = " " + arcticHome + "/plugin/optimize/OptimizeJob.jar ";
     String entryClass = this.getClass().getName();
@@ -140,7 +140,7 @@ public class FlinkOptimizer implements StatefulOptimizer {
     String finalCmd = envCmd + cmd;
     new Thread(() -> {
       try {
-        //start compact job
+        // start compact job
         LOG.info("starting compact job use command:" + finalCmd);
         String[] commends = {"/bin/sh", "-c", finalCmd};
         Runtime runtime = Runtime.getRuntime();
