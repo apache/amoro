@@ -62,11 +62,7 @@ public class TestRocksDBBackend {
   public void testIterator() {
     RocksDBBackend rocksDBBackend = RocksDBBackend.getOrCreateInstance();
     rocksDBBackend.addColumnFamily(CF_NAME);
-    List<String> expect = Arrays.asList(new String[] {
-            "mj",
-            "zjs",
-            "zyx"
-    });
+    List<String> expect = Arrays.asList("mj", "zjs", "zyx");
     rocksDBBackend.put(CF_NAME, "name", expect.get(0));
     rocksDBBackend.put(CF_NAME, 2, expect.get(1));
     rocksDBBackend.put(CF_NAME, 4556, expect.get(2));

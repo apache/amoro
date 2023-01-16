@@ -1,9 +1,7 @@
 package com.netease.arctic.utils.map;
 
-import com.google.common.collect.Maps;
 import com.netease.arctic.data.ChangedLsn;
 import com.netease.arctic.iceberg.optimize.StructProjection;
-import java.io.IOException;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
@@ -11,9 +9,9 @@ import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
-import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 

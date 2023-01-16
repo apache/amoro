@@ -23,9 +23,9 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DataFiles;
+import org.apache.iceberg.Metrics;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.StructLike;
 import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.types.Types;
@@ -47,7 +47,8 @@ public class TableTestHelpers {
   public static final Schema TABLE_SCHEMA = new Schema(
       Types.NestedField.required(1, "id", Types.IntegerType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get()),
-      Types.NestedField.required(3, "op_time", Types.TimestampType.withoutZone())
+      Types.NestedField.required(3, "ts", Types.LongType.get()),
+      Types.NestedField.required(4, "op_time", Types.TimestampType.withoutZone())
   );
 
   public static final PartitionSpec SPEC = PartitionSpec.builderFor(TABLE_SCHEMA)
@@ -63,36 +64,42 @@ public class TableTestHelpers {
 
   private static final Map<String, DataFile> DATA_FILE_MAP = Maps.newHashMap();
 
-  public static DataFile getFile(String basePath, int number, String partitionPath) {
+  public static DataFile getFile(String basePath, int number, PartitionSpec spec, String partitionPath,
+      Metrics metrics, boolean fromCache) {
     String filePath;
     if (partitionPath != null) {
       filePath = String.format("%s/%s/data-%d.parquet", basePath, partitionPath, number);
     } else {
       filePath = String.format("%s/data-%d.parquet", basePath, number);
     }
-    return DATA_FILE_MAP.computeIfAbsent(filePath, path -> {
-      if (partitionPath != null) {
-        return DataFiles.builder(SPEC)
-            .withPath(path)
-            .withFileSizeInBytes(10)
-            .withRecordCount(2)
-            .withPartitionPath(partitionPath)
-            .build();
-      } else {
-        return DataFiles.builder(PartitionSpec.unpartitioned())
-            .withPath(path)
-            .withFileSizeInBytes(10)
-            .withRecordCount(2)
-            .build();
-      }
-    });
+    if (fromCache) {
+      return DATA_FILE_MAP.computeIfAbsent(filePath, path -> buildDataFile(filePath, spec, partitionPath, metrics));
+    } else {
+      return buildDataFile(filePath, spec, partitionPath, metrics);
+    }
+  }
+
+  private static DataFile buildDataFile(String filePath,PartitionSpec spec, String partitionPath,
+      Metrics metrics) {
+    DataFiles.Builder fileBuilder = DataFiles.builder(spec);
+    fileBuilder
+        .withPath(filePath)
+        .withFileSizeInBytes(10)
+        .withRecordCount(2);
+    if (partitionPath != null) {
+      fileBuilder.withPartitionPath(partitionPath);
+    }
+    if (metrics != null) {
+      fileBuilder.withMetrics(metrics);
+    }
+    return fileBuilder.build();
   }
 
   public static DataFile getFile(int number) {
-    return getFile("/data", number, null);
+    return getFile("/data", number, PartitionSpec.unpartitioned(), null, null, true);
   }
 
   public static DataFile getFile(int number, String partitionPath) {
-    return getFile("/data", number, partitionPath);
+    return getFile("/data", number, SPEC, partitionPath, null, true);
   }
 }

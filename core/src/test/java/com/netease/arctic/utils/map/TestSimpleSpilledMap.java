@@ -1,6 +1,5 @@
 package com.netease.arctic.utils.map;
 
-import com.netease.arctic.ArcticIOException;
 import com.netease.arctic.utils.SerializationUtils;
 import org.junit.After;
 import org.junit.Assert;

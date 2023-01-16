@@ -51,6 +51,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated since 0.4.1, will be removed in 0.5.0; use {@link com.netease.arctic.catalog.TableTestBase} instead.
+ */
+@Deprecated
 public class IcebergTableBase {
 
   protected Table unPartitionTable;

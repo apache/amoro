@@ -56,15 +56,15 @@ import java.util.Map;
 @RunWith(Parameterized.class)
 public class TableTracerTest extends TableTestBase {
 
+  private final boolean onBaseTable;
+
+  private UnkeyedTable operationTable;
+
   @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
   public static Object[][] parameters() {
     return new Object[][]{{true, true, true}, {true, true, false}, {true, false, true}, {true, false, false},
                           {false, true, true}, {false, true, false}};
   }
-
-  private final boolean onBaseTable;
-
-  private UnkeyedTable operationTable;
 
   public TableTracerTest(
       boolean keyedTable,
