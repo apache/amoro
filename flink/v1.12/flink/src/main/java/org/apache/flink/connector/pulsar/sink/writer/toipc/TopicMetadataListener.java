@@ -115,8 +115,7 @@ public class TopicMetadataListener implements Serializable, Closeable {
    * performance.
    */
   public List<String> availableTopics() {
-    if (availableTopics.isEmpty()
-        && (!partitionedTopics.isEmpty() || !topicMetadata.isEmpty())) {
+    if (availableTopics.isEmpty() && (!partitionedTopics.isEmpty() || !topicMetadata.isEmpty())) {
       List<String> results = new ArrayList<>();
       for (Map.Entry<String, Integer> entry : topicMetadata.entrySet()) {
         int partitionNums = entry.getValue();
