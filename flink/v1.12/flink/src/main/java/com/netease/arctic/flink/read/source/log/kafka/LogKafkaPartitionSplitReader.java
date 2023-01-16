@@ -64,7 +64,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
  * <p> 
  * The implementation of reading consistently lists below:
  * 1. read data normally {@link #readNormal()}
- *    - convert data to {@link LogRecordWithRetractInfo} in {@link #convertToLogRecord(ConsumerRecords)}. If it comes to
+ *    - convert data to {@link LogRecordKafkaWithRetractInfo} in {@link #convertToLogRecord(ConsumerRecords)}. If it comes to
  *    Flip, the data would be cut.
  *    - save retracting info {@link LogSourceHelper.EpicRetractingInfo} in
  *    {@link LogSourceHelper#startRetracting(TopicPartition, String, long, long)}.
@@ -82,7 +82,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
  *    {@link LogSourceHelper.EpicRetractingInfo#getRetractStoppingOffset()}, else repeat {@link #readReversely} in next
  *    {@link #fetch()}
  * 3. write offset and retract info into splitState in
- * {@link LogKafkaPartitionSplitState#updateState(LogRecordWithRetractInfo)}
+ * {@link LogKafkaPartitionSplitState#updateState(LogRecordKafkaWithRetractInfo)}
  * 4. initialize state from state {@link LogSourceHelper#initializedState}
  */
 public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowData> {
@@ -222,7 +222,7 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowD
         if (logRetractionEnable) {
           logReadHelper.initialEpicStartOffsetIfEmpty(tp, logData.getUpstreamId(), logData.getEpicNo(), currentOffset);
         }
-        recordsForSplit.add(LogRecordWithRetractInfo.of(consumerRecord, logData));
+        recordsForSplit.add(LogRecordKafkaWithRetractInfo.of(consumerRecord, logData));
       }
     }
     return new ConsumerRecords<>(records);
@@ -281,7 +281,7 @@ public class LogKafkaPartitionSplitReader extends KafkaPartitionSplitReader<RowD
               logData.getUpstreamId(), logData.getEpicNo());
         } else {
           RowData actualValue = logReadHelper.turnRowKind(logData.getActualValue());
-          recordsForSplit.add(LogRecordWithRetractInfo.ofRetract(
+          recordsForSplit.add(LogRecordKafkaWithRetractInfo.ofRetract(
               r, retractingInfo.getRetractStoppingOffset(), retractingInfo.getRevertStartingOffset(),
               retractingInfo.getEpicNo(), logData, actualValue
           ));

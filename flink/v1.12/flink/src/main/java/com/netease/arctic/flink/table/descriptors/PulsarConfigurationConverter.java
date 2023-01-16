@@ -33,7 +33,7 @@ import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULS
  */
 public class PulsarConfigurationConverter {
 
-  private final static Logger LOG = LoggerFactory.getLogger(PulsarConfigurationConverter.class);
+  private static final Logger LOG = LoggerFactory.getLogger(PulsarConfigurationConverter.class);
 
   /**
    * @param arcticProperties The key has been trimmed of Arctic prefix

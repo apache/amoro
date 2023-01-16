@@ -97,8 +97,8 @@ public final class PulsarSinkOptions {
           .withDescription(
               Description.builder()
                   .text(
-                      "If you enable this option and use PulsarSerializationSchema.pulsarSchema(),"
-                          + " we would consume and deserialize the message by using Pulsar's %s.",
+                      "If you enable this option and use PulsarSerializationSchema.pulsarSchema()," +
+                          " we would consume and deserialize the message by using Pulsar's %s.",
                       code("Schema"))
                   .build());
 
@@ -107,8 +107,8 @@ public final class PulsarSinkOptions {
           .intType()
           .defaultValue(5)
           .withDescription(
-              "The allowed transaction recommit times if we meet some retryable exception."
-                  + " This is used in Pulsar Transaction.");
+              "The allowed transaction recommit times if we meet some retryable exception." +
+                  " This is used in Pulsar Transaction.");
 
   public static final ConfigOption<Integer> PULSAR_MAX_PENDING_MESSAGES_ON_PARALLELISM =
       ConfigOptions.key(SINK_CONFIG_PREFIX + "maxPendingMessages")
@@ -132,8 +132,8 @@ public final class PulsarSinkOptions {
           .stringType()
           .noDefaultValue()
           .withDescription(
-              "A producer name which would be displayed in the Pulsar's dashboard."
-                  + " If no producer name was provided, we would use a Pulsar generated name instead.");
+              "A producer name which would be displayed in the Pulsar's dashboard." +
+                  " If no producer name was provided, we would use a Pulsar generated name instead.");
 
   public static final ConfigOption<Long> PULSAR_SEND_TIMEOUT_MS =
       ConfigOptions.key(PRODUCER_CONFIG_PREFIX + "sendTimeoutMs")
@@ -166,7 +166,8 @@ public final class PulsarSinkOptions {
                           "https://pulsar.apache.org/docs/en/reference-terminology#broker"))
                   .linebreak()
                   .text(
-                      "By default, when the queue is full, all calls to the %s and %s methods fail unless you set %s to true.",
+                      "By default, when the queue is full, all calls to the %s and" +
+                          " %s methods fail unless you set %s to true.",
                       code("Send"),
                       code("SendAsync"),
                       code("BlockIfQueueFull"))
@@ -189,7 +190,8 @@ public final class PulsarSinkOptions {
                       "The maximum number of pending messages across partitions.")
                   .linebreak()
                   .text(
-                      "Use the setting to lower the max pending messages for each partition (%s) if the total number exceeds the configured value.",
+                      "Use the setting to lower the max pending messages for each partition (%s)" +
+                          " if the total number exceeds the configured value.",
                       code("setMaxPendingMessages"))
                   .text(
                       "Since Pulsar 2.10.0, you shouldn't set this option, use %s instead.",
@@ -205,8 +207,7 @@ public final class PulsarSinkOptions {
   public static final ConfigOption<Integer>
       PULSAR_BATCHING_PARTITION_SWITCH_FREQUENCY_BY_PUBLISH_DELAY =
       ConfigOptions.key(
-              PRODUCER_CONFIG_PREFIX
-                  + "batchingPartitionSwitchFrequencyByPublishDelay")
+              PRODUCER_CONFIG_PREFIX + "batchingPartitionSwitchFrequencyByPublishDelay")
           .intType()
           .defaultValue(10)
           .withDescription(
@@ -270,6 +271,7 @@ public final class PulsarSinkOptions {
                       " %s is application defined metadata attached to a consumer.",
                       code("properties"))
                   .text(
-                      " When getting a topic stats, associate this metadata with the consumer stats for easier identification.")
+                      " When getting a topic stats, associate this metadata with the consumer stats for" +
+                          " easier identification.")
                   .build());
 }

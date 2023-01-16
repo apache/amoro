@@ -123,12 +123,12 @@ public class SinkConfiguration extends PulsarConfiguration {
       return false;
     }
     SinkConfiguration that = (SinkConfiguration) o;
-    return transactionTimeoutMillis == that.transactionTimeoutMillis
-        && topicMetadataRefreshInterval == that.topicMetadataRefreshInterval
-        && partitionSwitchSize == that.partitionSwitchSize
-        && enableSchemaEvolution == that.enableSchemaEvolution
-        && maxPendingMessages == that.maxPendingMessages
-        && maxRecommitTimes == that.maxRecommitTimes;
+    return transactionTimeoutMillis == that.transactionTimeoutMillis &&
+        topicMetadataRefreshInterval == that.topicMetadataRefreshInterval &&
+        partitionSwitchSize == that.partitionSwitchSize &&
+        enableSchemaEvolution == that.enableSchemaEvolution &&
+        maxPendingMessages == that.maxPendingMessages &&
+        maxRecommitTimes == that.maxRecommitTimes;
   }
 
   @Override

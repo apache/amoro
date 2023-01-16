@@ -54,23 +54,12 @@ import static org.apache.flink.util.Preconditions.checkState;
  * The builder class for {@link LogPulsarSource} to make it easier for the users to construct a {@link
  * LogPulsarSource}.
  *
- * <p>The following example shows the minimum setup to create a PulsarSource that reads the String
+ * <p>The following example shows the minimum setup to create a LogPulsarSource that reads the String
  * values from a Pulsar topic.
- *
- * <pre>{@code
- * PulsarSource<String> source = PulsarSource
- *     .builder()
- *     .setServiceUrl(PULSAR_BROKER_URL)
- *     .setAdminUrl(PULSAR_BROKER_HTTP_URL)
- *     .setSubscriptionName("flink-source-1")
- *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
- *     .setDeserializationSchema(PulsarDeserializationSchema.flinkSchema(new SimpleStringSchema()))
- *     .build();
- * }</pre>
  *
  * <p>The service url, admin url, subscription name, topics to consume are required fields that must be set.
  *
- * <p>To specify the starting position of PulsarSource, one can call {@link
+ * <p>To specify the starting position of LogPulsarSource, one can call {@link
  * #setStartCursor(StartCursor)}.
  *
  * <p>By default, the LogPulsarSource runs in an {@link Boundedness#CONTINUOUS_UNBOUNDED} mode and

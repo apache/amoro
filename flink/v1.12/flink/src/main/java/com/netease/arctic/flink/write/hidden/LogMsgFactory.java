@@ -43,7 +43,12 @@ public interface LogMsgFactory<T> extends Serializable {
   Consumer<T> createConsumer();
 
   interface Producer<T> {
-    void open(StreamingRuntimeContext context) throws Exception;
+    default void open(StreamingRuntimeContext context) throws Exception {
+      open();
+    }
+
+    default void open() throws Exception {
+    }
 
     void send(LogData<T> logData) throws Exception;
 

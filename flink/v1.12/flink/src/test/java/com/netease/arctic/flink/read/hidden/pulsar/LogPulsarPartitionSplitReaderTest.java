@@ -19,7 +19,7 @@
 package com.netease.arctic.flink.read.hidden.pulsar;
 
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
-import com.netease.arctic.flink.read.source.log.pulsar.LogMsgWithRetractInfo;
+import com.netease.arctic.flink.read.source.log.pulsar.LogRecordPulsarWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarOrderedPartitionSplitReader;
 import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
@@ -105,7 +105,7 @@ public class LogPulsarPartitionSplitReaderTest {
           PulsarMessage<RowData> record;
           while ((record = recordsBySplitIds.nextRecordFromSplit()) != null) {
             LOG.info("read msg: {}, msgId: {}, idx: {}",
-                ((LogMsgWithRetractInfo) record).getValueToBeSent(), record.getId(), messages.size());
+                ((LogRecordPulsarWithRetractInfo) record).getValueToBeSent(), record.getId(), messages.size());
             messages.add(record);
           }
           finishedSplits.addAll(recordsBySplitIds.finishedSplits());
@@ -125,14 +125,14 @@ public class LogPulsarPartitionSplitReaderTest {
         assertThat(finishedSplits).as("Split should be marked as finished").hasSize(1);
       }
       for (int i = 0; i < messages.size(); i++) {
-        verifyMsg(((LogMsgWithRetractInfo<RowData>) messages.get(i)), i);
+        verifyMsg(((LogRecordPulsarWithRetractInfo<RowData>) messages.get(i)), i);
       }
     }
 
     return messages;
   }
 
-  private void verifyMsg(LogMsgWithRetractInfo<RowData> msg, int index) {
+  private void verifyMsg(LogRecordPulsarWithRetractInfo<RowData> msg, int index) {
     if (msg.isRetracting()) {
 
     } else {

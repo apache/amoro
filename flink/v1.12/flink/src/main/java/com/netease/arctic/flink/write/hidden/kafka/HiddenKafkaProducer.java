@@ -22,7 +22,6 @@ import com.netease.arctic.flink.write.hidden.ArcticLogPartitioner;
 import com.netease.arctic.flink.write.hidden.LogMsgFactory;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonSerialization;
-import org.apache.flink.streaming.api.operators.StreamingRuntimeContext;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaErrorCode;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaException;
 import org.apache.flink.streaming.connectors.kafka.internals.FlinkKafkaInternalProducer;
@@ -37,13 +36,11 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 
@@ -90,7 +87,7 @@ public class HiddenKafkaProducer<T> implements LogMsgFactory.Producer<T> {
   }
 
   @Override
-  public void open(StreamingRuntimeContext context) throws Exception {
+  public void open() throws Exception {
     callback = (metadata, exception) -> {
       if (exception != null && asyncException == null) {
         asyncException = exception;

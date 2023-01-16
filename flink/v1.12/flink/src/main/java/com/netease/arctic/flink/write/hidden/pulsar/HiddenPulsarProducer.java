@@ -88,6 +88,11 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
   }
 
   @Override
+  public void open() throws Exception {
+    this.open(null);
+  }
+
+  @Override
   public void send(LogData<T> logData) throws Exception {
     byte[] message = logDataJsonSerialization.serialize(logData);
 

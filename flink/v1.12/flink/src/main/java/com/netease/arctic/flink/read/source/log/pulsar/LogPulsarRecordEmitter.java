@@ -35,7 +35,7 @@ public class LogPulsarRecordEmitter<T> extends PulsarRecordEmitter<T> {
       PulsarMessage<T> element, SourceOutput<T> output, PulsarPartitionSplitState splitState)
       throws Exception {
     // Sink the record to source output.
-    output.collect(((LogMsgWithRetractInfo<T>) element).getValueToBeSent(), element.getEventTime());
+    output.collect(((LogRecordPulsarWithRetractInfo<T>) element).getValueToBeSent(), element.getEventTime());
     // Update the split state.
     splitState.setLatestConsumedId(element.getId());
   }

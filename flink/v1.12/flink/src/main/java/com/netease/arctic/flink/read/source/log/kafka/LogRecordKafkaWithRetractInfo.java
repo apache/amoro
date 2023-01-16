@@ -21,7 +21,7 @@ package com.netease.arctic.flink.read.source.log.kafka;
 import com.netease.arctic.log.LogData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
-public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> {
+public class LogRecordKafkaWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> {
 
   /**
    * Denote reader is in retracting read mode.
@@ -43,13 +43,13 @@ public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> 
   private final LogData<T> logData;
   private final T actualValue;
 
-  public LogRecordWithRetractInfo(ConsumerRecord<byte[], byte[]> consumerRecord,
-                                  boolean retracting,
-                                  Long retractStoppingOffset,
-                                  Long revertStartingOffset,
-                                  Long retractingEpicNo,
-                                  LogData<T> logData,
-                                  T actualValue) {
+  public LogRecordKafkaWithRetractInfo(ConsumerRecord<byte[], byte[]> consumerRecord,
+                                       boolean retracting,
+                                       Long retractStoppingOffset,
+                                       Long revertStartingOffset,
+                                       Long retractingEpicNo,
+                                       LogData<T> logData,
+                                       T actualValue) {
     super(consumerRecord.topic(),
         consumerRecord.partition(),
         consumerRecord.offset(),
@@ -70,19 +70,19 @@ public class LogRecordWithRetractInfo<T> extends ConsumerRecord<byte[], byte[]> 
     this.actualValue = actualValue;
   }
 
-  public static <T> LogRecordWithRetractInfo<T> ofRetract(ConsumerRecord<byte[], byte[]> consumerRecord,
-                                                          Long retractStoppingOffset,
-                                                          Long revertStartingOffset,
-                                                          Long retractingEpicNo,
-                                                          LogData<T> logData,
-                                                          T actualValue) {
-    return new LogRecordWithRetractInfo<>(consumerRecord, true, retractStoppingOffset,
+  public static <T> LogRecordKafkaWithRetractInfo<T> ofRetract(ConsumerRecord<byte[], byte[]> consumerRecord,
+                                                               Long retractStoppingOffset,
+                                                               Long revertStartingOffset,
+                                                               Long retractingEpicNo,
+                                                               LogData<T> logData,
+                                                               T actualValue) {
+    return new LogRecordKafkaWithRetractInfo<>(consumerRecord, true, retractStoppingOffset,
         revertStartingOffset, retractingEpicNo, logData, actualValue);
   }
 
-  public static <T> LogRecordWithRetractInfo<T> of(ConsumerRecord<byte[], byte[]> consumerRecord,
-                                                   LogData<T> logData) {
-    return new LogRecordWithRetractInfo<>(consumerRecord, false, null,
+  public static <T> LogRecordKafkaWithRetractInfo<T> of(ConsumerRecord<byte[], byte[]> consumerRecord,
+                                                        LogData<T> logData) {
+    return new LogRecordKafkaWithRetractInfo<>(consumerRecord, false, null,
         null, null, logData, logData.getActualValue());
   }
 

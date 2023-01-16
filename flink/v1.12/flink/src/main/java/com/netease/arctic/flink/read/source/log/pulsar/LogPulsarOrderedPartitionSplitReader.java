@@ -132,7 +132,7 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
               continue;
             }
           }
-          builder.add(splitId, LogMsgWithRetractInfo.of(message.getMessageId(), message.getEventTime(), logData));
+          builder.add(splitId, LogRecordPulsarWithRetractInfo.of(message.getMessageId(), message.getEventTime(), logData));
 
           // Acknowledge message if need.
           finishedPollMessage(message);

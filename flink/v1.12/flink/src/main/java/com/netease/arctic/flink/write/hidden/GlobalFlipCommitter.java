@@ -154,7 +154,7 @@ public class GlobalFlipCommitter {
                 topic,
                 logDataJsonSerialization,
                 helper);
-        producer.open(null);
+        producer.open();
       }
 
       producer.sendToAllPartitions(value.logRecord);

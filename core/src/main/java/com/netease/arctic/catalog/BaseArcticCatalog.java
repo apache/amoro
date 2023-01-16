@@ -504,7 +504,7 @@ public class BaseArcticCatalog implements ArcticCatalog {
         Preconditions.checkArgument(logStoreType == null ||
                 logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA) ||
                 logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR),
-            "log-store.type support only kafka, pulsar.");
+            "log-store.type support Kafka and Pulsar.");
         properties.putIfAbsent(TableProperties.LOG_STORE_DATA_FORMAT, TableProperties.LOG_STORE_DATA_FORMAT_DEFAULT);
       }
     }

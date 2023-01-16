@@ -23,7 +23,7 @@ import com.netease.arctic.log.LogData;
 import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
 import org.apache.pulsar.client.api.MessageId;
 
-public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
+public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
 
   /**
    * Denote reader is in retracting read mode.
@@ -48,13 +48,13 @@ public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
   private final LogData<T> logData;
   private final T valueToBeSent;
 
-  public LogMsgWithRetractInfo(MessageId id, long eventTime,
-                               boolean retracting,
-                               Long retractStoppingOffset,
-                               Long revertStartingOffset,
-                               Long retractingEpicNo,
-                               LogData<T> logData,
-                               T valueToBeSent) {
+  public LogRecordPulsarWithRetractInfo(MessageId id, long eventTime,
+                                        boolean retracting,
+                                        Long retractStoppingOffset,
+                                        Long revertStartingOffset,
+                                        Long retractingEpicNo,
+                                        LogData<T> logData,
+                                        T valueToBeSent) {
     super(id, null, eventTime);
     this.retracting = retracting;
     this.retractStoppingOffset = retractStoppingOffset;
@@ -64,19 +64,19 @@ public class LogMsgWithRetractInfo<T> extends PulsarMessage<T> {
     this.valueToBeSent = valueToBeSent;
   }
 
-  public static <T> LogMsgWithRetractInfo<T> ofRetract(MessageId id, long eventTime,
-                                                       Long retractStoppingOffset,
-                                                       Long revertStartingOffset,
-                                                       Long retractingEpicNo,
-                                                       LogData<T> logData,
-                                                       T valueToBeSent) {
-    return new LogMsgWithRetractInfo<>(id, eventTime, true, retractStoppingOffset,
+  public static <T> LogRecordPulsarWithRetractInfo<T> ofRetract(MessageId id, long eventTime,
+                                                                Long retractStoppingOffset,
+                                                                Long revertStartingOffset,
+                                                                Long retractingEpicNo,
+                                                                LogData<T> logData,
+                                                                T valueToBeSent) {
+    return new LogRecordPulsarWithRetractInfo<>(id, eventTime, true, retractStoppingOffset,
         revertStartingOffset, retractingEpicNo, logData, valueToBeSent);
   }
 
-  public static <T> LogMsgWithRetractInfo<T> of(MessageId id, long eventTime,
-                                                LogData<T> logData) {
-    return new LogMsgWithRetractInfo<>(id, eventTime, false, null,
+  public static <T> LogRecordPulsarWithRetractInfo<T> of(MessageId id, long eventTime,
+                                                         LogData<T> logData) {
+    return new LogRecordPulsarWithRetractInfo<>(id, eventTime, false, null,
         null, null, logData, logData.getActualValue());
   }
 
