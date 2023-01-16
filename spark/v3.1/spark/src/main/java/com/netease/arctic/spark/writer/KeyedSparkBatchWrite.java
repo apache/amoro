@@ -24,6 +24,8 @@ import com.netease.arctic.op.RewritePartitions;
 import com.netease.arctic.spark.io.TaskWriters;
 import com.netease.arctic.spark.table.SupportsUpsert;
 import com.netease.arctic.table.KeyedTable;
+import com.netease.arctic.table.blocker.Blocker;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
@@ -42,7 +44,9 @@ import org.apache.spark.sql.types.StructType;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static com.netease.arctic.hive.op.UpdateHiveFiles.DELETE_UNTRACKED_HIVE_FILE;
 import static com.netease.arctic.spark.writer.WriteTaskCommit.files;
@@ -62,13 +66,17 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final long legacyTxId;
   private final long txId;
   private final String hiveSubdirectory;
+  private final TableBlockerManager tableBlockerManager;
+  private final Blocker block;
 
-  KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
+  KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema, TableBlockerManager tableBlockerManager, Blocker block) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.legacyTxId = table.beginTransaction(null);
     this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
     this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.legacyTxId);
+    this.tableBlockerManager = tableBlockerManager;
+    this.block = block;
   }
 
   @Override
@@ -112,6 +120,15 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .run(file -> {
             table.io().deleteFile(file.path().toString());
           });
+      tableBlockerManager.release(block);
+    }
+
+    public void checkBlocker(TableBlockerManager tableBlockerManager) {
+      List<String> blockerIds = tableBlockerManager.getBlockers()
+          .stream().map(Blocker::blockerId).collect(Collectors.toList());
+      if (!blockerIds.contains(block.blockerId())) {
+        throw new IllegalStateException("block is not in blockerManager");
+      }
     }
   }
 
@@ -128,11 +145,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       AppendFiles append = table.changeTable().newAppend();
       for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
       append.commit();
+      tableBlockerManager.release(block);
     }
   }
 
@@ -149,6 +168,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       RewritePartitions rewritePartitions = table.newRewritePartitions();
       rewritePartitions.withTransactionId(txId);
 
@@ -156,6 +176,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
         rewritePartitions.addDataFile(file);
       }
       rewritePartitions.commit();
+      tableBlockerManager.release(block);
     }
   }
 
@@ -174,6 +195,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       OverwriteBaseFiles overwriteBaseFiles = table.newOverwriteBaseFiles();
       overwriteBaseFiles.overwriteByRowFilter(overwriteExpr);
       overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
@@ -183,6 +205,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
         overwriteBaseFiles.addFile(file);
       }
       overwriteBaseFiles.commit();
+      tableBlockerManager.release(block);
     }
   }
 
@@ -198,11 +221,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       AppendFiles append = table.changeTable().newAppend();
       for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
       append.commit();
+      tableBlockerManager.release(block);
     }
   }
 

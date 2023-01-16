@@ -298,7 +298,7 @@ public class TestKeyedTableDml extends SparkTestBase {
 
   @Test
   public void testDuplicateEnabled() {
-    sql("set `spark.sql.check-data-duplicates.enabled` = `false`");
+    sql("set `spark.sql.arctic.check-source-data-uniqueness.enabled` = `false`");
     sql("create table {0}.{1}( \n" +
         " id int, \n" +
         " name string, \n" +
@@ -326,6 +326,6 @@ public class TestKeyedTableDml extends SparkTestBase {
 
     sql("drop table " + database + "." + "testPks");
     sql("drop table " + database + "." + "testTable");
-    sql("set `spark.sql.check-data-duplicates.enabled` = `true`");
+    sql("set `spark.sql.arctic.check-source-data-uniqueness.enabled` = `true`");
   }
 }

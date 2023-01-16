@@ -60,7 +60,8 @@ import org.junit.runners.Suite;
     TestUnKeyedTableDML.class,
     TestKeyedTableDataFrameAPI.class,
     TestUnKeyedTableDataFrameAPI.class,
-    TestCreateKeyedTableAsSelect.class})
+    TestCreateKeyedTableAsSelect.class,
+    com.netease.arctic.spark.hive.TestKeyedTableDml.class})
 public class ArcticSparkCatalogTestGroup {
 
   @BeforeClass
