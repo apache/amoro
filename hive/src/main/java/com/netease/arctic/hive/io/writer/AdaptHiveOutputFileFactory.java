@@ -69,6 +69,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final int partitionId;
   private final long taskId;
   private final long transactionId;
+  private final String operationId;
 
   private final AtomicLong fileCount = new AtomicLong(0);
 
@@ -101,7 +102,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.encryptionManager = encryptionManager;
     this.partitionId = partitionId;
     this.taskId = taskId;
-    this.transactionId = transactionId == null ? IdGenerator.randomId() : transactionId;
+    this.transactionId = transactionId == null ? 0 : transactionId;
+    this.operationId = transactionId == null ? IdGenerator.randomId() + "" : "0";
     if (hiveSubDirectory == null) {
       this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
     } else {
@@ -111,8 +113,8 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
   private String generateFilename(TaskWriterKey key) {
     return format.addExtension(
-        String.format("%d-%s-%d-%05d-%d-%010d", key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, fileCount.incrementAndGet()));
+        String.format("%d-%s-%d-%05d-%d-%s-%05d", key.getTreeNode().getId(), key.getFileType().shortName(),
+            transactionId, partitionId, taskId, operationId, fileCount.incrementAndGet()));
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {
