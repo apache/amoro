@@ -33,7 +33,7 @@ public class TableProperties {
 
   private TableProperties() {
   }
-  
+
   public static final String TABLE_PARTITION_PROPERTIES = "table.partition-properties";
 
   public static final String BASE_TABLE_MAX_TRANSACTION_ID = "base.table.max-transaction-id";
