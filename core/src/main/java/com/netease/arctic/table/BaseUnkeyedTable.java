@@ -281,7 +281,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client, true));
+      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client, false));
     } else {
       return transaction;
     }

@@ -72,7 +72,7 @@ public class AmsTableTracer implements TableTracer {
    * @param table table object
    * @param action Table change operation name
    * @param client AMS client
-   * @param commitNewSnapshot Whether to commit a new snapshot
+   * @param commitNewSnapshot Whether to submit a new snapshot(but not a transaction)
    */
   public AmsTableTracer(UnkeyedTable table, String action, AmsClient client, boolean commitNewSnapshot) {
     this.innerTable = table instanceof ChangeTable ?
