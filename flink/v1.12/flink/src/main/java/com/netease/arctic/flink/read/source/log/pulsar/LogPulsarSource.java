@@ -49,12 +49,11 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_
  *
  * <pre>{@code
  * LogPulsarSource<String> source = LogPulsarSource
- *     .builder(schema, tableProperties)
- *     .setTopics(TOPIC1， TOPIC2)
+ *     .builder(schema, arcticTable.properties())
+ *     .setTopics(TOPIC1)
  *     .setServiceUrl(getServiceUrl())
  *     .setAdminUrl(getAdminUrl())
  *     .setSubscriptionName("test")
- *     .setBounded(StopCursor::defaultStopCursor)
  *     .build();
  * }</pre>
  *

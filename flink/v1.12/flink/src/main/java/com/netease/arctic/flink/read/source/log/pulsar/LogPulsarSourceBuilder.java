@@ -18,7 +18,6 @@
 
 package com.netease.arctic.flink.read.source.log.pulsar;
 
-import com.netease.arctic.flink.table.descriptors.PulsarConfigurationConverter;
 import com.netease.arctic.table.TableProperties;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.api.connector.source.Boundedness;
@@ -52,8 +51,8 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 import static org.apache.flink.util.Preconditions.checkState;
 
 /**
- * The builder class for {@link PulsarSource} to make it easier for the users to construct a {@link
- * PulsarSource}.
+ * The builder class for {@link LogPulsarSource} to make it easier for the users to construct a {@link
+ * LogPulsarSource}.
  *
  * <p>The following example shows the minimum setup to create a PulsarSource that reads the String
  * values from a Pulsar topic.
@@ -69,33 +68,21 @@ import static org.apache.flink.util.Preconditions.checkState;
  *     .build();
  * }</pre>
  *
- * <p>The service url, admin url, subscription name, topics to consume, and the record deserializer
- * are required fields that must be set.
+ * <p>The service url, admin url, subscription name, topics to consume are required fields that must be set.
  *
  * <p>To specify the starting position of PulsarSource, one can call {@link
  * #setStartCursor(StartCursor)}.
  *
- * <p>By default, the PulsarSource runs in an {@link Boundedness#CONTINUOUS_UNBOUNDED} mode and
- * never stop until the Flink job is canceled or fails. To let the PulsarSource run in {@link
- * Boundedness#CONTINUOUS_UNBOUNDED} but stops at some given offsets, one can call {@link
- * #setUnboundedStopCursor(StopCursor)} and disable auto partition discovery as described below. For
- * example the following PulsarSource stops after it consumes up to a event time when the Flink
- * started.
- *
- * <p>To stop the connector user has to disable the auto partition discovery. As auto partition
- * discovery always expected new splits to come and not exiting. To disable auto partition
- * discovery, use builder.setConfig({@link
- * PulsarSourceOptions#PULSAR_PARTITION_DISCOVERY_INTERVAL_MS}, -1).
+ * <p>By default, the LogPulsarSource runs in an {@link Boundedness#CONTINUOUS_UNBOUNDED} mode and
+ * never stop until the Flink job is canceled or fails.
  *
  * <pre>{@code
- * PulsarSource<String> source = PulsarSource
- *     .builder()
- *     .setServiceUrl(PULSAR_BROKER_URL)
- *     .setAdminUrl(PULSAR_BROKER_HTTP_URL)
- *     .setSubscriptionName("flink-source-1")
- *     .setTopics(Arrays.asList(TOPIC1, TOPIC2))
- *     .setDeserializationSchema(PulsarDeserializationSchema.flinkSchema(new SimpleStringSchema()))
- *     .setUnboundedStopCursor(StopCursor.atEventTime(System.currentTimeMillis()))
+ * LogPulsarSource<String> source = LogPulsarSource
+ *     .builder(schema, arcticTable.properties())
+ *     .setTopics(TOPIC1)
+ *     .setServiceUrl(getServiceUrl())
+ *     .setAdminUrl(getAdminUrl())
+ *     .setSubscriptionName("test")
  *     .build();
  * }</pre>
  */
@@ -107,7 +94,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
   private Map<String, String> tableProperties;
 
   /**
-   * @param schema read schema, only contains the selected fields
+   * @param schema          read schema, only contains the selected fields
    * @param tableProperties Arctic table properties
    */
   LogPulsarSourceBuilder(Schema schema, Map<String, String> tableProperties) {
@@ -117,21 +104,21 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
   }
 
   public LogPulsarSourceBuilder setProperties(Properties properties) {
-    configBuilder.set(PulsarConfigurationConverter.toSourceConf(properties));
+    configBuilder.set(properties);
     return this;
   }
 
   /**
-   * Build the {@link PulsarSource}.
+   * Build the {@link LogPulsarSource}.
    *
-   * @return a PulsarSource with the settings made for this builder.
+   * @return a LogPulsarSource with the settings made for this builder.
    */
   @SuppressWarnings("java:S3776")
   public LogPulsarSource build() {
     if (tableProperties.containsKey(TableProperties.LOG_STORE_ADDRESS)) {
       this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
     }
-    
+
     // Ensure the topic subscriber for pulsar.
     checkNotNull(subscriber, "No topic names or topic pattern are provided.");
 
@@ -139,7 +126,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     if (subscriptionType == SubscriptionType.Key_Shared) {
       if (rangeGenerator == null) {
         LOG.warn(
-            "No range generator provided for key_shared subscription," + 
+            "No range generator provided for key_shared subscription," +
                 " we would use the UniformRangeGenerator as the default range generator.");
         this.rangeGenerator = new UniformRangeGenerator();
       }
