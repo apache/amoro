@@ -57,6 +57,7 @@ public class AmsTableTracer implements TableTracer {
   private final ArcticTable table;
   private final String innerTable;
   private final AmsClient client;
+  private final boolean newSnapshot;
 
   private final Map<String, String> snapshotSummary = new HashMap<>();
   private final Map<Long, AmsTableTracer.InternalTableChange> transactionSnapshotTableChanges = new LinkedHashMap<>();
@@ -66,16 +67,17 @@ public class AmsTableTracer implements TableTracer {
   private Map<String, String> properties;
   private InternalTableChange defaultTableChange;
 
-  public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
+  public AmsTableTracer(UnkeyedTable table, String action, AmsClient client, boolean newSnapshot) {
     this.innerTable = table instanceof ChangeTable ?
         Constants.INNER_TABLE_CHANGE : Constants.INNER_TABLE_BASE;
     this.table = table;
     this.client = client;
+    this.newSnapshot = newSnapshot;
     setAction(action);
   }
 
-  public AmsTableTracer(UnkeyedTable table, AmsClient client) {
-    this(table, null, client);
+  public AmsTableTracer(UnkeyedTable table, AmsClient client, boolean newSnapshot) {
+    this(table, null, client, newSnapshot);
   }
 
   @Override
@@ -156,7 +158,7 @@ public class AmsTableTracer implements TableTracer {
       update = true;
     }
     //commit snapshot info even if no new file is submitted
-    if (commitMeta.getChanges() == null) {
+    if (newSnapshot && commitMeta.getChanges() == null) {
       Table traceTable;
       if (table.isUnkeyedTable()) {
         traceTable = table.asUnkeyedTable();
