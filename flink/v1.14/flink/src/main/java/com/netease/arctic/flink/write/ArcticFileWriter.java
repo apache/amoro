@@ -149,16 +149,7 @@ public class ArcticFileWriter extends AbstractStreamOperator<WriteResult>
   }
 
   private Long getTransactionId() {
-    Long transaction;
-    if (table.isKeyedTable()) {
-      String signature = BaseEncoding.base16().encode((jobId + checkpointId).getBytes());
-      transaction = table.asKeyedTable().beginTransaction(signature);
-      LOG.info("table:{}, signature:{}, transactionId:{}. From jobId:{}, ckpId:{}", table.name(), signature,
-          transaction, jobId, checkpointId);
-    } else {
-      transaction = null;
-    }
-    return transaction;
+    return null;
   }
 
   @VisibleForTesting
