@@ -303,9 +303,7 @@ public class SparkTestContext extends ExternalResource {
 
   public static void writeChange(TableIdentifier identifier, ChangeAction action, List<Record> rows) {
     KeyedTable table = SparkTestContext.catalog(identifier.getCatalog()).loadTable(identifier).asKeyedTable();
-    long txId = table.beginTransaction(System.currentTimeMillis() + "");
     try (TaskWriter<Record> writer = GenericTaskWriters.builderFor(table)
-        .withTransactionId(txId)
         .withChangeAction(action)
         .buildChangeWriter()) {
       rows.forEach(row -> {
