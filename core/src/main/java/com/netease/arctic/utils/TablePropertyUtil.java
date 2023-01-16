@@ -135,13 +135,6 @@ public class TablePropertyUtil {
     return baseTableMaxTransactionId;
   }
 
-  public static long allocateTransactionId(KeyedTable keyedTable) {
-    ChangeTable changeTable = keyedTable.changeTable();
-    changeTable.refresh();
-    Snapshot snapshot = changeTable.currentSnapshot();
-    return snapshot == null ? TableProperties.PARTITION_MAX_TRANSACTION_ID_DEFAULT : snapshot.sequenceNumber();
-  }
-
 
   public static long getTableWatermark(Map<String, String> properties) {
     String watermarkValue = properties.get(TableProperties.WATERMARK_TABLE);

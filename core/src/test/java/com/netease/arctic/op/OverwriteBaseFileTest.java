@@ -67,9 +67,8 @@ public class OverwriteBaseFileTest extends TableTestBase {
 
   @Override
   public void before() {
-    long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    initTxId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
-    List<DataFile> files = writeBaseNoCommit(testKeyedTable, txId, Lists.newArrayList(
+    initTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    List<DataFile> files = writeBaseNoCommit(testKeyedTable, initTxId, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 1, "aaa", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 2, "bbb", "2020-1-2"),
         newGenericRecord(TABLE_SCHEMA, 3, "ccc", "2020-1-3")
@@ -112,14 +111,13 @@ public class OverwriteBaseFileTest extends TableTestBase {
    */
   @Test
   public void testOverwriteAllPartition() {
-    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    long txId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
+    long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 8, "888", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
-    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
+    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.overwriteByRowFilter(Expressions.alwaysTrue())
@@ -156,14 +154,13 @@ public class OverwriteBaseFileTest extends TableTestBase {
 
   @Test
   public void testOverwritePartitionByExpression() {
-    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    long txId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
+    long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 8, "888", "2020-1-1"),
         newGenericRecord(TABLE_SCHEMA, 9, "999", "2020-1-1")
     );
-    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
+    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
     OverwriteBaseFiles overwrite = testKeyedTable.newOverwriteBaseFiles();
     newFiles.forEach(overwrite::addFile);
     overwrite.withTransactionIdForChangedPartition(txId);

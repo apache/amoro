@@ -59,16 +59,14 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private final KeyedTable table;
   private final StructType dsSchema;
 
-  private final long legacyTxId;
   private final long txId;
   private final String hiveSubdirectory;
 
   KeyedSparkBatchWrite(KeyedTable table, StructType dsSchema) {
     this.table = table;
     this.dsSchema = dsSchema;
-    this.legacyTxId = table.beginTransaction(null);
-    this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
-    this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.legacyTxId);
+    this.txId = table.beginTransaction(null);
+    this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.txId);
   }
 
   @Override
@@ -123,7 +121,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new ChangeWriteFactory(table, dsSchema, legacyTxId);
+      return new ChangeWriteFactory(table, dsSchema, txId);
     }
 
     @Override
@@ -144,7 +142,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, legacyTxId, hiveSubdirectory);
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory);
     }
 
     @Override
@@ -169,7 +167,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new BaseWriterFactory(table, dsSchema, legacyTxId, hiveSubdirectory);
+      return new BaseWriterFactory(table, dsSchema, txId, hiveSubdirectory);
     }
 
     @Override
@@ -193,7 +191,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new UpsertChangeFactory(table, dsSchema, legacyTxId);
+      return new UpsertChangeFactory(table, dsSchema, txId);
     }
 
     @Override

@@ -473,9 +473,13 @@ public class SparkTestContext extends ExternalResource {
 
   public List<DataFile> writeHive(ArcticTable table, LocationKind locationKind, List<Record> records)
       throws IOException {
+    Long txId = null;
+    if (table.isKeyedTable()) {
+      txId = table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
+    }
     AdaptHiveGenericTaskWriterBuilder builder = AdaptHiveGenericTaskWriterBuilder
         .builderFor(table)
-        .withTransactionId(table.isKeyedTable() ? 1L : null);
+        .withTransactionId(txId);
 
     TaskWriter<Record> changeWrite = builder.buildWriter(locationKind);
     for (Record record : records) {
@@ -483,11 +487,10 @@ public class SparkTestContext extends ExternalResource {
     }
     DataFile[] dataFiles = changeWrite.complete().dataFiles();
     if (table.isKeyedTable()) {
-      table.asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
       KeyedTable keyedTable = table.asKeyedTable();
       OverwriteBaseFiles overwriteBaseFiles = keyedTable.newOverwriteBaseFiles();
       Arrays.stream(dataFiles).forEach(overwriteBaseFiles::addFile);
-      overwriteBaseFiles.withTransactionIdForChangedPartition(TablePropertyUtil.allocateTransactionId(keyedTable));
+      overwriteBaseFiles.withTransactionIdForChangedPartition(txId);
       overwriteBaseFiles.commit();
     } else if (table.isUnkeyedTable()) {
       UnkeyedTable unkeyedTable = table.asUnkeyedTable();

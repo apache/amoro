@@ -39,9 +39,8 @@ public class RewritePartitionsTest extends TableTestBase {
 
   @Override
   public void before() {
-    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    initTxId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
-    List<DataFile> files = writeBaseNoCommit(testKeyedTable, legacyTxId, Lists.newArrayList(
+    initTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
+    List<DataFile> files = writeBaseNoCommit(testKeyedTable, initTxId, Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 1, "aaa", quickDate(1)),
         newGenericRecord(TABLE_SCHEMA, 2, "bbb", quickDate(2)),
         newGenericRecord(TABLE_SCHEMA, 3, "ccc", quickDate(3))
@@ -83,14 +82,13 @@ public class RewritePartitionsTest extends TableTestBase {
    */
   @Test
   public void testDynamicOverwritePartition() {
-    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    long txId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
+    long txId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
     List<Record> newRecords = Lists.newArrayList(
         newGenericRecord(TABLE_SCHEMA, 7, "777", quickDate(1)),
         newGenericRecord(TABLE_SCHEMA, 8, "888", quickDate(1)),
         newGenericRecord(TABLE_SCHEMA, 9, "999", quickDate(1))
     );
-    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
+    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, txId, newRecords);
     RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
     newFiles.forEach(overwrite::addDataFile);
     overwrite.withTransactionId(txId);
