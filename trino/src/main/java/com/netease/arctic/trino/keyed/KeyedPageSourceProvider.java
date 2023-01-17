@@ -27,7 +27,6 @@ import com.netease.arctic.scan.KeyedTableScanTask;
 import com.netease.arctic.trino.ArcticConfig;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
 import com.netease.arctic.utils.map.StructLikeCollections;
-import io.trino.FeaturesConfig;
 import io.trino.plugin.hive.HdfsEnvironment;
 import io.trino.plugin.iceberg.FileIoProvider;
 import io.trino.plugin.iceberg.IcebergColumnHandle;
@@ -65,13 +64,12 @@ public class KeyedPageSourceProvider implements ConnectorPageSourceProvider {
       IcebergPageSourceProvider icebergPageSourceProvider,
       TypeManager typeManager,
       FileIoProvider fileIoProvider,
-      ArcticConfig arcticConfig,
-      FeaturesConfig featuresConfig) {
+      ArcticConfig arcticConfig) {
     this.icebergPageSourceProvider = icebergPageSourceProvider;
     this.typeManager = typeManager;
     this.fileIoProvider = fileIoProvider;
     this.arcticConfig = arcticConfig;
-    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths();
+    this.trinoSpillPath = arcticConfig.getSpillerSpillPaths();
   }
 
   @Override

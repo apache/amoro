@@ -19,8 +19,17 @@
 
 package com.netease.arctic.trino;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableList;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigDescription;
+import io.airlift.configuration.LegacyConfig;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+
+import static com.google.common.collect.ImmutableList.toImmutableList;
 
 /**
  * Arctic config
@@ -31,6 +40,8 @@ public class ArcticConfig {
   private boolean enableSpillMap = false;
   private long maxInMemorySizeInBytes = 524288000;
   private String rocksDBBasePath;
+  private List<Path> spillerSpillPaths = ImmutableList.of();
+
 
   public String getCatalogUrl() {
     return catalogUrl;
@@ -50,6 +61,10 @@ public class ArcticConfig {
 
   public String getRocksDBBasePath() {
     return rocksDBBasePath;
+  }
+
+  public List<Path> getSpillerSpillPaths() {
+    return spillerSpillPaths;
   }
 
   @Config("arctic.url")
@@ -75,8 +90,22 @@ public class ArcticConfig {
   }
 
   @Config("arctic.spill-map.path")
-  @ConfigDescription("Rocks db base path")
+  @ConfigDescription("Spill map base path")
   public void setRocksDBBasePath(String rocksDBBasePath) {
     this.rocksDBBasePath = rocksDBBasePath;
+  }
+
+  /**
+   * This configuration parameter is copied from trino-main to be used
+   * when the user does not set the 'arctic.spill-map.path'.
+   *
+   * @param spillPaths
+   */
+  @Config("spiller-spill-path")
+  @LegacyConfig("experimental.spiller-spill-path")
+  public void setSpillerSpillPaths(String spillPaths) {
+    List<String> spillPathsSplit = ImmutableList.copyOf(Splitter.on(",")
+        .trimResults().omitEmptyStrings().split(spillPaths));
+    this.spillerSpillPaths = spillPathsSplit.stream().map(Paths::get).collect(toImmutableList());
   }
 }

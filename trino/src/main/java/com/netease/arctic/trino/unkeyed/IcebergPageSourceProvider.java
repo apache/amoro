@@ -28,7 +28,6 @@ import com.netease.arctic.table.MetadataColumns;
 import com.netease.arctic.trino.ArcticConfig;
 import com.netease.arctic.utils.map.StructLikeCollections;
 import io.airlift.json.JsonCodec;
-import io.trino.FeaturesConfig;
 import io.trino.memory.context.AggregatedMemoryContext;
 import io.trino.orc.OrcColumn;
 import io.trino.orc.OrcCorruptionException;
@@ -215,8 +214,7 @@ public class IcebergPageSourceProvider
       FileIoProvider fileIoProvider,
       JsonCodec<CommitTaskData> jsonCodec,
       IcebergFileWriterFactory fileWriterFactory,
-      ArcticConfig arcticConfig,
-      FeaturesConfig featuresConfig) {
+      ArcticConfig arcticConfig) {
     this.hdfsEnvironment = requireNonNull(hdfsEnvironment, "hdfsEnvironment is null");
     this.fileFormatDataSourceStats = requireNonNull(fileFormatDataSourceStats, "fileFormatDataSourceStats is null");
     this.orcReaderOptions = requireNonNull(orcReaderConfig, "orcReaderConfig is null").toOrcReaderOptions();
@@ -227,7 +225,7 @@ public class IcebergPageSourceProvider
     this.jsonCodec = requireNonNull(jsonCodec, "jsonCodec is null");
     this.fileWriterFactory = requireNonNull(fileWriterFactory, "fileWriterFactory is null");
     this.arcticConfig = arcticConfig;
-    this.trinoSpillPath = featuresConfig.getSpillerSpillPaths();
+    this.trinoSpillPath = arcticConfig.getSpillerSpillPaths();
   }
 
   @Override

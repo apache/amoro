@@ -37,13 +37,11 @@ import com.netease.arctic.trino.unkeyed.ArcticTrinoCatalogFactory;
 import com.netease.arctic.trino.unkeyed.IcebergPageSourceProvider;
 import com.netease.arctic.trino.unkeyed.IcebergSplitManager;
 import io.airlift.configuration.ConfigBinder;
-import io.trino.FeaturesConfig;
 import io.trino.plugin.base.session.SessionPropertiesProvider;
 import io.trino.plugin.hive.FileFormatDataSourceStats;
 import io.trino.plugin.hive.HdfsConfig;
 import io.trino.plugin.hive.HdfsConfiguration;
 import io.trino.plugin.hive.HdfsEnvironment;
-import io.trino.plugin.hive.HiveConfig;
 import io.trino.plugin.hive.NamenodeStats;
 import io.trino.plugin.hive.authentication.HdfsAuthentication;
 import io.trino.plugin.hive.metastore.MetastoreConfig;
@@ -97,7 +95,6 @@ public class TestUnionModule implements Module {
         //############# IcebergModule
         configBinder(binder).bindConfig(MetastoreConfig.class);
         configBinder(binder).bindConfig(IcebergConfig.class);
-        configBinder(binder).bindConfig(FeaturesConfig.class);
 
         newSetBinder(binder, SessionPropertiesProvider.class).addBinding().to(IcebergSessionProperties.class).in(Scopes.SINGLETON);
         binder.bind(IcebergTableProperties.class).in(Scopes.SINGLETON);
