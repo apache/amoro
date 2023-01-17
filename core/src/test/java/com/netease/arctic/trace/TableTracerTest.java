@@ -183,39 +183,39 @@ public class TableTracerTest extends TableTestBase {
 
   @Test
   public void testTraceAppendNoneFiles() {
-    testTable.newAppend()
-        .commit();
+    UnkeyedTable operationTable = getOperationTable();
+    operationTable.newAppend().commit();
     List<TableCommitMeta> appendTableCommitMetas =
-        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(1, appendTableCommitMetas.size());
     Assert.assertNotNull(appendTableCommitMetas.get(0).getChanges());
 
-    Transaction overwritetransaction = testTable.newTransaction();
+    Transaction overwritetransaction = operationTable.newTransaction();
     overwritetransaction.newOverwrite()
         .commit();
     overwritetransaction.commitTransaction();
     List<TableCommitMeta> overwriteTableCommitMetas =
-        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(2, overwriteTableCommitMetas.size());
     Assert.assertEquals(1, overwriteTableCommitMetas.get(1).getChanges().size());
 
-    Transaction rewriteTransaction = testTable.newTransaction();
+    Transaction rewriteTransaction = operationTable.newTransaction();
     rewriteTransaction.newRewrite()
         .commit();
     rewriteTransaction.commitTransaction();
     List<TableCommitMeta> rewriteTableCommitMetas =
-        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(3, rewriteTableCommitMetas.size());
     Assert.assertEquals(1, rewriteTableCommitMetas.get(2).getChanges().size());
 
-    testTable.updateSchema().commit();
+    operationTable.updateSchema().commit();
     List<TableCommitMeta> updateSchemaCommitMetas =
-        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(3, updateSchemaCommitMetas.size());
 
-    testTable.updateProperties().commit();
+    operationTable.updateProperties().commit();
     List<TableCommitMeta> updatePropertiesCommitMetas =
-        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+        getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(4, updatePropertiesCommitMetas.size());
     Assert.assertNull(rewriteTableCommitMetas.get(3).getChanges());
   }
