@@ -154,8 +154,8 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
         arcticDynamicSource = createLogSource(arcticTable, context, confWithAll);
     }
 
-    return new ArcticDynamicSource(identifier.getObjectName(), arcticDynamicSource, arcticTable, tableSchema,
-        arcticTable.properties());
+    return new ArcticDynamicSource(
+        identifier.getObjectName(), arcticDynamicSource, arcticTable, arcticTable.properties());
   }
 
   @Override
@@ -245,10 +245,10 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
     String startupMode = tableOptions.get(ArcticValidator.SCAN_STARTUP_MODE);
     long startupTimestampMillis = 0L;
     if (Objects.equals(startupMode.toLowerCase(), SCAN_STARTUP_MODE_TIMESTAMP)) {
-      startupTimestampMillis = Preconditions.checkNotNull(
-          tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
-          String.format("'%s' should be set in '%s' mode",
-              ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
+      startupTimestampMillis =
+          Preconditions.checkNotNull(tableOptions.get(ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS),
+              String.format("'%s' should be set in '%s' mode",
+                  ArcticValidator.SCAN_STARTUP_TIMESTAMP_MILLIS.key(), SCAN_STARTUP_MODE_TIMESTAMP));
     }
 
     LOG.info("build log source");

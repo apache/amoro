@@ -80,6 +80,11 @@ public class ChangelogSplit extends ArcticSplit {
   }
 
   @Override
+  public ArcticSplit copy() {
+    return new ChangelogSplit(insertScanTasks, deleteScanTasks, taskIndex);
+  }
+
+  @Override
   public String splitId() {
     return MoreObjects.toStringHelper(this)
         .add("insertTasks", toString(insertScanTasks))

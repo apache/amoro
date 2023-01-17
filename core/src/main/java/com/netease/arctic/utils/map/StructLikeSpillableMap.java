@@ -23,6 +23,7 @@ import com.netease.arctic.utils.SerializationUtils;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Types;
 
+import javax.annotation.Nullable;
 import java.util.HashMap;
 
 /**
@@ -31,15 +32,16 @@ import java.util.HashMap;
 public class StructLikeSpillableMap<T> extends StructLikeBaseMap<T> {
 
   public static <T> StructLikeSpillableMap<T> create(Types.StructType type,
-                                                     Long maxInMemorySizeInBytes) {
-    return new StructLikeSpillableMap<>(type, maxInMemorySizeInBytes);
+                                                     Long maxInMemorySizeInBytes,
+                                                     @Nullable String backendBaseDir) {
+    return new StructLikeSpillableMap<>(type, maxInMemorySizeInBytes, backendBaseDir);
   }
 
   private final SimpleMap<StructLikeWrapper, T> wrapperMap;
 
-  private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes) {
+  private StructLikeSpillableMap(Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
     super(type);
-    this.wrapperMap = new SimpleSpillableMap(maxInMemorySizeInBytes,
+    this.wrapperMap = new SimpleSpillableMap(maxInMemorySizeInBytes, backendBaseDir,
         SerializationUtils.createStructLikeWrapperSerializer(structLikeWrapperFactory),
         SerializationUtils.createJavaSimpleSerializer());
   }

@@ -20,7 +20,12 @@ package com.netease.arctic.utils;
 
 import com.netease.arctic.table.MetadataColumns;
 import org.apache.iceberg.Schema;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.types.Types;
+
+import java.util.List;
+import java.util.Set;
 
 public class SchemaUtil {
 
@@ -29,5 +34,31 @@ public class SchemaUtil {
         MetadataColumns.FILE_OFFSET_FILED
     );
     return TypeUtil.join(changeTableSchema, changeWriteMetaColumnsSchema);
+  }
+
+  /**
+   * Convert an Iceberg Schema {@link Schema} to a {@link Schema} based on the given schema.
+   * <p>
+   * This fill-up does not assign new ids; it uses ids from the base schema.
+   * <p>
+   * If the fromSchema does contain the identifierFields of the based schema, it will fill-up the identifierFields to
+   * a new schema.
+   *
+   * @param baseSchema a Schema on which loading is based
+   * @param fromSchema a Schema on which compared to
+   * @return a new Schema on which contain the identifier fields of the base Schema and column fields of the fromSchema
+   */
+  public static Schema fillUpIdentifierFields(Schema baseSchema, Schema fromSchema) {
+    int schemaId = fromSchema.schemaId();
+    Types.StructType struct = fromSchema.asStruct();
+    List<Types.NestedField> fields = Lists.newArrayList(struct.fields());
+    Set<Integer> identifierFields = baseSchema.identifierFieldIds();
+    identifierFields.forEach(fieldId -> {
+      if (struct.field(fieldId) == null) {
+        fields.add(baseSchema.findField(fieldId));
+      }
+    });
+
+    return new Schema(schemaId, fields, identifierFields);
   }
 }

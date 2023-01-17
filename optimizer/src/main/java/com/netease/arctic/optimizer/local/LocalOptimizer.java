@@ -85,6 +85,17 @@ public class LocalOptimizer implements StatefulOptimizer {
     JSONObject containerProperties = containerInfo.getJSONObject(OptimizerProperties.CONTAINER_PROPERTIES);
     JSONObject groupProperties = groupInfo.getJSONObject(OptimizerProperties.OPTIMIZER_GROUP_PROPERTIES);
 
+    // spill map config
+    String enableSpillMap = groupProperties.getString("enable_spill_map");
+    Long maxDeleteMemorySize = groupProperties.getLong("max_delete_memory_size_in_byte");
+    String spillMapCmd = "";
+    if (enableSpillMap != null) {
+      spillMapCmd = spillMapCmd + " " + enableSpillMap;
+    }
+    if (maxDeleteMemorySize != null) {
+      spillMapCmd = spillMapCmd + " " + maxDeleteMemorySize;
+    }
+
     //add compact execute config
     String amsUrl;
     if (systemInfo.containsKey(OptimizerProperties.HA_ENABLE) && systemInfo.getBoolean(OptimizerProperties.HA_ENABLE)) {
@@ -105,7 +116,7 @@ public class LocalOptimizer implements StatefulOptimizer {
     String arcticHome = systemInfo.getString(OptimizerProperties.ARCTIC_HOME);
     String cmd = String.format("%s/bin/localOptimize.sh %s %s %s %s %s %s", arcticHome, memory, amsUrl,
         groupInfo.get("id"),
-        parallelism, heartBeatInterval, jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID));
+        parallelism, heartBeatInterval, jobInfo.get(OptimizerProperties.OPTIMIZER_JOB_ID)) + spillMapCmd;
     LOG.info("starting compact job use command:" + cmd);
     Runtime runtime = Runtime.getRuntime();
     try {

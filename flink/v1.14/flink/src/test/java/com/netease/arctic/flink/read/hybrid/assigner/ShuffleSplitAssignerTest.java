@@ -20,25 +20,32 @@ package com.netease.arctic.flink.read.hybrid.assigner;
 
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.flink.read.FlinkSplitPlanner;
+import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunction;
 import com.netease.arctic.flink.read.hybrid.reader.RowDataReaderFunctionTest;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
+import com.netease.arctic.flink.read.source.DataIterator;
 import org.apache.flink.api.connector.source.ReaderInfo;
 import org.apache.flink.api.connector.source.SourceEvent;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.api.connector.source.SplitsAssignment;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.metrics.groups.SplitEnumeratorMetricGroup;
+import org.apache.flink.table.data.RowData;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
   private static final Logger LOG = LoggerFactory.getLogger(ShuffleSplitAssignerTest.class);
@@ -88,9 +95,12 @@ public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
   @Test
   public void testTreeNodeMaskUpdate() {
     ShuffleSplitAssigner shuffleSplitAssigner = instanceSplitAssigner(3);
-    long[][] treeNodes = new long[][] {{3, 0}, {3, 1}, {3, 2}, {3, 3}, {7, 0}, {7, 1}, {7, 2}, {7, 3}, {7, 4},
-                                       {1, 0}, {1, 1}, {0, 0}, {7, 7}, {15, 15}};
-    List<Long> actual = new ArrayList<>();
+    long[][] treeNodes = new long[][]{{3, 0}, {3, 1}, {3, 2}, {3, 3}, {7, 0}, {7, 1}, {7, 2}, {7, 3}, {7, 4},
+        {1, 0}, {1, 1}, {0, 0}, {7, 7}, {15, 15}};
+    long[][] expectNodes = new long[][]{{3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 0}, {3, 1}, {3, 2}, {3, 3}, {3, 0},
+        {3, 0}, {3, 2}, {3, 1}, {3, 3}, {3, 0}, {3, 2}, {3, 1}, {3, 3}, {3, 3}, {3, 3}};
+
+    List<DataTreeNode> actualNodes = new ArrayList<>();
 
     for (long[] node : treeNodes) {
       ArcticSplit arcticSplit = new ArcticSplit() {
@@ -103,6 +113,11 @@ public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
 
         @Override
         public void updateOffset(Object[] recordOffsets) {
+        }
+
+        @Override
+        public ArcticSplit copy() {
+          return null;
         }
 
         @Override
@@ -125,15 +140,56 @@ public class ShuffleSplitAssignerTest extends RowDataReaderFunctionTest {
           return dataTreeNode.toString();
         }
       };
-      LOG.info("before split {}.", arcticSplit);
-      long index = shuffleSplitAssigner.getExactlyIndexOfTreeNode(arcticSplit);
-      LOG.info("after split {}.", arcticSplit);
-      actual.add(index);
+      List<DataTreeNode> exactTreeNodes = shuffleSplitAssigner.getExactlyTreeNodes(arcticSplit);
+      actualNodes.addAll(exactTreeNodes);
     }
-    long[] result = actual.stream().mapToLong(l -> l).toArray();
-    long[] expect = new long[] {0, 1, 2, 3, 0, 0, 1, 1, 2, 0, 2, 0, 3, 3};
+    long[][] result = actualNodes.stream().map(treeNode -> new long[]{treeNode.mask(), treeNode.index()}).toArray(value -> new long[actualNodes.size()][]);
 
-    Assert.assertArrayEquals(expect, result);
+    Assert.assertArrayEquals(expectNodes, result);
+  }
+
+  @Test
+  public void testNodeUpMoved() throws IOException {
+    writeUpdateWithSpecifiedMaskOne();
+    List<ArcticSplit> arcticSplits = FlinkSplitPlanner.planFullTable(testKeyedTable, new AtomicInteger(0));
+    int totalParallelism = 3;
+    ShuffleSplitAssigner assigner = instanceSplitAssigner(totalParallelism);
+    assigner.onDiscoveredSplits(arcticSplits);
+    RowDataReaderFunction rowDataReaderFunction = new RowDataReaderFunction(
+        new Configuration(),
+        testKeyedTable.schema(),
+        testKeyedTable.schema(),
+        testKeyedTable.primaryKeySpec(),
+        null,
+        true,
+        testKeyedTable.io()
+    );
+    int subtaskId = 0;
+    Optional<ArcticSplit> split;
+    List<RowData> actual = new ArrayList<>();
+    LOG.info("subtaskId={}...", subtaskId);
+    do {
+      split = assigner.getNext(subtaskId);
+      if (split.isPresent()) {
+        DataIterator<RowData> dataIterator = rowDataReaderFunction.createDataIterator(split.get());
+        while (dataIterator.hasNext()) {
+          RowData rowData = dataIterator.next();
+          LOG.info("{}", rowData);
+          actual.add(rowData);
+        }
+      } else {
+        subtaskId = subtaskId + 1;
+        LOG.info("subtaskId={}...", subtaskId);
+      }
+    } while (subtaskId < totalParallelism);
+
+
+    List<RowData> excepts = exceptsCollection();
+    excepts.addAll(generateRecords());
+    RowData[] array = excepts.stream().sorted(Comparator.comparing(RowData::toString))
+        .collect(Collectors.toList())
+        .toArray(new RowData[excepts.size()]);
+    assertArrayEquals(array, actual);
   }
 
   protected ShuffleSplitAssigner instanceSplitAssigner(int parallelism) {

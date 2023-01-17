@@ -63,8 +63,10 @@ flink run -m yarn-cluster  -ytm {EXECUTOR_TASKMANAGER_MEMORY} -yjm {EXECUTOR_JOB
 
 ## Optimizer Group
 Optimizer Group (Optimizer 资源组)是为了划分 Optimizer 资源而引入的概念，一个 Optimizer Group 可以包含若干个具有相同 container 类型的 optimizer，方便对该资源组进行扩缩容。
+
 - name， optimize group 名称，可以在前端页面 optimizer group 列表看到。
-- container， containers 里配置的某一个 container 的名称
+- container， containers 里配置的某一个 container 的名称。
+- scheduling_policy，optimizer group 调度策略，默认值为 quota 会按照每个表配置的 quota 资源进行调度，表配置 quota 越大那么就可以占用更多的 optimizer 资源。还有一种配置 balanced 会均衡的调度每一张表，越久没有做 optimize 的表会具有越高的调度优先级。
 - properties，这个 group 下的默认配置，当在 optimize 页面进行 scale out 扩容的时候，会作为任务的配置参数。
 
 ```shell
@@ -72,6 +74,8 @@ optimize_group:
   - name: flinkOp
     # container name, should be in the names of containers  
     container: flinkContainer
+    # quota/balanced
+    scheduling_policy: balanced
     properties:
       taskmanager.memory: 2048
       jobmanager.memory: 1024
