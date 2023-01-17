@@ -156,7 +156,7 @@ public class ArcticRowDelta extends ArcticUpdate<Snapshot> implements RowDelta {
     public ArcticUpdate.Builder<ArcticRowDelta> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
         traceTable(tracer);
       }
       return this;
