@@ -43,7 +43,7 @@ public class TableBlockerService extends IJDBCService {
   private static final Logger LOG = LoggerFactory.getLogger(TableBlockerService.class);
   private final long blockerTimeout;
 
-  private final ConcurrentHashMap<TableIdentifier, ReentrantLock> TABLE_LOCK_MAP = new ConcurrentHashMap<>();
+  private final ConcurrentHashMap<TableIdentifier, ReentrantLock> tableLockMap = new ConcurrentHashMap<>();
 
   public TableBlockerService(Configuration conf) {
     this.blockerTimeout = conf.getLong(ArcticMetaStoreConf.BLOCKER_TIMEOUT);
@@ -252,6 +252,6 @@ public class TableBlockerService extends IJDBCService {
   }
 
   private Lock getLock(TableIdentifier tableIdentifier) {
-    return TABLE_LOCK_MAP.computeIfAbsent(tableIdentifier, s -> new ReentrantLock());
+    return tableLockMap.computeIfAbsent(tableIdentifier, s -> new ReentrantLock());
   }
 }

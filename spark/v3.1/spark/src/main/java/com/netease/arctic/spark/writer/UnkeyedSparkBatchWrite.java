@@ -69,7 +69,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
   private final TableBlockerManager tableBlockerManager;
   private final Blocker block;
 
-  public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema, TableBlockerManager tableBlockerManager, Blocker block) {
+  public UnkeyedSparkBatchWrite(UnkeyedTable table, StructType dsSchema, TableBlockerManager tableBlockerManager,
+                                Blocker block) {
     this.table = table;
     this.dsSchema = dsSchema;
     this.tableBlockerManager = tableBlockerManager;

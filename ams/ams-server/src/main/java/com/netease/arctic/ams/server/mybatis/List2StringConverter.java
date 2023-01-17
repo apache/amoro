@@ -46,9 +46,9 @@ public class List2StringConverter implements TypeHandler<List> {
 
     StringBuilder builder = new StringBuilder();
     Iterator iterator = parameter.iterator();
-    while(iterator.hasNext()) {
+    while (iterator.hasNext()) {
       builder.append(iterator.next());
-      if(iterator.hasNext()) {
+      if (iterator.hasNext()) {
         builder.append(separator);
       }
     }
@@ -59,14 +59,16 @@ public class List2StringConverter implements TypeHandler<List> {
   @Override
   public List getResult(ResultSet rs, String columnName) throws SQLException {
     String res = rs.getString(columnName);
-    if (res == null)
+    if (res == null) {
       return null;
+    }
 
     List set = new ArrayList<>();
     if (res.length() != 0) {
       String[] fields = res.split(separator);
-      for (String field : fields)
+      for (String field : fields) {
         set.add(field);
+      }
     }
 
     return set;
@@ -75,14 +77,16 @@ public class List2StringConverter implements TypeHandler<List> {
   @Override
   public List getResult(ResultSet rs, int columnIndex) throws SQLException {
     String res = rs.getString(columnIndex);
-    if (res == null)
+    if (res == null) {
       return null;
+    }
 
     List set = new ArrayList<>();
     if (res.length() != 0) {
       String[] fields = res.split(separator);
-      for (String field : fields)
+      for (String field : fields) {
         set.add(field);
+      }
     }
 
     return set;
@@ -91,14 +95,16 @@ public class List2StringConverter implements TypeHandler<List> {
   @Override
   public List getResult(CallableStatement cs, int columnIndex) throws SQLException {
     String res = cs.getString(columnIndex);
-    if (res == null)
+    if (res == null) {
       return null;
+    }
 
     List set = new ArrayList<>();
     if (res.length() != 0) {
       String[] fields = res.split(separator);
-      for (String field : fields)
+      for (String field : fields) {
         set.add(field);
+      }
     }
 
     return set;
