@@ -7,7 +7,7 @@
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,15 +16,15 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.ams.server.utils;
+package com.netease.arctic.utils;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.Maps;
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
+import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

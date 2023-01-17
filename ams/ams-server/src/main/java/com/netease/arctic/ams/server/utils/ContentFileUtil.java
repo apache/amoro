@@ -20,6 +20,7 @@ package com.netease.arctic.ams.server.utils;
 
 import com.netease.arctic.ams.api.DataFileInfo;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.file.WrapFileWithSequenceNumberHelper;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.FileMetadata;
@@ -69,6 +70,6 @@ public class ContentFileUtil {
       }
     }
 
-    return contentFile;
+    return WrapFileWithSequenceNumberHelper.wrap(contentFile, dataFileInfo.sequence);
   }
 }

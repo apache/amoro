@@ -94,7 +94,8 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       }
     });
     return CloseableIterable.transform(filteredEntry, e ->
-        new BaseArcticFileScanTask(new DefaultKeyedFile((DataFile) e.getFile()), null, table.spec(), null));
+        new BaseArcticFileScanTask(DefaultKeyedFile.parseChange((DataFile) e.getFile(), e.getSequenceNumber()),
+            null, table.spec(), null));
   }
 
   private Boolean shouldKeepFile(StructLike partition, long txId) {

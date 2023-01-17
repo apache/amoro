@@ -106,26 +106,6 @@ public class TableFileUtils {
   }
 
   /**
-   * parse keyed file meta from file name
-   * @param fileName - keyed file name
-   * @return fileMeta
-   */
-  public static DefaultKeyedFile.FileMeta parseFileMetaFromFileName(String fileName) {
-    fileName = TableFileUtils.getFileName(fileName);
-    Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
-    long nodeId = 1;
-    DataFileType type = DataFileType.BASE_FILE;
-    long transactionId = 0L;
-    if (matcher.matches()) {
-      nodeId = Long.parseLong(matcher.group(1));
-      type = DataFileType.ofShortName(matcher.group(2));
-      transactionId = Long.parseLong(matcher.group(3));
-    }
-    DataTreeNode node = DataTreeNode.ofId(nodeId);
-    return new DefaultKeyedFile.FileMeta(transactionId, type, node);
-  }
-
-  /**
    * parse keyed file type from file name
    * @param fileName fileName
    * @return DataFileType

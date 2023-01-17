@@ -212,7 +212,7 @@ public class TableExpireService implements ITableExpireService {
 
     String fileFormat = keyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
         TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
-    List<PrimaryKeyedFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
+    List<DataFile> changeDeleteFiles = deleteFiles.stream().map(dataFileInfo -> {
       PartitionSpec partitionSpec = keyedTable.changeTable().specs().get((int) dataFileInfo.getSpecId());
 
       if (partitionSpec == null) {
@@ -220,7 +220,7 @@ public class TableExpireService implements ITableExpireService {
         return null;
       }
       ContentFile<?> contentFile = ContentFileUtil.buildContentFile(dataFileInfo, partitionSpec, fileFormat);
-      return new DefaultKeyedFile((DataFile) contentFile);
+      return (DataFile) contentFile;
     }).filter(Objects::nonNull).collect(Collectors.toList());
 
     ChangeFilesUtil.tryClearChangeFiles(keyedTable, changeDeleteFiles);

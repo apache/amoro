@@ -56,7 +56,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this.baseFile = baseFile;
     this.posDeleteFiles = posDeleteFiles == null ?
         Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
-          DefaultKeyedFile.FileMeta fileMeta = TableFileUtils.parseFileMetaFromFileName(s.path().toString());
+          DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.FileMeta.parseBase(s.path().toString());
           return fileMeta.node().index() == baseFile.node().index() &&
             fileMeta.node().mask() == baseFile.node().mask();
         }).collect(Collectors.toList());
@@ -64,8 +64,12 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this.expression = expression;
   }
 
+  /**
+   * Only for iceberg wrap
+   * @param fileScanTask
+   */
   public BaseArcticFileScanTask(FileScanTask fileScanTask) {
-    this(new DefaultKeyedFile(fileScanTask.file()), fileScanTask.deletes(),
+    this(DefaultKeyedFile.parseBase(fileScanTask.file()), fileScanTask.deletes(),
         fileScanTask.spec(), fileScanTask.residual());
     this.fileScanTask = fileScanTask;
   }

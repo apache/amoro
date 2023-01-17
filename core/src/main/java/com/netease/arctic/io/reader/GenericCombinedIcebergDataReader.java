@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io.reader;
 
-import com.netease.arctic.data.IcebergContentFile;
+import com.netease.arctic.data.file.DataFileWithSequence;
 import com.netease.arctic.iceberg.CombinedDeleteFilter;
 import com.netease.arctic.iceberg.optimize.InternalRecordWrapper;
 import com.netease.arctic.io.ArcticFileIO;
@@ -104,12 +104,13 @@ public class GenericCombinedIcebergDataReader {
     return iterable;
   }
 
-  private CloseableIterable<Record> openFile(IcebergContentFile icebergContentFile,
+  private CloseableIterable<Record> openFile(
+      DataFileWithSequence dataFileWithSequence,
       PartitionSpec spec, Schema require) {
-    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(icebergContentFile, projectedSchema, spec,
+    Map<Integer, ?> idToConstant = DataReaderCommon.getIdToConstant(dataFileWithSequence, projectedSchema, spec,
         convertConstant);
 
-    return openFile(icebergContentFile.asDataFile(), require, idToConstant);
+    return openFile(dataFileWithSequence, require, idToConstant);
   }
 
   private CloseableIterable<Record> openFile(DataFile dataFile, Schema fileProjection, Map<Integer, ?> idToConstant) {
