@@ -513,7 +513,7 @@ public class OptimizeQueueService extends IJDBCService {
                   // no task have planned
                   if (!isHaveTask) {
                     LOG.debug("The queue {} has retry {} times, no task have planned",
-                        optimizeQueue.getOptimizeQueueMeta().queueId,
+                        optimizeQueue.getOptimizeQueueMeta().getQueueId(),
                         retryTime);
                   }
                 } catch (Throwable t) {

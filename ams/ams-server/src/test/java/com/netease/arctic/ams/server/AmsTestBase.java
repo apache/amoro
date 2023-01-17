@@ -29,6 +29,7 @@ import com.netease.arctic.ams.server.controller.TableControllerTest;
 import com.netease.arctic.ams.server.controller.TerminalControllerTest;
 import com.netease.arctic.ams.server.handler.impl.ArcticTableMetastoreHandler;
 import com.netease.arctic.ams.server.handler.impl.OptimizeManagerHandler;
+import com.netease.arctic.ams.server.optimize.OptimizeService;
 import com.netease.arctic.ams.server.optimize.SupportHiveTestGroup;
 import com.netease.arctic.ams.server.optimize.TestExpireFileCleanSupportIceberg;
 import com.netease.arctic.ams.server.optimize.TestExpiredFileClean;
@@ -48,6 +49,7 @@ import com.netease.arctic.ams.server.service.TestArcticTransactionService;
 import com.netease.arctic.ams.server.service.TestDDLTracerService;
 import com.netease.arctic.ams.server.service.TestFileInfoCacheService;
 import com.netease.arctic.ams.server.service.TestOptimizerService;
+import com.netease.arctic.ams.server.service.impl.ContainerMetaService;
 import com.netease.arctic.ams.server.service.impl.TestTableBlockerService;
 import com.netease.arctic.ams.server.service.impl.AdaptHiveService;
 import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
@@ -188,6 +190,12 @@ public class AmsTestBase {
     mockStatic(ServiceContainer.class);
     mockStatic(CatalogMetadataService.class);
 
+    //set config
+    com.netease.arctic.ams.server.config.Configuration configuration =
+        new com.netease.arctic.ams.server.config.Configuration();
+    configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
+    ArcticMetaStore.conf = configuration;
+
     //mock service
     FileInfoCacheService fileInfoCacheService = new FileInfoCacheService();
     when(ServiceContainer.getFileInfoCacheService()).thenReturn(fileInfoCacheService);
@@ -199,6 +207,8 @@ public class AmsTestBase {
     when(ServiceContainer.getCatalogMetadataService()).thenReturn(catalogMetadataService);
     AdaptHiveService adaptHiveService = new AdaptHiveService();
     when(ServiceContainer.getAdaptHiveService()).thenReturn(adaptHiveService);
+    TableBlockerService tableBlockerService = new TableBlockerService(configuration);
+    when(ServiceContainer.getTableBlockerService()).thenReturn(tableBlockerService);
     JDBCMetaService metaService = new JDBCMetaService();
     when(ServiceContainer.getMetaService()).thenReturn(metaService);
     PlatformFileInfoService platformFileInfoService = new PlatformFileInfoService();
@@ -208,19 +218,16 @@ public class AmsTestBase {
     amsHandler = new ArcticTableMetastoreHandler(ServiceContainer.getMetaService());
     when(ServiceContainer.getTableMetastoreHandler()).thenReturn(amsHandler);
 
-    //set handler config
-    com.netease.arctic.ams.server.config.Configuration configuration =
-        new com.netease.arctic.ams.server.config.Configuration();
-    configuration.setString(ArcticMetaStoreConf.DB_TYPE, "derby");
-    ArcticMetaStore.conf = configuration;
-
     OptimizeQueueService optimizeQueueService = new OptimizeQueueService();
     when(ServiceContainer.getOptimizeQueueService()).thenReturn(optimizeQueueService);
     OptimizerService optimizerService = new OptimizerService();
     when(ServiceContainer.getOptimizerService()).thenReturn(optimizerService);
 
-    TableBlockerService tableBlockerService = new TableBlockerService(configuration);
-    when(ServiceContainer.getTableBlockerService()).thenReturn(tableBlockerService);
+    OptimizeService optimizeService = new OptimizeService();
+    when(ServiceContainer.getOptimizeService()).thenReturn(optimizeService);
+
+    ContainerMetaService containerMetaService = new ContainerMetaService();
+    when(ServiceContainer.getContainerMetaService()).thenReturn(containerMetaService);
 
     //create
     createCatalog();

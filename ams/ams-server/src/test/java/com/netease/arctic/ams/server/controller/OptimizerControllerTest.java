@@ -20,7 +20,9 @@ package com.netease.arctic.ams.server.controller;
 
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.Maps;
+import com.netease.arctic.ams.api.MetaException;
 import com.netease.arctic.ams.server.ArcticMetaStore;
+import com.netease.arctic.ams.server.config.ConfigFileProperties;
 import com.netease.arctic.ams.server.controller.response.OkResponse;
 import com.netease.arctic.ams.server.controller.response.Response;
 import com.netease.arctic.ams.server.model.Container;
@@ -29,14 +31,14 @@ import com.netease.arctic.ams.server.model.Optimizer;
 import com.netease.arctic.ams.server.model.TableTaskStatus;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.service.impl.OptimizerService;
-import com.netease.arctic.ams.server.util.DerbyTestUtil;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import io.javalin.testtools.JavalinTest;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -53,6 +55,20 @@ import java.util.Map;
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*"})
 public class OptimizerControllerTest {
 
+  @BeforeClass
+  public static void beforeClass() throws MetaException {
+    createContainer("test1", "local");
+    createOptimizeGroup("testOptimizeGroup", "test1");
+
+    createContainer("test2", "local");
+    createOptimizeGroup("testOptimizeGroup2", "test2");
+  }
+  
+  @AfterClass
+  public static void afterClass() {
+    removeAllOptimizeGroup();
+  }
+
   @Test
   public void testGetOptimizers() {
 
@@ -61,6 +77,7 @@ public class OptimizerControllerTest {
             TableTaskStatus.STARTING,
             new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss").format(new Date()),
             2, 1024, 1, "test1");
+    
     JavalinTest.test((app, client) -> {
         app.get("/{optimizerGroup}/", OptimizerController::getOptimizers);
         final okhttp3.Response resp = client.get("/all?page=1&pageSize=20", x -> {});
@@ -83,24 +100,16 @@ public class OptimizerControllerTest {
   }
 
   @Test
-  public void testGetOptimizerGroups() throws Exception {
-    OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
-    optimizeQueueMeta.name = "testOptimizerGroup";
-    optimizeQueueMeta.container = "test1";
-
-    Map<String, String> map = Maps.newHashMap();
-    map.put("memory","1024");
-    optimizeQueueMeta.properties = map;
-    ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);
+  public void testGetOptimizerGroups() {
     JavalinTest.test((app, client) -> {
       app.get("/", OptimizerController::getOptimizerGroups);
-      final okhttp3.Response resp = client.get("/", x -> {});
+      final okhttp3.Response resp = client.get("/", x -> {
+      });
       OkResponse result = JSONObject.parseObject(resp.body().string(), OkResponse.class);
       assert JSONObject.parseObject(JSONObject.parseArray(result.getResult().toString()).get(0).toString()).
-              getString("optimizerGroupName").equals("testOptimizerGroup");
+          getString("optimizerGroupName").equals("testOptimizeGroup");
       assert result.getCode() == 200;
     });
-    ServiceContainer.getOptimizeQueueService().removeAllQueue();
   }
 
   @Test
@@ -121,51 +130,19 @@ public class OptimizerControllerTest {
   }
 
   @Test
-  public void testScaleOutOptimizer() throws Exception {
-    Container container = new Container();
-    container.setName("test1");
-    container.setType("local");
-    Map<String, String> map = new HashMap<>();
-    map.put("hadoop_home", "test");
-    container.setProperties(map);
-    ServiceContainer.getOptimizeQueueService().insertContainer(container);
-
-    OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
-    optimizeQueueMeta.name = "default202206141";
-    optimizeQueueMeta.container = "test1";
-
-    Map<String, String> map1 = Maps.newHashMap();
-    map1.put("memory","1024");
-    optimizeQueueMeta.properties = map1;
-    ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);
+  public void testScaleOutOptimizer() {
     JavalinTest.test((app, client) -> {
       app.post("/{optimizerGroup}", OptimizerController::scaleOutOptimizer);
       JSONObject  requestJson = new JSONObject();
       requestJson.put("parallelism", 1);
-      final okhttp3.Response resp = client.post("/default202206141", requestJson);
+      final okhttp3.Response resp = client.post("/testOptimizeGroup", requestJson);
       Response result = JSONObject.parseObject(resp.body().string(), Response.class);
       assert result.getCode() == 200;
     });
   }
 
   @Test
-  public void testReleaseOptimizer() throws Exception {
-    Container container = new Container();
-    container.setName("test2");
-    container.setType("local");
-    Map<String, String> map = Maps.newHashMap();
-    map.put("hadoop_home", "test");
-    container.setProperties(map);
-    ServiceContainer.getOptimizeQueueService().insertContainer(container);
-
-    OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
-    optimizeQueueMeta.name = "testOptimizeGroup2";
-    optimizeQueueMeta.container = "test2";
-
-    Map<String, String> map1 = Maps.newHashMap();
-    map1.put("memory","1024");
-    optimizeQueueMeta.properties = map1;
-    ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);
+  public void testReleaseOptimizer() {
     OptimizerService optimizerService = new OptimizerService();
     optimizerService.insertOptimizer("test2", 1, "testOptimizeGroup2",
             TableTaskStatus.STARTING,
@@ -182,7 +159,29 @@ public class OptimizerControllerTest {
     });
   }
 
-  public static void deleteDerby() throws IOException {
-    DerbyTestUtil.deleteIfExists(DerbyTestUtil.path + "mydb1");
+  private static void createOptimizeGroup(String name, String container) throws MetaException {
+    OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
+    optimizeQueueMeta.setName(name);
+    optimizeQueueMeta.setContainer(container);
+    optimizeQueueMeta.setSchedulingPolicy(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA);
+
+    Map<String, String> map = Maps.newHashMap();
+    map.put("memory", "1024");
+    optimizeQueueMeta.setProperties(map);
+    ServiceContainer.getOptimizeQueueService().createQueue(optimizeQueueMeta);
+  }
+
+  private static void createContainer(String name, String type) {
+    Container container = new Container();
+    container.setName(name);
+    container.setType(type);
+    Map<String, String> map = new HashMap<>();
+    map.put("hadoop_home", "test");
+    container.setProperties(map);
+    ServiceContainer.getOptimizeQueueService().insertContainer(container);
+  }
+
+  private static void removeAllOptimizeGroup() {
+    ServiceContainer.getOptimizeQueueService().removeAllQueue();
   }
 }
