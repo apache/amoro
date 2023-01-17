@@ -18,7 +18,7 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.IcebergTableBase;
+import com.netease.arctic.IcebergFormatBase;
 import com.netease.arctic.io.writer.IcebergFanoutPosDeleteWriter;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.hadoop.fs.Path;
@@ -52,7 +52,7 @@ import java.util.stream.Collectors;
 import static org.apache.iceberg.TableProperties.DEFAULT_FILE_FORMAT_DEFAULT;
 import static org.apache.iceberg.TableProperties.DELETE_DEFAULT_FILE_FORMAT;
 
-public class IcebergFanoutPosDeleteWriterTest extends IcebergTableBase {
+public class IcebergFanoutPosDeleteWriterTest extends IcebergFormatBase {
 
   @Test
   public void testWritePosDelete() throws IOException {

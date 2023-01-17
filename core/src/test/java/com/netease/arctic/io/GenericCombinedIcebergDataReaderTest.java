@@ -19,7 +19,7 @@
 package com.netease.arctic.io;
 
 import com.google.common.collect.Iterables;
-import com.netease.arctic.IcebergTableBase;
+import com.netease.arctic.IcebergFormatBase;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
@@ -28,7 +28,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
+public class GenericCombinedIcebergDataReaderTest extends IcebergFormatBase {
 
   protected GenericCombinedIcebergDataReader dataReader;
 
