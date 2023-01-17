@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static java.lang.Boolean.FALSE;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ENABLE_TRANSACTION;
@@ -44,6 +45,7 @@ import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSA
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_ENABLE_AUTO_ACKNOWLEDGE_MESSAGE;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_PARTITION_DISCOVERY_INTERVAL_MS;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_READ_TRANSACTION_TIMEOUT;
+import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
 import static org.apache.flink.connector.pulsar.source.config.PulsarSourceConfigUtils.SOURCE_CONFIG_VALIDATOR;
 import static org.apache.flink.util.InstantiationUtil.isSerializable;
@@ -171,6 +173,10 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     checkState(isSerializable(stopCursor), "StopCursor isn't serializable");
     checkState(isSerializable(rangeGenerator), "RangeGenerator isn't serializable");
 
+    // If subscription name is not set, set a random value.
+    if (!configBuilder.contains(PULSAR_SUBSCRIPTION_NAME)) {
+      configBuilder.set(PULSAR_SUBSCRIPTION_NAME, UUID.randomUUID().toString());
+    }
     // Check builder configuration.
     SourceConfiguration sourceConfiguration =
         configBuilder.build(SOURCE_CONFIG_VALIDATOR, SourceConfiguration::new);
