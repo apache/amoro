@@ -19,6 +19,8 @@
 package com.netease.arctic.spark.writer;
 
 import com.netease.arctic.table.ArcticTable;
+import com.netease.arctic.table.blocker.Blocker;
+import com.netease.arctic.table.blocker.TableBlockerManager;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
@@ -50,17 +52,24 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
 
   private WriteMode writeMode = WriteMode.APPEND;
   private final ArcticWrite write;
+  private final TableBlockerManager tableBlockerManager;
+  private final Blocker block;
 
-  public ArcticSparkWriteBuilder(ArcticTable table, LogicalWriteInfo info) {
+  public ArcticSparkWriteBuilder(ArcticTable table,
+                                 LogicalWriteInfo info,
+                                 TableBlockerManager tableBlockerManager,
+                                 Blocker block) {
     this.options = info.options();
     if (options.containsKey(WriteMode.WRITE_MODE_KEY)) {
       this.writeMode = WriteMode.getWriteMode(options.get(WriteMode.WRITE_MODE_KEY));
     }
+    this.tableBlockerManager = tableBlockerManager;
+    this.block = block;
 
     if (table.isKeyedTable()) {
-      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info.schema());
+      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info.schema(), tableBlockerManager, block);
     } else {
-      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info.schema());
+      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info.schema(), tableBlockerManager, block);
     }
   }
 
