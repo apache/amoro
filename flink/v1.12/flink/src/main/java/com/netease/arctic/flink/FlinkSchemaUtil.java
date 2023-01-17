@@ -26,7 +26,6 @@ import org.apache.flink.table.api.TableSchema;
 import org.apache.flink.table.api.ValidationException;
 import org.apache.flink.table.api.WatermarkSpec;
 import org.apache.flink.table.types.logical.LogicalType;
-import org.apache.flink.table.types.logical.LogicalTypeRoot;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.TypeConversions;
 import org.apache.iceberg.types.Types;
@@ -42,6 +41,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.table.runtime.typeutils.TypeCheckUtils.isTimestamp;
 import static org.apache.flink.table.types.logical.utils.LogicalTypeChecks.getPrecision;
 
 /**
@@ -190,7 +190,7 @@ public class FlinkSchemaUtil {
   }
 
   private static void validateWatermarkExpression(LogicalType watermarkType) {
-    if (!canBeTimeAttributeType(watermarkType) || getPrecision(watermarkType) > 3) {
+    if (!isTimestamp(watermarkType) || getPrecision(watermarkType) > 3) {
       throw new ValidationException(
         String.format(
           "Invalid data type of expression for watermark definition. " +
@@ -198,14 +198,6 @@ public class FlinkSchemaUtil {
             " the supported precision 'p' is from 0 to 3, but the watermark expression type is %s",
           watermarkType));
     }
-  }
-
-  public static boolean canBeTimeAttributeType(LogicalType logicalType) {
-    LogicalTypeRoot typeRoot = logicalType.getTypeRoot();
-    if (typeRoot == LogicalTypeRoot.TIMESTAMP_WITHOUT_TIME_ZONE) {
-      return true;
-    }
-    return false;
   }
 
 }
