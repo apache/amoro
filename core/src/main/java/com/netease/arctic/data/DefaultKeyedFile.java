@@ -28,6 +28,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Default implementation of {@link PrimaryKeyedFile}, wrapping a {@link DataFile} and parsing extra information from
@@ -37,30 +39,30 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   private final DataFile internalFile;
 
-  private transient FileMeta meta;
+  private final FileMeta meta;
 
-  public DefaultKeyedFile(DataFile internalFile) {
+  private DefaultKeyedFile(DataFile internalFile, FileMeta meta) {
     this.internalFile = internalFile;
+    this.meta = meta;
   }
 
-  private void parse() {
-    this.meta = TableFileUtils.parseFileMetaFromFileName(TableFileUtils
-            .getFileName(internalFile.path().toString()));
+  public static DefaultKeyedFile parseChange(DataFile dataFile, Long sequenceNumber) {
+    FileMeta fileMeta = FileMeta.parseChange(dataFile.path().toString(), sequenceNumber);
+    return new DefaultKeyedFile(dataFile, fileMeta);
+  }
+
+  public static DefaultKeyedFile parseBase(DataFile dataFile) {
+    FileMeta fileMeta = FileMeta.parseBase(dataFile.path().toString());
+    return new DefaultKeyedFile(dataFile, fileMeta);
   }
 
   @Override
   public Long transactionId() {
-    if (meta == null) {
-      parse();
-    }
     return meta.transactionId();
   }
 
   @Override
   public DataFileType type() {
-    if (meta == null) {
-      parse();
-    }
     return meta.type();
   }
 
@@ -136,12 +138,12 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public DataFile copy() {
-    return new DefaultKeyedFile(internalFile.copy());
+    return new DefaultKeyedFile(internalFile.copy(), meta);
   }
 
   @Override
   public DataFile copyWithoutStats() {
-    return new DefaultKeyedFile(internalFile.copyWithoutStats());
+    return new DefaultKeyedFile(internalFile.copyWithoutStats(), meta);
   }
 
   @Override
@@ -151,9 +153,6 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
   @Override
   public DataTreeNode node() {
-    if (meta == null) {
-      parse();
-    }
     return meta.node();
   }
 
@@ -175,11 +174,15 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
   }
 
   public static class FileMeta {
+
+    private static final String KEYED_FILE_NAME_PATTERN_STRING = "(\\d+)-(\\w+)-(\\d+)-(\\d+)-(\\d+)-(\\d+)\\.\\w+";
+    private static final Pattern KEYED_FILE_NAME_PATTERN = Pattern.compile(KEYED_FILE_NAME_PATTERN_STRING);
+
     private final long transactionId;
     private final DataFileType type;
     private final DataTreeNode node;
 
-    public FileMeta(Long transactionId, DataFileType type, DataTreeNode node) {
+    private FileMeta(Long transactionId, DataFileType type, DataTreeNode node) {
       this.transactionId = transactionId;
       this.type = type;
       this.node = node;
@@ -195,6 +198,49 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
 
     public DataTreeNode node() {
       return node;
+    }
+
+    /**
+     * Flink write transactionId as 0.
+     * if we get transactionId from path is 0, we set transactionId as iceberg sequenceNumber.
+     * @param path file path
+     * @param sequenceNumber iceberg sequenceNumber
+     */
+    public static FileMeta parseChange(String path, Long sequenceNumber) {
+      String fileName = TableFileUtils.getFileName(path);
+      Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+      long nodeId = 1;
+      DataFileType type = null;
+      long transactionId = 0L;
+      if (matcher.matches()) {
+        nodeId = Long.parseLong(matcher.group(1));
+        type = DataFileType.ofShortName(matcher.group(2));
+        transactionId = Long.parseLong(matcher.group(3));
+        transactionId = transactionId == 0 ? sequenceNumber : transactionId;
+      }
+      DataTreeNode node = DataTreeNode.ofId(nodeId);
+      return new DefaultKeyedFile.FileMeta(transactionId, type, node);
+    }
+
+    /**
+     * Path writen by hive can not be pared by arctic format. so we set it transactionId as 0.
+     * @param path file path
+     */
+    public static FileMeta parseBase(String path) {
+      String fileName = TableFileUtils.getFileName(path);
+      Matcher matcher = KEYED_FILE_NAME_PATTERN.matcher(fileName);
+      long nodeId = 1;
+      DataFileType type = DataFileType.BASE_FILE;
+      long transactionId = 0L;
+      if (matcher.matches()) {
+        nodeId = Long.parseLong(matcher.group(1));
+        type = DataFileType.ofShortName(matcher.group(2));
+        transactionId = Long.parseLong(matcher.group(3));
+      } else {
+        transactionId = 0;
+      }
+      DataTreeNode node = DataTreeNode.ofId(nodeId);
+      return new DefaultKeyedFile.FileMeta(transactionId, type, node);
     }
   }
 }

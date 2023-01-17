@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.JobType;
 import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
@@ -68,19 +69,19 @@ public abstract class BaseExecutor implements Executor {
           config.getMaxInMemorySizeInBytes(), config.getRocksDBBasePath());
   }
 
-  protected Map<DataTreeNode, List<DataFile>> groupDataFilesByNode(List<DataFile> dataFiles) {
+  protected Map<DataTreeNode, List<PrimaryKeyedFile>> groupDataFilesByNode(List<PrimaryKeyedFile> dataFiles) {
     return new HashMap<>(dataFiles.stream().collect(Collectors.groupingBy(dataFile ->
-        TableFileUtils.parseFileNodeFromFileName(dataFile.path().toString()))));
+        dataFile.node())));
   }
 
-  protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<DeleteFile> deleteFiles) {
+  protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<? extends DeleteFile> deleteFiles) {
     return new HashMap<>(deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->
         TableFileUtils.parseFileNodeFromFileName(deleteFile.path().toString()))));
   }
 
-  protected long getMaxTransactionId(List<DataFile> dataFiles) {
+  protected long getMaxTransactionId(List<PrimaryKeyedFile> dataFiles) {
     OptionalLong maxTransactionId = dataFiles.stream()
-        .mapToLong(file -> TableFileUtils.parseFileTidFromFileName(file.path().toString())).max();
+        .mapToLong(PrimaryKeyedFile::transactionId).max();
     if (maxTransactionId.isPresent()) {
       return maxTransactionId.getAsLong();
     }
