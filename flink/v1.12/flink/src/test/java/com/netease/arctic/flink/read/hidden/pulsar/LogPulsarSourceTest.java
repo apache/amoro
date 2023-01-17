@@ -47,6 +47,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -116,6 +117,11 @@ public class LogPulsarSourceTest extends TableTestBase {
         .withPrimaryKeySpec(BaseLogTest.PRIMARY_KEY_SPEC)
         .create().asKeyedTable();
     catalogBuilder = InternalCatalogBuilder.builder().metastoreUrl(AMS.getUrl());
+  }
+
+  @After
+  public void after() {
+    testCatalog.dropTable(RESULT_TABLE_ID, true);
   }
 
   @Test(timeout = 60000)
