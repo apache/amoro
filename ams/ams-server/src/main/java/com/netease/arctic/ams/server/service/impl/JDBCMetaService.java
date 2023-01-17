@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.server.config.ServerTableProperties;
 import com.netease.arctic.ams.server.mapper.DatabaseMetadataMapper;
 import com.netease.arctic.ams.server.mapper.TableMetadataMapper;
+import com.netease.arctic.ams.server.mapper.TableTransactionMetaMapper;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.optimize.TableOptimizeItem;
 import com.netease.arctic.ams.server.service.IInternalTableService;
@@ -57,7 +58,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public static final Logger LOG = LoggerFactory.getLogger(JDBCMetaService.class);
   public static final Map<Key, TableMetaStore> TABLE_META_STORE_CACHE = new ConcurrentHashMap<>();
   private final FileInfoCacheService fileInfoCacheService;
-  private final ArcticTransactionService transactionService;
   private final DDLTracerService ddlTracerService;
 
   private final AdaptHiveService adaptHiveService;
@@ -65,7 +65,6 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
   public JDBCMetaService() {
     super();
     this.fileInfoCacheService = ServiceContainer.getFileInfoCacheService();
-    this.transactionService = ServiceContainer.getArcticTransactionService();
     this.ddlTracerService = ServiceContainer.getDdlTracerService();
     this.adaptHiveService = ServiceContainer.getAdaptHiveService();
   }
@@ -139,7 +138,7 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
         }
 
         fileInfoCacheService.deleteTableCache(tableIdentifier);
-        transactionService.delete(tableIdentifier.buildTableIdentifier());
+        deleteTransactions(tableIdentifier);
         ddlTracerService.dropTableData(tableIdentifier.buildTableIdentifier());
         adaptHiveService.removeTableCache(tableIdentifier);
       } catch (Exception e) {
@@ -157,6 +156,13 @@ public class JDBCMetaService extends IJDBCService implements IMetaService {
       ServiceContainer.getOptimizeService().clearRemovedTables(toRemoveTables);
     } catch (Exception e) {
       LOG.warn("dropTable success but failed to refresh optimize table cache", e);
+    }
+  }
+
+  private void deleteTransactions(TableIdentifier tableIdentifier) {
+    try (SqlSession sqlSession = getSqlSession(true)) {
+      TableTransactionMetaMapper mapper = getMapper(sqlSession, TableTransactionMetaMapper.class);
+      mapper.deleteTableTx(tableIdentifier.buildTableIdentifier());
     }
   }
 
