@@ -38,6 +38,7 @@ import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.util.Tasks;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Map;
 
@@ -56,7 +57,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   private final PartitionKey partitionKey;
   private final PrimaryKeyData primaryKey;
 
-  private final Map<TaskWriterKey, DataWriter<T>> dataWriterMap = Maps.newHashMap();
+  private final Map<TaskWriterKey, TaskDataWriter> dataWriterMap = Maps.newHashMap();
   private final List<DataFile> completedFiles = Lists.newArrayList();
 
   protected BaseTaskWriter(FileFormat format, FileAppenderFactory<T> appenderFactory,
@@ -75,11 +76,10 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
   @Override
   public void write(T row) throws IOException {
     TaskWriterKey writerKey = buildWriterKey(row);
-    DataWriter<T> writer;
+    TaskDataWriter writer;
     if (!dataWriterMap.containsKey(writerKey)) {
       TaskWriterKey key = new TaskWriterKey(partitionKey.copy(), writerKey.getTreeNode(), writerKey.getFileType());
-      writer = io.doAs(() -> appenderFactory.newDataWriter(
-          outputFileFactory.newOutputFile(writerKey), format, key.getPartitionKey()));
+      writer = new TaskDataWriter(key);
       dataWriterMap.put(key, writer);
     } else {
       writer = dataWriterMap.get(writerKey);
@@ -87,14 +87,13 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     write(writer, row);
 
     if (shouldRollToNewFile(writer)) {
-      closeWriter(writer);
-      completedFiles.add(writer.toDataFile());
+      writer.close();
       dataWriterMap.remove(writerKey);
     }
   }
 
-  protected void write(DataWriter<T> writer, T row) throws IOException {
-    writer.add(row);
+  protected void write(TaskDataWriter writer, T row) throws IOException {
+    writer.write(row);
   }
 
   protected TaskWriterKey buildWriterKey(T row) {
@@ -110,7 +109,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     return new TaskWriterKey(partitionKey, node, DataFileType.BASE_FILE);
   }
 
-  private boolean shouldRollToNewFile(DataWriter<T> dataWriter) {
+  private boolean shouldRollToNewFile(TaskDataWriter dataWriter) {
     // TODO: ORC file now not support target file size before closed
     return !format.equals(FileFormat.ORC) && dataWriter.length() >= targetFileSize;
   }
@@ -136,9 +135,8 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
 
   @Override
   public void close() throws IOException {
-    for (DataWriter<T> dataWriter : dataWriterMap.values()) {
-      closeWriter(dataWriter);
-      completedFiles.add(dataWriter.toDataFile());
+    for (TaskDataWriter dataWriter : dataWriterMap.values()) {
+      dataWriter.close();
     }
     dataWriterMap.clear();
   }
@@ -148,10 +146,38 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
    */
   protected abstract StructLike asStructLike(T data);
 
-  private void closeWriter(DataWriter<T> dataWriter) {
-    io.doAs(() -> {
-      dataWriter.close();
-      return null;
-    });
+  protected class TaskDataWriter {
+    private final DataWriter<T> dataWriter;
+    private long currentRows = 0;
+
+    protected TaskDataWriter(TaskWriterKey writerKey) {
+      this.dataWriter = io.doAs(() -> appenderFactory.newDataWriter(
+          outputFileFactory.newOutputFile(writerKey), format, writerKey.getPartitionKey()));
+    }
+
+    protected void write(T record) {
+      dataWriter.write(record);
+      currentRows++;
+    }
+
+    protected void close() {
+      io.doAs(() -> {
+        dataWriter.close();
+        return null;
+      });
+      if (currentRows > 0) {
+        completedFiles.add(dataWriter.toDataFile());
+      } else {
+        try {
+          io.deleteFile(dataWriter.toDataFile().path().toString());
+        } catch (UncheckedIOException e) {
+          // the file may not have been created, and it isn't worth failing the job to clean up, skip deleting
+        }
+      }
+    }
+
+    protected long length() {
+      return dataWriter.length();
+    }
   }
 }

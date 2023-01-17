@@ -50,8 +50,8 @@ import com.netease.arctic.ams.server.utils.SecurityUtils;
 import com.netease.arctic.ams.server.utils.ThreadPool;
 import com.netease.arctic.ams.server.utils.YamlUtils;
 import com.netease.arctic.utils.ConfigurationFileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
-import org.apache.hadoop.util.StringUtils;
 import org.apache.thrift.TMultiplexedProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TCompactProtocol;
@@ -332,7 +332,7 @@ public class ArcticMetaStore {
         }
       } catch (Throwable t1) {
         LOG.error("Failure when starting the worker threads, compact、checker、clean may not happen, " +
-            StringUtils.stringifyException(t1));
+            org.apache.hadoop.util.StringUtils.stringifyException(t1));
       } finally {
         startLock.unlock();
       }
@@ -617,6 +617,20 @@ public class ArcticMetaStore {
       OptimizeQueueMeta optimizeQueueMeta = new OptimizeQueueMeta();
       optimizeQueueMeta.name = optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_NAME);
       optimizeQueueMeta.container = optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_GROUP_CONTAINER);
+
+      //init schedule policy
+      String schedulePolicy =
+          StringUtils.trim(optimizeGroup.getString(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY));
+      if (StringUtils.isBlank(schedulePolicy)) {
+        schedulePolicy = ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA;
+      } else if (
+          !(ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA.equalsIgnoreCase(schedulePolicy) ||
+          ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED.equalsIgnoreCase(schedulePolicy))) {
+        throw new IllegalArgumentException(String.format("Scheduling policy only can be %s and %s",
+            ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_QUOTA,
+            ConfigFileProperties.OPTIMIZE_SCHEDULING_POLICY_BALANCED));
+      }
+      optimizeQueueMeta.setSchedulingPolicy(schedulePolicy);
 
       List<Container> containers = ServiceContainer.getOptimizeQueueService().getContainers();
 

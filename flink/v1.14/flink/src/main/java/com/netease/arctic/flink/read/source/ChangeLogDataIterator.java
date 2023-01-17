@@ -51,10 +51,12 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
       Function<T, Long> arcticFileOffsetGetter,
       Function<T, T> arcticMetaColumnRemover,
       Function<ChangeActionTrans<T>, T> changeActionTransformer) {
-    super(fileScanTaskReader, Collections.emptyList(), arcticFileOffsetGetter);
-    this.insertDataIterator = initDataIterator(fileScanTaskReader, arcticFileOffsetGetter, insertTasks);
+    super(fileScanTaskReader, Collections.emptyList(), arcticFileOffsetGetter, arcticMetaColumnRemover);
+    this.insertDataIterator =
+        new DataIterator<>(fileScanTaskReader, insertTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
     if (deleteTasks != null && !deleteTasks.isEmpty()) {
-      this.deleteDataIterator = initDataIterator(fileScanTaskReader, arcticFileOffsetGetter, deleteTasks);
+      this.deleteDataIterator =
+          new DataIterator<>(fileScanTaskReader, deleteTasks, arcticFileOffsetGetter, arcticMetaColumnRemover);
     }
     this.arcticMetaColumnRemover = arcticMetaColumnRemover;
     this.changeActionTransformer = changeActionTransformer;
@@ -149,16 +151,6 @@ public class ChangeLogDataIterator<T> extends DataIterator<T> {
 
   public long deleteRecordOffset() {
     return deleteDataIterator.recordOffset();
-  }
-
-  private DataIterator<T> initDataIterator(
-      FileScanTaskReader<T> fileScanTaskReader,
-      Function<T, Long> arcticFileOffsetGetter,
-      Collection<ArcticFileScanTask> tasks) {
-    return new DataIterator<>(
-        fileScanTaskReader,
-        tasks,
-        arcticFileOffsetGetter);
   }
 
   private static class QueueHolder<T> {

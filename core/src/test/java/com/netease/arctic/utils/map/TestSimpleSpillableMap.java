@@ -48,7 +48,7 @@ public class TestSimpleSpillableMap {
 
   private SimpleSpillableMap testMap(long expectMemorySize, int expectKeyCount) {
     SimpleSpillableMap actualMap =
-        new SimpleSpillableMap(expectMemorySize * (keySize + valueSize));
+        new SimpleSpillableMap(expectMemorySize * (keySize + valueSize), null);
     Assert.assertTrue(actualMap.getSizeOfFileOnDiskInBytes() == 0);
     Map<Key, Value> expectedMap = Maps.newHashMap();
     for (int i = 0; i < expectKeyCount; i++) {

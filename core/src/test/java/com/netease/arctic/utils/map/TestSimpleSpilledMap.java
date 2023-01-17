@@ -14,10 +14,10 @@ public class TestSimpleSpilledMap {
 
   @Before
   public void createMap() {
-    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L);
+    SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L, null);
     map = spillableMap.new SimpleSpilledMap(
         SerializationUtils.createJavaSimpleSerializer(),
-        SerializationUtils.createJavaSimpleSerializer());
+        SerializationUtils.createJavaSimpleSerializer(), null);
   }
 
   @After

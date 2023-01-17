@@ -182,6 +182,45 @@ public class TableTracerTest extends TableTestBase {
   }
 
   @Test
+  public void testTraceAppendNoneFiles() {
+    testTable.newAppend()
+        .commit();
+    List<TableCommitMeta> appendTableCommitMetas =
+        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(1, appendTableCommitMetas.size());
+    Assert.assertNotNull(appendTableCommitMetas.get(0).getChanges());
+
+    Transaction overwritetransaction = testTable.newTransaction();
+    overwritetransaction.newOverwrite()
+        .commit();
+    overwritetransaction.commitTransaction();
+    List<TableCommitMeta> overwriteTableCommitMetas =
+        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(2, overwriteTableCommitMetas.size());
+    Assert.assertEquals(1, overwriteTableCommitMetas.get(1).getChanges().size());
+
+    Transaction rewriteTransaction = testTable.newTransaction();
+    rewriteTransaction.newRewrite()
+        .commit();
+    rewriteTransaction.commitTransaction();
+    List<TableCommitMeta> rewriteTableCommitMetas =
+        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(3, rewriteTableCommitMetas.size());
+    Assert.assertEquals(1, rewriteTableCommitMetas.get(2).getChanges().size());
+
+    testTable.updateSchema().commit();
+    List<TableCommitMeta> updateSchemaCommitMetas =
+        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(3, updateSchemaCommitMetas.size());
+
+    testTable.updateProperties().commit();
+    List<TableCommitMeta> updatePropertiesCommitMetas =
+        AMS.handler().getTableCommitMetas().get(TABLE_ID.buildTableIdentifier());
+    Assert.assertEquals(4, updatePropertiesCommitMetas.size());
+    Assert.assertNull(rewriteTableCommitMetas.get(3).getChanges());
+  }
+
+  @Test
   public void testTraceFastAppendInTx() {
     UnkeyedTable operationTable = getOperationTable();
     Transaction transaction = operationTable.newTransaction();
