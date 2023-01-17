@@ -234,7 +234,7 @@ public class TableMetaStore implements Serializable {
       }
     } else {
       if (TableMetaStore.AUTH_METHOD_KERBEROS.equals(authMethod)) {
-          // re-construct
+        // re-construct
         if (!ugi.getAuthenticationMethod().toString().equals(authMethod) ||
             !ugi.getUserName().equals(krbPrincipal)) {
           try {
