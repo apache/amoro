@@ -33,7 +33,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Set;
 
-
 public class RewritePartitionsTest extends TableDataTestBase {
 
   /**
@@ -58,7 +57,8 @@ public class RewritePartitionsTest extends TableDataTestBase {
     StructLikeMap<Long> partitionMaxTxId =
         TablePropertyUtil.getPartitionMaxTransactionId(getArcticTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
-    Assert.assertEquals(txId,
+    Assert.assertEquals(
+        txId,
         partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
     Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
     Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
@@ -71,7 +71,7 @@ public class RewritePartitionsTest extends TableDataTestBase {
     Assert.assertEquals(5, rows.size());
 
     Set<Integer> resultIdSet = Sets.newHashSet();
-    rows.forEach( r-> resultIdSet.add((Integer) r.get(0)));
+    rows.forEach(r -> resultIdSet.add((Integer) r.get(0)));
     Assert.assertTrue(resultIdSet.contains(7));
     Assert.assertTrue(resultIdSet.contains(8));
     Assert.assertTrue(resultIdSet.contains(9));

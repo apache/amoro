@@ -37,13 +37,11 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -101,9 +99,8 @@ public class TaskWriterTest extends TableTestBase {
 
   @Test
   public void testChangeWriter() throws IOException {
-    GenericChangeTaskWriter writer =   GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
         .withTransactionId(1L).buildChangeWriter();
-
 
     for (Record record : writeRecords()) {
       writer.write(record);

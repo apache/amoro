@@ -41,7 +41,8 @@ public abstract class TableTestBase extends CatalogTestBase {
 
   private ArcticTable arcticTable;
 
-  public TableTestBase(TableFormat testFormat, Schema tableSchema, PrimaryKeySpec primaryKeySpec,
+  public TableTestBase(
+      TableFormat testFormat, Schema tableSchema, PrimaryKeySpec primaryKeySpec,
       PartitionSpec partitionSpec, Map<String, String> tableProperties) {
     super(testFormat);
     this.tableSchema = tableSchema;
@@ -54,7 +55,8 @@ public abstract class TableTestBase extends CatalogTestBase {
     }
   }
 
-  public TableTestBase(TableFormat testFormat, boolean keyedTable, boolean partitionedTable,
+  public TableTestBase(
+      TableFormat testFormat, boolean keyedTable, boolean partitionedTable,
       Map<String, String> tableProperties) {
     this(testFormat, TableTestHelpers.TABLE_SCHEMA,
         keyedTable ? TableTestHelpers.PRIMARY_KEY_SPEC : PrimaryKeySpec.noPrimaryKey(),
@@ -118,5 +120,4 @@ public abstract class TableTestBase extends CatalogTestBase {
   protected boolean isPartitionedTable() {
     return partitionSpec != null && partitionSpec.isPartitioned();
   }
-
 }

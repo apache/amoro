@@ -60,18 +60,18 @@ public class TableTracerTest extends TableTestBase {
 
   private UnkeyedTable operationTable;
 
-  @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
-  public static Object[][] parameters() {
-    return new Object[][]{{true, true, true}, {true, true, false}, {true, false, true}, {true, false, false},
-                          {false, true, true}, {false, true, false}};
-  }
-
   public TableTracerTest(
       boolean keyedTable,
       boolean onBaseTable,
       boolean partitionedTable) {
     super(TableFormat.MIXED_ICEBERG, keyedTable, partitionedTable);
     this.onBaseTable = onBaseTable;
+  }
+
+  @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}, partitionedTable = {2}")
+  public static Object[][] parameters() {
+    return new Object[][] {{true, true, true}, {true, true, false}, {true, false, true}, {true, false, false},
+                           {false, true, true}, {false, true, false}};
   }
 
   private UnkeyedTable getOperationTable() {
@@ -115,12 +115,12 @@ public class TableTracerTest extends TableTestBase {
         .appendFile(getDataFile(2))
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas().get(
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas().get(
         operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
-    validateCommitMeta(commitMeta, DataOperations.APPEND, new org.apache.iceberg.DataFile[]{
-        getDataFile(1), getDataFile(2)}, new org.apache.iceberg.DataFile[]{});
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
+    validateCommitMeta(commitMeta, DataOperations.APPEND, new org.apache.iceberg.DataFile[] {
+        getDataFile(1), getDataFile(2)}, new org.apache.iceberg.DataFile[] {});
   }
 
   @Test
@@ -136,12 +136,13 @@ public class TableTracerTest extends TableTestBase {
 
     transaction.commitTransaction();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    List<TableCommitMeta> tableCommitMetas =
+        getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(commitMeta, DataOperations.APPEND,
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
   }
 
   @Test
@@ -153,14 +154,14 @@ public class TableTracerTest extends TableTestBase {
         .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas().
-        get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
+        .get(operationTable.id().buildTableIdentifier());
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(commitMeta, DataOperations.APPEND,
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
   }
 
   @Test
@@ -171,13 +172,13 @@ public class TableTracerTest extends TableTestBase {
         .appendFile(getDataFile(2))
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(commitMeta, DataOperations.APPEND,
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
   }
 
   @Test
@@ -192,13 +193,13 @@ public class TableTracerTest extends TableTestBase {
     Assert.assertFalse(getAmsHandler().getTableCommitMetas().containsKey(operationTable.id().buildTableIdentifier()));
 
     transaction.commitTransaction();
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     validateCommitMeta(commitMeta, DataOperations.APPEND,
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
   }
 
   @Test
@@ -210,14 +211,14 @@ public class TableTracerTest extends TableTestBase {
         .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     validateCommitMeta(commitMeta, DataOperations.APPEND,
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
   }
 
   @Test
@@ -234,12 +235,12 @@ public class TableTracerTest extends TableTestBase {
         .addFile(getDataFile(3))
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
-    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)});
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
+    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
   @Test
@@ -261,12 +262,12 @@ public class TableTracerTest extends TableTestBase {
         .get(operationTable.id().buildTableIdentifier()).size());
 
     transaction.commitTransaction();
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
-    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)});
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
+    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
   @Test
@@ -284,13 +285,13 @@ public class TableTracerTest extends TableTestBase {
         .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
     Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
-    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)});
+    validateCommitMeta(commitMeta, DataOperations.OVERWRITE, new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
   @Test
@@ -302,16 +303,17 @@ public class TableTracerTest extends TableTestBase {
         .commit();
 
     operationTable.newRewrite()
-        .rewriteFiles(Sets.newHashSet(getDataFile(1), getDataFile(2)),
+        .rewriteFiles(
+            Sets.newHashSet(getDataFile(1), getDataFile(2)),
             Sets.newHashSet(getDataFile(3)))
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
-    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)});
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
+    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
   @Test
@@ -324,7 +326,8 @@ public class TableTracerTest extends TableTestBase {
 
     Transaction transaction = operationTable.newTransaction();
     transaction.newRewrite()
-        .rewriteFiles(Sets.newHashSet(getDataFile(1), getDataFile(2)),
+        .rewriteFiles(
+            Sets.newHashSet(getDataFile(1), getDataFile(2)),
             Sets.newHashSet(getDataFile(3)))
         .commit();
 
@@ -332,12 +335,12 @@ public class TableTracerTest extends TableTestBase {
         .get(operationTable.id().buildTableIdentifier()).size());
 
     transaction.commitTransaction();
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
-    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)});
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
+    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
   @Test
@@ -349,18 +352,19 @@ public class TableTracerTest extends TableTestBase {
         .commit();
 
     operationTable.newRewrite()
-        .rewriteFiles(Sets.newHashSet(getDataFile(1), getDataFile(2)),
+        .rewriteFiles(
+            Sets.newHashSet(getDataFile(1), getDataFile(2)),
             Sets.newHashSet(getDataFile(3)))
         .set(SnapshotSummary.SNAPSHOT_PRODUCER, CommitMetaProducer.OPTIMIZE.name())
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
     Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
-    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)});
+    validateCommitMeta(commitMeta, DataOperations.REPLACE, new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)});
   }
 
   @Test
@@ -383,17 +387,17 @@ public class TableTracerTest extends TableTestBase {
 
     List<Snapshot> snapshots = Lists.newArrayList(operationTable.snapshots());
     Assert.assertEquals(2, snapshots.size());
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     Assert.assertEquals(2, commitMeta.getChanges().size());
     validateTableChange(snapshots.get(0), commitMeta.getChanges().get(0),
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
     validateTableChange(snapshots.get(1), commitMeta.getChanges().get(1),
-        new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1)});
+        new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1)});
   }
 
   @Test
@@ -418,18 +422,18 @@ public class TableTracerTest extends TableTestBase {
 
     List<Snapshot> snapshots = Lists.newArrayList(operationTable.snapshots());
     Assert.assertEquals(2, snapshots.size());
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(1, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(0);
+    Assert.assertEquals(1, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(0);
     Assert.assertSame(commitMeta.getCommitMetaProducer(), CommitMetaProducer.OPTIMIZE);
     Assert.assertEquals(2, commitMeta.getChanges().size());
     validateTableChange(snapshots.get(0), commitMeta.getChanges().get(0),
-        new org.apache.iceberg.DataFile[]{getDataFile(1), getDataFile(2)},
-        new org.apache.iceberg.DataFile[]{});
+        new org.apache.iceberg.DataFile[] {getDataFile(1), getDataFile(2)},
+        new org.apache.iceberg.DataFile[] {});
     validateTableChange(snapshots.get(1), commitMeta.getChanges().get(1),
-        new org.apache.iceberg.DataFile[]{getDataFile(3)},
-        new org.apache.iceberg.DataFile[]{getDataFile(1)});
+        new org.apache.iceberg.DataFile[] {getDataFile(3)},
+        new org.apache.iceberg.DataFile[] {getDataFile(1)});
   }
 
   @Test
@@ -446,13 +450,13 @@ public class TableTracerTest extends TableTestBase {
         .addFile(TableTestHelpers.getFile(4, "op_time_day=2022-01-02"))
         .commit();
 
-    List<TableCommitMeta> TableCommitMetas = getAmsHandler().getTableCommitMetas()
+    List<TableCommitMeta> tableCommitMetas = getAmsHandler().getTableCommitMetas()
         .get(operationTable.id().buildTableIdentifier());
-    Assert.assertEquals(2, TableCommitMetas.size());
-    TableCommitMeta commitMeta = TableCommitMetas.get(1);
+    Assert.assertEquals(2, tableCommitMetas.size());
+    TableCommitMeta commitMeta = tableCommitMetas.get(1);
     validateCommitMeta(commitMeta, DataOperations.OVERWRITE,
-        new org.apache.iceberg.DataFile[]{TableTestHelpers.getFile(4, "op_time_day=2022-01-02")},
-        new org.apache.iceberg.DataFile[]{TableTestHelpers.getFile(3, "op_time_day=2022-01-02")});
+        new org.apache.iceberg.DataFile[] {TableTestHelpers.getFile(4, "op_time_day=2022-01-02")},
+        new org.apache.iceberg.DataFile[] {TableTestHelpers.getFile(3, "op_time_day=2022-01-02")});
   }
 
   @Test
@@ -575,12 +579,13 @@ public class TableTracerTest extends TableTestBase {
       if (isPartitionedTable()) {
         Assert.assertEquals(getArcticTable().spec().specId(), validateFile.getSpecId());
         Assert.assertEquals(1, validateFile.getPartitionSize());
-        Assert.assertEquals(getArcticTable().spec().fields().get(0).name(),
+        Assert.assertEquals(
+            getArcticTable().spec().fields().get(0).name(),
             validateFile.getPartition().get(0).getName());
-        Assert.assertEquals(getArcticTable().spec().partitionToPath(icebergFile.partition()),
+        Assert.assertEquals(
+            getArcticTable().spec().partitionToPath(icebergFile.partition()),
             getArcticTable().spec().fields().get(0).name() + "=" + validateFile.getPartition().get(0).getValue());
       }
     }
   }
-
 }

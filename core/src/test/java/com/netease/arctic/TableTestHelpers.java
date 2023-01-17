@@ -64,7 +64,8 @@ public class TableTestHelpers {
 
   private static final Map<String, DataFile> DATA_FILE_MAP = Maps.newHashMap();
 
-  public static DataFile getFile(String basePath, int number, PartitionSpec spec, String partitionPath,
+  public static DataFile getFile(
+      String basePath, int number, PartitionSpec spec, String partitionPath,
       Metrics metrics, boolean fromCache) {
     String filePath;
     if (partitionPath != null) {
@@ -79,7 +80,16 @@ public class TableTestHelpers {
     }
   }
 
-  private static DataFile buildDataFile(String filePath,PartitionSpec spec, String partitionPath,
+  public static DataFile getFile(int number) {
+    return getFile("/data", number, PartitionSpec.unpartitioned(), null, null, true);
+  }
+
+  public static DataFile getFile(int number, String partitionPath) {
+    return getFile("/data", number, SPEC, partitionPath, null, true);
+  }
+
+  private static DataFile buildDataFile(
+      String filePath, PartitionSpec spec, String partitionPath,
       Metrics metrics) {
     DataFiles.Builder fileBuilder = DataFiles.builder(spec);
     fileBuilder
@@ -95,11 +105,5 @@ public class TableTestHelpers {
     return fileBuilder.build();
   }
 
-  public static DataFile getFile(int number) {
-    return getFile("/data", number, PartitionSpec.unpartitioned(), null, null, true);
-  }
 
-  public static DataFile getFile(int number, String partitionPath) {
-    return getFile("/data", number, SPEC, partitionPath, null, true);
-  }
 }

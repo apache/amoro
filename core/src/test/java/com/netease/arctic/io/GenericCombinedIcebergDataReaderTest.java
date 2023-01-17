@@ -50,7 +50,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -65,17 +64,17 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
   private CombinedIcebergScanTask dataScanTask;
   private GenericCombinedIcebergDataReader dataReader;
 
+  public GenericCombinedIcebergDataReaderTest(
+      boolean partitionedTable, FileFormat fileFormat) {
+    super(TableFormat.ICEBERG, false, partitionedTable, buildTableProperties(fileFormat));
+    this.fileFormat = fileFormat;
+  }
+
   @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
   public static Object[][] parameters() {
     return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
                            {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
                            {true, FileFormat.ORC}, {false, FileFormat.ORC}};
-  }
-
-  public GenericCombinedIcebergDataReaderTest(
-      boolean partitionedTable, FileFormat fileFormat) {
-    super(TableFormat.ICEBERG, false, partitionedTable, buildTableProperties(fileFormat));
-    this.fileFormat = fileFormat;
   }
 
   private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
@@ -112,24 +111,23 @@ public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
         Collections.singletonList(idRecord.copy("id", 1)), idSchema);
 
-
     List<Pair<CharSequence, Long>> deletes = Lists.newArrayList();
     deletes.add(Pair.of(dataFile.path(), 1L));
     DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
         outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
 
     scanTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[]{new IcebergContentFile(dataFile, 1L)},
-        new IcebergContentFile[]{new IcebergContentFile(eqDeleteFile, 2L),
-                                 new IcebergContentFile(posDeleteFile, 3L)},
+        new IcebergContentFile[] {new IcebergContentFile(dataFile, 1L)},
+        new IcebergContentFile[] {new IcebergContentFile(eqDeleteFile, 2L),
+                                  new IcebergContentFile(posDeleteFile, 3L)},
         getArcticTable().spec(), partitionData);
 
     dataScanTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[]{new IcebergContentFile(dataFile, 1L)},
-        new IcebergContentFile[]{}, getArcticTable().spec(), partitionData);
+        new IcebergContentFile[] {new IcebergContentFile(dataFile, 1L)},
+        new IcebergContentFile[] {}, getArcticTable().spec(), partitionData);
 
     dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
-        getArcticTable().schema(), null,false,
+        getArcticTable().schema(), null, false,
         IdentityPartitionConverters::convertConstant, false);
   }
 

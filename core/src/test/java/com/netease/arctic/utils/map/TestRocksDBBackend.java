@@ -57,7 +57,6 @@ public class TestRocksDBBackend {
     }
   }
 
-
   @Test
   public void testIterator() {
     RocksDBBackend rocksDBBackend = RocksDBBackend.getOrCreateInstance();
@@ -68,18 +67,18 @@ public class TestRocksDBBackend {
     rocksDBBackend.put(CF_NAME, 4556, expect.get(2));
     Iterator<String> values = rocksDBBackend.valuesForTest(CF_NAME);
     List<String> valueList = new ArrayList<>();
-    for ( ; values.hasNext(); ) {
+    for (; values.hasNext(); ) {
       valueList.add(values.next());
     }
     Collections.sort(expect);
     Collections.sort(valueList);
     Assert.assertEquals(expect.size(), valueList.size());
     Assert.assertArrayEquals(expect.toArray(), valueList.toArray());
-    
+
     rocksDBBackend.delete(CF_NAME, "name");
     valueList = new ArrayList<>();
     values = rocksDBBackend.valuesForTest(CF_NAME);
-    for ( ; values.hasNext(); ) {
+    for (; values.hasNext(); ) {
       valueList.add(values.next());
     }
     Assert.assertEquals(2, valueList.size());

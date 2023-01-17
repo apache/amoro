@@ -64,7 +64,6 @@ public class TestTableAlter extends TableTestBase {
     Assert.assertTrue(properties.containsKey(testProps));
     Assert.assertEquals(testPropsValue, properties.get(testProps));
 
-
     updateProperties = getArcticTable().updateProperties();
     updateProperties.remove(testProps);
     updateProperties.set(testProps2, testPropsVal2);
@@ -99,7 +98,8 @@ public class TestTableAlter extends TableTestBase {
             required(12, "alt", Types.DoubleType.get()),
             required(13, "long", Types.FloatType.get())
         )), "map of address to coordinate");
-    us.addColumn("points", Types.ListType.ofOptional(14,
+    us.addColumn("points", Types.ListType.ofOptional(
+        14,
         Types.StructType.of(
             required(15, "x", Types.LongType.get()),
             required(16, "y", Types.IntegerType.get()),
@@ -151,9 +151,9 @@ public class TestTableAlter extends TableTestBase {
     us.commit();
     KeyedSchemaUpdate.syncSchema(getArcticTable().asKeyedTable());
 
-    Assert.assertEquals("Should match base and change schema",
+    Assert.assertEquals(
+        "Should match base and change schema",
         getArcticTable().asKeyedTable().baseTable().schema().asStruct(),
         getArcticTable().asKeyedTable().changeTable().schema().asStruct());
   }
-
 }

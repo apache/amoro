@@ -26,7 +26,6 @@ import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.scan.CombinedScanTask;
 import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
 import org.apache.iceberg.AppendFiles;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
@@ -84,7 +83,8 @@ public class DataTestHelpers {
     return TestHelpers.Row.of(tsDay);
   }
 
-  public static List<DataFile> writeChangeStore(KeyedTable keyedTable, long txId, ChangeAction action,
+  public static List<DataFile> writeChangeStore(
+      KeyedTable keyedTable, long txId, ChangeAction action,
       List<Record> records) {
     try (GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(keyedTable)
         .withChangeAction(action)
@@ -122,7 +122,8 @@ public class DataTestHelpers {
     }
   }
 
-  public static List<DataFile> writeAndCommitChangeStore(KeyedTable keyedTable, long txId, ChangeAction action,
+  public static List<DataFile> writeAndCommitChangeStore(
+      KeyedTable keyedTable, long txId, ChangeAction action,
       List<Record> records) {
     List<DataFile> writeFiles = writeChangeStore(keyedTable, txId, action, records);
     AppendFiles appendFiles = keyedTable.changeTable().newAppend();

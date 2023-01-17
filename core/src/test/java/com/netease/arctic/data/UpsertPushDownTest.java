@@ -25,6 +25,11 @@ import java.util.stream.Collectors;
 @RunWith(Parameterized.class)
 public class UpsertPushDownTest extends TableTestBase {
 
+  public UpsertPushDownTest(PartitionSpec partitionSpec) {
+    super(TableFormat.MIXED_ICEBERG, TableTestHelpers.TABLE_SCHEMA, TableTestHelpers.PRIMARY_KEY_SPEC,
+        partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true"));
+  }
+
   @Parameterized.Parameters(name = "spec = {0}")
   public static Object[] parameters() {
     return new Object[] {PartitionSpec.unpartitioned(), TableTestHelpers.SPEC,
@@ -32,19 +37,14 @@ public class UpsertPushDownTest extends TableTestBase {
                              .day("op_time").identity("ts").build()};
   }
 
-  public UpsertPushDownTest(PartitionSpec partitionSpec) {
-    super(TableFormat.MIXED_ICEBERG, TableTestHelpers.TABLE_SCHEMA, TableTestHelpers.PRIMARY_KEY_SPEC,
-        partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true"));
-  }
-
   @Before
   public void initChangeStoreData() {
     DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 1L,
         ChangeAction.DELETE, writeRecords(1, "aaa", 0, 1));
     DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 2L,
-        ChangeAction.UPDATE_AFTER, writeRecords(1, "aaa", 0,1));
+        ChangeAction.UPDATE_AFTER, writeRecords(1, "aaa", 0, 1));
     DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 3L,
-        ChangeAction.DELETE, writeRecords(2, "bbb",  0, 2));
+        ChangeAction.DELETE, writeRecords(2, "bbb", 0, 2));
     DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 3L,
         ChangeAction.UPDATE_AFTER, writeRecords(2, "bbb", 0, 2));
     DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 4L,
@@ -63,7 +63,7 @@ public class UpsertPushDownTest extends TableTestBase {
   @Test
   public void testReadKeyedTableWithPartitionAndColumnFilter() {
     Assume.assumeTrue(isPartitionedTable());
-    Expression partition_and_np = Expressions.and(
+    Expression partitionAndColumnFilter = Expressions.and(
         Expressions.and(
             Expressions.notNull("op_time"),
             Expressions.equal("op_time", "2022-01-02T12:00:00")
@@ -73,7 +73,7 @@ public class UpsertPushDownTest extends TableTestBase {
             Expressions.equal("name", "bbb")
         )
     );
-    List<Record> records  = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partition_and_np);
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionAndColumnFilter);
     // Scan from change store only filter partition column expression, so record(name=ccc) is still returned.
     Assert.assertEquals(records.size(), 1);
     Assert.assertTrue(recordToNameList(records).contains("ccc"));
@@ -82,7 +82,7 @@ public class UpsertPushDownTest extends TableTestBase {
   @Test
   public void testReadKeyedTableWithPartitionOrColumnFilter() {
     Assume.assumeTrue(isPartitionedTable());
-    Expression partition_or_np = Expressions.or(
+    Expression partitionOrColumnFilter = Expressions.or(
         Expressions.and(
             Expressions.notNull("op_time"),
             Expressions.equal("op_time", "2022-01-02T12:00:00")
@@ -92,7 +92,7 @@ public class UpsertPushDownTest extends TableTestBase {
             Expressions.equal("name", "bbb")
         )
     );
-    List<Record> records  = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partition_or_np);
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionOrColumnFilter);
     Assert.assertEquals(records.size(), 2);
     Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
@@ -100,22 +100,22 @@ public class UpsertPushDownTest extends TableTestBase {
   @Test
   public void testReadKeyedTableWithPartitionFilter() {
     Assume.assumeTrue(isPartitionedTable());
-    Expression only_partition = Expressions.and(
+    Expression partitionFilter = Expressions.and(
         Expressions.notNull("op_time"),
         Expressions.equal("op_time", "2022-01-02T12:00:00")
     );
-    List<Record> records  = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), only_partition);
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionFilter);
     Assert.assertEquals(records.size(), 1);
     Assert.assertTrue(recordToNameList(records).contains("ccc"));
   }
 
   @Test
   public void testReadKeyedTableWithColumnFilter() {
-    Expression only_np = Expressions.and(
+    Expression columnFilter = Expressions.and(
         Expressions.notNull("name"),
         Expressions.equal("name", "bbb")
     );
-    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), only_np);
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), columnFilter);
     Assert.assertEquals(records.size(), 2);
     Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
   }
@@ -123,7 +123,7 @@ public class UpsertPushDownTest extends TableTestBase {
   @Test
   public void testReadKeyedTableWithGreaterPartitionAndColumnFilter() {
     Assume.assumeTrue(isPartitionedTable());
-    Expression partition_and_np_gt = Expressions.and(
+    Expression greaterPartitionAndColumnFilter = Expressions.and(
         Expressions.and(
             Expressions.notNull("op_time"),
             Expressions.greaterThan("op_time", "2022-01-01T12:00:00")
@@ -133,7 +133,8 @@ public class UpsertPushDownTest extends TableTestBase {
             Expressions.equal("name", "bbb")
         )
     );
-    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partition_and_np_gt);
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(),
+        greaterPartitionAndColumnFilter);
     Assert.assertEquals(records.size(), 1);
     Assert.assertTrue(recordToNameList(records).contains("ccc"));
   }

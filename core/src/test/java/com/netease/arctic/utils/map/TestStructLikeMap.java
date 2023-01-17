@@ -19,23 +19,23 @@ public class TestStructLikeMap {
 
   private static Schema PK_SCHEMA = new Schema(
       Arrays.asList(
-          Types.NestedField.of(1, false,"c1", Types.DoubleType.get()),
-          Types.NestedField.of(2, false,"c2", Types.IntegerType.get()),
-          Types.NestedField.of(3, false,"c3", Types.BooleanType.get())));
+          Types.NestedField.of(1, false, "c1", Types.DoubleType.get()),
+          Types.NestedField.of(2, false, "c2", Types.IntegerType.get()),
+          Types.NestedField.of(3, false, "c3", Types.BooleanType.get())));
 
   private static Schema DATA_SCHEMA = new Schema(
       Arrays.asList(
-          Types.NestedField.of(1, false,"c1", Types.DoubleType.get()),
-          Types.NestedField.of(2, false,"c2", Types.IntegerType.get()),
-          Types.NestedField.of(3, false,"c3", Types.BooleanType.get()),
-          Types.NestedField.of(4, false,"c4", Types.StringType.get()),
-          Types.NestedField.of(5, false,"c5", Types.BinaryType.get())));
+          Types.NestedField.of(1, false, "c1", Types.DoubleType.get()),
+          Types.NestedField.of(2, false, "c2", Types.IntegerType.get()),
+          Types.NestedField.of(3, false, "c3", Types.BooleanType.get()),
+          Types.NestedField.of(4, false, "c4", Types.StringType.get()),
+          Types.NestedField.of(5, false, "c5", Types.BinaryType.get())));
 
   private static Schema DELETE_SCHEMA = new Schema(
       Arrays.asList(
-          Types.NestedField.of(1, false,"c1", Types.DoubleType.get()),
-          Types.NestedField.of(2, false,"c2", Types.IntegerType.get()),
-          Types.NestedField.of(3, false,"c3", Types.BooleanType.get())));
+          Types.NestedField.of(1, false, "c1", Types.DoubleType.get()),
+          Types.NestedField.of(2, false, "c2", Types.IntegerType.get()),
+          Types.NestedField.of(3, false, "c3", Types.BooleanType.get())));
 
   @Test
   public void testMemoryMap() throws IOException {
@@ -69,7 +69,7 @@ public class TestStructLikeMap {
 
     private static final Random RANDOM = new Random(100000);
 
-    private Object[] values = new Object[]{
+    private Object[] values = new Object[] {
         RANDOM.nextDouble(),
         RANDOM.nextInt(),
         RANDOM.nextBoolean(),
@@ -79,6 +79,7 @@ public class TestStructLikeMap {
 
     DataStructLike() throws UnsupportedEncodingException {
     }
+
     @Override
     public int size() {
       return 5;
@@ -99,7 +100,7 @@ public class TestStructLikeMap {
 
     private static final Random RANDOM = new Random(100000);
 
-    private Object[] values = new Object[]{
+    private Object[] values = new Object[] {
         RANDOM.nextDouble(),
         RANDOM.nextInt(),
         RANDOM.nextBoolean()
@@ -107,6 +108,7 @@ public class TestStructLikeMap {
 
     DeleteStructLike() {
     }
+
     @Override
     public int size() {
       return 3;

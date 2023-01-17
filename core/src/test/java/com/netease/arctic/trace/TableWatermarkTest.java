@@ -47,14 +47,14 @@ public class TableWatermarkTest extends TableTestBase {
 
   private UnkeyedTable operationTable;
 
-  @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}")
-  public static Object[][] parameters() {
-    return new Object[][]{{true, true}, {true, false}, {false, true}};
-  }
-
   public TableWatermarkTest(boolean keyedTable, boolean onBaseTable) {
     super(TableFormat.MIXED_ICEBERG, keyedTable, true);
     this.onBaseTable = onBaseTable;
+  }
+
+  @Parameterized.Parameters(name = "keyedTable = {0}, onBaseTable = {1}")
+  public static Object[][] parameters() {
+    return new Object[][] {{true, true}, {true, false}, {false, true}};
   }
 
   private UnkeyedTable getOperationTable() {

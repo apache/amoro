@@ -33,10 +33,9 @@ import java.util.Map;
 
 public class CatalogLoaderTest {
 
+  private static final String TEST_CATALOG_NAME = "test";
   @ClassRule
   public static TestAms TEST_AMS = new TestAms();
-
-  private static final String TEST_CATALOG_NAME = "test";
 
   @Test
   public void testLoadIcebergHadoopCatalog() {
@@ -109,5 +108,4 @@ public class CatalogLoaderTest {
   private String getCatalogUrl(String catalogName) {
     return TEST_AMS.getServerUrl() + "/" + catalogName;
   }
-
 }

@@ -44,21 +44,15 @@ import static org.apache.iceberg.CatalogUtil.ICEBERG_CATALOG_TYPE_HADOOP;
 
 public abstract class CatalogTestBase {
 
+  protected static final String TEST_CATALOG_NAME = TableTestHelpers.TEST_CATALOG_NAME;
   @ClassRule
   public static TestAms TEST_AMS = new TestAms();
-
-  protected static final String TEST_CATALOG_NAME = TableTestHelpers.TEST_CATALOG_NAME;
-
   private final TableFormat testFormat;
-
-  private ArcticCatalog catalog;
-
-  private CatalogMeta catalogMeta;
-
-  private Catalog icebergCatalog;
-
   @Rule
   public TemporaryFolder temp = new TemporaryFolder();
+  private ArcticCatalog catalog;
+  private CatalogMeta catalogMeta;
+  private Catalog icebergCatalog;
 
   public CatalogTestBase(TableFormat testFormat) {
     this.testFormat = testFormat;

@@ -37,7 +37,8 @@ public class CatalogTestHelpers {
   private static final String HADOOP_EMPTY_CONFIG_BASE64 =
       Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
 
-  public static CatalogMeta buildCatalogMeta(String catalogName, String type,
+  public static CatalogMeta buildCatalogMeta(
+      String catalogName, String type,
       Map<String, String> properties, TableFormat... tableFormats) {
     Map<String, String> storageConfig = new HashMap<>();
     storageConfig.put(
@@ -47,23 +48,27 @@ public class CatalogTestHelpers {
     storageConfig.put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HDFS_SITE, HADOOP_EMPTY_CONFIG_BASE64);
 
     Map<String, String> authConfig = new HashMap<>();
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
+    authConfig.put(
+        CatalogMetaProperties.AUTH_CONFIGS_KEY_TYPE,
         CatalogMetaProperties.AUTH_CONFIGS_VALUE_TYPE_SIMPLE);
-    authConfig.put(CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
+    authConfig.put(
+        CatalogMetaProperties.AUTH_CONFIGS_KEY_HADOOP_USERNAME,
         System.getProperty("user.name"));
 
-
     if (tableFormats != null && tableFormats.length > 0) {
-      properties.put(CatalogMetaProperties.TABLE_FORMATS,
+      properties.put(
+          CatalogMetaProperties.TABLE_FORMATS,
           Arrays.stream(tableFormats).map(TableFormat::name).collect(Collectors.joining(",")));
     }
     return new CatalogMeta(catalogName, type, storageConfig, authConfig, properties);
   }
 
-  public static CatalogMeta buildHiveCatalogMeta(String catalogName, Map<String, String> properties,
+  public static CatalogMeta buildHiveCatalogMeta(
+      String catalogName, Map<String, String> properties,
       Configuration hiveConfiguration, TableFormat... tableFormats) {
     CatalogMeta meta = buildCatalogMeta(catalogName, CatalogMetaProperties.CATALOG_TYPE_HIVE, properties, tableFormats);
-    meta.getStorageConfigs().put(CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
+    meta.getStorageConfigs().put(
+        CatalogMetaProperties.STORAGE_CONFIGS_KEY_HIVE_SITE,
         encodeHadoopConfiguration(hiveConfiguration));
     return meta;
   }
@@ -78,5 +83,4 @@ public class CatalogTestHelpers {
       throw new UncheckedIOException(e);
     }
   }
-
 }

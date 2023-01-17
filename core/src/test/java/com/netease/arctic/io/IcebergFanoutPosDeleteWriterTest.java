@@ -50,16 +50,16 @@ public class IcebergFanoutPosDeleteWriterTest extends TableTestBase {
 
   private final FileFormat fileFormat;
 
+  public IcebergFanoutPosDeleteWriterTest(boolean partitionedTable, FileFormat fileFormat) {
+    super(TableFormat.ICEBERG, false, partitionedTable);
+    this.fileFormat = fileFormat;
+  }
+
   @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
   public static Object[][] parameters() {
     return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
                            {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
                            {true, FileFormat.ORC}, {false, FileFormat.ORC}};
-  }
-
-  public IcebergFanoutPosDeleteWriterTest(boolean partitionedTable, FileFormat fileFormat) {
-    super(TableFormat.ICEBERG, false, partitionedTable);
-    this.fileFormat = fileFormat;
   }
 
   private StructLike getPartitionData() {
@@ -103,7 +103,8 @@ public class IcebergFanoutPosDeleteWriterTest extends TableTestBase {
 
     List<DeleteFile> deleteFiles = icebergPosDeleteWriter.complete();
     Assert.assertEquals(2, deleteFiles.size());
-    Map<String, DeleteFile> deleteFileMap = deleteFiles.stream().collect(Collectors.toMap(f -> f.path().toString(),
+    Map<String, DeleteFile> deleteFileMap = deleteFiles.stream().collect(Collectors.toMap(
+        f -> f.path().toString(),
         f -> f));
     DeleteFile deleteFile1 = deleteFileMap.get(
         new Path(TableFileUtils.getNewFilePath(dataDir, fileFormat.addExtension("data-1-delete-suffix"))).toString());
@@ -132,8 +133,8 @@ public class IcebergFanoutPosDeleteWriterTest extends TableTestBase {
             record.copy("file_path", dataFile2Path, "pos", 8L),
             record.copy("file_path", dataFile2Path, "pos", 9L),
             record.copy("file_path", dataFile2Path, "pos", 10L));
-    Assert.assertEquals(expectedDeletes,
+    Assert.assertEquals(
+        expectedDeletes,
         DataTestHelpers.readDataFile(fileFormat, pathPosSchema, deleteFile2.path()));
   }
-
 }

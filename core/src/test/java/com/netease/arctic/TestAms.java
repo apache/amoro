@@ -23,18 +23,17 @@ import org.junit.rules.ExternalResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TestAms extends ExternalResource {
   private static final Logger LOG = LoggerFactory.getLogger(TestAms.class);
   private static MockArcticMetastoreServer SINGLETON;
-
-  private final MockArcticMetastoreServer mockAms;
 
   static {
     if (SingletonResourceUtil.isUseSingletonResource()) {
       SINGLETON = new MockArcticMetastoreServer();
     }
   }
+
+  private final MockArcticMetastoreServer mockAms;
 
   public TestAms() {
     if (SingletonResourceUtil.isUseSingletonResource()) {

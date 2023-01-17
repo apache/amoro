@@ -38,7 +38,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
-
 public class TableDataTestBase extends TableTestBase {
 
   protected static final List<Record> BASE_RECORDS;
@@ -57,6 +56,29 @@ public class TableDataTestBase extends TableTestBase {
 
   public TableDataTestBase() {
     super(TableFormat.MIXED_ICEBERG, true, true);
+  }
+
+  private static List<Record> baseRecords() {
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(DataTestHelpers.createRecord(1, "john", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(2, "lily", 0, "2022-01-02T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(3, "jake", 0, "2022-01-03T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(4, "sam", 0, "2022-01-04T12:00:00"));
+
+    return builder.build();
+  }
+
+  private static List<Record> changeInsertRecords() {
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(DataTestHelpers.createRecord(5, "mary", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(6, "mack", 0, "2022-01-01T12:00:00"));
+    return builder.build();
+  }
+
+  private static List<Record> changeDeleteRecords() {
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(DataTestHelpers.createRecord(5, "mary", 0, "2022-01-01T12:00:00"));
+    return builder.build();
   }
 
   @Before
@@ -99,7 +121,7 @@ public class TableDataTestBase extends TableTestBase {
       AppendFiles changeAppend = getArcticTable().asKeyedTable().changeTable().newAppend();
       Arrays.stream(result.dataFiles())
           .map(DefaultKeyedFile::new)
-              .forEach(changeAppend::appendFile);
+          .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
 
@@ -117,28 +139,5 @@ public class TableDataTestBase extends TableTestBase {
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
-  }
-
-  private static List<Record> baseRecords() {
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(DataTestHelpers.createRecord(1, "john", 0, "2022-01-01T12:00:00"));
-    builder.add(DataTestHelpers.createRecord(2, "lily", 0, "2022-01-02T12:00:00"));
-    builder.add(DataTestHelpers.createRecord(3, "jake", 0, "2022-01-03T12:00:00"));
-    builder.add(DataTestHelpers.createRecord(4, "sam", 0, "2022-01-04T12:00:00"));
-
-    return builder.build();
-  }
-
-  private static List<Record> changeInsertRecords() {
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(DataTestHelpers.createRecord(5, "mary", 0, "2022-01-01T12:00:00"));
-    builder.add(DataTestHelpers.createRecord(6, "mack", 0, "2022-01-01T12:00:00"));
-    return builder.build();
-  }
-
-  private static List<Record> changeDeleteRecords() {
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(DataTestHelpers.createRecord(5, "mary", 0, "2022-01-01T12:00:00"));
-    return builder.build();
   }
 }

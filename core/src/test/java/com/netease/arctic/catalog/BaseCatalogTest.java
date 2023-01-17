@@ -28,13 +28,13 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class BaseCatalogTest extends CatalogTestBase {
 
+  public BaseCatalogTest(TableFormat testFormat) {
+    super(testFormat);
+  }
+
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
     return new Object[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG};
-  }
-
-  public BaseCatalogTest(TableFormat testFormat) {
-    super(testFormat);
   }
 
   @Test

@@ -168,5 +168,4 @@ public class WatermarkGeneratorTest extends TableTestBase {
     watermarkGenerator.addFile(file1);
     Assert.assertEquals(-1, watermarkGenerator.watermark());
   }
-
 }

@@ -37,13 +37,13 @@ import org.junit.runners.Parameterized;
 @RunWith(Parameterized.class)
 public class MixedCatalogTest extends CatalogTestBase {
 
+  public MixedCatalogTest(TableFormat tableFormat) {
+    super(tableFormat);
+  }
+
   @Parameterized.Parameters(name = "testFormat = {0}")
   public static Object[] parameters() {
     return new Object[] {TableFormat.MIXED_ICEBERG};
-  }
-
-  public MixedCatalogTest(TableFormat tableFormat) {
-    super(tableFormat);
   }
 
   @Test
@@ -110,8 +110,8 @@ public class MixedCatalogTest extends CatalogTestBase {
   public void testCreateTableWithCatalogTableProperties() throws TException {
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING
-        , "false");
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+        "false");
     getCatalog().createDatabase(TableTestHelpers.TEST_DB_NAME);
     UnkeyedTable createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())
@@ -138,8 +138,8 @@ public class MixedCatalogTest extends CatalogTestBase {
 
     CatalogMeta testCatalogMeta = TEST_AMS.getAmsHandler().getCatalog(TEST_CATALOG_NAME);
     TEST_AMS.getAmsHandler().updateMeta(testCatalogMeta,
-        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING
-        , "false");
+        CatalogMetaProperties.TABLE_PROPERTIES_PREFIX + TableProperties.ENABLE_SELF_OPTIMIZING,
+        "false");
     getCatalog().refresh();
     createTable = getCatalog()
         .newTableBuilder(TableTestHelpers.TEST_TABLE_ID, getCreateTableSchema())

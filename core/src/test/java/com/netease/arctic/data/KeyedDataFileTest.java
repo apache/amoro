@@ -27,7 +27,6 @@ import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class KeyedDataFileTest extends TableTestBase {
@@ -48,7 +47,6 @@ public class KeyedDataFileTest extends TableTestBase {
     Assert.assertEquals(3, defaultKeyedFile.node().mask());
     Assert.assertEquals(0, defaultKeyedFile.node().index());
     Assert.assertEquals(txId, defaultKeyedFile.transactionId());
-
   }
 
   private List<Record> writeRecords() {
