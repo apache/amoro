@@ -190,10 +190,10 @@ public class TableTracerTest extends TableTestBase {
     Assert.assertEquals(1, appendTableCommitMetas.size());
     Assert.assertNotNull(appendTableCommitMetas.get(0).getChanges());
 
-    Transaction overwritetransaction = operationTable.newTransaction();
-    overwritetransaction.newOverwrite()
+    Transaction overwriteTransaction = operationTable.newTransaction();
+    overwriteTransaction.newOverwrite()
         .commit();
-    overwritetransaction.commitTransaction();
+    overwriteTransaction.commitTransaction();
     List<TableCommitMeta> overwriteTableCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(2, overwriteTableCommitMetas.size());
@@ -208,12 +208,12 @@ public class TableTracerTest extends TableTestBase {
     Assert.assertEquals(3, rewriteTableCommitMetas.size());
     Assert.assertEquals(1, rewriteTableCommitMetas.get(2).getChanges().size());
 
-    operationTable.updateSchema().commit();
+    getArcticTable().updateSchema().commit();
     List<TableCommitMeta> updateSchemaCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(3, updateSchemaCommitMetas.size());
 
-    operationTable.updateProperties().commit();
+    getArcticTable().updateProperties().commit();
     List<TableCommitMeta> updatePropertiesCommitMetas =
         getAmsHandler().getTableCommitMetas().get(operationTable.id().buildTableIdentifier());
     Assert.assertEquals(4, updatePropertiesCommitMetas.size());
