@@ -20,6 +20,7 @@ package com.netease.arctic.hive.io.writer;
 
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.io.writer.OutputFileFactory;
 import com.netease.arctic.io.writer.TaskWriterKey;
 import com.netease.arctic.utils.IdGenerator;
@@ -63,15 +64,9 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final String baseLocation;
   private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
-  private final FileFormat format;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
-  private final int partitionId;
-  private final long taskId;
-  private final long transactionId;
-  private final String operationId;
-
-  private final AtomicLong fileCount = new AtomicLong(0);
+  private final FileNameHandle fileNameHandle;
 
   public AdaptHiveOutputFileFactory(
       String baseLocation,
@@ -97,24 +92,18 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       String hiveSubDirectory) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
-    this.format = format;
     this.io = io;
     this.encryptionManager = encryptionManager;
-    this.partitionId = partitionId;
-    this.taskId = taskId;
-    this.transactionId = transactionId == null ? 0 : transactionId;
-    this.operationId = transactionId == null ? IdGenerator.randomId() + "" : "0";
     if (hiveSubDirectory == null) {
-      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(this.transactionId);
+      this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
     } else {
       this.hiveSubDirectory = hiveSubDirectory;
     }
+    this.fileNameHandle = new FileNameHandle(format, partitionId, taskId, transactionId);
   }
 
   private String generateFilename(TaskWriterKey key) {
-    return format.addExtension(
-        String.format("%d-%s-%d-%05d-%d-%s-%05d", key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, operationId, fileCount.incrementAndGet()));
+    return fileNameHandle.fileName(key);
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {

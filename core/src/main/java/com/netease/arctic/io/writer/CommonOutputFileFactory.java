@@ -19,6 +19,7 @@
 package com.netease.arctic.io.writer;
 
 import com.netease.arctic.io.ArcticFileIO;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.utils.IdGenerator;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
@@ -45,34 +46,22 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CommonOutputFileFactory implements OutputFileFactory {
   private final String baseLocation;
   private final PartitionSpec partitionSpec;
-  private final FileFormat format;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
-  private final int partitionId;
-  private final long taskId;
-  private final long transactionId;
-  private final String operationId;
-
-  private final AtomicLong fileCount = new AtomicLong(0);
+  private final FileNameHandle fileNameHandle;
 
   public CommonOutputFileFactory(String baseLocation, PartitionSpec partitionSpec,
                            FileFormat format, ArcticFileIO io, EncryptionManager encryptionManager,
                            int partitionId, long taskId, Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
-    this.format = format;
     this.io = io;
     this.encryptionManager = encryptionManager;
-    this.partitionId = partitionId;
-    this.taskId = taskId;
-    this.transactionId = transactionId == null ? 0 : transactionId;
-    this.operationId = transactionId == null ? IdGenerator.randomId() + "" : "0";
+    this.fileNameHandle = new FileNameHandle(format, partitionId, taskId, transactionId);
   }
 
   private String generateFilename(TaskWriterKey key) {
-    return format.addExtension(
-        String.format("%d-%s-%d-%05d-%d-%s-%05d", key.getTreeNode().getId(), key.getFileType().shortName(),
-            transactionId, partitionId, taskId, operationId, fileCount.incrementAndGet()));
+    return fileNameHandle.fileName(key);
   }
 
   private String fileLocation(StructLike partitionData, String fileName) {

@@ -20,6 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileScanTask;
@@ -56,7 +57,7 @@ public class BaseArcticFileScanTask implements ArcticFileScanTask {
     this.baseFile = baseFile;
     this.posDeleteFiles = posDeleteFiles == null ?
         Collections.emptyList() : posDeleteFiles.stream().filter(s -> {
-          DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.FileMeta.parseBase(s.path().toString());
+          DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseBase(s.path().toString());
           return fileMeta.node().index() == baseFile.node().index() &&
             fileMeta.node().mask() == baseFile.node().mask();
         }).collect(Collectors.toList());

@@ -37,7 +37,7 @@ public class KeyedDataFileTest extends TableTestBase {
     List<DataFile> writeFiles = writeChange(PK_TABLE_ID, ChangeAction.INSERT, writeRecords());
 
     Assert.assertEquals(1, writeFiles.size());
-    DefaultKeyedFile defaultKeyedFile = new DefaultKeyedFile(writeFiles.get(0));
+    DefaultKeyedFile defaultKeyedFile = DefaultKeyedFile.parseChange(writeFiles.get(0), 0L);
     Assert.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
     Assert.assertEquals(3, defaultKeyedFile.node().mask());
     Assert.assertEquals(0, defaultKeyedFile.node().index());

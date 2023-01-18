@@ -20,6 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.table.ChangeTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.TableFileUtils;
@@ -88,7 +89,8 @@ public class BaseChangeTableIncrementalScan implements ChangeTableIncrementalSca
       Boolean shouldKeep = shouldKeepFile.shouldKeep(partition, sequenceNumber);
       if (shouldKeep == null) {
         String filePath = entry.getFile().path().toString();
-        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, TableFileUtils.parseFileTidFromFileName(filePath));
+        return shouldKeepFileWithLegacyTxId.shouldKeep(partition, FileNameHandle.parseChange(filePath,
+            sequenceNumber).transactionId());
       } else {
         return shouldKeep;
       }
