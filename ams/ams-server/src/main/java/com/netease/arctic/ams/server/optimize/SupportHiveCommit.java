@@ -27,6 +27,7 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HivePartitionUtil;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.IdGenerator;
 import com.netease.arctic.utils.SerializationUtils;
@@ -82,7 +83,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
               .map(fileByte -> (DataFile) SerializationUtils.toInternalTableFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
-              .mapToLong(dataFile -> TableFileUtils.parseFileTidFromFileName(dataFile.path().toString()))
+              .mapToLong(dataFile -> FileNameHandle.parseBase(dataFile.path().toString()).transactionId())
               .max()
               .orElse(0L);
 

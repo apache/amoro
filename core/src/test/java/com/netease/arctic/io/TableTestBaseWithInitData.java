@@ -84,7 +84,6 @@ public class TableTestBaseWithInitData extends TableTestBase {
       WriteResult result = writer.complete();
       AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
               .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }
@@ -99,7 +98,6 @@ public class TableTestBaseWithInitData extends TableTestBase {
       WriteResult result = writer.complete();
       AppendFiles changeAppend = testKeyedTable.changeTable().newAppend();
       Arrays.stream(result.dataFiles())
-          .map(DefaultKeyedFile::new)
           .forEach(changeAppend::appendFile);
       changeAppend.commit();
     }

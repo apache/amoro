@@ -23,6 +23,7 @@ import com.netease.arctic.ams.api.TableMeta;
 import com.netease.arctic.ams.api.properties.MetaTableProperties;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.PrimaryKeySpec;
 import com.netease.arctic.table.TableIdentifier;
@@ -72,13 +73,13 @@ public class ConvertStructUtil {
      */
     FileContent content = dataFile.content();
     if (content == FileContent.DATA) {
-      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.FileMeta.parseBase(dataFile.path().toString());
+      DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseBase(dataFile.path().toString());
       validateArcticFileType(content, dataFile.path().toString(), fileMeta.type());
       amsDataFile.setFileType(fileMeta.type().name());
       amsDataFile.setIndex(fileMeta.node().index());
       amsDataFile.setMask(fileMeta.node().mask());
     } else if (content == FileContent.POSITION_DELETES) {
-      DefaultKeyedFile.FileMeta fileMeta = DefaultKeyedFile.FileMeta.parseBase(dataFile.path().toString());
+      DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseBase(dataFile.path().toString());
       amsDataFile.setFileType(DataFileType.POS_DELETE_FILE.name());
       if (fileMeta.type() == DataFileType.POS_DELETE_FILE || fileMeta.type() == DataFileType.BASE_FILE) {
         amsDataFile.setIndex(fileMeta.node().index());
