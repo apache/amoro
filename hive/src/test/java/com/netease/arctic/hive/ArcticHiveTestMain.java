@@ -19,6 +19,7 @@
 package com.netease.arctic.hive;
 
 import com.netease.arctic.hive.catalog.TestArcticHiveCatalog;
+import com.netease.arctic.hive.io.TestAdaptHiveReader;
 import com.netease.arctic.hive.io.TestAdaptHiveWriter;
 import com.netease.arctic.hive.op.AutoSyncHiveTest;
 import com.netease.arctic.hive.op.TestHiveSchemaUpdate;
@@ -40,7 +41,8 @@ import org.junit.runners.Suite;
     TestHiveSchemaUpdate.class,
     HiveMetaSynchronizerTest.class,
     TestAdaptHiveWriter.class,
-    AutoSyncHiveTest.class
+    AutoSyncHiveTest.class,
+    TestAdaptHiveReader.class
 })
 public class ArcticHiveTestMain {
 
