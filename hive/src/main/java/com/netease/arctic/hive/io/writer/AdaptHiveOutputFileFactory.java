@@ -69,8 +69,6 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final EncryptionManager encryptionManager;
   private final FileNameHandle fileNameHandle;
 
-  private final AtomicLong fileCount = new AtomicLong(0);
-
   public AdaptHiveOutputFileFactory(
       String baseLocation,
       PartitionSpec partitionSpec,
