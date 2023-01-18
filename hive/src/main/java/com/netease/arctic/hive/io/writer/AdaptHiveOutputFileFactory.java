@@ -64,7 +64,6 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
   private final String baseLocation;
   private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
-  private final FileFormat format;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
   private final FileNameHandle fileNameHandle;
@@ -93,7 +92,6 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
       String hiveSubDirectory) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
-    this.format = format;
     this.io = io;
     this.encryptionManager = encryptionManager;
     if (hiveSubDirectory == null) {

@@ -46,7 +46,6 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CommonOutputFileFactory implements OutputFileFactory {
   private final String baseLocation;
   private final PartitionSpec partitionSpec;
-  private final FileFormat format;
   private final ArcticFileIO io;
   private final EncryptionManager encryptionManager;
   private final FileNameHandle fileNameHandle;
@@ -56,7 +55,6 @@ public class CommonOutputFileFactory implements OutputFileFactory {
                            int partitionId, long taskId, Long transactionId) {
     this.baseLocation = baseLocation;
     this.partitionSpec = partitionSpec;
-    this.format = format;
     this.io = io;
     this.encryptionManager = encryptionManager;
     this.fileNameHandle = new FileNameHandle(format, partitionId, taskId, transactionId);
