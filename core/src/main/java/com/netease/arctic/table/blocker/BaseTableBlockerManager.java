@@ -22,6 +22,7 @@ import com.netease.arctic.AmsClient;
 import com.netease.arctic.ams.api.BlockableOperation;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.table.TableIdentifier;
+import org.apache.iceberg.relocated.com.google.common.annotations.VisibleForTesting;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -42,7 +43,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   private final AmsClient client;
 
   private final Map<String, Blocker> toRenewBlockers = Maps.newHashMap();
-  private volatile boolean stop;
+  private volatile boolean stop = true;
   private Thread renewWorker;
 
   public BaseTableBlockerManager(TableIdentifier tableIdentifier, AmsClient client) {
@@ -132,6 +133,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
           LOG.info(Thread.currentThread() + " exit");
         }
       }, "renew-blocker-thread");
+      this.stop = false;
       this.renewWorker.start();
       LOG.info("start renew worker with interval {}ms", interval);
     }
@@ -144,5 +146,20 @@ public class BaseTableBlockerManager implements TableBlockerManager {
       renewWorker = null;
     }
     LOG.info("stop renew worker");
+  }
+
+  @VisibleForTesting
+  Map<String, Blocker> getToRenewBlockers() {
+    return toRenewBlockers;
+  }
+
+  @VisibleForTesting
+  boolean isStop() {
+    return stop;
+  }
+
+  @VisibleForTesting
+  Thread getRenewWorker() {
+    return renewWorker;
   }
 }
