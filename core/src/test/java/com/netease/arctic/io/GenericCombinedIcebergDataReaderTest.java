@@ -19,81 +19,149 @@
 package com.netease.arctic.io;
 
 import com.google.common.collect.Iterables;
-import com.netease.arctic.IcebergTableBase;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.data.IcebergContentFile;
 import com.netease.arctic.io.reader.GenericCombinedIcebergDataReader;
+import com.netease.arctic.scan.CombinedIcebergScanTask;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.DeleteFile;
+import org.apache.iceberg.FileFormat;
+import org.apache.iceberg.Schema;
+import org.apache.iceberg.StructLike;
+import org.apache.iceberg.TableProperties;
+import org.apache.iceberg.TestHelpers;
+import org.apache.iceberg.data.FileHelpers;
+import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.IdentityPartitionConverters;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.io.OutputFileFactory;
+import org.apache.iceberg.relocated.com.google.common.collect.Lists;
+import org.apache.iceberg.types.TypeUtil;
+import org.apache.iceberg.util.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-public class GenericCombinedIcebergDataReaderTest extends IcebergTableBase {
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-  protected GenericCombinedIcebergDataReader dataReader;
+@RunWith(Parameterized.class)
+public class GenericCombinedIcebergDataReaderTest extends TableTestBase {
 
-  protected GenericCombinedIcebergDataReader partitionDataReader;
+  private final FileFormat fileFormat;
+
+  private CombinedIcebergScanTask scanTask;
+  private CombinedIcebergScanTask dataScanTask;
+  private GenericCombinedIcebergDataReader dataReader;
+
+  public GenericCombinedIcebergDataReaderTest(
+      boolean partitionedTable, FileFormat fileFormat) {
+    super(TableFormat.ICEBERG, false, partitionedTable, buildTableProperties(fileFormat));
+    this.fileFormat = fileFormat;
+  }
+
+  @Parameterized.Parameters(name = "partitionedTable = {0}, fileFormat = {1}")
+  public static Object[][] parameters() {
+    return new Object[][] {{true, FileFormat.PARQUET}, {false, FileFormat.PARQUET},
+                           {true, FileFormat.AVRO}, {false, FileFormat.AVRO},
+                           {true, FileFormat.ORC}, {false, FileFormat.ORC}};
+  }
+
+  private static Map<String, String> buildTableProperties(FileFormat fileFormat) {
+    Map<String, String> tableProperties = Maps.newHashMapWithExpectedSize(3);
+    tableProperties.put(TableProperties.FORMAT_VERSION, "2");
+    tableProperties.put(TableProperties.DEFAULT_FILE_FORMAT, fileFormat.name());
+    tableProperties.put(TableProperties.DELETE_DEFAULT_FILE_FORMAT, fileFormat.name());
+    return tableProperties;
+  }
+
+  private StructLike getPartitionData() {
+    if (isPartitionedTable()) {
+      return TestHelpers.Row.of(0);
+    } else {
+      return TestHelpers.Row.of();
+    }
+  }
 
   @Before
-  public void init() {
-    dataReader = new GenericCombinedIcebergDataReader(
-        new ArcticFileIoDummy(unPartitionTable.io()),
-        unPartitionSchema,
-        unPartitionSchema,
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false
-    );
+  public void initDataAndReader() throws IOException {
+    StructLike partitionData = getPartitionData();
+    OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(getArcticTable().asUnkeyedTable(), 0, 1)
+        .format(fileFormat).build();
+    DataFile dataFile = FileHelpers.writeDataFile(getArcticTable().asUnkeyedTable(),
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
+        Arrays.asList(
+            DataTestHelpers.createRecord(1, "john", 0, "1970-01-01T08:00:00"),
+            DataTestHelpers.createRecord(2, "lily", 1, "1970-01-01T08:00:00"),
+            DataTestHelpers.createRecord(3, "sam", 2, "1970-01-01T08:00:00")));
 
-    partitionDataReader = new GenericCombinedIcebergDataReader(
-        new ArcticFileIoDummy(partitionTable.io()),
-        partitionSchema,
-        partitionSchema,
-        null,
-        false,
-        IdentityPartitionConverters::convertConstant,
-        false
-    );
+    Schema idSchema = TypeUtil.select(TableTestHelpers.TABLE_SCHEMA, Sets.newHashSet(1));
+    GenericRecord idRecord = GenericRecord.create(idSchema);
+    DeleteFile eqDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData,
+        Collections.singletonList(idRecord.copy("id", 1)), idSchema);
+
+    List<Pair<CharSequence, Long>> deletes = Lists.newArrayList();
+    deletes.add(Pair.of(dataFile.path(), 1L));
+    DeleteFile posDeleteFile = FileHelpers.writeDeleteFile(getArcticTable().asUnkeyedTable(),
+        outputFileFactory.newOutputFile(partitionData).encryptingOutputFile(), partitionData, deletes).first();
+
+    scanTask = new CombinedIcebergScanTask(
+        new IcebergContentFile[] {new IcebergContentFile(dataFile, 1L)},
+        new IcebergContentFile[] {new IcebergContentFile(eqDeleteFile, 2L),
+                                  new IcebergContentFile(posDeleteFile, 3L)},
+        getArcticTable().spec(), partitionData);
+
+    dataScanTask = new CombinedIcebergScanTask(
+        new IcebergContentFile[] {new IcebergContentFile(dataFile, 1L)},
+        new IcebergContentFile[] {}, getArcticTable().spec(), partitionData);
+
+    dataReader = new GenericCombinedIcebergDataReader(getArcticTable().io(), getArcticTable().schema(),
+        getArcticTable().schema(), null, false,
+        IdentityPartitionConverters::convertConstant, false);
   }
 
   @Test
-  public void readAllData(){
-    CloseableIterable<Record> records = dataReader.readData(unPartitionAllFileTask);
-    Assert.assertTrue(Iterables.size(records) == 1);
-    Record record = Iterables.getFirst(records, null);
-    Assert.assertEquals(record.get(0), 3L);
+  public void readAllData() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readData(scanTask)) {
+      Assert.assertEquals(1, Iterables.size(records));
+      Record record = Iterables.getFirst(records, null);
+      Assert.assertEquals(record.get(0), 3);
+    }
   }
 
   @Test
-  public void readAllDataNegate(){
-    CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionAllFileTask);
-    Assert.assertTrue(Iterables.size(records) == 2);
-    Record first = Iterables.getFirst(records, null);
-    Assert.assertEquals(first.get(0), 1L);
-    Record last = Iterables.getLast(records);
-    Assert.assertEquals(last.get(0), 2L);
+  public void readAllDataNegate() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readDeleteData(scanTask)) {
+      Assert.assertEquals(2, Iterables.size(records));
+      Record first = Iterables.getFirst(records, null);
+      Assert.assertEquals(first.get(0), 1);
+      Record last = Iterables.getLast(records);
+      Assert.assertEquals(last.get(0), 2);
+    }
   }
 
   @Test
-  public void readOnlyData(){
-    CloseableIterable<Record> records = dataReader.readData(unPartitionOnlyDataTask);
-    Assert.assertEquals(Iterables.size(records), 3);
+  public void readOnlyData() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readData(dataScanTask)) {
+      Assert.assertEquals(3, Iterables.size(records));
+    }
   }
 
   @Test
-  public void readOnlyDataNegate(){
-    CloseableIterable<Record> records = dataReader.readDeleteData(unPartitionOnlyDataTask);
-    Assert.assertEquals(Iterables.size(records), 0);
-  }
-
-  @Test
-  public void readPartitionAllData(){
-    CloseableIterable<Record> records = partitionDataReader.readData(partitionAllFileTask);
-    records.forEach(System.out::println);
-    Assert.assertTrue(Iterables.size(records) == 1);
-    Record record = Iterables.getFirst(records, null);
-    Assert.assertEquals(record.get(0), 3L);
-    Assert.assertEquals(record.get(1), "3");
+  public void readOnlyDataNegate() throws IOException {
+    try (CloseableIterable<Record> records = dataReader.readDeleteData(dataScanTask)) {
+      Assert.assertEquals(0, Iterables.size(records));
+    }
   }
 }

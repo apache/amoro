@@ -41,7 +41,6 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -103,6 +102,10 @@ public class MockArcticMetastoreServer implements Runnable {
 
   public static String getHadoopSite() {
     return Base64.getEncoder().encodeToString("<configuration></configuration>".getBytes(StandardCharsets.UTF_8));
+  }
+
+  public String getServerUrl() {
+    return "thrift://127.0.0.1:" + port;
   }
 
   public String getUrl() {
@@ -209,6 +212,10 @@ public class MockArcticMetastoreServer implements Runnable {
       catalogs.add(catalogMeta);
     }
 
+    public void dropCatalog(String catalogName) {
+      catalogs.removeIf(catalogMeta -> catalogMeta.getCatalogName().equals(catalogName));
+    }
+
     public Map<TableIdentifier, List<TableCommitMeta>> getTableCommitMetas() {
       return tableCommitMetas;
     }
@@ -241,10 +248,10 @@ public class MockArcticMetastoreServer implements Runnable {
     @Override
     public void createDatabase(String catalogName, String database) throws TException {
       databases.computeIfAbsent(catalogName, c -> new ArrayList<>());
+      if (databases.get(catalogName).contains(database)) {
+        throw new AlreadyExistsException("database exist");
+      }
       databases.computeIfPresent(catalogName, (c, dbList) -> {
-        if (dbList.contains(database)) {
-          throw new IllegalStateException("database exist");
-        }
         List<String> newList = new ArrayList<>(dbList);
         newList.add(database);
         return newList;
@@ -370,8 +377,8 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().replace(key, value);
-     }
+      meta.getCatalogProperties().put(key, value);
+    }
   }
 
   public class OptimizeManagerHandler implements OptimizeManager.Iface {

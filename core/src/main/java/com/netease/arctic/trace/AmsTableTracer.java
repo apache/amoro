@@ -66,16 +66,27 @@ public class AmsTableTracer implements TableTracer {
   private Map<String, String> properties;
   private InternalTableChange defaultTableChange;
 
-  public AmsTableTracer(UnkeyedTable table, String action, AmsClient client) {
+  /**
+   * Construct a new AmsTableTracer
+   *
+   * @param table table object
+   * @param action Table change operation name
+   * @param client AMS client
+   * @param commitNewSnapshot Whether to submit a new snapshot(but not a transaction)
+   */
+  public AmsTableTracer(UnkeyedTable table, String action, AmsClient client, boolean commitNewSnapshot) {
     this.innerTable = table instanceof ChangeTable ?
         Constants.INNER_TABLE_CHANGE : Constants.INNER_TABLE_BASE;
     this.table = table;
     this.client = client;
+    if (commitNewSnapshot) {
+      this.defaultTableChange = new InternalTableChange();
+    }
     setAction(action);
   }
 
-  public AmsTableTracer(UnkeyedTable table, AmsClient client) {
-    this(table, null, client);
+  public AmsTableTracer(UnkeyedTable table, AmsClient client, boolean commitNewSnapshot) {
+    this(table, null, client, commitNewSnapshot);
   }
 
   @Override
@@ -100,7 +111,7 @@ public class AmsTableTracer implements TableTracer {
 
   private InternalTableChange getDefaultChange() {
     if (defaultTableChange == null) {
-      defaultTableChange = new InternalTableChange();
+      throw new RuntimeException("This operation should not result in changes to files or snapshots");
     }
     return defaultTableChange;
   }
@@ -122,14 +133,25 @@ public class AmsTableTracer implements TableTracer {
     TableCommitMeta commitMeta = new TableCommitMeta();
     commitMeta.setTableIdentifier(table.id().buildTableIdentifier());
     commitMeta.setAction(action);
-    String commitMetaSource = PropertyUtil.propertyAsString(snapshotSummary,
+    String commitMetaSource = PropertyUtil.propertyAsString(
+        snapshotSummary,
         com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER,
         com.netease.arctic.trace.SnapshotSummary.SNAPSHOT_PRODUCER_DEFAULT);
     commitMeta.setCommitMetaProducer(CommitMetaProducer.valueOf(commitMetaSource));
     commitMeta.setCommitTime(System.currentTimeMillis());
     boolean update = false;
 
-    if (defaultTableChange != null) {
+
+    if (transactionSnapshotTableChanges.size() > 0) {
+      transactionSnapshotTableChanges.forEach((snapshotId, internalTableChange) -> {
+        if (table.isUnkeyedTable()) {
+          Snapshot snapshot = table.asUnkeyedTable().snapshot(snapshotId);
+          TableChange tableChange = internalTableChange.toTableChange(table, snapshot, innerTable);
+          commitMeta.addToChanges(tableChange);
+        }
+      });
+      update = true;
+    } else if (defaultTableChange != null) {
       Table traceTable;
       if (table.isUnkeyedTable()) {
         traceTable = table.asUnkeyedTable();
@@ -137,23 +159,12 @@ public class AmsTableTracer implements TableTracer {
         throw new IllegalStateException("can't apply table change on keyed table.");
       }
 
-      Optional<TableChange> tableChange =
+      TableChange tableChange =
           defaultTableChange.toTableChange(table, traceTable.currentSnapshot(), innerTable);
-      if (tableChange.isPresent()) {
-        commitMeta.addToChanges(tableChange.get());
-        update = true;
-      }
-    }
-    if (transactionSnapshotTableChanges.size() > 0) {
-      transactionSnapshotTableChanges.forEach((snapshotId, internalTableChange) -> {
-        if (table.isUnkeyedTable()) {
-          Snapshot snapshot = table.asUnkeyedTable().snapshot(snapshotId);
-          Optional<TableChange> tableChange = internalTableChange.toTableChange(table, snapshot, innerTable);
-          tableChange.ifPresent(commitMeta::addToChanges);
-        }
-      });
+      commitMeta.addToChanges(tableChange);
       update = true;
     }
+
     if (updateColumns.size() > 0 && Constants.INNER_TABLE_BASE.equals(innerTable)) {
       int schemaId = table.schema().schemaId();
       SchemaUpdateMeta ddlCommitMeta = new SchemaUpdateMeta();
@@ -227,50 +238,46 @@ public class AmsTableTracer implements TableTracer {
      * Build {@link TableChange} to report to ams.
      *
      * @param arcticTable arctic table which table change belongs
-     * @param snapshot  the snapshot produced in this operation
+     * @param snapshot    the snapshot produced in this operation
      * @param innerTable  inner table name
      * @return table change
      */
-    public Optional<TableChange> toTableChange(ArcticTable arcticTable, Snapshot snapshot, String innerTable) {
-      if (addedFiles.size() > 0 || deletedFiles.size() > 0 || addedDeleteFiles.size() > 0 ||
-          deletedDeleteFiles.size() > 0) {
-        long currentSnapshotId = snapshot.snapshotId();
-        long parentSnapshotId =
-            snapshot.parentId() == null ? -1 : snapshot.parentId();
-        Map<String, String> summary = snapshot.summary();
-        long realAddedDataFiles = summary.get(SnapshotSummary.ADDED_FILES_PROP) == null ?
-            0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_FILES_PROP));
-        long realDeletedDataFiles = summary.get(SnapshotSummary.DELETED_FILES_PROP) == null ?
-            0 : Long.parseLong(summary.get(SnapshotSummary.DELETED_FILES_PROP));
-        long realAddedDeleteFiles = summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP) == null ?
-            0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP));
-        long readRemovedDeleteFiles = summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP) == null ?
-            0 : Long.parseLong(summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP));
+    public TableChange toTableChange(ArcticTable arcticTable, Snapshot snapshot, String innerTable) {
 
-        List<com.netease.arctic.ams.api.DataFile> addFiles = new ArrayList<>();
-        List<com.netease.arctic.ams.api.DataFile> deleteFiles = new ArrayList<>();
-        if (realAddedDataFiles == addedFiles.size() && realDeletedDataFiles == deletedFiles.size() &&
-            realAddedDeleteFiles == addedDeleteFiles.size() && readRemovedDeleteFiles == deletedDeleteFiles.size()) {
-          addFiles =
-              addedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
-                  .collect(Collectors.toList());
-          deleteFiles =
-              deletedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
-                  .collect(Collectors.toList());
-          addFiles.addAll(addedDeleteFiles.stream()
-              .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
-          deleteFiles.addAll(deletedDeleteFiles.stream()
-              .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
-        } else {
-          // tracer file change info is different from iceberg snapshot, should get iceberg real file change info
-          SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
-        }
+      long currentSnapshotId = snapshot.snapshotId();
+      long parentSnapshotId =
+          snapshot.parentId() == null ? -1 : snapshot.parentId();
+      Map<String, String> summary = snapshot.summary();
+      long realAddedDataFiles = summary.get(SnapshotSummary.ADDED_FILES_PROP) == null ?
+          0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_FILES_PROP));
+      long realDeletedDataFiles = summary.get(SnapshotSummary.DELETED_FILES_PROP) == null ?
+          0 : Long.parseLong(summary.get(SnapshotSummary.DELETED_FILES_PROP));
+      long realAddedDeleteFiles = summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP) == null ?
+          0 : Long.parseLong(summary.get(SnapshotSummary.ADDED_DELETE_FILES_PROP));
+      long readRemovedDeleteFiles = summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP) == null ?
+          0 : Long.parseLong(summary.get(SnapshotSummary.REMOVED_DELETE_FILES_PROP));
 
-        return Optional.of(new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
-            snapshot.sequenceNumber(), parentSnapshotId));
+      List<com.netease.arctic.ams.api.DataFile> addFiles = new ArrayList<>();
+      List<com.netease.arctic.ams.api.DataFile> deleteFiles = new ArrayList<>();
+      if (realAddedDataFiles == addedFiles.size() && realDeletedDataFiles == deletedFiles.size() &&
+          realAddedDeleteFiles == addedDeleteFiles.size() && readRemovedDeleteFiles == deletedDeleteFiles.size()) {
+        addFiles =
+            addedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
+                .collect(Collectors.toList());
+        deleteFiles =
+            deletedFiles.stream().map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable))
+                .collect(Collectors.toList());
+        addFiles.addAll(addedDeleteFiles.stream()
+            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
+        deleteFiles.addAll(deletedDeleteFiles.stream()
+            .map(file -> ConvertStructUtil.convertToAmsDatafile(file, arcticTable)).collect(Collectors.toList()));
       } else {
-        return Optional.empty();
+        // tracer file change info is different from iceberg snapshot, should get iceberg real file change info
+        SnapshotFileUtil.getSnapshotFiles(arcticTable, snapshot, addFiles, deleteFiles);
       }
+
+      return new TableChange(innerTable, addFiles, deleteFiles, currentSnapshotId,
+          snapshot.sequenceNumber(), parentSnapshotId);
     }
   }
 

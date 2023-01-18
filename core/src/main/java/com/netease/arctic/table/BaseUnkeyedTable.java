@@ -173,7 +173,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateSchema updateSchema() {
     if (client != null) {
       return new TracedSchemaUpdate(icebergTable.updateSchema(),
-          new AmsTableTracer(this, TraceOperations.UPDATE_SCHEMA, client));
+          new AmsTableTracer(this, TraceOperations.UPDATE_SCHEMA, client, false));
     } else {
       return icebergTable.updateSchema();
     }
@@ -188,7 +188,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = icebergTable.updateProperties();
     if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client);
+      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client, false);
       return new TracedUpdateProperties(updateProperties, tracer);
     } else {
       return updateProperties;
@@ -221,7 +221,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public RewriteFiles newRewrite() {
     RewriteFiles rewriteFiles = icebergTable.newRewrite();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.REPLACE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.REPLACE, client, true);
       return new TracedRewriteFiles(rewriteFiles, tracer);
     } else {
       return rewriteFiles;
@@ -255,7 +255,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public DeleteFiles newDelete() {
     DeleteFiles deleteFiles = icebergTable.newDelete();
     if (client != null) {
-      TableTracer tracer = new AmsTableTracer(this, TraceOperations.DELETE, client);
+      TableTracer tracer = new AmsTableTracer(this, TraceOperations.DELETE, client, true);
       return new TracedDeleteFiles(deleteFiles, tracer);
     } else {
       return deleteFiles;
@@ -281,7 +281,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client));
+      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client, false));
     } else {
       return transaction;
     }
