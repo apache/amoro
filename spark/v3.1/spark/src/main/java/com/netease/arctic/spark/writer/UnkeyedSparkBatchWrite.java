@@ -101,19 +101,22 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
-      Map<String, String> props = table.properties();
-      Tasks.foreach(files(messages))
-          .retry(PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
-          .exponentialBackoff(
-              PropertyUtil.propertyAsInt(props, COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
-              PropertyUtil.propertyAsInt(props, COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
-              PropertyUtil.propertyAsInt(props, COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
-              2.0 /* exponential */)
-          .throwFailureWhenFinished()
-          .run(file -> {
-            table.io().deleteFile(file.path().toString());
-          });
-      tableBlockerManager.release(block);
+      try {
+        Map<String, String> props = table.properties();
+        Tasks.foreach(files(messages))
+            .retry(PropertyUtil.propertyAsInt(props, COMMIT_NUM_RETRIES, COMMIT_NUM_RETRIES_DEFAULT))
+            .exponentialBackoff(
+                PropertyUtil.propertyAsInt(props, COMMIT_MIN_RETRY_WAIT_MS, COMMIT_MIN_RETRY_WAIT_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(props, COMMIT_MAX_RETRY_WAIT_MS, COMMIT_MAX_RETRY_WAIT_MS_DEFAULT),
+                PropertyUtil.propertyAsInt(props, COMMIT_TOTAL_RETRY_TIME_MS, COMMIT_TOTAL_RETRY_TIME_MS_DEFAULT),
+                2.0 /* exponential */)
+            .throwFailureWhenFinished()
+            .run(file -> {
+              table.io().deleteFile(file.path().toString());
+            });
+      } finally {
+        tableBlockerManager.release(block);
+      }
     }
 
     public void checkBlocker(TableBlockerManager tableBlockerManager) {
