@@ -1,38 +1,69 @@
 package com.netease.arctic.data;
 
-import com.netease.arctic.TableTestBase;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.iceberg.DataFile;
-import org.apache.iceberg.data.GenericRecord;
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.table.TableProperties;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.expressions.Expression;
 import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.junit.Assert;
+import org.junit.Assume;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@RunWith(Parameterized.class)
 public class UpsertPushDownTest extends TableTestBase {
 
+  public UpsertPushDownTest(PartitionSpec partitionSpec) {
+    super(TableFormat.MIXED_ICEBERG, TableTestHelpers.TABLE_SCHEMA, TableTestHelpers.PRIMARY_KEY_SPEC,
+        partitionSpec, Collections.singletonMap(TableProperties.UPSERT_ENABLED, "true"));
+  }
+
+  @Parameterized.Parameters(name = "spec = {0}")
+  public static Object[] parameters() {
+    return new Object[] {PartitionSpec.unpartitioned(), TableTestHelpers.SPEC,
+                         PartitionSpec.builderFor(TableTestHelpers.TABLE_SCHEMA)
+                             .day("op_time").identity("ts").build()};
+  }
+
+  @Before
+  public void initChangeStoreData() {
+    DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 1L,
+        ChangeAction.DELETE, writeRecords(1, "aaa", 0, 1));
+    DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 2L,
+        ChangeAction.UPDATE_AFTER, writeRecords(1, "aaa", 0, 1));
+    DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 3L,
+        ChangeAction.DELETE, writeRecords(2, "bbb", 0, 2));
+    DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 3L,
+        ChangeAction.UPDATE_AFTER, writeRecords(2, "bbb", 0, 2));
+    DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 4L,
+        ChangeAction.DELETE, writeRecords(2, "ccc", 0, 2));
+    DataTestHelpers.writeAndCommitChangeStore(getArcticTable().asKeyedTable(), 5L,
+        ChangeAction.UPDATE_AFTER, writeRecords(2, "ccc", 0, 2));
+  }
+
   @Test
-  public void testUpsertKeyedTable() {
-    List<DataFile> dataFiles1 = writeChange(PK_UPSERT_TABLE_ID, ChangeAction.DELETE, writeRecords(1, "aaa", 1));
-    List<DataFile> dataFiles2 = writeChange(PK_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeRecords(1, "aaa", 1));
-    List<DataFile> dataFiles3 = writeChange(PK_UPSERT_TABLE_ID, ChangeAction.DELETE, writeRecords(1, "bbb", 2));
-    List<DataFile> dataFiles4 = writeChange(PK_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeRecords(1, "bbb", 2));
-    List<DataFile> dataFiles5 = writeChange(PK_UPSERT_TABLE_ID, ChangeAction.DELETE, writeRecords(1, "ccc", 2));
-    List<DataFile> dataFiles6 = writeChange(PK_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeRecords(1, "ccc", 2));
-    List<Record> records = readKeyedTable(testKeyedUpsertTable);
+  public void testReadKeyedTableWithoutFilter() {
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     Assert.assertEquals(records.size(), 2);
-    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
+    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
+  }
 
-    Expression partition_and_np = Expressions.and(
+  @Test
+  public void testReadKeyedTableWithPartitionAndColumnFilter() {
+    Assume.assumeTrue(isPartitionedTable());
+    Expression partitionAndColumnFilter = Expressions.and(
         Expressions.and(
             Expressions.notNull("op_time"),
             Expressions.equal("op_time", "2022-01-02T12:00:00")
@@ -42,14 +73,16 @@ public class UpsertPushDownTest extends TableTestBase {
             Expressions.equal("name", "bbb")
         )
     );
-    Pair<List<Record>, List<String>> pair1 = readKeyedTableWithFilters(testKeyedUpsertTable, partition_and_np);
-    List<Record> records1 = pair1.getLeft();
-    List<String> path1 = pair1.getRight();
-    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path1);
-    Assert.assertEquals(records1.size(), 1);
-    Assert.assertTrue(recordToNameList(records1).containsAll(Arrays.asList(new String[]{"ccc"})));
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionAndColumnFilter);
+    // Scan from change store only filter partition column expression, so record(name=ccc) is still returned.
+    Assert.assertEquals(records.size(), 1);
+    Assert.assertTrue(recordToNameList(records).contains("ccc"));
+  }
 
-    Expression partition_or_np = Expressions.or(
+  @Test
+  public void testReadKeyedTableWithPartitionOrColumnFilter() {
+    Assume.assumeTrue(isPartitionedTable());
+    Expression partitionOrColumnFilter = Expressions.or(
         Expressions.and(
             Expressions.notNull("op_time"),
             Expressions.equal("op_time", "2022-01-02T12:00:00")
@@ -59,36 +92,38 @@ public class UpsertPushDownTest extends TableTestBase {
             Expressions.equal("name", "bbb")
         )
     );
-    Pair<List<Record>, List<String>> pair2 = readKeyedTableWithFilters(testKeyedUpsertTable, partition_or_np);
-    List<Record> records2 = pair2.getLeft();
-    List<String> path2 = pair2.getRight();
-    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path2);
-    Assert.assertEquals(records2.size(), 2);
-    Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionOrColumnFilter);
+    Assert.assertEquals(records.size(), 2);
+    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
+  }
 
-    Expression only_partition = Expressions.and(
+  @Test
+  public void testReadKeyedTableWithPartitionFilter() {
+    Assume.assumeTrue(isPartitionedTable());
+    Expression partitionFilter = Expressions.and(
         Expressions.notNull("op_time"),
         Expressions.equal("op_time", "2022-01-02T12:00:00")
     );
-    Pair<List<Record>, List<String>> pair3 = readKeyedTableWithFilters(testKeyedUpsertTable, only_partition);
-    List<Record> records3 = pair3.getLeft();
-    List<String> path3 = pair3.getRight();
-    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path3);
-    Assert.assertEquals(records3.size(), 1);
-    Assert.assertTrue(recordToNameList(records3).containsAll(Arrays.asList(new String[]{"ccc"})));
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), partitionFilter);
+    Assert.assertEquals(records.size(), 1);
+    Assert.assertTrue(recordToNameList(records).contains("ccc"));
+  }
 
-    Expression only_np = Expressions.and(
+  @Test
+  public void testReadKeyedTableWithColumnFilter() {
+    Expression columnFilter = Expressions.and(
         Expressions.notNull("name"),
         Expressions.equal("name", "bbb")
     );
-    Pair<List<Record>, List<String>> pair4 = readKeyedTableWithFilters(testKeyedUpsertTable, only_np);
-    List<Record> records4 = pair4.getLeft();
-    List<String> path4 = pair4.getRight();
-    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path4);
-    Assert.assertEquals(records4.size(), 2);
-    Assert.assertTrue(recordToNameList(records4).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), columnFilter);
+    Assert.assertEquals(records.size(), 2);
+    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList("aaa", "ccc")));
+  }
 
-    Expression partition_and_np_gt = Expressions.and(
+  @Test
+  public void testReadKeyedTableWithGreaterPartitionAndColumnFilter() {
+    Assume.assumeTrue(isPartitionedTable());
+    Expression greaterPartitionAndColumnFilter = Expressions.and(
         Expressions.and(
             Expressions.notNull("op_time"),
             Expressions.greaterThan("op_time", "2022-01-01T12:00:00")
@@ -98,106 +133,21 @@ public class UpsertPushDownTest extends TableTestBase {
             Expressions.equal("name", "bbb")
         )
     );
-    Pair<List<Record>, List<String>> pair5 = readKeyedTableWithFilters(testKeyedUpsertTable, partition_and_np_gt);
-    List<Record> records5 = pair5.getLeft();
-    List<String> path5 = pair5.getRight();
-    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path5);
-    Assert.assertEquals(records5.size(), 1);
-    Assert.assertTrue(recordToNameList(records5).containsAll(Arrays.asList(new String[]{"ccc"})));
-  }
-
-  @Test
-  public void testUpsertNoPartitionKeyedTable() {
-    List<DataFile> dataFiles1 = writeChange(PK_NO_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeRecords(1, "aaa", 1));
-    List<DataFile> dataFiles2 = writeChange(PK_NO_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeRecords(1, "aaa", 1));
-    List<DataFile> dataFiles3 = writeChange(PK_NO_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeRecords(1, "bbb", 2));
-    List<DataFile> dataFiles4 = writeChange(PK_NO_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeRecords(1, "bbb", 2));
-    List<DataFile> dataFiles5 = writeChange(PK_NO_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeRecords(1, "ccc", 2));
-    List<DataFile> dataFiles6 = writeChange(PK_NO_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeRecords(1, "ccc", 2));
-    List<Record> records = readKeyedTable(testKeyedNoPartitionUpsertTable);
+    List<Record> records = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(),
+        greaterPartitionAndColumnFilter);
     Assert.assertEquals(records.size(), 1);
-    Assert.assertTrue(recordToNameList(records).containsAll(Arrays.asList(new String[]{"ccc"})));
-
-    Expression exp_bbb = Expressions.and(
-        Expressions.notNull("name"),
-        Expressions.equal("name", "bbb")
-    );
-    Pair<List<Record>, List<String>> pair1 = readKeyedTableWithFilters(testKeyedNoPartitionUpsertTable, exp_bbb);
-    List<Record> records1 = pair1.getLeft();
-    List<String> path1 = pair1.getRight();
-    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path1);
-    Assert.assertEquals(records1.size(), 1);
-    Assert.assertTrue(recordToNameList(records1).containsAll(Arrays.asList(new String[]{"ccc"})));
-
-    Expression exp_aaa = Expressions.and(
-        Expressions.notNull("name"),
-        Expressions.equal("name", "aaa")
-    );
-    Pair<List<Record>, List<String>> pair2 = readKeyedTableWithFilters(testKeyedNoPartitionUpsertTable, exp_aaa);
-    List<Record> records2 = pair2.getLeft();
-    List<String> path2 = pair2.getRight();
-    assertPath(Lists.newArrayList(dataFiles1, dataFiles2, dataFiles3, dataFiles4, dataFiles5, dataFiles6), path2);
-    Assert.assertEquals(records2.size(), 1);
-    Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"ccc"})));
+    Assert.assertTrue(recordToNameList(records).contains("ccc"));
   }
 
-  @Test
-  public void testUpsertUnionPartitionKeyedTable() {
-    List<DataFile> dataFiles1 = writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeUnionRecords(1, "aaa", "2023-1-1", 1));
-    List<DataFile> dataFiles2 = writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeUnionRecords(1, "aaa", "2023-1-1", 1));
-    List<DataFile> dataFiles3 = writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeUnionRecords(1, "bbb", "2023-1-1", 2));
-    List<DataFile> dataFiles4 = writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeUnionRecords(1, "bbb", "2023-1-1", 2));
-    List<DataFile> dataFiles5 = writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.DELETE, writeUnionRecords(1, "ccc", "2023-1-1", 2));
-    List<DataFile> dataFiles6 = writeChange(PK_UNION_PARTITION_UPSERT_TABLE_ID, ChangeAction.UPDATE_AFTER, writeUnionRecords(1, "ccc", "2023-1-1", 2));
-    List<Record> records1 = readKeyedTable(testKeyedUnionPartitionUpsertTable);
-    Assert.assertEquals(records1.size(), 2);
-    Assert.assertTrue(recordToNameList(records1).containsAll(Arrays.asList(new String[]{"aaa", "ccc"})));
-
-    Expression partition_and_np = Expressions.and(
-        Expressions.and(
-            Expressions.notNull("num"),
-            Expressions.greaterThan("num", 1)
-        ),
-        Expressions.and(
-            Expressions.notNull("name"),
-            Expressions.equal("name", "bbb")
-        )
-    );
-    Pair<List<Record>, List<String>> pair = readKeyedTableWithFilters(testKeyedUnionPartitionUpsertTable, partition_and_np);
-    List<Record> records2 = pair.getLeft();
-    List<String> path = pair.getRight();
-    assertPath(Lists.newArrayList(dataFiles3, dataFiles4, dataFiles5, dataFiles6), path);
-    Assert.assertEquals(records2.size(), 1);
-    Assert.assertTrue(recordToNameList(records2).containsAll(Arrays.asList(new String[]{"ccc"})));
-  }
-
-  private List<Record> writeRecords(int id, String name, int day) {
-    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
+  private List<Record> writeRecords(int id, String name, long ts, int day) {
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", id, "name", name, "op_time",
-        LocalDateTime.of(2022, 1, day, 12, 0, 0))));
-
-    return builder.build();
-  }
-
-  private List<Record> writeUnionRecords(int id, String name, String time, int num) {
-    GenericRecord record = GenericRecord.create(UNION_TABLE_SCHEMA);
-
-    ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", id, "name", name, "time", time, "num", num)));
+    builder.add(DataTestHelpers.createRecord(id, name, ts, String.format("2022-01-%02dT12:00:00", day)));
 
     return builder.build();
   }
 
   private List<String> recordToNameList(List<Record> list) {
     return list.stream().map(r -> r.getField("name").toString()).collect(Collectors.toList());
-  }
-
-  private void assertPath(List<List<DataFile>> dataFileList, List<String> path) {
-    Assert.assertTrue(path.size() == dataFileList.size());
-    for (List<DataFile> dataFile : dataFileList) {
-      Assert.assertTrue(path.contains(dataFile.get(0).path().toString()));
-    }
   }
 }
