@@ -18,8 +18,9 @@
 
 package com.netease.arctic.spark.sql.optimize
 
+import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, CreateArcticTableAsSelect, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.util.ArcticSparkUtils
 import com.netease.arctic.spark.writer.WriteMode
@@ -27,7 +28,7 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, ArcticExpressionUtils, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.catalyst.plans.{CreateArcticTableAsSelect, RightOuter}
+import org.apache.spark.sql.catalyst.plans.RightOuter
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.connector.iceberg.distributions.ClusteredDistribution
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
@@ -109,7 +110,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
               val alias = Alias(than, "count")()
               val attributes = query.output.filter(p => primaries.contains(p.name))
               val validateQuery = Aggregate(attributes, Seq(alias), query)
-              CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery,
+              plans.CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery,
                 props, options, ifNotExists)
             } else {
               c

@@ -25,7 +25,6 @@ import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import org.apache.spark.sql.catalyst.analysis.{NamedRelation, ResolvedTable}
 import org.apache.spark.sql.catalyst.expressions.PredicateHelper
-import org.apache.spark.sql.catalyst.plans.CreateArcticTableAsSelect
 import org.apache.spark.sql.catalyst.plans.logical.{CreateTableAsSelect, DescribeRelation, LogicalPlan}
 import org.apache.spark.sql.catalyst.utils.TranslateUtils
 import org.apache.spark.sql.execution.SparkPlan
