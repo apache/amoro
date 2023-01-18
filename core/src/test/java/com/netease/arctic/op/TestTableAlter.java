@@ -18,8 +18,9 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.UpdateProperties;
 import org.apache.iceberg.UpdateSchema;
 import org.apache.iceberg.types.Types;
@@ -34,9 +35,13 @@ import static org.apache.iceberg.types.Types.NestedField.required;
 
 public class TestTableAlter extends TableTestBase {
 
+  public TestTableAlter() {
+    super(TableFormat.MIXED_ICEBERG, true, true);
+  }
+
   @Test
   public void testUpdateProperties() throws TException {
-    Map<String, String> properties = testTable.properties();
+    Map<String, String> properties = getArcticTable().properties();
     final String testProps = "test.props";
     final String testPropsValue = "values11111";
 
@@ -46,25 +51,24 @@ public class TestTableAlter extends TableTestBase {
     Assert.assertFalse(properties.containsKey(testProps));
     Assert.assertFalse(properties.containsKey(testProps2));
 
-    UpdateProperties updateProperties = testTable.updateProperties();
+    UpdateProperties updateProperties = getArcticTable().updateProperties();
     updateProperties.set(testProps, testPropsValue);
     updateProperties.commit();
 
-    properties = testTable.properties();
+    properties = getArcticTable().properties();
     Assert.assertTrue(properties.containsKey(testProps));
     Assert.assertEquals(testPropsValue, properties.get(testProps));
 
-    TableMeta meta = AMS.handler().getTable(testTable.id().buildTableIdentifier());
+    TableMeta meta = getAmsHandler().getTable(getArcticTable().id().buildTableIdentifier());
     properties = meta.getProperties();
     Assert.assertTrue(properties.containsKey(testProps));
     Assert.assertEquals(testPropsValue, properties.get(testProps));
 
-
-    updateProperties = testTable.updateProperties();
+    updateProperties = getArcticTable().updateProperties();
     updateProperties.remove(testProps);
     updateProperties.set(testProps2, testPropsVal2);
     updateProperties.commit();
-    properties = testTable.properties();
+    properties = getArcticTable().properties();
     Assert.assertTrue(properties.containsKey(testProps2));
     Assert.assertEquals(testPropsVal2, properties.get(testProps2));
     Assert.assertFalse(properties.containsKey(testProps));
@@ -72,7 +76,7 @@ public class TestTableAlter extends TableTestBase {
 
   @Test
   public void testSyncSchema() {
-    UpdateSchema us = testKeyedTable.baseTable().updateSchema();
+    UpdateSchema us = getArcticTable().asKeyedTable().baseTable().updateSchema();
     us.addColumn("height", Types.FloatType.get(), "height");
     us.addColumn("birthday", Types.DateType.get());
     us.addColumn("preferences", Types.StructType.of(
@@ -94,7 +98,8 @@ public class TestTableAlter extends TableTestBase {
             required(12, "alt", Types.DoubleType.get()),
             required(13, "long", Types.FloatType.get())
         )), "map of address to coordinate");
-    us.addColumn("points", Types.ListType.ofOptional(14,
+    us.addColumn("points", Types.ListType.ofOptional(
+        14,
         Types.StructType.of(
             required(15, "x", Types.LongType.get()),
             required(16, "y", Types.IntegerType.get()),
@@ -102,9 +107,9 @@ public class TestTableAlter extends TableTestBase {
         )), "2-D cartesian points");
 
     us.commit();
-    KeyedSchemaUpdate.syncSchema(testKeyedTable);
+    KeyedSchemaUpdate.syncSchema(getArcticTable().asKeyedTable());
 
-    us = testKeyedTable.baseTable().updateSchema();
+    us = getArcticTable().asKeyedTable().baseTable().updateSchema();
     // primitive
     us.renameColumn("name", "name.nick");
     us.addColumn("friends", Types.StructType.of(
@@ -144,11 +149,11 @@ public class TestTableAlter extends TableTestBase {
     us.deleteColumn("preferences.feature2.item1");
 
     us.commit();
-    KeyedSchemaUpdate.syncSchema(testKeyedTable);
+    KeyedSchemaUpdate.syncSchema(getArcticTable().asKeyedTable());
 
-    Assert.assertEquals("Should match base and change schema",
-        testKeyedTable.baseTable().schema().asStruct(),
-        testKeyedTable.changeTable().schema().asStruct());
+    Assert.assertEquals(
+        "Should match base and change schema",
+        getArcticTable().asKeyedTable().baseTable().schema().asStruct(),
+        getArcticTable().asKeyedTable().changeTable().schema().asStruct());
   }
-
 }

@@ -18,12 +18,14 @@
 
 package com.netease.arctic.utils;
 
-import com.netease.arctic.TableTestBase;
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.WatermarkGenerator;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.DataFiles;
 import org.apache.iceberg.Metrics;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.apache.iceberg.types.Conversions;
 import org.apache.iceberg.types.Types;
@@ -38,50 +40,47 @@ import java.util.Map;
 
 public class WatermarkGeneratorTest extends TableTestBase {
 
+  public WatermarkGeneratorTest() {
+    super(TableFormat.MIXED_ICEBERG, false, false);
+  }
+
   @Test
   public void testDefaultEventTime() {
     long start = System.currentTimeMillis();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(testTable);
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
     Assert.assertEquals(-1, watermarkGenerator.watermark());
-    watermarkGenerator.addFile(FILE_A);
+    watermarkGenerator.addFile(TableTestHelpers.getFile(1));
     Assert.assertTrue(watermarkGenerator.watermark() >= start);
   }
 
   @Test
   public void testTimestampEventTime() {
     long start = System.currentTimeMillis();
-    testTable.asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
+    getArcticTable().asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "op_time")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "10").commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(testTable);
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
-    lowerBounds.put(3, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start - 30000));
-    upperBounds.put(3, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start - 10000));
+    lowerBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start - 30000));
+    upperBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start - 10000));
 
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file1.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+        PartitionSpec.unpartitioned(), null, metrics, false);
+
     watermarkGenerator.addFile(file1);
     Assert.assertEquals(start - 20000, watermarkGenerator.watermark());
 
-    lowerBounds.put(3, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start));
-    upperBounds.put(3, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start));
+    lowerBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start));
+    upperBounds.put(4, Conversions.toByteBuffer(Types.TimestampType.withoutZone(), start));
     metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file2 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file2.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file2 = TableTestHelpers.getFile("/watermark", 2,
+        PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
     Assert.assertEquals(start - 10000, watermarkGenerator.watermark());
   }
@@ -89,49 +88,40 @@ public class WatermarkGeneratorTest extends TableTestBase {
   @Test
   public void testLongEventTime() {
     long start = System.currentTimeMillis();
-    testTable.asUnkeyedTable().updateSchema().addColumn("long_column", Types.LongType.get()).commit();
-    testTable.asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "long_column")
+    getArcticTable().asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "ts")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "5")
         .set(TableProperties.TABLE_EVENT_TIME_NUMBER_FORMAT, "TIMESTAMP_S").commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(testTable);
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
-    lowerBounds.put(4, Conversions.toByteBuffer(Types.LongType.get(), start / 1000 - 30));
-    upperBounds.put(4, Conversions.toByteBuffer(Types.LongType.get(), start / 1000 - 10));
+    lowerBounds.put(3, Conversions.toByteBuffer(Types.LongType.get(), start / 1000 - 30));
+    upperBounds.put(3, Conversions.toByteBuffer(Types.LongType.get(), start / 1000 - 10));
 
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file1.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+        PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
     Assert.assertEquals((start / 1000 * 1000) - 15000, watermarkGenerator.watermark());
 
-    lowerBounds.put(4, Conversions.toByteBuffer(Types.LongType.get(), start / 1000));
-    upperBounds.put(4, Conversions.toByteBuffer(Types.LongType.get(), start / 1000));
+    lowerBounds.put(3, Conversions.toByteBuffer(Types.LongType.get(), start / 1000));
+    upperBounds.put(3, Conversions.toByteBuffer(Types.LongType.get(), start / 1000));
     metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file2 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file2.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file2 = TableTestHelpers.getFile("/watermark", 2,
+        PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
     Assert.assertEquals((start / 1000 * 1000) - 5000, watermarkGenerator.watermark());
   }
 
   @Test
   public void testStringEventTime() throws ParseException {
-    testTable.asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
+    getArcticTable().asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "1").commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(testTable);
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
@@ -143,12 +133,8 @@ public class WatermarkGeneratorTest extends TableTestBase {
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file1.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+        PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
     Assert.assertEquals(df.parse("2022-11-11 00:00:59").getTime(), watermarkGenerator.watermark());
 
@@ -157,21 +143,17 @@ public class WatermarkGeneratorTest extends TableTestBase {
     metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file2 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file2.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file2 = TableTestHelpers.getFile("/watermark", 2,
+        PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file2);
     Assert.assertEquals(df.parse("2022-11-11 00:01:59").getTime(), watermarkGenerator.watermark());
   }
 
   @Test
   public void testWithWrongConfigs() {
-    testTable.asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
+    getArcticTable().asUnkeyedTable().updateProperties().set(TableProperties.TABLE_EVENT_TIME_FIELD, "name")
         .set(TableProperties.TABLE_WATERMARK_ALLOWED_LATENESS, "1").commit();
-    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(testTable);
+    WatermarkGenerator watermarkGenerator = WatermarkGenerator.forTable(getArcticTable());
 
     Map<Integer, ByteBuffer> lowerBounds = Maps.newHashMap();
     Map<Integer, ByteBuffer> upperBounds = Maps.newHashMap();
@@ -181,14 +163,9 @@ public class WatermarkGeneratorTest extends TableTestBase {
     Metrics metrics = new Metrics(2L, Maps.newHashMap(), Maps.newHashMap(),
         Maps.newHashMap(), null, lowerBounds, upperBounds);
 
-    DataFile file1 = DataFiles.builder(SPEC)
-        .withPath("/path/to/file1.parquet")
-        .withFileSizeInBytes(0)
-        .withPartitionPath("op_time_day=2022-01-01")
-        .withMetrics(metrics)
-        .build();
+    DataFile file1 = TableTestHelpers.getFile("/watermark", 1,
+        PartitionSpec.unpartitioned(), null, metrics, false);
     watermarkGenerator.addFile(file1);
     Assert.assertEquals(-1, watermarkGenerator.watermark());
   }
-
 }
