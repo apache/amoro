@@ -46,13 +46,16 @@ public class ArcticHiveTestMain {
 
   @BeforeClass
   public static void setup() throws Exception {
-    System.out.println("================== begin arctic hive test ==================");
+    System.out.println("================== setup arctic hiveMetastore env ==================");
     HiveTableTestBase.startMetastore();
+    System.out.println("================== setup arctic hiveMetastore env completed ==================");
+
   }
 
   @AfterClass
-  public static void cleanDown(){
-    System.out.println("================== end arctic hive test ===================");
+  public static void cleanDown() {
+    System.out.println("================== clean arctic hiveMetastore env ===================");
     HiveTableTestBase.stopMetastore();
+    System.out.println("================== clean arctic hiveMetastore env completed ===================");
   }
 }
