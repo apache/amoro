@@ -19,8 +19,8 @@
 package com.netease.arctic.flink.read.hidden.pulsar;
 
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
-import com.netease.arctic.flink.read.source.log.pulsar.LogRecordPulsarWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.pulsar.LogPulsarOrderedPartitionSplitReader;
+import com.netease.arctic.flink.read.source.log.pulsar.LogRecordPulsarWithRetractInfo;
 import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
@@ -66,7 +66,7 @@ public class LogPulsarPartitionSplitReaderTest {
 
   private static final Logger LOG = LoggerFactory.getLogger(LogPulsarPartitionSplitReaderTest.class);
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
   public static final String TOPIC = "splitReaderTest";
   public LogPulsarHelper logPulsarHelper;
 

@@ -98,7 +98,7 @@ public class HiddenLogOperatorsTest {
   public static final int DATA_INDEX = 1;
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
   private static LogPulsarHelper pulsarHelper;
 
   @Parameterized.Parameter

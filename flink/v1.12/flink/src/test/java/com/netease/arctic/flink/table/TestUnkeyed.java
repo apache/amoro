@@ -92,7 +92,7 @@ public class TestUnkeyed extends FlinkTestBase {
   private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
   private Map<String, String> tableProperties = new HashMap<>();
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
   private static LogPulsarHelper pulsarHelper;
 
   @Parameterized.Parameter
