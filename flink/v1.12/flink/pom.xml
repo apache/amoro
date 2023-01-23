@@ -37,7 +37,7 @@
         <pulsar.version>2.10.0</pulsar.version>
         <protoc.version>3.17.3</protoc.version>
         <assertj.version>3.21.0</assertj.version>
-        <testcontainers.version>1.16.2</testcontainers.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
         <flink.version>1.12.7</flink.version>
         <pulsar-commons-lang3.version>3.11</pulsar-commons-lang3.version>
         <pulsar-zookeeper.version>3.6.3</pulsar-zookeeper.version>
