@@ -25,6 +25,7 @@ import org.apache.flink.runtime.concurrent.FutureUtils;
 import org.apache.flink.runtime.messages.Acknowledge;
 import org.apache.flink.runtime.minicluster.MiniCluster;
 import org.apache.flink.runtime.testutils.CommonTestUtils;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +38,14 @@ import java.util.stream.Collectors;
 public class TestUtil {
 
   public static final Logger LOG = LoggerFactory.getLogger(TestUtil.class);
+
+  /**
+   * get ut method name without parameters.
+   */
+  public static String getUtMethodName(TestName testName) {
+    int i = testName.getMethodName().indexOf("[");
+    return testName.getMethodName().substring(0, i);
+  }
 
   public static void cancelJob(JobClient jobClient) {
     if (isJobTerminated(jobClient)) {
@@ -69,7 +78,7 @@ public class TestUtil {
       return true;
     }
   }
-  
+
   public static void cancelAllJobs(MiniCluster miniCluster) {
     try {
       final Deadline jobCancellationDeadline =

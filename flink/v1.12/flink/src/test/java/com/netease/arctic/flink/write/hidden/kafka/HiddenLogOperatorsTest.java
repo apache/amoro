@@ -25,6 +25,7 @@ import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.flink.util.TestGlobalAggregateManager;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
@@ -54,11 +55,14 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.StringData;
 import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.util.CloseableIterator;
+import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.slf4j.Logger;
@@ -94,14 +98,15 @@ import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULS
 @RunWith(Parameterized.class)
 public class HiddenLogOperatorsTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
-  public static final String topic = "produce-consume-topic";
+  public static String topic;
   public static final int DATA_INDEX = 1;
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
   private static LogPulsarHelper pulsarHelper;
 
-  @Parameterized.Parameter
+  @Rule
+  public TestName testName = new TestName();
   public String logType;
 
   @Parameterized.Parameters(name = "logType = {0}")
@@ -111,10 +116,28 @@ public class HiddenLogOperatorsTest {
         LOG_STORE_STORAGE_TYPE_PULSAR);
   }
 
-  @BeforeClass
-  public static void prepare() throws Exception {
-    KAFKA_CONTAINER.start();
-    pulsarHelper = new LogPulsarHelper(environment);
+  public HiddenLogOperatorsTest(String logType) {
+    this.logType = logType;
+    if (LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType)) {
+      pulsarHelper = new LogPulsarHelper(environment);
+    } else {
+      KAFKA_CONTAINER.start();
+    }
+  }
+
+  @Before
+  public void before() {
+    topic = TestUtil.getUtMethodName(testName);
+    if (LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType)) {
+      pulsarHelper.op().createTopic(topic, 1);
+    }
+  }
+
+  @After
+  public void after() {
+    if (LOG_STORE_STORAGE_TYPE_PULSAR.equals(logType)) {
+      pulsarHelper.op().deleteTopicByForce(topic);
+    }
   }
 
   @AfterClass
@@ -124,8 +147,6 @@ public class HiddenLogOperatorsTest {
 
   @Test
   public void testProduceAndConsume() throws Exception {
-    String topic = "testProduceAndConsume";
-    pulsarHelper.op().createTopic(topic, 1);
     final int count = 20;
 
     String[] expect = new String[count];
@@ -149,13 +170,10 @@ public class HiddenLogOperatorsTest {
       e.printStackTrace();
       throw e;
     }
-    pulsarHelper.op().deleteTopicByForce(topic);
   }
 
   @Test
   public void testProducerFailoverWithoutRetract() throws Exception {
-    String topic = "testProducerFailoverWithoutRetract";
-    pulsarHelper.op().createTopic(topic, 1);
     OperatorSubtaskState state;
     try {
       OneInputStreamOperatorTestHarness<RowData, RowData> harness = createProducer(null, topic);
@@ -197,13 +215,10 @@ public class HiddenLogOperatorsTest {
     }
 
     createConsumerWithoutRetract(true, 10, "test-gid", topic);
-    pulsarHelper.op().deleteTopicByForce(topic);
   }
 
   @Test
   public void testMultiParallelismFailoverConsistencyRead() throws Exception {
-    String topic = "testMultiParallelismFailoverConsistencyRead";
-    pulsarHelper.op().createTopic(topic, 1);
     OperatorSubtaskState state0;
     OperatorSubtaskState state1;
     OperatorSubtaskState state2;
@@ -335,7 +350,6 @@ public class HiddenLogOperatorsTest {
     if (logType.equals(LOG_STORE_STORAGE_TYPE_KAFKA)) {
       createConsumerWithRetract(true, 27, "test-gid-2", topic);
     }
-    pulsarHelper.op().deleteTopicByForce(topic);
   }
 
   public static RowData createRowData(int i) {

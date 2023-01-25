@@ -136,8 +136,7 @@ public class TestKeyed extends FlinkTestBase {
   }
 
   private void prepareLog() {
-    int i = testName.getMethodName().indexOf("[");
-    topic = testName.getMethodName().substring(0, i);
+    topic = TestUtil.getUtMethodName(testName);
     tableProperties.clear();
     tableProperties.put(ENABLE_LOG_STORE, "true");
     tableProperties.put(LOG_STORE_MESSAGE_TOPIC, topic);
