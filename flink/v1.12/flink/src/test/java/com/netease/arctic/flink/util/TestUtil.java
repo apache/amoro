@@ -44,6 +44,9 @@ public class TestUtil {
    */
   public static String getUtMethodName(TestName testName) {
     int i = testName.getMethodName().indexOf("[");
+    if (i == -1) {
+      return testName.getMethodName();
+    }
     return testName.getMethodName().substring(0, i);
   }
 

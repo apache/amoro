@@ -53,6 +53,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +83,7 @@ public class LogPulsarSourceTest extends TableTestBase {
 
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
-  public static final String TOPIC = "LogPulsarSourceTest";
+  public String TOPIC = "LogPulsarSourceTest_";
   public static final int PARALLELISM = 3;
   private List<LogData<RowData>> dataInPulsar;
   public LogPulsarHelper logPulsarHelper;
@@ -92,7 +93,9 @@ public class LogPulsarSourceTest extends TableTestBase {
       TableIdentifier.of(TEST_CATALOG_NAME, TEST_DB_NAME, RESULT_TABLE);
   private static KeyedTable result;
   public static InternalCatalogBuilder catalogBuilder;
-
+  @Rule
+  public TestName testName = new TestName();
+  
   @Rule
   public final MiniClusterWithClientResource miniClusterResource =
       new MiniClusterWithClientResource(
@@ -105,6 +108,7 @@ public class LogPulsarSourceTest extends TableTestBase {
 
   @Before
   public void initData() throws Exception {
+    TOPIC += TestUtil.getUtMethodName(testName);
     TestUtil.cancelAllJobs(miniClusterResource.getMiniCluster());
     logPulsarHelper = new LogPulsarHelper(environment);
     // |0 1 2 3 4 5 6 7 8 9 Flip 10 11 12 13 14| 15 16 17 18 19
@@ -122,6 +126,7 @@ public class LogPulsarSourceTest extends TableTestBase {
   @After
   public void after() {
     testCatalog.dropTable(RESULT_TABLE_ID, true);
+    logPulsarHelper.op().deleteTopicByForce(TOPIC);
   }
 
   @Test(timeout = 60000)
