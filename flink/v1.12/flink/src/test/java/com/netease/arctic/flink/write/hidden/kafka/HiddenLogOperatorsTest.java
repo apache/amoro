@@ -100,7 +100,7 @@ public class HiddenLogOperatorsTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static String topic;
   public static final int DATA_INDEX = 1;
-  public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
+  public final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
   @ClassRule
   public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
   private static LogPulsarHelper pulsarHelper;
