@@ -72,6 +72,7 @@ import static com.netease.arctic.table.TableProperties.LOG_STORE_PROPERTIES_PREF
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
 import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.table.api.Expressions.$;
 
 @RunWith(Parameterized.class)
@@ -91,7 +92,7 @@ public class TestKeyed extends FlinkTestBase {
   private HiveTableTestBase hiveTableTestBase = new HiveTableTestBase();
   private Map<String, String> tableProperties = new HashMap<>();
   @ClassRule
-  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.container());
+  public static PulsarTestEnvironment environment = new PulsarTestEnvironment(PulsarRuntime.mock());
   private static LogPulsarHelper pulsarHelper;
 
   @Parameterized.Parameter
@@ -145,7 +146,7 @@ public class TestKeyed extends FlinkTestBase {
       pulsarHelper.op().createTopic(topic, 1);
       tableProperties.put(LOG_STORE_ADDRESS, pulsarHelper.op().serviceUrl());
       tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_PULSAR);
-      tableProperties.put(LOG_STORE_PROPERTIES_PREFIX + "adminUrl", pulsarHelper.op().adminUrl());
+      tableProperties.put(LOG_STORE_PROPERTIES_PREFIX + PULSAR_ADMIN_URL.key(), pulsarHelper.op().adminUrl());
     } else {
       kafkaTestBase.createTopics(KAFKA_PARTITION_NUMS, topic);
       tableProperties.put(LOG_STORE_TYPE, LOG_STORE_STORAGE_TYPE_KAFKA);
