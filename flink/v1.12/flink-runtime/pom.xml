@@ -200,6 +200,21 @@
                                 <exclude>common/**</exclude>
                             </excludes>
                         </filter>
+                        <filter>
+                            <artifact>org.apache.pulsar:*</artifact>
+                            <excludes>
+                                <exclude>io/**</exclude>
+                                <exclude>de/**</exclude>
+                                <exclude>lib/**</exclude>
+                                <exclude>com/scurrilous/**</exclude>
+                                <exclude>LICENSE</exclude>
+                                <exclude>*.xml</exclude>
+                                <exclude>*.html</exclude>
+                                <exclude>NOTICE</exclude>
+                                <exclude>*.dtd</exclude>
+                                <exclude>META-INF/**</exclude>
+                            </excludes>
+                        </filter>
                     </filters>
                     <artifactSet>
                         <includes>
@@ -219,6 +234,7 @@
                             <include>asm:*</include>
                             <include>org.apache.flink:flink-connector-kafka_${scala.binary.version}</include>
                             <include>org.apache.kafka:*</include>
+                            <include>org.apache.pulsar:*</include>
                         </includes>
                     </artifactSet>
                 </configuration>
@@ -347,6 +363,15 @@
                                 <relocation>
                                     <pattern>com.facebook.fb303</pattern>
                                     <shadedPattern>com.netease.arctic.shaded.com.facebook.fb303</shadedPattern>
+                                </relocation>
+                                <!--              flink-pulsar                  -->
+                                <relocation>
+                                    <pattern>org.apache.flink.connector.pulsar</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.flink.connector.pulsar</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.apache.pulsar</pattern>
+                                    <shadedPattern>com.netease.arctic.shaded.org.apache.pulsar</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>
