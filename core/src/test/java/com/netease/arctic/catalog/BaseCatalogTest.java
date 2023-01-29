@@ -18,62 +18,44 @@
 
 package com.netease.arctic.catalog;
 
-import com.netease.arctic.TableTestBase;
-import com.netease.arctic.ams.api.CatalogMeta;
-import com.netease.arctic.ams.api.properties.CatalogMetaProperties;
-import com.netease.arctic.table.KeyedTable;
-import com.netease.arctic.table.UnkeyedTable;
-import org.apache.iceberg.relocated.com.google.common.collect.Lists;
-import org.apache.thrift.TException;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import org.apache.iceberg.exceptions.AlreadyExistsException;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_NAME;
-import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_DB_NAME;
+@RunWith(Parameterized.class)
+public class BaseCatalogTest extends CatalogTestBase {
 
-public class BaseCatalogTest extends TableTestBase {
+  public BaseCatalogTest(TableFormat testFormat) {
+    super(testFormat);
+  }
+
+  @Parameterized.Parameters(name = "testFormat = {0}")
+  public static Object[] parameters() {
+    return new Object[] {TableFormat.ICEBERG, TableFormat.MIXED_ICEBERG};
+  }
 
   @Test
   public void testCreateAndDropDatabase() {
-    Assert.assertEquals(Lists.newArrayList(TEST_DB_NAME), testCatalog.listDatabases());
-    testCatalog.createDatabase("create_db");
-    Assert.assertEquals(Lists.newArrayList(TEST_DB_NAME, "create_db"), testCatalog.listDatabases());
-    testCatalog.dropDatabase("create_db");
-    Assert.assertEquals(Lists.newArrayList(TEST_DB_NAME), testCatalog.listDatabases());
+    String createDbName = "create_db";
+    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
+    getCatalog().createDatabase(createDbName);
+    Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
+    getCatalog().dropDatabase(createDbName);
+    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
   }
 
   @Test
-  public void testLoadUnkeyedTable() {
-    UnkeyedTable loadTable = testCatalog.loadTable(TABLE_ID).asUnkeyedTable();
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(SPEC, loadTable.spec());
-    Assert.assertEquals(TABLE_ID, loadTable.id());
+  public void testCreateDuplicateDatabase() {
+    String createDbName = "create_db";
+    Assert.assertFalse(getCatalog().listDatabases().contains(createDbName));
+    getCatalog().createDatabase(createDbName);
+    Assert.assertTrue(getCatalog().listDatabases().contains(createDbName));
+    Assert.assertThrows(
+        AlreadyExistsException.class,
+        () -> getCatalog().createDatabase(createDbName));
+    getCatalog().dropDatabase(createDbName);
   }
-
-  @Test
-  public void testLoadKeyedTable() {
-    KeyedTable loadTable = testCatalog.loadTable(PK_TABLE_ID).asKeyedTable();
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.schema().asStruct());
-    Assert.assertEquals(SPEC, loadTable.spec());
-    Assert.assertEquals(PK_TABLE_ID, loadTable.id());
-    Assert.assertEquals(PRIMARY_KEY_SPEC, loadTable.primaryKeySpec());
-
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.baseTable().schema().asStruct());
-    Assert.assertEquals(SPEC, loadTable.baseTable().spec());
-
-    Assert.assertEquals(TABLE_SCHEMA.asStruct(), loadTable.changeTable().schema().asStruct());
-    Assert.assertEquals(SPEC, loadTable.changeTable().spec());
-  }
-
-  @Test
-  public void refreshCatalog() throws TException {
-    CatalogMeta catalog = AMS.handler().getCatalog(TEST_CATALOG_NAME);
-    AMS.handler().updateMeta(catalog, CatalogMetaProperties.KEY_WAREHOUSE, "/test");
-    testCatalog = CatalogLoader.load(AMS.getUrl());
-    testCatalog.refresh();
-    Assert.assertEquals("/test",
-        AMS.handler().getCatalog(TEST_CATALOG_NAME).
-            getCatalogProperties().get(CatalogMetaProperties.KEY_WAREHOUSE));
-  }
-
 }

@@ -98,6 +98,34 @@ public class TestFileInfoCacheService extends TableTestBase {
   }
 
   @Test
+  public void testNoNewFilesCommit() throws MetaException {
+    TableCommitMeta meta = new TableCommitMeta();
+    meta.setAction("append");
+    meta.setCommitTime(System.currentTimeMillis());
+    meta.setCommitMetaProducer(CommitMetaProducer.INGESTION);
+    TableIdentifier tableIdentifier = new TableIdentifier(AMS_TEST_CATALOG_NAME, "test", "testNoNewFilesCommit");
+    meta.setTableIdentifier(tableIdentifier);
+    List<TableChange> changes = new ArrayList<>();
+    TableChange change = new TableChange();
+    change.setParentSnapshotId(-1);
+    change.setInnerTable("base");
+    long snapshotId = 1L;
+    change.setSnapshotId(snapshotId);
+
+    changes.add(change);
+    meta.setChanges(changes);
+    Map<String, String> properties = new HashMap<>();
+    properties.put(TableProperties.TABLE_EVENT_TIME_FIELD, "eventTime");
+    meta.setProperties(properties);
+    ServiceContainer.getFileInfoCacheService().commitCacheFileInfo(meta);
+
+    List<TransactionsOfTable> transactionsOfTables =
+        ServiceContainer.getFileInfoCacheService().getTxExcludeOptimize(tableIdentifier);
+    Assert.assertEquals(1, transactionsOfTables.size());
+    Assert.assertEquals(snapshotId, transactionsOfTables.get(0).getTransactionId());
+  }
+
+  @Test
   public void testNeedFixCacheWhenParentNotCached() throws MetaException {
     TableCommitMeta meta = new TableCommitMeta();
     meta.setAction("append");
@@ -396,7 +424,7 @@ public class TestFileInfoCacheService extends TableTestBase {
     assertDataFile(dataFile, commitTime, snapshotSequence, ttlDataFiles.get(0));
     assertDataFile(dataFile1, commitTime, snapshotSequence1, ttlDataFiles.get(1));
   }
-  
+
   private void assertDataFile(DataFile file, long commitTime, long sequence, DataFileInfo dataFileInfo) {
     Assert.assertEquals(file.getPath().toString(), dataFileInfo.getPath());
     Assert.assertEquals("pt=2022-08-31", dataFileInfo.getPartition());
