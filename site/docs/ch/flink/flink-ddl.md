@@ -145,14 +145,14 @@ SHOW TABLES;
 ### Mixed Iceberg Data Types
 | Flink Data Type    | Mixed Iceberg Data Type    |
 |-----|-----|
-| STRING    | CHAR(p)    |
-| STRING    | VARCHAR(p)    |
+| CHAR(p)    | STRING    |
+| VARCHAR(p)    | STRING    |
 | STRING    | STRING    |
 | BOOLEAN    | BOOLEAN    |
-| INT    | TINYINT    |
-| INT    | SMALLINT    |
+| TINYINT    | INT    |
+| SMALLINT    | INT    |
 | INT    | INT    |
-| BIGINT    | BIGINT    |
+| BIGINT    | LONG    |
 | FLOAT    | FLOAT     |
 | DOUBLE    | DOUBLE    |
 | DECIAML(p, s)    | DECIAML(p, s)    |
