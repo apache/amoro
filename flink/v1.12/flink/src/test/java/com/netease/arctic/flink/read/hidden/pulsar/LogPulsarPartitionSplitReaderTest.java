@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.DATA_INDEX;
+import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.DATA_INDEX;
 import static java.util.Collections.singletonList;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_SERVICE_URL;

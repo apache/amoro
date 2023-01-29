@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.write.hidden.kafka;
+package com.netease.arctic.flink.write.hidden;
 
 import com.netease.arctic.flink.read.hidden.pulsar.LogPulsarSourceTest;
 import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
@@ -29,9 +29,7 @@ import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.util.pulsar.LogPulsarHelper;
 import com.netease.arctic.flink.util.pulsar.PulsarTestEnvironment;
 import com.netease.arctic.flink.util.pulsar.runtime.PulsarRuntime;
-import com.netease.arctic.flink.write.hidden.BaseLogTest;
-import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
-import com.netease.arctic.flink.write.hidden.LogMsgFactory;
+import com.netease.arctic.flink.write.hidden.kafka.HiddenKafkaFactory;
 import com.netease.arctic.flink.write.hidden.pulsar.HiddenPulsarFactory;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;

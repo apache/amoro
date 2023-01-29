@@ -39,7 +39,7 @@ import java.util.List;
 import static com.netease.arctic.flink.shuffle.RowKindUtil.transformFromFlinkRowKind;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.createLogDataDeserialization;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.createRowData;
+import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.createRowData;
 
 public class LogPulsarHelper {
 

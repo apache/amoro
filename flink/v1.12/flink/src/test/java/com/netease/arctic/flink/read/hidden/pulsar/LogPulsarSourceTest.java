@@ -72,7 +72,7 @@ import static com.netease.arctic.flink.read.ArcticSourceTest.tableRecords;
 import static com.netease.arctic.flink.util.FailoverTestUtil.triggerFailover;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.FLINK_USER_SCHEMA;
 import static com.netease.arctic.flink.write.hidden.BaseLogTest.userSchema;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.DATA_INDEX;
+import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.DATA_INDEX;
 import static org.apache.flink.connector.pulsar.common.config.PulsarOptions.PULSAR_ADMIN_URL;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_MAX_FETCH_TIME;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_NAME;

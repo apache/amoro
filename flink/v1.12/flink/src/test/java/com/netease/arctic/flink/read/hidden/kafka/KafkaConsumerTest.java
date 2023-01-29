@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
 
 import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getProperties;
 import static com.netease.arctic.flink.util.kafka.KafkaConfigGenerate.getPropertiesWithByteArray;
-import static com.netease.arctic.flink.write.hidden.kafka.HiddenLogOperatorsTest.topic;
+import static com.netease.arctic.flink.write.hidden.HiddenLogOperatorsTest.topic;
 import static org.apache.kafka.clients.producer.ProducerConfig.TRANSACTIONAL_ID_CONFIG;
 import static org.assertj.core.api.Assertions.assertThat;
 
