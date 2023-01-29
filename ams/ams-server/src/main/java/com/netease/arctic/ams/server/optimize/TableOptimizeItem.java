@@ -858,12 +858,17 @@ public class TableOptimizeItem extends IJDBCService {
    * If task execute timeout, set it to be Failed.
    */
   public void checkTaskExecuteTimeout() {
-    optimizeTasks.values().stream().filter(OptimizeTaskItem::executeTimeout)
-        .forEach(task -> {
-          task.onFailed(new ErrorMessage(System.currentTimeMillis(), "execute expired"),
-              System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
-          LOG.error("{} execute timeout, change to Failed", task.getTaskId());
-        });
+    tasksLock.lock();
+    try {
+      optimizeTasks.values().stream().filter(OptimizeTaskItem::executeTimeout)
+          .forEach(task -> {
+            task.onFailed(new ErrorMessage(System.currentTimeMillis(), "execute expired"),
+                System.currentTimeMillis() - task.getOptimizeRuntime().getExecuteTime());
+            LOG.error("{} execute timeout, change to Failed", task.getTaskId());
+          });
+    } finally {
+      tasksLock.unlock();
+    }
   }
 
   /**
