@@ -34,8 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.util.function.Supplier;
 
 /**
- * The source reader for pulsar subscription Failover and Exclusive, which consumes the ordered
- * messages.
+ * The source reader for log pulsar subscription Exclusive, which consumes the ordered messages.
+ * To support LogPulsarRecordEmitter.
  */
 @Internal
 public class LogPulsarOrderedSourceReader<OUT> extends PulsarOrderedSourceReader<OUT> {

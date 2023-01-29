@@ -54,7 +54,7 @@ import static com.netease.arctic.flink.table.descriptors.ArcticValidator.LOG_CON
 
 /**
  * The split reader a given {@link PulsarPartitionSplit}, it would be closed once the {@link
- * PulsarOrderedSourceReader} is closed.
+ * LogPulsarOrderedSourceReader} is closed.
  */
 @Internal
 public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartitionSplitReader<RowData> {
@@ -89,6 +89,7 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
 
   @Override
   public RecordsWithSplitIds<PulsarMessage<RowData>> fetch() throws IOException {
+    // ---- copy from org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase start ----
     RecordsBySplits.Builder<PulsarMessage<RowData>> builder = new RecordsBySplits.Builder<>();
 
     // Return when no split registered to this reader.
@@ -110,7 +111,7 @@ public class LogPulsarOrderedPartitionSplitReader extends PulsarOrderedPartition
         if (message == null) {
           break;
         }
-
+        // ---- copy from org.apache.flink.connector.pulsar.source.reader.split.PulsarPartitionSplitReaderBase end ----
         LogData<RowData> logData = logDataJsonDeserialization.deserialize(message.getData());
         if (!logData.getFlip() && filterByRowKind(logData.getActualValue())) {
           LOG.info(

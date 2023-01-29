@@ -43,7 +43,7 @@ import java.util.function.Supplier;
  * subscription type.
  *
  * <ol>
- *   <li>Failover, Exclusive: We would create {@link PulsarOrderedSourceReader}.
+ *   <li>Exclusive: We would create {@link LogPulsarOrderedSourceReader}. Only support it for now.
  * </ol>
  */
 @Internal
@@ -66,6 +66,7 @@ public final class LogPulsarSourceReaderFactory {
       Schema schema,
       boolean logRetractionEnable,
       String logConsumerChangelogMode) {
+    // ------ copy from org.apache.flink.connector.pulsar.source.reader.PulsarSourceReaderFactory start -------
     PulsarClient pulsarClient = PulsarClientFactory.createClient(sourceConfiguration);
     PulsarAdmin pulsarAdmin = PulsarClientFactory.createAdmin(sourceConfiguration);
 
@@ -76,6 +77,7 @@ public final class LogPulsarSourceReaderFactory {
 
     // Create different pulsar source reader by subscription type.
     SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
+    // ------ copy from org.apache.flink.connector.pulsar.source.reader.PulsarSourceReaderFactory end -------
     if (subscriptionType == SubscriptionType.Exclusive) {
       LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
 
@@ -101,7 +103,7 @@ public final class LogPulsarSourceReaderFactory {
           pulsarAdmin);
     } else {
       throw new UnsupportedOperationException(
-          "This subscription type is not " + subscriptionType + " supported currently.");
+          "This subscription type [" + subscriptionType + "] is not supported currently.");
     }
   }
 }

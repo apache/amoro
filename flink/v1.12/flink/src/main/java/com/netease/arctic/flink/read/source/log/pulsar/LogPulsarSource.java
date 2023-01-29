@@ -35,6 +35,7 @@ import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.util.Preconditions;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.flink.FlinkSchemaUtil;
 
@@ -82,6 +83,8 @@ public final class LogPulsarSource extends PulsarSource<RowData> {
     super(sourceConfiguration, subscriber, rangeGenerator, startCursor, stopCursor, boundedness, deserializationSchema);
     logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableProperties,
         ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
+    Preconditions.checkArgument(logRetractionEnable, 
+        "log-store.consistency-guarantee.enabled is not supported for now");
     logConsumerChangelogMode = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties,
         ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(), ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
     this.schema = schema;

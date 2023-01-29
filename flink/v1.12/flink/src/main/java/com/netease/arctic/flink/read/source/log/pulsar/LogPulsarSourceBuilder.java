@@ -110,6 +110,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
       this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
     }
 
+    // ------ copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder start -------
     // Ensure the topic subscriber for pulsar.
     checkNotNull(subscriber, "No topic names or topic pattern are provided.");
 
@@ -172,7 +173,8 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
     checkState(isSerializable(startCursor), "StartCursor isn't serializable");
     checkState(isSerializable(stopCursor), "StopCursor isn't serializable");
     checkState(isSerializable(rangeGenerator), "RangeGenerator isn't serializable");
-
+    // ------ copy from org.apache.flink.connector.pulsar.source.PulsarSourceBuilder end -------
+    
     // If subscription name is not set, set a random value.
     if (!configBuilder.contains(PULSAR_SUBSCRIPTION_NAME)) {
       configBuilder.set(PULSAR_SUBSCRIPTION_NAME, UUID.randomUUID().toString());
