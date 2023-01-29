@@ -31,6 +31,8 @@ import org.apache.hadoop.hive.metastore.api.UnknownDBException;
 import org.apache.hadoop.hive.metastore.api.UnknownTableException;
 import org.apache.iceberg.util.PropertyUtil;
 import org.apache.thrift.TException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -42,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 public class CachedHiveClientPool implements HMSClientPool, Serializable {
 
   private static Cache<TableMetaStore, ArcticHiveClientPool> clientPoolCache;
+  private static final Logger LOG = LoggerFactory.getLogger(CachedHiveClientPool.class);
 
   private final TableMetaStore tableMetaStore;
   private final int clientPoolSize;
@@ -50,11 +53,11 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
   public CachedHiveClientPool(TableMetaStore tableMetaStore, Map<String, String> properties) {
     this.tableMetaStore = tableMetaStore;
     this.clientPoolSize = PropertyUtil.propertyAsInt(properties,
-        CatalogMetaProperties.CLIENT_POOL_SIZE,
-        CatalogMetaProperties.CLIENT_POOL_SIZE_DEFAULT);
+            CatalogMetaProperties.CLIENT_POOL_SIZE,
+            CatalogMetaProperties.CLIENT_POOL_SIZE_DEFAULT);
     this.evictionInterval = PropertyUtil.propertyAsLong(properties,
-        CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS,
-        CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT);
+            CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS,
+            CatalogMetaProperties.CLIENT_POOL_CACHE_EVICTION_INTERVAL_MS_DEFAULT);
     init();
   }
 
@@ -65,8 +68,8 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
   private synchronized void init() {
     if (clientPoolCache == null) {
       clientPoolCache = Caffeine.newBuilder().expireAfterAccess(evictionInterval, TimeUnit.MILLISECONDS)
-          .removalListener((key, value, cause) -> ((ArcticHiveClientPool) value).close())
-          .build();
+              .removalListener((key, value, cause) -> ((ArcticHiveClientPool) value).close())
+              .build();
     }
   }
 
@@ -75,6 +78,15 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
     try {
       return tableMetaStore.doAs(() -> clientPool().run(action));
     } catch (RuntimeException e) {
+      try {
+        LOG.error("Connect to hms failed and try to retry.");
+        clientPool().close();
+        clientPoolCache = null;
+        init();
+        tableMetaStore.doAs(() -> clientPool().run(action));
+      } catch (RuntimeException re) {
+        throw throwTException(re);
+      }
       throw throwTException(e);
     }
   }
@@ -84,6 +96,15 @@ public class CachedHiveClientPool implements HMSClientPool, Serializable {
     try {
       return tableMetaStore.doAs(() -> clientPool().run(action, retry));
     } catch (RuntimeException e) {
+      try {
+        LOG.error("Connect to hms failed and try to retry.");
+        clientPool().close();
+        clientPoolCache = null;
+        init();
+        tableMetaStore.doAs(() -> clientPool().run(action, retry));
+      } catch (RuntimeException re) {
+        throw throwTException(re);
+      }
       throw throwTException(e);
     }
   }
