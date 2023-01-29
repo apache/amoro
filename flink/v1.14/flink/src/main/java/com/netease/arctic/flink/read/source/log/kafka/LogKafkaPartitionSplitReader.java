@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.source.log.kafka;
 
 import com.netease.arctic.flink.read.internals.KafkaPartitionSplitReader;
+import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.log.LogData;

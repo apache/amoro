@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.source.log.kafka;
 
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
@@ -91,8 +91,7 @@ public class LogKafkaPartitionSplitState extends KafkaPartitionSplitState {
     } else {
       setCurrentOffset(record.offset() + 1);
     }
-    initEpicStartOffsetIfEmpty(record.getLogData().getUpstreamId(), record.getLogData().getEpicNo(),
-        record.offset());
+    initEpicStartOffsetIfEmpty(record.getLogData().getUpstreamId(), record.getLogData().getEpicNo(), record.offset());
     
     // todo: clear useless epic start offset in state
     retracting = record.isRetracting();

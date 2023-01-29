@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.source.log.kafka;
 
 import com.netease.arctic.flink.read.internals.KafkaSourceReader;
+import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import org.apache.flink.api.connector.source.SourceReaderContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.source.reader.RecordEmitter;

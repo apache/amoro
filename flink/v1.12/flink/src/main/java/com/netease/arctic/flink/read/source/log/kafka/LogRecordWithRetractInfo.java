@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.source.log.kafka;
 
 import com.netease.arctic.log.LogData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

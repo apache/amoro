@@ -20,11 +20,10 @@ package com.netease.arctic.flink.read.hidden.kafka;
 
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
-import com.netease.arctic.flink.read.source.log.LogKafkaPartitionSplitReader;
-import com.netease.arctic.flink.read.source.log.LogRecordWithRetractInfo;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitReader;
+import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
-import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
 import com.netease.arctic.log.FormatVersion;
 import com.netease.arctic.log.LogData;
 import com.netease.arctic.log.LogDataJsonDeserialization;
@@ -34,7 +33,6 @@ import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsAddition;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitsChange;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
-import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.table.data.RowData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -45,7 +43,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +55,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.UUID;
 
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.KAFKA_CONTAINER;
 import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.readRecordsBytes;
