@@ -36,8 +36,8 @@ import java.util.Objects;
  */
 public final class DataTreeNode implements Serializable {
 
-  private long mask;
-  private long index;
+  private final long mask;
+  private final long index;
 
   public static final DataTreeNode ROOT = new DataTreeNode(0, 0);
 
@@ -65,9 +65,6 @@ public final class DataTreeNode implements Serializable {
   private DataTreeNode(long mask, long index) {
     this.mask = mask;
     this.index = index;
-  }
-
-  public DataTreeNode() {
   }
 
   public long mask() {
@@ -106,10 +103,6 @@ public final class DataTreeNode implements Serializable {
       parentIndex = index;
     }
     return DataTreeNode.of(parentMask, parentIndex);
-  }
-
-  public DataTreeNode copy() {
-    return new DataTreeNode(mask, index);
   }
 
   @Override

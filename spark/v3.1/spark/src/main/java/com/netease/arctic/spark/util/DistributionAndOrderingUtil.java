@@ -33,6 +33,7 @@ import org.apache.iceberg.Schema;
 import org.apache.iceberg.SortOrder;
 import org.apache.iceberg.transforms.SortOrderVisitor;
 import org.apache.iceberg.util.PropertyUtil;
+import org.apache.spark.sql.catalyst.plans.logical.RepartitionByExpression;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;
 import org.apache.spark.sql.connector.expressions.NamedReference;
@@ -60,7 +61,15 @@ public class DistributionAndOrderingUtil {
       PARTITION_ORDER, FILE_PATH_ORDER, ROW_POSITION_ORDER
   };
 
-
+  /**
+   * Build a list of {@link Expression} indicate how to shuffle incoming data before writing.
+   * The result of this method will convert to a list of {@link org.apache.spark.sql.catalyst.expressions.Expression}
+   * which will be used by a {@link RepartitionByExpression} operator.
+   *
+   * @param table the arctic table to write
+   * @param writeBase write to base store
+   * @return array of expressions indicate how to shuffle incoming data.
+   */
   public static Expression[] buildTableRequiredDistribution(ArcticTable table, boolean writeBase) {
     DistributionHashMode distributionHashMode = DistributionHashMode.autoSelect(
         table.isKeyedTable(),
@@ -96,6 +105,17 @@ public class DistributionAndOrderingUtil {
     return new FileIndexBucket(table.schema(), primaryKeySpec, numBucket);
   }
 
+  /**
+   * Build a list of {@link Expression} to indicate how the incoming data will be sorted before write.
+   * The result of this method will covert to {@link org.apache.spark.sql.catalyst.expressions.Expression} list and
+   * be used for a local sort by add an {@link org.apache.spark.sql.catalyst.plans.logical.Sort} operator for
+   * in-coming data.
+   *
+   * @param table the arctic table to write to
+   * @param rowLevelOperation is this writing is an row-level-operation or a batch overwrite.
+   * @param writeBase is this writing happened in base store.
+   * @return array of expression to indicate how incoming data will be sorted.
+   */
   public static Expression[] buildTableRequiredSortOrder(
       ArcticTable table,
       boolean rowLevelOperation,

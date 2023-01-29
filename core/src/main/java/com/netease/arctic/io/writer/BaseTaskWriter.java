@@ -140,7 +140,7 @@ public abstract class BaseTaskWriter<T> implements TaskWriter<T> {
     }
 
     public DataWriterKey copy() {
-      return new DataWriterKey(partitionKey.copy(), getTreeNode().copy(), getFileType());
+      return new DataWriterKey(partitionKey.copy(), getTreeNode(), getFileType());
     }
 
     @Override
