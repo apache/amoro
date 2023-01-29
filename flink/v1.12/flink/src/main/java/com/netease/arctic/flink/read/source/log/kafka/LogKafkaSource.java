@@ -16,9 +16,10 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.source.log.kafka;
 
 import com.netease.arctic.flink.read.internals.KafkaSource;
+import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.connector.source.Boundedness;
@@ -30,9 +31,7 @@ import org.apache.flink.connector.base.source.reader.synchronization.FutureCompl
 import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscriber;
-import org.apache.flink.connector.kafka.source.metrics.KafkaSourceReaderMetrics;
-import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
-import org.apache.flink.connector.kafka.source.reader.fetcher.KafkaSourceFetcherManager;
+import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializer;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
@@ -77,7 +76,7 @@ public class LogKafkaSource extends KafkaSource<RowData> {
       OffsetsInitializer startingOffsetsInitializer,
       @Nullable OffsetsInitializer stoppingOffsetsInitializer,
       Boundedness boundedness,
-      KafkaRecordDeserializationSchema<RowData> deserializationSchema,
+      KafkaRecordDeserializer<RowData> deserializationSchema,
       Properties props,
       Schema schema,
       Map<String, String> tableProperties) {
@@ -105,21 +104,19 @@ public class LogKafkaSource extends KafkaSource<RowData> {
         new FutureCompletingBlockingQueue<>();
     LogSourceHelper logReadHelper = logRetractionEnable ? new LogSourceHelper() : null;
 
-    final KafkaSourceReaderMetrics kafkaSourceReaderMetrics = new KafkaSourceReaderMetrics(readerContext.metricGroup());
     Supplier<LogKafkaPartitionSplitReader> splitReaderSupplier =
         () ->
             new LogKafkaPartitionSplitReader(
-                props, readerContext, kafkaSourceReaderMetrics, schema, logRetractionEnable,
+                props, deserializationSchema, readerContext.getIndexOfSubtask(), schema, logRetractionEnable,
                 logReadHelper, logConsumerChangelogMode);
-    LogKafkaRecordEmitter recordEmitter = new LogKafkaRecordEmitter(null);
+    LogKafkaRecordEmitter recordEmitter = new LogKafkaRecordEmitter();
 
     return new LogKafkaSourceReader<>(
         elementsQueue,
-        new KafkaSourceFetcherManager(elementsQueue, splitReaderSupplier::get, (ignore) -> {}),
+        splitReaderSupplier,
         recordEmitter,
         toConfiguration(props),
         readerContext,
-        kafkaSourceReaderMetrics,
         logReadHelper);
   }
 

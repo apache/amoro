@@ -16,25 +16,29 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.flink.read.source.log;
+package com.netease.arctic.flink.read.source.log.kafka;
 
 import org.apache.flink.api.connector.source.SourceOutput;
-import org.apache.flink.connector.base.source.reader.RecordEmitter;
+import org.apache.flink.connector.kafka.source.reader.KafkaRecordEmitter;
+import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDeserializationSchema;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplitState;
 import org.apache.flink.table.data.RowData;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
-public class LogKafkaRecordEmitter
-    implements RecordEmitter<ConsumerRecord<byte[], byte[]>, RowData, KafkaPartitionSplitState> {
+public class LogKafkaRecordEmitter extends KafkaRecordEmitter<RowData> {
+
+  public LogKafkaRecordEmitter(KafkaRecordDeserializationSchema<RowData> deserializationSchema) {
+    super(deserializationSchema);
+  }
 
   @Override
   public void emitRecord(
-      ConsumerRecord<byte[], byte[]> element,
+      ConsumerRecord<byte[], byte[]> consumerRecord,
       SourceOutput<RowData> output,
       KafkaPartitionSplitState splitState)
       throws Exception {
-    LogRecordWithRetractInfo<RowData> record = ((LogRecordWithRetractInfo<RowData>) element);
-    output.collect(record.getActualValue(), record.timestamp());
-    ((LogKafkaPartitionSplitState) splitState).updateState(record);
+    LogRecordWithRetractInfo<RowData> element = (LogRecordWithRetractInfo) consumerRecord;
+    output.collect(element.getActualValue(), element.timestamp());
+    ((LogKafkaPartitionSplitState) splitState).updateState(element);
   }
 }
