@@ -19,9 +19,12 @@
 
 package com.netease.arctic.spark.sql.utils
 
+import com.netease.arctic.spark.sql.catalyst.plans.MergeRows
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.util.{ArrayData, MapData}
-import org.apache.spark.sql.types.{DataType, Decimal, StructType}
+import org.apache.spark.sql.types.{DataType, Decimal, StructField, StructType}
 import org.apache.spark.unsafe.types.{CalendarInterval, UTF8String}
 
 /**
@@ -121,5 +124,23 @@ case class ProjectingInternalRow(schema: StructType, colOrdinals: Seq[Int]) exte
 
   override def get(ordinal: Int, dataType: DataType): AnyRef = {
     row.get(colOrdinals(ordinal), dataType)
+  }
+}
+
+object ProjectingInternalRow {
+  def newProjectInternalRow(plan: LogicalPlan,
+                            attrs: Seq[Attribute],
+                            isFront: Boolean,
+                            offset: Int): ProjectingInternalRow = {
+
+    val colOrdinals = attrs.map(attr => plan.output.indexWhere(_.name == attr.name)).filter(p => p.!=(-1))
+    val planAttrs = colOrdinals.map(plan.output(_))
+    val schema = StructType(planAttrs.map(a => StructField(a.name, a.dataType, a.nullable, a.metadata)))
+    if (!isFront) {
+      val backColOrdinals = colOrdinals.map(c => c + colOrdinals.size + offset)
+      ProjectingInternalRow(schema, backColOrdinals)
+    } else {
+      ProjectingInternalRow(schema, colOrdinals)
+    }
   }
 }

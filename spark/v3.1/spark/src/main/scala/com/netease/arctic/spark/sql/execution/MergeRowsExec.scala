@@ -15,7 +15,6 @@ case class MergeRowsExec(
                           matchedOutputs: Seq[Seq[Expression]],
                           notMatchedConditions: Seq[Expression],
                           notMatchedOutputs: Seq[Seq[Expression]],
-                          targetOutput: Seq[Expression],
                           rowIdAttrs: Seq[Attribute],
                           performCardinalityCheck: Boolean,
                           unMatchedRowCheck: Boolean,
@@ -24,7 +23,7 @@ case class MergeRowsExec(
                           child: SparkPlan) extends UnaryExecNode {
 
   override def requiredChildOrdering: Seq[Seq[SortOrder]] = {
-    if (performCardinalityCheck) {
+    if (performCardinalityCheck || unMatchedRowCheck) {
       // request a local sort by the row ID attrs to co-locate matches for the same target row
       Seq(rowIdAttrs.map(attr => SortOrder(attr, Ascending)))
     } else {
@@ -99,7 +98,7 @@ case class MergeRowsExec(
     }
     val nonMatchedPairs = notMatchedPreds zip notMatchedProjs
 
-    val projectTargetCols = createProjection(targetOutput, inputAttrs)
+    val projectTargetCols = createProjection(Nil, inputAttrs)
     val rowIdProj = createProjection(rowIdAttrs, inputAttrs)
 
     def processRow(inputRow: InternalRow): InternalRow = {
@@ -147,7 +146,7 @@ case class MergeRowsExec(
       }
     }
 
-    val processFunc: InternalRow => InternalRow = if (performCardinalityCheck) {
+    val processFunc: InternalRow => InternalRow = if (performCardinalityCheck || unMatchedRowCheck) {
       processRowWithCardinalityCheck
     } else {
       processRow

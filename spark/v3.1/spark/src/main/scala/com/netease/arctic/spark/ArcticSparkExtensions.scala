@@ -37,7 +37,7 @@ class ArcticSparkExtensions extends (SparkSessionExtensions => Unit) {
     // resolve arctic command
     extensions.injectResolutionRule { spark => ResolveArcticCommand(spark) }
     extensions.injectResolutionRule { spark => analysis.ResolveMergeIntoTableReferences(spark) }
-    extensions.injectResolutionRule { _ => RewriteMergeIntoTable }
+    extensions.injectResolutionRule { spark => RewriteMergeIntoTable(spark) }
 
     extensions.injectPostHocResolutionRule(spark => RewriteArcticCommand(spark))
     // iceberg analyzer rules

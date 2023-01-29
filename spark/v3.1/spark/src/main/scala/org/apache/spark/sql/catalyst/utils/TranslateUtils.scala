@@ -11,20 +11,4 @@ object TranslateUtils {
   def translateFilter(deleteExpr: Expression): Option[Filter] = {
     DataSourceStrategy.translateFilter(deleteExpr, supportNestedPredicatePushdown = true)
   }
-
-  def newLazyProjection(plan: LogicalPlan,
-                        attrs: Seq[Attribute],
-                        isFront: Boolean,
-                        offset: Int): ProjectingInternalRow = {
-
-    val colOrdinals = attrs.map(attr => plan.output.indexWhere(_.name == attr.name)).filter(p => p.!=(-1))
-    val planAttrs = colOrdinals.map(plan.output(_))
-    val schema = StructType.fromAttributes(planAttrs)
-    if (!isFront) {
-      val backColOrdinals = colOrdinals.map(c => c + colOrdinals.size + offset)
-      ProjectingInternalRow(schema, backColOrdinals)
-    } else {
-      ProjectingInternalRow(schema, colOrdinals)
-    }
-  }
 }

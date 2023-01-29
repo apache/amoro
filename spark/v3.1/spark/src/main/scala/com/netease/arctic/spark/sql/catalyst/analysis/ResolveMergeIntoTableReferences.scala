@@ -1,21 +1,59 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netease.arctic.spark.sql.catalyst.analysis
 
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.isArcticRelation
 import com.netease.arctic.spark.sql.catalyst.plans
 import com.netease.arctic.spark.sql.catalyst.plans.MergeIntoArcticTable
-import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
+import com.netease.arctic.spark.table.ArcticSparkTable
+import org.apache.spark.sql.catalyst.analysis.{AnalysisErrorAt, Analyzer, EliminateSubqueryAliases, GetColumnByOrdinal, Resolver, UnresolvedAttribute, UnresolvedExtractValue, caseInsensitiveResolution, withPosition}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, CurrentDate, CurrentTimestamp, Expression, ExtractValue, LambdaFunction}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.catalyst.util.toPrettySQL
+import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
-  private lazy val analyzer: Analyzer = spark.sessionState.analyzer
+  def checkConditionIsPrimaryKey(aliasedTable: LogicalPlan, cond: Expression): Unit = {
+    EliminateSubqueryAliases(aliasedTable) match {
+      case r@DataSourceV2Relation(tbl, _, _, _, _) if isArcticRelation(r) =>
+        tbl match {
+          case arctic: ArcticSparkTable =>
+            if (arctic.table().isKeyedTable) {
+              val primarys = arctic.table().asKeyedTable().primaryKeySpec().fieldNames()
+              val condRefs = cond.references.filter(f => primarys.contains(f.name))
+              if (condRefs.isEmpty) {
+                throw new UnsupportedOperationException(s"Condition ${cond.references}. is not allowed because is not a primary key")
+              }
+            }
+        }
+      case p =>
+        throw new UnsupportedOperationException(s"$p is not an Arctic table")
+    }
+  }
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsUp {
     case m@MergeIntoArcticTable(aliasedTable, source, cond, matchedActions, notMatchedActions, None) =>
+      checkConditionIsPrimaryKey(aliasedTable, cond)
 
       val resolvedMatchedActions = matchedActions.map {
         case DeleteAction(cond) =>

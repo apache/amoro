@@ -328,4 +328,17 @@ public class TestKeyedTableDml extends SparkTestBase {
     sql("drop table " + database + "." + "testTable");
     sql("set `spark.sql.check-data-duplicates.enabled` = `true`");
   }
+
+  @Test
+  public void testExplain() {
+    sql("explain insert into {0}.{1} values (1, ''aaa'', ''aaaa'')", database, notUpsertTable);
+    sql("explain delete from {0}.{1} where id = 3", database, notUpsertTable);
+    sql("explain update {0}.{1} set name = ''aaa'' where id = 3", database, notUpsertTable);
+    rows = sql("select id, name from {0}.{1} order by id", database, notUpsertTable);
+
+    Assert.assertEquals(3, rows.size());
+    Assert.assertEquals(1, rows.get(0)[0]);
+    Assert.assertEquals(2, rows.get(1)[0]);
+    Assert.assertEquals(3, rows.get(2)[0]);
+  }
 }

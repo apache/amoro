@@ -179,16 +179,16 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public void commit(WriterCommitMessage[] messages) {
       RowDelta rowDelta = table.newRowDelta();
-      if (WriteTaskDeleteFilesCommit.deleteFiles(messages).iterator().hasNext()) {
-        for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+      if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
           rowDelta.addDeletes(file);
         }
         rowDelta.commit();
       }
 
       AppendFiles appendFiles = table.newAppend();
-      if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
-        for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
+      if (WriteTaskCommit.files(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskCommit.files(messages)) {
           appendFiles.appendFile(file);
         }
         appendFiles.commit();
@@ -282,16 +282,16 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public void commit(WriterCommitMessage[] messages) {
       RowDelta rowDelta = table.newRowDelta();
-      if (WriteTaskDeleteFilesCommit.deleteFiles(messages).iterator().hasNext()) {
-        for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+      if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
           rowDelta.addDeletes(file);
         }
         rowDelta.commit();
       }
 
       AppendFiles appendFiles = table.newAppend();
-      if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
-        for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
+      if (WriteTaskCommit.files(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskCommit.files(messages)) {
           appendFiles.appendFile(file);
         }
         appendFiles.commit();

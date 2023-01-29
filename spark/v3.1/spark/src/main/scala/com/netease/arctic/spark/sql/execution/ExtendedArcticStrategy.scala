@@ -89,10 +89,10 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
           throw new UnsupportedOperationException(s"Cannot append data to non-Arctic table: $table")
       }
 
-    case WriteMerge(table: DataSourceV2Relation, query, options, projs) =>
+    case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs) =>
       table.table match {
         case arctic: ArcticSparkTable =>
-          WriteMergeExec(arctic, planLater(query),
+          ArcticRowLevelWriteExec(arctic, planLater(query),
             new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table)) :: Nil
       }
 
@@ -120,13 +120,10 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       }
 
     case MergeRows(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-    notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
+    notMatchedOutputs, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
     output, child) =>
-      val unMatchedRowNeedCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
-        getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
-          SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty && unMatchedRowCheck
       MergeRowsExec(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-        notMatchedOutputs, targetOutput, rowIdAttrs, performCardinalityCheck, unMatchedRowNeedCheck, emitNotMatchedTargetRows,
+        notMatchedOutputs, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
     case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>

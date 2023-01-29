@@ -50,24 +50,10 @@ public class SparkInternalRowCastWrapper extends GenericInternalRow {
   }
 
   public SparkInternalRowCastWrapper(InternalRow row, ChangeAction changeAction) {
-    this.row = buildProjectingInternalRow((ProjectingInternalRow)row);
+    this.row = row;
     this.changeAction = changeAction;
     this.schema = ((ProjectingInternalRow) row).schema();
     this.isMerge = true;
-  }
-
-  private InternalRow buildProjectingInternalRow(ProjectingInternalRow projectingInternalRow) {
-    InternalRow row = projectingInternalRow.getRow();
-    StructType rowSchema = projectingInternalRow.schema();
-    List<DataType> dataTypeList = Arrays.stream(rowSchema.fields())
-        .map(StructField::dataType).collect(Collectors.toList());
-    List<Integer> colOrdinals = JavaConverters.seqAsJavaList(projectingInternalRow.colOrdinals())
-            .stream().map(o -> Integer.parseInt(o.toString())).collect(Collectors.toList());
-    List<Object> rows = new ArrayList<>();
-    for (int i = 0; i < dataTypeList.size(); i++) {
-      rows.add(row.get(colOrdinals.get(i), dataTypeList.get(i)));
-    }
-    return new GenericInternalRow(rows.toArray());
   }
 
   /**
