@@ -18,25 +18,10 @@
 
 package com.netease.arctic.scan;
 
-import org.apache.iceberg.expressions.Expression;
-import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.TableScan;
 import org.apache.iceberg.util.StructLikeMap;
 
-public interface ChangeTableIncrementalScan {
-  /**
-   * Config this scan with filter by the {@link Expression}.
-   *
-   * @param expr a filter expression
-   * @return scan based on this with results filtered by the expression
-   */
-  ChangeTableIncrementalScan filter(Expression expr);
-
-  /**
-   * Plan the {@link ArcticFileScanTask tasks} for this scan.
-   *
-   * @return an Iterable of tasks for this scan
-   */
-  CloseableIterable<ArcticFileScanTask> planTasks();
+public interface ChangeTableIncrementalScan extends TableScan {
 
   /**
    * Config this scan to read data from {@code partitionTransactionId} exclusive to

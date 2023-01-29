@@ -24,6 +24,7 @@ import com.netease.arctic.ams.api.OptimizeStatus;
 import com.netease.arctic.ams.api.OptimizeTaskStat;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.PrimaryKeyedFile;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.optimizer.OptimizerConfig;
 import com.netease.arctic.optimizer.exception.TimeoutException;
 import com.netease.arctic.table.ArcticTable;
@@ -76,7 +77,7 @@ public abstract class BaseExecutor implements Executor {
 
   protected Map<DataTreeNode, List<DeleteFile>> groupDeleteFilesByNode(List<? extends DeleteFile> deleteFiles) {
     return new HashMap<>(deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->
-        TableFileUtils.parseFileNodeFromFileName(deleteFile.path().toString()))));
+        FileNameHandle.parseFileNodeFromFileName(deleteFile.path().toString()))));
   }
 
   protected long getMaxTransactionId(List<PrimaryKeyedFile> dataFiles) {

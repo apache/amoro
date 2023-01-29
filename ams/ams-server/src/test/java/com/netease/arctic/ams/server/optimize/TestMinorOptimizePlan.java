@@ -56,7 +56,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -107,7 +107,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Snapshot snapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, arcticTable, false))
         .collect(Collectors.toList());
     return changeDeleteFiles;
   }
@@ -135,7 +135,7 @@ public class TestMinorOptimizePlan extends TestBaseOptimizeBase {
     Snapshot snapshot = arcticTable.asKeyedTable().changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, arcticTable, true))
         .collect(Collectors.toList());
 
     return changeInsertFiles;

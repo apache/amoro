@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.data.DefaultKeyedFile;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.SerializationUtils;
@@ -71,7 +72,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -139,7 +140,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = baseInsertResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, baseInsertResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, baseInsertResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -205,7 +206,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -277,7 +278,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -331,9 +332,7 @@ public class TestMajorOptimizeCommit extends TestBaseOptimizeBase {
 
   private Map<TreeNode, List<DataFile>> generateTargetFiles(ArcticTable arcticTable) throws Exception {
     List<DataFile> dataFiles = insertOptimizeTargetDataFiles(arcticTable, OptimizeType.Major, 3);
-    return dataFiles.stream().collect(Collectors.groupingBy(dataFile ->  {
-      DefaultKeyedFile keyedFile = new DefaultKeyedFile(dataFile);
-      return keyedFile.node().toAmsTreeNode();
-    }));
+    return dataFiles.stream().collect(Collectors.groupingBy(
+        dataFile -> FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString()).toAmsTreeNode()));
   }
 }

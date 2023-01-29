@@ -24,16 +24,16 @@ import org.apache.iceberg.DeleteFile;
 
 public class WrapFileWithSequenceNumberHelper {
 
-  public static ContentFile<?> wrap(ContentFile<?> contentFile, long sequenceNumber) {
+  public static ContentFileWithSequence<?> wrap(ContentFile<?> contentFile, long sequenceNumber) {
     if (contentFile instanceof DataFile) {
       if (contentFile instanceof DataFileWithSequence) {
-        return contentFile;
+        return (DataFileWithSequence) contentFile;
       } else {
         return new DataFileWithSequence((DataFile) contentFile, sequenceNumber);
       }
     } else if (contentFile instanceof DeleteFile) {
       if (contentFile instanceof DeleteFileWithSequence) {
-        return contentFile;
+        return (DeleteFileWithSequence) contentFile;
       } else {
         return new DeleteFileWithSequence((DeleteFile) contentFile, sequenceNumber);
       }
