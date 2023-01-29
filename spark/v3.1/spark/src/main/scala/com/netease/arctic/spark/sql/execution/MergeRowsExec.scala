@@ -102,15 +102,6 @@ case class MergeRowsExec(
     val projectTargetCols = createProjection(targetOutput, inputAttrs)
     val rowIdProj = createProjection(rowIdAttrs, inputAttrs)
 
-    // This method is responsible for processing a input row to emit the resultant row with an
-    // additional column that indicates whether the row is going to be included in the final
-    // output of merge or not.
-    // 1. Found a target row for which there is no corresponding source row (join condition not met)
-    //    - Only project the target columns if we need to output unchanged rows
-    // 2. Found a source row for which there is no corresponding target row (join condition not met)
-    //    - Apply the not matched actions (i.e INSERT actions) if non match conditions are met.
-    // 3. Found a source row for which there is a corresponding target row (join condition met)
-    //    - Apply the matched actions (i.e DELETE or UPDATE actions) if match conditions are met.
     def processRow(inputRow: InternalRow): InternalRow = {
       if (emitNotMatchedTargetRows && !isSourceRowPresentPred.eval(inputRow)) {
         projectTargetCols.apply(inputRow)

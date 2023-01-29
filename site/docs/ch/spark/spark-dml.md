@@ -123,14 +123,6 @@ DELETE FROM arctic_catalog.db.sample AS t1
 WHERE EXISTS (SELECT oid FROM prod.db.returned_orders WHERE t1.oid = oid)
 ```
 
-### TRUNCATE TABLE
-
-Arctic Spark 支持 `TRUNCATE TABLE` 语法用于删除表中所有行
-
-```sql
-TRUNCATE TABLE arctic_catalog.db.sample;
-```
-
 
 ### UPDATE 
 

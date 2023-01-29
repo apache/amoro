@@ -10,9 +10,6 @@ import org.apache.spark.sql.catalyst.trees.CurrentOrigin.withOrigin
 import org.apache.spark.sql.catalyst.util.toPrettySQL
 import org.apache.spark.sql.{AnalysisException, SparkSession}
 
-/**
- * A resolution rule similar to ResolveReferences in Spark but handles Iceberg MERGE operations.
- */
 case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[LogicalPlan] {
 
   private lazy val analyzer: Analyzer = spark.sessionState.analyzer
@@ -87,10 +84,6 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
                                  plan: LogicalPlan,
                                  throws: Boolean = false): Expression = {
     if (expr.resolved) return expr
-    // Resolve expression in one round.
-    // If throws == false or the desired attribute doesn't exist
-    // (like try to resolve `a.b` but `a` doesn't exist), fail and return the origin one.
-    // Else, throw exception.
     try {
       expr transformUp {
         case GetColumnByOrdinal(ordinal, _) => plan.output(ordinal)
@@ -161,10 +154,6 @@ case class ResolveMergeIntoTableReferences(spark: SparkSession) extends Rule[Log
         case u@UnresolvedAttribute(nameParts) =>
           val result = withPosition(u) {
             resolveColumnByName(nameParts).map {
-              // We trim unnecessary alias here. Note that, we cannot trim the alias at top-level,
-              // as we should resolve `UnresolvedAttribute` to a named expression. The caller side
-              // can trim the top-level alias if it's safe to do so. Since we will call
-              // CleanupAliases later in Analyzer, trim non top-level unnecessary alias is safe.
               case Alias(child, _) if !isTopLevel => child
               case other => other
             }.getOrElse(u)
