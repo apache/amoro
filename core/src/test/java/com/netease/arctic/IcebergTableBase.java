@@ -51,37 +51,30 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * @deprecated since 0.4.1, will be removed in 0.5.0; use {@link com.netease.arctic.catalog.TableTestBase} instead.
+ */
+@Deprecated
 public class IcebergTableBase {
 
+  @Rule
+  public TemporaryFolder temp = new TemporaryFolder();
   protected Table unPartitionTable;
-
   protected Table partitionTable;
-
   protected String unPartitionName = "un_partition_table";
-
   protected String partitionName = "un_partition_table";
-
   protected Schema unPartitionSchema = new Schema(
       Types.NestedField.required(1, "id", Types.LongType.get())
   );
-
   protected Schema partitionSchema = new Schema(
       Types.NestedField.required(1, "id", Types.LongType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get())
   );
-
   protected CombinedIcebergScanTask unPartitionAllFileTask;
-
   protected CombinedIcebergScanTask unPartitionOnlyDataTask;
-
   protected CombinedIcebergScanTask partitionAllFileTask;
-
   protected CombinedIcebergScanTask partitionOnlyDataTask;
-
   private HadoopCatalog catalog;
-
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
 
   @Before
   public void setupTables() throws IOException {
@@ -95,9 +88,9 @@ public class IcebergTableBase {
   private void initUnPartitionTable() throws IOException {
     //create table
     TableIdentifier tableIdentifier = TableIdentifier.of(unPartitionName);
-    if (catalog.tableExists(tableIdentifier)){
+    if (catalog.tableExists(tableIdentifier)) {
       unPartitionTable = catalog.loadTable(tableIdentifier);
-    }else {
+    } else {
       Map<String, String> map = Maps.newHashMap();
       map.put(TableProperties.FORMAT_VERSION, "2");
       unPartitionTable = catalog.createTable(tableIdentifier, unPartitionSchema, PartitionSpec.unpartitioned(), map);
@@ -115,25 +108,25 @@ public class IcebergTableBase {
 
     IcebergContentFile orcData = new IcebergContentFile(insert(Arrays.asList(
         record.copy("id", 3L)
-    ), FileFormat.ORC, unPartitionSchema),3L);
+    ), FileFormat.ORC, unPartitionSchema), 3L);
 
     IcebergContentFile eqDeleteFile = new IcebergContentFile(eqDelete(Arrays.asList(
         record.copy("id", 1L)
-    ), FileFormat.PARQUET, unPartitionSchema),4L);
+    ), FileFormat.PARQUET, unPartitionSchema), 4L);
 
     IcebergContentFile posDeleteFile = new IcebergContentFile(posDelete(Arrays.asList(
         PositionDelete.<Record>create().set(parquetData.asDataFile().path(), 0, record.copy("id", 2L))
-    ), FileFormat.AVRO, unPartitionSchema),5L);
+    ), FileFormat.AVRO, unPartitionSchema), 5L);
 
     unPartitionAllFileTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[]{avroData, parquetData, orcData},
-        new IcebergContentFile[]{eqDeleteFile, posDeleteFile},
+        new IcebergContentFile[] {avroData, parquetData, orcData},
+        new IcebergContentFile[] {eqDeleteFile, posDeleteFile},
         PartitionSpec.unpartitioned(),
         null
     );
 
     unPartitionOnlyDataTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[]{avroData, parquetData, orcData},
+        new IcebergContentFile[] {avroData, parquetData, orcData},
         null,
         PartitionSpec.unpartitioned(),
         null
@@ -144,9 +137,9 @@ public class IcebergTableBase {
     //create table
     TableIdentifier tableIdentifier = TableIdentifier.of(partitionName);
     PartitionSpec partitionSpec = PartitionSpec.builderFor(partitionSchema).identity("name").build();
-    if (catalog.tableExists(tableIdentifier)){
+    if (catalog.tableExists(tableIdentifier)) {
       partitionTable = catalog.loadTable(tableIdentifier);
-    }else {
+    } else {
       Map<String, String> map = Maps.newHashMap();
       map.put(TableProperties.FORMAT_VERSION, "2");
       partitionTable = catalog.createTable(tableIdentifier, partitionSchema, partitionSpec, map);
@@ -164,28 +157,28 @@ public class IcebergTableBase {
 
     IcebergContentFile orcData = new IcebergContentFile(insert(Arrays.asList(
         record.copy("id", 3L, "name", "3")
-    ), FileFormat.ORC, partitionSchema),3L);
+    ), FileFormat.ORC, partitionSchema), 3L);
 
     IcebergContentFile eqDeleteFile = new IcebergContentFile(eqDelete(Arrays.asList(
         record.copy("id", 1L, "name", "1")
-    ), FileFormat.PARQUET, partitionSchema),4L);
+    ), FileFormat.PARQUET, partitionSchema), 4L);
 
     IcebergContentFile posDeleteFile = new IcebergContentFile(posDelete(Arrays.asList(
         PositionDelete.<Record>create().set(
             parquetData.asDataFile().path(),
             0,
             record.copy("id", 2L, "name", "2"))
-    ), FileFormat.AVRO, partitionSchema),5L);
+    ), FileFormat.AVRO, partitionSchema), 5L);
 
     partitionAllFileTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[]{avroData, parquetData, orcData},
-        new IcebergContentFile[]{eqDeleteFile, posDeleteFile},
+        new IcebergContentFile[] {avroData, parquetData, orcData},
+        new IcebergContentFile[] {eqDeleteFile, posDeleteFile},
         PartitionSpec.unpartitioned(),
         null
     );
 
     partitionOnlyDataTask = new CombinedIcebergScanTask(
-        new IcebergContentFile[]{avroData, parquetData, orcData},
+        new IcebergContentFile[] {avroData, parquetData, orcData},
         null,
         PartitionSpec.unpartitioned(),
         null
@@ -198,7 +191,7 @@ public class IcebergTableBase {
         .format(fileFormat).build();
     DataWriter<Record> recordDataWriter =
         fileAppenderFactory.newDataWriter(outputFileFactory.newOutputFile(), fileFormat, null);
-    for (Record record: records){
+    for (Record record : records) {
       recordDataWriter.write(record);
     }
     recordDataWriter.close();
@@ -207,7 +200,7 @@ public class IcebergTableBase {
 
   private DeleteFile eqDelete(List<Record> records, FileFormat fileFormat, Schema schema) throws IOException {
     GenericAppenderFactory fileAppenderFactory = new GenericAppenderFactory(schema, PartitionSpec.unpartitioned(),
-        new int[]{1}, schema, schema);
+        new int[] {1}, schema, schema);
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(unPartitionTable, 0, 1)
         .format(fileFormat).build();
     EqualityDeleteWriter<Record> recordDataWriter =
@@ -217,7 +210,8 @@ public class IcebergTableBase {
     return recordDataWriter.toDeleteFile();
   }
 
-  private DeleteFile posDelete(List<PositionDelete<Record>> positionDeletes, FileFormat fileFormat, Schema schema) throws IOException {
+  private DeleteFile posDelete(List<PositionDelete<Record>> positionDeletes, FileFormat fileFormat, Schema schema)
+      throws IOException {
     GenericAppenderFactory fileAppenderFactory = new GenericAppenderFactory(schema);
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(unPartitionTable, 0, 1)
         .format(fileFormat).build();
@@ -228,9 +222,8 @@ public class IcebergTableBase {
     return recordDataWriter.toDeleteFile();
   }
 
-
   @After
-  public void clean(){
+  public void clean() {
     temp.delete();
   }
 }

@@ -37,6 +37,7 @@ import org.rocksdb.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -50,17 +51,34 @@ import java.util.stream.Collectors;
 
 public class RocksDBBackend {
   private static final Logger LOG = LoggerFactory.getLogger(RocksDBBackend.class);
-  private static final String BACKEND_BASE_DIR = System.getProperty("rocksdb.dir");
+  private static final String BACKEND_BASE_DIR = System.getProperty("java.io.tmpdir");
   private static final ThreadLocal<RocksDBBackend> instance =
           new ThreadLocal<>();
 
   public static RocksDBBackend getOrCreateInstance() {
     RocksDBBackend backend = instance.get();
     if (backend == null) {
-      backend = create();
+      backend = create(BACKEND_BASE_DIR);
+      instance.set(backend);
     }
     if (backend.closed) {
-      backend = create();
+      backend = create(BACKEND_BASE_DIR);
+      instance.set(backend);
+    }
+    return backend;
+  }
+
+  public static RocksDBBackend getOrCreateInstance(@Nullable String backendBaseDir) {
+    if (backendBaseDir == null) {
+      return getOrCreateInstance();
+    }
+    RocksDBBackend backend = instance.get();
+    if (backend == null) {
+      backend = create(backendBaseDir);
+      instance.set(backend);
+    }
+    if (backend.closed) {
+      backend = create(backendBaseDir);
       instance.set(backend);
     }
     return backend;
@@ -73,13 +91,13 @@ public class RocksDBBackend {
   private final String rocksDBBasePath;
   private long totalBytesWritten;
 
-  private static RocksDBBackend create() {
-    return new RocksDBBackend();
+  private static RocksDBBackend create(@Nullable String backendBaseDir) {
+    return new RocksDBBackend(backendBaseDir);
   }
 
-  private RocksDBBackend() {
-    this.rocksDBBasePath = BACKEND_BASE_DIR == null ? UUID.randomUUID().toString() :
-        String.format("%s/%s", BACKEND_BASE_DIR, UUID.randomUUID().toString());
+  private RocksDBBackend(@Nullable String backendBaseDir) {
+    this.rocksDBBasePath = backendBaseDir == null ? UUID.randomUUID().toString() :
+        String.format("%s/%s", backendBaseDir, UUID.randomUUID());
     totalBytesWritten = 0L;
     setup();
   }

@@ -18,14 +18,20 @@
 
 package com.netease.arctic.hive;
 
-import com.netease.arctic.hive.catalog.TestArcticHiveCatalog;
+import com.netease.arctic.hive.catalog.HiveBasedCatalogTest;
+import com.netease.arctic.hive.catalog.HiveCatalogLoaderTest;
+import com.netease.arctic.hive.catalog.IcebergHiveCatalogTest;
+import com.netease.arctic.hive.catalog.MixedHiveCatalogTest;
+import com.netease.arctic.hive.io.TestAdaptHiveReader;
 import com.netease.arctic.hive.io.TestAdaptHiveWriter;
 import com.netease.arctic.hive.op.AutoSyncHiveTest;
 import com.netease.arctic.hive.op.TestHiveSchemaUpdate;
 import com.netease.arctic.hive.op.TestOverwriteFiles;
 import com.netease.arctic.hive.op.TestRewriteFiles;
 import com.netease.arctic.hive.op.TestRewritePartitions;
+import com.netease.arctic.hive.utils.CompatibleHivePropertyUtilTest;
 import com.netease.arctic.hive.utils.HiveMetaSynchronizerTest;
+import com.netease.arctic.hive.utils.HiveSchemaUtilTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
@@ -33,26 +39,35 @@ import org.junit.runners.Suite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-    TestArcticHiveCatalog.class,
     TestRewritePartitions.class,
     TestOverwriteFiles.class,
     TestRewriteFiles.class,
     TestHiveSchemaUpdate.class,
     HiveMetaSynchronizerTest.class,
     TestAdaptHiveWriter.class,
-    AutoSyncHiveTest.class
+    AutoSyncHiveTest.class,
+    HiveBasedCatalogTest.class,
+    HiveCatalogLoaderTest.class,
+    IcebergHiveCatalogTest.class,
+    MixedHiveCatalogTest.class,
+    CompatibleHivePropertyUtilTest.class,
+    HiveSchemaUtilTest.class,
+    TestAdaptHiveReader.class
 })
 public class ArcticHiveTestMain {
 
   @BeforeClass
   public static void setup() throws Exception {
-    System.out.println("================== begin arctic hive test ==================");
+    System.out.println("================== setup arctic hiveMetastore env ==================");
     HiveTableTestBase.startMetastore();
+    System.out.println("================== setup arctic hiveMetastore env completed ==================");
+
   }
 
   @AfterClass
-  public static void cleanDown(){
-    System.out.println("================== end arctic hive test ===================");
+  public static void cleanDown() {
+    System.out.println("================== clean arctic hiveMetastore env ===================");
     HiveTableTestBase.stopMetastore();
+    System.out.println("================== clean arctic hiveMetastore env completed ===================");
   }
 }

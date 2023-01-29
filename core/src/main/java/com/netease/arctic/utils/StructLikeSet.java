@@ -24,6 +24,7 @@ import com.netease.arctic.utils.map.StructLikeSpillableMap;
 import org.apache.iceberg.StructLike;
 import org.apache.iceberg.types.Types;
 
+import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 
@@ -34,8 +35,9 @@ public class StructLikeSet implements Closeable {
   }
 
   public static StructLikeSet createSpillableSet(Types.StructType type,
-                                                 Long maxInMemorySizeInBytes) {
-    return new StructLikeSet(type, maxInMemorySizeInBytes);
+                                                 Long maxInMemorySizeInBytes,
+                                                 @Nullable String backendBaseDir) {
+    return new StructLikeSet(type, maxInMemorySizeInBytes, backendBaseDir);
   }
 
   private static final Integer _V = 0;
@@ -45,8 +47,8 @@ public class StructLikeSet implements Closeable {
     this.structLikeMap =  StructLikeMemoryMap.create(type);
   }
 
-  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes) {
-    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes);
+  private StructLikeSet(Types.StructType type, Long maxInMemorySizeInBytes, @Nullable String backendBaseDir) {
+    this.structLikeMap =  StructLikeSpillableMap.create(type, maxInMemorySizeInBytes, backendBaseDir);
   }
 
   public boolean contains(StructLike key) {

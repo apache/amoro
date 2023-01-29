@@ -43,7 +43,8 @@ public class ArcticDataFilesTest {
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy("dt",
+    partitionKey.partition(internalRecordWrapper.wrap(record.copy(
+        "dt",
         LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
@@ -60,7 +61,8 @@ public class ArcticDataFilesTest {
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy("dt",
+    partitionKey.partition(internalRecordWrapper.wrap(record.copy(
+        "dt",
         LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
@@ -77,7 +79,8 @@ public class ArcticDataFilesTest {
     PartitionKey partitionKey = new PartitionKey(spec, SCHEMA);
     GenericRecord record = GenericRecord.create(SCHEMA);
     InternalRecordWrapper internalRecordWrapper = new InternalRecordWrapper(SCHEMA.asStruct());
-    partitionKey.partition(internalRecordWrapper.wrap(record.copy("dt",
+    partitionKey.partition(internalRecordWrapper.wrap(record.copy(
+        "dt",
         LocalDateTime.parse("2022-11-11T11:00:00"))));
     String partitionPath = spec.partitionToPath(partitionKey);
     StructLike partitionData = ArcticDataFiles.data(spec, partitionPath);
@@ -90,7 +93,7 @@ public class ArcticDataFilesTest {
 
   @Test
   public void testBucketPartition() {
-     Schema schema = new Schema(
+    Schema schema = new Schema(
         Types.NestedField.required(1, "dt", Types.IntegerType.get())
     );
     PartitionSpec spec = PartitionSpec.builderFor(schema).bucket("dt", 2).build();
