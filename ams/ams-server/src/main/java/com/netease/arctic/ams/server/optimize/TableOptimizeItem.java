@@ -83,11 +83,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Collectors;
@@ -106,7 +106,7 @@ public class TableOptimizeItem extends IJDBCService {
   private final ReentrantLock tasksCommitLock = new ReentrantLock();
   private final AtomicBoolean waitCommit = new AtomicBoolean(false);
 
-  private final Map<OptimizeTaskId, OptimizeTaskItem> optimizeTasks = new ConcurrentHashMap<>();
+  private final Map<OptimizeTaskId, OptimizeTaskItem> optimizeTasks = new LinkedHashMap<>();
 
   private volatile long metaRefreshTime;
 
