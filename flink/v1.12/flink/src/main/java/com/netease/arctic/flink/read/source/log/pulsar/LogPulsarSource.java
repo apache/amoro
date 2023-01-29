@@ -83,7 +83,7 @@ public final class LogPulsarSource extends PulsarSource<RowData> {
     super(sourceConfiguration, subscriber, rangeGenerator, startCursor, stopCursor, boundedness, deserializationSchema);
     logRetractionEnable = CompatibleFlinkPropertyUtil.propertyAsBoolean(tableProperties,
         ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.defaultValue());
-    Preconditions.checkArgument(logRetractionEnable, 
+    Preconditions.checkArgument(!logRetractionEnable, 
         "log-store.consistency-guarantee.enabled is not supported for now");
     logConsumerChangelogMode = CompatibleFlinkPropertyUtil.propertyAsString(tableProperties,
         ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.key(), ARCTIC_LOG_CONSUMER_CHANGELOG_MODE.defaultValue());
