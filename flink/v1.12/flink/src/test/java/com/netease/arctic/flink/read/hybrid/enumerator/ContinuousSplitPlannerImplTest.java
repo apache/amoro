@@ -37,7 +37,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ContinuousSplitPlannerImplTest extends FlinkTestBase {
   private static final Logger LOG = LoggerFactory.getLogger(ContinuousSplitPlannerImplTest.class);

@@ -28,7 +28,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.flink.annotation.Internal;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.TableScan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

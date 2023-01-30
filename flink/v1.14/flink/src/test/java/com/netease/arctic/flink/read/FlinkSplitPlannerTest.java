@@ -25,7 +25,6 @@ import com.netease.arctic.scan.TableEntriesScan;
 import org.apache.iceberg.FileContent;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Snapshot;
-import org.apache.iceberg.TableScan;
 import org.junit.Assert;
 import org.junit.Test;
 
