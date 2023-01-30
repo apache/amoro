@@ -7,7 +7,6 @@ import com.netease.arctic.spark.SparkInternalRowCastWrapper;
 import com.netease.arctic.spark.SparkInternalRowWrapper;
 import com.netease.arctic.spark.io.ArcticSparkBaseTaskWriter;
 import com.netease.arctic.table.ArcticTable;
-import com.netease.arctic.table.TableProperties;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.DeleteFile;
 import org.apache.iceberg.FileFormat;
@@ -19,7 +18,6 @@ import org.apache.iceberg.io.TaskWriter;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkSchemaUtil;
-import org.apache.iceberg.util.PropertyUtil;
 import org.apache.spark.sql.catalyst.InternalRow;
 
 import java.io.IOException;
@@ -31,40 +29,30 @@ import java.util.Map;
 import static org.apache.spark.sql.types.DataTypes.IntegerType;
 import static org.apache.spark.sql.types.DataTypes.StringType;
 
-public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
+public class UnkeyedUpsertSparkWriter<T> implements TaskWriter<T> {
 
-  private static final long DEFAULT_RECORDS_NUM_THRESHOLD = Long.MAX_VALUE;
   private final List<DeleteFile> completedDeleteFiles = Lists.newArrayList();
   private final List<DataFile> completedDataFiles = Lists.newArrayList();
 
   private final FileAppenderFactory<InternalRow> appenderFactory;
   private final OutputFileFactory fileFactory;
   private final FileFormat format;
-  private final long recordsNumThreshold;
   private final Schema schema;
   private final ArcticTable table;
+  private final ArcticSparkBaseTaskWriter writer;
   private final Map<PartitionKey, SortedPosDeleteWriter<InternalRow>> writerMap = new HashMap<>();
 
-  private int records = 0;
-
-  public UnkeyedPosDeleteSparkWriter(ArcticTable table,
-                                     FileAppenderFactory<InternalRow> appenderFactory,
-                                     OutputFileFactory fileFactory,
-                                     FileFormat format,
-                                     long recordsNumThreshold, Schema schema) {
+  public UnkeyedUpsertSparkWriter(ArcticTable table,
+                                  FileAppenderFactory<InternalRow> appenderFactory,
+                                  OutputFileFactory fileFactory,
+                                  FileFormat format, Schema schema,
+                                  ArcticSparkBaseTaskWriter writer) {
     this.table = table;
     this.appenderFactory = appenderFactory;
     this.fileFactory = fileFactory;
     this.format = format;
-    this.recordsNumThreshold = recordsNumThreshold;
     this.schema = schema;
-  }
-
-  public UnkeyedPosDeleteSparkWriter(ArcticTable table, FileAppenderFactory<InternalRow> appenderFactory,
-                               OutputFileFactory fileFactory,
-                               FileFormat format,
-                               Schema schema) {
-    this(table, appenderFactory, fileFactory, format, DEFAULT_RECORDS_NUM_THRESHOLD, schema);
+    this.writer = writer;
   }
 
   @Override
@@ -86,21 +74,12 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
       Object pos = internalRow.getRow().get(numFields - 1, IntegerType);
       deleteWriter.delete(file.toString(), Long.parseLong(pos.toString()), null);
     } else {
-      long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
-          TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
-      long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
-          TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
-      ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter = new ArcticSparkBaseTaskWriter(format, appenderFactory,
-          fileFactory,
-          table.io(), fileSizeBytes, mask, schema, table.spec(), null);
-      arcticSparkBaseTaskWriter.write(internalRow.getRow());
-      completedDataFiles.addAll(Arrays.asList(arcticSparkBaseTaskWriter.complete().dataFiles()));
+      this.writer.write(internalRow.getRow());
     }
   }
 
   @Override
   public void abort() throws IOException {
-
   }
 
   @Override
@@ -109,7 +88,7 @@ public class UnkeyedPosDeleteSparkWriter<T> implements TaskWriter<T> {
       completedDeleteFiles.addAll(entry.getValue().complete());
     }
     close();
-
+    completedDataFiles.addAll(Arrays.asList(writer.complete().dataFiles()));
     return WriteResult.builder()
         .addDeleteFiles(completedDeleteFiles)
         .addDataFiles(completedDataFiles).build();

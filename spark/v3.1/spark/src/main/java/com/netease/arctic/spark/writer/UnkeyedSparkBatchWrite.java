@@ -88,6 +88,11 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     return new UpsertWrite();
   }
 
+  @Override
+  public BatchWrite asMergeBatchWrite() {
+    return new MergeIntoWrite();
+  }
+
   private abstract class BaseBatchWrite implements BatchWrite {
 
     @Override
@@ -174,21 +179,17 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
     @Override
     public void commit(WriterCommitMessage[] messages) {
       RowDelta rowDelta = table.newRowDelta();
-      if (WriteTaskDeleteFilesCommit.deleteFiles(messages).iterator().hasNext()) {
-        for (DeleteFile file : WriteTaskDeleteFilesCommit.deleteFiles(messages)) {
+      if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
           rowDelta.addDeletes(file);
         }
-        rowDelta.commit();
       }
-
-
-      AppendFiles appendFiles = table.newAppend();
-      if (WriteTaskDeleteFilesCommit.dataFiles(messages).iterator().hasNext()) {
-        for (DataFile file : WriteTaskDeleteFilesCommit.dataFiles(messages)) {
-          appendFiles.appendFile(file);
+      if (WriteTaskCommit.files(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskCommit.files(messages)) {
+          rowDelta.addRows(file);
         }
-        appendFiles.commit();
       }
+      rowDelta.commit();
     }
   }
 
@@ -234,17 +235,62 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriter<InternalRow> createWriter(int partitionId, long taskId) {
-      // TODO: issues-173 - support upsert data writer
       StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
           !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
-      UnkeyedPosDeleteSparkWriter<InternalRow> internalRowUnkeyedPosDeleteSparkWriter = TaskWriters.of(table)
+      TaskWriter<InternalRow> internalRowUnkeyedUpsertSparkWriter = TaskWriters.of(table)
           .withPartitionId(partitionId)
           .withTransactionId(transactionId)
           .withTaskId(taskId)
           .withDataSourceSchema(schema)
-          .newBasePosDeleteWriter();
+          .newUnkeyedUpsertWriter();
 
-      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedPosDeleteSparkWriter, dsSchema);
+      return new SimpleUnkeyedUpsertDataWriter(internalRowUnkeyedUpsertSparkWriter, dsSchema);
+    }
+  }
+
+  private static class MergeWriteFactory extends WriterFactory {
+
+    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, Long transactionId) {
+      super(table, dsSchema, false, transactionId, null);
+    }
+
+    @Override
+    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      StructType schema = new StructType(Arrays.stream(dsSchema.fields()).filter(f -> !f.name().equals("_file") &&
+          !f.name().equals("_pos") && !f.name().equals("_arctic_upsert_op")).toArray(StructField[]::new));
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(schema)
+          .newUnkeyedUpsertWriter();
+      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
+    }
+  }
+
+  private class MergeIntoWrite extends BaseBatchWrite {
+
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new MergeWriteFactory(table, dsSchema, transactionId);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      RowDelta rowDelta = table.newRowDelta();
+      if (WriteTaskCommit.deleteFiles(messages).iterator().hasNext()) {
+        for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
+          rowDelta.addDeletes(file);
+        }
+
+      }
+      if (WriteTaskCommit.files(messages).iterator().hasNext()) {
+        for (DataFile file : WriteTaskCommit.files(messages)) {
+          rowDelta.addRows(file);
+        }
+      }
+      rowDelta.commit();
     }
   }
 }

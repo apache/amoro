@@ -31,7 +31,7 @@ import org.junit.Test;
 
 import java.util.List;
 
-public class TestDropPartitions extends SparkTestBase {
+public class TestHiveTableDropPartitions extends SparkTestBase {
   private final String database = "db_hive";
 
   private final String dropPartitionTable = "drop_partition_table";
