@@ -102,8 +102,6 @@ public class FileNameHandle {
         type = DataFileType.BASE_FILE;
       }
       transactionId = Long.parseLong(matcher.group(3));
-    } else {
-      transactionId = 0;
     }
     DataTreeNode node = DataTreeNode.ofId(nodeId);
     return new DefaultKeyedFile.FileMeta(transactionId, type, node);
