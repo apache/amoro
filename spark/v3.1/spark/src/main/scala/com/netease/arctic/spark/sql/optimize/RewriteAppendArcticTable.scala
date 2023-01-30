@@ -109,8 +109,9 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
               val alias = Alias(than, "count")()
               val attributes = query.output.filter(p => primaries.contains(p.name))
               val validateQuery = Aggregate(attributes, Seq(alias), query)
+              val writeOptions = options + (WriteMode.WRITE_MODE_KEY -> WriteMode.OVERWRITE_DYNAMIC.mode)
               CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery,
-                props, options, ifNotExists)
+                props, writeOptions, ifNotExists)
             } else {
               c
             }
