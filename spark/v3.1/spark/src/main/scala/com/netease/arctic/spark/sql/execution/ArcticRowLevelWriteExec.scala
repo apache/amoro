@@ -22,21 +22,23 @@ import com.netease.arctic.spark.sql.utils.WriteQueryProjections
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.RowLevelWriter
 import org.apache.spark.SparkException
+import org.apache.spark.sql.arctic.execution.{ExtendedV2ExistingTableWriteExec, WritingSparkTask}
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.execution.datasources.v2.{BatchWriteHelper, ExtendedV2ExistingTableWriteExec, WritingSparkTask}
+import org.apache.spark.sql.execution.datasources.v2.BatchWriteHelper
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 /**
  * Physical plan node to write a delta of rows to an existing table.
  */
 case class ArcticRowLevelWriteExec(
-                           table: ArcticSparkTable,
-                           query: SparkPlan,
-                           writeOptions: CaseInsensitiveStringMap,
-                           projections: WriteQueryProjections,
-                           refreshCache: () => Unit) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] with BatchWriteHelper {
+  table: ArcticSparkTable,
+  query: SparkPlan,
+  writeOptions: CaseInsensitiveStringMap,
+  projections: WriteQueryProjections,
+  refreshCache: () => Unit
+) extends ExtendedV2ExistingTableWriteExec[RowLevelWriter[InternalRow]] with BatchWriteHelper {
 
   override protected def run(): Seq[InternalRow] = {
     val writtenRows = writeWithV2(newWriteBuilder().buildForBatch())
@@ -54,7 +56,8 @@ case class ArcticRowLevelWriteExec(
 }
 
 case class DeltaWithMetadataWritingSparkTask(
-                                              projs: WriteQueryProjections) extends WritingSparkTask[RowLevelWriter[InternalRow]] {
+  projs: WriteQueryProjections
+) extends WritingSparkTask[RowLevelWriter[InternalRow]] {
 
   private lazy val frontRowProjection = projs.frontRowProjection.orNull
   private lazy val backRowProjection = projs.backRowProjection
