@@ -83,7 +83,8 @@ public class FileNameHandleTest {
 
   @Test
   public void adaptOldFileName() {
-    DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseChange("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet", 6L);
+    DefaultKeyedFile.FileMeta fileMeta = FileNameHandle.parseChange(
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet", 6L);
     Assert.assertEquals(fileMeta.node(), DataTreeNode.of(3, 1));
     Assert.assertEquals(fileMeta.type(), DataFileType.INSERT_FILE);
     Assert.assertEquals(fileMeta.transactionId(), 2L);
