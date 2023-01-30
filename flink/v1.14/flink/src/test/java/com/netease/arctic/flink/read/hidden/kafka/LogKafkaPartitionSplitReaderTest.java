@@ -20,8 +20,8 @@ package com.netease.arctic.flink.read.hidden.kafka;
 
 import com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate;
 import com.netease.arctic.flink.kafka.testutils.KafkaContainerTest;
-import com.netease.arctic.flink.read.source.log.LogKafkaPartitionSplitReader;
-import com.netease.arctic.flink.read.source.log.LogRecordWithRetractInfo;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaPartitionSplitReader;
+import com.netease.arctic.flink.read.source.log.kafka.LogRecordWithRetractInfo;
 import com.netease.arctic.flink.read.source.log.LogSourceHelper;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.log.FormatVersion;

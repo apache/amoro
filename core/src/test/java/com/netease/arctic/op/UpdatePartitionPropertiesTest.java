@@ -18,10 +18,11 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.TableTestBase;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
 import org.apache.iceberg.StructLike;
+import org.apache.iceberg.TestHelpers;
 import org.apache.iceberg.Transaction;
-import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.util.StructLikeMap;
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,30 +31,32 @@ import java.util.Map;
 
 public class UpdatePartitionPropertiesTest extends TableTestBase {
 
+  public UpdatePartitionPropertiesTest() {
+    super(TableFormat.MIXED_ICEBERG, false, true);
+  }
+
   @Test
   public void testUpdatePartitionProperties() {
-    StructLikeMap<Map<String, String>> partitionProperties = testTable.partitionProperty();
+    StructLikeMap<Map<String, String>> partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(0, partitionProperties.size());
-    StructLike p0 = GenericRecord.create(SPEC.partitionType());
-    p0.set(0, 1200);
-    testTable.updatePartitionProperties(null).set(p0, "key", "value").commit();
-    partitionProperties = testTable.partitionProperty();
+    StructLike p0 = TestHelpers.Row.of(1200);
+    getArcticTable().asUnkeyedTable().updatePartitionProperties(null).set(p0, "key", "value").commit();
+    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(1, partitionProperties.size());
     Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
   }
 
   @Test
   public void testUpdatePartitionPropertiesInTx() {
-    StructLikeMap<Map<String, String>> partitionProperties = testTable.partitionProperty();
-    Transaction transaction = testTable.newTransaction();
+    StructLikeMap<Map<String, String>> partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
+    Transaction transaction = getArcticTable().asUnkeyedTable().newTransaction();
     Assert.assertEquals(0, partitionProperties.size());
-    StructLike p0 = GenericRecord.create(SPEC.partitionType());
-    p0.set(0, 1200);
-    testTable.updatePartitionProperties(transaction).set(p0, "key", "value").commit();
-    partitionProperties = testTable.partitionProperty();
+    StructLike p0 = TestHelpers.Row.of(1200);
+    getArcticTable().asUnkeyedTable().updatePartitionProperties(transaction).set(p0, "key", "value").commit();
+    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(0, partitionProperties.size());
     transaction.commitTransaction();
-    partitionProperties = testTable.partitionProperty();
+    partitionProperties = getArcticTable().asUnkeyedTable().partitionProperty();
     Assert.assertEquals(1, partitionProperties.size());
     Assert.assertEquals("value", partitionProperties.get(p0).get("key"));
   }

@@ -34,7 +34,9 @@ public class FileUtilTest {
   public void getFileDir() {
     String fileDir = TableFileUtils.getFileDir("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
         "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
-    Assert.assertEquals("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", fileDir);
+    Assert.assertEquals(
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26",
+        fileDir);
   }
 
   @Test

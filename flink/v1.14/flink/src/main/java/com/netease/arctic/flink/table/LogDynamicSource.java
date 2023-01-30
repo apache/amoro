@@ -18,8 +18,8 @@
 
 package com.netease.arctic.flink.table;
 
-import com.netease.arctic.flink.read.source.log.LogKafkaSource;
-import com.netease.arctic.flink.read.source.log.LogKafkaSourceBuilder;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSourceBuilder;
 import com.netease.arctic.flink.table.descriptors.ArcticValidator;
 import com.netease.arctic.flink.util.CompatibleFlinkPropertyUtil;
 import com.netease.arctic.table.ArcticTable;

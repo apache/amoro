@@ -33,7 +33,8 @@ public class ArcticRunListener extends RunListener {
   @Override
   public void testRunStarted(Description description) {
     startTime = System.currentTimeMillis();
-    LOG.info("{} Tests started! Number of Test case: {}",
+    LOG.info(
+        "{} Tests started! Number of Test case: {}",
         description == null ? "Unknown" : description.getClassName(),
         description == null ? 0 : description.testCount());
   }

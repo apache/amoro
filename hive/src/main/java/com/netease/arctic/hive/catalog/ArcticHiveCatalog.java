@@ -40,6 +40,7 @@ import com.netease.arctic.table.TableIdentifier;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.utils.CatalogUtil;
 import org.apache.hadoop.hive.metastore.TableType;
+import org.apache.hadoop.hive.metastore.api.AlreadyExistsException;
 import org.apache.hadoop.hive.metastore.api.Database;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.IcebergSchemaUtil;
@@ -95,7 +96,11 @@ public class ArcticHiveCatalog extends BaseArcticCatalog {
         client.createDatabase(database);
         return null;
       });
-    } catch (TException | InterruptedException e) {
+    } catch (AlreadyExistsException e) {
+      throw new org.apache.iceberg.exceptions.AlreadyExistsException(
+          e, "Database '%s' already exists!", databaseName);
+
+    }  catch (TException | InterruptedException e) {
       throw new RuntimeException("Failed to create database:" + databaseName, e);
     }
   }

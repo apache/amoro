@@ -51,37 +51,36 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
 
-public class IcebergFormatBase {
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
+/**
+ * @deprecated since 0.4.1, will be removed in 0.5.0; use {@link com.netease.arctic.catalog.TableTestBase} instead.
+ */
+@Deprecated
+public class IcebergTableBase {
+
+  @Rule
+  public TemporaryFolder temp = new TemporaryFolder();
   protected Table unPartitionTable;
-
   protected Table partitionTable;
-
   protected String unPartitionName = "un_partition_table";
-
   protected String partitionName = "un_partition_table";
-
   protected Schema unPartitionSchema = new Schema(
       Types.NestedField.required(1, "id", Types.LongType.get())
   );
-
   protected Schema partitionSchema = new Schema(
       Types.NestedField.required(1, "id", Types.LongType.get()),
       Types.NestedField.required(2, "name", Types.StringType.get())
   );
-
   protected CombinedIcebergScanTask unPartitionAllFileTask;
-
   protected CombinedIcebergScanTask unPartitionOnlyDataTask;
-
   protected CombinedIcebergScanTask partitionAllFileTask;
-
   protected CombinedIcebergScanTask partitionOnlyDataTask;
-
   private HadoopCatalog catalog;
-
-  @Rule
-  public TemporaryFolder temp = new TemporaryFolder();
 
   @Before
   public void setupTables() throws IOException {
@@ -95,9 +94,9 @@ public class IcebergFormatBase {
   private void initUnPartitionTable() throws IOException {
     //create table
     TableIdentifier tableIdentifier = TableIdentifier.of(unPartitionName);
-    if (catalog.tableExists(tableIdentifier)){
+    if (catalog.tableExists(tableIdentifier)) {
       unPartitionTable = catalog.loadTable(tableIdentifier);
-    }else {
+    } else {
       Map<String, String> map = Maps.newHashMap();
       map.put(TableProperties.FORMAT_VERSION, "2");
       unPartitionTable = catalog.createTable(tableIdentifier, unPartitionSchema, PartitionSpec.unpartitioned(), map);
@@ -115,15 +114,15 @@ public class IcebergFormatBase {
 
     DataFileWithSequence orcData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 3L)
-    ), FileFormat.ORC, unPartitionSchema),3L);
+    ), FileFormat.ORC, unPartitionSchema), 3L);
 
     DeleteFileWithSequence eqDeleteFile = new DeleteFileWithSequence(eqDelete(Arrays.asList(
         record.copy("id", 1L)
-    ), FileFormat.PARQUET, unPartitionSchema),4L);
+    ), FileFormat.PARQUET, unPartitionSchema), 4L);
 
     DeleteFileWithSequence posDeleteFile = new DeleteFileWithSequence(posDelete(Arrays.asList(
         PositionDelete.<Record>create().set(parquetData.path(), 0, record.copy("id", 2L))
-    ), FileFormat.AVRO, unPartitionSchema),5L);
+    ), FileFormat.AVRO, unPartitionSchema), 5L);
 
     unPartitionAllFileTask = new CombinedIcebergScanTask(
         new DataFileWithSequence[]{avroData, parquetData, orcData},
@@ -144,9 +143,9 @@ public class IcebergFormatBase {
     //create table
     TableIdentifier tableIdentifier = TableIdentifier.of(partitionName);
     PartitionSpec partitionSpec = PartitionSpec.builderFor(partitionSchema).identity("name").build();
-    if (catalog.tableExists(tableIdentifier)){
+    if (catalog.tableExists(tableIdentifier)) {
       partitionTable = catalog.loadTable(tableIdentifier);
-    }else {
+    } else {
       Map<String, String> map = Maps.newHashMap();
       map.put(TableProperties.FORMAT_VERSION, "2");
       partitionTable = catalog.createTable(tableIdentifier, partitionSchema, partitionSpec, map);
@@ -164,18 +163,18 @@ public class IcebergFormatBase {
 
     DataFileWithSequence orcData = new DataFileWithSequence(insert(Arrays.asList(
         record.copy("id", 3L, "name", "3")
-    ), FileFormat.ORC, partitionSchema),3L);
+    ), FileFormat.ORC, partitionSchema), 3L);
 
     DeleteFileWithSequence eqDeleteFile = new DeleteFileWithSequence(eqDelete(Arrays.asList(
         record.copy("id", 1L, "name", "1")
-    ), FileFormat.PARQUET, partitionSchema),4L);
+    ), FileFormat.PARQUET, partitionSchema), 4L);
 
     DeleteFileWithSequence posDeleteFile = new DeleteFileWithSequence(posDelete(Arrays.asList(
         PositionDelete.<Record>create().set(
             parquetData.path(),
             0,
             record.copy("id", 2L, "name", "2"))
-    ), FileFormat.AVRO, partitionSchema),5L);
+    ), FileFormat.AVRO, partitionSchema), 5L);
 
     partitionAllFileTask = new CombinedIcebergScanTask(
         new DataFileWithSequence[]{avroData, parquetData, orcData},
@@ -198,7 +197,7 @@ public class IcebergFormatBase {
         .format(fileFormat).build();
     DataWriter<Record> recordDataWriter =
         fileAppenderFactory.newDataWriter(outputFileFactory.newOutputFile(), fileFormat, null);
-    for (Record record: records){
+    for (Record record : records) {
       recordDataWriter.write(record);
     }
     recordDataWriter.close();
@@ -207,7 +206,7 @@ public class IcebergFormatBase {
 
   private DeleteFile eqDelete(List<Record> records, FileFormat fileFormat, Schema schema) throws IOException {
     GenericAppenderFactory fileAppenderFactory = new GenericAppenderFactory(schema, PartitionSpec.unpartitioned(),
-        new int[]{1}, schema, schema);
+        new int[] {1}, schema, schema);
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(unPartitionTable, 0, 1)
         .format(fileFormat).build();
     EqualityDeleteWriter<Record> recordDataWriter =
@@ -217,7 +216,8 @@ public class IcebergFormatBase {
     return recordDataWriter.toDeleteFile();
   }
 
-  private DeleteFile posDelete(List<PositionDelete<Record>> positionDeletes, FileFormat fileFormat, Schema schema) throws IOException {
+  private DeleteFile posDelete(List<PositionDelete<Record>> positionDeletes, FileFormat fileFormat, Schema schema)
+      throws IOException {
     GenericAppenderFactory fileAppenderFactory = new GenericAppenderFactory(schema);
     OutputFileFactory outputFileFactory = OutputFileFactory.builderFor(unPartitionTable, 0, 1)
         .format(fileFormat).build();
@@ -228,9 +228,8 @@ public class IcebergFormatBase {
     return recordDataWriter.toDeleteFile();
   }
 
-
   @After
-  public void clean(){
+  public void clean() {
     temp.delete();
   }
 }
