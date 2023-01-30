@@ -57,6 +57,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema;
 import static com.netease.arctic.flink.catalog.factories.ArcticCatalogFactoryOptions.METASTORE_URL;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.createValueFormatProjection;
 import static com.netease.arctic.flink.table.KafkaConnectorOptionsUtil.getKafkaProperties;
@@ -139,7 +140,7 @@ public class DynamicTableFactory implements DynamicTableSourceFactory, DynamicTa
 
     boolean dimTable = CompatibleFlinkPropertyUtil.propertyAsBoolean(arcticTable.properties(),
         ArcticValidator.DIM_TABLE_ENABLE.key(), ArcticValidator.DIM_TABLE_ENABLE.defaultValue());
-    TableSchema tableSchema = com.netease.arctic.flink.FlinkSchemaUtil.getPhysicalSchema(catalogTable.getSchema(),
+    TableSchema tableSchema = getPhysicalSchema(catalogTable.getSchema(),
         dimTable);
     switch (readMode) {
       case ArcticValidator.ARCTIC_READ_FILE:

@@ -41,6 +41,9 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static org.apache.flink.table.runtime.typeutils.TypeCheckUtils.isTimestamp;
+import static org.apache.flink.table.types.logical.utils.LogicalTypeChecks.getPrecision;
+
 /**
  * An util that converts flink table schema.
  */
@@ -94,6 +97,8 @@ public class FlinkSchemaUtil {
       for (WatermarkSpec spec : watermarkSpecs) {
         if (spec.getRowtimeAttribute().equals(tableColumn.getName())) {
           isWatermark = true;
+          final LogicalType timeFieldType = tableColumn.getType().getLogicalType();
+          validateWatermarkExpression(timeFieldType);
           break;
         }
       }
@@ -184,6 +189,17 @@ public class FlinkSchemaUtil {
       builder.field(pk, tableSchema.getFieldDataType(pk)
           .orElseThrow(() -> new ValidationException("Arctic primary key should be declared in table")));
     });
+  }
+
+  private static void validateWatermarkExpression(LogicalType watermarkType) {
+    if (!isTimestamp(watermarkType) || getPrecision(watermarkType) > 3) {
+      throw new ValidationException(
+        String.format(
+          "Invalid data type of expression for watermark definition. " +
+            "The field must be of type TIMESTAMP(p)," +
+            " the supported precision 'p' is from 0 to 3, but the watermark expression type is %s",
+          watermarkType));
+    }
   }
 
 }

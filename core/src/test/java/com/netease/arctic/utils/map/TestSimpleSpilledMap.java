@@ -10,29 +10,14 @@ import java.io.Serializable;
 
 public class TestSimpleSpilledMap {
 
-  private static class Key implements Serializable {
-    String k = "Key";
-
-    @Override
-    public boolean equals(Object obj) {
-      return ((Key) obj).k == k;
-    }
-  }
-
-  private class Value implements Serializable {
-    int value = 666;
-
-    @Override
-    public boolean equals(Object obj) {
-      return ((Value) obj).value == value;
-    }
-  }
-
   private SimpleSpillableMap.SimpleSpilledMap map;
+
   @Before
   public void createMap() {
     SimpleSpillableMap spillableMap = new SimpleSpillableMap(100L, null);
-    map = spillableMap.new SimpleSpilledMap(SerializationUtils.createJavaSimpleSerializer(), SerializationUtils.createJavaSimpleSerializer(), null);
+    map = spillableMap.new SimpleSpilledMap(
+        SerializationUtils.createJavaSimpleSerializer(),
+        SerializationUtils.createJavaSimpleSerializer(), null);
   }
 
   @After
@@ -40,11 +25,12 @@ public class TestSimpleSpilledMap {
     map.close();
     map = null;
   }
+
   @Test
   public void testPutGetRemove() {
     Key key = new Key();
     Value value = new Value();
-    map.put( "name", 555);
+    map.put("name", 555);
     map.put(2, "zjs");
     map.put(4556, "zyx");
     map.put(key, value);
@@ -66,5 +52,23 @@ public class TestSimpleSpilledMap {
     Assert.assertEquals(value, map.get(key));
     Assert.assertThrows(Exception.class, () -> map.put(key, null));
     Assert.assertThrows(Exception.class, () -> map.put(null, value));
+  }
+
+  private static class Key implements Serializable {
+    String key = "Key";
+
+    @Override
+    public boolean equals(Object obj) {
+      return ((Key) obj).key == key;
+    }
+  }
+
+  private class Value implements Serializable {
+    int value = 666;
+
+    @Override
+    public boolean equals(Object obj) {
+      return ((Value) obj).value == value;
+    }
   }
 }

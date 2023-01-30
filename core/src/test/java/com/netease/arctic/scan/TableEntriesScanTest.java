@@ -20,7 +20,7 @@ package com.netease.arctic.scan;
 
 import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
-import com.netease.arctic.io.TableTestBaseWithInitData;
+import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
@@ -31,12 +31,12 @@ import org.apache.iceberg.expressions.Expressions;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TableEntriesScanTest extends TableTestBaseWithInitData {
+public class TableEntriesScanTest extends TableDataTestBase {
 
   @Test
   public void testScanDataEntries() {
     // change table commit 2 insert files, then commit 1 delete file
-    Table changeTable = testKeyedTable.changeTable();
+    Table changeTable = getArcticTable().asKeyedTable().changeTable();
     TableEntriesScan dataFileScan = TableEntriesScan.builder(changeTable)
         .includeFileContent(FileContent.DATA)
         .build();
@@ -60,7 +60,7 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
   @Test
   public void testScanDeleteEntries() {
     // base table commit 4 insert files, then commit 1 pos-delete file
-    Table baseTable = testKeyedTable.baseTable();
+    Table baseTable = getArcticTable().asKeyedTable().baseTable();
     TableEntriesScan deleteFileScan = TableEntriesScan.builder(baseTable)
         .includeFileContent(FileContent.POSITION_DELETES)
         .build();
@@ -79,7 +79,7 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
   @Test
   public void testScanAllEntries() {
     // base table commit 4 insert files, then commit 1 pos-delete file
-    Table baseTable = testKeyedTable.baseTable();
+    Table baseTable = getArcticTable().asKeyedTable().baseTable();
     TableEntriesScan deleteFileScan = TableEntriesScan.builder(baseTable)
         .includeFileContent(FileContent.POSITION_DELETES, FileContent.DATA, FileContent.EQUALITY_DELETES)
         .build();
@@ -102,7 +102,7 @@ public class TableEntriesScanTest extends TableTestBaseWithInitData {
   @Test
   public void testScanEntriesWithFilter() {
     // change table commit 2 insert files, then commit 1 delete file
-    Table changeTable = testKeyedTable.changeTable();
+    Table changeTable = getArcticTable().asKeyedTable().changeTable();
     TableEntriesScan dataFileScan = TableEntriesScan.builder(changeTable)
         .includeFileContent(FileContent.DATA)
         .withDataFilter(Expressions.equal("id", 5))

@@ -59,7 +59,6 @@ import java.util.stream.Collectors;
 
 public class AutoSyncHiveTest extends HiveTableTestBase {
 
-
   @Test
   public void testAutoSyncHiveSchemaChange() throws TException {
     testAutoSyncHiveSchemaChange(testHiveTable);

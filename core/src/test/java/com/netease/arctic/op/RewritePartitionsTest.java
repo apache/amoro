@@ -18,11 +18,12 @@
 
 package com.netease.arctic.op;
 
-import com.netease.arctic.TableTestBase;
-import com.netease.arctic.data.ChangeAction;
+import com.netease.arctic.io.DataTestHelpers;
+import com.netease.arctic.io.TableDataTestBase;
 import com.netease.arctic.utils.TablePropertyUtil;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.data.Record;
+import org.apache.iceberg.expressions.Expressions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.collect.Sets;
 import org.apache.iceberg.util.StructLikeMap;
@@ -32,97 +33,49 @@ import org.junit.Test;
 import java.util.List;
 import java.util.Set;
 
-
-public class RewritePartitionsTest extends TableTestBase {
-
-  private long initTxId;
-
-  @Override
-  public void before() {
-    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    initTxId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
-    List<DataFile> files = writeBaseNoCommit(testKeyedTable, legacyTxId, Lists.newArrayList(
-        newGenericRecord(TABLE_SCHEMA, 1, "aaa", quickDate(1)),
-        newGenericRecord(TABLE_SCHEMA, 2, "bbb", quickDate(2)),
-        newGenericRecord(TABLE_SCHEMA, 3, "ccc", quickDate(3))
-    ));
-
-    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
-    files.forEach(overwrite::addDataFile);
-    overwrite.withTransactionId(initTxId);
-    overwrite.commit();
-
-    writeChange(PK_TABLE_ID, ChangeAction.INSERT, Lists.newArrayList(
-        newGenericRecord(TABLE_SCHEMA, 4, "444", quickDate(1)),
-        newGenericRecord(TABLE_SCHEMA, 5, "555", quickDate(2)),
-        newGenericRecord(TABLE_SCHEMA, 6, "666", quickDate(3))
-    ));
-
-    // init. 3 partition with init txId
-    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
-        partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
-    ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
-        partitionData(TABLE_SCHEMA, SPEC, quickDate(2))
-    ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
-        partitionData(TABLE_SCHEMA, SPEC, quickDate(3))
-    ).longValue());
-
-    testKeyedTable.baseTable().refresh();
-    testKeyedTable.changeTable().refresh();
-
-    List<Record> rows = readKeyedTable(testKeyedTable);
-    // for init 6 record
-    Assert.assertEquals(6, rows.size());
-  }
+public class RewritePartitionsTest extends TableDataTestBase {
 
   /**
-   * overwrite partiton by data file.
+   * overwrite partition by data file.
    */
   @Test
   public void testDynamicOverwritePartition() {
-    long legacyTxId = testKeyedTable.beginTransaction(System.currentTimeMillis() + "");
-    long txId = TablePropertyUtil.allocateTransactionId(testKeyedTable);
+    long legacyTxId = getArcticTable().asKeyedTable().beginTransaction(System.currentTimeMillis() + "");
+    long txId = TablePropertyUtil.allocateTransactionId(getArcticTable().asKeyedTable());
     List<Record> newRecords = Lists.newArrayList(
-        newGenericRecord(TABLE_SCHEMA, 7, "777", quickDate(1)),
-        newGenericRecord(TABLE_SCHEMA, 8, "888", quickDate(1)),
-        newGenericRecord(TABLE_SCHEMA, 9, "999", quickDate(1))
+        DataTestHelpers.createRecord(7, "777", 0, "2022-01-01T12:00:00"),
+        DataTestHelpers.createRecord(8, "888", 0, "2022-01-01T12:00:00"),
+        DataTestHelpers.createRecord(9, "999", 0, "2022-01-01T12:00:00")
     );
-    List<DataFile> newFiles = writeBaseNoCommit(testKeyedTable, legacyTxId, newRecords);
-    RewritePartitions overwrite = testKeyedTable.newRewritePartitions();
-    newFiles.forEach(overwrite::addDataFile);
-    overwrite.withTransactionId(txId);
-    overwrite.commit();
-    // overwrite 1 partition by data file
+    List<DataFile> newFiles = DataTestHelpers.writeBaseStore(getArcticTable().asKeyedTable(), legacyTxId, newRecords);
+    RewritePartitions rewritePartitions = getArcticTable().asKeyedTable().newRewritePartitions();
+    newFiles.forEach(rewritePartitions::addDataFile);
+    rewritePartitions.withTransactionId(txId);
+    rewritePartitions.commit();
+    // rewrite 1 partition by data file
 
-    StructLikeMap<Long> partitionMaxTxId = TablePropertyUtil.getPartitionMaxTransactionId(testKeyedTable);
+    StructLikeMap<Long> partitionMaxTxId =
+        TablePropertyUtil.getPartitionMaxTransactionId(getArcticTable().asKeyedTable());
     // expect result: 1 partition with new txId, 2,3 partition use old txId
-    Assert.assertEquals(txId, partitionMaxTxId.get(
-        partitionData(TABLE_SCHEMA, SPEC, quickDate(1))
-    ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
-        partitionData(TABLE_SCHEMA, SPEC, quickDate(2))
-    ).longValue());
-    Assert.assertEquals(initTxId, partitionMaxTxId.get(
-        partitionData(TABLE_SCHEMA, SPEC, quickDate(3))
-    ).longValue());
+    Assert.assertEquals(
+        txId,
+        partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-01T12:00:00")).longValue());
+    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-02T12:00:00")));
+    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-03T12:00:00")));
+    Assert.assertNull(partitionMaxTxId.get(DataTestHelpers.recordPartition("2022-01-04T12:00:00")));
 
-    List<Record> rows = readKeyedTable(testKeyedTable);
+    List<Record> rows = DataTestHelpers.readKeyedTable(getArcticTable().asKeyedTable(), Expressions.alwaysTrue());
     // partition1 -> base[7,8,9]
-    // partition2 -> base[2], change[5]
-    // partition3 -> base[3], change[6]
-    Assert.assertEquals(7, rows.size());
+    // partition2 -> base[2]
+    // partition3 -> base[3]
+    Assert.assertEquals(5, rows.size());
 
     Set<Integer> resultIdSet = Sets.newHashSet();
-    rows.forEach( r-> resultIdSet.add((Integer) r.get(0)));
+    rows.forEach(r -> resultIdSet.add((Integer) r.get(0)));
     Assert.assertTrue(resultIdSet.contains(7));
     Assert.assertTrue(resultIdSet.contains(8));
     Assert.assertTrue(resultIdSet.contains(9));
     Assert.assertTrue(resultIdSet.contains(2));
-    Assert.assertTrue(resultIdSet.contains(5));
     Assert.assertTrue(resultIdSet.contains(3));
-    Assert.assertTrue(resultIdSet.contains(6));
   }
 }

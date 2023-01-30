@@ -74,6 +74,10 @@ public class KafkaTestBase {
     LOG.info("-------------------------------------------------------------------------");
 
     startClusters(false);
+
+    LOG.info("-------------------------------------------------------------------------");
+    LOG.info("    KafkaTestBase Started");
+    LOG.info("-------------------------------------------------------------------------");
   }
 
   public void shutDownServices() throws Exception {
