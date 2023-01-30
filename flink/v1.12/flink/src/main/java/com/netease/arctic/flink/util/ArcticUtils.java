@@ -110,14 +110,11 @@ public class ArcticUtils {
 
     if (arcticEmitMode.contains(ArcticValidator.ARCTIC_EMIT_LOG)) {
       if (!streamEnable) {
-        throw new ValidationException(
-            "emit to kafka was set, but no kafka config be found, please set kafka config first");
+        throw new ValidationException("emit to log was set, but 'log-store.enabled' is false");
       }
       return true;
     } else if (arcticEmitMode.equals(ArcticValidator.ARCTIC_EMIT_AUTO)) {
-      LOG.info("arctic emit mode is auto, and the arctic table {} is {}",
-          ENABLE_LOG_STORE,
-          streamEnable);
+      LOG.info("arctic emit mode is auto, and the arctic table {} is {}", ENABLE_LOG_STORE, streamEnable);
       return streamEnable;
     }
 
