@@ -261,8 +261,8 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
   private static class MergeWriteFactory extends WriterFactory {
 
-    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, Long transactionId) {
-      super(table, dsSchema, false, transactionId, null);
+    MergeWriteFactory(UnkeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
+      super(table, dsSchema, false, transactionId, null, orderedWrite);
     }
 
     @Override
@@ -284,7 +284,7 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
 
     @Override
     public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
-      return new MergeWriteFactory(table, dsSchema, transactionId);
+      return new MergeWriteFactory(table, dsSchema, transactionId, orderedWriter);
     }
 
     @Override

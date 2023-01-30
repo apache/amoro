@@ -102,7 +102,7 @@ public class TaskWriters {
   }
 
   public TaskWriters withOrderedWriter(boolean orderedWriter) {
-    this.orderedWriter = this.orderedWriter;
+    this.orderedWriter = orderedWriter;
     return this;
   }
 
@@ -199,7 +199,7 @@ public class TaskWriters {
         table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId);
     ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter = new ArcticSparkBaseTaskWriter(fileFormat, build,
         commonOutputFileFactory,
-        table.io(), fileSizeBytes, mask, schema, table.spec(), null);
+        table.io(), fileSizeBytes, mask, schema, table.spec(), null, orderedWriter);
     return new UnkeyedUpsertSparkWriter<>(table, build,
         commonOutputFileFactory,
         fileFormat, schema, arcticSparkBaseTaskWriter);

@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ *  *
  *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ *  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.catalyst.arctic
+package org.apache.spark.sql.arctic.catalyst
 
 import com.netease.arctic.data.PrimaryKeyData
 import com.netease.arctic.spark.SparkInternalRowWrapper
@@ -28,15 +28,15 @@ import org.apache.spark.sql.catalyst.expressions.{Expression, IcebergBucketTrans
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.{InternalRow, SQLConfHelper}
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits
-import org.apache.spark.sql.connector.expressions.{BucketTransform, DaysTransform, FieldReference, HoursTransform, IdentityTransform, MonthsTransform, NamedReference, Transform, YearsTransform, Expression => V2Expression}
-import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder => SortValue}
-import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, catalyst}
+import org.apache.spark.sql.connector.expressions._
+import org.apache.spark.sql.connector.iceberg.expressions.{NullOrdering, SortDirection, SortOrder}
+import org.apache.spark.sql.types.{DataType, LongType}
+import org.apache.spark.sql.{AnalysisException, catalyst, connector}
 
 object ArcticSpark31CatalystHelper extends SQLConfHelper {
 
 
-  def toCatalyst(expr: V2Expression, query: LogicalPlan): Expression = {
+  def toCatalyst(expr: connector.expressions.Expression, query: LogicalPlan): Expression = {
     def resolve(parts: Seq[String]): NamedExpression = {
       val resolver = conf.resolver
       query.resolve(parts, resolver) match {
@@ -54,7 +54,7 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
       case fbt: FileIndexBucket =>
         ArcticFileIndexBucketTransform(fbt.mask(), fbt.primaryKeyData(), fbt.schema())
       case ArcticBucketTransform(n, r) =>
-        IcebergBucketTransform(n, resolveRef[NamedExpression](r, query))
+        IcebergBucketTransform(n, ExpressionHelper.resolveRef[NamedExpression](r, query))
       case yt: YearsTransform =>
         IcebergYearTransform(resolve(yt.ref.fieldNames))
       case mt: MonthsTransform =>
@@ -65,7 +65,7 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
         IcebergHourTransform(resolve(ht.ref.fieldNames))
       case ref: FieldReference =>
         resolve(ref.fieldNames)
-      case sort: SortValue =>
+      case sort: SortOrder =>
         val catalystChild = toCatalyst(sort.expression(), query)
         catalyst.expressions.SortOrder(
           catalystChild,
@@ -88,19 +88,6 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     nullOrdering match {
       case NullOrdering.NULLS_FIRST => catalyst.expressions.NullsFirst
       case NullOrdering.NULLS_LAST => catalyst.expressions.NullsLast
-    }
-  }
-
-  import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.MultipartIdentifierHelper
-
-  def resolveRef[T <: NamedExpression](ref: NamedReference, plan: LogicalPlan): T = {
-    plan.resolve(ref.fieldNames.toSeq, conf.resolver) match {
-      case Some(namedExpr) =>
-        namedExpr.asInstanceOf[T]
-      case None =>
-        val name = ref.fieldNames.toSeq.quoted
-        val outputString = plan.output.map(_.name).mkString(",")
-        throw new AnalysisException(s"Cannot resolve '$name' using $outputString")
     }
   }
 
@@ -143,6 +130,3 @@ object ArcticSpark31CatalystHelper extends SQLConfHelper {
     }
   }
 }
-
-
-

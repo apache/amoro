@@ -18,7 +18,7 @@
 
 package com.netease.arctic.spark.util;
 
-import org.apache.spark.sql.catalyst.arctic.ArcticSpark31CatalystHelper;
+import org.apache.spark.sql.arctic.catalyst.ArcticSpark31CatalystHelper;
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan;
 import org.apache.spark.sql.connector.expressions.Expression;
 import org.apache.spark.sql.connector.expressions.Expressions;

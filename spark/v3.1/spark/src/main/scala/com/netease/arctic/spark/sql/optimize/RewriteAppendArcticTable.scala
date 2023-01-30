@@ -18,9 +18,7 @@
 
 package com.netease.arctic.spark.sql.optimize
 
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticDataByExpression, OverwriteArcticPartitionsDynamic, ReplaceArcticData}
-import com.netease.arctic.spark.sql.catalyst.plans
-import com.netease.arctic.spark.sql.catalyst.plans.{AppendArcticData, OverwriteArcticData, OverwriteArcticDataByExpression, ReplaceArcticData}
+import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
 import com.netease.arctic.spark.{ArcticSparkCatalog, SparkSQLProperties}
@@ -28,7 +26,6 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.aggregate.{AggregateExpression, Complete, Count}
 import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.RightOuter
-import org.apache.spark.sql.catalyst.expressions.{Alias, And, Cast, EqualNullSafe, EqualTo, Expression, GreaterThan, Literal}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
@@ -41,7 +38,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case AppendData(r: DataSourceV2Relation, query, writeOptions, isByName) if isArcticRelation(r) =>
+    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
       val upsertWrite = arcticRelation.table.asUpsertWrite
       val (newQuery, options) = if (upsertWrite.appendAsUpsert()) {
@@ -65,7 +62,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
           }
       }
     case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _)
-      if (checkDuplicatesEnabled()) =>
+      if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
       arcticRelation.table match {
         case table: ArcticSparkTable =>
@@ -80,7 +77,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       }
 
     case a @ OverwriteByExpression(r: DataSourceV2Relation, deleteExpr, query, writeOptions, _)
-      if (checkDuplicatesEnabled()) =>
+      if checkDuplicatesEnabled() =>
       val arcticRelation = asTableRelation(r)
       arcticRelation.table match {
         case table: ArcticSparkTable =>
@@ -102,16 +99,17 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       }
 
     case c @ CreateTableAsSelect(catalog, ident, parts, query, props, options, ifNotExists)
-      if (checkDuplicatesEnabled()) =>
+      if checkDuplicatesEnabled() =>
       catalog match {
-        case t: ArcticSparkCatalog =>
+        case _: ArcticSparkCatalog =>
           if (props.contains("primary.keys")) {
             val primaries = props("primary.keys").split(",")
             val than = GreaterThan(AggregateExpression(Count(Literal(1)), Complete, isDistinct = false), Cast(Literal(1), LongType))
             val alias = Alias(than, "count")()
             val attributes = query.output.filter(p => primaries.contains(p.name))
             val validateQuery = Aggregate(attributes, Seq(alias), query)
-            CreateArcticTableAsSelect(catalog, ident, parts, query, validateQuery,
+            CreateArcticTableAsSelect(
+              catalog, ident, parts, query, validateQuery,
               props, options, ifNotExists)
           } else {
             c
@@ -138,7 +136,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
 
   def checkDuplicatesEnabled(): Boolean = {
     java.lang.Boolean.valueOf(spark.sessionState.conf.
-      getConfString(SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
+      getConfString(
+        SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
         SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT))
   }
 
@@ -160,12 +159,14 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
       } else {
         joinCondition = And(joinCondition, experssion)
       }
-    });
+    })
     joinCondition
   }
 
-  def rewriteAppendAsUpsertQuery(r: DataSourceV2Relation,
-                                 query: LogicalPlan): LogicalPlan = {
+  def rewriteAppendAsUpsertQuery(
+    r: DataSourceV2Relation,
+    query: LogicalPlan
+  ): LogicalPlan = {
     r.table match {
       case arctic: ArcticSparkTable =>
         if (arctic.table().isKeyedTable) {
