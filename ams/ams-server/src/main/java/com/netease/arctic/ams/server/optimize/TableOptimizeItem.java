@@ -172,6 +172,10 @@ public class TableOptimizeItem extends IJDBCService {
     return this;
   }
 
+  public boolean snapshotIsCurrentCache(long snapshotId, String innerTable) {
+    return fileInfoCacheService.snapshotIsCurrentCache(tableIdentifier.buildTableIdentifier(), innerTable, snapshotId);
+  }
+
   /**
    * if all tasks are Prepared
    *

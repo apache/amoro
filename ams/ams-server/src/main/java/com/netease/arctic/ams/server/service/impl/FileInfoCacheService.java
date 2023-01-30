@@ -147,6 +147,17 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
+  public Boolean snapshotIsCurrentCache(TableIdentifier identifier, String innerTable, Long snapshotId) {
+    if (snapshotId == -1) {
+      return true;
+    }
+    try (SqlSession sqlSession = getSqlSession(false)) {
+      SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
+      return snapInfoCacheMapper.snapshotIsCached(identifier, innerTable, snapshotId) &&
+          !snapInfoCacheMapper.snapshotIsCachedAsParent(identifier, innerTable, snapshotId);
+    }
+  }
+
   /**
    * @param time delete all cache which commit time less than time and is deleted
    */

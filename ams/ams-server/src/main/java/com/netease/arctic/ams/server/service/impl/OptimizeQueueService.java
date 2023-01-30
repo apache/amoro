@@ -19,6 +19,7 @@
 package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.Constants;
 import com.netease.arctic.ams.api.ErrorMessage;
 import com.netease.arctic.ams.api.InvalidObjectException;
 import com.netease.arctic.ams.api.JobId;
@@ -46,6 +47,7 @@ import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.ITableTaskHistoryService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.ams.server.utils.OptimizeStatusUtil;
+import com.netease.arctic.ams.server.utils.UnKeyedTableUtil;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.HiveTableUtil;
 import com.netease.arctic.table.ArcticTable;
@@ -663,11 +665,6 @@ public class OptimizeQueueService extends IJDBCService {
             }
           }
 
-          if (ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE)) {
-            LOG.debug("{} optimize is blocked continue", tableIdentifier);
-            continue;
-          }
-
           BaseOptimizePlan optimizePlan;
           List<BaseOptimizeTask> optimizeTasks;
 
@@ -695,19 +692,43 @@ public class OptimizeQueueService extends IJDBCService {
               optimizeTasks = optimizePlan.plan();
             }
           } else {
+            if (isOptimizeBlocked(tableIdentifier)) {
+              continue;
+            }
             optimizePlan = tableItem.getFullPlan(queueId, currentTime, partitionIsRunning);
             optimizeTasks = optimizePlan.plan();
 
-            // if no full tasks, then plan minor tasks
+            // if no full tasks, then plan major tasks
             if (CollectionUtils.isEmpty(optimizeTasks)) {
+              if (isOptimizeBlocked(tableIdentifier)) {
+                continue;
+              }
               optimizePlan = tableItem.getMajorPlan(queueId, currentTime, partitionIsRunning);
               optimizeTasks = optimizePlan.plan();
             }
 
             // if no major tasks and keyed table, then plan minor tasks
             if (tableItem.isKeyedTable() && CollectionUtils.isEmpty(optimizeTasks)) {
+              long changeSnapshotId =
+                  UnKeyedTableUtil.getSnapshotId(tableItem.getArcticTable().asKeyedTable().changeTable());
+              if (changeSnapshotId == TableOptimizeRuntime.INVALID_SNAPSHOT_ID) {
+                LOG.debug("{} current change table is empty, skip minor optimize", tableIdentifier);
+                continue;
+              }
+              if (!tableItem.snapshotIsCurrentCache(changeSnapshotId, Constants.INNER_TABLE_CHANGE)) {
+                LOG.debug("{} current change snapshot is not cached, skip minor optimize", tableIdentifier);
+                continue;
+              }
+              if (isOptimizeBlocked(tableIdentifier)) {
+                continue;
+              }
               optimizePlan = tableItem.getMinorPlan(queueId, currentTime, partitionIsRunning);
-              optimizeTasks = optimizePlan.plan();
+              if (tableItem.snapshotIsCurrentCache(changeSnapshotId, Constants.INNER_TABLE_CHANGE)) {
+                optimizeTasks = optimizePlan.plan();
+              } else {
+                LOG.warn("{} current change snapshot is changed after check blocker, skip minor optimize",
+                    tableIdentifier);
+              }
             }
           }
 
@@ -727,6 +748,14 @@ public class OptimizeQueueService extends IJDBCService {
       }
 
       return Collections.emptyList();
+    }
+
+    private boolean isOptimizeBlocked(TableIdentifier tableIdentifier) {
+      if (ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE)) {
+        LOG.debug("{} optimize is blocked continue", tableIdentifier);
+        return true;
+      }
+      return false;
     }
 
     private void initTableOptimizeRuntime(TableOptimizeItem tableItem,
