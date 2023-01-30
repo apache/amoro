@@ -56,9 +56,11 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   }
 
   @Override
-  public Blocker block(List<BlockableOperation> operations) throws OperationConflictException {
+  public Blocker block(List<BlockableOperation> operations, Map<String, String> properties)
+      throws OperationConflictException {
     try {
-      BaseBlocker blocker = BaseBlocker.of(client.block(tableIdentifier.buildTableIdentifier(), operations));
+      BaseBlocker blocker =
+          BaseBlocker.of(client.block(tableIdentifier.buildTableIdentifier(), operations, properties));
       toRenewBlockers.put(blocker.blockerId(), blocker);
       if (renewWorker == null) {
         long timeout = blocker.getExpirationTime() - blocker.getCreateTime();

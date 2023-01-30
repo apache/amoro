@@ -29,6 +29,7 @@ import com.netease.arctic.ams.api.client.AmsClientPools;
 import org.apache.thrift.TException;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * {@link AmsClient} implementation using client pool.
@@ -109,9 +110,10 @@ public class PooledAmsClient implements AmsClient {
   }
 
   @Override
-  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
+  public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                       Map<String, String> properties)
       throws TException {
-    return getIface().block(tableIdentifier, operations);
+    return getIface().block(tableIdentifier, operations, properties);
   }
 
   @Override
