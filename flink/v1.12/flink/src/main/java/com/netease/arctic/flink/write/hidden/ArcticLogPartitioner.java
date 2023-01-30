@@ -44,6 +44,9 @@ public class ArcticLogPartitioner<T> implements Serializable {
     this.helper = shuffleHelper;
   }
 
+  /**
+   * @param <P> Partition type, which is int for Kafka, but String for Pulsar
+   */
   public <P> P partition(LogData<T> logData, List<P> partitions) {
     checkNotNull(logData, "record is null");
     checkArgument(CollectionUtils.isNotEmpty(partitions), "Partitions of the target topic is empty.");

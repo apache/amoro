@@ -71,6 +71,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR;
+import static com.netease.arctic.table.TableProperties.LOG_STORE_TYPE;
+
 /**
  * Base {@link ArcticCatalog} implementation.
  */
@@ -500,10 +504,10 @@ public class BaseArcticCatalog implements ArcticCatalog {
             "log-store.topic must not be null when log-store.enabled is true.");
         Preconditions.checkArgument(properties.containsKey(TableProperties.LOG_STORE_ADDRESS),
             "log-store.address must not be null when log-store.enabled is true.");
-        String logStoreType = properties.get(TableProperties.LOG_STORE_TYPE);
+        String logStoreType = properties.get(LOG_STORE_TYPE);
         Preconditions.checkArgument(logStoreType == null ||
-                logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_KAFKA) ||
-                logStoreType.equals(TableProperties.LOG_STORE_STORAGE_TYPE_PULSAR),
+                logStoreType.equals(LOG_STORE_STORAGE_TYPE_KAFKA) ||
+                logStoreType.equals(LOG_STORE_STORAGE_TYPE_PULSAR),
             String.format(
                 "%s can not be set %s, valid values are: [%s, %s].",
                 LOG_STORE_TYPE,

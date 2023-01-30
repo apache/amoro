@@ -88,7 +88,7 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
 
   @Override
   public void open() throws Exception {
-    this.open(null);
+    open(null);
   }
 
   @Override
@@ -110,7 +110,7 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
     builder.sendAsync()
         .whenComplete(
             (id, ex) -> {
-              this.releasePermits();
+              releasePermits();
               if (ex != null) {
                 throw new FlinkRuntimeException(
                     "Failed to send data to Pulsar " + topic, ex);
@@ -161,7 +161,7 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
 
   @Override
   public void close() throws Exception {
-    IOUtils.closeAll(metadataListener, producerRegister);
+    IOUtils.closeAll(pulsarClient, metadataListener, producerRegister);
   }
 
   private void requirePermits() throws InterruptedException {
@@ -173,7 +173,7 @@ public class HiddenPulsarProducer<T> implements LogMsgFactory.Producer<T> {
   }
 
   private void releasePermits() {
-    this.pendingMessages -= 1;
+    pendingMessages -= 1;
   }
 
   private TypedMessageBuilder<?> createMessageBuilder(
