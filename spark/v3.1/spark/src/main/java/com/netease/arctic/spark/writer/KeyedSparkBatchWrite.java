@@ -99,12 +99,12 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     return new UpsertWrite();
   }
 
-  private abstract class BaseBatchWrite implements BatchWrite {
-    private boolean isOverwrite;
+  @Override
+  public BatchWrite asMergeBatchWrite() {
+    return new MergeIntoWrite();
+  }
 
-    BaseBatchWrite(boolean isOverwrite) {
-      this.isOverwrite = isOverwrite;
-    }
+  private abstract class BaseBatchWrite implements BatchWrite {
 
     @Override
     public void abort(WriterCommitMessage[] messages) {
@@ -138,7 +138,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private class AppendWrite extends BaseBatchWrite {
 
     AppendWrite() {
-      super(false);
+      super();
     }
 
     @Override
@@ -161,7 +161,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
   private class DynamicOverwrite extends BaseBatchWrite {
 
     DynamicOverwrite() {
-      super(true);
+      super();
     }
 
     @Override
@@ -187,7 +187,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     private final Expression overwriteExpr;
 
     private OverwriteByFilter(Expression overwriteExpr) {
-      super(true);
+      super();
       this.overwriteExpr = overwriteExpr;
     }
 
@@ -214,7 +214,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
   private class UpsertWrite extends BaseBatchWrite {
     UpsertWrite() {
-      super(true);
+      super();
     }
 
     @Override
@@ -303,6 +303,42 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withDataSourceSchema(schema)
           .newChangeWriter();
       return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
+    }
+  }
+
+  private class MergeIntoWrite extends BaseBatchWrite {
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new MergeWriteFactory(table, dsSchema, legacyTxId);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
+      for (DataFile file : files(messages)) {
+        append.appendFile(file);
+      }
+      append.commit();
+    }
+  }
+
+
+  private static class MergeWriteFactory extends AbstractWriterFactory {
+
+    MergeWriteFactory(KeyedTable table, StructType dsSchema, Long transactionId) {
+      super(table, dsSchema, transactionId);
+    }
+
+    @Override
+    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(dsSchema)
+          .newChangeWriter();
+      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
 }

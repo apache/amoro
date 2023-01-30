@@ -23,7 +23,7 @@ import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.io.writer.ChangeTaskWriter;
 import com.netease.arctic.io.writer.CommonOutputFileFactory;
 import com.netease.arctic.io.writer.OutputFileFactory;
-import com.netease.arctic.spark.writer.UnkeyedPosDeleteSparkWriter;
+import com.netease.arctic.spark.writer.UnkeyedUpsertSparkWriter;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
 import com.netease.arctic.table.PrimaryKeySpec;
@@ -177,15 +177,24 @@ public class TaskWriters {
         table.io(), fileSize, mask, schema, table.spec(), primaryKeySpec);
   }
 
-  public UnkeyedPosDeleteSparkWriter<InternalRow> newBasePosDeleteWriter() {
+  public TaskWriter<InternalRow> newUnkeyedUpsertWriter() {
     preconditions();
     Schema schema = table.schema();
     InternalRowFileAppenderFactory build = new InternalRowFileAppenderFactory.Builder(table.asUnkeyedTable(),
         schema, dsSchema).build();
-    return new UnkeyedPosDeleteSparkWriter<>(table, build,
-        new CommonOutputFileFactory(table.location(), table.spec(), fileFormat, table.io(),
-            table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId),
-        fileFormat, schema);
+    long fileSizeBytes = PropertyUtil.propertyAsLong(table.properties(), TableProperties.WRITE_TARGET_FILE_SIZE_BYTES,
+        TableProperties.WRITE_TARGET_FILE_SIZE_BYTES_DEFAULT);
+    long mask = PropertyUtil.propertyAsLong(table.properties(), TableProperties.BASE_FILE_INDEX_HASH_BUCKET,
+        TableProperties.BASE_FILE_INDEX_HASH_BUCKET_DEFAULT) - 1;
+    CommonOutputFileFactory commonOutputFileFactory = new CommonOutputFileFactory(table.location(),
+        table.spec(), fileFormat, table.io(),
+        table.asUnkeyedTable().encryption(), partitionId, taskId, transactionId);
+    ArcticSparkBaseTaskWriter arcticSparkBaseTaskWriter = new ArcticSparkBaseTaskWriter(fileFormat, build,
+        commonOutputFileFactory,
+        table.io(), fileSizeBytes, mask, schema, table.spec(), null);
+    return new UnkeyedUpsertSparkWriter<>(table, build,
+        commonOutputFileFactory,
+        fileFormat, schema, arcticSparkBaseTaskWriter);
   }
 
   private void preconditions() {

@@ -125,7 +125,7 @@ public class ArcticAppendFiles extends ArcticUpdate<Snapshot> implements AppendF
     @Override
     public ArcticUpdate.Builder<ArcticAppendFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.APPEND, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.APPEND, client, true);
         traceTable(tracer);
       }
       return this;

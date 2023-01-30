@@ -18,7 +18,7 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
-import com.netease.arctic.flink.read.source.log.LogKafkaSource;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;

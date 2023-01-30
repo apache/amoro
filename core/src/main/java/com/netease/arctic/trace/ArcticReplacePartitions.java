@@ -102,7 +102,7 @@ public class ArcticReplacePartitions extends ArcticUpdate<Snapshot> implements R
     public ArcticUpdate.Builder<ArcticReplacePartitions> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
         traceTable(tracer);
       }
       return this;

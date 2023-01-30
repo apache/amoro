@@ -116,3 +116,53 @@ SHOW DATABASES;
 ```sql
 SHOW TABLES;
 ```
+
+## Supported Types
+
+### Mixed Hive Data Types
+
+| Flink Data Type    | Hive Data Type    |
+|-----|-----|
+| STRING    | CHAR(p)    |
+| STRING    | VARCHAR(p)    |
+| STRING    | STRING    |
+| BOOLEAN    | BOOLEAN    |
+| INT    | TINYINT    |
+| INT    | SMALLINT    |
+| INT    | INT    |
+| BIGINT    | BIGINT    |
+| FLOAT    | FLOAT     |
+| DOUBLE    | DOUBLE    |
+| DECIAML(p, s)    | DECIAML(p, s)    |
+| DATE    | DATE    |
+| TIMESTAMP(6)    | TIMESTAMP    |
+| VARBINARY    | BYNARY    |
+| ARRAY<T>     | ARRAY<T>     |
+| MAP<K, V>    | MAP<K, V>     |
+| ROW    | STRUCT       |
+
+
+### Mixed Iceberg Data Types
+| Flink Data Type    | Mixed Iceberg Data Type    |
+|-----|-----|
+| CHAR(p)    | STRING    |
+| VARCHAR(p)    | STRING    |
+| STRING    | STRING    |
+| BOOLEAN    | BOOLEAN    |
+| TINYINT    | INT    |
+| SMALLINT    | INT    |
+| INT    | INT    |
+| BIGINT    | LONG    |
+| FLOAT    | FLOAT     |
+| DOUBLE    | DOUBLE    |
+| DECIAML(p, s)    | DECIAML(p, s)    |
+| DATE    | DATE    |
+| TIMESTAMP(6)    | TIMESTAMP    |
+| TIMESTAMP(6) WITH LCOAL TIME ZONE    | TIMESTAMPTZ    |
+| BINARY(p)    | FIXED(p)    |
+| BINARY(16)    | UUID       |
+| VARBINARY    | BYNARY    |
+| ARRAY<T>     | ARRAY<T>     |
+| MAP<K, V>    | MAP<K, V>     |
+| ROW    | STRUCT       |
+| MULTISET<T>    | MAP<T, INT>       |

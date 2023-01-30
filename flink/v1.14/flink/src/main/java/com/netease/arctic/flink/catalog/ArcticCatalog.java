@@ -70,6 +70,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.netease.arctic.flink.FlinkSchemaUtil.toSchema;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.TOPIC;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
@@ -184,7 +185,7 @@ public class ArcticCatalog extends AbstractCatalog {
 
     List<String> partitionKeys = toPartitionKeys(table.spec(), table.schema());
     return new CatalogTableImpl(
-        com.netease.arctic.flink.FlinkSchemaUtil.toSchema(rowType, ArcticUtils.getPrimaryKeys(table)),
+        toSchema(rowType, ArcticUtils.getPrimaryKeys(table)),
         partitionKeys,
         arcticProperties,
         null);

@@ -37,7 +37,9 @@ public class FileUtilTest {
   public void getFileDir() {
     String fileDir = TableFileUtils.getFileDir("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/" +
         "opt_mon=202109/opt_day=26/00000-0-3-1-37128f07-0845-43d8-905b-bd69b4ca351c-0000000001.parquet");
-    Assert.assertEquals("hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26", fileDir);
+    Assert.assertEquals(
+        "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/opt_mon=202109/opt_day=26",
+        fileDir);
   }
 
   @Test
@@ -46,11 +48,11 @@ public class FileUtilTest {
         "hdfs://easyops-sloth/user/warehouse/animal_partition_two/base/5-I-2-00000-941953957-0000000001.parquet";
     DefaultKeyedFile.FileMeta fileMeta = TableFileUtils.parseFileMetaFromFileName(fileName);
     Assert.assertEquals(DataFileType.INSERT_FILE, fileMeta.type());
-    Assert.assertEquals(DataTreeNode.of(3,1), fileMeta.node());
+    Assert.assertEquals(DataTreeNode.of(3, 1), fileMeta.node());
     Assert.assertEquals(2, fileMeta.transactionId());
 
     Assert.assertEquals(DataFileType.INSERT_FILE, TableFileUtils.parseFileTypeFromFileName(fileName));
-    Assert.assertEquals(DataTreeNode.of(3,1), TableFileUtils.parseFileNodeFromFileName(fileName));
+    Assert.assertEquals(DataTreeNode.of(3, 1), TableFileUtils.parseFileNodeFromFileName(fileName));
     Assert.assertEquals(2, TableFileUtils.parseFileTidFromFileName(fileName));
   }
 
