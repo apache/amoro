@@ -18,15 +18,18 @@
 
 package com.netease.arctic.flink.read;
 
+import com.netease.arctic.IcebergFileEntry;
 import com.netease.arctic.data.DataFileType;
+import com.netease.arctic.data.DefaultKeyedFile;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.SnapshotSplit;
 import com.netease.arctic.scan.ArcticFileScanTask;
 import com.netease.arctic.scan.BaseArcticFileScanTask;
 import com.netease.arctic.scan.CombinedScanTask;
+import com.netease.arctic.scan.TableEntriesScan;
 import com.netease.arctic.table.KeyedTable;
-import org.apache.iceberg.FileScanTask;
-import org.apache.iceberg.TableScan;
+import org.apache.iceberg.DataFile;
+import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.io.CloseableIterable;
 import org.apache.iceberg.io.CloseableIterator;
 
@@ -72,10 +75,11 @@ public class FlinkSplitPlanner {
     return allSplits;
   }
 
-  public static List<ArcticSplit> planChangeTable(TableScan tableScan, AtomicInteger splitCount) {
-    CloseableIterable<FileScanTask> tasks = tableScan.planFiles();
+  public static List<ArcticSplit> planChangeTable(TableEntriesScan tableEntriesScan, Long fromSequence,
+                                                  PartitionSpec spec, AtomicInteger splitCount) {
+    CloseableIterable<IcebergFileEntry> entries = tableEntriesScan.entries();
 
-    BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(tasks);
+    BaseAndChangeTask baseAndChangeTask = BaseAndChangeTask.ofIceberg(entries, spec, fromSequence);
 
     return planChangeTable(baseAndChangeTask.transactionTasks(), splitCount);
   }
@@ -135,12 +139,19 @@ public class FlinkSplitPlanner {
       }
     }
 
-    public static BaseAndChangeTask ofIceberg(CloseableIterable<FileScanTask> fileScanTasks) {
-      try (CloseableIterator<FileScanTask> icebergTasks = fileScanTasks.iterator()) {
+    public static BaseAndChangeTask ofIceberg(CloseableIterable<IcebergFileEntry> entries, PartitionSpec spec,
+                                              Long fromSequence) {
+      try (CloseableIterator<IcebergFileEntry> entriesIterator = entries.iterator()) {
         Map<Long, TransactionTask> transactionTasks = new HashMap<>();
 
-        while (icebergTasks.hasNext()) {
-          BaseArcticFileScanTask task = new BaseArcticFileScanTask(icebergTasks.next());
+        while (entriesIterator.hasNext()) {
+          IcebergFileEntry entry = entriesIterator.next();
+          if (fromSequence != null && entry.getSequenceNumber() <= fromSequence) {
+            continue;
+          }
+          DefaultKeyedFile keyedFile =
+              DefaultKeyedFile.parseChange((DataFile) entry.getFile(), entry.getSequenceNumber());
+          BaseArcticFileScanTask task = new BaseArcticFileScanTask(keyedFile, null, spec, null);
 
           if (task.fileType().equals(DataFileType.INSERT_FILE)) {
             taskMap(Collections.singleton(task), true, transactionTasks);
