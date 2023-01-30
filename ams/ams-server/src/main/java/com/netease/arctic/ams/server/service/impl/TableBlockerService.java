@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -78,10 +79,12 @@ public class TableBlockerService extends IJDBCService {
    *
    * @param tableIdentifier - table
    * @param operations      - operations to be blocked
+   * @param properties      - 
    * @return BaseBlocker if success
    * @throws OperationConflictException when operations have been blocked
    */
-  public BaseBlocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
+  public BaseBlocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                           Map<String, String> properties)
       throws OperationConflictException {
     Preconditions.checkNotNull(operations, "operations should not be null");
     Preconditions.checkArgument(!operations.isEmpty(), "operations should not be empty");
@@ -95,7 +98,7 @@ public class TableBlockerService extends IJDBCService {
       if (conflict(operations, tableBlockers)) {
         throw new OperationConflictException(operations + " is conflict with " + tableBlockers);
       }
-      TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, now);
+      TableBlocker tableBlocker = buildTableBlocker(tableIdentifier, operations, properties, now);
       mapper.insertBlocker(tableBlocker);
       return buildBaseBlocker(tableBlocker);
     } catch (OperationConflictException operationConflictException) {
@@ -242,12 +245,13 @@ public class TableBlockerService extends IJDBCService {
   }
 
   private TableBlocker buildTableBlocker(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
-                                         long now) {
+                                         Map<String, String> properties, long now) {
     TableBlocker tableBlocker = new TableBlocker();
     tableBlocker.setTableIdentifier(tableIdentifier);
     tableBlocker.setCreateTime(now);
     tableBlocker.setExpirationTime(now + blockerTimeout);
     tableBlocker.setOperations(operations.stream().map(BlockableOperation::name).collect(Collectors.toList()));
+    tableBlocker.setProperties(properties);
     return tableBlocker;
   }
 

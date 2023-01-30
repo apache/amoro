@@ -41,7 +41,6 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.netease.arctic.ams.api.properties.CatalogMetaProperties.CATALOG_TYPE_HADOOP;
@@ -342,10 +341,10 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     @Override
-    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations)
+    public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
+                         Map<String, String> properties)
         throws OperationConflictException, TException {
       Map<String, Blocker> blockers = this.tableBlockers.computeIfAbsent(tableIdentifier, t -> new HashMap<>());
-      Map<String, String> properties = new HashMap<>();
       long now = System.currentTimeMillis();
       properties.put("create.time", now + "");
       properties.put("expiration.time", (now + 60000) + "");
@@ -378,8 +377,8 @@ public class MockArcticMetastoreServer implements Runnable {
     }
 
     public void updateMeta(CatalogMeta meta, String key, String value) {
-      meta.getCatalogProperties().replace(key, value);
-     }
+      meta.getCatalogProperties().put(key, value);
+    }
   }
 
   public class OptimizeManagerHandler implements OptimizeManager.Iface {
