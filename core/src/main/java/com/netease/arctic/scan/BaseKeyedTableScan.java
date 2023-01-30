@@ -144,7 +144,7 @@ public class BaseKeyedTableScan implements KeyedTableScan {
       Expression partitionExpression = new BasePartitionEvaluator(table.spec()).project(expression);
       changeTableScan.filter(partitionExpression);
     }
-    return changeTableScan.planTasks();
+    return CloseableIterable.transform(changeTableScan.planFiles(), s -> (ArcticFileScanTask) s);
   }
 
   private void split() {

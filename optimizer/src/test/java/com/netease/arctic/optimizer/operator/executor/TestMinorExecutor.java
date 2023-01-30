@@ -25,6 +25,7 @@ import com.netease.arctic.ams.api.OptimizeType;
 import com.netease.arctic.data.ChangeAction;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.data.file.ContentFileWithSequence;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
 import com.netease.arctic.optimizer.OptimizerConfig;
@@ -33,6 +34,7 @@ import com.netease.arctic.optimizer.util.DataFileInfoUtils;
 import com.netease.arctic.table.TableProperties;
 import org.apache.hadoop.fs.Path;
 import org.apache.iceberg.AppendFiles;
+import org.apache.iceberg.ContentFile;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.data.Record;
@@ -91,7 +93,22 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
   }
 
   private NodeTask constructNodeTask() {
-    NodeTask nodeTask = new NodeTask();
+    String fileFormat = testKeyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
+        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
+    List<ContentFileWithSequence<?>> base =
+        baseDataFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, testKeyedTable.baseTable().spec(),
+            fileFormat)).collect(Collectors.toList());
+    List<ContentFileWithSequence<?>> pos =
+        posDeleteFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, testKeyedTable.baseTable().spec(),
+            fileFormat)).collect(Collectors.toList());
+    List<ContentFileWithSequence<?>> changeInsert =
+        changeInsertFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, testKeyedTable.baseTable().spec(),
+            fileFormat)).collect(Collectors.toList());
+    List<ContentFileWithSequence<?>> changeDelete =
+        changeDeleteFilesInfo.stream().map(s -> ContentFileUtil.buildContentFile(s, testKeyedTable.baseTable().spec(),
+            fileFormat)).collect(Collectors.toList());
+
+    NodeTask nodeTask = new NodeTask(base, changeInsert, changeDelete, pos, true);
     nodeTask.setSourceNodes(baseDataFilesInfo.stream()
         .map(dataFileInfo -> DataTreeNode.of(dataFileInfo.getMask(), dataFileInfo.getIndex()))
         .collect(Collectors.toSet()));
@@ -99,29 +116,6 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     nodeTask.setTaskId(new OptimizeTaskId(OptimizeType.Minor, UUID.randomUUID().toString()));
     nodeTask.setAttemptId(Math.abs(ThreadLocalRandom.current().nextInt()));
     nodeTask.setPartition(FILE_A.partition());
-
-    String fileFormat = testKeyedTable.properties().getOrDefault(TableProperties.DEFAULT_FILE_FORMAT,
-        TableProperties.DEFAULT_FILE_FORMAT_DEFAULT);
-    for (DataFileInfo fileInfo : baseDataFilesInfo) {
-      nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
-          DataFileType.BASE_FILE);
-    }
-    for (DataFileInfo fileInfo : posDeleteFilesInfo) {
-      nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
-          DataFileType.POS_DELETE_FILE);
-    }
-    for (DataFileInfo fileInfo : changeInsertFilesInfo) {
-      nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
-          DataFileType.INSERT_FILE);
-    }
-    for (DataFileInfo fileInfo : changeDeleteFilesInfo) {
-      nodeTask.addFile(
-          ContentFileUtil.buildContentFile(fileInfo, testKeyedTable.baseTable().spec(), fileFormat),
-          DataFileType.EQ_DELETE_FILE);
-    }
 
     return nodeTask;
   }
@@ -147,7 +141,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeDeleteFilesInfo = changeDeleteFiles.stream()
-        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable))
+        .map(deleteFile -> DataFileInfoUtils.convertToDatafileInfo(deleteFile, snapshot, testKeyedTable, true))
         .collect(Collectors.toList());
   }
 
@@ -172,7 +166,7 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
     Snapshot snapshot = testKeyedTable.changeTable().currentSnapshot();
 
     changeInsertFilesInfo = changeInsertFiles.stream()
-        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable))
+        .map(dataFile -> DataFileInfoUtils.convertToDatafileInfo(dataFile, snapshot, testKeyedTable, true))
         .collect(Collectors.toList());
   }
 }

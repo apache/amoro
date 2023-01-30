@@ -19,7 +19,6 @@
 package com.netease.arctic.data;
 
 import com.netease.arctic.io.FileNameHandle;
-import com.netease.arctic.utils.TableFileUtils;
 import org.apache.iceberg.DataFile;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.StructLike;
@@ -29,8 +28,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Default implementation of {@link PrimaryKeyedFile}, wrapping a {@link DataFile} and parsing extra information from
@@ -174,7 +171,7 @@ public class DefaultKeyedFile implements PrimaryKeyedFile, Serializable {
     return Objects.hash(internalFile.path());
   }
 
-  public static class FileMeta {
+  public static class FileMeta implements Serializable {
 
     private final long transactionId;
     private final DataFileType type;

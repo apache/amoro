@@ -27,6 +27,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.util.DataFileInfoUtils;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.utils.SerializationUtils;
 import com.netease.arctic.utils.TableFileUtils;
 import com.netease.arctic.utils.TablePropertyUtil;
@@ -76,7 +77,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testKeyedTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -160,7 +161,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     List<DataFile> baseDataFiles = insertBaseResult.second();
     baseDataFilesInfo.addAll(baseDataFiles.stream()
         .map(dataFile ->
-            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable))
+            DataFileInfoUtils.convertToDatafileInfo(dataFile, insertBaseResult.first(), testNoPartitionTable, false))
         .collect(Collectors.toList()));
 
     Set<DataTreeNode> targetNodes = baseDataFilesInfo.stream()
@@ -323,7 +324,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
   private Map<TreeNode, List<DeleteFile>> generateTargetFiles(List<DataFile> dataFiles) throws Exception {
     List<DeleteFile> deleteFiles = insertOptimizeTargetDeleteFiles(testKeyedTable, dataFiles, 5);
     return deleteFiles.stream().collect(Collectors.groupingBy(deleteFile ->  {
-      DataTreeNode dataTreeNode = TableFileUtils.parseFileNodeFromFileName(deleteFile.path().toString());
+      DataTreeNode dataTreeNode = FileNameHandle.parseFileNodeFromFileName(deleteFile.path().toString());
       return new TreeNode(dataTreeNode.mask(), dataTreeNode.index());
     }));
   }

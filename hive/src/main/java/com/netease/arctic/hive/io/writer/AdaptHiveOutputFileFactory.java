@@ -55,12 +55,6 @@ import static com.netease.arctic.utils.TableFileUtils.getFileName;
  */
 public class AdaptHiveOutputFileFactory implements OutputFileFactory {
 
-  public static final String SEPARATOR = "-";
-  /**
-   * start from 0
-   */
-  public static final int TRANSACTION_INDEX = 2;
-
   private final String baseLocation;
   private final String hiveSubDirectory;
   private final PartitionSpec partitionSpec;
@@ -94,6 +88,7 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     this.partitionSpec = partitionSpec;
     this.io = io;
     this.encryptionManager = encryptionManager;
+    transactionId = transactionId == null ? 0 : transactionId;
     if (hiveSubDirectory == null) {
       this.hiveSubDirectory = HiveTableUtil.newHiveSubdirectory(transactionId);
     } else {
@@ -116,17 +111,4 @@ public class AdaptHiveOutputFileFactory implements OutputFileFactory {
     OutputFile outputFile = io.newOutputFile(fileLocation);
     return encryptionManager.encrypt(outputFile);
   }
-
-  /**
-   * extract transactionId from data path name.
-   */
-  public static int parseTransactionId(CharSequence path) {
-    String fileName = getFileName(path.toString());
-    String[] values = fileName.split(SEPARATOR);
-    if (values.length <= TRANSACTION_INDEX) {
-      throw new IllegalArgumentException("path is invalid. " + path);
-    }
-    return Integer.parseInt(values[TRANSACTION_INDEX]);
-  }
-
 }

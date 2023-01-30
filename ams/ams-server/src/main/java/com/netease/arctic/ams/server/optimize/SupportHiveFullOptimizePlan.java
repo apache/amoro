@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.data.DataTreeNode;
 import com.netease.arctic.hive.table.SupportHive;
 import com.netease.arctic.hive.utils.TableTypeUtil;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.utils.TableFileUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -80,7 +81,7 @@ public class SupportHiveFullOptimizePlan extends FullOptimizePlan {
         LOG.info("table {} has in not hive location files", arcticTable.id());
         break;
       } else if (baseFile.fileSizeInBytes() <= getSmallFileSize(arcticTable.properties())) {
-        DataTreeNode node = TableFileUtils.parseFileNodeFromFileName(baseFile.path().toString());
+        DataTreeNode node = FileNameHandle.parseFileNodeFromFileName(baseFile.path().toString());
         if (nodeSmallFileCount.get(node) != null) {
           nodeHaveTwoSmallFiles = true;
           LOG.info("table {} has greater than 2 small files in (mask:{}, node :{}) in hive location",

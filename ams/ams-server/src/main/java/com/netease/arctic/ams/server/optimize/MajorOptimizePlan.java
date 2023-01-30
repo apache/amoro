@@ -28,6 +28,7 @@ import com.netease.arctic.ams.server.model.TaskConfig;
 import com.netease.arctic.ams.server.utils.ContentFileUtil;
 import com.netease.arctic.data.DataFileType;
 import com.netease.arctic.data.DataTreeNode;
+import com.netease.arctic.io.FileNameHandle;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.TableProperties;
 import com.netease.arctic.table.UnkeyedTable;
@@ -258,12 +259,12 @@ public class MajorOptimizePlan extends BaseArcticOptimizePlan {
       if (!baseFiles.isEmpty()) {
         List<DataTreeNode> sourceNodes = Collections.singletonList(subTree.getNode());
         Set<DataTreeNode> baseFileNodes = baseFiles.stream()
-            .map(dataFile -> TableFileUtils.parseFileNodeFromFileName(dataFile.path().toString()))
+            .map(dataFile -> FileNameHandle.parseFileNodeFromFileName(dataFile.path().toString()))
             .collect(Collectors.toSet());
         List<DeleteFile> posDeleteFiles = partitionPosDeleteFiles
             .computeIfAbsent(partition, e -> Collections.emptyList()).stream()
             .filter(deleteFile ->
-                baseFileNodes.contains(TableFileUtils.parseFileNodeFromFileName(deleteFile.path().toString())))
+                baseFileNodes.contains(FileNameHandle.parseFileNodeFromFileName(deleteFile.path().toString())))
             .collect(Collectors.toList());
 
         if (nodeTaskNeedBuild(posDeleteFiles, baseFiles)) {
