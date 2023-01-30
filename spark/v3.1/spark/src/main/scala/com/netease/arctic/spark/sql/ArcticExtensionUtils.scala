@@ -169,6 +169,7 @@ object ArcticExtensionUtils {
     relation.table match {
       case arctic: ArcticSparkTable =>
         arctic.table().isKeyedTable
+      case _ => false
     }
   }
 }

@@ -19,7 +19,7 @@
 package com.netease.arctic.spark.sql.execution
 
 import com.netease.arctic.spark.SparkSQLProperties
-import com.netease.arctic.spark.sql.ArcticExtensionUtils.{isArcticCatalog, isArcticTable}
+import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, isArcticCatalog, isArcticTable}
 import com.netease.arctic.spark.sql.catalyst.plans._
 import com.netease.arctic.spark.table.ArcticSparkTable
 import com.netease.arctic.spark.writer.WriteMode
@@ -90,11 +90,8 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       }
 
     case ArcticRowLevelWrite(table: DataSourceV2Relation, query, options, projs) =>
-      table.table match {
-        case arctic: ArcticSparkTable =>
-          ArcticRowLevelWriteExec(arctic, planLater(query),
-            new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table)) :: Nil
-      }
+      ArcticRowLevelWriteExec(table.table.asArcticTable, planLater(query),
+        new CaseInsensitiveStringMap(options.asJava), projs, refreshCache(table)) :: Nil
 
     case OverwriteArcticData(d: DataSourceV2Relation, query, validateQuery, options) =>
       d.table match {

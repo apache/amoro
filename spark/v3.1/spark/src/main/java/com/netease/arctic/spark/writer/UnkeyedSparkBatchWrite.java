@@ -183,16 +183,13 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
           rowDelta.addDeletes(file);
         }
-        rowDelta.commit();
       }
-
-      AppendFiles appendFiles = table.newAppend();
       if (WriteTaskCommit.files(messages).iterator().hasNext()) {
         for (DataFile file : WriteTaskCommit.files(messages)) {
-          appendFiles.appendFile(file);
+          rowDelta.addRows(file);
         }
-        appendFiles.commit();
       }
+      rowDelta.commit();
     }
   }
 
@@ -286,16 +283,14 @@ public class UnkeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWri
         for (DeleteFile file : WriteTaskCommit.deleteFiles(messages)) {
           rowDelta.addDeletes(file);
         }
-        rowDelta.commit();
-      }
 
-      AppendFiles appendFiles = table.newAppend();
+      }
       if (WriteTaskCommit.files(messages).iterator().hasNext()) {
         for (DataFile file : WriteTaskCommit.files(messages)) {
-          appendFiles.appendFile(file);
+          rowDelta.addRows(file);
         }
-        appendFiles.commit();
       }
+      rowDelta.commit();
     }
   }
 }
