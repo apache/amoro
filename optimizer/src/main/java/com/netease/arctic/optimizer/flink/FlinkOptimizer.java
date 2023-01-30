@@ -85,9 +85,9 @@ public class FlinkOptimizer implements StatefulOptimizer {
     cmd += " -yjm " + jmMemory;
 
     // spill map config
-    Boolean enableSpillMap = groupProperties.getBoolean("spillable.map.enabled");
-    String backendBaseDir = groupProperties.getString("spillable.map.dir");
-    Long maxDeleteMemorySize = groupProperties.getLong("spillable.memory.limit");
+    Boolean enableSpillMap = groupProperties.getBoolean(OptimizerProperties.SPILLABLE_MAP_ENABLE);
+    String backendBaseDir = groupProperties.getString(OptimizerProperties.SPILLABLE_MAP_DIR);
+    Long maxDeleteMemorySize = groupProperties.getLong(OptimizerProperties.SPILLABLE_MEMORY_LIMIT);
     String spillMapCmd = "";
     if (enableSpillMap != null) {
       spillMapCmd = spillMapCmd + " -es " + enableSpillMap;
