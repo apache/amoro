@@ -315,11 +315,13 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
 
     @Override
     public void commit(WriterCommitMessage[] messages) {
+      checkBlocker(tableBlockerManager);
       AppendFiles append = table.changeTable().newAppend();
       for (DataFile file : files(messages)) {
         append.appendFile(file);
       }
       append.commit();
+      tableBlockerManager.release(block);
     }
   }
 
