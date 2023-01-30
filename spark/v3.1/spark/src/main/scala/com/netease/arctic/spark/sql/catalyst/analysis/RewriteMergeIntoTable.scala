@@ -191,7 +191,7 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
       notMatchedConditions = notMatchedConditions,
       notMatchedOutputs = notMatchedOutputs,
       rowIdAttrs = keyAttrs,
-      performCardinalityCheck = isCardinalityCheckNeeded(matchedActions),
+      matchedRowCheck = isMatchedRowCheckNeeded(matchedActions),
       unMatchedRowCheck = unMatchedRowNeedCheck,
       emitNotMatchedTargetRows = false,
       output = mergeRowsOutput,
@@ -261,7 +261,7 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
     }
   }
 
-  private def isCardinalityCheckNeeded(actions: Seq[MergeAction]): Boolean = actions match {
+  private def isMatchedRowCheckNeeded(actions: Seq[MergeAction]): Boolean = actions match {
     case Seq(DeleteAction(None)) => false
     case _ => true
   }

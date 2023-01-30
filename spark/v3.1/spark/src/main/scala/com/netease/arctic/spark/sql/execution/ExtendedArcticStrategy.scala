@@ -120,10 +120,10 @@ case class ExtendedArcticStrategy(spark: SparkSession) extends Strategy with Pre
       }
 
     case MergeRows(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-    notMatchedOutputs, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
+    notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
     output, child) =>
       MergeRowsExec(isSourceRowPresent, isTargetRowPresent, matchedConditions, matchedOutputs, notMatchedConditions,
-        notMatchedOutputs, rowIdAttrs, performCardinalityCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
+        notMatchedOutputs, rowIdAttrs, matchedRowCheck, unMatchedRowCheck, emitNotMatchedTargetRows,
         output, planLater(child)) :: Nil
 
     case d@AlterArcticTableDropPartition(r: ResolvedTable, _, _, _, _) =>
