@@ -16,28 +16,22 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.writer;
+package com.netease.arctic.spark.sql.catalyst.plans
 
-public enum WriteMode {
-  OVERWRITE_BY_FILTER("overwrite-by-filter"),
-  OVERWRITE_DYNAMIC("overwrite-dynamic"),
-  APPEND("append"),
-  UPSERT("upsert"),
-  MERGE("merge");
+import com.netease.arctic.spark.sql.utils.WriteQueryProjections
+import org.apache.spark.sql.catalyst.analysis.NamedRelation
+import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan, V2WriteCommand}
 
-  public static final String WRITE_MODE_KEY = "write-mode";
+case class ArcticRowLevelWrite(table: NamedRelation,
+                               query: LogicalPlan,
+                               options: Map[String, String],
+                               projections: WriteQueryProjections) extends V2WriteCommand {
 
-  public final String mode;
-  WriteMode(String mode) {
-    this.mode = mode;
-  }
+  def isByName: Boolean = false
 
-  public static WriteMode getWriteMode(String mode) {
-    for (WriteMode m : values()) {
-      if (m.mode.equalsIgnoreCase(mode)) {
-        return m;
-      }
-    }
-    throw new IllegalArgumentException("Invalid write mode: " + mode);
-  }
+  def withNewQuery(newQuery: LogicalPlan): ArcticRowLevelWrite = copy(query = newQuery)
+
+  def withNewTable(newTable: NamedRelation): ArcticRowLevelWrite = copy(table = newTable)
+
+  override def outputResolved = true
 }
