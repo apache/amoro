@@ -97,6 +97,11 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     return new UpsertWrite();
   }
 
+  @Override
+  public BatchWrite asMergeBatchWrite() {
+    return new MergeIntoWrite();
+  }
+
   private abstract class BaseBatchWrite implements BatchWrite {
 
 
@@ -278,6 +283,43 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
           .withOrderedWriter(orderedWrite)
           .newChangeWriter();
       return new SimpleKeyedUpsertDataWriter(writer, dsSchema, true);
+    }
+  }
+
+  private class MergeIntoWrite extends BaseBatchWrite {
+
+    @Override
+    public DataWriterFactory createBatchWriterFactory(PhysicalWriteInfo info) {
+      return new MergeWriteFactory(table, dsSchema, legacyTxId, orderedWriter);
+    }
+
+    @Override
+    public void commit(WriterCommitMessage[] messages) {
+      AppendFiles append = table.changeTable().newAppend();
+      for (DataFile file : files(messages)) {
+        append.appendFile(file);
+      }
+      append.commit();
+    }
+  }
+
+
+  private static class MergeWriteFactory extends AbstractWriterFactory {
+
+    MergeWriteFactory(KeyedTable table, StructType dsSchema, Long transactionId, boolean orderedWrite) {
+      super(table, dsSchema, transactionId, orderedWrite);
+    }
+
+    @Override
+    public RowLevelWriter<InternalRow> createWriter(int partitionId, long taskId) {
+      TaskWriter<InternalRow> writer = TaskWriters.of(table)
+          .withTransactionId(transactionId)
+          .withPartitionId(partitionId)
+          .withTaskId(taskId)
+          .withDataSourceSchema(dsSchema)
+          .withOrderedWriter(orderedWrite)
+          .newChangeWriter();
+      return new SimpleMergeRowDataWriter(writer, dsSchema, table.isKeyedTable());
     }
   }
 }

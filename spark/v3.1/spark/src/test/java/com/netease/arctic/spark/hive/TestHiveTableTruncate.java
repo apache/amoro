@@ -27,7 +27,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class TestTruncate extends SparkTestBase {
+public class TestHiveTableTruncate extends SparkTestBase {
   private final String database = "db_hive";
 
   private final String truncateTable = "truncate_table";
