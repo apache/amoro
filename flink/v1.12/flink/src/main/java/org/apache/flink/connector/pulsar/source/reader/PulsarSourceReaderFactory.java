@@ -54,70 +54,73 @@ import static org.apache.flink.connector.pulsar.common.config.PulsarClientFactor
 @Internal
 public final class PulsarSourceReaderFactory {
 
-  private PulsarSourceReaderFactory() {
-    // No public constructor.
-  }
-
-  @SuppressWarnings("java:S2095")
-  public static <OUT> SourceReader<OUT, PulsarPartitionSplit> create(
-      SourceReaderContext readerContext,
-      PulsarDeserializationSchema<OUT> deserializationSchema,
-      SourceConfiguration sourceConfiguration) {
-
-    PulsarClient pulsarClient = createClient(sourceConfiguration);
-    PulsarAdmin pulsarAdmin = createAdmin(sourceConfiguration);
-
-    // Create a message queue with the predefined source option.
-    int queueCapacity = sourceConfiguration.getMessageQueueCapacity();
-    FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue =
-        new FutureCompletingBlockingQueue<>(queueCapacity);
-
-    // Create different pulsar source reader by subscription type.
-    SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
-    if (subscriptionType == SubscriptionType.Failover || subscriptionType == SubscriptionType.Exclusive) {
-      // Create an ordered split reader supplier.
-      Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier =
-          () ->
-              new PulsarOrderedPartitionSplitReader<>(
-                  pulsarClient,
-                  pulsarAdmin,
-                  sourceConfiguration,
-                  deserializationSchema);
-
-      return new PulsarOrderedSourceReader<>(
-          elementsQueue,
-          splitReaderSupplier,
-          readerContext,
-          sourceConfiguration,
-          pulsarClient,
-          pulsarAdmin);
-    } else if (subscriptionType == SubscriptionType.Shared || subscriptionType == SubscriptionType.Key_Shared) {
-      TransactionCoordinatorClient coordinatorClient =
-          ((PulsarClientImpl) pulsarClient).getTcClient();
-      if (coordinatorClient == null && !sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
-        throw new IllegalStateException("Transaction is required but didn't enabled");
-      }
-
-      Supplier<PulsarUnorderedPartitionSplitReader<OUT>> splitReaderSupplier =
-          () ->
-              new PulsarUnorderedPartitionSplitReader<>(
-                  pulsarClient,
-                  pulsarAdmin,
-                  sourceConfiguration,
-                  deserializationSchema,
-                  coordinatorClient);
-
-      return new PulsarUnorderedSourceReader<>(
-          elementsQueue,
-          splitReaderSupplier,
-          readerContext,
-          sourceConfiguration,
-          pulsarClient,
-          pulsarAdmin,
-          coordinatorClient);
-    } else {
-      throw new UnsupportedOperationException(
-          "This subscription type is not " + subscriptionType + " supported currently.");
+    private PulsarSourceReaderFactory() {
+        // No public constructor.
     }
-  }
+
+    @SuppressWarnings("java:S2095")
+    public static <OUT> SourceReader<OUT, PulsarPartitionSplit> create(
+            SourceReaderContext readerContext,
+            PulsarDeserializationSchema<OUT> deserializationSchema,
+            SourceConfiguration sourceConfiguration) {
+
+        PulsarClient pulsarClient = createClient(sourceConfiguration);
+        PulsarAdmin pulsarAdmin = createAdmin(sourceConfiguration);
+
+        // Create a message queue with the predefined source option.
+        int queueCapacity = sourceConfiguration.getMessageQueueCapacity();
+        FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue =
+                new FutureCompletingBlockingQueue<>(queueCapacity);
+
+        // Create different pulsar source reader by subscription type.
+        SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
+        if (subscriptionType == SubscriptionType.Failover
+                || subscriptionType == SubscriptionType.Exclusive) {
+            // Create an ordered split reader supplier.
+            Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier =
+                    () ->
+                            new PulsarOrderedPartitionSplitReader<>(
+                                    pulsarClient,
+                                    pulsarAdmin,
+                                    sourceConfiguration,
+                                    deserializationSchema);
+
+            return new PulsarOrderedSourceReader<>(
+                    elementsQueue,
+                    splitReaderSupplier,
+                    readerContext,
+                    sourceConfiguration,
+                    pulsarClient,
+                    pulsarAdmin);
+        } else if (subscriptionType == SubscriptionType.Shared
+                || subscriptionType == SubscriptionType.Key_Shared) {
+            TransactionCoordinatorClient coordinatorClient =
+                    ((PulsarClientImpl) pulsarClient).getTcClient();
+            if (coordinatorClient == null
+                    && !sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
+                throw new IllegalStateException("Transaction is required but didn't enabled");
+            }
+
+            Supplier<PulsarUnorderedPartitionSplitReader<OUT>> splitReaderSupplier =
+                    () ->
+                            new PulsarUnorderedPartitionSplitReader<>(
+                                    pulsarClient,
+                                    pulsarAdmin,
+                                    sourceConfiguration,
+                                    deserializationSchema,
+                                    coordinatorClient);
+
+            return new PulsarUnorderedSourceReader<>(
+                    elementsQueue,
+                    splitReaderSupplier,
+                    readerContext,
+                    sourceConfiguration,
+                    pulsarClient,
+                    pulsarAdmin,
+                    coordinatorClient);
+        } else {
+            throw new UnsupportedOperationException(
+                    "This subscription type is not " + subscriptionType + " supported currently.");
+        }
+    }
 }

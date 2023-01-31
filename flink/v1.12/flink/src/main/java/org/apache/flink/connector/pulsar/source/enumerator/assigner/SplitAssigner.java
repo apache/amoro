@@ -35,33 +35,29 @@ import java.util.Set;
 @Internal
 public interface SplitAssigner {
 
-  /**
-   * Add the current available partitions into assigner.
-   *
-   * @param fetchedPartitions The available partitions queried from Pulsar broker.
-   * @return New topic partitions compare to previous registered partitions.
-   */
-  List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions);
+    /**
+     * Add the current available partitions into assigner.
+     *
+     * @param fetchedPartitions The available partitions queried from Pulsar broker.
+     * @return New topic partitions compare to previous registered partitions.
+     */
+    List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions);
 
-  /**
-   * Add a split back to the split assigner if the reader fails. We would try to reassign the
-   * split or add it to the pending list.
-   */
-  void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId);
+    /**
+     * Add a split back to the split assigner if the reader fails. We would try to reassign the
+     * split or add it to the pending list.
+     */
+    void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId);
 
-  /**
-   * Create a split assignment from the current readers.
-   */
-  Optional<SplitsAssignment<PulsarPartitionSplit>> createAssignment(List<Integer> readers);
+    /** Create a split assignment from the current readers. */
+    Optional<SplitsAssignment<PulsarPartitionSplit>> createAssignment(List<Integer> readers);
 
-  /**
-   * It would return true only if periodically partition discovery is turned off, the initializing
-   * partition discovery has finished, AND there are no pending splits for assignment.
-   */
-  boolean noMoreSplits(Integer reader);
+    /**
+     * It would return true only if periodically partition discovery is turned off, the initializing
+     * partition discovery has finished, AND there are no pending splits for assignment.
+     */
+    boolean noMoreSplits(Integer reader);
 
-  /**
-   * Snapshot the current assign state into checkpoint.
-   */
-  PulsarSourceEnumState snapshotState();
+    /** Snapshot the current assign state into checkpoint. */
+    PulsarSourceEnumState snapshotState();
 }

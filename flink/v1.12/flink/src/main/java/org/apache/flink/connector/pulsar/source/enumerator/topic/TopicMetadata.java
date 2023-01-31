@@ -23,39 +23,35 @@ import org.apache.flink.annotation.PublicEvolving;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.pulsar.common.partition.PartitionedTopicMetadata.NON_PARTITIONED;
 
-/**
- * The pojo class for pulsar topic metadata information.
- */
+/** The pojo class for pulsar topic metadata information. */
 @PublicEvolving
 public final class TopicMetadata {
 
-  /**
-   * The name of the topic, it would be a {@link TopicNameUtils#topicName(String)} which don't
-   * contain partition information.
-   */
-  private final String name;
+    /**
+     * The name of the topic, it would be a {@link TopicNameUtils#topicName(String)} which don't
+     * contain partition information.
+     */
+    private final String name;
 
-  /**
-   * The size for a partitioned topic. It would be zero for non-partitioned topic.
-   */
-  private final int partitionSize;
+    /** The size for a partitioned topic. It would be zero for non-partitioned topic. */
+    private final int partitionSize;
 
-  public TopicMetadata(String name, int partitionSize) {
-    checkArgument(partitionSize >= 0);
+    public TopicMetadata(String name, int partitionSize) {
+        checkArgument(partitionSize >= 0);
 
-    this.name = name;
-    this.partitionSize = partitionSize;
-  }
+        this.name = name;
+        this.partitionSize = partitionSize;
+    }
 
-  public String getName() {
-    return name;
-  }
+    public String getName() {
+        return name;
+    }
 
-  public boolean isPartitioned() {
-    return partitionSize != NON_PARTITIONED;
-  }
+    public boolean isPartitioned() {
+        return partitionSize != NON_PARTITIONED;
+    }
 
-  public int getPartitionSize() {
-    return partitionSize;
-  }
+    public int getPartitionSize() {
+        return partitionSize;
+    }
 }

@@ -33,15 +33,15 @@ import static java.util.Collections.singletonList;
  */
 @PublicEvolving
 public class FullRangeGenerator implements RangeGenerator {
-  private static final long serialVersionUID = -4571731955155036216L;
+    private static final long serialVersionUID = -4571731955155036216L;
 
-  @Override
-  public List<TopicRange> range(TopicMetadata metadata, int parallelism) {
-    return singletonList(TopicRange.createFullRange());
-  }
+    @Override
+    public List<TopicRange> range(TopicMetadata metadata, int parallelism) {
+        return singletonList(TopicRange.createFullRange());
+    }
 
-  @Override
-  public KeySharedMode keyShareMode(TopicMetadata metadata, int parallelism) {
-    return KeySharedMode.SPLIT;
-  }
+    @Override
+    public KeySharedMode keyShareMode(TopicMetadata metadata, int parallelism) {
+        return KeySharedMode.SPLIT;
+    }
 }

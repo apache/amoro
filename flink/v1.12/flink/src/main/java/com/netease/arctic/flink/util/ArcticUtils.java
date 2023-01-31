@@ -154,7 +154,7 @@ public class ArcticUtils {
             FlinkSchemaUtil.convert(tableSchema),
             producerConfig,
             topic,
-            new HiddenKafkaFactory<>(),
+            buildLogMsgFactory(properties),
             LogRecordV1.fieldGetterFactory,
             IdGenerator.generateUpstreamId(),
             helper,

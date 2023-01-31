@@ -93,6 +93,10 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 |properties.pulsar.admin.adminUrl| (none) |String|Logstore 是 pulsar 时必填，否则可不填| Pulsar admin 的 HTTP URL，如：http://my-broker.example.com:8080|
 |properties.*| (none) |String|否| Logstore的参数。<br><br>对于 Logstore 为 Kafka ('log-store.type'='kafka' 默认值)时，Kafka Consumer 支持的其他所有参数都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.batch.size'='16384'`，<br>完整的参数信息可以参考 [Kafka官方手册](https://kafka.apache.org/documentation/#consumerconfigs); <br><br>对于 Logstore 为 Pulsar ('log-store.type'='pulsar')时，Pulsar 支持的相关配置都可以通过在前面拼接 `properties.` 的前缀来设置，<br>如：`'properties.pulsar.client.requestTimeoutMs'='60000'`，<br>完整的参数信息可以参考 [Flink-Pulsar-Connector文档](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/connectors/datastream/pulsar)|
 
+**注意事项**
+
+- 当 log-store.type = pulsar 时，flink 任务的并行度不能小于 pulsar topic 的分区数，否则部分分区的数据无法读取
+
 ####非主键表 Filestore 数据
         
 ```sql

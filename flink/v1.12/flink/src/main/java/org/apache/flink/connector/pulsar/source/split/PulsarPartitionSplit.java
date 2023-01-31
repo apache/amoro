@@ -33,94 +33,88 @@ import java.util.Objects;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
-/**
- * A {@link SourceSplit} implementation for a Pulsar's partition.
- */
+/** A {@link SourceSplit} implementation for a Pulsar's partition. */
 @Internal
 public class PulsarPartitionSplit implements SourceSplit, Serializable {
-  private static final long serialVersionUID = -6857317360756062625L;
+    private static final long serialVersionUID = -6857317360756062625L;
 
-  private final TopicPartition partition;
+    private final TopicPartition partition;
 
-  private final StopCursor stopCursor;
+    private final StopCursor stopCursor;
 
-  /**
-   * Since this field in only used in {@link PulsarOrderedSourceReader#snapshotState(long)}, it's
-   * no need to serialize this field into flink checkpoint state.
-   */
-  @Nullable
-  private final MessageId latestConsumedId;
+    /**
+     * Since this field in only used in {@link PulsarOrderedSourceReader#snapshotState(long)}, it's
+     * no need to serialize this field into flink checkpoint state.
+     */
+    @Nullable private final MessageId latestConsumedId;
 
-  @Nullable
-  private final TxnID uncommittedTransactionId;
+    @Nullable private final TxnID uncommittedTransactionId;
 
-  public PulsarPartitionSplit(TopicPartition partition, StopCursor stopCursor) {
-    this.partition = checkNotNull(partition);
-    this.stopCursor = checkNotNull(stopCursor);
-    this.latestConsumedId = null;
-    this.uncommittedTransactionId = null;
-  }
-
-  public PulsarPartitionSplit(
-      TopicPartition partition,
-      StopCursor stopCursor,
-      MessageId latestConsumedId,
-      TxnID uncommittedTransactionId) {
-    this.partition = checkNotNull(partition);
-    this.stopCursor = checkNotNull(stopCursor);
-    this.latestConsumedId = latestConsumedId;
-    this.uncommittedTransactionId = uncommittedTransactionId;
-  }
-
-  @Override
-  public String splitId() {
-    return partition.toString();
-  }
-
-  public TopicPartition getPartition() {
-    return partition;
-  }
-
-  public StopCursor getStopCursor() {
-    return stopCursor;
-  }
-
-  @Nullable
-  public MessageId getLatestConsumedId() {
-    return latestConsumedId;
-  }
-
-  @Nullable
-  public TxnID getUncommittedTransactionId() {
-    return uncommittedTransactionId;
-  }
-
-  /**
-   * Open stop cursor.
-   */
-  public void open(PulsarAdmin admin) {
-    stopCursor.open(admin, partition);
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+    public PulsarPartitionSplit(TopicPartition partition, StopCursor stopCursor) {
+        this.partition = checkNotNull(partition);
+        this.stopCursor = checkNotNull(stopCursor);
+        this.latestConsumedId = null;
+        this.uncommittedTransactionId = null;
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
+
+    public PulsarPartitionSplit(
+            TopicPartition partition,
+            StopCursor stopCursor,
+            @Nullable MessageId latestConsumedId,
+            @Nullable TxnID uncommittedTransactionId) {
+        this.partition = checkNotNull(partition);
+        this.stopCursor = checkNotNull(stopCursor);
+        this.latestConsumedId = latestConsumedId;
+        this.uncommittedTransactionId = uncommittedTransactionId;
     }
-    PulsarPartitionSplit that = (PulsarPartitionSplit) o;
-    return partition.equals(that.partition);
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(partition);
-  }
+    @Override
+    public String splitId() {
+        return partition.toString();
+    }
 
-  @Override
-  public String toString() {
-    return "PulsarPartitionSplit{partition=" + partition + '}';
-  }
+    public TopicPartition getPartition() {
+        return partition;
+    }
+
+    public StopCursor getStopCursor() {
+        return stopCursor;
+    }
+
+    @Nullable
+    public MessageId getLatestConsumedId() {
+        return latestConsumedId;
+    }
+
+    @Nullable
+    public TxnID getUncommittedTransactionId() {
+        return uncommittedTransactionId;
+    }
+
+    /** Open stop cursor. */
+    public void open(PulsarAdmin admin) {
+        stopCursor.open(admin, partition);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        PulsarPartitionSplit that = (PulsarPartitionSplit) o;
+        return partition.equals(that.partition);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(partition);
+    }
+
+    @Override
+    public String toString() {
+        return "PulsarPartitionSplit{partition=" + partition + '}';
+    }
 }

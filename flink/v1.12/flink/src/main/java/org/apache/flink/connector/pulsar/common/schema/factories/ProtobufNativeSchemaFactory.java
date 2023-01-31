@@ -26,20 +26,18 @@ import org.apache.pulsar.common.schema.SchemaType;
 
 import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
 
-/**
- * The schema factory for pulsar's {@link ProtobufNativeSchema}.
- */
+/** The schema factory for pulsar's {@link ProtobufNativeSchema}. */
 public class ProtobufNativeSchemaFactory<T extends GeneratedMessageV3>
-    extends BaseStructSchemaFactory<T> {
+        extends BaseStructSchemaFactory<T> {
 
-  @Override
-  public SchemaType type() {
-    return SchemaType.PROTOBUF_NATIVE;
-  }
+    @Override
+    public SchemaType type() {
+        return SchemaType.PROTOBUF_NATIVE;
+    }
 
-  @Override
-  public Schema<T> createSchema(SchemaInfo info) {
-    Class<T> typeClass = decodeClassInfo(info);
-    return ProtobufNativeSchema.of(typeClass, info.getProperties());
-  }
+    @Override
+    public Schema<T> createSchema(SchemaInfo info) {
+        Class<T> typeClass = decodeClassInfo(info);
+        return ProtobufNativeSchema.of(typeClass, info.getProperties());
+    }
 }

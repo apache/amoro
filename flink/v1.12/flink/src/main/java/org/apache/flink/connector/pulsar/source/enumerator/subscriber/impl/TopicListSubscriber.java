@@ -33,54 +33,52 @@ import java.util.Set;
 
 import static org.apache.flink.connector.pulsar.source.enumerator.topic.TopicNameUtils.isPartition;
 
-/**
- * the implements of consuming multiple topics.
- */
+/** the implements of consuming multiple topics. */
 public class TopicListSubscriber extends BasePulsarSubscriber {
-  private static final long serialVersionUID = 6473918213832993116L;
+    private static final long serialVersionUID = 6473918213832993116L;
 
-  private final List<String> partitions;
-  private final List<String> fullTopicNames;
+    private final List<String> partitions;
+    private final List<String> fullTopicNames;
 
-  public TopicListSubscriber(List<String> fullTopicNameOrPartitions) {
-    this.partitions = new ArrayList<>();
-    this.fullTopicNames = new ArrayList<>();
+    public TopicListSubscriber(List<String> fullTopicNameOrPartitions) {
+        this.partitions = new ArrayList<>();
+        this.fullTopicNames = new ArrayList<>();
 
-    for (String fullTopicNameOrPartition : fullTopicNameOrPartitions) {
-      if (isPartition(fullTopicNameOrPartition)) {
-        this.partitions.add(fullTopicNameOrPartition);
-      } else {
-        this.fullTopicNames.add(fullTopicNameOrPartition);
-      }
-    }
-  }
-
-  @Override
-  public Set<TopicPartition> getSubscribedTopicPartitions(
-      PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism) {
-    Set<TopicPartition> results = new HashSet<>();
-
-    // Query topics from Pulsar.
-    for (String topic : fullTopicNames) {
-      TopicMetadata metadata = queryTopicMetadata(pulsarAdmin, topic);
-      List<TopicRange> ranges = rangeGenerator.range(metadata, parallelism);
-      KeySharedMode mode = rangeGenerator.keyShareMode(metadata, parallelism);
-
-      results.addAll(toTopicPartitions(metadata, ranges, mode));
+        for (String fullTopicNameOrPartition : fullTopicNameOrPartitions) {
+            if (isPartition(fullTopicNameOrPartition)) {
+                this.partitions.add(fullTopicNameOrPartition);
+            } else {
+                this.fullTopicNames.add(fullTopicNameOrPartition);
+            }
+        }
     }
 
-    for (String partition : partitions) {
-      TopicName topicName = TopicName.get(partition);
-      String name = topicName.getPartitionedTopicName();
-      int index = topicName.getPartitionIndex();
+    @Override
+    public Set<TopicPartition> getSubscribedTopicPartitions(
+            PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism) {
+        Set<TopicPartition> results = new HashSet<>();
 
-      TopicMetadata metadata = queryTopicMetadata(pulsarAdmin, name);
-      List<TopicRange> ranges = rangeGenerator.range(metadata, parallelism);
-      KeySharedMode mode = rangeGenerator.keyShareMode(metadata, parallelism);
+        // Query topics from Pulsar.
+        for (String topic : fullTopicNames) {
+            TopicMetadata metadata = queryTopicMetadata(pulsarAdmin, topic);
+            List<TopicRange> ranges = rangeGenerator.range(metadata, parallelism);
+            KeySharedMode mode = rangeGenerator.keyShareMode(metadata, parallelism);
 
-      results.addAll(toTopicPartitions(name, index, ranges, mode));
+            results.addAll(toTopicPartitions(metadata, ranges, mode));
+        }
+
+        for (String partition : partitions) {
+            TopicName topicName = TopicName.get(partition);
+            String name = topicName.getPartitionedTopicName();
+            int index = topicName.getPartitionIndex();
+
+            TopicMetadata metadata = queryTopicMetadata(pulsarAdmin, name);
+            List<TopicRange> ranges = rangeGenerator.range(metadata, parallelism);
+            KeySharedMode mode = rangeGenerator.keyShareMode(metadata, parallelism);
+
+            results.addAll(toTopicPartitions(name, index, ranges, mode));
+        }
+
+        return results;
     }
-
-    return results;
-  }
 }

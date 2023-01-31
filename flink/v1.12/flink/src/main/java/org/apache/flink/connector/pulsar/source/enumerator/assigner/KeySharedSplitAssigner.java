@@ -30,65 +30,63 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * This assigner is used for {@link SubscriptionType#Key_Shared} subscription.
- */
+/** This assigner is used for {@link SubscriptionType#Key_Shared} subscription. */
 @Internal
 public class KeySharedSplitAssigner extends SplitAssignerBase {
 
-  public KeySharedSplitAssigner(
-      StopCursor stopCursor,
-      boolean enablePartitionDiscovery,
-      SplitEnumeratorContext<PulsarPartitionSplit> context,
-      PulsarSourceEnumState enumState) {
-    super(stopCursor, enablePartitionDiscovery, context, enumState);
-  }
-
-  @Override
-  public List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions) {
-    List<TopicPartition> newPartitions = new ArrayList<>();
-
-    for (TopicPartition partition : fetchedPartitions) {
-      boolean shouldAssign = false;
-      if (!appendedPartitions.contains(partition)) {
-        appendedPartitions.add(partition);
-        newPartitions.add(partition);
-        shouldAssign = true;
-      }
-
-      // Reassign the incoming splits when restarting from state.
-      if (shouldAssign || !initialized) {
-        // Calculate the reader id by the current parallelism.
-        int readerId = partitionOwner(partition);
-        PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
-        addSplitToPendingList(readerId, split);
-      }
+    public KeySharedSplitAssigner(
+            StopCursor stopCursor,
+            boolean enablePartitionDiscovery,
+            SplitEnumeratorContext<PulsarPartitionSplit> context,
+            PulsarSourceEnumState enumState) {
+        super(stopCursor, enablePartitionDiscovery, context, enumState);
     }
 
-    if (!initialized) {
-      initialized = true;
-    }
+    @Override
+    public List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions) {
+        List<TopicPartition> newPartitions = new ArrayList<>();
 
-    return newPartitions;
-  }
+        for (TopicPartition partition : fetchedPartitions) {
+            boolean shouldAssign = false;
+            if (!appendedPartitions.contains(partition)) {
+                appendedPartitions.add(partition);
+                newPartitions.add(partition);
+                shouldAssign = true;
+            }
 
-  @Override
-  public void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId) {
-    if (splits.isEmpty()) {
-      // In case of the task failure. No splits will be put back to the enumerator.
-      for (TopicPartition partition : appendedPartitions) {
-        int readId = partitionOwner(partition);
-        if (readId == subtaskId) {
-          PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
-          addSplitToPendingList(subtaskId, split);
+            // Reassign the incoming splits when restarting from state.
+            if (shouldAssign || !initialized) {
+                // Calculate the reader id by the current parallelism.
+                int readerId = partitionOwner(partition);
+                PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
+                addSplitToPendingList(readerId, split);
+            }
         }
-      }
-    } else {
-      // Manually put all the splits back to the enumerator.
-      for (PulsarPartitionSplit split : splits) {
-        int readerId = partitionOwner(split.getPartition());
-        addSplitToPendingList(readerId, split);
-      }
+
+        if (!initialized) {
+            initialized = true;
+        }
+
+        return newPartitions;
     }
-  }
+
+    @Override
+    public void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId) {
+        if (splits.isEmpty()) {
+            // In case of the task failure. No splits will be put back to the enumerator.
+            for (TopicPartition partition : appendedPartitions) {
+                int readId = partitionOwner(partition);
+                if (readId == subtaskId) {
+                    PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
+                    addSplitToPendingList(subtaskId, split);
+                }
+            }
+        } else {
+            // Manually put all the splits back to the enumerator.
+            for (PulsarPartitionSplit split : splits) {
+                int readerId = partitionOwner(split.getPartition());
+                addSplitToPendingList(readerId, split);
+            }
+        }
+    }
 }

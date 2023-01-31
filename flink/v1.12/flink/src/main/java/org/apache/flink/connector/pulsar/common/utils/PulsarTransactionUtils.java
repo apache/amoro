@@ -31,41 +31,37 @@ import java.util.concurrent.TimeUnit;
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
 import static org.apache.flink.util.ExceptionUtils.findThrowable;
 
-/**
- * A suit of workarounds for the Pulsar Transaction.
- */
+/** A suit of workarounds for the Pulsar Transaction. */
 @Internal
 public final class PulsarTransactionUtils {
 
-  private PulsarTransactionUtils() {
-    // No public constructor
-  }
-
-  /**
-   * Create transaction with given timeout millis.
-   */
-  public static Transaction createTransaction(PulsarClient pulsarClient, long timeoutMs) {
-    try {
-      CompletableFuture<Transaction> future =
-          sneakyClient(pulsarClient::newTransaction)
-              .withTransactionTimeout(timeoutMs, TimeUnit.MILLISECONDS)
-              .build();
-
-      return future.get();
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException(e);
-    } catch (ExecutionException e) {
-      throw new FlinkRuntimeException(e);
+    private PulsarTransactionUtils() {
+        // No public constructor
     }
-  }
 
-  /**
-   * This is a bug in original {@link TransactionCoordinatorClientException#unwrap(Throwable)}
-   * method. Pulsar wraps the {@link ExecutionException} which hides the real execution exception.
-   */
-  public static TransactionCoordinatorClientException unwrap(
-      TransactionCoordinatorClientException e) {
-    return findThrowable(e.getCause(), TransactionCoordinatorClientException.class).orElse(e);
-  }
+    /** Create transaction with given timeout millis. */
+    public static Transaction createTransaction(PulsarClient pulsarClient, long timeoutMs) {
+        try {
+            CompletableFuture<Transaction> future =
+                    sneakyClient(pulsarClient::newTransaction)
+                            .withTransactionTimeout(timeoutMs, TimeUnit.MILLISECONDS)
+                            .build();
+
+            return future.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(e);
+        } catch (ExecutionException e) {
+            throw new FlinkRuntimeException(e);
+        }
+    }
+
+    /**
+     * This is a bug in original {@link TransactionCoordinatorClientException#unwrap(Throwable)}
+     * method. Pulsar wraps the {@link ExecutionException} which hides the real execution exception.
+     */
+    public static TransactionCoordinatorClientException unwrap(
+            TransactionCoordinatorClientException e) {
+        return findThrowable(e.getCause(), TransactionCoordinatorClientException.class).orElse(e);
+    }
 }

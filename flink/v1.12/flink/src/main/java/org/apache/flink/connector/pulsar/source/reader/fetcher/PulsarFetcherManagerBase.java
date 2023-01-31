@@ -42,65 +42,68 @@ import static java.util.Collections.singletonList;
  */
 @Internal
 public abstract class PulsarFetcherManagerBase<T>
-    extends SplitFetcherManager<PulsarMessage<T>, PulsarPartitionSplit> {
+        extends SplitFetcherManager<PulsarMessage<T>, PulsarPartitionSplit> {
 
-  private final Map<String, Integer> splitFetcherMapping = new HashMap<>();
-  private final Map<Integer, Boolean> fetcherStatus = new HashMap<>();
+    private final Map<String, Integer> splitFetcherMapping = new HashMap<>();
+    private final Map<Integer, Boolean> fetcherStatus = new HashMap<>();
 
-  /**
-   * Creates a new SplitFetcherManager with multiple I/O threads.
-   *
-   * @param elementsQueue       The queue that is used to hand over data from the I/O thread (the
-   *                            fetchers) to the reader (which emits the records and book-keeps the state. This must be
-   *                            the same queue instance that is also passed to the {@link SourceReaderBase}.
-   * @param splitReaderSupplier The factory for the split reader that connects to the source
-   */
-  protected PulsarFetcherManagerBase(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<T>>> elementsQueue,
-      Supplier<SplitReader<PulsarMessage<T>, PulsarPartitionSplit>> splitReaderSupplier) {
-    super(elementsQueue, splitReaderSupplier);
-  }
-
-  /**
-   * Override this method for supporting multiple thread fetching, one fetcher thread for one
-   * split.
-   */
-  @Override
-  public void addSplits(List<PulsarPartitionSplit> splitsToAdd) {
-    for (PulsarPartitionSplit split : splitsToAdd) {
-      SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher =
-          getOrCreateFetcher(split.splitId());
-      fetcher.addSplits(singletonList(split));
-      // This method could be executed multiple times.
-      startFetcher(fetcher);
+    /**
+     * Creates a new SplitFetcherManager with multiple I/O threads.
+     *
+     * @param elementsQueue The queue that is used to hand over data from the I/O thread (the
+     *     fetchers) to the reader (which emits the records and book-keeps the state. This must be
+     *     the same queue instance that is also passed to the {@link SourceReaderBase}.
+     * @param splitReaderSupplier The factory for the split reader that connects to the source
+     */
+    protected PulsarFetcherManagerBase(
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<T>>> elementsQueue,
+            Supplier<SplitReader<PulsarMessage<T>, PulsarPartitionSplit>> splitReaderSupplier) {
+        super(elementsQueue, splitReaderSupplier);
     }
-  }
 
-  @Override
-  protected void startFetcher(SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher) {
-    if (fetcherStatus.get(0) != Boolean.TRUE) {
-      fetcherStatus.put(0, true);
-      super.startFetcher(fetcher);
+    /**
+     * Override this method for supporting multiple thread fetching, one fetcher thread for one
+     * split.
+     */
+    @Override
+    public void addSplits(List<PulsarPartitionSplit> splitsToAdd) {
+        for (PulsarPartitionSplit split : splitsToAdd) {
+            SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher =
+                    getOrCreateFetcher(split.splitId());
+            fetcher.addSplits(singletonList(split));
+            // This method could be executed multiple times.
+            startFetcher(fetcher);
+        }
     }
-  }
 
-  protected SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> getOrCreateFetcher(
-      String splitId) {
-    SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher;
-    Integer fetcherId = splitFetcherMapping.get(splitId);
-
-    if (fetcherId == null) {
-      fetcher = createSplitFetcher();
-    } else {
-      fetcher = fetchers.get(fetcherId);
-      // This fetcher has been stopped.
-      if (fetcher == null) {
-        fetcherStatus.remove(fetcherId);
-        fetcher = createSplitFetcher();
-      }
+    @Override
+    protected void startFetcher(SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher) {
+        // -------------- custom start --------------
+        if (fetcherStatus.get(0) != Boolean.TRUE) {
+            fetcherStatus.put(0, true);
+            // -------------- custom end --------------
+            super.startFetcher(fetcher);
+        }
     }
-    splitFetcherMapping.put(splitId, 0);
 
-    return fetcher;
-  }
+    protected SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> getOrCreateFetcher(
+            String splitId) {
+        SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher;
+        Integer fetcherId = splitFetcherMapping.get(splitId);
+
+        if (fetcherId == null) {
+            fetcher = createSplitFetcher();
+        } else {
+            fetcher = fetchers.get(fetcherId);
+            // This fetcher has been stopped.
+            if (fetcher == null) {
+                fetcherStatus.remove(fetcherId);
+                fetcher = createSplitFetcher();
+            }
+        }
+        // -------------- custom start --------------
+        splitFetcherMapping.put(splitId, 0);
+        // -------------- custom end --------------
+        return fetcher;
+    }
 }

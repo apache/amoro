@@ -26,38 +26,36 @@ import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
 import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplit;
 import org.apache.pulsar.client.api.SubscriptionType;
 
-/**
- * The factory for creating split assigner.
- */
+/** The factory for creating split assigner. */
 @Internal
 public final class SplitAssignerFactory {
 
-  private SplitAssignerFactory() {
-    // No public constructor.
-  }
-
-  public static SplitAssigner createAssigner(
-      StopCursor stopCursor,
-      SourceConfiguration sourceConfiguration,
-      SplitEnumeratorContext<PulsarPartitionSplit> context,
-      PulsarSourceEnumState enumState) {
-    SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
-    boolean enablePartitionDiscovery = sourceConfiguration.isEnablePartitionDiscovery();
-
-    switch (subscriptionType) {
-      case Failover:
-      case Exclusive:
-        return new NonSharedSplitAssigner(
-            stopCursor, enablePartitionDiscovery, context, enumState);
-      case Shared:
-        return new SharedSplitAssigner(
-            stopCursor, enablePartitionDiscovery, context, enumState);
-      case Key_Shared:
-        return new KeySharedSplitAssigner(
-            stopCursor, enablePartitionDiscovery, context, enumState);
-      default:
-        throw new IllegalArgumentException(
-            "We don't support this subscription type: " + subscriptionType);
+    private SplitAssignerFactory() {
+        // No public constructor.
     }
-  }
+
+    public static SplitAssigner createAssigner(
+            StopCursor stopCursor,
+            SourceConfiguration sourceConfiguration,
+            SplitEnumeratorContext<PulsarPartitionSplit> context,
+            PulsarSourceEnumState enumState) {
+        SubscriptionType subscriptionType = sourceConfiguration.getSubscriptionType();
+        boolean enablePartitionDiscovery = sourceConfiguration.isEnablePartitionDiscovery();
+
+        switch (subscriptionType) {
+            case Failover:
+            case Exclusive:
+                return new NonSharedSplitAssigner(
+                        stopCursor, enablePartitionDiscovery, context, enumState);
+            case Shared:
+                return new SharedSplitAssigner(
+                        stopCursor, enablePartitionDiscovery, context, enumState);
+            case Key_Shared:
+                return new KeySharedSplitAssigner(
+                        stopCursor, enablePartitionDiscovery, context, enumState);
+            default:
+                throw new IllegalArgumentException(
+                        "We don't support this subscription type: " + subscriptionType);
+        }
+    }
 }

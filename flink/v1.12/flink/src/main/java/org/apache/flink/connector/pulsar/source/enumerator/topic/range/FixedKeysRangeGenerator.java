@@ -19,6 +19,7 @@
 package org.apache.flink.connector.pulsar.source.enumerator.topic.range;
 
 import org.apache.flink.annotation.PublicEvolving;
+import org.apache.flink.connector.pulsar.sink.writer.message.PulsarMessageBuilder;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicMetadata;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicRange;
 import org.apache.pulsar.client.api.Message;
@@ -54,138 +55,130 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  */
 @PublicEvolving
 public class FixedKeysRangeGenerator implements RangeGenerator {
-  private static final long serialVersionUID = 2372969466289052100L;
+    private static final long serialVersionUID = 2372969466289052100L;
 
-  private final List<TopicRange> ranges;
-  private final KeySharedMode sharedMode;
+    private final List<TopicRange> ranges;
+    private final KeySharedMode sharedMode;
 
-  private FixedKeysRangeGenerator(List<TopicRange> ranges, KeySharedMode sharedMode) {
-    this.ranges = ranges;
-    this.sharedMode = sharedMode;
-  }
-
-  @Override
-  public List<TopicRange> range(TopicMetadata metadata, int parallelism) {
-    return ranges;
-  }
-
-  @Override
-  public KeySharedMode keyShareMode(TopicMetadata metadata, int parallelism) {
-    return sharedMode;
-  }
-
-  public static FixedKeysRangeGeneratorBuilder builder() {
-    return new FixedKeysRangeGeneratorBuilder();
-  }
-
-  /**
-   * The builder for {@link FixedKeysRangeGenerator}.
-   */
-  @PublicEvolving
-  public static class FixedKeysRangeGeneratorBuilder {
-
-    private final SortedSet<Integer> keyHashes = new TreeSet<>();
-    private KeySharedMode sharedMode = KeySharedMode.JOIN;
-
-    private FixedKeysRangeGeneratorBuilder() {
-      // No public for builder
+    private FixedKeysRangeGenerator(List<TopicRange> ranges, KeySharedMode sharedMode) {
+        this.ranges = ranges;
+        this.sharedMode = sharedMode;
     }
 
-    /**
-     * Some {@link Message} in Pulsar may not have {@link Message#getOrderingKey()} or {@link
-     * Message#getKey()}, use this method for supporting consuming such messages.
-     */
-    public FixedKeysRangeGeneratorBuilder supportNullKey() {
-      keyHashes.add(keyHash(NONE_KEY));
-      return this;
+    @Override
+    public List<TopicRange> range(TopicMetadata metadata, int parallelism) {
+        return ranges;
     }
 
-    /**
-     * If you set the message key by using {@link PulsarMessageBuilder#key(String)} or {@link
-     * TypedMessageBuilder#key(String)}, use this method for supporting consuming such messages.
-     */
-    public FixedKeysRangeGeneratorBuilder key(String key) {
-      keyHashes.add(keyHash(key));
-      return this;
+    @Override
+    public KeySharedMode keyShareMode(TopicMetadata metadata, int parallelism) {
+        return sharedMode;
     }
 
-    /**
-     * Same as the {@link #key(String)}, support setting multiple keys in the same time.
-     */
-    public FixedKeysRangeGeneratorBuilder keys(Collection<String> someKeys) {
-      checkNotNull(someKeys);
-      for (String someKey : someKeys) {
-        keyHashes.add(keyHash(someKey));
-      }
-      return this;
+    public static FixedKeysRangeGeneratorBuilder builder() {
+        return new FixedKeysRangeGeneratorBuilder();
     }
 
-    /**
-     * If you set the message key by using {@link TypedMessageBuilder#keyBytes(byte[])}, use
-     * this method for supporting consuming such messages.
-     */
-    public FixedKeysRangeGeneratorBuilder keyBytes(byte[] keyBytes) {
-      keyHashes.add(keyBytesHash(keyBytes));
-      return this;
-    }
+    /** The builder for {@link FixedKeysRangeGenerator}. */
+    @PublicEvolving
+    public static class FixedKeysRangeGeneratorBuilder {
 
-    /**
-     * Pulsar's ordering key is prior to the message key. If you set the ordering key by using
-     * {@link PulsarMessageBuilder#orderingKey(byte[])} or {@link
-     * TypedMessageBuilder#orderingKey(byte[])}, use this method for supporting consuming such
-     * messages.
-     */
-    public FixedKeysRangeGeneratorBuilder orderingKey(byte[] keyBytes) {
-      keyHashes.add(keyHash(keyBytes));
-      return this;
-    }
+        private final SortedSet<Integer> keyHashes = new TreeSet<>();
+        private KeySharedMode sharedMode = KeySharedMode.JOIN;
 
-    /**
-     * Override the default {@link KeySharedMode#JOIN} to the mode your have provided.
-     */
-    public FixedKeysRangeGeneratorBuilder keySharedMode(KeySharedMode sharedMode) {
-      this.sharedMode = sharedMode;
-      return this;
-    }
-
-    /**
-     * Create the FixedKeysRangeGenerator by the given keys.
-     */
-    public FixedKeysRangeGenerator build() {
-      List<TopicRange> ranges = new ArrayList<>();
-      // Calculate the topic ranges.
-      Integer start = null;
-      Integer next = null;
-      for (Integer hash : keyHashes) {
-        // Start
-        if (start == null) {
-          start = hash;
-          next = hash;
-          continue;
+        private FixedKeysRangeGeneratorBuilder() {
+            // No public for builder
         }
 
-        // Continue range.
-        if (hash - next == 1) {
-          next = hash;
-          continue;
+        /**
+         * Some {@link Message} in Pulsar may not have {@link Message#getOrderingKey()} or {@link
+         * Message#getKey()}, use this method for supporting consuming such messages.
+         */
+        public FixedKeysRangeGeneratorBuilder supportNullKey() {
+            keyHashes.add(keyHash(NONE_KEY));
+            return this;
         }
 
-        // Found one continues topic range.
-        TopicRange range = new TopicRange(start, next);
-        ranges.add(range);
+        /**
+         * If you set the message key by using {@link PulsarMessageBuilder#key(String)} or {@link
+         * TypedMessageBuilder#key(String)}, use this method for supporting consuming such messages.
+         */
+        public FixedKeysRangeGeneratorBuilder key(String key) {
+            keyHashes.add(keyHash(key));
+            return this;
+        }
 
-        start = hash;
-        next = hash;
-      }
+        /** Same as the {@link #key(String)}, support setting multiple keys in the same time. */
+        public FixedKeysRangeGeneratorBuilder keys(Collection<String> someKeys) {
+            checkNotNull(someKeys);
+            for (String someKey : someKeys) {
+                keyHashes.add(keyHash(someKey));
+            }
+            return this;
+        }
 
-      // Support the last range.
-      if (start != null) {
-        TopicRange range = new TopicRange(start, next);
-        ranges.add(range);
-      }
+        /**
+         * If you set the message key by using {@link TypedMessageBuilder#keyBytes(byte[])}, use
+         * this method for supporting consuming such messages.
+         */
+        public FixedKeysRangeGeneratorBuilder keyBytes(byte[] keyBytes) {
+            keyHashes.add(keyBytesHash(keyBytes));
+            return this;
+        }
 
-      validateTopicRanges(ranges, sharedMode);
-      return new FixedKeysRangeGenerator(ranges, sharedMode);
+        /**
+         * Pulsar's ordering key is prior to the message key. If you set the ordering key by using
+         * {@link PulsarMessageBuilder#orderingKey(byte[])} or {@link
+         * TypedMessageBuilder#orderingKey(byte[])}, use this method for supporting consuming such
+         * messages.
+         */
+        public FixedKeysRangeGeneratorBuilder orderingKey(byte[] keyBytes) {
+            keyHashes.add(keyHash(keyBytes));
+            return this;
+        }
+
+        /** Override the default {@link KeySharedMode#JOIN} to the mode your have provided. */
+        public FixedKeysRangeGeneratorBuilder keySharedMode(KeySharedMode sharedMode) {
+            this.sharedMode = sharedMode;
+            return this;
+        }
+
+        /** Create the FixedKeysRangeGenerator by the given keys. */
+        public FixedKeysRangeGenerator build() {
+            List<TopicRange> ranges = new ArrayList<>();
+            // Calculate the topic ranges.
+            Integer start = null;
+            Integer next = null;
+            for (Integer hash : keyHashes) {
+                // Start
+                if (start == null) {
+                    start = hash;
+                    next = hash;
+                    continue;
+                }
+
+                // Continue range.
+                if (hash - next == 1) {
+                    next = hash;
+                    continue;
+                }
+
+                // Found one continues topic range.
+                TopicRange range = new TopicRange(start, next);
+                ranges.add(range);
+
+                start = hash;
+                next = hash;
+            }
+
+            // Support the last range.
+            if (start != null) {
+                TopicRange range = new TopicRange(start, next);
+                ranges.add(range);
+            }
+
+            validateTopicRanges(ranges, sharedMode);
+            return new FixedKeysRangeGenerator(ranges, sharedMode);
+        }
     }
-  }
 }

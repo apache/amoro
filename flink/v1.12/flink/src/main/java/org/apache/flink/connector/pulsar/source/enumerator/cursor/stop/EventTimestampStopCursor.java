@@ -21,23 +21,21 @@ package org.apache.flink.connector.pulsar.source.enumerator.cursor.stop;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StopCursor;
 import org.apache.pulsar.client.api.Message;
 
-/**
- * Stop consuming message at the given event time.
- */
+/** Stop consuming message at the given event time. */
 public class EventTimestampStopCursor implements StopCursor {
-  private static final long serialVersionUID = 2391576769339369027L;
+    private static final long serialVersionUID = 2391576769339369027L;
 
-  private final long timestamp;
-  private final boolean inclusive;
+    private final long timestamp;
+    private final boolean inclusive;
 
-  public EventTimestampStopCursor(long timestamp, boolean inclusive) {
-    this.timestamp = timestamp;
-    this.inclusive = inclusive;
-  }
+    public EventTimestampStopCursor(long timestamp, boolean inclusive) {
+        this.timestamp = timestamp;
+        this.inclusive = inclusive;
+    }
 
-  @Override
-  public StopCondition shouldStop(Message<?> message) {
-    long eventTime = message.getEventTime();
-    return StopCondition.compare(timestamp, eventTime, inclusive);
-  }
+    @Override
+    public StopCondition shouldStop(Message<?> message) {
+        long eventTime = message.getEventTime();
+        return StopCondition.compare(timestamp, eventTime, inclusive);
+    }
 }

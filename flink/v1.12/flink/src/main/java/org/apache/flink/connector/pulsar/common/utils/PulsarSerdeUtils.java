@@ -34,130 +34,128 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Util for serialize and deserialize.
- */
+/** Util for serialize and deserialize. */
 @Internal
 public final class PulsarSerdeUtils {
 
-  private PulsarSerdeUtils() {
-    // No public constructor.
-  }
-
-  // Bytes serialization.
-
-  public static void serializeBytes(DataOutputStream out, byte[] bytes) throws IOException {
-    out.writeInt(bytes.length);
-    out.write(bytes);
-  }
-
-  public static byte[] deserializeBytes(DataInputStream in) throws IOException {
-    int size = in.readInt();
-    byte[] bytes = new byte[size];
-    in.readFully(bytes);
-
-    return bytes;
-  }
-
-  // Common Object serialization.
-
-  public static void serializeObject(DataOutputStream out, Object obj) throws IOException {
-    Preconditions.checkNotNull(obj);
-
-    byte[] objectBytes = InstantiationUtil.serializeObject(obj);
-    serializeBytes(out, objectBytes);
-  }
-
-  public static <T> T deserializeObject(DataInputStream in) throws IOException {
-    byte[] objectBytes = deserializeBytes(in);
-    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-
-    try {
-      return InstantiationUtil.deserializeObject(objectBytes, loader);
-    } catch (ClassNotFoundException e) {
-      throw new IOException(e);
-    }
-  }
-
-  // Common List serialization.
-
-  public static <T> void serializeList(
-      DataOutputStream out,
-      List<T> list,
-      BiConsumerWithException<DataOutputStream, T, IOException> serializer)
-      throws IOException {
-    out.writeInt(list.size());
-    for (T t : list) {
-      serializer.accept(out, t);
-    }
-  }
-
-  public static <T> List<T> deserializeList(
-      DataInputStream in, FunctionWithException<DataInputStream, T, IOException> deserializer)
-      throws IOException {
-    int size = in.readInt();
-    List<T> set = new ArrayList<>(size);
-    for (int i = 0; i < size; i++) {
-      T t = deserializer.apply(in);
-      set.add(t);
+    private PulsarSerdeUtils() {
+        // No public constructor.
     }
 
-    return set;
-  }
+    // Bytes serialization.
 
-  // Common Set serialization.
-
-  public static <T> void serializeSet(
-      DataOutputStream out,
-      Set<T> set,
-      BiConsumerWithException<DataOutputStream, T, IOException> serializer)
-      throws IOException {
-    out.writeInt(set.size());
-    for (T t : set) {
-      serializer.accept(out, t);
-    }
-  }
-
-  public static <T> Set<T> deserializeSet(
-      DataInputStream in, FunctionWithException<DataInputStream, T, IOException> deserializer)
-      throws IOException {
-    int size = in.readInt();
-    Set<T> set = new HashSet<>(size);
-    for (int i = 0; i < size; i++) {
-      T t = deserializer.apply(in);
-      set.add(t);
+    public static void serializeBytes(DataOutputStream out, byte[] bytes) throws IOException {
+        out.writeInt(bytes.length);
+        out.write(bytes);
     }
 
-    return set;
-  }
+    public static byte[] deserializeBytes(DataInputStream in) throws IOException {
+        int size = in.readInt();
+        byte[] bytes = new byte[size];
+        in.readFully(bytes);
 
-  // Common Map serialization.
-
-  public static <K, V> void serializeMap(
-      DataOutputStream out,
-      Map<K, V> map,
-      BiConsumerWithException<DataOutputStream, K, IOException> keySerializer,
-      BiConsumerWithException<DataOutputStream, V, IOException> valueSerializer)
-      throws IOException {
-    out.writeInt(map.size());
-    for (Map.Entry<K, V> entry : map.entrySet()) {
-      keySerializer.accept(out, entry.getKey());
-      valueSerializer.accept(out, entry.getValue());
+        return bytes;
     }
-  }
 
-  public static <K, V> Map<K, V> deserializeMap(
-      DataInputStream in,
-      FunctionWithException<DataInputStream, K, IOException> keyDeserializer,
-      FunctionWithException<DataInputStream, V, IOException> valueDeserializer)
-      throws IOException {
-    int size = in.readInt();
-    Map<K, V> result = new HashMap<>(size);
-    for (int i = 0; i < size; i++) {
-      K key = keyDeserializer.apply(in);
-      V value = valueDeserializer.apply(in);
-      result.put(key, value);
+    // Common Object serialization.
+
+    public static void serializeObject(DataOutputStream out, Object obj) throws IOException {
+        Preconditions.checkNotNull(obj);
+
+        byte[] objectBytes = InstantiationUtil.serializeObject(obj);
+        serializeBytes(out, objectBytes);
     }
-    return result;
-  }
+
+    public static <T> T deserializeObject(DataInputStream in) throws IOException {
+        byte[] objectBytes = deserializeBytes(in);
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+
+        try {
+            return InstantiationUtil.deserializeObject(objectBytes, loader);
+        } catch (ClassNotFoundException e) {
+            throw new IOException(e);
+        }
+    }
+
+    // Common List serialization.
+
+    public static <T> void serializeList(
+            DataOutputStream out,
+            List<T> list,
+            BiConsumerWithException<DataOutputStream, T, IOException> serializer)
+            throws IOException {
+        out.writeInt(list.size());
+        for (T t : list) {
+            serializer.accept(out, t);
+        }
+    }
+
+    public static <T> List<T> deserializeList(
+            DataInputStream in, FunctionWithException<DataInputStream, T, IOException> deserializer)
+            throws IOException {
+        int size = in.readInt();
+        List<T> set = new ArrayList<>(size);
+        for (int i = 0; i < size; i++) {
+            T t = deserializer.apply(in);
+            set.add(t);
+        }
+
+        return set;
+    }
+
+    // Common Set serialization.
+
+    public static <T> void serializeSet(
+            DataOutputStream out,
+            Set<T> set,
+            BiConsumerWithException<DataOutputStream, T, IOException> serializer)
+            throws IOException {
+        out.writeInt(set.size());
+        for (T t : set) {
+            serializer.accept(out, t);
+        }
+    }
+
+    public static <T> Set<T> deserializeSet(
+            DataInputStream in, FunctionWithException<DataInputStream, T, IOException> deserializer)
+            throws IOException {
+        int size = in.readInt();
+        Set<T> set = new HashSet<>(size);
+        for (int i = 0; i < size; i++) {
+            T t = deserializer.apply(in);
+            set.add(t);
+        }
+
+        return set;
+    }
+
+    // Common Map serialization.
+
+    public static <K, V> void serializeMap(
+            DataOutputStream out,
+            Map<K, V> map,
+            BiConsumerWithException<DataOutputStream, K, IOException> keySerializer,
+            BiConsumerWithException<DataOutputStream, V, IOException> valueSerializer)
+            throws IOException {
+        out.writeInt(map.size());
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            keySerializer.accept(out, entry.getKey());
+            valueSerializer.accept(out, entry.getValue());
+        }
+    }
+
+    public static <K, V> Map<K, V> deserializeMap(
+            DataInputStream in,
+            FunctionWithException<DataInputStream, K, IOException> keyDeserializer,
+            FunctionWithException<DataInputStream, V, IOException> valueDeserializer)
+            throws IOException {
+        int size = in.readInt();
+        Map<K, V> result = new HashMap<>(size);
+        for (int i = 0; i < size; i++) {
+            K key = keyDeserializer.apply(in);
+            V value = valueDeserializer.apply(in);
+            result.put(key, value);
+        }
+        return result;
+    }
 }

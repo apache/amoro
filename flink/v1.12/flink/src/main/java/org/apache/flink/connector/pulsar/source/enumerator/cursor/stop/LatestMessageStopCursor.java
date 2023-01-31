@@ -32,26 +32,26 @@ import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtil
  * PulsarSourceEnumerator}. We would include the latest message available in Pulsar by default.
  */
 public class LatestMessageStopCursor implements StopCursor {
-  private static final long serialVersionUID = 1702059838323965723L;
+    private static final long serialVersionUID = 1702059838323965723L;
 
-  private MessageId messageId;
-  private final boolean inclusive;
+    private MessageId messageId;
+    private final boolean inclusive;
 
-  public LatestMessageStopCursor(boolean inclusive) {
-    this.inclusive = inclusive;
-  }
-
-  @Override
-  public StopCondition shouldStop(Message<?> message) {
-    MessageId current = message.getMessageId();
-    return StopCondition.compare(messageId, current, inclusive);
-  }
-
-  @Override
-  public void open(PulsarAdmin admin, TopicPartition partition) {
-    if (messageId == null) {
-      String topic = partition.getFullTopicName();
-      this.messageId = sneakyAdmin(() -> admin.topics().getLastMessageId(topic));
+    public LatestMessageStopCursor(boolean inclusive) {
+        this.inclusive = inclusive;
     }
-  }
+
+    @Override
+    public StopCondition shouldStop(Message<?> message) {
+        MessageId current = message.getMessageId();
+        return StopCondition.compare(messageId, current, inclusive);
+    }
+
+    @Override
+    public void open(PulsarAdmin admin, TopicPartition partition) {
+        if (messageId == null) {
+            String topic = partition.getFullTopicName();
+            this.messageId = sneakyAdmin(() -> admin.topics().getLastMessageId(topic));
+        }
+    }
 }

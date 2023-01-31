@@ -26,24 +26,22 @@ import org.apache.pulsar.client.impl.schema.StringSchema;
 import org.apache.pulsar.common.schema.SchemaInfo;
 import org.apache.pulsar.common.schema.SchemaType;
 
-/**
- * The schema factory for pulsar's {@link StringSchema}.
- */
+/** The schema factory for pulsar's {@link StringSchema}. */
 public class StringSchemaFactory implements PulsarSchemaFactory<String> {
 
-  @Override
-  public SchemaType type() {
-    return SchemaType.STRING;
-  }
+    @Override
+    public SchemaType type() {
+        return SchemaType.STRING;
+    }
 
-  @Override
-  public Schema<String> createSchema(SchemaInfo info) {
-    // SchemaInfo contains the string encode type.
-    return StringSchema.fromSchemaInfo(info);
-  }
+    @Override
+    public Schema<String> createSchema(SchemaInfo info) {
+        // SchemaInfo contains the string encode type.
+        return StringSchema.fromSchemaInfo(info);
+    }
 
-  @Override
-  public TypeInformation<String> createTypeInfo(SchemaInfo info) {
-    return Types.STRING;
-  }
+    @Override
+    public TypeInformation<String> createTypeInfo(SchemaInfo info) {
+        return Types.STRING;
+    }
 }

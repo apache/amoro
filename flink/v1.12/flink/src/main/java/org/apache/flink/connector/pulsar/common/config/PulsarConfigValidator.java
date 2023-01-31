@@ -45,66 +45,60 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 @Internal
 public class PulsarConfigValidator {
 
-  private final List<Set<ConfigOption<?>>> conflictOptions;
-  private final Set<ConfigOption<?>> requiredOptions;
+    private final List<Set<ConfigOption<?>>> conflictOptions;
+    private final Set<ConfigOption<?>> requiredOptions;
 
-  private PulsarConfigValidator(
-      List<Set<ConfigOption<?>>> conflictOptions, Set<ConfigOption<?>> requiredOptions) {
-    this.conflictOptions = conflictOptions;
-    this.requiredOptions = requiredOptions;
-  }
-
-  /**
-   * Package private validating for using in {@link PulsarConfigBuilder}.
-   */
-  void validate(Configuration configuration) {
-    requiredOptions.forEach(
-        option ->
-            checkArgument(
-                configuration.contains(option),
-                "Config option %s is not provided for pulsar client.",
-                option));
-    conflictOptions.forEach(
-        options -> {
-          long nums = options.stream().filter(configuration::contains).count();
-          checkArgument(
-              nums <= 1,
-              "Conflict config options %s were provided, we only support one of them for creating pulsar client.",
-              options);
-        });
-  }
-
-  /**
-   * Return the builder for building {@link PulsarConfigValidator}.
-   */
-  public static PulsarConfigValidatorBuilder builder() {
-    return new PulsarConfigValidatorBuilder();
-  }
-
-  /**
-   * Builder pattern for building {@link PulsarConfigValidator}.
-   */
-  public static class PulsarConfigValidatorBuilder {
-
-    private final List<Set<ConfigOption<?>>> conflictOptions = new ArrayList<>();
-    private final Set<ConfigOption<?>> requiredOptions = new HashSet<>();
-
-    public PulsarConfigValidatorBuilder conflictOptions(ConfigOption<?>... options) {
-      checkArgument(options.length > 1, "You should provide at least two conflict options.");
-      conflictOptions.add(ImmutableSet.copyOf(options));
-      return this;
+    private PulsarConfigValidator(
+            List<Set<ConfigOption<?>>> conflictOptions, Set<ConfigOption<?>> requiredOptions) {
+        this.conflictOptions = conflictOptions;
+        this.requiredOptions = requiredOptions;
     }
 
-    public PulsarConfigValidatorBuilder requiredOption(ConfigOption<?> option) {
-      requiredOptions.add(option);
-      return this;
+    /** Package private validating for using in {@link PulsarConfigBuilder}. */
+    void validate(Configuration configuration) {
+        requiredOptions.forEach(
+                option ->
+                        checkArgument(
+                                configuration.contains(option),
+                                "Config option %s is not provided for pulsar client.",
+                                option));
+        conflictOptions.forEach(
+                options -> {
+                    long nums = options.stream().filter(configuration::contains).count();
+                    checkArgument(
+                            nums <= 1,
+                            "Conflict config options %s were provided, we only support one of them for creating pulsar client.",
+                            options);
+                });
     }
 
-    public PulsarConfigValidator build() {
-      ImmutableList<Set<ConfigOption<?>>> conflict = ImmutableList.copyOf(conflictOptions);
-      Set<ConfigOption<?>> required = ImmutableSet.copyOf(requiredOptions);
-
-      return new PulsarConfigValidator(conflict, required);
+    /** Return the builder for building {@link PulsarConfigValidator}. */
+    public static PulsarConfigValidatorBuilder builder() {
+        return new PulsarConfigValidatorBuilder();
     }
-  }
+
+    /** Builder pattern for building {@link PulsarConfigValidator}. */
+    public static class PulsarConfigValidatorBuilder {
+
+        private final List<Set<ConfigOption<?>>> conflictOptions = new ArrayList<>();
+        private final Set<ConfigOption<?>> requiredOptions = new HashSet<>();
+
+        public PulsarConfigValidatorBuilder conflictOptions(ConfigOption<?>... options) {
+            checkArgument(options.length > 1, "You should provide at least two conflict options.");
+            conflictOptions.add(ImmutableSet.copyOf(options));
+            return this;
+        }
+
+        public PulsarConfigValidatorBuilder requiredOption(ConfigOption<?> option) {
+            requiredOptions.add(option);
+            return this;
+        }
+
+        public PulsarConfigValidator build() {
+            ImmutableList<Set<ConfigOption<?>>> conflict = ImmutableList.copyOf(conflictOptions);
+            Set<ConfigOption<?>> required = ImmutableSet.copyOf(requiredOptions);
+
+            return new PulsarConfigValidator(conflict, required);
+        }
+    }
 }

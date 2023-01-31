@@ -52,146 +52,135 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 @Internal
 public class TopicProducerRegister implements Closeable {
 
-  private final PulsarClient pulsarClient;
-  private final SinkConfiguration sinkConfiguration;
-  private final Map<String, Map<SchemaInfo, Producer<?>>> producerRegister;
-  private final Map<String, Transaction> transactionRegister;
+    private final PulsarClient pulsarClient;
+    private final SinkConfiguration sinkConfiguration;
+    private final Map<String, Map<SchemaInfo, Producer<?>>> producerRegister;
+    private final Map<String, Transaction> transactionRegister;
 
-  public TopicProducerRegister(SinkConfiguration sinkConfiguration) {
-    this.pulsarClient = createClient(sinkConfiguration);
-    this.sinkConfiguration = sinkConfiguration;
-    this.producerRegister = new HashMap<>();
-    this.transactionRegister = new HashMap<>();
-  }
-
-  /**
-   * Create a TypedMessageBuilder which could be sent to Pulsar directly. First, we would create a
-   * topic-related producer or use a cached instead. Then we would try to find a topic-related
-   * transaction. We would generate a transaction instance if there is no transaction. Finally, we
-   * create the message builder and put the element into it.
-   */
-  public <T> TypedMessageBuilder<T> createMessageBuilder(String topic, Schema<T> schema) {
-    return createMessageBuilder(topic, schema, false);
-  }
-
-  /**
-   * Normal message would send without transaction, only Flip using transaction.
-   */
-  public <T> TypedMessageBuilder<T> createMessageBuilder(String topic, Schema<T> schema, boolean exactlyOnce) {
-    Producer<T> producer = getOrCreateProducer(topic, schema);
-
-    if (exactlyOnce) {
-      Transaction transaction = getOrCreateTransaction(topic);
-      return producer.newMessage(transaction);
-    } else {
-      return producer.newMessage();
-    }
-  }
-
-  /**
-   * commit all transactions
-   */
-  public void commitTransactions() {
-    transactionRegister.forEach((topic, transaction) -> transaction.commit());
-    clearTransactions();
-  }
-
-  /**
-   * Flush all the messages buffered in the client and wait until all messages have been
-   * successfully persisted.
-   */
-  public void flush() throws IOException {
-    Collection<Map<SchemaInfo, Producer<?>>> collection = producerRegister.values();
-    for (Map<SchemaInfo, Producer<?>> producers : collection) {
-      for (Producer<?> producer : producers.values()) {
-        producer.flush();
-      }
-    }
-  }
-
-  @Override
-  public void close() throws IOException {
-    try (Closer closer = Closer.create()) {
-      // Flush all the pending messages to Pulsar. This wouldn't cause exception.
-      closer.register(this::flush);
-
-      // Abort all the existed transactions.
-      closer.register(this::abortTransactions);
-
-      // Remove all the producers.
-      closer.register(producerRegister::clear);
-
-      // All the producers would be closed by this method.
-      // We would block until all the producers have been successfully closed.
-      closer.register(pulsarClient);
-    }
-  }
-
-  /**
-   * Create or return the cached topic-related producer.
-   */
-  @SuppressWarnings("unchecked")
-  private <T> Producer<T> getOrCreateProducer(String topic, Schema<T> schema) {
-    Map<SchemaInfo, Producer<?>> producers =
-        producerRegister.computeIfAbsent(topic, key -> new HashMap<>());
-    SchemaInfo schemaInfo = schema.getSchemaInfo();
-
-    if (producers.containsKey(schemaInfo)) {
-      return (Producer<T>) producers.get(schemaInfo);
-    } else {
-      ProducerBuilder<T> builder =
-          createProducerBuilder(pulsarClient, schema, sinkConfiguration);
-      // Set the required topic name.
-      builder.topic(topic);
-      Producer<T> producer = sneakyClient(builder::create);
-      producers.put(schemaInfo, producer);
-
-      return producer;
-    }
-  }
-
-  /**
-   * Get the cached topic-related transaction. Or create a new transaction after checkpointing.
-   */
-  private Transaction getOrCreateTransaction(String topic) {
-    return transactionRegister.computeIfAbsent(
-        topic,
-        t -> {
-          long timeoutMillis = sinkConfiguration.getTransactionTimeoutMillis();
-          return createTransaction(pulsarClient, timeoutMillis);
-        });
-  }
-
-  /**
-   * Abort the existed transactions. This method would be used when closing PulsarWriter.
-   */
-  private void abortTransactions() {
-    if (transactionRegister.isEmpty()) {
-      return;
+    public TopicProducerRegister(SinkConfiguration sinkConfiguration) {
+        this.pulsarClient = createClient(sinkConfiguration);
+        this.sinkConfiguration = sinkConfiguration;
+        this.producerRegister = new HashMap<>();
+        this.transactionRegister = new HashMap<>();
     }
 
-    TransactionCoordinatorClient coordinatorClient =
-        ((PulsarClientImpl) pulsarClient).getTcClient();
-    // This null check is used for making sure transaction is enabled in client.
-    checkNotNull(coordinatorClient);
-
-    try (Closer closer = Closer.create()) {
-      for (Transaction transaction : transactionRegister.values()) {
-        TxnID txnID = transaction.getTxnID();
-        closer.register(() -> coordinatorClient.abort(txnID));
-      }
-
-      clearTransactions();
-    } catch (IOException e) {
-      throw new FlinkRuntimeException(e);
+    // -------------- custom start ----------------
+    /**
+     * Create a TypedMessageBuilder which could be sent to Pulsar directly. First, we would create a
+     * topic-related producer or use a cached instead. Then we would try to find a topic-related
+     * transaction. We would generate a transaction instance if there is no transaction. Finally, we
+     * create the message builder and put the element into it.
+     */
+    public <T> TypedMessageBuilder<T> createMessageBuilder(String topic, Schema<T> schema) {
+        return createMessageBuilder(topic, schema, false);
     }
-  }
 
-  /**
-   * Clean these transactions. All transactions should be passed to Pulsar committer, we would
-   * create new transaction when new message comes.
-   */
-  private void clearTransactions() {
-    transactionRegister.clear();
-  }
+    /**
+     * Normal message would send without transaction, only Flip using transaction.
+     */
+    public <T> TypedMessageBuilder<T> createMessageBuilder(String topic, Schema<T> schema, boolean exactlyOnce) {
+        Producer<T> producer = getOrCreateProducer(topic, schema);
+    
+        if (exactlyOnce) {
+            Transaction transaction = getOrCreateTransaction(topic);
+            return producer.newMessage(transaction);
+        } else {
+            return producer.newMessage();
+        }
+    }
+    // -------------- custom end ----------------
+    /**
+     * Flush all the messages buffered in the client and wait until all messages have been
+     * successfully persisted.
+     */
+    public void flush() throws IOException {
+        Collection<Map<SchemaInfo, Producer<?>>> collection = producerRegister.values();
+        for (Map<SchemaInfo, Producer<?>> producers : collection) {
+            for (Producer<?> producer : producers.values()) {
+                producer.flush();
+            }
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        try (Closer closer = Closer.create()) {
+            // Flush all the pending messages to Pulsar. This wouldn't cause exception.
+            closer.register(this::flush);
+
+            // Abort all the existed transactions.
+            closer.register(this::abortTransactions);
+
+            // Remove all the producers.
+            closer.register(producerRegister::clear);
+
+            // All the producers would be closed by this method.
+            // We would block until all the producers have been successfully closed.
+            closer.register(pulsarClient);
+        }
+    }
+
+    /** Create or return the cached topic-related producer. */
+    @SuppressWarnings("unchecked")
+    private <T> Producer<T> getOrCreateProducer(String topic, Schema<T> schema) {
+        Map<SchemaInfo, Producer<?>> producers =
+                producerRegister.computeIfAbsent(topic, key -> new HashMap<>());
+        SchemaInfo schemaInfo = schema.getSchemaInfo();
+
+        if (producers.containsKey(schemaInfo)) {
+            return (Producer<T>) producers.get(schemaInfo);
+        } else {
+            ProducerBuilder<T> builder =
+                    createProducerBuilder(pulsarClient, schema, sinkConfiguration);
+            // Set the required topic name.
+            builder.topic(topic);
+            Producer<T> producer = sneakyClient(builder::create);
+            producers.put(schemaInfo, producer);
+
+            return producer;
+        }
+    }
+
+    /**
+     * Get the cached topic-related transaction. Or create a new transaction after checkpointing.
+     */
+    private Transaction getOrCreateTransaction(String topic) {
+        return transactionRegister.computeIfAbsent(
+                topic,
+                t -> {
+                    long timeoutMillis = sinkConfiguration.getTransactionTimeoutMillis();
+                    return createTransaction(pulsarClient, timeoutMillis);
+                });
+    }
+
+    /** Abort the existed transactions. This method would be used when closing PulsarWriter. */
+    private void abortTransactions() {
+        if (transactionRegister.isEmpty()) {
+            return;
+        }
+
+        TransactionCoordinatorClient coordinatorClient =
+                ((PulsarClientImpl) pulsarClient).getTcClient();
+        // This null check is used for making sure transaction is enabled in client.
+        checkNotNull(coordinatorClient);
+
+        try (Closer closer = Closer.create()) {
+            for (Transaction transaction : transactionRegister.values()) {
+                TxnID txnID = transaction.getTxnID();
+                closer.register(() -> coordinatorClient.abort(txnID));
+            }
+
+            clearTransactions();
+        } catch (IOException e) {
+            throw new FlinkRuntimeException(e);
+        }
+    }
+
+    /**
+     * Clean these transactions. All transactions should be passed to Pulsar committer, we would
+     * create new transaction when new message comes.
+     */
+    private void clearTransactions() {
+        transactionRegister.clear();
+    }
 }

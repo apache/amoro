@@ -33,113 +33,105 @@ import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_TO
 import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_WRITE_SCHEMA_EVOLUTION;
 import static org.apache.flink.connector.pulsar.sink.PulsarSinkOptions.PULSAR_WRITE_TRANSACTION_TIMEOUT;
 
-/**
- * The configured class for pulsar sink.
- */
+/** The configured class for pulsar sink. */
 @PublicEvolving
 public class SinkConfiguration extends PulsarConfiguration {
-  private static final long serialVersionUID = 4941360605051251153L;
+    private static final long serialVersionUID = 4941360605051251153L;
 
-  private final long transactionTimeoutMillis;
-  private final long topicMetadataRefreshInterval;
-  private final int partitionSwitchSize;
-  private final boolean enableSchemaEvolution;
-  private final int maxPendingMessages;
-  private final int maxRecommitTimes;
+    private final long transactionTimeoutMillis;
+    private final long topicMetadataRefreshInterval;
+    private final int partitionSwitchSize;
+    private final boolean enableSchemaEvolution;
+    private final int maxPendingMessages;
+    private final int maxRecommitTimes;
 
-  public SinkConfiguration(Configuration configuration) {
-    super(configuration);
+    public SinkConfiguration(Configuration configuration) {
+        super(configuration);
 
-    this.transactionTimeoutMillis = getLong(PULSAR_WRITE_TRANSACTION_TIMEOUT);
-    this.topicMetadataRefreshInterval = getLong(PULSAR_TOPIC_METADATA_REFRESH_INTERVAL);
-    this.partitionSwitchSize = getInteger(PULSAR_BATCHING_MAX_MESSAGES);
-    this.enableSchemaEvolution = get(PULSAR_WRITE_SCHEMA_EVOLUTION);
-    this.maxPendingMessages = get(PULSAR_MAX_PENDING_MESSAGES_ON_PARALLELISM);
-    this.maxRecommitTimes = get(PULSAR_MAX_RECOMMIT_TIMES);
-  }
-
-  /**
-   * Pulsar's transactions have a timeout mechanism for the uncommitted transaction. We use
-   * transactions for making sure the message could be written only once. Since the checkpoint
-   * interval couldn't be acquired from {@link InitContext}, we have to expose this option. Make
-   * sure this value is greater than the checkpoint interval. Create a pulsar producer builder by
-   * using the given Configuration.
-   */
-  public long getTransactionTimeoutMillis() {
-    return transactionTimeoutMillis;
-  }
-
-  /**
-   * Auto-update the topic metadata in a fixed interval (in ms). The default value is 30 minutes.
-   */
-  public long getTopicMetadataRefreshInterval() {
-    return topicMetadataRefreshInterval;
-  }
-
-  /**
-   * Switch the partition to write when we have written the given size of messages. It's used for
-   * a round-robin topic router.
-   */
-  public int getPartitionSwitchSize() {
-    return partitionSwitchSize;
-  }
-
-  /**
-   * The message key's hash logic for routing the message into one Pulsar partition.
-   */
-
-  /**
-   * If we should serialize and send the message with a specified Pulsar {@link Schema} instead
-   * the default {@link Schema#BYTES}. This switch is only used for {@link PulsarSchemaWrapper}.
-   */
-  public boolean isEnableSchemaEvolution() {
-    return enableSchemaEvolution;
-  }
-
-  /**
-   * Pulsar message is sent asynchronously. Set this option for limiting the pending messages in a
-   * Pulsar writer instance.
-   */
-  public int getMaxPendingMessages() {
-    return maxPendingMessages;
-  }
-
-  /**
-   * The maximum allowed recommitting time for a Pulsar transaction.
-   */
-  public int getMaxRecommitTimes() {
-    return maxRecommitTimes;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+        this.transactionTimeoutMillis = getLong(PULSAR_WRITE_TRANSACTION_TIMEOUT);
+        this.topicMetadataRefreshInterval = getLong(PULSAR_TOPIC_METADATA_REFRESH_INTERVAL);
+        this.partitionSwitchSize = getInteger(PULSAR_BATCHING_MAX_MESSAGES);
+        this.enableSchemaEvolution = get(PULSAR_WRITE_SCHEMA_EVOLUTION);
+        this.maxPendingMessages = get(PULSAR_MAX_PENDING_MESSAGES_ON_PARALLELISM);
+        this.maxRecommitTimes = get(PULSAR_MAX_RECOMMIT_TIMES);
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
-    }
-    if (!super.equals(o)) {
-      return false;
-    }
-    SinkConfiguration that = (SinkConfiguration) o;
-    return transactionTimeoutMillis == that.transactionTimeoutMillis &&
-        topicMetadataRefreshInterval == that.topicMetadataRefreshInterval &&
-        partitionSwitchSize == that.partitionSwitchSize &&
-        enableSchemaEvolution == that.enableSchemaEvolution &&
-        maxPendingMessages == that.maxPendingMessages &&
-        maxRecommitTimes == that.maxRecommitTimes;
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(
-        super.hashCode(),
-        transactionTimeoutMillis,
-        topicMetadataRefreshInterval,
-        partitionSwitchSize,
-        enableSchemaEvolution,
-        maxPendingMessages,
-        maxRecommitTimes);
-  }
+    /**
+     * Pulsar's transactions have a timeout mechanism for the uncommitted transaction. We use
+     * transactions for making sure the message could be written only once. Since the checkpoint
+     * interval couldn't be acquired from {@link InitContext}, we have to expose this option. Make
+     * sure this value is greater than the checkpoint interval. Create a pulsar producer builder by
+     * using the given Configuration.
+     */
+    public long getTransactionTimeoutMillis() {
+        return transactionTimeoutMillis;
+    }
+
+    /**
+     * Auto-update the topic metadata in a fixed interval (in ms). The default value is 30 minutes.
+     */
+    public long getTopicMetadataRefreshInterval() {
+        return topicMetadataRefreshInterval;
+    }
+
+    /**
+     * Switch the partition to write when we have written the given size of messages. It's used for
+     * a round-robin topic router.
+     */
+    public int getPartitionSwitchSize() {
+        return partitionSwitchSize;
+    }
+
+    /**
+     * If we should serialize and send the message with a specified Pulsar {@link Schema} instead
+     * the default {@link Schema#BYTES}. This switch is only used for {@link PulsarSchemaWrapper}.
+     */
+    public boolean isEnableSchemaEvolution() {
+        return enableSchemaEvolution;
+    }
+
+    /**
+     * Pulsar message is sent asynchronously. Set this option for limiting the pending messages in a
+     * Pulsar writer instance.
+     */
+    public int getMaxPendingMessages() {
+        return maxPendingMessages;
+    }
+
+    /** The maximum allowed recommitting time for a Pulsar transaction. */
+    public int getMaxRecommitTimes() {
+        return maxRecommitTimes;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        if (!super.equals(o)) {
+            return false;
+        }
+        SinkConfiguration that = (SinkConfiguration) o;
+        return transactionTimeoutMillis == that.transactionTimeoutMillis
+                && topicMetadataRefreshInterval == that.topicMetadataRefreshInterval
+                && partitionSwitchSize == that.partitionSwitchSize
+                && enableSchemaEvolution == that.enableSchemaEvolution
+                && maxPendingMessages == that.maxPendingMessages
+                && maxRecommitTimes == that.maxRecommitTimes;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                super.hashCode(),
+                transactionTimeoutMillis,
+                topicMetadataRefreshInterval,
+                partitionSwitchSize,
+                enableSchemaEvolution,
+                maxPendingMessages,
+                maxRecommitTimes);
+    }
 }

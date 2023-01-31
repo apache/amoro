@@ -32,18 +32,12 @@ import org.apache.pulsar.common.schema.SchemaType;
 @Internal
 public interface PulsarSchemaFactory<T> {
 
-  /**
-   * The supported schema type for this factory. We would classify the factory by the type.
-   */
-  SchemaType type();
+    /** The supported schema type for this factory. We would classify the factory by the type. */
+    SchemaType type();
 
-  /**
-   * Create the schema by the given info.
-   */
-  Schema<T> createSchema(SchemaInfo info);
+    /** Create the schema by the given info. */
+    Schema<T> createSchema(SchemaInfo info);
 
-  /**
-   * Create the flink type information by the given schema info.
-   */
-  TypeInformation<T> createTypeInfo(SchemaInfo info);
+    /** Create the flink type information by the given schema info. */
+    TypeInformation<T> createTypeInfo(SchemaInfo info);
 }

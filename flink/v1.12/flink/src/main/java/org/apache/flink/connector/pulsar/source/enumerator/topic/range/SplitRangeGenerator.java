@@ -36,46 +36,46 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  */
 @PublicEvolving
 public class SplitRangeGenerator implements RangeGenerator {
-  private static final long serialVersionUID = -8682286436352905249L;
+    private static final long serialVersionUID = -8682286436352905249L;
 
-  private final int start;
-  private final int end;
+    private final int start;
+    private final int end;
 
-  public SplitRangeGenerator() {
-    this(MIN_RANGE, MAX_RANGE);
-  }
-
-  public SplitRangeGenerator(int start, int end) {
-    checkArgument(
-        start >= MIN_RANGE,
-        "Start range should be equal to or great than the min range " + MIN_RANGE);
-    checkArgument(
-        end <= MAX_RANGE, "End range should below or less than the max range " + MAX_RANGE);
-    checkArgument(start <= end, "Start range should be equal to or less than the end range");
-
-    this.start = start;
-    this.end = end;
-  }
-
-  @Override
-  public List<TopicRange> range(TopicMetadata metadata, int parallelism) {
-    final int range = end - start + 1;
-    final int size = Math.min(range, parallelism);
-    int startRange = start;
-
-    List<TopicRange> results = new ArrayList<>(size);
-    for (int i = 1; i < size; i++) {
-      int nextStartRange = i * range / size + start;
-      results.add(new TopicRange(startRange, nextStartRange - 1));
-      startRange = nextStartRange;
+    public SplitRangeGenerator() {
+        this(MIN_RANGE, MAX_RANGE);
     }
-    results.add(new TopicRange(startRange, end));
 
-    return results;
-  }
+    public SplitRangeGenerator(int start, int end) {
+        checkArgument(
+                start >= MIN_RANGE,
+                "Start range should be equal to or great than the min range " + MIN_RANGE);
+        checkArgument(
+                end <= MAX_RANGE, "End range should below or less than the max range " + MAX_RANGE);
+        checkArgument(start <= end, "Start range should be equal to or less than the end range");
 
-  @Override
-  public KeySharedMode keyShareMode(TopicMetadata metadata, int parallelism) {
-    return KeySharedMode.SPLIT;
-  }
+        this.start = start;
+        this.end = end;
+    }
+
+    @Override
+    public List<TopicRange> range(TopicMetadata metadata, int parallelism) {
+        final int range = end - start + 1;
+        final int size = Math.min(range, parallelism);
+        int startRange = start;
+
+        List<TopicRange> results = new ArrayList<>(size);
+        for (int i = 1; i < size; i++) {
+            int nextStartRange = i * range / size + start;
+            results.add(new TopicRange(startRange, nextStartRange - 1));
+            startRange = nextStartRange;
+        }
+        results.add(new TopicRange(startRange, end));
+
+        return results;
+    }
+
+    @Override
+    public KeySharedMode keyShareMode(TopicMetadata metadata, int parallelism) {
+        return KeySharedMode.SPLIT;
+    }
 }

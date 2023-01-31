@@ -30,23 +30,19 @@ import java.util.Set;
  */
 public class PulsarSourceEnumState {
 
-  /**
-   * The topic partitions that have been appended to this source.
-   */
-  private final Set<TopicPartition> appendedPartitions;
+    /** The topic partitions that have been appended to this source. */
+    private final Set<TopicPartition> appendedPartitions;
 
-  public PulsarSourceEnumState(Set<TopicPartition> appendedPartitions) {
-    this.appendedPartitions = appendedPartitions;
-  }
+    public PulsarSourceEnumState(Set<TopicPartition> appendedPartitions) {
+        this.appendedPartitions = appendedPartitions;
+    }
 
-  public Set<TopicPartition> getAppendedPartitions() {
-    return appendedPartitions;
-  }
+    public Set<TopicPartition> getAppendedPartitions() {
+        return appendedPartitions;
+    }
 
-  /**
-   * The initial assignment state for Pulsar.
-   */
-  public static PulsarSourceEnumState initialState() {
-    return new PulsarSourceEnumState(new HashSet<>());
-  }
+    /** The initial assignment state for Pulsar. */
+    public static PulsarSourceEnumState initialState() {
+        return new PulsarSourceEnumState(new HashSet<>());
+    }
 }

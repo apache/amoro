@@ -65,104 +65,101 @@ import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSA
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_SUBSCRIPTION_TYPE;
 import static org.apache.flink.connector.pulsar.source.PulsarSourceOptions.PULSAR_TICK_DURATION_MILLIS;
 
-/**
- * Create source related {@link Consumer} and validate config.
- */
+/** Create source related {@link Consumer} and validate config. */
 @Internal
 public final class PulsarSourceConfigUtils {
 
-  private static final BatchReceivePolicy DISABLED_BATCH_RECEIVE_POLICY =
-      BatchReceivePolicy.builder()
-          .timeout(0, TimeUnit.MILLISECONDS)
-          .maxNumMessages(1)
-          .build();
+    private static final BatchReceivePolicy DISABLED_BATCH_RECEIVE_POLICY =
+            BatchReceivePolicy.builder()
+                    .timeout(0, TimeUnit.MILLISECONDS)
+                    .maxNumMessages(1)
+                    .build();
 
-  private PulsarSourceConfigUtils() {
-    // No need to create an instance.
-  }
-
-  public static final PulsarConfigValidator SOURCE_CONFIG_VALIDATOR =
-      PulsarConfigValidator.builder()
-          .requiredOption(PULSAR_SERVICE_URL)
-          .requiredOption(PULSAR_ADMIN_URL)
-          .requiredOption(PULSAR_SUBSCRIPTION_NAME)
-          .conflictOptions(PULSAR_AUTH_PARAMS, PULSAR_AUTH_PARAM_MAP)
-          .build();
-
-  /**
-   * Create a pulsar consumer builder by using the given Configuration.
-   */
-  public static <T> ConsumerBuilder<T> createConsumerBuilder(
-      PulsarClient client, Schema<T> schema, SourceConfiguration configuration) {
-    ConsumerBuilder<T> builder = new PulsarConsumerBuilder<>(client, schema);
-
-    configuration.useOption(PULSAR_SUBSCRIPTION_NAME, builder::subscriptionName);
-    configuration.useOption(
-        PULSAR_ACK_TIMEOUT_MILLIS, v -> builder.ackTimeout(v, MILLISECONDS));
-    configuration.useOption(PULSAR_ACK_RECEIPT_ENABLED, builder::isAckReceiptEnabled);
-    configuration.useOption(
-        PULSAR_TICK_DURATION_MILLIS, v -> builder.ackTimeoutTickTime(v, MILLISECONDS));
-    configuration.useOption(
-        PULSAR_NEGATIVE_ACK_REDELIVERY_DELAY_MICROS,
-        v -> builder.negativeAckRedeliveryDelay(v, MICROSECONDS));
-    configuration.useOption(PULSAR_SUBSCRIPTION_TYPE, builder::subscriptionType);
-    configuration.useOption(PULSAR_SUBSCRIPTION_MODE, builder::subscriptionMode);
-    configuration.useOption(PULSAR_CRYPTO_FAILURE_ACTION, builder::cryptoFailureAction);
-    configuration.useOption(PULSAR_RECEIVER_QUEUE_SIZE, builder::receiverQueueSize);
-    configuration.useOption(
-        PULSAR_ACKNOWLEDGEMENTS_GROUP_TIME_MICROS,
-        v -> builder.acknowledgmentGroupTime(v, MICROSECONDS));
-    configuration.useOption(
-        PULSAR_REPLICATE_SUBSCRIPTION_STATE, builder::replicateSubscriptionState);
-    configuration.useOption(
-        PULSAR_MAX_TOTAL_RECEIVER_QUEUE_SIZE_ACROSS_PARTITIONS,
-        builder::maxTotalReceiverQueueSizeAcrossPartitions);
-    configuration.useOption(
-        PULSAR_CONSUMER_NAME,
-        consumerName -> String.format(consumerName, UUID.randomUUID()),
-        builder::consumerName);
-    configuration.useOption(PULSAR_READ_COMPACTED, builder::readCompacted);
-    configuration.useOption(PULSAR_PRIORITY_LEVEL, builder::priorityLevel);
-    createDeadLetterPolicy(configuration).ifPresent(builder::deadLetterPolicy);
-    configuration.useOption(
-        PULSAR_AUTO_UPDATE_PARTITIONS_INTERVAL_SECONDS,
-        v -> builder.autoUpdatePartitionsInterval(v, SECONDS));
-    configuration.useOption(PULSAR_RETRY_ENABLE, builder::enableRetry);
-    configuration.useOption(
-        PULSAR_MAX_PENDING_CHUNKED_MESSAGE, builder::maxPendingChunkedMessage);
-    configuration.useOption(
-        PULSAR_AUTO_ACK_OLDEST_CHUNKED_MESSAGE_ON_QUEUE_FULL,
-        builder::autoAckOldestChunkedMessageOnQueueFull);
-    configuration.useOption(
-        PULSAR_EXPIRE_TIME_OF_INCOMPLETE_CHUNKED_MESSAGE_MILLIS,
-        v -> builder.expireTimeOfIncompleteChunkedMessage(v, MILLISECONDS));
-    configuration.useOption(PULSAR_POOL_MESSAGES, builder::poolMessages);
-
-    Map<String, String> properties = configuration.getProperties(PULSAR_CONSUMER_PROPERTIES);
-    if (!properties.isEmpty()) {
-      builder.properties(properties);
+    private PulsarSourceConfigUtils() {
+        // No need to create an instance.
     }
 
-    // Flink connector doesn't need any batch receiving behaviours.
-    // Disable the batch-receive timer for the Consumer instance.
-    builder.batchReceivePolicy(DISABLED_BATCH_RECEIVE_POLICY);
+    public static final PulsarConfigValidator SOURCE_CONFIG_VALIDATOR =
+            PulsarConfigValidator.builder()
+                    .requiredOption(PULSAR_SERVICE_URL)
+                    .requiredOption(PULSAR_ADMIN_URL)
+                    .requiredOption(PULSAR_SUBSCRIPTION_NAME)
+                    .conflictOptions(PULSAR_AUTH_PARAMS, PULSAR_AUTH_PARAM_MAP)
+                    .build();
 
-    return builder;
-  }
+    /** Create a pulsar consumer builder by using the given Configuration. */
+    public static <T> ConsumerBuilder<T> createConsumerBuilder(
+            PulsarClient client, Schema<T> schema, SourceConfiguration configuration) {
+        ConsumerBuilder<T> builder = new PulsarConsumerBuilder<>(client, schema);
 
-  private static Optional<DeadLetterPolicy> createDeadLetterPolicy(
-      SourceConfiguration configuration) {
-    if (configuration.contains(PULSAR_MAX_REDELIVER_COUNT) || configuration.contains(PULSAR_RETRY_LETTER_TOPIC) ||
-        configuration.contains(PULSAR_DEAD_LETTER_TOPIC)) {
-      DeadLetterPolicy.DeadLetterPolicyBuilder builder = DeadLetterPolicy.builder();
+        configuration.useOption(PULSAR_SUBSCRIPTION_NAME, builder::subscriptionName);
+        configuration.useOption(
+                PULSAR_ACK_TIMEOUT_MILLIS, v -> builder.ackTimeout(v, MILLISECONDS));
+        configuration.useOption(PULSAR_ACK_RECEIPT_ENABLED, builder::isAckReceiptEnabled);
+        configuration.useOption(
+                PULSAR_TICK_DURATION_MILLIS, v -> builder.ackTimeoutTickTime(v, MILLISECONDS));
+        configuration.useOption(
+                PULSAR_NEGATIVE_ACK_REDELIVERY_DELAY_MICROS,
+                v -> builder.negativeAckRedeliveryDelay(v, MICROSECONDS));
+        configuration.useOption(PULSAR_SUBSCRIPTION_TYPE, builder::subscriptionType);
+        configuration.useOption(PULSAR_SUBSCRIPTION_MODE, builder::subscriptionMode);
+        configuration.useOption(PULSAR_CRYPTO_FAILURE_ACTION, builder::cryptoFailureAction);
+        configuration.useOption(PULSAR_RECEIVER_QUEUE_SIZE, builder::receiverQueueSize);
+        configuration.useOption(
+                PULSAR_ACKNOWLEDGEMENTS_GROUP_TIME_MICROS,
+                v -> builder.acknowledgmentGroupTime(v, MICROSECONDS));
+        configuration.useOption(
+                PULSAR_REPLICATE_SUBSCRIPTION_STATE, builder::replicateSubscriptionState);
+        configuration.useOption(
+                PULSAR_MAX_TOTAL_RECEIVER_QUEUE_SIZE_ACROSS_PARTITIONS,
+                builder::maxTotalReceiverQueueSizeAcrossPartitions);
+        configuration.useOption(
+                PULSAR_CONSUMER_NAME,
+                consumerName -> String.format(consumerName, UUID.randomUUID()),
+                builder::consumerName);
+        configuration.useOption(PULSAR_READ_COMPACTED, builder::readCompacted);
+        configuration.useOption(PULSAR_PRIORITY_LEVEL, builder::priorityLevel);
+        createDeadLetterPolicy(configuration).ifPresent(builder::deadLetterPolicy);
+        configuration.useOption(
+                PULSAR_AUTO_UPDATE_PARTITIONS_INTERVAL_SECONDS,
+                v -> builder.autoUpdatePartitionsInterval(v, SECONDS));
+        configuration.useOption(PULSAR_RETRY_ENABLE, builder::enableRetry);
+        configuration.useOption(
+                PULSAR_MAX_PENDING_CHUNKED_MESSAGE, builder::maxPendingChunkedMessage);
+        configuration.useOption(
+                PULSAR_AUTO_ACK_OLDEST_CHUNKED_MESSAGE_ON_QUEUE_FULL,
+                builder::autoAckOldestChunkedMessageOnQueueFull);
+        configuration.useOption(
+                PULSAR_EXPIRE_TIME_OF_INCOMPLETE_CHUNKED_MESSAGE_MILLIS,
+                v -> builder.expireTimeOfIncompleteChunkedMessage(v, MILLISECONDS));
+        configuration.useOption(PULSAR_POOL_MESSAGES, builder::poolMessages);
 
-      configuration.useOption(PULSAR_MAX_REDELIVER_COUNT, builder::maxRedeliverCount);
-      configuration.useOption(PULSAR_RETRY_LETTER_TOPIC, builder::retryLetterTopic);
-      configuration.useOption(PULSAR_DEAD_LETTER_TOPIC, builder::deadLetterTopic);
+        Map<String, String> properties = configuration.getProperties(PULSAR_CONSUMER_PROPERTIES);
+        if (!properties.isEmpty()) {
+            builder.properties(properties);
+        }
 
-      return Optional.of(builder.build());
-    } else {
-      return Optional.empty();
+        // Flink connector doesn't need any batch receiving behaviours.
+        // Disable the batch-receive timer for the Consumer instance.
+        builder.batchReceivePolicy(DISABLED_BATCH_RECEIVE_POLICY);
+
+        return builder;
     }
-  }
+
+    private static Optional<DeadLetterPolicy> createDeadLetterPolicy(
+            SourceConfiguration configuration) {
+        if (configuration.contains(PULSAR_MAX_REDELIVER_COUNT)
+                || configuration.contains(PULSAR_RETRY_LETTER_TOPIC)
+                || configuration.contains(PULSAR_DEAD_LETTER_TOPIC)) {
+            DeadLetterPolicy.DeadLetterPolicyBuilder builder = DeadLetterPolicy.builder();
+
+            configuration.useOption(PULSAR_MAX_REDELIVER_COUNT, builder::maxRedeliverCount);
+            configuration.useOption(PULSAR_RETRY_LETTER_TOPIC, builder::retryLetterTopic);
+            configuration.useOption(PULSAR_DEAD_LETTER_TOPIC, builder::deadLetterTopic);
+
+            return Optional.of(builder.build());
+        } else {
+            return Optional.empty();
+        }
+    }
 }

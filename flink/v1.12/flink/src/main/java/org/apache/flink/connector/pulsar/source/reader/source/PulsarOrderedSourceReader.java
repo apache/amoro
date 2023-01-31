@@ -26,7 +26,6 @@ import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
-import org.apache.flink.connector.pulsar.source.reader.emitter.PulsarRecordEmitter;
 import org.apache.flink.connector.pulsar.source.reader.fetcher.PulsarOrderedFetcherManager;
 import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
 import org.apache.flink.connector.pulsar.source.reader.split.PulsarOrderedPartitionSplitReader;
@@ -59,161 +58,145 @@ import java.util.function.Supplier;
  */
 @Internal
 public class PulsarOrderedSourceReader<OUT> extends PulsarSourceReaderBase<OUT> {
-  private static final Logger LOG = LoggerFactory.getLogger(PulsarOrderedSourceReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PulsarOrderedSourceReader.class);
 
-  @VisibleForTesting
-  final SortedMap<Long, Map<TopicPartition, MessageId>> cursorsToCommit;
-  private final ConcurrentMap<TopicPartition, MessageId> cursorsOfFinishedSplits;
-  private final AtomicReference<Throwable> cursorCommitThrowable = new AtomicReference<>();
-  private ScheduledExecutorService cursorScheduler;
+    @VisibleForTesting final SortedMap<Long, Map<TopicPartition, MessageId>> cursorsToCommit;
+    private final ConcurrentMap<TopicPartition, MessageId> cursorsOfFinishedSplits;
+    private final AtomicReference<Throwable> cursorCommitThrowable = new AtomicReference<>();
+    private ScheduledExecutorService cursorScheduler;
 
-  public PulsarOrderedSourceReader(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
-      Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier,
-      SourceReaderContext context,
-      SourceConfiguration sourceConfiguration,
-      PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin) {
-    this(elementsQueue, splitReaderSupplier, context, sourceConfiguration, pulsarClient, pulsarAdmin,
-        new PulsarRecordEmitter<>());
-  }
+    public PulsarOrderedSourceReader(
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
+            Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier,
+            SourceReaderContext context,
+            SourceConfiguration sourceConfiguration,
+            PulsarClient pulsarClient,
+            PulsarAdmin pulsarAdmin) {
+        super(
+                elementsQueue,
+                new PulsarOrderedFetcherManager<>(elementsQueue, splitReaderSupplier::get),
+                context,
+                sourceConfiguration,
+                pulsarClient,
+                pulsarAdmin);
 
-  public PulsarOrderedSourceReader(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
-      Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier,
-      SourceReaderContext context,
-      SourceConfiguration sourceConfiguration,
-      PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin,
-      PulsarRecordEmitter<OUT> emitter) {
-    super(
-        elementsQueue,
-        new PulsarOrderedFetcherManager<>(elementsQueue, splitReaderSupplier::get),
-        context,
-        sourceConfiguration,
-        pulsarClient,
-        pulsarAdmin,
-        emitter);
-
-    this.cursorsToCommit = Collections.synchronizedSortedMap(new TreeMap<>());
-    this.cursorsOfFinishedSplits = new ConcurrentHashMap<>();
-  }
-
-  @Override
-  public void start() {
-    super.start();
-    if (sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
-      this.cursorScheduler = Executors.newSingleThreadScheduledExecutor();
-
-      // Auto commit cursor, this could be enabled when checkpoint is also enabled.
-      cursorScheduler.scheduleAtFixedRate(
-          this::cumulativeAcknowledgmentMessage,
-          sourceConfiguration.getMaxFetchTime().toMillis(),
-          sourceConfiguration.getAutoCommitCursorInterval(),
-          TimeUnit.MILLISECONDS);
-    }
-  }
-
-  @Override
-  public InputStatus pollNext(ReaderOutput<OUT> output) throws Exception {
-    checkErrorAndRethrow();
-    return super.pollNext(output);
-  }
-
-  @Override
-  protected void onSplitFinished(Map<String, PulsarPartitionSplitState> finishedSplitIds) {
-    // We don't require new splits, all the splits are pre-assigned by source enumerator.
-    if (LOG.isDebugEnabled()) {
-      LOG.debug("onSplitFinished event: {}", finishedSplitIds);
+        this.cursorsToCommit = Collections.synchronizedSortedMap(new TreeMap<>());
+        this.cursorsOfFinishedSplits = new ConcurrentHashMap<>();
     }
 
-    for (Map.Entry<String, PulsarPartitionSplitState> entry : finishedSplitIds.entrySet()) {
-      PulsarPartitionSplitState state = entry.getValue();
-      MessageId latestConsumedId = state.getLatestConsumedId();
-      if (latestConsumedId != null) {
-        cursorsOfFinishedSplits.put(state.getPartition(), latestConsumedId);
-      }
-    }
-  }
+    @Override
+    public void start() {
+        super.start();
+        if (sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
+            this.cursorScheduler = Executors.newSingleThreadScheduledExecutor();
 
-  @Override
-  public List<PulsarPartitionSplit> snapshotState(long checkpointId) {
-    List<PulsarPartitionSplit> splits = super.snapshotState(checkpointId);
-
-    // Perform a snapshot for these splits.
-    Map<TopicPartition, MessageId> cursors =
-        cursorsToCommit.computeIfAbsent(checkpointId, id -> new HashMap<>());
-    // Put the cursors of the active splits.
-    for (PulsarPartitionSplit split : splits) {
-      MessageId latestConsumedId = split.getLatestConsumedId();
-      if (latestConsumedId != null) {
-        cursors.put(split.getPartition(), latestConsumedId);
-      }
-    }
-    // Put cursors of all the finished splits.
-    cursors.putAll(cursorsOfFinishedSplits);
-
-    return splits;
-  }
-
-  @Override
-  public void notifyCheckpointComplete(long checkpointId) {
-    LOG.debug("Committing cursors for checkpoint {}", checkpointId);
-    Map<TopicPartition, MessageId> cursors = cursorsToCommit.get(checkpointId);
-    try {
-      ((PulsarOrderedFetcherManager<OUT>) splitFetcherManager).acknowledgeMessages(cursors);
-      LOG.debug("Successfully acknowledge cursors for checkpoint {}", checkpointId);
-
-      // Clean up the cursors.
-      cursorsOfFinishedSplits.keySet().removeAll(cursors.keySet());
-      cursorsToCommit.headMap(checkpointId + 1).clear();
-    } catch (Exception e) {
-      LOG.error("Failed to acknowledge cursors for checkpoint {}", checkpointId, e);
-      cursorCommitThrowable.compareAndSet(null, e);
-    }
-  }
-
-  @Override
-  public void close() throws Exception {
-    if (cursorScheduler != null) {
-      cursorScheduler.shutdown();
+            // Auto commit cursor, this could be enabled when checkpoint is also enabled.
+            cursorScheduler.scheduleAtFixedRate(
+                    this::cumulativeAcknowledgmentMessage,
+                    sourceConfiguration.getMaxFetchTime().toMillis(),
+                    sourceConfiguration.getAutoCommitCursorInterval(),
+                    TimeUnit.MILLISECONDS);
+        }
     }
 
-    super.close();
-  }
-
-  // ----------------- helper methods --------------
-
-  private void checkErrorAndRethrow() {
-    Throwable cause = cursorCommitThrowable.get();
-    if (cause != null) {
-      throw new RuntimeException("An error occurred in acknowledge message.", cause);
-    }
-  }
-
-  /**
-   * Acknowledge the pulsar topic partition cursor by the last consumed message id.
-   */
-  private void cumulativeAcknowledgmentMessage() {
-    Map<TopicPartition, MessageId> cursors = new HashMap<>(cursorsOfFinishedSplits);
-
-    // We reuse snapshotState for acquiring a consume status snapshot.
-    // So the checkpoint didn't really happen, so we just pass a fake checkpoint id.
-    List<PulsarPartitionSplit> splits = super.snapshotState(1L);
-    for (PulsarPartitionSplit split : splits) {
-      MessageId latestConsumedId = split.getLatestConsumedId();
-      if (latestConsumedId != null) {
-        cursors.put(split.getPartition(), latestConsumedId);
-      }
+    @Override
+    public InputStatus pollNext(ReaderOutput<OUT> output) throws Exception {
+        checkErrorAndRethrow();
+        return super.pollNext(output);
     }
 
-    try {
-      ((PulsarOrderedFetcherManager<OUT>) splitFetcherManager).acknowledgeMessages(cursors);
-      // Clean up the finish splits.
-      cursorsOfFinishedSplits.keySet().removeAll(cursors.keySet());
-    } catch (Exception e) {
-      LOG.error("Fail in auto cursor commit.", e);
-      cursorCommitThrowable.compareAndSet(null, e);
+    @Override
+    protected void onSplitFinished(Map<String, PulsarPartitionSplitState> finishedSplitIds) {
+        // We don't require new splits, all the splits are pre-assigned by source enumerator.
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("onSplitFinished event: {}", finishedSplitIds);
+        }
+
+        for (Map.Entry<String, PulsarPartitionSplitState> entry : finishedSplitIds.entrySet()) {
+            PulsarPartitionSplitState state = entry.getValue();
+            MessageId latestConsumedId = state.getLatestConsumedId();
+            if (latestConsumedId != null) {
+                cursorsOfFinishedSplits.put(state.getPartition(), latestConsumedId);
+            }
+        }
     }
-  }
+
+    @Override
+    public List<PulsarPartitionSplit> snapshotState(long checkpointId) {
+        List<PulsarPartitionSplit> splits = super.snapshotState(checkpointId);
+
+        // Perform a snapshot for these splits.
+        Map<TopicPartition, MessageId> cursors =
+                cursorsToCommit.computeIfAbsent(checkpointId, id -> new HashMap<>());
+        // Put the cursors of the active splits.
+        for (PulsarPartitionSplit split : splits) {
+            MessageId latestConsumedId = split.getLatestConsumedId();
+            if (latestConsumedId != null) {
+                cursors.put(split.getPartition(), latestConsumedId);
+            }
+        }
+        // Put cursors of all the finished splits.
+        cursors.putAll(cursorsOfFinishedSplits);
+
+        return splits;
+    }
+
+    @Override
+    public void notifyCheckpointComplete(long checkpointId) {
+        LOG.debug("Committing cursors for checkpoint {}", checkpointId);
+        Map<TopicPartition, MessageId> cursors = cursorsToCommit.get(checkpointId);
+        try {
+            ((PulsarOrderedFetcherManager<OUT>) splitFetcherManager).acknowledgeMessages(cursors);
+            LOG.debug("Successfully acknowledge cursors for checkpoint {}", checkpointId);
+
+            // Clean up the cursors.
+            cursorsOfFinishedSplits.keySet().removeAll(cursors.keySet());
+            cursorsToCommit.headMap(checkpointId + 1).clear();
+        } catch (Exception e) {
+            LOG.error("Failed to acknowledge cursors for checkpoint {}", checkpointId, e);
+            cursorCommitThrowable.compareAndSet(null, e);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (cursorScheduler != null) {
+            cursorScheduler.shutdown();
+        }
+
+        super.close();
+    }
+
+    // ----------------- helper methods --------------
+
+    private void checkErrorAndRethrow() {
+        Throwable cause = cursorCommitThrowable.get();
+        if (cause != null) {
+            throw new RuntimeException("An error occurred in acknowledge message.", cause);
+        }
+    }
+
+    /** Acknowledge the pulsar topic partition cursor by the last consumed message id. */
+    private void cumulativeAcknowledgmentMessage() {
+        Map<TopicPartition, MessageId> cursors = new HashMap<>(cursorsOfFinishedSplits);
+
+        // We reuse snapshotState for acquiring a consume status snapshot.
+        // So the checkpoint didn't really happen, so we just pass a fake checkpoint id.
+        List<PulsarPartitionSplit> splits = super.snapshotState(1L);
+        for (PulsarPartitionSplit split : splits) {
+            MessageId latestConsumedId = split.getLatestConsumedId();
+            if (latestConsumedId != null) {
+                cursors.put(split.getPartition(), latestConsumedId);
+            }
+        }
+
+        try {
+            ((PulsarOrderedFetcherManager<OUT>) splitFetcherManager).acknowledgeMessages(cursors);
+            // Clean up the finish splits.
+            cursorsOfFinishedSplits.keySet().removeAll(cursors.keySet());
+        } catch (Exception e) {
+            LOG.error("Fail in auto cursor commit.", e);
+            cursorCommitThrowable.compareAndSet(null, e);
+        }
+    }
 }

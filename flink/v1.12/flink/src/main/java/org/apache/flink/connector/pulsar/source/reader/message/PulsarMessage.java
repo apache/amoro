@@ -29,49 +29,45 @@ import org.apache.pulsar.client.api.MessageId;
 @Internal
 public class PulsarMessage<T> {
 
-  /**
-   * The id of a given message. This id could be same for multiple {@link PulsarMessage}, although
-   * it is unique for every {@link Message}.
-   */
-  private final MessageId id;
+    /**
+     * The id of a given message. This id could be same for multiple {@link PulsarMessage}, although
+     * it is unique for every {@link Message}.
+     */
+    private final MessageId id;
 
-  /**
-   * The value which deserialized by {@link PulsarDeserializationSchema}.
-   */
-  private final T value;
+    /** The value which deserialized by {@link PulsarDeserializationSchema}. */
+    private final T value;
 
-  /**
-   * The produce time for this message, it's a event time.
-   */
-  private final long eventTime;
+    /** The produce time for this message, it's a event time. */
+    private final long eventTime;
 
-  public PulsarMessage(MessageId id, T value, long eventTime) {
-    this.id = id;
-    this.value = value;
-    this.eventTime = eventTime;
-  }
+    public PulsarMessage(MessageId id, T value, long eventTime) {
+        this.id = id;
+        this.value = value;
+        this.eventTime = eventTime;
+    }
 
-  public MessageId getId() {
-    return id;
-  }
+    public MessageId getId() {
+        return id;
+    }
 
-  public T getValue() {
-    return value;
-  }
+    public T getValue() {
+        return value;
+    }
 
-  public long getEventTime() {
-    return eventTime;
-  }
+    public long getEventTime() {
+        return eventTime;
+    }
 
-  @Override
-  public String toString() {
-    return "PulsarMessage{" +
-        "id=" +
-        id +
-        ", value=" +
-        value +
-        ", eventTime=" +
-        eventTime +
-        '}';
-  }
+    @Override
+    public String toString() {
+        return "PulsarMessage{"
+                + "id="
+                + id
+                + ", value="
+                + value
+                + ", eventTime="
+                + eventTime
+                + '}';
+    }
 }

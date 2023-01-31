@@ -20,6 +20,7 @@ package org.apache.flink.connector.pulsar.source.reader.split;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
+import org.apache.flink.connector.pulsar.source.enumerator.cursor.CursorPosition;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
 import org.apache.flink.connector.pulsar.source.reader.deserializer.PulsarDeserializationSchema;
 import org.apache.flink.connector.pulsar.source.reader.source.PulsarOrderedSourceReader;
@@ -34,12 +35,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.apache.flink.connector.pulsar.common.utils.PulsarExceptionUtils.sneakyClient;
 import static org.apache.flink.connector.pulsar.source.config.CursorVerification.FAIL_ON_MISMATCH;
-import static org.apache.flink.connector.pulsar.source.enumerator.cursor.MessageIdUtils.nextMessageId;
 
 /**
  * The split reader a given {@link PulsarPartitionSplit}, it would be closed once the {@link
@@ -49,84 +48,76 @@ import static org.apache.flink.connector.pulsar.source.enumerator.cursor.Message
  */
 @Internal
 public class PulsarOrderedPartitionSplitReader<OUT> extends PulsarPartitionSplitReaderBase<OUT> {
-  private static final Logger LOG =
-      LoggerFactory.getLogger(PulsarOrderedPartitionSplitReader.class);
+    private static final Logger LOG =
+            LoggerFactory.getLogger(PulsarOrderedPartitionSplitReader.class);
 
-  public PulsarOrderedPartitionSplitReader(
-      PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin,
-      SourceConfiguration sourceConfiguration,
-      PulsarDeserializationSchema<OUT> deserializationSchema) {
-    super(pulsarClient, pulsarAdmin, sourceConfiguration, deserializationSchema);
-  }
-
-  @Override
-  protected Message<byte[]> pollMessage(Duration timeout) throws PulsarClientException {
-    return pulsarConsumer.receive(Math.toIntExact(timeout.toMillis()), TimeUnit.MILLISECONDS);
-  }
-
-  @Override
-  protected void finishedPollMessage(Message<byte[]> message) {
-    // Nothing to do here.
-    LOG.debug("Finished polling message {}", message);
-
-    // Release message
-    message.release();
-  }
-
-  @Override
-  protected void beforeCreatingConsumer(PulsarPartitionSplit split) {
-    MessageId latestConsumedId = split.getLatestConsumedId();
-
-    // Reset the start position for ordered pulsar consumer.
-    if (latestConsumedId != null) {
-      LOG.info("Reset subscription position by the checkpoint {}", latestConsumedId);
-      try {
-        MessageId initialPosition;
-        if (latestConsumedId == MessageId.latest || latestConsumedId == MessageId.earliest) {
-          // for compatibility
-          initialPosition = latestConsumedId;
-        } else {
-          initialPosition = nextMessageId(latestConsumedId);
-        }
-
-        // Remove Consumer.seek() here for waiting for pulsar-client-all 2.12.0
-        // See https://github.com/apache/pulsar/issues/16757 for more details.
-
-        String topicName = split.getPartition().getFullTopicName();
-        List<String> subscriptions = pulsarAdmin.topics().getSubscriptions(topicName);
-        String subscriptionName = sourceConfiguration.getSubscriptionName();
-
-        if (!subscriptions.contains(subscriptionName)) {
-          // If this subscription is not available. Just create it.
-          pulsarAdmin
-              .topics()
-              .createSubscription(topicName, subscriptionName, initialPosition);
-        } else {
-          // Reset the subscription if this is existed.
-          pulsarAdmin.topics().resetCursor(topicName, subscriptionName, initialPosition);
-        }
-      } catch (PulsarAdminException e) {
-        if (sourceConfiguration.getVerifyInitialOffsets() == FAIL_ON_MISMATCH) {
-          throw new IllegalArgumentException(e);
-        } else {
-          // WARN_ON_MISMATCH would just print this warning message.
-          // No need to print the stacktrace.
-          LOG.warn(
-              "Failed to reset cursor to {} on partition {}",
-              latestConsumedId,
-              split.getPartition(),
-              e);
-        }
-      }
-    }
-  }
-
-  public void notifyCheckpointComplete(TopicPartition partition, MessageId offsetsToCommit) {
-    if (pulsarConsumer == null) {
-      this.pulsarConsumer = createPulsarConsumer(partition);
+    public PulsarOrderedPartitionSplitReader(
+            PulsarClient pulsarClient,
+            PulsarAdmin pulsarAdmin,
+            SourceConfiguration sourceConfiguration,
+            PulsarDeserializationSchema<OUT> deserializationSchema) {
+        super(pulsarClient, pulsarAdmin, sourceConfiguration, deserializationSchema);
     }
 
-    sneakyClient(() -> pulsarConsumer.acknowledgeCumulative(offsetsToCommit));
-  }
+    @Override
+    protected Message<byte[]> pollMessage(Duration timeout) throws PulsarClientException {
+        return pulsarConsumer.receive(Math.toIntExact(timeout.toMillis()), TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    protected void finishedPollMessage(Message<byte[]> message) {
+        // Nothing to do here.
+        LOG.debug("Finished polling message {}", message);
+
+        // Release message
+        message.release();
+    }
+
+    @Override
+    protected void beforeCreatingConsumer(PulsarPartitionSplit split) {
+        MessageId latestConsumedId = split.getLatestConsumedId();
+
+        // Reset the start position for ordered pulsar consumer.
+        if (latestConsumedId != null) {
+            LOG.info("Reset subscription position by the checkpoint {}", latestConsumedId);
+            try {
+                CursorPosition cursorPosition;
+                if (latestConsumedId == MessageId.latest
+                        || latestConsumedId == MessageId.earliest) {
+                    // for compatibility
+                    cursorPosition = new CursorPosition(latestConsumedId, true);
+                } else {
+                    cursorPosition = new CursorPosition(latestConsumedId, false);
+                }
+
+                String topicName = registeredSplit.getPartition().getFullTopicName();
+                String subscriptionName = sourceConfiguration.getSubscriptionName();
+
+                // Remove Consumer.seek() here for waiting for pulsar-client-all 2.12.0
+                // See https://github.com/apache/pulsar/issues/16757 for more details.
+
+                cursorPosition.seekPosition(pulsarAdmin, topicName, subscriptionName);
+            } catch (PulsarAdminException e) {
+                if (sourceConfiguration.getVerifyInitialOffsets() == FAIL_ON_MISMATCH) {
+                    throw new IllegalArgumentException(e);
+                } else {
+                    // WARN_ON_MISMATCH would just print this warning message.
+                    // No need to print the stacktrace.
+                    LOG.warn(
+                            "Failed to reset cursor to {} on partition {}",
+                            latestConsumedId,
+                            registeredSplit.getPartition(),
+                            e);
+                }
+            }
+        }
+    }
+
+    public void notifyCheckpointComplete(TopicPartition partition, MessageId offsetsToCommit) {
+        if (pulsarConsumer == null) {
+            this.pulsarConsumer = createPulsarConsumer(partition);
+        }
+
+        sneakyClient(() -> pulsarConsumer.acknowledgeCumulative(offsetsToCommit));
+    }
 }

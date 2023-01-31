@@ -25,19 +25,17 @@ import org.apache.pulsar.common.schema.SchemaType;
 
 import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
 
-/**
- * The schema factory for pulsar's {@link JSONSchema}.
- */
+/** The schema factory for pulsar's {@link JSONSchema}. */
 public class JSONSchemaFactory<T> extends BaseStructSchemaFactory<T> {
 
-  @Override
-  public SchemaType type() {
-    return SchemaType.JSON;
-  }
+    @Override
+    public SchemaType type() {
+        return SchemaType.JSON;
+    }
 
-  @Override
-  public Schema<T> createSchema(SchemaInfo info) {
-    Class<T> typeClass = decodeClassInfo(info);
-    return JSONSchema.of(typeClass, info.getProperties());
-  }
+    @Override
+    public Schema<T> createSchema(SchemaInfo info) {
+        Class<T> typeClass = decodeClassInfo(info);
+        return JSONSchema.of(typeClass, info.getProperties());
+    }
 }

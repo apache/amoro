@@ -31,21 +31,23 @@ import org.apache.flink.util.UserCodeClassLoader;
  */
 @Internal
 public class PulsarDeserializationSchemaInitializationContext
-    implements DeserializationSchema.InitializationContext {
+        implements DeserializationSchema.InitializationContext {
 
-  private final SourceReaderContext readerContext;
+    private final SourceReaderContext readerContext;
 
-  public PulsarDeserializationSchemaInitializationContext(SourceReaderContext readerContext) {
-    this.readerContext = readerContext;
-  }
+    public PulsarDeserializationSchemaInitializationContext(SourceReaderContext readerContext) {
+        this.readerContext = readerContext;
+    }
 
-  @Override
-  public MetricGroup getMetricGroup() {
-    return readerContext.metricGroup().addGroup("pulsarDeserializer");
-  }
+    @Override
+    public MetricGroup getMetricGroup() {
+        return readerContext.metricGroup().addGroup("pulsarDeserializer");
+    }
 
-  @Override
-  public UserCodeClassLoader getUserCodeClassLoader() {
-    return (UserCodeClassLoader) Thread.currentThread().getContextClassLoader();
-  }
+    @Override
+    public UserCodeClassLoader getUserCodeClassLoader() {
+        // ------------------ custom start ---------------------
+        return (UserCodeClassLoader) Thread.currentThread().getContextClassLoader();
+        // ------------------ custom end ---------------------
+    }
 }

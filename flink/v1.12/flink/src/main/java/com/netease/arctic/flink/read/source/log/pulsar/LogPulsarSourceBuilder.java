@@ -25,7 +25,7 @@ import org.apache.flink.connector.pulsar.source.PulsarSourceBuilder;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.FullRangeGenerator;
-import org.apache.flink.connector.pulsar.source.enumerator.topic.range.UniformRangeGenerator;
+import org.apache.flink.connector.pulsar.source.enumerator.topic.range.SplitRangeGenerator;
 import org.apache.flink.table.data.RowData;
 import org.apache.iceberg.Schema;
 import org.apache.pulsar.client.api.SubscriptionType;
@@ -107,7 +107,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
       this.setServiceUrl(tableProperties.get(TableProperties.LOG_STORE_ADDRESS));
     }
     buildOfficial();
-    
+
     // If subscription name is not set, set a random value.
     if (!configBuilder.contains(PULSAR_SUBSCRIPTION_NAME)) {
       String uuid = UUID.randomUUID().toString();
@@ -143,7 +143,7 @@ public class LogPulsarSourceBuilder extends PulsarSourceBuilder<RowData> {
         LOG.warn(
             "No range generator provided for key_shared subscription," +
                 " we would use the UniformRangeGenerator as the default range generator.");
-        this.rangeGenerator = new UniformRangeGenerator();
+        this.rangeGenerator = new SplitRangeGenerator();
       }
     } else {
       // Override the range generator.

@@ -30,60 +30,58 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-/**
- * This assigner is used for {@link SubscriptionType#Shared} subscription.
- */
+/** This assigner is used for {@link SubscriptionType#Shared} subscription. */
 @Internal
 class SharedSplitAssigner extends SplitAssignerBase {
 
-  public SharedSplitAssigner(
-      StopCursor stopCursor,
-      boolean enablePartitionDiscovery,
-      SplitEnumeratorContext<PulsarPartitionSplit> context,
-      PulsarSourceEnumState enumState) {
-    super(stopCursor, enablePartitionDiscovery, context, enumState);
-  }
+    public SharedSplitAssigner(
+            StopCursor stopCursor,
+            boolean enablePartitionDiscovery,
+            SplitEnumeratorContext<PulsarPartitionSplit> context,
+            PulsarSourceEnumState enumState) {
+        super(stopCursor, enablePartitionDiscovery, context, enumState);
+    }
 
-  @Override
-  public List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions) {
-    List<TopicPartition> newPartitions = new ArrayList<>();
+    @Override
+    public List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions) {
+        List<TopicPartition> newPartitions = new ArrayList<>();
 
-    for (TopicPartition partition : fetchedPartitions) {
-      boolean shouldAssign = false;
-      if (!appendedPartitions.contains(partition)) {
-        appendedPartitions.add(partition);
-        newPartitions.add(partition);
-        shouldAssign = true;
-      }
+        for (TopicPartition partition : fetchedPartitions) {
+            boolean shouldAssign = false;
+            if (!appendedPartitions.contains(partition)) {
+                appendedPartitions.add(partition);
+                newPartitions.add(partition);
+                shouldAssign = true;
+            }
 
-      // Reassign the incoming splits when restarting from state.
-      if (shouldAssign || !initialized) {
-        // Share the split to all the readers.
-        for (int i = 0; i < context.currentParallelism(); i++) {
-          PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
-          addSplitToPendingList(i, split);
+            // Reassign the incoming splits when restarting from state.
+            if (shouldAssign || !initialized) {
+                // Share the split to all the readers.
+                for (int i = 0; i < context.currentParallelism(); i++) {
+                    PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
+                    addSplitToPendingList(i, split);
+                }
+            }
         }
-      }
+
+        if (!initialized) {
+            initialized = true;
+        }
+
+        return newPartitions;
     }
 
-    if (!initialized) {
-      initialized = true;
+    @Override
+    public void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId) {
+        if (splits.isEmpty()) {
+            // In case of the task failure. No splits will be put back to the enumerator.
+            for (TopicPartition partition : appendedPartitions) {
+                addSplitToPendingList(subtaskId, new PulsarPartitionSplit(partition, stopCursor));
+            }
+        } else {
+            for (PulsarPartitionSplit split : splits) {
+                addSplitToPendingList(subtaskId, split);
+            }
+        }
     }
-
-    return newPartitions;
-  }
-
-  @Override
-  public void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId) {
-    if (splits.isEmpty()) {
-      // In case of the task failure. No splits will be put back to the enumerator.
-      for (TopicPartition partition : appendedPartitions) {
-        addSplitToPendingList(subtaskId, new PulsarPartitionSplit(partition, stopCursor));
-      }
-    } else {
-      for (PulsarPartitionSplit split : splits) {
-        addSplitToPendingList(subtaskId, split);
-      }
-    }
-  }
 }

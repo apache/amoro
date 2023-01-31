@@ -37,51 +37,50 @@ import org.apache.pulsar.client.api.PulsarClient;
  * @param <OUT> The output message type for flink.
  */
 abstract class PulsarSourceReaderBase<OUT>
-    extends SourceReaderBase<
-    PulsarMessage<OUT>, OUT, PulsarPartitionSplit, PulsarPartitionSplitState> {
+        extends SourceReaderBase<
+                PulsarMessage<OUT>, OUT, PulsarPartitionSplit, PulsarPartitionSplitState> {
 
-  protected final SourceConfiguration sourceConfiguration;
-  protected final PulsarClient pulsarClient;
-  protected final PulsarAdmin pulsarAdmin;
+    protected final SourceConfiguration sourceConfiguration;
+    protected final PulsarClient pulsarClient;
+    protected final PulsarAdmin pulsarAdmin;
 
-  protected PulsarSourceReaderBase(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
-      PulsarFetcherManagerBase<OUT> splitFetcherManager,
-      SourceReaderContext context,
-      SourceConfiguration sourceConfiguration,
-      PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin,
-      PulsarRecordEmitter<OUT> emitter) {
-    super(
-        elementsQueue,
-        splitFetcherManager,
-        emitter,
-        sourceConfiguration,
-        context);
+    protected PulsarSourceReaderBase(
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
+            PulsarFetcherManagerBase<OUT> splitFetcherManager,
+            SourceReaderContext context,
+            SourceConfiguration sourceConfiguration,
+            PulsarClient pulsarClient,
+            PulsarAdmin pulsarAdmin) {
+        super(
+                elementsQueue,
+                splitFetcherManager,
+                new PulsarRecordEmitter<>(),
+                sourceConfiguration,
+                context);
 
-    this.sourceConfiguration = sourceConfiguration;
-    this.pulsarClient = pulsarClient;
-    this.pulsarAdmin = pulsarAdmin;
-  }
+        this.sourceConfiguration = sourceConfiguration;
+        this.pulsarClient = pulsarClient;
+        this.pulsarAdmin = pulsarAdmin;
+    }
 
-  @Override
-  protected PulsarPartitionSplitState initializedState(PulsarPartitionSplit split) {
-    return new PulsarPartitionSplitState(split);
-  }
+    @Override
+    protected PulsarPartitionSplitState initializedState(PulsarPartitionSplit split) {
+        return new PulsarPartitionSplitState(split);
+    }
 
-  @Override
-  protected PulsarPartitionSplit toSplitType(
-      String splitId, PulsarPartitionSplitState splitState) {
-    return splitState.toPulsarPartitionSplit();
-  }
+    @Override
+    protected PulsarPartitionSplit toSplitType(
+            String splitId, PulsarPartitionSplitState splitState) {
+        return splitState.toPulsarPartitionSplit();
+    }
 
-  @Override
-  public void close() throws Exception {
-    // Close the all the consumers first.
-    super.close();
+    @Override
+    public void close() throws Exception {
+        // Close the all the consumers first.
+        super.close();
 
-    // Close shared pulsar resources.
-    pulsarClient.shutdown();
-    pulsarAdmin.close();
-  }
+        // Close shared pulsar resources.
+        pulsarClient.shutdown();
+        pulsarAdmin.close();
+    }
 }

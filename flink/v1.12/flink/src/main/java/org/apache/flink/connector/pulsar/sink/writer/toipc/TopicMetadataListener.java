@@ -29,7 +29,6 @@ import org.apache.pulsar.common.partition.PartitionedTopicMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.Serializable;
@@ -53,135 +52,136 @@ import static org.apache.pulsar.common.partition.PartitionedTopicMetadata.NON_PA
  */
 @Internal
 public class TopicMetadataListener implements Serializable, Closeable {
-  private static final long serialVersionUID = 6186948471557507522L;
+    private static final long serialVersionUID = 6186948471557507522L;
 
-  private static final Logger LOG = LoggerFactory.getLogger(TopicMetadataListener.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TopicMetadataListener.class);
 
-  private final ImmutableList<String> partitionedTopics;
-  private final Map<String, Integer> topicMetadata;
-  private volatile ImmutableList<String> availableTopics;
+    private final ImmutableList<String> partitionedTopics;
+    private final Map<String, Integer> topicMetadata;
+    private volatile ImmutableList<String> availableTopics;
 
-  // Dynamic fields.
-  private transient PulsarAdmin pulsarAdmin;
-  private transient Long topicMetadataRefreshInterval;
-  @Nullable
-  private transient ProcessingTimeService timeService;
+    // Dynamic fields.
+    private transient PulsarAdmin pulsarAdmin;
+    private transient Long topicMetadataRefreshInterval;
+    private transient ProcessingTimeService timeService;
 
-  public TopicMetadataListener() {
-    this(emptyList());
-  }
-
-  public TopicMetadataListener(List<String> topics) {
-    List<String> partitions = new ArrayList<>(topics.size());
-    Map<String, Integer> metadata = new HashMap<>(topics.size());
-    for (String topic : topics) {
-      if (isPartition(topic)) {
-        partitions.add(topic);
-      } else {
-        // This would be updated when open writing.
-        metadata.put(topic, -1);
-      }
+    public TopicMetadataListener() {
+        this(emptyList());
     }
 
-    this.partitionedTopics = ImmutableList.copyOf(partitions);
-    this.topicMetadata = metadata;
-    this.availableTopics = ImmutableList.of();
-  }
-
-  /**
-   * Register the topic metadata update in process time service.
-   */
-  public void open(SinkConfiguration sinkConfiguration, ProcessingTimeService timeService) {
-    if (topicMetadata.isEmpty()) {
-      LOG.info("No topics have been provided, skip listener initialize.");
-      return;
-    }
-
-    // Initialize listener properties.
-    this.pulsarAdmin = createAdmin(sinkConfiguration);
-    this.topicMetadataRefreshInterval = sinkConfiguration.getTopicMetadataRefreshInterval();
-    this.timeService = timeService;
-
-    // Initialize the topic metadata. Quit if fail to connect to Pulsar.
-    sneakyAdmin(this::updateTopicMetadata);
-
-    // Register time service.
-    triggerNextTopicMetadataUpdate(true);
-  }
-
-  /**
-   * Return all the available topic partitions. We would recalculate the partitions if the topic
-   * metadata has been changed. Otherwise, we would return the cached result for better
-   * performance.
-   */
-  public List<String> availableTopics() {
-    if (availableTopics.isEmpty() && (!partitionedTopics.isEmpty() || !topicMetadata.isEmpty())) {
-      List<String> results = new ArrayList<>();
-      for (Map.Entry<String, Integer> entry : topicMetadata.entrySet()) {
-        int partitionNums = entry.getValue();
-        // Get all topics from partitioned and non-partitioned topic names
-        if (partitionNums == NON_PARTITIONED) {
-          results.add(topicName(entry.getKey()));
-        } else {
-          for (int i = 0; i < partitionNums; i++) {
-            results.add(topicNameWithPartition(entry.getKey(), i));
-          }
+    public TopicMetadataListener(List<String> topics) {
+        List<String> partitions = new ArrayList<>(topics.size());
+        Map<String, Integer> metadata = new HashMap<>(topics.size());
+        for (String topic : topics) {
+            if (isPartition(topic)) {
+                partitions.add(topic);
+            } else {
+                // This would be updated when open writing.
+                metadata.put(topic, -1);
+            }
         }
-      }
 
-      results.addAll(partitionedTopics);
-      LOG.info("available topic partitions update: {}", availableTopics);
-      this.availableTopics = ImmutableList.copyOf(results);
+        this.partitionedTopics = ImmutableList.copyOf(partitions);
+        this.topicMetadata = metadata;
+        this.availableTopics = ImmutableList.of();
     }
 
-    return availableTopics;
-  }
+    /** Register the topic metadata update in process time service. */
+    public void open(SinkConfiguration sinkConfiguration, ProcessingTimeService timeService) {
+        if (topicMetadata.isEmpty()) {
+            LOG.info("No topics have been provided, skip listener initialize.");
+            return;
+        }
 
-  @Override
-  public void close() throws IOException {
-    if (pulsarAdmin != null) {
-      pulsarAdmin.close();
-    }
-  }
+        // Initialize listener properties.
+        this.pulsarAdmin = createAdmin(sinkConfiguration);
+        this.topicMetadataRefreshInterval = sinkConfiguration.getTopicMetadataRefreshInterval();
+        this.timeService = timeService;
 
-  private void triggerNextTopicMetadataUpdate(boolean initial) {
-    if (!initial) {
-      // We should update the topic metadata, ignore the pulsar admin exception.
-      try {
-        updateTopicMetadata();
-      } catch (PulsarAdminException e) {
-        LOG.warn("", e);
-      }
-    }
+        // Initialize the topic metadata. Quit if fail to connect to Pulsar.
+        sneakyAdmin(this::updateTopicMetadata);
 
-    // cannot access timeService in JM
-    if (timeService == null) {
-      return;
-    }
-    // Register next timer.
-    long currentProcessingTime = timeService.getCurrentProcessingTime();
-    long triggerTime = currentProcessingTime + topicMetadataRefreshInterval;
-    timeService.registerTimer(triggerTime, time -> triggerNextTopicMetadataUpdate(false));
-  }
-
-  private void updateTopicMetadata() throws PulsarAdminException {
-    boolean shouldUpdate = false;
-
-    for (Map.Entry<String, Integer> entry : topicMetadata.entrySet()) {
-      String topic = entry.getKey();
-      PartitionedTopicMetadata metadata =
-          pulsarAdmin.topics().getPartitionedTopicMetadata(topic);
-
-      // Update topic metadata if it has been changed.
-      if (!Objects.equal(entry.getValue(), metadata.partitions)) {
-        entry.setValue(metadata.partitions);
-        shouldUpdate = true;
-      }
+        // Register time service.
+        triggerNextTopicMetadataUpdate(true);
     }
 
-    // Clear available topics if the topic metadata has been changed.
-    if (shouldUpdate) {
-      this.availableTopics = ImmutableList.of();
+    /**
+     * Return all the available topic partitions. We would recalculate the partitions if the topic
+     * metadata has been changed. Otherwise, we would return the cached result for better
+     * performance.
+     */
+    public List<String> availableTopics() {
+        if (availableTopics.isEmpty()
+                && (!partitionedTopics.isEmpty() || !topicMetadata.isEmpty())) {
+            List<String> results = new ArrayList<>();
+            for (Map.Entry<String, Integer> entry : topicMetadata.entrySet()) {
+                int partitionNums = entry.getValue();
+                // Get all topics from partitioned and non-partitioned topic names
+                if (partitionNums == NON_PARTITIONED) {
+                    results.add(topicName(entry.getKey()));
+                } else {
+                    for (int i = 0; i < partitionNums; i++) {
+                        results.add(topicNameWithPartition(entry.getKey(), i));
+                    }
+                }
+            }
+
+            results.addAll(partitionedTopics);
+            // ---------------- custom start ------------- 
+            LOG.info("available topic partitions update: {}", availableTopics);
+            // ---------------- custom end ------------- 
+            this.availableTopics = ImmutableList.copyOf(results);
+        }
+
+        return availableTopics;
     }
-  }
+
+    @Override
+    public void close() throws IOException {
+        if (pulsarAdmin != null) {
+            pulsarAdmin.close();
+        }
+    }
+
+    private void triggerNextTopicMetadataUpdate(boolean initial) {
+        if (!initial) {
+            // We should update the topic metadata, ignore the pulsar admin exception.
+            try {
+                updateTopicMetadata();
+            } catch (PulsarAdminException e) {
+                LOG.warn("", e);
+            }
+        }
+        // ---------------- custom start ------------- 
+        // cannot access timeService in JM
+        if (timeService == null) {
+            return;
+        }
+        // ---------------- custom end ------------- 
+        // Register next timer.
+        long currentProcessingTime = timeService.getCurrentProcessingTime();
+        long triggerTime = currentProcessingTime + topicMetadataRefreshInterval;
+        timeService.registerTimer(triggerTime, time -> triggerNextTopicMetadataUpdate(false));
+    }
+
+    private void updateTopicMetadata() throws PulsarAdminException {
+        boolean shouldUpdate = false;
+
+        for (Map.Entry<String, Integer> entry : topicMetadata.entrySet()) {
+            String topic = entry.getKey();
+            PartitionedTopicMetadata metadata =
+                    pulsarAdmin.topics().getPartitionedTopicMetadata(topic);
+
+            // Update topic metadata if it has been changed.
+            if (!Objects.equal(entry.getValue(), metadata.partitions)) {
+                entry.setValue(metadata.partitions);
+                shouldUpdate = true;
+            }
+        }
+
+        // Clear available topics if the topic metadata has been changed.
+        if (shouldUpdate) {
+            this.availableTopics = ImmutableList.of();
+        }
+    }
 }

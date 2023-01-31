@@ -35,29 +35,27 @@ import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.
  */
 @Internal
 class PulsarSchemaWrapper<T> implements PulsarDeserializationSchema<T> {
-  private static final long serialVersionUID = -4864701207257059158L;
+    private static final long serialVersionUID = -4864701207257059158L;
 
-  /**
-   * The serializable pulsar schema, it wrap the schema with type class.
-   */
-  private final PulsarSchema<T> pulsarSchema;
+    /** The serializable pulsar schema, it wrap the schema with type class. */
+    private final PulsarSchema<T> pulsarSchema;
 
-  public PulsarSchemaWrapper(PulsarSchema<T> pulsarSchema) {
-    this.pulsarSchema = pulsarSchema;
-  }
+    public PulsarSchemaWrapper(PulsarSchema<T> pulsarSchema) {
+        this.pulsarSchema = pulsarSchema;
+    }
 
-  @Override
-  public void deserialize(Message<byte[]> message, Collector<T> out) throws Exception {
-    Schema<T> schema = this.pulsarSchema.getPulsarSchema();
-    byte[] bytes = message.getData();
-    T instance = schema.decode(bytes);
+    @Override
+    public void deserialize(Message<byte[]> message, Collector<T> out) throws Exception {
+        Schema<T> schema = this.pulsarSchema.getPulsarSchema();
+        byte[] bytes = message.getData();
+        T instance = schema.decode(bytes);
 
-    out.collect(instance);
-  }
+        out.collect(instance);
+    }
 
-  @Override
-  public TypeInformation<T> getProducedType() {
-    SchemaInfo info = pulsarSchema.getSchemaInfo();
-    return createTypeInformation(info);
-  }
+    @Override
+    public TypeInformation<T> getProducedType() {
+        SchemaInfo info = pulsarSchema.getSchemaInfo();
+        return createTypeInformation(info);
+    }
 }

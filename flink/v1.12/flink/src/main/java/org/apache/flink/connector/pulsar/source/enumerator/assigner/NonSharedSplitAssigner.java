@@ -37,42 +37,42 @@ import java.util.Set;
 @Internal
 class NonSharedSplitAssigner extends SplitAssignerBase {
 
-  public NonSharedSplitAssigner(
-      StopCursor stopCursor,
-      boolean enablePartitionDiscovery,
-      SplitEnumeratorContext<PulsarPartitionSplit> context,
-      PulsarSourceEnumState enumState) {
-    super(stopCursor, enablePartitionDiscovery, context, enumState);
-  }
-
-  @Override
-  public List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions) {
-    List<TopicPartition> newPartitions = new ArrayList<>();
-
-    for (TopicPartition partition : fetchedPartitions) {
-      if (!appendedPartitions.contains(partition)) {
-        appendedPartitions.add(partition);
-        newPartitions.add(partition);
-
-        // Calculate the reader id by the current parallelism.
-        int readerId = partitionOwner(partition);
-        PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
-        addSplitToPendingList(readerId, split);
-      }
+    public NonSharedSplitAssigner(
+            StopCursor stopCursor,
+            boolean enablePartitionDiscovery,
+            SplitEnumeratorContext<PulsarPartitionSplit> context,
+            PulsarSourceEnumState enumState) {
+        super(stopCursor, enablePartitionDiscovery, context, enumState);
     }
 
-    if (!initialized) {
-      initialized = true;
+    @Override
+    public List<TopicPartition> registerTopicPartitions(Set<TopicPartition> fetchedPartitions) {
+        List<TopicPartition> newPartitions = new ArrayList<>();
+
+        for (TopicPartition partition : fetchedPartitions) {
+            if (!appendedPartitions.contains(partition)) {
+                appendedPartitions.add(partition);
+                newPartitions.add(partition);
+
+                // Calculate the reader id by the current parallelism.
+                int readerId = partitionOwner(partition);
+                PulsarPartitionSplit split = new PulsarPartitionSplit(partition, stopCursor);
+                addSplitToPendingList(readerId, split);
+            }
+        }
+
+        if (!initialized) {
+            initialized = true;
+        }
+
+        return newPartitions;
     }
 
-    return newPartitions;
-  }
-
-  @Override
-  public void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId) {
-    for (PulsarPartitionSplit split : splits) {
-      int readerId = partitionOwner(split.getPartition());
-      addSplitToPendingList(readerId, split);
+    @Override
+    public void addSplitsBack(List<PulsarPartitionSplit> splits, int subtaskId) {
+        for (PulsarPartitionSplit split : splits) {
+            int readerId = partitionOwner(split.getPartition());
+            addSplitToPendingList(readerId, split);
+        }
     }
-  }
 }

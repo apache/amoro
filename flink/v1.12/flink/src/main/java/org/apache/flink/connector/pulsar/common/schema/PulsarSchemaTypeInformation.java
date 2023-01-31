@@ -25,76 +25,74 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 
 import java.util.Objects;
 
-/**
- * Wrap the pulsar {@code Schema} into a flink {@code TypeInformation}.
- */
+/** Wrap the pulsar {@code Schema} into a flink {@code TypeInformation}. */
 @Internal
 public class PulsarSchemaTypeInformation<T> extends TypeInformation<T> {
-  private static final long serialVersionUID = 7284667318651333519L;
+    private static final long serialVersionUID = 7284667318651333519L;
 
-  private final PulsarSchema<T> schema;
+    private final PulsarSchema<T> schema;
 
-  public PulsarSchemaTypeInformation(PulsarSchema<T> schema) {
-    this.schema = schema;
-  }
-
-  @Override
-  public boolean isBasicType() {
-    return false;
-  }
-
-  @Override
-  public boolean isTupleType() {
-    return false;
-  }
-
-  @Override
-  public int getArity() {
-    return 1;
-  }
-
-  @Override
-  public int getTotalFields() {
-    return 1;
-  }
-
-  @Override
-  public Class<T> getTypeClass() {
-    return schema.getRecordClass();
-  }
-
-  @Override
-  public boolean isKeyType() {
-    return false;
-  }
-
-  @Override
-  public TypeSerializer<T> createSerializer(ExecutionConfig config) {
-    return new PulsarSchemaTypeSerializer<>(schema);
-  }
-
-  @Override
-  public String toString() {
-    return schema.toString();
-  }
-
-  @Override
-  public boolean equals(Object obj) {
-    if (obj instanceof PulsarSchemaTypeInformation) {
-      PulsarSchemaTypeInformation<?> that = (PulsarSchemaTypeInformation<?>) obj;
-      return Objects.equals(schema, that.schema);
-    } else {
-      return false;
+    public PulsarSchemaTypeInformation(PulsarSchema<T> schema) {
+        this.schema = schema;
     }
-  }
 
-  @Override
-  public int hashCode() {
-    return schema.hashCode();
-  }
+    @Override
+    public boolean isBasicType() {
+        return false;
+    }
 
-  @Override
-  public boolean canEqual(Object obj) {
-    return obj instanceof PulsarSchemaTypeInformation;
-  }
+    @Override
+    public boolean isTupleType() {
+        return false;
+    }
+
+    @Override
+    public int getArity() {
+        return 1;
+    }
+
+    @Override
+    public int getTotalFields() {
+        return 1;
+    }
+
+    @Override
+    public Class<T> getTypeClass() {
+        return schema.getRecordClass();
+    }
+
+    @Override
+    public boolean isKeyType() {
+        return false;
+    }
+
+    @Override
+    public TypeSerializer<T> createSerializer(ExecutionConfig config) {
+        return new PulsarSchemaTypeSerializer<>(schema);
+    }
+
+    @Override
+    public String toString() {
+        return schema.toString();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof PulsarSchemaTypeInformation) {
+            PulsarSchemaTypeInformation<?> that = (PulsarSchemaTypeInformation<?>) obj;
+            return Objects.equals(schema, that.schema);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return schema.hashCode();
+    }
+
+    @Override
+    public boolean canEqual(Object obj) {
+        return obj instanceof PulsarSchemaTypeInformation;
+    }
 }

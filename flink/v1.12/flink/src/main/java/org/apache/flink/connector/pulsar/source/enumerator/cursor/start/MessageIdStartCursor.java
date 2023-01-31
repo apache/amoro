@@ -23,41 +23,30 @@ import org.apache.flink.connector.pulsar.source.enumerator.cursor.StartCursor;
 import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.MessageId;
 
-import static org.apache.flink.connector.pulsar.source.enumerator.cursor.MessageIdUtils.nextMessageId;
-import static org.apache.flink.connector.pulsar.source.enumerator.cursor.MessageIdUtils.unwrapMessageId;
-
-/**
- * This cursor would leave pulsar start consuming from a specific message id.
- */
+/** This cursor would leave pulsar start consuming from a specific message id. */
 public class MessageIdStartCursor implements StartCursor {
-  private static final long serialVersionUID = -8057345435887170111L;
+    private static final long serialVersionUID = -8057345435887170111L;
 
-  private final MessageId messageId;
+    private final MessageId messageId;
+    private final boolean inclusive;
 
-  /**
-   * The default {@code inclusive} behavior should be controlled in {@link
-   * ConsumerBuilder#startMessageIdInclusive}. But pulsar has a bug and don't support this
-   * currently. We have to use {@code entry + 1} policy for consuming the next available message.
-   * If the message id entry is not valid. Pulsar would automatically find next valid message id.
-   * Please referer <a
-   * href="https://github.com/apache/pulsar/blob/36d5738412bb1ed9018178007bf63d9202b675db/managed-ledger/src/main/java/org/apache/bookkeeper/mledger/impl/ManagedCursorImpl.java#L1151">this
-   * code</a> for understanding pulsar internal logic.
-   *
-   * @param messageId The message id for start position.
-   * @param inclusive Whether we include the start message id in consuming result. This works only
-   *                  if we provide a specified message id instead of {@link MessageId#earliest} or {@link
-   *                  MessageId#latest}.
-   */
-  public MessageIdStartCursor(MessageId messageId, boolean inclusive) {
-    if (MessageId.earliest.equals(messageId) || MessageId.latest.equals(messageId) || inclusive) {
-      this.messageId = unwrapMessageId(messageId);
-    } else {
-      this.messageId = nextMessageId(messageId);
+    /**
+     * The default {@code inclusive} behavior should be controlled in {@link
+     * ConsumerBuilder#startMessageIdInclusive}. But pulsar has a bug and doesn't support this
+     * feature currently. We have to use admin API to reset the cursor instead.
+     *
+     * @param messageId The message id for start position.
+     * @param inclusive Whether we include the start message id in the consuming result. This works
+     *     only if we provide a specified message id instead of {@link MessageId#earliest} or {@link
+     *     MessageId#latest}.
+     */
+    public MessageIdStartCursor(MessageId messageId, boolean inclusive) {
+        this.messageId = messageId;
+        this.inclusive = inclusive;
     }
-  }
 
-  @Override
-  public CursorPosition position(String topic, int partitionId) {
-    return new CursorPosition(messageId);
-  }
+    @Override
+    public CursorPosition position(String topic, int partitionId) {
+        return new CursorPosition(messageId, inclusive);
+    }
 }

@@ -31,15 +31,15 @@ import org.apache.flink.connector.pulsar.source.split.PulsarPartitionSplitState;
  * emitter.
  */
 public class PulsarRecordEmitter<T>
-    implements RecordEmitter<PulsarMessage<T>, T, PulsarPartitionSplitState> {
+        implements RecordEmitter<PulsarMessage<T>, T, PulsarPartitionSplitState> {
 
-  @Override
-  public void emitRecord(
-      PulsarMessage<T> element, SourceOutput<T> output, PulsarPartitionSplitState splitState)
-      throws Exception {
-    // Sink the record to source output.
-    output.collect(element.getValue(), element.getEventTime());
-    // Update the split state.
-    splitState.setLatestConsumedId(element.getId());
-  }
+    @Override
+    public void emitRecord(
+            PulsarMessage<T> element, SourceOutput<T> output, PulsarPartitionSplitState splitState)
+            throws Exception {
+        // Sink the record to source output.
+        output.collect(element.getValue(), element.getEventTime());
+        // Update the split state.
+        splitState.setLatestConsumedId(element.getId());
+    }
 }

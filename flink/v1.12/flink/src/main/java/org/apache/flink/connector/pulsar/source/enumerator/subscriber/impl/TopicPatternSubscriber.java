@@ -35,78 +35,76 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static com.google.common.base.Predicates.not;
 import static java.util.stream.Collectors.toSet;
-import static org.apache.pulsar.shade.com.google.common.base.Predicates.not;
 
-/**
- * Subscribe to matching topics based on topic pattern.
- */
+/** Subscribe to matching topics based on topic pattern. */
 public class TopicPatternSubscriber extends BasePulsarSubscriber {
-  private static final long serialVersionUID = 3307710093243745104L;
+    private static final long serialVersionUID = 3307710093243745104L;
 
-  private final Pattern topicPattern;
-  private final RegexSubscriptionMode subscriptionMode;
-  private final String namespace;
+    private final Pattern topicPattern;
+    private final RegexSubscriptionMode subscriptionMode;
+    private final String namespace;
 
-  public TopicPatternSubscriber(Pattern topicPattern, RegexSubscriptionMode subscriptionMode) {
-    this.topicPattern = topicPattern;
-    this.subscriptionMode = subscriptionMode;
+    public TopicPatternSubscriber(Pattern topicPattern, RegexSubscriptionMode subscriptionMode) {
+        this.topicPattern = topicPattern;
+        this.subscriptionMode = subscriptionMode;
 
-    // Extract the namespace from topic pattern regex.
-    // If no namespace provided in the regex, we would directly use "default" as the namespace.
-    TopicName destination = TopicName.get(topicPattern.toString());
-    NamespaceName namespaceName = destination.getNamespaceObject();
-    this.namespace = namespaceName.toString();
-  }
-
-  @Override
-  public Set<TopicPartition> getSubscribedTopicPartitions(
-      PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism) {
-    try {
-      return pulsarAdmin
-          .namespaces()
-          .getTopics(namespace)
-          .parallelStream()
-          .filter(this::matchesSubscriptionMode)
-          .filter(not(TopicNameUtils::isInternal))
-          .filter(topic -> topicPattern.matcher(topic).find())
-          .map(topic -> queryTopicMetadata(pulsarAdmin, topic))
-          .filter(Objects::nonNull)
-          .flatMap(
-              metadata -> {
-                List<TopicRange> ranges =
-                    rangeGenerator.range(metadata, parallelism);
-                KeySharedMode mode =
-                    rangeGenerator.keyShareMode(metadata, parallelism);
-                return toTopicPartitions(metadata, ranges, mode).stream();
-              })
-          .collect(toSet());
-    } catch (PulsarAdminException e) {
-      if (e.getStatusCode() == 404) {
-        // Skip the topic metadata query.
-        return Collections.emptySet();
-      } else {
-        // This method would cause failure for subscribers.
-        throw new IllegalStateException(e);
-      }
+        // Extract the namespace from topic pattern regex.
+        // If no namespace provided in the regex, we would directly use "default" as the namespace.
+        TopicName destination = TopicName.get(topicPattern.toString());
+        NamespaceName namespaceName = destination.getNamespaceObject();
+        this.namespace = namespaceName.toString();
     }
-  }
 
-  /**
-   * Filter the topic by regex subscription mode. This logic is the same as pulsar consumer's
-   * regex subscription.
-   */
-  private boolean matchesSubscriptionMode(String topic) {
-    TopicName topicName = TopicName.get(topic);
-    // Filter the topic persistence.
-    switch (subscriptionMode) {
-      case PersistentOnly:
-        return topicName.isPersistent();
-      case NonPersistentOnly:
-        return !topicName.isPersistent();
-      default:
-        // RegexSubscriptionMode.AllTopics
-        return true;
+    @Override
+    public Set<TopicPartition> getSubscribedTopicPartitions(
+            PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism) {
+        try {
+            return pulsarAdmin
+                    .namespaces()
+                    .getTopics(namespace)
+                    .parallelStream()
+                    .filter(this::matchesSubscriptionMode)
+                    .filter(not(TopicNameUtils::isInternal))
+                    .filter(topic -> topicPattern.matcher(topic).find())
+                    .map(topic -> queryTopicMetadata(pulsarAdmin, topic))
+                    .filter(Objects::nonNull)
+                    .flatMap(
+                            metadata -> {
+                                List<TopicRange> ranges =
+                                        rangeGenerator.range(metadata, parallelism);
+                                KeySharedMode mode =
+                                        rangeGenerator.keyShareMode(metadata, parallelism);
+                                return toTopicPartitions(metadata, ranges, mode).stream();
+                            })
+                    .collect(toSet());
+        } catch (PulsarAdminException e) {
+            if (e.getStatusCode() == 404) {
+                // Skip the topic metadata query.
+                return Collections.emptySet();
+            } else {
+                // This method would cause failure for subscribers.
+                throw new IllegalStateException(e);
+            }
+        }
     }
-  }
+
+    /**
+     * Filter the topic by regex subscription mode. This logic is the same as pulsar consumer's
+     * regex subscription.
+     */
+    private boolean matchesSubscriptionMode(String topic) {
+        TopicName topicName = TopicName.get(topic);
+        // Filter the topic persistence.
+        switch (subscriptionMode) {
+            case PersistentOnly:
+                return topicName.isPersistent();
+            case NonPersistentOnly:
+                return !topicName.isPersistent();
+            default:
+                // RegexSubscriptionMode.AllTopics
+                return true;
+        }
+    }
 }

@@ -31,29 +31,29 @@ import org.apache.pulsar.client.api.Message;
  */
 public class PulsarMessageCollector<T> implements Collector<T> {
 
-  private final String splitId;
-  private final RecordsBySplits.Builder<PulsarMessage<T>> builder;
-  private Message<?> message;
+    private final String splitId;
+    private final RecordsBySplits.Builder<PulsarMessage<T>> builder;
+    private Message<?> message;
 
-  public PulsarMessageCollector(
-      String splitId, RecordsBySplits.Builder<PulsarMessage<T>> builder) {
-    this.splitId = splitId;
-    this.builder = builder;
-  }
+    public PulsarMessageCollector(
+            String splitId, RecordsBySplits.Builder<PulsarMessage<T>> builder) {
+        this.splitId = splitId;
+        this.builder = builder;
+    }
 
-  public void setMessage(Message<?> message) {
-    this.message = message;
-  }
+    public void setMessage(Message<?> message) {
+        this.message = message;
+    }
 
-  @Override
-  public void collect(T t) {
-    PulsarMessage<T> result =
-        new PulsarMessage<>(message.getMessageId(), t, message.getEventTime());
-    builder.add(splitId, result);
-  }
+    @Override
+    public void collect(T t) {
+        PulsarMessage<T> result =
+                new PulsarMessage<>(message.getMessageId(), t, message.getEventTime());
+        builder.add(splitId, result);
+    }
 
-  @Override
-  public void close() {
-    // Nothing to do for this collector.
-  }
+    @Override
+    public void close() {
+        // Nothing to do for this collector.
+    }
 }

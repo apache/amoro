@@ -31,35 +31,35 @@ import org.apache.pulsar.client.api.Message;
  * {@link ExecutionEnvironment#getConfig()}.
  */
 public class PulsarTypeInformationWrapper<T> implements PulsarDeserializationSchema<T> {
-  private static final long serialVersionUID = 6647084180084963022L;
+    private static final long serialVersionUID = 6647084180084963022L;
 
-  /**
-   * PulsarDeserializationSchema would be shared for multiple SplitReaders in different fetcher
-   * thread. Use a thread-local DataInputDeserializer would be better.
-   */
-  @SuppressWarnings("java:S5164")
-  private static final ThreadLocal<DataInputDeserializer> DESERIALIZER =
-      ThreadLocal.withInitial(DataInputDeserializer::new);
+    /**
+     * PulsarDeserializationSchema would be shared for multiple SplitReaders in different fetcher
+     * thread. Use a thread-local DataInputDeserializer would be better.
+     */
+    @SuppressWarnings("java:S5164")
+    private static final ThreadLocal<DataInputDeserializer> DESERIALIZER =
+            ThreadLocal.withInitial(DataInputDeserializer::new);
 
-  private final TypeInformation<T> information;
-  private final TypeSerializer<T> serializer;
+    private final TypeInformation<T> information;
+    private final TypeSerializer<T> serializer;
 
-  public PulsarTypeInformationWrapper(TypeInformation<T> information, ExecutionConfig config) {
-    this.information = information;
-    this.serializer = information.createSerializer(config);
-  }
+    public PulsarTypeInformationWrapper(TypeInformation<T> information, ExecutionConfig config) {
+        this.information = information;
+        this.serializer = information.createSerializer(config);
+    }
 
-  @Override
-  public void deserialize(Message<byte[]> message, Collector<T> out) throws Exception {
-    DataInputDeserializer dis = DESERIALIZER.get();
-    dis.setBuffer(message.getData());
-    T instance = serializer.deserialize(dis);
+    @Override
+    public void deserialize(Message<byte[]> message, Collector<T> out) throws Exception {
+        DataInputDeserializer dis = DESERIALIZER.get();
+        dis.setBuffer(message.getData());
+        T instance = serializer.deserialize(dis);
 
-    out.collect(instance);
-  }
+        out.collect(instance);
+    }
 
-  @Override
-  public TypeInformation<T> getProducedType() {
-    return information;
-  }
+    @Override
+    public TypeInformation<T> getProducedType() {
+        return information;
+    }
 }

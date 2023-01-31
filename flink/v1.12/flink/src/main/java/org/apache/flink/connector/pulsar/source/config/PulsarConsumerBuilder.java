@@ -37,54 +37,52 @@ import static org.apache.pulsar.client.util.RetryMessageUtil.DLQ_GROUP_TOPIC_SUF
 import static org.apache.pulsar.client.util.RetryMessageUtil.MAX_RECONSUMETIMES;
 import static org.apache.pulsar.client.util.RetryMessageUtil.RETRY_GROUP_TOPIC_SUFFIX;
 
-/**
- * Override the default consumer builder for supporting build the custom Key_Shared consumer.
- */
+/** Override the default consumer builder for supporting build the custom Key_Shared consumer. */
 public class PulsarConsumerBuilder<T> extends ConsumerBuilderImpl<T> {
 
-  public PulsarConsumerBuilder(PulsarClient client, Schema<T> schema) {
-    super((PulsarClientImpl) client, schema);
-  }
-
-  @Override
-  public CompletableFuture<Consumer<T>> subscribeAsync() {
-    PulsarClientImpl client = super.getClient();
-    ConsumerConfigurationData<T> conf = super.getConf();
-    Schema<T> schema = super.getSchema();
-    List<ConsumerInterceptor<T>> interceptorList = super.getInterceptorList();
-
-    // Override the default subscribeAsync for skipping the subscription validation.
-    if (conf.isRetryEnable()) {
-      TopicName topicFirst = TopicName.get(conf.getTopicNames().iterator().next());
-      String retryLetterTopic =
-          topicFirst + "-" + conf.getSubscriptionName() + RETRY_GROUP_TOPIC_SUFFIX;
-      String deadLetterTopic =
-          topicFirst + "-" + conf.getSubscriptionName() + DLQ_GROUP_TOPIC_SUFFIX;
-
-      DeadLetterPolicy deadLetterPolicy = conf.getDeadLetterPolicy();
-      if (deadLetterPolicy == null) {
-        conf.setDeadLetterPolicy(
-            DeadLetterPolicy.builder()
-                .maxRedeliverCount(MAX_RECONSUMETIMES)
-                .retryLetterTopic(retryLetterTopic)
-                .deadLetterTopic(deadLetterTopic)
-                .build());
-      } else {
-        if (Strings.isNullOrEmpty(deadLetterPolicy.getRetryLetterTopic())) {
-          deadLetterPolicy.setRetryLetterTopic(retryLetterTopic);
-        }
-        if (Strings.isNullOrEmpty(deadLetterPolicy.getDeadLetterTopic())) {
-          deadLetterPolicy.setDeadLetterTopic(deadLetterTopic);
-        }
-      }
-
-      conf.getTopicNames().add(conf.getDeadLetterPolicy().getRetryLetterTopic());
+    public PulsarConsumerBuilder(PulsarClient client, Schema<T> schema) {
+        super((PulsarClientImpl) client, schema);
     }
 
-    if (interceptorList == null || interceptorList.isEmpty()) {
-      return client.subscribeAsync(conf, schema, null);
-    } else {
-      return client.subscribeAsync(conf, schema, new ConsumerInterceptors<>(interceptorList));
+    @Override
+    public CompletableFuture<Consumer<T>> subscribeAsync() {
+        PulsarClientImpl client = super.getClient();
+        ConsumerConfigurationData<T> conf = super.getConf();
+        Schema<T> schema = super.getSchema();
+        List<ConsumerInterceptor<T>> interceptorList = super.getInterceptorList();
+
+        // Override the default subscribeAsync for skipping the subscription validation.
+        if (conf.isRetryEnable()) {
+            TopicName topicFirst = TopicName.get(conf.getTopicNames().iterator().next());
+            String retryLetterTopic =
+                    topicFirst + "-" + conf.getSubscriptionName() + RETRY_GROUP_TOPIC_SUFFIX;
+            String deadLetterTopic =
+                    topicFirst + "-" + conf.getSubscriptionName() + DLQ_GROUP_TOPIC_SUFFIX;
+
+            DeadLetterPolicy deadLetterPolicy = conf.getDeadLetterPolicy();
+            if (deadLetterPolicy == null) {
+                conf.setDeadLetterPolicy(
+                        DeadLetterPolicy.builder()
+                                .maxRedeliverCount(MAX_RECONSUMETIMES)
+                                .retryLetterTopic(retryLetterTopic)
+                                .deadLetterTopic(deadLetterTopic)
+                                .build());
+            } else {
+                if (Strings.isNullOrEmpty(deadLetterPolicy.getRetryLetterTopic())) {
+                    deadLetterPolicy.setRetryLetterTopic(retryLetterTopic);
+                }
+                if (Strings.isNullOrEmpty(deadLetterPolicy.getDeadLetterTopic())) {
+                    deadLetterPolicy.setDeadLetterTopic(deadLetterTopic);
+                }
+            }
+
+            conf.getTopicNames().add(conf.getDeadLetterPolicy().getRetryLetterTopic());
+        }
+
+        if (interceptorList == null || interceptorList.isEmpty()) {
+            return client.subscribeAsync(conf, schema, null);
+        } else {
+            return client.subscribeAsync(conf, schema, new ConsumerInterceptors<>(interceptorList));
+        }
     }
-  }
 }

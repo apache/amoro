@@ -24,30 +24,25 @@ import org.apache.flink.configuration.description.InlineElement;
 
 import static org.apache.flink.configuration.description.TextElement.text;
 
-/**
- * The enum class for defining the cursor verify behavior.
- */
+// ------------- custom start ------------------
+/** The enum class for defining the cursor verify behavior. */
 @PublicEvolving
 public enum CursorVerification {
+// ------------- custom end ------------------
+    /** We would just fail the consuming. */
+    FAIL_ON_MISMATCH(text("Fail the consuming from Pulsar when we don't find the related cursor.")),
 
-  /**
-   * We would just fail the consuming.
-   */
-  FAIL_ON_MISMATCH(text("Fail the consuming from Pulsar when we don't find the related cursor.")),
+    /** Print a warn message and start consuming from the valid offset. */
+    WARN_ON_MISMATCH(text("Print a warn message and start consuming from the valid offset."));
 
-  /**
-   * Print a warn message and start consuming from the valid offset.
-   */
-  WARN_ON_MISMATCH(text("Print a warn message and start consuming from the valid offset."));
+    private final InlineElement desc;
 
-  private final InlineElement desc;
+    CursorVerification(InlineElement desc) {
+        this.desc = desc;
+    }
 
-  CursorVerification(InlineElement desc) {
-    this.desc = desc;
-  }
-
-  @Internal
-  public InlineElement getDescription() {
-    return desc;
-  }
+    @Internal
+    public InlineElement getDescription() {
+        return desc;
+    }
 }

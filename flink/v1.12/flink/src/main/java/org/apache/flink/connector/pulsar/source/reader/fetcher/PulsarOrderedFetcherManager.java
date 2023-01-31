@@ -44,31 +44,31 @@ import java.util.function.Supplier;
  */
 @Internal
 public class PulsarOrderedFetcherManager<T> extends PulsarFetcherManagerBase<T> {
-  private static final Logger LOG = LoggerFactory.getLogger(PulsarOrderedFetcherManager.class);
+    private static final Logger LOG = LoggerFactory.getLogger(PulsarOrderedFetcherManager.class);
 
-  public PulsarOrderedFetcherManager(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<T>>> elementsQueue,
-      Supplier<SplitReader<PulsarMessage<T>, PulsarPartitionSplit>> splitReaderSupplier) {
-    super(elementsQueue, splitReaderSupplier);
-  }
+    public PulsarOrderedFetcherManager(
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<T>>> elementsQueue,
+            Supplier<SplitReader<PulsarMessage<T>, PulsarPartitionSplit>> splitReaderSupplier) {
+        super(elementsQueue, splitReaderSupplier);
+    }
 
-  public void acknowledgeMessages(Map<TopicPartition, MessageId> cursorsToCommit) {
-    LOG.debug("Acknowledge messages {}", cursorsToCommit);
-    cursorsToCommit.forEach(
-        (partition, messageId) -> {
-          SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher =
-              getOrCreateFetcher(partition.toString());
-          triggerAcknowledge(fetcher, partition, messageId);
-        });
-  }
+    public void acknowledgeMessages(Map<TopicPartition, MessageId> cursorsToCommit) {
+        LOG.debug("Acknowledge messages {}", cursorsToCommit);
+        cursorsToCommit.forEach(
+                (partition, messageId) -> {
+                    SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> fetcher =
+                            getOrCreateFetcher(partition.toString());
+                    triggerAcknowledge(fetcher, partition, messageId);
+                });
+    }
 
-  private void triggerAcknowledge(
-      SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> splitFetcher,
-      TopicPartition partition,
-      MessageId messageId) {
-    PulsarOrderedPartitionSplitReader<T> splitReader =
-        (PulsarOrderedPartitionSplitReader<T>) splitFetcher.getSplitReader();
-    splitReader.notifyCheckpointComplete(partition, messageId);
-    startFetcher(splitFetcher);
-  }
+    private void triggerAcknowledge(
+            SplitFetcher<PulsarMessage<T>, PulsarPartitionSplit> splitFetcher,
+            TopicPartition partition,
+            MessageId messageId) {
+        PulsarOrderedPartitionSplitReader<T> splitReader =
+                (PulsarOrderedPartitionSplitReader<T>) splitFetcher.getSplitReader();
+        splitReader.notifyCheckpointComplete(partition, messageId);
+        startFetcher(splitFetcher);
+    }
 }

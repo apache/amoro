@@ -37,49 +37,47 @@ import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.
 import static org.apache.pulsar.client.impl.schema.KeyValueSchemaInfo.decodeKeyValueEncodingType;
 import static org.apache.pulsar.client.impl.schema.KeyValueSchemaInfo.decodeKeyValueSchemaInfo;
 
-/**
- * The schema factory for pulsar's {@link KeyValueSchemaImpl}.
- */
+/** The schema factory for pulsar's {@link KeyValueSchemaImpl}. */
 public class KeyValueSchemaFactory<K, V> implements PulsarSchemaFactory<KeyValue<K, V>> {
 
-  @Override
-  public SchemaType type() {
-    return SchemaType.KEY_VALUE;
-  }
+    @Override
+    public SchemaType type() {
+        return SchemaType.KEY_VALUE;
+    }
 
-  @Override
-  public Schema<KeyValue<K, V>> createSchema(SchemaInfo info) {
-    KeyValue<SchemaInfo, SchemaInfo> kvSchemaInfo = decodeKeyValueSchemaInfo(info);
+    @Override
+    public Schema<KeyValue<K, V>> createSchema(SchemaInfo info) {
+        KeyValue<SchemaInfo, SchemaInfo> kvSchemaInfo = decodeKeyValueSchemaInfo(info);
 
-    Schema<K> keySchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getKey());
-    Schema<V> valueSchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getValue());
-    KeyValueEncodingType encodingType = decodeKeyValueEncodingType(info);
+        Schema<K> keySchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getKey());
+        Schema<V> valueSchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getValue());
+        KeyValueEncodingType encodingType = decodeKeyValueEncodingType(info);
 
-    Schema<KeyValue<K, V>> schema = KeyValueSchemaImpl.of(keySchema, valueSchema, encodingType);
+        Schema<KeyValue<K, V>> schema = KeyValueSchemaImpl.of(keySchema, valueSchema, encodingType);
 
-    // Append extra class name into schema info properties.
-    // KeyValueSchema don't have custom properties builder method, we have to use side effects.
-    SchemaInfo schemaInfo = schema.getSchemaInfo();
-    Map<String, String> properties = schemaInfo.getProperties();
-    properties.put(CLASS_INFO_PLACEHOLDER, KeyValue.class.getName());
+        // Append extra class name into schema info properties.
+        // KeyValueSchema don't have custom properties builder method, we have to use side effects.
+        SchemaInfo schemaInfo = schema.getSchemaInfo();
+        Map<String, String> properties = schemaInfo.getProperties();
+        properties.put(CLASS_INFO_PLACEHOLDER, KeyValue.class.getName());
 
-    return schema;
-  }
+        return schema;
+    }
 
-  @Override
-  public TypeInformation<KeyValue<K, V>> createTypeInfo(SchemaInfo info) {
-    KeyValue<SchemaInfo, SchemaInfo> kvSchemaInfo = decodeKeyValueSchemaInfo(info);
+    @Override
+    public TypeInformation<KeyValue<K, V>> createTypeInfo(SchemaInfo info) {
+        KeyValue<SchemaInfo, SchemaInfo> kvSchemaInfo = decodeKeyValueSchemaInfo(info);
 
-    Schema<K> keySchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getKey());
-    Class<K> keyClass = decodeClassInfo(keySchema.getSchemaInfo());
+        Schema<K> keySchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getKey());
+        Class<K> keyClass = decodeClassInfo(keySchema.getSchemaInfo());
 
-    Schema<V> valueSchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getValue());
-    Class<V> valueClass = decodeClassInfo(valueSchema.getSchemaInfo());
+        Schema<V> valueSchema = PulsarSchemaUtils.createSchema(kvSchemaInfo.getValue());
+        Class<V> valueClass = decodeClassInfo(valueSchema.getSchemaInfo());
 
-    Schema<KeyValue<K, V>> schema = createSchema(info);
-    PulsarSchema<KeyValue<K, V>> pulsarSchema =
-        new PulsarSchema<>(schema, keyClass, valueClass);
+        Schema<KeyValue<K, V>> schema = createSchema(info);
+        PulsarSchema<KeyValue<K, V>> pulsarSchema =
+                new PulsarSchema<>(schema, keyClass, valueClass);
 
-    return new PulsarSchemaTypeInformation<>(pulsarSchema);
-  }
+        return new PulsarSchemaTypeInformation<>(pulsarSchema);
+    }
 }

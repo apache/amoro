@@ -31,56 +31,52 @@ import org.apache.pulsar.client.api.PulsarClientException;
 @Internal
 public final class PulsarExceptionUtils {
 
-  private PulsarExceptionUtils() {
-    // No public constructor.
-  }
-
-  public static <R extends PulsarClientException> void sneakyClient(
-      ThrowingRunnable<R> runnable) {
-    sneaky(runnable);
-  }
-
-  public static <T, R extends PulsarClientException> T sneakyClient(
-      SupplierWithException<T, R> supplier) {
-    return sneaky(supplier);
-  }
-
-  public static <R extends PulsarAdminException> void sneakyAdmin(ThrowingRunnable<R> runnable) {
-    sneaky(runnable);
-  }
-
-  public static <T, R extends PulsarAdminException> T sneakyAdmin(
-      SupplierWithException<T, R> supplier) {
-    return sneaky(supplier);
-  }
-
-  private static <R extends Exception> void sneaky(ThrowingRunnable<R> runnable) {
-    try {
-      runnable.run();
-    } catch (Exception r) {
-      sneakyThrow(r);
-    }
-  }
-
-  /**
-   * Catch the throwable exception and rethrow it without try catch.
-   */
-  private static <T, R extends Exception> T sneaky(SupplierWithException<T, R> supplier) {
-    try {
-      return supplier.get();
-    } catch (Exception r) {
-      sneakyThrow(r);
+    private PulsarExceptionUtils() {
+        // No public constructor.
     }
 
-    // This method wouldn't be executed.
-    throw new RuntimeException("Never throw here.");
-  }
+    public static <R extends PulsarClientException> void sneakyClient(
+            ThrowingRunnable<R> runnable) {
+        sneaky(runnable);
+    }
 
-  /**
-   * javac hack for unchecking the checked exception.
-   */
-  @SuppressWarnings("unchecked")
-  public static <T extends Exception> void sneakyThrow(Exception t) throws T {
-    throw (T) t;
-  }
+    public static <T, R extends PulsarClientException> T sneakyClient(
+            SupplierWithException<T, R> supplier) {
+        return sneaky(supplier);
+    }
+
+    public static <R extends PulsarAdminException> void sneakyAdmin(ThrowingRunnable<R> runnable) {
+        sneaky(runnable);
+    }
+
+    public static <T, R extends PulsarAdminException> T sneakyAdmin(
+            SupplierWithException<T, R> supplier) {
+        return sneaky(supplier);
+    }
+
+    private static <R extends Exception> void sneaky(ThrowingRunnable<R> runnable) {
+        try {
+            runnable.run();
+        } catch (Exception r) {
+            sneakyThrow(r);
+        }
+    }
+
+    /** Catch the throwable exception and rethrow it without try catch. */
+    private static <T, R extends Exception> T sneaky(SupplierWithException<T, R> supplier) {
+        try {
+            return supplier.get();
+        } catch (Exception r) {
+            sneakyThrow(r);
+        }
+
+        // This method wouldn't be executed.
+        throw new RuntimeException("Never throw here.");
+    }
+
+    /** javac hack for unchecking the checked exception. */
+    @SuppressWarnings("unchecked")
+    public static <T extends Exception> void sneakyThrow(Exception t) throws T {
+        throw (T) t;
+    }
 }

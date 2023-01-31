@@ -36,72 +36,72 @@ import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.de
 import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.deserializeSet;
 import static org.apache.flink.connector.pulsar.common.utils.PulsarSerdeUtils.serializeSet;
 
-/**
- * The {@link SimpleVersionedSerializer Serializer} for the enumerator state of Pulsar source.
- */
+/** The {@link SimpleVersionedSerializer Serializer} for the enumerator state of Pulsar source. */
 public class PulsarSourceEnumStateSerializer
-    implements SimpleVersionedSerializer<PulsarSourceEnumState> {
+        implements SimpleVersionedSerializer<PulsarSourceEnumState> {
 
-  // This version should be bumped after modifying the PulsarSourceEnumState.
-  public static final int CURRENT_VERSION = 2;
+    // This version should be bumped after modifying the PulsarSourceEnumState.
+    public static final int CURRENT_VERSION = 2;
 
-  public static final PulsarSourceEnumStateSerializer INSTANCE =
-      new PulsarSourceEnumStateSerializer();
+    public static final PulsarSourceEnumStateSerializer INSTANCE =
+            new PulsarSourceEnumStateSerializer();
 
-  private static final PulsarPartitionSplitSerializer SPLIT_SERIALIZER =
-      PulsarPartitionSplitSerializer.INSTANCE;
+    private static final PulsarPartitionSplitSerializer SPLIT_SERIALIZER =
+            PulsarPartitionSplitSerializer.INSTANCE;
 
-  private PulsarSourceEnumStateSerializer() {
-    // Singleton instance.
-  }
-
-  @Override
-  public int getVersion() {
-    return CURRENT_VERSION;
-  }
-
-  @Override
-  public byte[] serialize(PulsarSourceEnumState obj) throws IOException {
-    try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-         DataOutputStream out = new DataOutputStream(baos)) {
-      serializeSet(
-          out, obj.getAppendedPartitions(), SPLIT_SERIALIZER::serializeTopicPartition);
-      out.flush();
-      return baos.toByteArray();
+    private PulsarSourceEnumStateSerializer() {
+        // Singleton instance.
     }
-  }
 
-  @Override
-  public PulsarSourceEnumState deserialize(int version, byte[] serialized) throws IOException {
-    // VERSION 2 deserialization, support VERSION 0 and 1 deserialization in the meantime.
-    try (ByteArrayInputStream bais = new ByteArrayInputStream(serialized);
-         DataInputStream in = new DataInputStream(bais)) {
-      Set<TopicPartition> partitions = null;
-      if (version == 2) {
-        partitions = deserializeSet(in, deserializePartition(1));
-      } else {
-        partitions = deserializeSet(in, deserializePartition(0));
-      }
-
-      // Only deserialize these fields for backward compatibility.
-      if (version == 0) {
-        deserializeSet(in, deserializeSplit(0));
-        deserializeMap(in, DataInput::readInt, i -> deserializeSet(i, deserializeSplit(0)));
-        deserializeMap(in, DataInput::readInt, i -> deserializeSet(i, DataInput::readUTF));
-        in.readBoolean();
-      }
-
-      return new PulsarSourceEnumState(partitions);
+    @Override
+    public int getVersion() {
+        return CURRENT_VERSION;
     }
-  }
 
-  // ----------------- private methods -------------------
+    @Override
+    public byte[] serialize(PulsarSourceEnumState obj) throws IOException {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                DataOutputStream out = new DataOutputStream(baos)) {
+            serializeSet(
+                    out, obj.getAppendedPartitions(), SPLIT_SERIALIZER::serializeTopicPartition);
+            out.flush();
+            return baos.toByteArray();
+        }
+    }
 
-  private FunctionWithException<DataInputStream, TopicPartition, IOException> deserializePartition(int version) {
-    return in -> SPLIT_SERIALIZER.deserializeTopicPartition(version, in);
-  }
+    @Override
+    public PulsarSourceEnumState deserialize(int version, byte[] serialized) throws IOException {
+        // VERSION 2 deserialization, support VERSION 0 and 1 deserialization in the meantime.
+        try (ByteArrayInputStream bais = new ByteArrayInputStream(serialized);
+                DataInputStream in = new DataInputStream(bais)) {
+            Set<TopicPartition> partitions = null;
+            if (version == 2) {
+                partitions = deserializeSet(in, deserializePartition(1));
+            } else {
+                partitions = deserializeSet(in, deserializePartition(0));
+            }
 
-  private FunctionWithException<DataInputStream, PulsarPartitionSplit, IOException> deserializeSplit(int version) {
-    return in -> SPLIT_SERIALIZER.deserializePulsarPartitionSplit(version, in);
-  }
+            // Only deserialize these fields for backward compatibility.
+            if (version == 0) {
+                deserializeSet(in, deserializeSplit(0));
+                deserializeMap(in, DataInput::readInt, i -> deserializeSet(i, deserializeSplit(0)));
+                deserializeMap(in, DataInput::readInt, i -> deserializeSet(i, DataInput::readUTF));
+                in.readBoolean();
+            }
+
+            return new PulsarSourceEnumState(partitions);
+        }
+    }
+
+    // ----------------- private methods -------------------
+
+    private FunctionWithException<DataInputStream, TopicPartition, IOException>
+            deserializePartition(int version) {
+        return in -> SPLIT_SERIALIZER.deserializeTopicPartition(version, in);
+    }
+
+    private FunctionWithException<DataInputStream, PulsarPartitionSplit, IOException>
+            deserializeSplit(int version) {
+        return in -> SPLIT_SERIALIZER.deserializePulsarPartitionSplit(version, in);
+    }
 }

@@ -77,127 +77,125 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
 @SuppressWarnings("unchecked")
 public final class PulsarSchemaUtils {
 
-  private static final Class<Message> PROTOBUF_MESSAGE_CLASS;
-  // Predefined pulsar schema factory.
-  private static final Map<SchemaType, PulsarSchemaFactory<?>> FACTORY_REGISTER =
-      new EnumMap<>(SchemaType.class);
+    private static final Class<Message> PROTOBUF_MESSAGE_CLASS;
+    // Predefined pulsar schema factory.
+    private static final Map<SchemaType, PulsarSchemaFactory<?>> FACTORY_REGISTER =
+            new EnumMap<>(SchemaType.class);
 
-  public static final String CLASS_INFO_PLACEHOLDER = "INTERNAL.pulsar.schema.type.class.name";
+    public static final String CLASS_INFO_PLACEHOLDER = "INTERNAL.pulsar.schema.type.class.name";
 
-  static {
-    // Initialize protobuf message class.
-    Class<Message> messageClass;
-    try {
-      messageClass = (Class<Message>) Class.forName("com.google.protobuf.Message");
-    } catch (ClassNotFoundException e) {
-      messageClass = null;
+    static {
+        // Initialize protobuf message class.
+        Class<Message> messageClass;
+        try {
+            messageClass = (Class<Message>) Class.forName("com.google.protobuf.Message");
+        } catch (ClassNotFoundException e) {
+            messageClass = null;
+        }
+        PROTOBUF_MESSAGE_CLASS = messageClass;
+
+        // Struct schemas
+        registerSchemaFactory(new AvroSchemaFactory<>());
+        registerSchemaFactory(new JSONSchemaFactory<>());
+        registerSchemaFactory(new KeyValueSchemaFactory<>());
+        if (haveProtobuf()) {
+            // Protobuf type should be supported only when we have protobuf-java.
+            registerSchemaFactory(new ProtobufNativeSchemaFactory<>());
+            registerSchemaFactory(new ProtobufSchemaFactory<>());
+        }
+
+        // Primitive schemas
+        registerSchemaFactory(new StringSchemaFactory());
+        registerSchemaFactory(
+                new PrimitiveSchemaFactory<>(
+                        SchemaType.NONE, BytesSchema.of(), BYTE_PRIMITIVE_ARRAY_TYPE_INFO));
+        registerPrimitiveFactory(BooleanSchema.of(), BOOLEAN);
+        registerPrimitiveFactory(ByteSchema.of(), BYTE);
+        registerPrimitiveFactory(BytesSchema.of(), BYTE_PRIMITIVE_ARRAY_TYPE_INFO);
+        registerPrimitiveFactory(DateSchema.of(), DATE_TYPE_INFO);
+        registerPrimitiveFactory(DoubleSchema.of(), DOUBLE);
+        registerPrimitiveFactory(FloatSchema.of(), FLOAT);
+        registerPrimitiveFactory(InstantSchema.of(), INSTANT);
+        registerPrimitiveFactory(IntSchema.of(), INT);
+        registerPrimitiveFactory(LocalDateSchema.of(), LOCAL_DATE);
+        registerPrimitiveFactory(LocalDateTimeSchema.of(), LOCAL_DATE_TIME);
+        registerPrimitiveFactory(LocalTimeSchema.of(), LOCAL_TIME);
+        registerPrimitiveFactory(LongSchema.of(), LONG);
+        registerPrimitiveFactory(ShortSchema.of(), SHORT);
+        registerPrimitiveFactory(TimeSchema.of(), SQL_TIME);
+        registerPrimitiveFactory(TimestampSchema.of(), SQL_TIMESTAMP);
     }
-    PROTOBUF_MESSAGE_CLASS = messageClass;
 
-    // Struct schemas
-    registerSchemaFactory(new AvroSchemaFactory<>());
-    registerSchemaFactory(new JSONSchemaFactory<>());
-    registerSchemaFactory(new KeyValueSchemaFactory<>());
-    if (haveProtobuf()) {
-      // Protobuf type should be supported only when we have protobuf-java.
-      registerSchemaFactory(new ProtobufNativeSchemaFactory<>());
-      registerSchemaFactory(new ProtobufSchemaFactory<>());
+    private PulsarSchemaUtils() {
+        // No need to create instance.
     }
 
-    // Primitive schemas
-    registerSchemaFactory(new StringSchemaFactory());
-    registerSchemaFactory(
-        new PrimitiveSchemaFactory<>(
-            SchemaType.NONE, BytesSchema.of(), BYTE_PRIMITIVE_ARRAY_TYPE_INFO));
-    registerPrimitiveFactory(BooleanSchema.of(), BOOLEAN);
-    registerPrimitiveFactory(ByteSchema.of(), BYTE);
-    registerPrimitiveFactory(BytesSchema.of(), BYTE_PRIMITIVE_ARRAY_TYPE_INFO);
-    registerPrimitiveFactory(DateSchema.of(), DATE_TYPE_INFO);
-    registerPrimitiveFactory(DoubleSchema.of(), DOUBLE);
-    registerPrimitiveFactory(FloatSchema.of(), FLOAT);
-    registerPrimitiveFactory(InstantSchema.of(), INSTANT);
-    registerPrimitiveFactory(IntSchema.of(), INT);
-    registerPrimitiveFactory(LocalDateSchema.of(), LOCAL_DATE);
-    registerPrimitiveFactory(LocalDateTimeSchema.of(), LOCAL_DATE_TIME);
-    registerPrimitiveFactory(LocalTimeSchema.of(), LOCAL_TIME);
-    registerPrimitiveFactory(LongSchema.of(), LONG);
-    registerPrimitiveFactory(ShortSchema.of(), SHORT);
-    registerPrimitiveFactory(TimeSchema.of(), SQL_TIME);
-    registerPrimitiveFactory(TimestampSchema.of(), SQL_TIMESTAMP);
-  }
-
-  private PulsarSchemaUtils() {
-    // No need to create instance.
-  }
-
-  /**
-   * A boolean value for determine if user have protobuf-java in his class path.
-   */
-  public static boolean haveProtobuf() {
-    return PROTOBUF_MESSAGE_CLASS != null;
-  }
-
-  /**
-   * Check if the given class is a protobuf generated class. Since this class would throw NP
-   * exception when you don't provide protobuf-java, use this method with {@link #haveProtobuf()}
-   */
-  public static <T> boolean isProtobufTypeClass(Class<T> clazz) {
-    return checkNotNull(PROTOBUF_MESSAGE_CLASS).isAssignableFrom(clazz);
-  }
-
-  private static <T> void registerPrimitiveFactory(
-      Schema<T> schema, TypeInformation<T> information) {
-    registerSchemaFactory(new PrimitiveSchemaFactory<>(schema, information));
-  }
-
-  private static void registerSchemaFactory(PulsarSchemaFactory<?> factory) {
-    FACTORY_REGISTER.put(factory.type(), factory);
-  }
-
-  /**
-   * Pulsar has a hugh set of built-in schemas. We can create them by the given {@link
-   * SchemaInfo}. This schema info is a wrapped info created by {@link PulsarSchema}.
-   */
-  @SuppressWarnings("unchecked")
-  public static <T> Schema<T> createSchema(SchemaInfo info) {
-    PulsarSchemaFactory<?> factory = FACTORY_REGISTER.get(info.getType());
-    checkNotNull(factory, "This schema info %s is not supported.", info);
-
-    return (Schema<T>) factory.createSchema(info);
-  }
-
-  /**
-   * Convert the {@link SchemaInfo} into a flink manageable {@link TypeInformation}. This schema
-   * info is a wrapped info created by {@link PulsarSchema}.
-   */
-  @SuppressWarnings("unchecked")
-  public static <T> TypeInformation<T> createTypeInformation(SchemaInfo info) {
-    PulsarSchemaFactory<?> factory = FACTORY_REGISTER.get(info.getType());
-    checkNotNull(factory, "This schema info %s is not supported.", info);
-
-    return (TypeInformation<T>) factory.createTypeInfo(info);
-  }
-
-  public static SchemaInfo encodeClassInfo(SchemaInfo schemaInfo, Class<?> typeClass) {
-    Map<String, String> properties = new HashMap<>(schemaInfo.getProperties());
-    properties.put(CLASS_INFO_PLACEHOLDER, typeClass.getName());
-
-    return new SchemaInfoImpl(
-        schemaInfo.getName(), schemaInfo.getSchema(), schemaInfo.getType(), properties);
-  }
-
-  @SuppressWarnings("unchecked")
-  public static <T> Class<T> decodeClassInfo(SchemaInfo schemaInfo) {
-    Map<String, String> properties = schemaInfo.getProperties();
-    String className =
-        checkNotNull(
-            properties.get(CLASS_INFO_PLACEHOLDER),
-            "This schema don't contain a class name.");
-
-    try {
-      return (Class<T>) Class.forName(className);
-    } catch (ClassNotFoundException e) {
-      throw new IllegalStateException("Couldn't find the schema class " + className);
+    /** A boolean value for determine if user have protobuf-java in his class path. */
+    public static boolean haveProtobuf() {
+        return PROTOBUF_MESSAGE_CLASS != null;
     }
-  }
+
+    /**
+     * Check if the given class is a protobuf generated class. Since this class would throw NP
+     * exception when you don't provide protobuf-java, use this method with {@link #haveProtobuf()}
+     */
+    public static <T> boolean isProtobufTypeClass(Class<T> clazz) {
+        return checkNotNull(PROTOBUF_MESSAGE_CLASS).isAssignableFrom(clazz);
+    }
+
+    private static <T> void registerPrimitiveFactory(
+            Schema<T> schema, TypeInformation<T> information) {
+        registerSchemaFactory(new PrimitiveSchemaFactory<>(schema, information));
+    }
+
+    private static void registerSchemaFactory(PulsarSchemaFactory<?> factory) {
+        FACTORY_REGISTER.put(factory.type(), factory);
+    }
+
+    /**
+     * Pulsar has a hugh set of built-in schemas. We can create them by the given {@link
+     * SchemaInfo}. This schema info is a wrapped info created by {@link PulsarSchema}.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Schema<T> createSchema(SchemaInfo info) {
+        PulsarSchemaFactory<?> factory = FACTORY_REGISTER.get(info.getType());
+        checkNotNull(factory, "This schema info %s is not supported.", info);
+
+        return (Schema<T>) factory.createSchema(info);
+    }
+
+    /**
+     * Convert the {@link SchemaInfo} into a flink manageable {@link TypeInformation}. This schema
+     * info is a wrapped info created by {@link PulsarSchema}.
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> TypeInformation<T> createTypeInformation(SchemaInfo info) {
+        PulsarSchemaFactory<?> factory = FACTORY_REGISTER.get(info.getType());
+        checkNotNull(factory, "This schema info %s is not supported.", info);
+
+        return (TypeInformation<T>) factory.createTypeInfo(info);
+    }
+
+    public static SchemaInfo encodeClassInfo(SchemaInfo schemaInfo, Class<?> typeClass) {
+        Map<String, String> properties = new HashMap<>(schemaInfo.getProperties());
+        properties.put(CLASS_INFO_PLACEHOLDER, typeClass.getName());
+
+        return new SchemaInfoImpl(
+                schemaInfo.getName(), schemaInfo.getSchema(), schemaInfo.getType(), properties);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> decodeClassInfo(SchemaInfo schemaInfo) {
+        Map<String, String> properties = schemaInfo.getProperties();
+        String className =
+                checkNotNull(
+                        properties.get(CLASS_INFO_PLACEHOLDER),
+                        "This schema don't contain a class name.");
+
+        try {
+            return (Class<T>) Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException("Couldn't find the schema class " + className);
+        }
+    }
 }

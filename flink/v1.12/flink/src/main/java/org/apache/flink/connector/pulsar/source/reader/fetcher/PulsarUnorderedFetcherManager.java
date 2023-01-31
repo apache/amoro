@@ -46,25 +46,25 @@ import static java.util.stream.Collectors.toCollection;
 @Internal
 public class PulsarUnorderedFetcherManager<T> extends PulsarFetcherManagerBase<T> {
 
-  public PulsarUnorderedFetcherManager(
-      FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<T>>> elementsQueue,
-      Supplier<SplitReader<PulsarMessage<T>, PulsarPartitionSplit>> splitReaderSupplier) {
-    super(elementsQueue, splitReaderSupplier);
-  }
+    public PulsarUnorderedFetcherManager(
+            FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<T>>> elementsQueue,
+            Supplier<SplitReader<PulsarMessage<T>, PulsarPartitionSplit>> splitReaderSupplier) {
+        super(elementsQueue, splitReaderSupplier);
+    }
 
-  public List<PulsarPartitionSplit> snapshotState() {
-    return fetchers.values().stream()
-        .map(SplitFetcher::getSplitReader)
-        .map(this::snapshotReader)
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(toCollection(() -> new ArrayList<>(fetchers.size())));
-  }
+    public List<PulsarPartitionSplit> snapshotState() {
+        return fetchers.values().stream()
+                .map(SplitFetcher::getSplitReader)
+                .map(this::snapshotReader)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(toCollection(() -> new ArrayList<>(fetchers.size())));
+    }
 
-  private Optional<PulsarPartitionSplit> snapshotReader(
-      SplitReader<PulsarMessage<T>, PulsarPartitionSplit> splitReader) {
-    return ((PulsarUnorderedPartitionSplitReader<T>) splitReader)
-        .snapshotState()
-        .map(PulsarPartitionSplitState::toPulsarPartitionSplit);
-  }
+    private Optional<PulsarPartitionSplit> snapshotReader(
+            SplitReader<PulsarMessage<T>, PulsarPartitionSplit> splitReader) {
+        return ((PulsarUnorderedPartitionSplitReader<T>) splitReader)
+                .snapshotState()
+                .map(PulsarPartitionSplitState::toPulsarPartitionSplit);
+    }
 }

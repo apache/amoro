@@ -65,122 +65,120 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
  * @param <OUT> The output type of the source.
  */
 @PublicEvolving
-public class PulsarSource<OUT>
-    implements Source<OUT, PulsarPartitionSplit, PulsarSourceEnumState>,
-    ResultTypeQueryable<OUT> {
-  private static final long serialVersionUID = 7773108631275567433L;
+public final class PulsarSource<OUT>
+        implements Source<OUT, PulsarPartitionSplit, PulsarSourceEnumState>,
+                ResultTypeQueryable<OUT> {
+    private static final long serialVersionUID = 7773108631275567433L;
 
-  /**
-   * The configuration for pulsar source, we don't support the pulsar's configuration class
-   * directly.
-   */
-  protected final SourceConfiguration sourceConfiguration;
+    /**
+     * The configuration for pulsar source, we don't support the pulsar's configuration class
+     * directly.
+     */
+    private final SourceConfiguration sourceConfiguration;
 
-  private final PulsarSubscriber subscriber;
+    private final PulsarSubscriber subscriber;
 
-  private final RangeGenerator rangeGenerator;
+    private final RangeGenerator rangeGenerator;
 
-  private final StartCursor startCursor;
+    private final StartCursor startCursor;
 
-  private final StopCursor stopCursor;
+    private final StopCursor stopCursor;
 
-  private final Boundedness boundedness;
+    private final Boundedness boundedness;
 
-  /**
-   * The pulsar deserialization schema used for deserializing message.
-   */
-  private final PulsarDeserializationSchema<OUT> deserializationSchema;
+    /** The pulsar deserialization schema used for deserializing message. */
+    private final PulsarDeserializationSchema<OUT> deserializationSchema;
 
-  /**
-   * The constructor for PulsarSource, it's package protected for forcing using {@link
-   * PulsarSourceBuilder}.
-   */
-  protected PulsarSource(
-      SourceConfiguration sourceConfiguration,
-      PulsarSubscriber subscriber,
-      RangeGenerator rangeGenerator,
-      StartCursor startCursor,
-      StopCursor stopCursor,
-      Boundedness boundedness,
-      PulsarDeserializationSchema<OUT> deserializationSchema) {
-    this.sourceConfiguration = sourceConfiguration;
-    this.subscriber = subscriber;
-    this.rangeGenerator = rangeGenerator;
-    this.startCursor = startCursor;
-    this.stopCursor = stopCursor;
-    this.boundedness = boundedness;
-    this.deserializationSchema = deserializationSchema;
-  }
+    /**
+     * The constructor for PulsarSource, it's package protected for forcing using {@link
+     * PulsarSourceBuilder}.
+     */
+    PulsarSource(
+            SourceConfiguration sourceConfiguration,
+            PulsarSubscriber subscriber,
+            RangeGenerator rangeGenerator,
+            StartCursor startCursor,
+            StopCursor stopCursor,
+            Boundedness boundedness,
+            PulsarDeserializationSchema<OUT> deserializationSchema) {
+        this.sourceConfiguration = sourceConfiguration;
+        this.subscriber = subscriber;
+        this.rangeGenerator = rangeGenerator;
+        this.startCursor = startCursor;
+        this.stopCursor = stopCursor;
+        this.boundedness = boundedness;
+        this.deserializationSchema = deserializationSchema;
+    }
 
-  /**
-   * Get a PulsarSourceBuilder to builder a {@link PulsarSource}.
-   *
-   * @return a Pulsar source builder.
-   */
-  public static <OUT> PulsarSourceBuilder<OUT> builder() {
-    return new PulsarSourceBuilder<>();
-  }
+    /**
+     * Get a PulsarSourceBuilder to builder a {@link PulsarSource}.
+     *
+     * @return a Pulsar source builder.
+     */
+    public static <OUT> PulsarSourceBuilder<OUT> builder() {
+        return new PulsarSourceBuilder<>();
+    }
 
-  @Override
-  public Boundedness getBoundedness() {
-    return boundedness;
-  }
+    @Override
+    public Boundedness getBoundedness() {
+        return boundedness;
+    }
 
-  @Internal
-  @Override
-  public SourceReader<OUT, PulsarPartitionSplit> createReader(SourceReaderContext readerContext)
-      throws Exception {
-    // Initialize the deserialization schema before creating the pulsar reader.
-    PulsarDeserializationSchemaInitializationContext initializationContext =
-        new PulsarDeserializationSchemaInitializationContext(readerContext);
-    deserializationSchema.open(initializationContext, sourceConfiguration);
+    @Internal
+    @Override
+    public SourceReader<OUT, PulsarPartitionSplit> createReader(SourceReaderContext readerContext)
+            throws Exception {
+        // Initialize the deserialization schema before creating the pulsar reader.
+        PulsarDeserializationSchemaInitializationContext initializationContext =
+                new PulsarDeserializationSchemaInitializationContext(readerContext);
+        deserializationSchema.open(initializationContext, sourceConfiguration);
 
-    return PulsarSourceReaderFactory.create(
-        readerContext, deserializationSchema, sourceConfiguration);
-  }
+        return PulsarSourceReaderFactory.create(
+                readerContext, deserializationSchema, sourceConfiguration);
+    }
 
-  @Internal
-  @Override
-  public SplitEnumerator<PulsarPartitionSplit, PulsarSourceEnumState> createEnumerator(
-      SplitEnumeratorContext<PulsarPartitionSplit> enumContext) {
-    return new PulsarSourceEnumerator(
-        subscriber,
-        startCursor,
-        stopCursor,
-        rangeGenerator,
-        sourceConfiguration,
-        enumContext);
-  }
+    @Internal
+    @Override
+    public SplitEnumerator<PulsarPartitionSplit, PulsarSourceEnumState> createEnumerator(
+            SplitEnumeratorContext<PulsarPartitionSplit> enumContext) {
+        return new PulsarSourceEnumerator(
+                subscriber,
+                startCursor,
+                stopCursor,
+                rangeGenerator,
+                sourceConfiguration,
+                enumContext);
+    }
 
-  @Internal
-  @Override
-  public SplitEnumerator<PulsarPartitionSplit, PulsarSourceEnumState> restoreEnumerator(
-      SplitEnumeratorContext<PulsarPartitionSplit> enumContext,
-      PulsarSourceEnumState checkpoint) {
-    return new PulsarSourceEnumerator(
-        subscriber,
-        startCursor,
-        stopCursor,
-        rangeGenerator,
-        sourceConfiguration,
-        enumContext,
-        checkpoint);
-  }
+    @Internal
+    @Override
+    public SplitEnumerator<PulsarPartitionSplit, PulsarSourceEnumState> restoreEnumerator(
+            SplitEnumeratorContext<PulsarPartitionSplit> enumContext,
+            PulsarSourceEnumState checkpoint) {
+        return new PulsarSourceEnumerator(
+                subscriber,
+                startCursor,
+                stopCursor,
+                rangeGenerator,
+                sourceConfiguration,
+                enumContext,
+                checkpoint);
+    }
 
-  @Internal
-  @Override
-  public SimpleVersionedSerializer<PulsarPartitionSplit> getSplitSerializer() {
-    return PulsarPartitionSplitSerializer.INSTANCE;
-  }
+    @Internal
+    @Override
+    public SimpleVersionedSerializer<PulsarPartitionSplit> getSplitSerializer() {
+        return PulsarPartitionSplitSerializer.INSTANCE;
+    }
 
-  @Internal
-  @Override
-  public SimpleVersionedSerializer<PulsarSourceEnumState> getEnumeratorCheckpointSerializer() {
-    return PulsarSourceEnumStateSerializer.INSTANCE;
-  }
+    @Internal
+    @Override
+    public SimpleVersionedSerializer<PulsarSourceEnumState> getEnumeratorCheckpointSerializer() {
+        return PulsarSourceEnumStateSerializer.INSTANCE;
+    }
 
-  @Override
-  public TypeInformation<OUT> getProducedType() {
-    return deserializationSchema.getProducedType();
-  }
+    @Override
+    public TypeInformation<OUT> getProducedType() {
+        return deserializationSchema.getProducedType();
+    }
 }

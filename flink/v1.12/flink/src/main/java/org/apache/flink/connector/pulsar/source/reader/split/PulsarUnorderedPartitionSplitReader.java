@@ -53,107 +53,106 @@ import static org.apache.flink.connector.pulsar.common.utils.PulsarTransactionUt
  */
 @Internal
 public class PulsarUnorderedPartitionSplitReader<OUT> extends PulsarPartitionSplitReaderBase<OUT> {
-  private static final Logger LOG =
-      LoggerFactory.getLogger(PulsarUnorderedPartitionSplitReader.class);
+    private static final Logger LOG =
+            LoggerFactory.getLogger(PulsarUnorderedPartitionSplitReader.class);
 
-  private final TransactionCoordinatorClient coordinatorClient;
+    private final TransactionCoordinatorClient coordinatorClient;
 
-  @Nullable
-  private Transaction uncommittedTransaction;
+    @Nullable private Transaction uncommittedTransaction;
 
-  public PulsarUnorderedPartitionSplitReader(
-      PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin,
-      SourceConfiguration sourceConfiguration,
-      PulsarDeserializationSchema<OUT> deserializationSchema,
-      TransactionCoordinatorClient coordinatorClient) {
-    super(pulsarClient, pulsarAdmin, sourceConfiguration, deserializationSchema);
+    public PulsarUnorderedPartitionSplitReader(
+            PulsarClient pulsarClient,
+            PulsarAdmin pulsarAdmin,
+            SourceConfiguration sourceConfiguration,
+            PulsarDeserializationSchema<OUT> deserializationSchema,
+            TransactionCoordinatorClient coordinatorClient) {
+        super(pulsarClient, pulsarAdmin, sourceConfiguration, deserializationSchema);
 
-    this.coordinatorClient = coordinatorClient;
-  }
-
-  @Override
-  protected Message<byte[]> pollMessage(Duration timeout)
-      throws ExecutionException, InterruptedException, PulsarClientException {
-    Message<byte[]> message =
-        pulsarConsumer.receive(Math.toIntExact(timeout.toMillis()), TimeUnit.MILLISECONDS);
-
-    // Skip the message when receive timeout
-    if (message == null) {
-      return null;
+        this.coordinatorClient = coordinatorClient;
     }
 
-    if (!sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
-      if (uncommittedTransaction == null) {
-        // Create a transaction.
-        this.uncommittedTransaction = newTransaction();
-      }
+    @Override
+    protected Message<byte[]> pollMessage(Duration timeout)
+            throws ExecutionException, InterruptedException, PulsarClientException {
+        Message<byte[]> message =
+                pulsarConsumer.receive(Math.toIntExact(timeout.toMillis()), TimeUnit.MILLISECONDS);
 
-      try {
-        // Add this message into transaction.
-        pulsarConsumer
-            .acknowledgeAsync(message.getMessageId(), uncommittedTransaction)
-            .get();
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw e;
-      }
-    }
-
-    return message;
-  }
-
-  @Override
-  protected void finishedPollMessage(Message<byte[]> message) {
-    if (sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
-      sneakyClient(() -> pulsarConsumer.acknowledge(message));
-    }
-
-    // Release message
-    message.release();
-  }
-
-  @Override
-  protected void afterCreatingConsumer(PulsarPartitionSplit split, Consumer<byte[]> consumer) {
-    TxnID uncommittedTransactionId = split.getUncommittedTransactionId();
-
-    // Abort the uncommitted pulsar transaction.
-    if (uncommittedTransactionId != null) {
-      if (coordinatorClient != null) {
-        try {
-          coordinatorClient.abort(uncommittedTransactionId);
-        } catch (TransactionCoordinatorClientException e) {
-          LOG.error(
-              "Failed to abort the uncommitted transaction {} when restart the reader",
-              uncommittedTransactionId,
-              e);
+        // Skip the message when receive timeout
+        if (message == null) {
+            return null;
         }
-      }
 
-      // Redeliver unacknowledged messages because of the message is out of order.
-      consumer.redeliverUnacknowledgedMessages();
+        if (!sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
+            if (uncommittedTransaction == null) {
+                // Create a transaction.
+                this.uncommittedTransaction = newTransaction();
+            }
+
+            try {
+                // Add this message into transaction.
+                pulsarConsumer
+                        .acknowledgeAsync(message.getMessageId(), uncommittedTransaction)
+                        .get();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw e;
+            }
+        }
+
+        return message;
     }
-  }
 
-  public Optional<PulsarPartitionSplitState> snapshotState() {
-    if (registeredSplit == null) {
-      return Optional.empty();
+    @Override
+    protected void finishedPollMessage(Message<byte[]> message) {
+        if (sourceConfiguration.isEnableAutoAcknowledgeMessage()) {
+            sneakyClient(() -> pulsarConsumer.acknowledge(message));
+        }
+
+        // Release message
+        message.release();
     }
 
-    PulsarPartitionSplitState state = new PulsarPartitionSplitState(registeredSplit);
+    @Override
+    protected void afterCreatingConsumer(PulsarPartitionSplit split, Consumer<byte[]> consumer) {
+        TxnID uncommittedTransactionId = split.getUncommittedTransactionId();
 
-    // Avoiding NP problem when Pulsar don't get the message before Flink checkpoint.
-    if (uncommittedTransaction != null) {
-      TxnID txnID = uncommittedTransaction.getTxnID();
-      this.uncommittedTransaction = newTransaction();
-      state.setUncommittedTransactionId(txnID);
+        // Abort the uncommitted pulsar transaction.
+        if (uncommittedTransactionId != null) {
+            if (coordinatorClient != null) {
+                try {
+                    coordinatorClient.abort(uncommittedTransactionId);
+                } catch (TransactionCoordinatorClientException e) {
+                    LOG.error(
+                            "Failed to abort the uncommitted transaction {} when restart the reader",
+                            uncommittedTransactionId,
+                            e);
+                }
+            }
+
+            // Redeliver unacknowledged messages because of the message is out of order.
+            consumer.redeliverUnacknowledgedMessages();
+        }
     }
 
-    return Optional.of(state);
-  }
+    public Optional<PulsarPartitionSplitState> snapshotState() {
+        if (registeredSplit == null) {
+            return Optional.empty();
+        }
 
-  private Transaction newTransaction() {
-    long timeoutMillis = sourceConfiguration.getTransactionTimeoutMillis();
-    return createTransaction(pulsarClient, timeoutMillis);
-  }
+        PulsarPartitionSplitState state = new PulsarPartitionSplitState(registeredSplit);
+
+        // Avoiding NP problem when Pulsar don't get the message before Flink checkpoint.
+        if (uncommittedTransaction != null) {
+            TxnID txnID = uncommittedTransaction.getTxnID();
+            this.uncommittedTransaction = newTransaction();
+            state.setUncommittedTransactionId(txnID);
+        }
+
+        return Optional.of(state);
+    }
+
+    private Transaction newTransaction() {
+        long timeoutMillis = sourceConfiguration.getTransactionTimeoutMillis();
+        return createTransaction(pulsarClient, timeoutMillis);
+    }
 }

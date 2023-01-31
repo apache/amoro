@@ -37,80 +37,68 @@ import static org.apache.flink.util.Preconditions.checkArgument;
  */
 @PublicEvolving
 public class TopicRange implements Serializable {
-  private static final long serialVersionUID = 3176938692775594400L;
+    private static final long serialVersionUID = 3176938692775594400L;
 
-  public static final int RANGE_SIZE = KeySharedPolicy.DEFAULT_HASH_RANGE_SIZE;
+    public static final int RANGE_SIZE = KeySharedPolicy.DEFAULT_HASH_RANGE_SIZE;
 
-  /**
-   * The start position for hash range.
-   */
-  public static final int MIN_RANGE = 0;
+    /** The start position for hash range. */
+    public static final int MIN_RANGE = 0;
 
-  /**
-   * The end position for hash range, it's 65535.
-   */
-  public static final int MAX_RANGE = RANGE_SIZE - 1;
+    /** The end position for hash range, it's 65535. */
+    public static final int MAX_RANGE = RANGE_SIZE - 1;
 
-  /**
-   * The start of the range, default is zero.
-   */
-  private final int start;
+    /** The start of the range, default is zero. */
+    private final int start;
 
-  /**
-   * The end of the range, included.
-   */
-  private final int end;
+    /** The end of the range, included. */
+    private final int end;
 
-  public TopicRange(int start, int end) {
-    checkArgument(start >= MIN_RANGE, "Start range %s shouldn't below zero.", start);
-    checkArgument(end <= MAX_RANGE, "End range %s shouldn't exceed 65535.", end);
-    checkArgument(start <= end, "Range end must >= range start.");
+    public TopicRange(int start, int end) {
+        checkArgument(start >= MIN_RANGE, "Start range %s shouldn't below zero.", start);
+        checkArgument(end <= MAX_RANGE, "End range %s shouldn't exceed 65535.", end);
+        checkArgument(start <= end, "Range end must >= range start.");
 
-    this.start = start;
-    this.end = end;
-  }
-
-  /**
-   * Convert to pulsar's {@link Range} API for consuming in client.
-   */
-  public Range toPulsarRange() {
-    return new Range(start, end);
-  }
-
-  /**
-   * Create a topic range which contains the full hash range.
-   */
-  public static TopicRange createFullRange() {
-    return new TopicRange(MIN_RANGE, MAX_RANGE);
-  }
-
-  public int getStart() {
-    return start;
-  }
-
-  public int getEnd() {
-    return end;
-  }
-
-  @Override
-  public boolean equals(Object o) {
-    if (this == o) {
-      return true;
+        this.start = start;
+        this.end = end;
     }
-    if (o == null || getClass() != o.getClass()) {
-      return false;
+
+    /** Convert to pulsar's {@link Range} API for consuming in client. */
+    public Range toPulsarRange() {
+        return new Range(start, end);
     }
-    TopicRange that = (TopicRange) o;
-    return start == that.start && end == that.end;
-  }
 
-  @Override
-  public int hashCode() {
-    return Objects.hash(start, end);
-  }
+    /** Create a topic range which contains the full hash range. */
+    public static TopicRange createFullRange() {
+        return new TopicRange(MIN_RANGE, MAX_RANGE);
+    }
 
-  @Override
-  public String toString() {
-    return getStart() + "-" + getEnd();
-  }
+    public int getStart() {
+        return start;
+    }
+
+    public int getEnd() {
+        return end;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TopicRange that = (TopicRange) o;
+        return start == that.start && end == that.end;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(start, end);
+    }
+
+    @Override
+    public String toString() {
+        return getStart() + "-" + getEnd();
+    }
 }

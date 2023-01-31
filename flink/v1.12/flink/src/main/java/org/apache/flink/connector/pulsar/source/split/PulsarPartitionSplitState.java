@@ -24,53 +24,49 @@ import org.apache.pulsar.client.api.transaction.TxnID;
 
 import javax.annotation.Nullable;
 
-/**
- * Pulsar partition split state.
- */
+/** Pulsar partition split state. */
 public class PulsarPartitionSplitState {
 
-  private final PulsarPartitionSplit split;
+    private final PulsarPartitionSplit split;
 
-  @Nullable
-  private TxnID uncommittedTransactionId;
+    @Nullable private TxnID uncommittedTransactionId;
 
-  @Nullable
-  private MessageId latestConsumedId;
+    @Nullable private MessageId latestConsumedId;
 
-  public PulsarPartitionSplitState(PulsarPartitionSplit split) {
-    this.split = split;
-  }
+    public PulsarPartitionSplitState(PulsarPartitionSplit split) {
+        this.split = split;
+    }
 
-  /**
-   * Create a partition split which contains the latest consumed message id as the start position.
-   */
-  public PulsarPartitionSplit toPulsarPartitionSplit() {
-    return new PulsarPartitionSplit(
-        split.getPartition(),
-        split.getStopCursor(),
-        latestConsumedId,
-        uncommittedTransactionId);
-  }
+    /**
+     * Create a partition split which contains the latest consumed message id as the start position.
+     */
+    public PulsarPartitionSplit toPulsarPartitionSplit() {
+        return new PulsarPartitionSplit(
+                split.getPartition(),
+                split.getStopCursor(),
+                latestConsumedId,
+                uncommittedTransactionId);
+    }
 
-  public TopicPartition getPartition() {
-    return split.getPartition();
-  }
+    public TopicPartition getPartition() {
+        return split.getPartition();
+    }
 
-  @Nullable
-  public TxnID getUncommittedTransactionId() {
-    return uncommittedTransactionId;
-  }
+    @Nullable
+    public TxnID getUncommittedTransactionId() {
+        return uncommittedTransactionId;
+    }
 
-  public void setUncommittedTransactionId(@Nullable TxnID uncommittedTransactionId) {
-    this.uncommittedTransactionId = uncommittedTransactionId;
-  }
+    public void setUncommittedTransactionId(@Nullable TxnID uncommittedTransactionId) {
+        this.uncommittedTransactionId = uncommittedTransactionId;
+    }
 
-  @Nullable
-  public MessageId getLatestConsumedId() {
-    return latestConsumedId;
-  }
+    @Nullable
+    public MessageId getLatestConsumedId() {
+        return latestConsumedId;
+    }
 
-  public void setLatestConsumedId(@Nullable MessageId latestConsumedId) {
-    this.latestConsumedId = latestConsumedId;
-  }
+    public void setLatestConsumedId(@Nullable MessageId latestConsumedId) {
+        this.latestConsumedId = latestConsumedId;
+    }
 }

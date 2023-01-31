@@ -26,25 +26,23 @@ import org.apache.pulsar.common.schema.SchemaType;
 
 import static org.apache.flink.connector.pulsar.common.schema.PulsarSchemaUtils.decodeClassInfo;
 
-/**
- * The schema factory for pulsar's {@link AvroSchema}.
- */
+/** The schema factory for pulsar's {@link AvroSchema}. */
 public class AvroSchemaFactory<T> extends BaseStructSchemaFactory<T> {
 
-  @Override
-  public SchemaType type() {
-    return SchemaType.AVRO;
-  }
+    @Override
+    public SchemaType type() {
+        return SchemaType.AVRO;
+    }
 
-  @Override
-  public Schema<T> createSchema(SchemaInfo info) {
-    Class<T> typeClass = decodeClassInfo(info);
-    SchemaDefinition<T> definition =
-        SchemaDefinition.<T>builder()
-            .withPojo(typeClass)
-            .withProperties(info.getProperties())
-            .build();
+    @Override
+    public Schema<T> createSchema(SchemaInfo info) {
+        Class<T> typeClass = decodeClassInfo(info);
+        SchemaDefinition<T> definition =
+                SchemaDefinition.<T>builder()
+                        .withPojo(typeClass)
+                        .withProperties(info.getProperties())
+                        .build();
 
-    return AvroSchema.of(definition);
-  }
+        return AvroSchema.of(definition);
+    }
 }

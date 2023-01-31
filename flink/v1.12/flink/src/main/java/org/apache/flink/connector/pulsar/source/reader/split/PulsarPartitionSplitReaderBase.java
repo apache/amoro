@@ -63,180 +63,176 @@ import static org.apache.pulsar.client.api.KeySharedPolicy.stickyHashRange;
  * @param <OUT> the type of the pulsar source message that would be serialized to downstream.
  */
 abstract class PulsarPartitionSplitReaderBase<OUT>
-    implements SplitReader<PulsarMessage<OUT>, PulsarPartitionSplit> {
-  private static final Logger LOG = LoggerFactory.getLogger(PulsarPartitionSplitReaderBase.class);
+        implements SplitReader<PulsarMessage<OUT>, PulsarPartitionSplit> {
+    private static final Logger LOG = LoggerFactory.getLogger(PulsarPartitionSplitReaderBase.class);
 
-  protected final PulsarClient pulsarClient;
-  protected final PulsarAdmin pulsarAdmin;
-  protected final SourceConfiguration sourceConfiguration;
-  protected final PulsarDeserializationSchema<OUT> deserializationSchema;
+    protected final PulsarClient pulsarClient;
+    protected final PulsarAdmin pulsarAdmin;
+    protected final SourceConfiguration sourceConfiguration;
+    protected final PulsarDeserializationSchema<OUT> deserializationSchema;
 
-  protected Consumer<byte[]> pulsarConsumer;
-  protected PulsarPartitionSplit registeredSplit;
+    protected Consumer<byte[]> pulsarConsumer;
+    protected PulsarPartitionSplit registeredSplit;
 
-  protected PulsarPartitionSplitReaderBase(
-      PulsarClient pulsarClient,
-      PulsarAdmin pulsarAdmin,
-      SourceConfiguration sourceConfiguration,
-      PulsarDeserializationSchema<OUT> deserializationSchema) {
-    this.pulsarClient = pulsarClient;
-    this.pulsarAdmin = pulsarAdmin;
-    this.sourceConfiguration = sourceConfiguration;
-    this.deserializationSchema = deserializationSchema;
-  }
-
-  @Override
-  public RecordsWithSplitIds<PulsarMessage<OUT>> fetch() throws IOException {
-    RecordsBySplits.Builder<PulsarMessage<OUT>> builder = new RecordsBySplits.Builder<>();
-
-    // Return when no split registered to this reader.
-    if (pulsarConsumer == null || registeredSplit == null) {
-      return builder.build();
+    protected PulsarPartitionSplitReaderBase(
+            PulsarClient pulsarClient,
+            PulsarAdmin pulsarAdmin,
+            SourceConfiguration sourceConfiguration,
+            PulsarDeserializationSchema<OUT> deserializationSchema) {
+        this.pulsarClient = pulsarClient;
+        this.pulsarAdmin = pulsarAdmin;
+        this.sourceConfiguration = sourceConfiguration;
+        this.deserializationSchema = deserializationSchema;
     }
 
-    StopCursor stopCursor = registeredSplit.getStopCursor();
-    String splitId = registeredSplit.splitId();
-    PulsarMessageCollector<OUT> collector = new PulsarMessageCollector<>(splitId, builder);
-    Deadline deadline = Deadline.fromNow(sourceConfiguration.getMaxFetchTime());
+    @Override
+    public RecordsWithSplitIds<PulsarMessage<OUT>> fetch() throws IOException {
+        RecordsBySplits.Builder<PulsarMessage<OUT>> builder = new RecordsBySplits.Builder<>();
 
-    // Consume message from pulsar until it was woke up by flink reader.
-    for (int messageNum = 0;
-         messageNum < sourceConfiguration.getMaxFetchRecords() && deadline.hasTimeLeft();
-         messageNum++) {
-      try {
-        Duration timeout = deadline.timeLeftIfAny();
-        Message<byte[]> message = pollMessage(timeout);
-        if (message == null) {
-          break;
+        // Return when no split registered to this reader.
+        if (pulsarConsumer == null || registeredSplit == null) {
+            return builder.build();
         }
 
-        StopCondition condition = stopCursor.shouldStop(message);
+        StopCursor stopCursor = registeredSplit.getStopCursor();
+        String splitId = registeredSplit.splitId();
+        PulsarMessageCollector<OUT> collector = new PulsarMessageCollector<>(splitId, builder);
+        Deadline deadline = Deadline.fromNow(sourceConfiguration.getMaxFetchTime());
 
-        if (condition == StopCondition.CONTINUE || condition == StopCondition.EXACTLY) {
-          // Deserialize message.
-          collector.setMessage(message);
-          deserializationSchema.deserialize(message, collector);
+        // Consume message from pulsar until it was woke up by flink reader.
+        for (int messageNum = 0;
+                messageNum < sourceConfiguration.getMaxFetchRecords() && deadline.hasTimeLeft();
+                messageNum++) {
+            try {
+                Duration timeout = deadline.timeLeftIfAny();
+                Message<byte[]> message = pollMessage(timeout);
+                if (message == null) {
+                    break;
+                }
 
-          // Acknowledge message if need.
-          finishedPollMessage(message);
+                StopCondition condition = stopCursor.shouldStop(message);
+
+                if (condition == StopCondition.CONTINUE || condition == StopCondition.EXACTLY) {
+                    // Deserialize message.
+                    collector.setMessage(message);
+                    deserializationSchema.deserialize(message, collector);
+
+                    // Acknowledge message if need.
+                    finishedPollMessage(message);
+                }
+
+                if (condition == StopCondition.EXACTLY || condition == StopCondition.TERMINATE) {
+                    builder.addFinishedSplit(splitId);
+                    break;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            } catch (TimeoutException e) {
+                break;
+            } catch (ExecutionException e) {
+                LOG.error("Error in polling message from pulsar consumer.", e);
+                break;
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
         }
 
-        if (condition == StopCondition.EXACTLY || condition == StopCondition.TERMINATE) {
-          builder.addFinishedSplit(splitId);
-          break;
+        return builder.build();
+    }
+
+    @Override
+    public void handleSplitsChanges(SplitsChange<PulsarPartitionSplit> splitsChanges) {
+        LOG.debug("Handle split changes {}", splitsChanges);
+
+        // Get all the partition assignments and stopping offsets.
+        if (!(splitsChanges instanceof SplitsAddition)) {
+            throw new UnsupportedOperationException(
+                    String.format(
+                            "The SplitChange type of %s is not supported.",
+                            splitsChanges.getClass()));
         }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        break;
-      } catch (TimeoutException e) {
-        break;
-      } catch (ExecutionException e) {
-        LOG.error("Error in polling message from pulsar consumer.", e);
-        break;
-      } catch (Exception e) {
-        throw new IOException(e);
-      }
+
+        if (registeredSplit != null) {
+            throw new IllegalStateException("This split reader have assigned split.");
+        }
+
+        List<PulsarPartitionSplit> newSplits = splitsChanges.splits();
+        Preconditions.checkArgument(
+                newSplits.size() == 1, "This pulsar split reader only support one split.");
+        this.registeredSplit = newSplits.get(0);
+
+        // Open stop cursor.
+        registeredSplit.open(pulsarAdmin);
+
+        // Before creating the consumer.
+        beforeCreatingConsumer(registeredSplit);
+
+        // Create pulsar consumer.
+        this.pulsarConsumer = createPulsarConsumer(registeredSplit);
+
+        // After creating the consumer.
+        afterCreatingConsumer(registeredSplit, pulsarConsumer);
+
+        LOG.info("Register split {} consumer for current reader.", registeredSplit);
     }
 
-    return builder.build();
-  }
-
-  @Override
-  public void handleSplitsChanges(SplitsChange<PulsarPartitionSplit> splitsChanges) {
-    LOG.debug("Handle split changes {}", splitsChanges);
-
-    // Get all the partition assignments and stopping offsets.
-    if (!(splitsChanges instanceof SplitsAddition)) {
-      throw new UnsupportedOperationException(
-          String.format(
-              "The SplitChange type of %s is not supported.",
-              splitsChanges.getClass()));
+    @Override
+    public void wakeUp() {
+        // Nothing to do on this method.
     }
 
-    if (registeredSplit != null) {
-      throw new IllegalStateException("This split reader have assigned split.");
+    @Override
+    public void close() {
+        if (pulsarConsumer != null) {
+            sneakyClient(() -> pulsarConsumer.close());
+        }
     }
 
-    List<PulsarPartitionSplit> newSplits = splitsChanges.splits();
-    Preconditions.checkArgument(
-        newSplits.size() == 1, "This pulsar split reader only support one split.");
-    this.registeredSplit = newSplits.get(0);
+    @Nullable
+    protected abstract Message<byte[]> pollMessage(Duration timeout)
+            throws ExecutionException, InterruptedException, PulsarClientException;
 
-    // Open stop cursor.
-    registeredSplit.open(pulsarAdmin);
+    protected abstract void finishedPollMessage(Message<byte[]> message);
 
-    // Before creating the consumer.
-    beforeCreatingConsumer(registeredSplit);
-
-    // Create pulsar consumer.
-    this.pulsarConsumer = createPulsarConsumer(registeredSplit);
-
-    // After creating the consumer.
-    afterCreatingConsumer(registeredSplit, pulsarConsumer);
-
-    LOG.info("Register split {} consumer for current reader.", registeredSplit);
-  }
-
-  @Override
-  public void wakeUp() {
-    // Nothing to do on this method.
-  }
-
-  @Override
-  public void close() {
-    if (pulsarConsumer != null) {
-      sneakyClient(() -> pulsarConsumer.close());
-    }
-  }
-
-  @Nullable
-  protected abstract Message<byte[]> pollMessage(Duration timeout)
-      throws ExecutionException, InterruptedException, PulsarClientException;
-
-  protected abstract void finishedPollMessage(Message<byte[]> message);
-
-  protected void beforeCreatingConsumer(PulsarPartitionSplit split) {
-    // Nothing to do by default.
-  }
-
-  protected void afterCreatingConsumer(PulsarPartitionSplit split, Consumer<byte[]> consumer) {
-    // Nothing to do by default.
-  }
-
-  // --------------------------- Helper Methods -----------------------------
-
-  /**
-   * Create a specified {@link Consumer} by the given split information.
-   */
-  protected Consumer<byte[]> createPulsarConsumer(PulsarPartitionSplit split) {
-    return createPulsarConsumer(split.getPartition());
-  }
-
-  /**
-   * Create a specified {@link Consumer} by the given topic partition.
-   */
-  protected Consumer<byte[]> createPulsarConsumer(TopicPartition partition) {
-    ConsumerBuilder<byte[]> consumerBuilder =
-        createConsumerBuilder(pulsarClient, Schema.BYTES, sourceConfiguration);
-
-    consumerBuilder.topic(partition.getFullTopicName());
-
-    // Add KeySharedPolicy for Key_Shared subscription.
-    if (sourceConfiguration.getSubscriptionType() == SubscriptionType.Key_Shared) {
-      KeySharedPolicy policy = stickyHashRange().ranges(partition.getPulsarRanges());
-      // We may enable out of order delivery for speeding up. It was turned off by default.
-      policy.setAllowOutOfOrderDelivery(
-          sourceConfiguration.isAllowKeySharedOutOfOrderDelivery());
-      consumerBuilder.keySharedPolicy(policy);
-
-      if (partition.getMode() == JOIN) {
-        // Override the key shared subscription into exclusive for making it behaviors like
-        // a Pulsar Reader which supports partial key hash ranges.
-        consumerBuilder.subscriptionType(SubscriptionType.Exclusive);
-      }
+    protected void beforeCreatingConsumer(PulsarPartitionSplit split) {
+        // Nothing to do by default.
     }
 
-    // Create the consumer configuration by using common utils.
-    return sneakyClient(consumerBuilder::subscribe);
-  }
+    protected void afterCreatingConsumer(PulsarPartitionSplit split, Consumer<byte[]> consumer) {
+        // Nothing to do by default.
+    }
+
+    // --------------------------- Helper Methods -----------------------------
+
+    /** Create a specified {@link Consumer} by the given split information. */
+    protected Consumer<byte[]> createPulsarConsumer(PulsarPartitionSplit split) {
+        return createPulsarConsumer(split.getPartition());
+    }
+
+    /** Create a specified {@link Consumer} by the given topic partition. */
+    protected Consumer<byte[]> createPulsarConsumer(TopicPartition partition) {
+        ConsumerBuilder<byte[]> consumerBuilder =
+                createConsumerBuilder(pulsarClient, Schema.BYTES, sourceConfiguration);
+
+        consumerBuilder.topic(partition.getFullTopicName());
+
+        // Add KeySharedPolicy for Key_Shared subscription.
+        if (sourceConfiguration.getSubscriptionType() == SubscriptionType.Key_Shared) {
+            KeySharedPolicy policy = stickyHashRange().ranges(partition.getPulsarRanges());
+            // We may enable out of order delivery for speeding up. It was turned off by default.
+            policy.setAllowOutOfOrderDelivery(
+                    sourceConfiguration.isAllowKeySharedOutOfOrderDelivery());
+            consumerBuilder.keySharedPolicy(policy);
+
+            if (partition.getMode() == JOIN) {
+                // Override the key shared subscription into exclusive for making it behaviors like
+                // a Pulsar Reader which supports partial key hash ranges.
+                consumerBuilder.subscriptionType(SubscriptionType.Exclusive);
+            }
+        }
+
+        // Create the consumer configuration by using common utils.
+        return sneakyClient(consumerBuilder::subscribe);
+    }
 }

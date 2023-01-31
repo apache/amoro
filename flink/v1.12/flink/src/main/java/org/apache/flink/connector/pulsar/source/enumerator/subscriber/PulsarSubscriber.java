@@ -45,26 +45,26 @@ import java.util.regex.Pattern;
 @Internal
 public interface PulsarSubscriber extends Serializable {
 
-  /**
-   * Get a set of subscribed {@link TopicPartition}s. The method could throw {@link
-   * IllegalStateException}, an extra try catch is required.
-   *
-   * @param pulsarAdmin    The admin interface used to retrieve subscribed topic partitions.
-   * @param rangeGenerator The range for different partitions.
-   * @param parallelism    The parallelism of flink source.
-   * @return A subscribed {@link TopicPartition} for each pulsar topic partition.
-   */
-  Set<TopicPartition> getSubscribedTopicPartitions(
-      PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism);
+    /**
+     * Get a set of subscribed {@link TopicPartition}s. The method could throw {@link
+     * IllegalStateException}, an extra try catch is required.
+     *
+     * @param pulsarAdmin The admin interface used to retrieve subscribed topic partitions.
+     * @param rangeGenerator The range for different partitions.
+     * @param parallelism The parallelism of flink source.
+     * @return A subscribed {@link TopicPartition} for each pulsar topic partition.
+     */
+    Set<TopicPartition> getSubscribedTopicPartitions(
+            PulsarAdmin pulsarAdmin, RangeGenerator rangeGenerator, int parallelism);
 
-  // ----------------- factory methods --------------
+    // ----------------- factory methods --------------
 
-  static PulsarSubscriber getTopicListSubscriber(List<String> topics) {
-    return new TopicListSubscriber(topics);
-  }
+    static PulsarSubscriber getTopicListSubscriber(List<String> topics) {
+        return new TopicListSubscriber(topics);
+    }
 
-  static PulsarSubscriber getTopicPatternSubscriber(
-      Pattern topicPattern, RegexSubscriptionMode subscriptionMode) {
-    return new TopicPatternSubscriber(topicPattern, subscriptionMode);
-  }
+    static PulsarSubscriber getTopicPatternSubscriber(
+            Pattern topicPattern, RegexSubscriptionMode subscriptionMode) {
+        return new TopicPatternSubscriber(topicPattern, subscriptionMode);
+    }
 }

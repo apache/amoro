@@ -35,31 +35,31 @@ import org.apache.pulsar.client.api.Message;
  */
 @Internal
 class PulsarDeserializationSchemaWrapper<T> implements PulsarDeserializationSchema<T> {
-  private static final long serialVersionUID = -630646912412751300L;
+    private static final long serialVersionUID = -630646912412751300L;
 
-  private final DeserializationSchema<T> deserializationSchema;
+    private final DeserializationSchema<T> deserializationSchema;
 
-  public PulsarDeserializationSchemaWrapper(DeserializationSchema<T> deserializationSchema) {
-    this.deserializationSchema = deserializationSchema;
-  }
+    public PulsarDeserializationSchemaWrapper(DeserializationSchema<T> deserializationSchema) {
+        this.deserializationSchema = deserializationSchema;
+    }
 
-  @Override
-  public void open(InitializationContext context, SourceConfiguration configuration)
-      throws Exception {
-    // Initialize it for some custom logic.
-    deserializationSchema.open(context);
-  }
+    @Override
+    public void open(InitializationContext context, SourceConfiguration configuration)
+            throws Exception {
+        // Initialize it for some custom logic.
+        deserializationSchema.open(context);
+    }
 
-  @Override
-  public void deserialize(Message<byte[]> message, Collector<T> out) throws Exception {
-    byte[] bytes = message.getData();
-    T instance = deserializationSchema.deserialize(bytes);
+    @Override
+    public void deserialize(Message<byte[]> message, Collector<T> out) throws Exception {
+        byte[] bytes = message.getData();
+        T instance = deserializationSchema.deserialize(bytes);
 
-    out.collect(instance);
-  }
+        out.collect(instance);
+    }
 
-  @Override
-  public TypeInformation<T> getProducedType() {
-    return deserializationSchema.getProducedType();
-  }
+    @Override
+    public TypeInformation<T> getProducedType() {
+        return deserializationSchema.getProducedType();
+    }
 }
