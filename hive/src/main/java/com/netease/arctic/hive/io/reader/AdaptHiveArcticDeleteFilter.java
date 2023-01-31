@@ -66,6 +66,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
+ * Copy from arctic-core to use AdaptHiveParquet reader to open delete file.
  * Abstract implementation of filtering equality and position delete files with insert files and base files.
  *
  * @param <T> to indicate the record data type.
