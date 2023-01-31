@@ -89,44 +89,6 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
     super(fileIO, tableSchema, projectedSchema, primaryKeySpec,
         nameMapping, caseSensitive, convertConstant, sourceNodes, reuseContainer);
   }
-
-  @Override
-  public CloseableIterator<Record> readData(KeyedTableScanTask keyedTableScanTask) {
-    AdaptHiveGenericArcticDeleteFilter arcticDeleteFilter =
-        new AdaptHiveGenericArcticDeleteFilter(keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec,
-            sourceNodes, structLikeCollections);
-    Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-
-    CloseableIterable<Record> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-        CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-        fileScanTask -> arcticDeleteFilter.filter(newParquetIterable(fileScanTask, newProjectedSchema,
-            DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
-    return dataIterable.iterator();
-  }
-
-  @Override
-  public CloseableIterator<Record> readDeletedData(KeyedTableScanTask keyedTableScanTask) {
-    List<PrimaryKeyedFile> equDeleteFiles = keyedTableScanTask.arcticEquityDeletes().stream()
-        .map(ArcticFileScanTask::file).collect(Collectors.toList());
-
-    if (!equDeleteFiles.isEmpty()) {
-      AdaptHiveGenericArcticDeleteFilter arcticDeleteFilter = new AdaptHiveGenericArcticDeleteFilter(
-          keyedTableScanTask, tableSchema, projectedSchema, primaryKeySpec, sourceNodes, structLikeCollections
-      );
-
-      Schema newProjectedSchema = arcticDeleteFilter.requiredSchema();
-
-      CloseableIterable<Record> dataIterable = CloseableIterable.concat(CloseableIterable.transform(
-          CloseableIterable.withNoopClose(keyedTableScanTask.dataTasks()),
-          fileScanTask -> arcticDeleteFilter.filterNegate(
-              newParquetIterable(fileScanTask, newProjectedSchema,
-                  DataReaderCommon.getIdToConstant(fileScanTask, newProjectedSchema, convertConstant)))));
-      return dataIterable.iterator();
-    } else {
-      return CloseableIterator.empty();
-    }
-  }
-
   @Override
   protected Function<MessageType, ParquetValueReader<?>> getNewReaderFunction(
       Schema projectSchema,
@@ -139,52 +101,4 @@ public class AdaptHiveGenericArcticDataReader extends AdaptHiveBaseArcticDataRea
     return schema -> record -> new InternalRecordWrapper(schema.asStruct()).wrap(record);
   }
 
-  private class AdaptHiveGenericArcticDeleteFilter extends AdaptHiveArcticDeleteFilter<Record> {
-
-    protected Function<Record, StructLike> asStructLike;
-
-    protected AdaptHiveGenericArcticDeleteFilter(
-        KeyedTableScanTask keyedTableScanTask,
-        Schema tableSchema, Schema requestedSchema, PrimaryKeySpec primaryKeySpec) {
-      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec);
-      this.asStructLike = AdaptHiveGenericArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
-    }
-
-    protected AdaptHiveGenericArcticDeleteFilter(
-        KeyedTableScanTask keyedTableScanTask,
-        Schema tableSchema,
-        Schema requestedSchema,
-        PrimaryKeySpec primaryKeySpec,
-        Set<DataTreeNode> sourceNodes,
-        StructLikeCollections structLikeCollections) {
-      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec,
-          sourceNodes, structLikeCollections);
-      this.asStructLike = AdaptHiveGenericArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
-    }
-
-    protected AdaptHiveGenericArcticDeleteFilter(
-        KeyedTableScanTask keyedTableScanTask,
-        Schema tableSchema,
-        Schema requestedSchema,
-        PrimaryKeySpec primaryKeySpec,
-        Set<DataTreeNode> sourceNodes) {
-      super(keyedTableScanTask, tableSchema, requestedSchema, primaryKeySpec, sourceNodes);
-      this.asStructLike = AdaptHiveGenericArcticDataReader.this.toStructLikeFunction().apply(requiredSchema());
-    }
-
-    @Override
-    protected StructLike asStructLike(Record record) {
-      return asStructLike.apply(record);
-    }
-
-    @Override
-    protected InputFile getInputFile(String location) {
-      return fileIO.newInputFile(location);
-    }
-
-    @Override
-    protected ArcticFileIO getArcticFileIo() {
-      return fileIO;
-    }
-  }
 }
