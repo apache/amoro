@@ -52,26 +52,32 @@ public class RenewableBlocker implements Blocker {
   private final long createTime;
   private final long expirationTime;
   private final Map<String, String> properties;
+  private final TableIdentifier tableIdentifier;
+  private final AmsClient amsClient;
 
   private volatile ScheduledFuture<?> renewTaskFuture;
 
   public RenewableBlocker(String blockerId, List<BlockableOperation> operations, long createTime, long expirationTime,
-                          Map<String, String> properties) {
+                          Map<String, String> properties, TableIdentifier tableIdentifier, AmsClient amsClient) {
     this.blockerId = blockerId;
     this.operations = operations;
     this.createTime = createTime;
     this.expirationTime = expirationTime;
     this.properties = properties;
+    this.tableIdentifier = tableIdentifier;
+    this.amsClient = amsClient;
+    renewAsync();
   }
 
-  public static RenewableBlocker of(com.netease.arctic.ams.api.Blocker blocker) {
+  public static RenewableBlocker of(TableIdentifier tableIdentifier, com.netease.arctic.ams.api.Blocker blocker,
+                                    AmsClient amsClient) {
     Map<String, String> properties = Maps.newHashMap(blocker.getProperties());
     long createTime = PropertyUtil.propertyAsLong(properties, CREATE_TIME_PROPERTY, 0);
     long expirationTime = PropertyUtil.propertyAsLong(properties, EXPIRATION_TIME_PROPERTY, 0);
     properties.remove(CREATE_TIME_PROPERTY);
     properties.remove(EXPIRATION_TIME_PROPERTY);
     return new RenewableBlocker(blocker.getBlockerId(), blocker.getOperations(), createTime, expirationTime,
-        properties);
+        properties, tableIdentifier, amsClient);
   }
 
   private static ScheduledExecutorService getExecutorService() {
@@ -85,44 +91,35 @@ public class RenewableBlocker implements Blocker {
     return EXECUTOR;
   }
 
-  /**
-   * Call after blocked
-   *
-   * @param client          - AmsClient
-   * @param tableIdentifier - table identifier
-   */
-  public void onBlocked(AmsClient client, TableIdentifier tableIdentifier) {
+  public void renewAsync() {
     long timeout = getExpirationTime() - getCreateTime();
     long interval = timeout / 5;
     this.renewTaskFuture =
-        getExecutorService().scheduleAtFixedRate(() -> renew(client, tableIdentifier), interval, interval,
+        getExecutorService().scheduleAtFixedRate(this::doRenew, interval, interval,
             TimeUnit.MILLISECONDS);
   }
 
-  /**
-   * Call after released
-   *
-   * @param tableIdentifier - table identifier
-   */
-  public void onReleased(TableIdentifier tableIdentifier) {
+  private void doRenew() {
+    try {
+      amsClient.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
+      LOG.info("renew blocker {} success of {}", blockerId(), tableIdentifier);
+    } catch (NoSuchObjectException e1) {
+      LOG.warn("failed to renew block {} of table {}, blocker is released, renew exit", blockerId(), e1);
+      cancelRenew();
+    } catch (Throwable t) {
+      LOG.warn("failed to renew block {} of table {}, ignore", blockerId(),
+          tableIdentifier, t);
+    }
+  }
+
+  public void cancelRenew() {
     if (this.renewTaskFuture != null) {
       this.renewTaskFuture.cancel(true);
       LOG.info("blocker released, blocker {} of {}", blockerId(), tableIdentifier);
     }
   }
 
-  private void renew(AmsClient client, TableIdentifier tableIdentifier) {
-    try {
-      client.renewBlocker(tableIdentifier.buildTableIdentifier(), blockerId());
-      LOG.info("renew blocker {} success of {}", blockerId(), tableIdentifier);
-    } catch (NoSuchObjectException e1) {
-      LOG.warn("failed to renew block {} of table {}, blocker is released, renew exit", blockerId(), e1);
-      onReleased(tableIdentifier);
-    } catch (Throwable t) {
-      LOG.warn("failed to renew block {} of table {}, ignore", blockerId(),
-          tableIdentifier, t);
-    }
-  }
+
 
   @Override
   public String blockerId() {

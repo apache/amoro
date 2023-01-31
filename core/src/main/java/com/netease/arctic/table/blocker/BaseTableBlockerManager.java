@@ -52,12 +52,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public Blocker block(List<BlockableOperation> operations, Map<String, String> properties)
       throws OperationConflictException {
     try {
-      Blocker blocker =
-          BlockerFactory.buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties));
-      if (blocker instanceof RenewableBlocker) {
-        ((RenewableBlocker) blocker).onBlocked(client, tableIdentifier);
-      }
-      return blocker;
+      return buildBlocker(client.block(tableIdentifier.buildTableIdentifier(), operations, properties));
     } catch (OperationConflictException e) {
       throw e;
     } catch (TException e) {
@@ -69,9 +64,6 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public void release(Blocker blocker) {
     try {
       client.releaseBlocker(tableIdentifier.buildTableIdentifier(), blocker.blockerId());
-      if (blocker instanceof RenewableBlocker) {
-        ((RenewableBlocker) blocker).onReleased(tableIdentifier);
-      }
     } catch (TException e) {
       throw new IllegalStateException("failed to release " + tableIdentifier + "'s blocker " + blocker.blockerId(), e);
     }
@@ -81,7 +73,7 @@ public class BaseTableBlockerManager implements TableBlockerManager {
   public List<Blocker> getBlockers() {
     try {
       return client.getBlockers(tableIdentifier.buildTableIdentifier())
-          .stream().map(BlockerFactory::buildBlocker).collect(Collectors.toList());
+          .stream().map(this::buildBlocker).collect(Collectors.toList());
     } catch (TException e) {
       throw new IllegalStateException("failed to get blockers of " + tableIdentifier, e);
     }
@@ -91,13 +83,11 @@ public class BaseTableBlockerManager implements TableBlockerManager {
     return tableIdentifier;
   }
 
-  public static class BlockerFactory {
-    public static Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker) {
-      if (blocker.getProperties() != null &&
-          blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null) {
-        return RenewableBlocker.of(blocker);
-      }
-      throw new IllegalArgumentException("illegal blocker " + blocker);
+  private Blocker buildBlocker(com.netease.arctic.ams.api.Blocker blocker) {
+    if (blocker.getProperties() != null &&
+        blocker.getProperties().get(RenewableBlocker.EXPIRATION_TIME_PROPERTY) != null) {
+      return RenewableBlocker.of(tableIdentifier, blocker, client);
     }
+    throw new IllegalArgumentException("illegal blocker " + blocker);
   }
 }
