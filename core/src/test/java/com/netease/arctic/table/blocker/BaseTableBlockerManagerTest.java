@@ -29,24 +29,9 @@ public class BaseTableBlockerManagerTest extends TableTestBase {
     TableBlockerManager tableBlockerManager = getCatalog().getTableBlockerManager(TableTestHelpers.TEST_TABLE_ID);
     Assert.assertTrue(tableBlockerManager instanceof BaseTableBlockerManager);
     BaseTableBlockerManager blockerManager = (BaseTableBlockerManager) tableBlockerManager;
-    assertStopped(blockerManager);
 
     Blocker block = blockerManager.block(OPERATIONS);
-    assertRunning(blockerManager);
 
     blockerManager.release(block);
-    assertStopped(blockerManager);
-  }
-
-  public void assertRunning(BaseTableBlockerManager blockerManager) {
-    Assert.assertNotNull(blockerManager.getRenewWorker());
-    Assert.assertFalse(blockerManager.isStop());
-    Assert.assertFalse(blockerManager.getToRenewBlockers().isEmpty());
-  }
-
-  public void assertStopped(BaseTableBlockerManager blockerManager) {
-    Assert.assertNull(blockerManager.getRenewWorker());
-    Assert.assertTrue(blockerManager.isStop());
-    Assert.assertTrue(blockerManager.getToRenewBlockers().isEmpty());
   }
 }

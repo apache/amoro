@@ -30,6 +30,7 @@ import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.api.TableCommitMeta;
 import com.netease.arctic.ams.api.TableIdentifier;
 import com.netease.arctic.ams.api.TableMeta;
+import com.netease.arctic.ams.server.model.TableBlocker;
 import com.netease.arctic.ams.server.model.TableMetadata;
 import com.netease.arctic.ams.server.service.IMetaService;
 import com.netease.arctic.ams.server.service.ServiceContainer;
@@ -37,7 +38,6 @@ import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.service.impl.FileInfoCacheService;
 import com.netease.arctic.ams.server.utils.ArcticMetaValidator;
-import com.netease.arctic.table.blocker.BaseBlocker;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
@@ -211,7 +211,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   public Blocker block(TableIdentifier tableIdentifier, List<BlockableOperation> operations,
                        Map<String, String> properties)
       throws OperationConflictException {
-    BaseBlocker block = ServiceContainer.getTableBlockerService()
+    TableBlocker block = ServiceContainer.getTableBlockerService()
         .block(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), operations, properties);
     return block.buildBlocker();
   }
@@ -223,7 +223,7 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   }
 
   @Override
-  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) {
+  public void renewBlocker(TableIdentifier tableIdentifier, String blockerId) throws NoSuchObjectException {
     ServiceContainer.getTableBlockerService()
         .renew(com.netease.arctic.table.TableIdentifier.of(tableIdentifier), blockerId);
   }
@@ -232,6 +232,6 @@ public class ArcticTableMetastoreHandler implements AmsClient, ArcticTableMetast
   public List<Blocker> getBlockers(TableIdentifier tableIdentifier) {
     return ServiceContainer.getTableBlockerService()
         .getBlockers(com.netease.arctic.table.TableIdentifier.of(tableIdentifier))
-        .stream().map(BaseBlocker::buildBlocker).collect(Collectors.toList());
+        .stream().map(TableBlocker::buildBlocker).collect(Collectors.toList());
   }
 }

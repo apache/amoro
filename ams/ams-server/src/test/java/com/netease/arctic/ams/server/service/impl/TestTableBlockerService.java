@@ -2,12 +2,12 @@ package com.netease.arctic.ams.server.service.impl;
 
 import com.netease.arctic.TableTestBase;
 import com.netease.arctic.ams.api.BlockableOperation;
+import com.netease.arctic.ams.api.NoSuchObjectException;
 import com.netease.arctic.ams.api.OperationConflictException;
 import com.netease.arctic.ams.server.config.ArcticMetaStoreConf;
 import com.netease.arctic.ams.server.model.TableBlocker;
 import com.netease.arctic.ams.server.service.ServiceContainer;
 import com.netease.arctic.table.TableIdentifier;
-import com.netease.arctic.table.blocker.BaseBlocker;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -38,13 +38,13 @@ public class TestTableBlockerService extends TableTestBase {
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
 
-    BaseBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
+    TableBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
     assertBlocker(block, operations);
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
 
-    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.blockerId());
+    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.getBlockerId() + "");
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -60,7 +60,7 @@ public class TestTableBlockerService extends TableTestBase {
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
 
-    BaseBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
+    TableBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
 
     Assert.assertThrows("should be conflict", OperationConflictException.class,
         () -> ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties));
@@ -70,14 +70,14 @@ public class TestTableBlockerService extends TableTestBase {
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
 
-    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.blockerId());
+    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.getBlockerId() + "");
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
   }
 
   @Test
-  public void testRenew() throws OperationConflictException {
+  public void testRenew() throws OperationConflictException, NoSuchObjectException {
     List<BlockableOperation> operations = new ArrayList<>();
     operations.add(BlockableOperation.BATCH_WRITE);
     operations.add(BlockableOperation.OPTIMIZE);
@@ -86,9 +86,9 @@ public class TestTableBlockerService extends TableTestBase {
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
 
-    BaseBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
+    TableBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
 
-    ServiceContainer.getTableBlockerService().renew(tableIdentifier, block.blockerId());
+    ServiceContainer.getTableBlockerService().renew(tableIdentifier, block.getBlockerId() + "");
     assertBlockerCnt(1);
     assertBlocked(BlockableOperation.OPTIMIZE);
     assertBlocked(BlockableOperation.BATCH_WRITE);
@@ -99,7 +99,7 @@ public class TestTableBlockerService extends TableTestBase {
     assertBlocked(BlockableOperation.BATCH_WRITE);
     assertBlockerRenewed(ServiceContainer.getTableBlockerService().getBlockers(tableIdentifier).get(0));
 
-    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.blockerId());
+    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.getBlockerId() + "");
     assertBlockerCnt(0);
     assertNotBlocked(BlockableOperation.OPTIMIZE);
     assertNotBlocked(BlockableOperation.BATCH_WRITE);
@@ -155,28 +155,28 @@ public class TestTableBlockerService extends TableTestBase {
     operations.add(BlockableOperation.BATCH_WRITE);
     operations.add(BlockableOperation.OPTIMIZE);
 
-    BaseBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
+    TableBlocker block = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
 
-    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.blockerId());
+    ServiceContainer.getTableBlockerService().release(tableIdentifier, block.getBlockerId() + "");
 
-    BaseBlocker block2 = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
+    TableBlocker block2 = ServiceContainer.getTableBlockerService().block(tableIdentifier, operations, properties);
 
-    Assert.assertEquals(Long.parseLong(block2.blockerId()) - Long.parseLong(block.blockerId()), 1);
+    Assert.assertEquals(block2.getBlockerId() - block.getBlockerId(), 1);
 
-    ServiceContainer.getTableBlockerService().release(tableIdentifier, block2.blockerId());
+    ServiceContainer.getTableBlockerService().release(tableIdentifier, block2.getBlockerId() + "");
   }
 
-  private void assertBlocker(BaseBlocker block, List<BlockableOperation> operations) {
-    Assert.assertEquals(operations.size(), block.operations().size());
-    operations.forEach(operation -> Assert.assertTrue(block.operations().contains(operation)));
-    Assert.assertEquals(properties.size(), block.properties().size());
-    block.properties().forEach((key, value) -> Assert.assertEquals(properties.get(key), value));
+  private void assertBlocker(TableBlocker block, List<BlockableOperation> operations) {
+    Assert.assertEquals(operations.size(), block.getOperations().size());
+    operations.forEach(operation -> Assert.assertTrue(block.getOperations().contains(operation.name())));
+    Assert.assertEquals(properties.size(), block.getProperties().size());
+    block.getProperties().forEach((key, value) -> Assert.assertEquals(properties.get(key), value));
 
     long timeout = ArcticMetaStoreConf.BLOCKER_TIMEOUT.defaultValue();
     Assert.assertEquals(timeout, block.getExpirationTime() - block.getCreateTime());
   }
 
-  private void assertBlockerRenewed(BaseBlocker block) {
+  private void assertBlockerRenewed(TableBlocker block) {
     long timeout = ArcticMetaStoreConf.BLOCKER_TIMEOUT.defaultValue();
     Assert.assertTrue(block.getExpirationTime() - block.getCreateTime() > timeout);
   }
@@ -192,7 +192,7 @@ public class TestTableBlockerService extends TableTestBase {
   }
 
   private void assertBlockerCnt(int i) {
-    List<BaseBlocker> blockers;
+    List<TableBlocker> blockers;
     blockers = ServiceContainer.getTableBlockerService().getBlockers(tableIdentifier);
     Assert.assertEquals(i, blockers.size());
   }
