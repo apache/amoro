@@ -80,7 +80,7 @@ public class SupportHiveCommit extends BaseOptimizeCommit {
         for (OptimizeTaskItem optimizeTaskItem : optimizeTaskItems) {
           BaseOptimizeTaskRuntime optimizeRuntime = optimizeTaskItem.getOptimizeRuntime();
           List<DataFile> targetFiles = optimizeRuntime.getTargetFiles().stream()
-              .map(fileByte -> (DataFile) SerializationUtils.toInternalTableFile(fileByte))
+              .map(fileByte -> (DataFile) SerializationUtils.toContentFile(fileByte))
               .collect(Collectors.toList());
           long maxTransactionId = targetFiles.stream()
               .mapToLong(dataFile -> FileNameHandle.parseBase(dataFile.path().toString()).transactionId())
