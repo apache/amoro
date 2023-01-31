@@ -25,6 +25,7 @@ import com.netease.arctic.ams.server.service.impl.ArcticTransactionService;
 import com.netease.arctic.ams.server.service.impl.CatalogMetadataService;
 import com.netease.arctic.ams.server.service.impl.DDLTracerService;
 import com.netease.arctic.ams.server.utils.JDBCSqlSessionFactoryProvider;
+import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.Schema;
 import org.apache.iceberg.types.Types;
 import org.apache.thrift.TException;
@@ -58,9 +59,11 @@ public class TestArcticTransactionService {
     Schema schema = new Schema(
         Types.NestedField.required(1, "id", Types.IntegerType.get())
     );
+    PrimaryKeySpec primaryKeySpec = PrimaryKeySpec.builderFor(schema)
+        .addColumn("id").build();
     AmsTestBase.catalog.newTableBuilder(
         com.netease.arctic.table.TableIdentifier.of(AMS_TEST_CATALOG_NAME, AMS_TEST_DB_NAME, tableName),
-        schema).create();
+        schema).withPrimaryKeySpec(primaryKeySpec).create();
   }
 
   @Test
