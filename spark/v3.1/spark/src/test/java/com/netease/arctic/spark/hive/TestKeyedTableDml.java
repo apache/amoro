@@ -8,6 +8,8 @@ import org.junit.Test;
 
 import java.text.DecimalFormat;
 
+import static com.netease.arctic.spark.SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE;
+
 public class TestKeyedTableDml extends SparkTestBase {
   private final String database = "db_hive";
   private final String notUpsertTable = "testNotUpsert";
@@ -298,7 +300,7 @@ public class TestKeyedTableDml extends SparkTestBase {
 
   @Test
   public void testDuplicateEnabled() {
-    sql("set `spark.sql.check-data-duplicates.enabled` = `false`");
+    sql("set `{0}` = `false`", CHECK_SOURCE_DUPLICATES_ENABLE);
     sql("create table {0}.{1}( \n" +
         " id int, \n" +
         " name string, \n" +
@@ -326,7 +328,7 @@ public class TestKeyedTableDml extends SparkTestBase {
 
     sql("drop table " + database + "." + "testPks");
     sql("drop table " + database + "." + "testTable");
-    sql("set `spark.sql.check-data-duplicates.enabled` = `true`");
+    sql("set `{0}` = `true`", CHECK_SOURCE_DUPLICATES_ENABLE);
   }
 
   @Test
