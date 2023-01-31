@@ -752,7 +752,7 @@ public class OptimizeQueueService extends IJDBCService {
 
     private boolean isOptimizeBlocked(TableIdentifier tableIdentifier) {
       if (ServiceContainer.getTableBlockerService().isBlocked(tableIdentifier, BlockableOperation.OPTIMIZE)) {
-        LOG.debug("{} optimize is blocked continue", tableIdentifier);
+        LOG.debug("{} optimize is blocked", tableIdentifier);
         return true;
       }
       return false;

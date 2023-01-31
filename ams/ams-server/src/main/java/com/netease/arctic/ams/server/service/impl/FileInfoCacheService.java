@@ -37,6 +37,7 @@ import com.netease.arctic.ams.server.model.CacheSnapshotInfo;
 import com.netease.arctic.ams.server.model.PartitionBaseInfo;
 import com.netease.arctic.ams.server.model.PartitionFileBaseInfo;
 import com.netease.arctic.ams.server.model.TableMetadata;
+import com.netease.arctic.ams.server.model.TableOptimizeRuntime;
 import com.netease.arctic.ams.server.model.TransactionsOfTable;
 import com.netease.arctic.ams.server.service.IJDBCService;
 import com.netease.arctic.ams.server.service.IMetaService;
@@ -59,6 +60,7 @@ import org.apache.iceberg.FileScanTask;
 import org.apache.iceberg.Snapshot;
 import org.apache.iceberg.Table;
 import org.apache.iceberg.io.CloseableIterable;
+import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.relocated.com.google.common.hash.Hashing;
 import org.apache.iceberg.util.PropertyUtil;
@@ -147,10 +149,8 @@ public class FileInfoCacheService extends IJDBCService {
     }
   }
 
-  public Boolean snapshotIsCurrentCache(TableIdentifier identifier, String innerTable, Long snapshotId) {
-    if (snapshotId == -1) {
-      return true;
-    }
+  public Boolean snapshotIsCurrentCache(TableIdentifier identifier, String innerTable, long snapshotId) {
+    Preconditions.checkArgument(snapshotId != TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     try (SqlSession sqlSession = getSqlSession(false)) {
       SnapInfoCacheMapper snapInfoCacheMapper = getMapper(sqlSession, SnapInfoCacheMapper.class);
       return snapInfoCacheMapper.snapshotIsCached(identifier, innerTable, snapshotId) &&
