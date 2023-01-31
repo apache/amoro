@@ -721,6 +721,10 @@ public class OptimizeQueueService extends IJDBCService {
               optimizeTasks = optimizePlan == null ? Collections.emptyList() : optimizePlan.plan();
             }
           }
+          
+          if (optimizePlan == null) {
+            continue;
+          }
 
           initTableOptimizeRuntime(tableItem, optimizePlan, optimizeTasks, optimizePlan.getPartitionOptimizeType());
           LOG.debug("{} after plan get {} tasks", tableItem.getTableIdentifier(), optimizeTasks.size());
