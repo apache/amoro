@@ -19,11 +19,6 @@
 
 package org.apache.iceberg.spark.data;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 import org.apache.avro.LogicalType;
 import org.apache.avro.LogicalTypes;
 import org.apache.avro.Schema;
@@ -38,6 +33,12 @@ import org.apache.spark.sql.types.ByteType;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StructType;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class SparkAvroWriter implements MetricsAwareDatumWriter<InternalRow> {
   private final StructType dsSchema;
@@ -85,18 +86,20 @@ public class SparkAvroWriter implements MetricsAwareDatumWriter<InternalRow> {
     }
 
     @Override
-    public ValueWriter<?> array(DataType sArray, Schema array, ValueWriter<?> elementWriter) {
-      return SparkValueWriters.array(elementWriter, arrayElementType(sArray));
+    public ValueWriter<?> array(DataType sparkArray, Schema array, ValueWriter<?> elementWriter) {
+      return SparkValueWriters.array(elementWriter, arrayElementType(sparkArray));
     }
 
     @Override
-    public ValueWriter<?> map(DataType sMap, Schema map, ValueWriter<?> valueReader) {
-      return SparkValueWriters.map(SparkValueWriters.strings(), mapKeyType(sMap), valueReader, mapValueType(sMap));
+    public ValueWriter<?> map(DataType sparkMap, Schema map, ValueWriter<?> valueReader) {
+      return SparkValueWriters.map(
+          SparkValueWriters.strings(), mapKeyType(sparkMap),
+          valueReader, mapValueType(sparkMap));
     }
 
     @Override
-    public ValueWriter<?> map(DataType sMap, Schema map, ValueWriter<?> keyWriter, ValueWriter<?> valueWriter) {
-      return SparkValueWriters.arrayMap(keyWriter, mapKeyType(sMap), valueWriter, mapValueType(sMap));
+    public ValueWriter<?> map(DataType sparkMap, Schema map, ValueWriter<?> keyWriter, ValueWriter<?> valueWriter) {
+      return SparkValueWriters.arrayMap(keyWriter, mapKeyType(sparkMap), valueWriter, mapValueType(sparkMap));
     }
 
     @Override

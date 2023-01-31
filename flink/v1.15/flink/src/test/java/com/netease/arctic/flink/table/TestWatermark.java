@@ -67,7 +67,7 @@ import static com.netease.arctic.ams.api.MockArcticMetastoreServer.TEST_CATALOG_
 import static com.netease.arctic.table.TableProperties.LOCATION;
 
 public class TestWatermark extends FlinkTestBase {
-  public static final Logger LOG = LoggerFactory.getLogger(TestJoin.class);
+  public static final Logger LOG = LoggerFactory.getLogger(TestWatermark.class);
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();

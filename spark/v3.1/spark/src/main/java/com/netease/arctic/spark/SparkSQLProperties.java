@@ -32,7 +32,7 @@ public class SparkSQLProperties {
 
   public static final String REFRESH_CATALOG_BEFORE_USAGE_DEFAULT = "false";
 
-  public static final String CHECK_DATA_DUPLICATES_ENABLE = "spark.sql.arctic.check-source-data-uniqueness.enabled";
+  public static final String CHECK_SOURCE_DUPLICATES_ENABLE = "spark.sql.arctic.check-source-data-uniqueness.enabled";
 
-  public static final String CHECK_DATA_DUPLICATES_ENABLE_DEFAULT = "false";
+  public static final String CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT = "false";
 }

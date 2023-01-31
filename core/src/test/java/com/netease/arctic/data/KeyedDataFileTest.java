@@ -18,42 +18,42 @@
 
 package com.netease.arctic.data;
 
-import com.netease.arctic.TableTestBase;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
+import com.netease.arctic.io.DataTestHelpers;
 import org.apache.iceberg.DataFile;
-import org.apache.iceberg.data.GenericRecord;
 import org.apache.iceberg.data.Record;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public class KeyedDataFileTest extends TableTestBase {
 
+  public KeyedDataFileTest() {
+    super(TableFormat.MIXED_ICEBERG, true, true);
+  }
+
   @Test
   public void testDefaultKeyedFile() {
-    List<DataFile> writeFiles = writeChange(PK_TABLE_ID, ChangeAction.INSERT, writeRecords());
+    Long txId = getArcticTable().asKeyedTable().beginTransaction("begin");
+    List<DataFile> writeFiles = DataTestHelpers.writeChangeStore(getArcticTable().asKeyedTable(), txId,
+        ChangeAction.INSERT, writeRecords());
 
     Assert.assertEquals(1, writeFiles.size());
     DefaultKeyedFile defaultKeyedFile = new DefaultKeyedFile(writeFiles.get(0));
     Assert.assertEquals(DataFileType.INSERT_FILE, defaultKeyedFile.type());
     Assert.assertEquals(3, defaultKeyedFile.node().mask());
-    Long txId = AMS.handler().getTableCurrentTxId(PK_TABLE_ID.buildTableIdentifier());
     Assert.assertEquals(0, defaultKeyedFile.node().index());
     Assert.assertEquals(txId, defaultKeyedFile.transactionId());
-
   }
 
   private List<Record> writeRecords() {
-    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
 
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "lily", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
+    builder.add(DataTestHelpers.createRecord(1, "john", 0, "2022-08-30T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(1, "lily", 0, "2022-08-30T12:00:00"));
 
     return builder.build();
   }

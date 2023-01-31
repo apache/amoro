@@ -21,13 +21,12 @@ package com.netease.arctic.spark.sql.catalyst.plans
 
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, V2WriteCommand}
-import org.apache.spark.sql.connector.write.BatchWrite
-import org.apache.spark.sql.util.CaseInsensitiveStringMap
 
 case class ReplaceArcticData(
-    table: NamedRelation,
-    query: LogicalPlan,
-    options: Map[String, String]) extends V2WriteCommand {
+  table: NamedRelation,
+  query: LogicalPlan,
+  writeOptions: Map[String, String]
+) extends V2WriteCommand {
 
   def isByName: Boolean = false
 

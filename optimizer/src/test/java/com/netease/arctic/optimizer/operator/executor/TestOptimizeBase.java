@@ -47,6 +47,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public interface TestOptimizeBase {
@@ -54,14 +55,16 @@ public interface TestOptimizeBase {
 
   default List<DataFile> insertTableBaseDataFiles(ArcticTable arcticTable, Long transactionId,
                                                   List<DataFileInfo> baseDataFilesInfo) throws IOException {
-    TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
+    Supplier<TaskWriter<Record>> writerSupplier = () ->
+        arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-        .withTransactionId(transactionId)
-        .buildWriter(BaseLocationKind.INSTANT) :
+            .withTransactionId(transactionId)
+            .buildWriter(BaseLocationKind.INSTANT) :
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
-            .buildWriter(BaseLocationKind.INSTANT) ;
+            .buildWriter(BaseLocationKind.INSTANT);
 
-    List<DataFile> baseDataFiles = insertBaseDataFiles(writer, arcticTable.schema());
+    List<DataFile> baseDataFiles = insertBaseDataFiles(writerSupplier, arcticTable.schema());
+
     UnkeyedTable baseTable = arcticTable.isKeyedTable() ?
         arcticTable.asKeyedTable().baseTable() : arcticTable.asUnkeyedTable();
     AppendFiles baseAppend = baseTable.newAppend();
@@ -78,25 +81,28 @@ public interface TestOptimizeBase {
   default List<DataFile> insertOptimizeTargetDataFiles(ArcticTable arcticTable,
                                                        OptimizeType optimizeType,
                                                        Long transactionId) throws IOException {
-    WriteOperationKind writeOperationKind = WriteOperationKind.MAJOR_OPTIMIZE;
-    switch (optimizeType) {
-      case FullMajor:
-        writeOperationKind = WriteOperationKind.FULL_OPTIMIZE;
-        break;
-      case Major:
-        break;
-      case Minor:
-          writeOperationKind = WriteOperationKind.MINOR_OPTIMIZE;
-          break;
-    }
-    TaskWriter<Record> writer = arcticTable.isKeyedTable() ?
+    WriteOperationKind writeOperationKind = getWriteOperationKind(optimizeType);
+
+    Supplier<TaskWriter<Record>> writerSupplier = () -> arcticTable.isKeyedTable() ?
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .withTransactionId(transactionId)
             .buildWriter(writeOperationKind) :
         AdaptHiveGenericTaskWriterBuilder.builderFor(arcticTable)
             .buildWriter(writeOperationKind);
 
-    return insertBaseDataFiles(writer, arcticTable.schema());
+    return insertBaseDataFiles(writerSupplier , arcticTable.schema());
+  }
+
+  default WriteOperationKind getWriteOperationKind(OptimizeType optimizeType) {
+    switch (optimizeType) {
+      case Major:
+        return WriteOperationKind.MAJOR_OPTIMIZE;
+      case Minor:
+        return WriteOperationKind.MINOR_OPTIMIZE;
+      case FullMajor:
+        return WriteOperationKind.FULL_OPTIMIZE;
+    }
+    throw new IllegalStateException("unknown kind optimize");
   }
 
   default List<DeleteFile> insertBasePosDeleteFiles(ArcticTable arcticTable,
@@ -172,11 +178,12 @@ public interface TestOptimizeBase {
     return deleteFiles;
   }
 
-  default List<DataFile> insertBaseDataFiles(TaskWriter<Record> writer, Schema schema) throws IOException {
+  default List<DataFile> insertBaseDataFiles(Supplier<TaskWriter<Record>> writerSupplier, Schema schema) throws IOException {
     List<DataFile> baseDataFiles = new ArrayList<>();
     // write 1000 records to 1 partitions(2022-1-1)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      TaskWriter<Record> writer = writerSupplier.get();
       for (Record record : baseRecords(i, length, schema)) {
         writer.write(record);
       }

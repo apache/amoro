@@ -18,8 +18,7 @@
 
 package com.netease.arctic.flink.write.hidden.kafka;
 
-import com.netease.arctic.flink.kafka.testutils.KafkaTestBase;
-import com.netease.arctic.flink.read.LogKafkaConsumer;
+import com.netease.arctic.flink.read.source.log.kafka.LogKafkaSource;
 import com.netease.arctic.flink.shuffle.LogRecordV1;
 import com.netease.arctic.flink.shuffle.ShuffleHelper;
 import com.netease.arctic.flink.util.OneInputStreamOperatorInternTest;
@@ -27,33 +26,22 @@ import com.netease.arctic.flink.util.TestGlobalAggregateManager;
 import com.netease.arctic.flink.write.hidden.HiddenLogWriter;
 import com.netease.arctic.log.LogDataJsonDeserialization;
 import com.netease.arctic.utils.IdGenerator;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.restartstrategy.RestartStrategies;
-import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.core.execution.JobClient;
-import org.apache.flink.formats.common.TimestampFormat;
-import org.apache.flink.formats.json.JsonRowDataDeserializationSchema;
 import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.DataStreamUtils;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.operators.collect.ClientAndIterator;
-import org.apache.flink.streaming.connectors.kafka.internals.KafkaDeserializationSchemaWrapper;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
-import org.apache.flink.table.data.DecimalData;
-import org.apache.flink.table.data.GenericArrayData;
-import org.apache.flink.table.data.GenericMapData;
-import org.apache.flink.table.data.GenericRowData;
-import org.apache.flink.table.data.RowData;
-import org.apache.flink.table.data.StringData;
-import org.apache.flink.table.data.TimestampData;
-import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
+import org.apache.flink.table.data.*;
 import org.apache.flink.util.CloseableIterator;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
@@ -65,32 +53,29 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
-import static com.netease.arctic.flink.kafka.testutils.KafkaConfigGenerate.getPropertiesWithByteArray;
+import static com.netease.arctic.flink.kafka.testutils.KafkaContainerTest.*;
 import static com.netease.arctic.flink.table.descriptors.ArcticValidator.ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE;
-import static com.netease.arctic.table.TableProperties.LOG_STORE_MESSAGE_TOPIC;
+import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.createLogDataDeserialization;
+import static com.netease.arctic.flink.write.hidden.kafka.BaseLogTest.userSchema;
 
 /**
  * Hidden log operator tests.
  */
-public class HiddenLogOperatorsTest extends BaseLogTest {
+public class HiddenLogOperatorsTest {
   private static final Logger LOG = LoggerFactory.getLogger(HiddenLogOperatorsTest.class);
   public static final String topic = "produce-consume-topic";
   public static final TestGlobalAggregateManager globalAggregateManger = new TestGlobalAggregateManager();
-  private static final KafkaTestBase kafkaTestBase = new KafkaTestBase();
 
   @BeforeClass
   public static void prepare() throws Exception {
-    kafkaTestBase.prepare();
+    KAFKA_CONTAINER.start();
   }
 
   @AfterClass
   public static void shutdown() throws Exception {
-    kafkaTestBase.shutDownServices();
+    KAFKA_CONTAINER.close();
   }
 
   @Test
@@ -121,7 +106,6 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     }
   }
 
-  @Ignore
   @Test
   public void testProducerFailoverWithoutRetract() throws Exception {
     String topic = "testProducerFailoverWithoutRetract";
@@ -168,7 +152,6 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     createConsumerWithoutRetract(true, 10, "test-gid", topic);
   }
 
-  @Ignore
   @Test
   public void testMultiParallelismFailoverConsistencyRead() throws Exception {
     String topic = "testMultiParallelismFailoverConsistencyRead";
@@ -229,7 +212,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
       output.addAll(collect(harness1));
       output.addAll(collect(harness2));
       Assertions.assertEquals(11, output.size());
-      ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
+      ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
       Assertions.assertEquals(11, consumerRecords.count());
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
@@ -284,7 +267,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
       output.addAll(collect(harness1));
       output.addAll(collect(harness2));
       Assertions.assertEquals(8, output.size());
-      ConsumerRecords<byte[], byte[]> consumerRecords = kafkaTestBase.readRecordsBytes(topic);
+      ConsumerRecords<byte[], byte[]> consumerRecords = readRecordsBytes(topic);
       LogDataJsonDeserialization<RowData> deserialization = createLogDataDeserialization();
       consumerRecords.forEach(consumerRecord -> {
         try {
@@ -376,23 +359,18 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     properties.put("group.id", groupId);
     properties.put("auto.offset.reset", "earliest");
 
-    JsonRowDataDeserializationSchema deserializationSchema =
-        new JsonRowDataDeserializationSchema(
-            flinkUserSchema,
-            InternalTypeInfo.of(flinkUserSchema), false, false, TimestampFormat.ISO_8601);
-
-    Configuration configuration = new Configuration();
-    configuration.set(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE, retract);
+    Map<String, String> configuration = new HashMap<>();
+    configuration.put(ARCTIC_LOG_CONSISTENCY_GUARANTEE_ENABLE.key(), String.valueOf(retract));
 
     DataStream<RowData> streamWithTimestamps =
-        env.addSource(
-            new LogKafkaConsumer(
-                topics,
-                new KafkaDeserializationSchemaWrapper<>(deserializationSchema),
-                properties,
-                userSchema,
-                configuration
-            )
+        env.fromSource(
+            LogKafkaSource.builder(userSchema, configuration)
+                .setTopics(topics)
+                .setStartingOffsets(OffsetsInitializer.earliest())
+                .setProperties(properties)
+                .build(),
+            WatermarkStrategy.noWatermarks(),
+            "Log Source"
         );
     if (print) {
       streamWithTimestamps.print("log-hidden");
@@ -409,13 +387,11 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
     while (iterator.hasNext()) {
       RowData row = iterator.next();
       actualResult.add(row);
-      LOG.info("size {}, {}.", actualResult.size(), row);
+      LOG.info("size {}, {}, {}.", actualResult.size(), row.getRowKind(), row.getInt(1));
       if (actualResult.size() == count) {
         break;
       }
     }
-
-    jobClient.cancel();
   }
 
   public static OneInputStreamOperatorTestHarness<RowData, RowData> createProducer(
@@ -430,7 +406,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
         topic);
   }
 
-  private static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  public static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
       int maxParallelism,
       int subTaskId,
       byte[] jobId,
@@ -446,7 +422,7 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
         topic);
   }
 
-  private static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
+  public static OneInputStreamOperatorInternTest<RowData, RowData> createProducer(
       int maxParallelism,
       int subTaskId,
       byte[] jobId,
@@ -490,12 +466,5 @@ public class HiddenLogOperatorsTest extends BaseLogTest {
             testGlobalAggregateManager);
     harness.getStreamConfig().setTimeCharacteristic(TimeCharacteristic.ProcessingTime);
     return harness;
-  }
-
-  public static Properties getPropertiesByTopic(String topic) {
-    Properties properties = getPropertiesWithByteArray(kafkaTestBase.getProperties());
-    properties.put(LOG_STORE_MESSAGE_TOPIC, topic);
-    properties.put(ProducerConfig.ACKS_CONFIG, "all");
-    return properties;
   }
 }

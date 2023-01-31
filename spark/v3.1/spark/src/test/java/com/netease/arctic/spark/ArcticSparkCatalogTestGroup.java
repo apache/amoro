@@ -19,23 +19,28 @@
 package com.netease.arctic.spark;
 
 import com.netease.arctic.spark.hive.TestCreateTableDDL;
+import com.netease.arctic.spark.hive.TestHiveTableDropPartitions;
 import com.netease.arctic.spark.hive.TestHiveTableMergeOnRead;
+import com.netease.arctic.spark.hive.TestHiveTableTruncate;
 import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteDynamic;
 import com.netease.arctic.spark.hive.TestKeyedHiveInsertOverwriteStatic;
+import com.netease.arctic.spark.hive.TestKeyedTableDml;
+import com.netease.arctic.spark.hive.TestKeyedTableMergeInto;
 import com.netease.arctic.spark.hive.TestMigrateHiveTable;
+import com.netease.arctic.spark.hive.TestUnKeyedTableMergeInto;
 import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteDynamic;
 import com.netease.arctic.spark.hive.TestUnkeyedHiveInsertOverwriteStatic;
+import com.netease.arctic.spark.hive.TestUnkeyedTableDml;
 import com.netease.arctic.spark.source.TestKeyedTableDataFrameAPI;
 import com.netease.arctic.spark.source.TestUnKeyedTableDataFrameAPI;
-
-import java.io.IOException;
-import java.util.Map;
-
 import org.apache.iceberg.relocated.com.google.common.collect.Maps;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
+
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * Test suite for the arctic-spark library. all tests share same ams and hms and spark session
@@ -51,6 +56,7 @@ import org.junit.runners.Suite;
     TestHiveTableMergeOnRead.class,
     TestAlterKeyedTable.class,
     TestKeyedTableDDL.class,
+    TestKeyedTableDml.class,
     TestKeyedTableDML.class,
     TestKeyedTableDMLInsertOverwriteDynamic.class,
     TestKeyedTableDMLInsertOverwriteStatic.class,
@@ -58,9 +64,17 @@ import org.junit.runners.Suite;
     TestMigrateNonHiveTable.class,
     TestOptimizeWrite.class,
     TestUnKeyedTableDML.class,
+    TestUnkeyedTableDml.class,
     TestKeyedTableDataFrameAPI.class,
     TestUnKeyedTableDataFrameAPI.class,
-    TestCreateKeyedTableAsSelect.class})
+    TestCreateKeyedTableAsSelect.class,
+    TestDropPartitions.class,
+    TestTruncate.class,
+    TestMergeInto.class,
+    TestHiveTableDropPartitions.class,
+    TestHiveTableTruncate.class,
+    TestKeyedTableMergeInto.class,
+    TestUnKeyedTableMergeInto.class})
 public class ArcticSparkCatalogTestGroup {
 
   @BeforeClass

@@ -27,7 +27,6 @@ import com.netease.arctic.trace.ArcticAppendFiles;
 import com.netease.arctic.trace.ArcticOverwriteFiles;
 import com.netease.arctic.trace.ArcticReplacePartitions;
 import com.netease.arctic.trace.ArcticRowDelta;
-import com.netease.arctic.trace.TableTracer;
 import com.netease.arctic.trace.TraceOperations;
 import com.netease.arctic.trace.TracedDeleteFiles;
 import com.netease.arctic.trace.TracedRewriteFiles;
@@ -172,7 +171,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateSchema updateSchema() {
     if (client != null) {
       return new TracedSchemaUpdate(icebergTable.updateSchema(),
-          new AmsTableTracer(this, TraceOperations.UPDATE_SCHEMA, client));
+          new AmsTableTracer(this, TraceOperations.UPDATE_SCHEMA, client, false));
     } else {
       return icebergTable.updateSchema();
     }
@@ -187,7 +186,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public UpdateProperties updateProperties() {
     UpdateProperties updateProperties = icebergTable.updateProperties();
     if (client != null) {
-      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client);
+      AmsTableTracer tracer = new AmsTableTracer(this, TraceOperations.UPDATE_PROPERTIES, client, false);
       return new TracedUpdateProperties(updateProperties, tracer);
     } else {
       return updateProperties;
@@ -207,19 +206,25 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public AppendFiles newAppend() {
     return ArcticAppendFiles.buildFor(this, false)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
   public AppendFiles newFastAppend() {
     return ArcticAppendFiles.buildFor(this, true)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
   public RewriteFiles newRewrite() {
     return TracedRewriteFiles.buildFor(this)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
@@ -248,7 +253,9 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   @Override
   public DeleteFiles newDelete() {
     return TracedDeleteFiles.buildFor(this)
-        .traceTable(client, this).onTableStore(icebergTable).build();
+        .traceTable(client, this)
+        .onTableStore(icebergTable)
+        .build();
   }
 
   @Override
@@ -265,7 +272,7 @@ public class BaseUnkeyedTable implements UnkeyedTable, HasTableOperations {
   public Transaction newTransaction() {
     Transaction transaction = icebergTable.newTransaction();
     if (client != null) {
-      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client));
+      return new TracedTransaction(this, transaction, new AmsTableTracer(this, client, false));
     } else {
       return transaction;
     }

@@ -23,7 +23,6 @@ import com.netease.arctic.data.PrimaryKeyedFile;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplit;
 import com.netease.arctic.flink.read.hybrid.split.ArcticSplitState;
 import com.netease.arctic.scan.ArcticFileScanTask;
-import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.connector.source.SplitEnumeratorContext;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.slf4j.Logger;
@@ -124,7 +123,6 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   @Override
   public void onDiscoveredSplits(Collection<ArcticSplit> splits) {
     splits.forEach(this::putArcticIntoQueue);
-    totalSplitNum += splits.size();
   }
 
   @Override
@@ -133,22 +131,25 @@ public class ShuffleSplitAssigner implements SplitAssigner {
   }
 
   void putArcticIntoQueue(ArcticSplit split) {
-    int subtaskId = getSubtaskIdByArcticSplit(split);
-    PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
-    LOG.info("put split into queue: {}", split);
-    queue.add(split);
-    subtaskSplitMap.put(subtaskId, queue);
-  }
+    List<DataTreeNode> exactlyTreeNodes = getExactlyTreeNodes(split);
 
-  private int getSubtaskIdByArcticSplit(ArcticSplit arcticSplit) {
-    PrimaryKeyedFile file = findAnyFileInArcticSplit(arcticSplit);
-    long partitionIndexKey = partitionAndIndexHashCode(
-        file.partition().toString(), arcticSplit);
+    PrimaryKeyedFile file = findAnyFileInArcticSplit(split);
 
-    int subtaskId = partitionIndexSubtaskMap.computeIfAbsent(
-        partitionIndexKey, key -> (partitionIndexSubtaskMap.size() + 1) % totalParallelism);
-    LOG.info("partition = {}, index = {}, subtaskId = {}", file.partition().toString(), file.node().index(), subtaskId);
-    return subtaskId;
+    for (DataTreeNode node : exactlyTreeNodes) {
+      long partitionIndexKey = Math.abs(file.partition().toString().hashCode() + node.index());
+      int subtaskId = partitionIndexSubtaskMap.computeIfAbsent(
+          partitionIndexKey, key -> (partitionIndexSubtaskMap.size() + 1) % totalParallelism);
+      LOG.info("partition = {}, (mask, index) = ({}, {}), subtaskId = {}",
+          file.partition().toString(), node.mask(), node.index(), subtaskId);
+
+      PriorityBlockingQueue<ArcticSplit> queue = subtaskSplitMap.getOrDefault(subtaskId, new PriorityBlockingQueue<>());
+      ArcticSplit copiedSplit = split.copy();
+      copiedSplit.modifyTreeNode(node);
+      LOG.info("put split into queue: {}", copiedSplit);
+      queue.add(copiedSplit);
+      totalSplitNum = totalSplitNum + 1;
+      subtaskSplitMap.put(subtaskId, queue);
+    }
   }
 
   @Override
@@ -195,14 +196,24 @@ public class ShuffleSplitAssigner implements SplitAssigner {
     }
   }
 
-  private long partitionAndIndexHashCode(String partition, ArcticSplit arcticSplit) {
-    return Math.abs(partition.hashCode() + getExactlyIndexOfTreeNode(arcticSplit));
-  }
-
-  @VisibleForTesting
-  public long getExactlyIndexOfTreeNode(ArcticSplit arcticSplit) {
+  /**
+   * <p>
+   * |mask=0          o
+   * |             /     \
+   * |mask=1     o        o
+   * |         /   \    /   \
+   * |mask=3  o     o  o     o
+   * <p>
+   * Different data files may locate in different layers when multi snapshots are committed, so arctic source reading
+   * should consider emitting the records and keeping ordering. According to the dataTreeNode of the arctic split and
+   * the currentMaskOfTreeNode, return the exact tree node list which may move up or go down layers in the arctic tree.
+   * </p>
+   *
+   * @param arcticSplit arctic split.
+   * @return the exact tree node list.
+   */
+  public List<DataTreeNode> getExactlyTreeNodes(ArcticSplit arcticSplit) {
     DataTreeNode dataTreeNode = arcticSplit.dataTreeNode();
-    long index = dataTreeNode.index();
     long mask = dataTreeNode.mask();
 
     synchronized (lock) {
@@ -211,27 +222,23 @@ public class ShuffleSplitAssigner implements SplitAssigner {
       }
     }
 
-    boolean modifyDataTreeNode = mask != currentMaskOfTreeNode;
-    boolean greaterThanCurrent = mask > currentMaskOfTreeNode;
-    ++mask;
-    while (mask != currentMaskOfTreeNode + 1) {
-      if (greaterThanCurrent) {
-        mask = mask >> 1;
-        index = index >> 1;
-      } else {
-        mask = mask << 1;
-        index = index << 1;
-      }
-    }
+    return scanTreeNode(dataTreeNode);
+  }
 
-    // Have to modify the dataTreeNode of the arcticSplit due to the mask of this split is diff from the current
-    // mask assigned to source readers.
-    if (modifyDataTreeNode) {
-      DataTreeNode expectedNode = DataTreeNode.of(currentMaskOfTreeNode, index);
-      LOG.info("original dataTreeNode is {}, new dataTreeNode is {}.", dataTreeNode, expectedNode);
-      arcticSplit.modifyTreeNode(expectedNode);
+  private List<DataTreeNode> scanTreeNode(DataTreeNode dataTreeNode) {
+    long mask = dataTreeNode.mask();
+    if (mask == currentMaskOfTreeNode) {
+      return Collections.singletonList(dataTreeNode);
+    } else if (mask > currentMaskOfTreeNode) {
+      // move up one layer
+      return scanTreeNode(dataTreeNode.parent());
+    } else {
+      // go down one layer
+      List<DataTreeNode> allNodes = new ArrayList<>();
+      allNodes.addAll(scanTreeNode(dataTreeNode.left()));
+      allNodes.addAll(scanTreeNode(dataTreeNode.right()));
+      return allNodes;
     }
-    return index;
   }
 
   /**

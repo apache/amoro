@@ -127,14 +127,15 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
   }
 
   protected void insertChangeDeleteFiles(long transactionId) throws IOException {
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withChangeAction(ChangeAction.DELETE)
-        .withTransactionId(transactionId).buildChangeWriter();
+
 
     List<DataFile> changeDeleteFiles = new ArrayList<>();
     // delete 1000 records in 2 partitions(2022-1-1\2022-1-2)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+          .withChangeAction(ChangeAction.DELETE)
+          .withTransactionId(transactionId).buildChangeWriter();
       for (Record record : baseRecords(i, length, testKeyedTable.changeTable().schema())) {
         writer.write(record);
       }
@@ -152,14 +153,15 @@ public class TestMinorExecutor extends TestBaseOptimizeBase {
   }
 
   protected void insertChangeDataFiles(long transactionId) throws IOException {
-    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withChangeAction(ChangeAction.INSERT)
-        .withTransactionId(transactionId).buildChangeWriter();
 
     List<DataFile> changeInsertFiles = new ArrayList<>();
     // write 1000 records to 2 partitions(2022-1-1\2022-1-2)
     int length = 100;
     for (int i = 1; i < length * 10; i = i + length) {
+      GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+          .withChangeAction(ChangeAction.INSERT)
+          .withTransactionId(transactionId).buildChangeWriter();
+
       for (Record record : baseRecords(i, length, testKeyedTable.changeTable().schema())) {
         writer.write(record);
       }

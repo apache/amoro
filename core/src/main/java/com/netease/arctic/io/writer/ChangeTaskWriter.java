@@ -25,7 +25,6 @@ import com.netease.arctic.table.PrimaryKeySpec;
 import org.apache.iceberg.FileFormat;
 import org.apache.iceberg.PartitionSpec;
 import org.apache.iceberg.Schema;
-import org.apache.iceberg.io.DataWriter;
 import org.apache.iceberg.io.FileAppenderFactory;
 
 import java.io.IOException;
@@ -38,30 +37,41 @@ public abstract class ChangeTaskWriter<T> extends BaseTaskWriter<T> {
 
   private long fileOffset = 0L;
 
-  protected ChangeTaskWriter(FileFormat format, FileAppenderFactory<T> appenderFactory,
-                             OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                             long mask, Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
+  protected ChangeTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<T> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      boolean orderedWriter) {
+    super(
+        format, appenderFactory, outputFileFactory, io, targetFileSize,
+        mask, schema, spec, primaryKeySpec, orderedWriter
+    );
   }
 
   @Override
-  protected TaskWriterKey buildWriterKey(T row) {
-    TaskWriterKey key = super.buildWriterKey(row);
+  protected DataWriterKey buildWriterKey(T row) {
+    DataWriterKey key = super.buildWriterKey(row);
     ChangeAction action = action(row);
     switch (action) {
       case INSERT:
       case UPDATE_AFTER:
-        return new TaskWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.INSERT_FILE);
+        return new DataWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.INSERT_FILE);
       case DELETE:
       case UPDATE_BEFORE:
-        return new TaskWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.EQ_DELETE_FILE);
+        return new DataWriterKey(key.getPartitionKey(), key.getTreeNode(), DataFileType.EQ_DELETE_FILE);
       default:
         throw new IllegalArgumentException("Unknown action:" + action.name());
     }
   }
 
   @Override
-  protected void write(DataWriter<T> writer, T row) throws IOException {
+  protected void write(TaskDataWriter<T> writer, T row) throws IOException {
     super.write(writer, appendFileOffset(row));
   }
 

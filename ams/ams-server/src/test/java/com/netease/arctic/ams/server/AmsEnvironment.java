@@ -267,6 +267,7 @@ public class AmsEnvironment {
         "optimize_group:\n" +
         "  - name: default\n" +
         "    # container name, should equal with the name that containers config.sh\n" +
+        "    scheduling_policy: balanced\n" +
         "    container: localContainer\n" +
         "    properties:\n" +
         "      # unit MB\n" +

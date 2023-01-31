@@ -96,7 +96,7 @@ public class ArcticReplacePartitions extends ArcticUpdate<ReplacePartitions> imp
     public ArcticUpdate.Builder<ArcticReplacePartitions, ReplacePartitions> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.OVERWRITE, client, true);
         traceTable(tracer);
       }
       return this;

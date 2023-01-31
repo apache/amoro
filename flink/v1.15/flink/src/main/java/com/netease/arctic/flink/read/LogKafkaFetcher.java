@@ -57,6 +57,7 @@ import static org.apache.flink.util.Preconditions.checkNotNull;
  * The fetcher runs in {@link LogKafkaConsumer} and fetches messages from kafka, and retracts message as handling a
  * Flip message that {@link LogData#getFlip()} is true.
  */
+@Deprecated
 public class LogKafkaFetcher extends KafkaFetcher<RowData> {
   private static final Logger LOG = LoggerFactory.getLogger(LogKafkaFetcher.class);
   private final LogDataJsonDeserialization<RowData> logDataJsonDeserialization;

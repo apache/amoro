@@ -18,23 +18,29 @@
 
 package com.netease.arctic.spark.sql.catalyst.parser
 
-//import com.netease.arctic.spark.sql.parser.{ArcticSqlBaseBaseListener, ArcticSqlBaseLexer, ArcticSqlBaseParser}
-
-import com.netease.arctic.spark.sql.parser.{ArcticExtendSparkSqlBaseListener, ArcticExtendSparkSqlLexer, ArcticExtendSparkSqlParser, ArcticSqlCommandLexer, ArcticSqlCommandParser}
+import com.netease.arctic.spark.sql.catalyst.plans
+import com.netease.arctic.spark.sql.parser._
+import com.netease.arctic.spark.table.ArcticSparkTable
+import com.netease.arctic.spark.util.ArcticSparkUtils
 import org.antlr.v4.runtime._
 import org.antlr.v4.runtime.atn.PredictionMode
 import org.antlr.v4.runtime.misc.{Interval, ParseCancellationException}
 import org.antlr.v4.runtime.tree.TerminalNodeImpl
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.arctic.parser.ArcticExtendSparkSqlAstBuilder
+import org.apache.spark.sql.catalyst.analysis.{EliminateSubqueryAliases, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.extensions.IcebergSqlExtensionsParser.{NonReservedContext, QuotedIdentifierContext}
-import org.apache.spark.sql.catalyst.parser.{ArcticExtendSparkSqlAstBuilder, ParseException, ParserInterface}
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.parser.{ParseException, ParserInterface}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, MergeIntoTable}
 import org.apache.spark.sql.catalyst.trees.Origin
 import org.apache.spark.sql.catalyst.{FunctionIdentifier, SQLConfHelper, TableIdentifier}
+import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.types.{DataType, StructType}
+import org.apache.spark.sql.{AnalysisException, SparkSession}
 
 import java.util.Locale
+import scala.collection.JavaConverters.seqAsJavaListConverter
+import scala.util.Try
 
 class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterface with SQLConfHelper {
 
@@ -97,7 +103,7 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
 
   def isArcticExtendSparkStatement(sqlText: String): Boolean = {
     val normalized = sqlText.toLowerCase(Locale.ROOT).trim().replaceAll("\\s+", " ")
-     normalized.contains("create table") && normalized.contains("using arctic") && normalized.contains("primary key")
+    normalized.contains("create table") && normalized.contains("using arctic") && normalized.contains("primary key")
   }
 
   def buildLexer(sql: String): Option[Lexer] = {
@@ -172,10 +178,50 @@ class ArcticSqlExtensionsParser(delegate: ParserInterface) extends ParserInterfa
           throw new ParseException(Option(sqlText), e.message, position, position)
       }
     } else {
-      delegate.parsePlan(sqlText)
+      val parsedPlan = delegate.parsePlan(sqlText)
+      parsedPlan match {
+        case p =>
+          replaceMergeIntoCommands(p)
+      }
     }
   }
 
+  private def replaceMergeIntoCommands(plan: LogicalPlan): LogicalPlan = plan resolveOperatorsDown {
+
+    case m @ MergeIntoTable(UnresolvedArcticTable(aliasedTable), _, _, _, _) =>
+      plans.MergeIntoArcticTable(aliasedTable, m.sourceTable, m.mergeCondition, m.matchedActions, m.notMatchedActions)
+  }
+
+  object UnresolvedArcticTable {
+
+    def unapply(plan: LogicalPlan): Option[LogicalPlan] = {
+      EliminateSubqueryAliases(plan) match {
+        case UnresolvedRelation(multipartIdentifier, _, _) if isArcticKeyedTable(multipartIdentifier) =>
+          Some(plan)
+        case _ =>
+          None
+      }
+    }
+
+    private def isArcticKeyedTable(multipartIdent: Seq[String]): Boolean = {
+      val catalogAndIdentifier = ArcticSparkUtils.tableCatalogAndIdentifier(SparkSession.active, multipartIdent.asJava)
+      catalogAndIdentifier.catalog match {
+        case tableCatalog: TableCatalog =>
+          Try(tableCatalog.loadTable(catalogAndIdentifier.identifier))
+            .map(isArcticKeyedTable)
+            .getOrElse(false)
+
+        case _ =>
+          false
+      }
+    }
+
+    private def isArcticKeyedTable(table: Table): Boolean = table match {
+      case _: ArcticSparkTable =>
+        true
+      case _ => false
+    }
+  }
 }
 
 /* Copied from Apache Spark's to avoid dependency on Spark Internals */
@@ -225,9 +271,11 @@ case object ArcticSqlExtensionsPostProcessor extends ArcticExtendSparkSqlBaseLis
   }
 
   private def replaceTokenByIdentifier(
-                                        ctx: ParserRuleContext,
-                                        stripMargins: Int)(
-                                        f: CommonToken => CommonToken = identity): Unit = {
+    ctx: ParserRuleContext,
+    stripMargins: Int
+  )(
+    f: CommonToken => CommonToken = identity
+  ): Unit = {
     val parent = ctx.getParent
     parent.removeLastChild()
     val token = ctx.getChild(0).getPayload.asInstanceOf[Token]
@@ -244,12 +292,13 @@ case object ArcticSqlExtensionsPostProcessor extends ArcticExtendSparkSqlBaseLis
 /* Partially copied from Apache Spark's Parser to avoid dependency on Spark Internals */
 case object ArcticParseErrorListener extends BaseErrorListener {
   override def syntaxError(
-                            recognizer: Recognizer[_, _],
-                            offendingSymbol: scala.Any,
-                            line: Int,
-                            charPositionInLine: Int,
-                            msg: String,
-                            e: RecognitionException): Unit = {
+    recognizer: Recognizer[_, _],
+    offendingSymbol: scala.Any,
+    line: Int,
+    charPositionInLine: Int,
+    msg: String,
+    e: RecognitionException
+  ): Unit = {
     val (start, stop) = offendingSymbol match {
       case token: CommonToken =>
         val start = Origin(Some(line), Some(token.getCharPositionInLine))

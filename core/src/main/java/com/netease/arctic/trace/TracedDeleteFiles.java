@@ -84,7 +84,7 @@ public class TracedDeleteFiles extends ArcticUpdate<DeleteFiles> implements Dele
     @Override
     public ArcticUpdate.Builder<TracedDeleteFiles, DeleteFiles> traceTable(AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.DELETE, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.DELETE, client, true);
         traceTable(tracer);
       }
       return this;

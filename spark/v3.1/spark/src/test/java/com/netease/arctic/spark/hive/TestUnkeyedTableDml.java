@@ -41,16 +41,21 @@ public class TestUnkeyedTableDml extends SparkTestBase {
   public void testUpdate() {
     sql("insert into " + database + "." + tableA +
         " values (1, 'aaa', '1' ) , " +
-        "(2, 'bbb', '2'), " +
-        "(3, 'ccc', '1') ");
+        "(2, 'bbb', '1'), " +
+        "(3, 'bbb', '1'), " +
+        "(4, 'bbb', '1'), " +
+        "(5, 'bbb', '2'), " +
+        "(6, 'bbb', '2'), " +
+        "(7, 'bbb', '2'), " +
+        "(8, 'ccc', '2') ");
 
-    sql("update {0}.{1} set name = \"ddd\" where id = 3", database, tableA);
+    sql("update {0}.{1} set name = \"ddd\" where id >= 1", database, tableA);
     rows = sql("select id, name from {0}.{1} where id = 3", database, tableA);
 
     Assert.assertEquals(1, rows.size());
     Assert.assertEquals("ddd", rows.get(0)[1]);
     sql("select * from {0}.{1} ", database, tableA);
-    Assert.assertEquals(3, rows.size());
+    Assert.assertEquals(8, rows.size());
 
   }
 

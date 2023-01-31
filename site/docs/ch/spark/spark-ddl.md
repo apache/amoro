@@ -115,6 +115,14 @@ AS SELECT ...
 DROP TABLE arctic_catalog.db.sample;
 ```
 
+## TRUNCATE TABLE
+
+Arctic Spark 支持 `TRUNCATE TABLE` 语法用于删除表中所有行
+
+```sql
+TRUNCATE TABLE arctic_catalog.db.sample;
+```
+
 ## ALTER TABLE
 Arctic 支持的 `ALTER TABLE` 语法包括：
 
@@ -123,6 +131,7 @@ Arctic 支持的 `ALTER TABLE` 语法包括：
 * ALTER TABLE ... RENAME COLUMN
 * ALTER TABLE ... ALTER COLUMN
 * ALTER TABLE ... DROP COLUMN
+* ALTER TABLE ... DROP PARTITION
 
 ### ALTER TABLE ... SET TBLPROPERTIES
 ```sql
@@ -205,6 +214,10 @@ ALTER TABLE arctic_catalog.db.sample ALTER COLUMN nested.col AFTER other_col;
 ```sql
 ALTER TABLE arctic_catalog.db.sample DROP COLUMN id;
 ALTER TABLE arctic_catalog.db.sample DROP COLUMN point.z;
+```
+### ALTER TABLE ... DROP PARTITION
+```sql
+ALTER TABLE arctic_catalog.db.sample DROP IF EXISTS PARTITION (dt=2022);
 ```
 
 
