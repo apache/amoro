@@ -191,7 +191,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(),
-        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
@@ -295,7 +295,7 @@ public class TestMinorOptimizeCommit extends TestMinorOptimizePlan {
     MinorOptimizePlan minorOptimizePlan = new MinorOptimizePlan(testNoPartitionTable,
         tableOptimizeRuntime, baseDataFilesInfo, changeTableFilesInfo, posDeleteFilesInfo,
         new HashMap<>(), 1, System.currentTimeMillis(),
-        testKeyedTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
+        testNoPartitionTable.asKeyedTable().changeTable().currentSnapshot().snapshotId(),
         TableOptimizeRuntime.INVALID_SNAPSHOT_ID);
     List<BaseOptimizeTask> tasks = minorOptimizePlan.plan();
 
