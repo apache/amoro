@@ -31,15 +31,15 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
    */
   private final boolean retracting;
   /**
-   * @see LogKafkaPartitionSplit#retractStopOffset
+   * The offset where job retract stops, i.e. Read reversely ends.
    */
-  private final Long retractStoppingOffset;
+  private final MessageId retractStoppingOffset;
   /**
-   * @see LogKafkaPartitionSplit#revertStartOffset
+   *  The offset where job revert to normal read starts from. It should skip the flip which has been read.
    */
-  private final Long revertStartingOffset;
+  private final MessageId revertStartingOffset;
   /**
-   * @see LogKafkaPartitionSplit#retractingEpicNo
+   * The epic No. which has finished checkpoint. The data whose epic No. larger than it should be retracted.
    */
   private final Long retractingEpicNo;
   /**
@@ -51,8 +51,8 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
   public LogRecordPulsarWithRetractInfo(MessageId id,
                                         long eventTime,
                                         boolean retracting,
-                                        Long retractStoppingOffset,
-                                        Long revertStartingOffset,
+                                        MessageId retractStoppingOffset,
+                                        MessageId revertStartingOffset,
                                         Long retractingEpicNo,
                                         LogData<T> logData,
                                         T valueToBeSent) {
@@ -67,8 +67,8 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
 
   public static <T> LogRecordPulsarWithRetractInfo<T> ofRetract(MessageId id,
                                                                 long eventTime,
-                                                                Long retractStoppingOffset,
-                                                                Long revertStartingOffset,
+                                                                MessageId retractStoppingOffset,
+                                                                MessageId revertStartingOffset,
                                                                 Long retractingEpicNo,
                                                                 LogData<T> logData,
                                                                 T valueToBeSent) {
@@ -87,11 +87,11 @@ public class LogRecordPulsarWithRetractInfo<T> extends PulsarMessage<T> {
     return retracting;
   }
 
-  public Long getRetractStoppingOffset() {
+  public MessageId getRetractStoppingOffset() {
     return retractStoppingOffset;
   }
 
-  public Long getRevertStartingOffset() {
+  public MessageId getRevertStartingOffset() {
     return revertStartingOffset;
   }
 

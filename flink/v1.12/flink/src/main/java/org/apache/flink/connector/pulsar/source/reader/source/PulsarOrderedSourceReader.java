@@ -26,6 +26,7 @@ import org.apache.flink.connector.base.source.reader.RecordsWithSplitIds;
 import org.apache.flink.connector.base.source.reader.synchronization.FutureCompletingBlockingQueue;
 import org.apache.flink.connector.pulsar.source.config.SourceConfiguration;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.TopicPartition;
+import org.apache.flink.connector.pulsar.source.reader.emitter.PulsarRecordEmitter;
 import org.apache.flink.connector.pulsar.source.reader.fetcher.PulsarOrderedFetcherManager;
 import org.apache.flink.connector.pulsar.source.reader.message.PulsarMessage;
 import org.apache.flink.connector.pulsar.source.reader.split.PulsarOrderedPartitionSplitReader;
@@ -65,6 +66,7 @@ public class PulsarOrderedSourceReader<OUT> extends PulsarSourceReaderBase<OUT> 
     private final AtomicReference<Throwable> cursorCommitThrowable = new AtomicReference<>();
     private ScheduledExecutorService cursorScheduler;
 
+    // --------------- custom start ------------------
     public PulsarOrderedSourceReader(
             FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
             Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier,
@@ -72,14 +74,27 @@ public class PulsarOrderedSourceReader<OUT> extends PulsarSourceReaderBase<OUT> 
             SourceConfiguration sourceConfiguration,
             PulsarClient pulsarClient,
             PulsarAdmin pulsarAdmin) {
-        super(
-                elementsQueue,
-                new PulsarOrderedFetcherManager<>(elementsQueue, splitReaderSupplier::get),
-                context,
-                sourceConfiguration,
-                pulsarClient,
-                pulsarAdmin);
+        this(elementsQueue, splitReaderSupplier, context, sourceConfiguration, pulsarClient, pulsarAdmin,
+            new PulsarRecordEmitter<>());
+    }
 
+    public PulsarOrderedSourceReader(
+        FutureCompletingBlockingQueue<RecordsWithSplitIds<PulsarMessage<OUT>>> elementsQueue,
+        Supplier<PulsarOrderedPartitionSplitReader<OUT>> splitReaderSupplier,
+        SourceReaderContext context,
+        SourceConfiguration sourceConfiguration,
+        PulsarClient pulsarClient,
+        PulsarAdmin pulsarAdmin,
+        PulsarRecordEmitter<OUT> emitter) {
+        super(
+            elementsQueue,
+            new PulsarOrderedFetcherManager<>(elementsQueue, splitReaderSupplier::get),
+            context,
+            sourceConfiguration,
+            pulsarClient,
+            pulsarAdmin,
+            emitter);
+        // --------------- custom end ------------------
         this.cursorsToCommit = Collections.synchronizedSortedMap(new TreeMap<>());
         this.cursorsOfFinishedSplits = new ConcurrentHashMap<>();
     }

@@ -113,20 +113,21 @@ import static org.apache.flink.util.Preconditions.checkState;
  * @param <OUT> The output type of the source.
  */
 @PublicEvolving
-public final class PulsarSourceBuilder<OUT> {
+// ---------------- custom start --------------
+public class PulsarSourceBuilder<OUT> {
     private static final Logger LOG = LoggerFactory.getLogger(PulsarSourceBuilder.class);
+    
+    protected final PulsarConfigBuilder configBuilder;
 
-    private final PulsarConfigBuilder configBuilder;
-
-    private PulsarSubscriber subscriber;
-    private RangeGenerator rangeGenerator;
-    private StartCursor startCursor;
-    private StopCursor stopCursor;
-    private Boundedness boundedness;
-    private PulsarDeserializationSchema<OUT> deserializationSchema;
-
+    protected PulsarSubscriber subscriber;
+    protected RangeGenerator rangeGenerator;
+    protected StartCursor startCursor;
+    protected StopCursor stopCursor;
+    protected Boundedness boundedness;
+    protected PulsarDeserializationSchema<OUT> deserializationSchema;
+    // ---------------- custom end --------------
     // private builder constructor.
-    PulsarSourceBuilder() {
+    protected PulsarSourceBuilder() {
         this.configBuilder = new PulsarConfigBuilder();
         this.startCursor = StartCursor.defaultStartCursor();
         this.stopCursor = StopCursor.defaultStopCursor();

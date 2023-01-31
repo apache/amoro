@@ -18,9 +18,9 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.topic;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import org.apache.flink.annotation.Internal;
-import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
-import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableSet;
 import org.apache.pulsar.common.naming.TopicName;
 
 import java.util.ArrayList;

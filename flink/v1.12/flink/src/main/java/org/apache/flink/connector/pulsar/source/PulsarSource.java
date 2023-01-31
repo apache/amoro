@@ -65,17 +65,20 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
  * @param <OUT> The output type of the source.
  */
 @PublicEvolving
-public final class PulsarSource<OUT>
+// --------------- custom start ------------------
+public class PulsarSource<OUT>
         implements Source<OUT, PulsarPartitionSplit, PulsarSourceEnumState>,
                 ResultTypeQueryable<OUT> {
+    // --------------- custom end ------------------
     private static final long serialVersionUID = 7773108631275567433L;
 
     /**
      * The configuration for pulsar source, we don't support the pulsar's configuration class
      * directly.
      */
-    private final SourceConfiguration sourceConfiguration;
-
+    // --------------- custom start ------------------
+    protected final SourceConfiguration sourceConfiguration;
+    // --------------- custom end ------------------
     private final PulsarSubscriber subscriber;
 
     private final RangeGenerator rangeGenerator;
@@ -93,7 +96,9 @@ public final class PulsarSource<OUT>
      * The constructor for PulsarSource, it's package protected for forcing using {@link
      * PulsarSourceBuilder}.
      */
-    PulsarSource(
+    // --------------- custom start ------------------
+    protected PulsarSource(
+            // --------------- custom end ------------------
             SourceConfiguration sourceConfiguration,
             PulsarSubscriber subscriber,
             RangeGenerator rangeGenerator,

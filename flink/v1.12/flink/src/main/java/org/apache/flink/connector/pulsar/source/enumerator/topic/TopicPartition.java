@@ -18,11 +18,11 @@
 
 package org.apache.flink.connector.pulsar.source.enumerator.topic;
 
+import com.google.common.collect.ImmutableList;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.PublicEvolving;
 import org.apache.flink.connector.base.source.reader.splitreader.SplitReader;
 import org.apache.flink.connector.pulsar.source.enumerator.topic.range.RangeGenerator.KeySharedMode;
-import org.apache.flink.shaded.guava30.com.google.common.collect.ImmutableList;
 import org.apache.pulsar.client.api.Range;
 import org.apache.pulsar.client.api.SubscriptionType;
 

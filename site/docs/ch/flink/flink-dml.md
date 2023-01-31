@@ -95,7 +95,8 @@ SELECT * FROM test_table /*+ OPTIONS('arctic.read.mode'='log') */;
 
 **注意事项**
 
-- 当 log-store.type = pulsar 时，flink 任务的并行度不能小于 pulsar topic 的分区数，否则部分分区的数据无法读取
+- 当 log-store.type = pulsar 时，Flink 任务的并行度不能小于 pulsar topic 的分区数，否则部分分区的数据无法读取
+- 当 log-store 的 Topic 分区数小于 Flink 任务的并行度时，部分 Flink subtask 将闲置。此时，如果任务有 watermark，必须配置参数 table.exec.source.idle-timeout，否则 watermark 将无法推进，详见 [官方文档](https://nightlies.apache.org/flink/flink-docs-release-1.16/docs/dev/table/config/#table-exec-source-idle-timeout)
 
 ####非主键表 Filestore 数据
         
