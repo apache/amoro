@@ -22,11 +22,12 @@ package com.netease.arctic.spark.sql.catalyst.plans
 import org.apache.spark.sql.catalyst.analysis.NamedRelation
 import org.apache.spark.sql.catalyst.plans.logical.{Command, LogicalPlan}
 
-case class OverwriteArcticData(
-    table: NamedRelation,
-    query: LogicalPlan,
-    validateQuery: LogicalPlan,
-    options: Map[String, String]) extends Command {
+case class OverwriteArcticPartitionsDynamic(
+  table: NamedRelation,
+  query: LogicalPlan,
+  validateQuery: LogicalPlan,
+  writeOptions: Map[String, String]
+) extends Command {
   override def children: Seq[LogicalPlan] = Seq(query, validateQuery)
 
 }

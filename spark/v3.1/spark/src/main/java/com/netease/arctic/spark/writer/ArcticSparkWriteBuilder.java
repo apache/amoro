@@ -69,9 +69,9 @@ public class ArcticSparkWriteBuilder implements WriteBuilder, SupportsDynamicOve
     this.block = block;
 
     if (table.isKeyedTable()) {
-      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info.schema(), tableBlockerManager, block);
+      write = new KeyedSparkBatchWrite(table.asKeyedTable(), info, tableBlockerManager, block);
     } else {
-      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info.schema(), tableBlockerManager, block);
+      write = new UnkeyedSparkBatchWrite(table.asUnkeyedTable(), info, tableBlockerManager, block);
     }
   }
 

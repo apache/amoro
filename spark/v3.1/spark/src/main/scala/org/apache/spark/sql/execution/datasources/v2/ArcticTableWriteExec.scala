@@ -1,26 +1,30 @@
 package org.apache.spark.sql.execution.datasources.v2
 
 import com.netease.arctic.spark.table.ArcticSparkTable
-import org.apache.spark.executor.CommitDeniedException
-import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.connector.catalog.CatalogV2Implicits.IdentifierHelper
-import org.apache.spark.sql.connector.catalog.{Identifier, StagedTable, SupportsWrite, Table, TableCatalog}
-import org.apache.spark.sql.connector.write.{BatchWrite, DataWriterFactory, LogicalWriteInfoImpl, PhysicalWriteInfoImpl, V1WriteBuilder, WriterCommitMessage}
-import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan, UnaryExecNode}
+import org.apache.spark.sql.connector.catalog._
+import org.apache.spark.sql.connector.write.{BatchWrite, LogicalWriteInfoImpl, PhysicalWriteInfoImpl, WriterCommitMessage}
+import org.apache.spark.sql.execution.{BinaryExecNode, SparkPlan}
 import org.apache.spark.sql.util.CaseInsensitiveStringMap
 import org.apache.spark.util.{LongAccumulator, Utils}
-import org.apache.spark.{SparkEnv, SparkException, TaskContext}
+import org.apache.spark.{SparkException, TaskContext}
 
 import java.util.UUID
-import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.util.control.NonFatal
 
-trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode{
+/**
+ * This trait will be removed in 0.5.0,
+ * using [[ org.apache.spark.sql.arctic.execution.ExtendedV2ExistingTableWriteExec ]] instead.
+ */
+@deprecated("will be removed after 0.5.0", "0.4.1")
+trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
   def table: ArcticSparkTable
+
   def queryInsert: SparkPlan
+
   def validateQuery: SparkPlan
 
   var count: Long = 0L
@@ -112,10 +116,11 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode{
   }
 
   protected def writeToTable(
-                              catalog: TableCatalog,
-                              table: Table,
-                              writeOptions: CaseInsensitiveStringMap,
-                              ident: Identifier): Seq[InternalRow] = {
+    catalog: TableCatalog,
+    table: Table,
+    writeOptions: CaseInsensitiveStringMap,
+    ident: Identifier
+  ): Seq[InternalRow] = {
     Utils.tryWithSafeFinallyAndFailureCallbacks({
       table match {
         case table: SupportsWrite =>
@@ -151,9 +156,3 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode{
   }
 
 }
-
-
-
-private[v2] case class ArcticDataWritingSparkTaskResult(
-                                                   numRows: Long,
-                                                   rows: List[InternalRow])

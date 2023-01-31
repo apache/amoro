@@ -35,10 +35,19 @@ public class GenericBaseTaskWriter extends BaseTaskWriter<Record> {
 
   private final InternalRecordWrapper wrapper;
 
-  public GenericBaseTaskWriter(FileFormat format, FileAppenderFactory<Record> appenderFactory,
-                               OutputFileFactory outputFileFactory, ArcticFileIO io, long targetFileSize,
-                               long mask, Schema schema, PartitionSpec spec, PrimaryKeySpec primaryKeySpec) {
-    super(format, appenderFactory, outputFileFactory, io, targetFileSize, mask, schema, spec, primaryKeySpec);
+  public GenericBaseTaskWriter(
+      FileFormat format,
+      FileAppenderFactory<Record> appenderFactory,
+      OutputFileFactory outputFileFactory,
+      ArcticFileIO io,
+      long targetFileSize,
+      long mask,
+      Schema schema,
+      PartitionSpec spec,
+      PrimaryKeySpec primaryKeySpec,
+      boolean orderedWriter) {
+    super(format, appenderFactory, outputFileFactory, io, targetFileSize,
+        mask, schema, spec, primaryKeySpec, orderedWriter);
     this.wrapper = new InternalRecordWrapper(schema.asStruct());
   }
 
