@@ -137,8 +137,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   def checkDuplicatesEnabled(): Boolean = {
     java.lang.Boolean.valueOf(spark.sessionState.conf.
       getConfString(
-        SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
-        SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT))
+        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
+        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT))
   }
 
   def buildJoinCondition(primaries: util.List[String], r: DataSourceV2Relation, insertPlan: LogicalPlan): Expression = {

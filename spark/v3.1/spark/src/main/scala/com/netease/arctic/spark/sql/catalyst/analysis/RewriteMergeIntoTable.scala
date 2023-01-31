@@ -184,8 +184,8 @@ case class RewriteMergeIntoTable(spark: SparkSession) extends Rule[LogicalPlan] 
 
     val unMatchedRowNeedCheck = java.lang.Boolean.valueOf(spark.sessionState.conf.
       getConfString(
-        SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE,
-        SparkSQLProperties.CHECK_DATA_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty &&
+        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE,
+        SparkSQLProperties.CHECK_SOURCE_DUPLICATES_ENABLE_DEFAULT)) && notMatchedOutputs.nonEmpty &&
       ArcticExtensionUtils.isKeyedTable(relation)
 
     val mergeRows = plans.MergeRows(
