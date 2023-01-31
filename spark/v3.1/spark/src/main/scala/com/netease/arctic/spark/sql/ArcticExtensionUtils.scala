@@ -18,15 +18,15 @@
 
 package com.netease.arctic.spark.sql
 
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
 import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import org.apache.spark.sql.catalyst.analysis.Resolver
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
+import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
 import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
-
-import scala.annotation.tailrec
 
 
 object ArcticExtensionUtils {
@@ -138,7 +138,21 @@ object ArcticExtensionUtils {
 
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticTable(p)
-      case s: SubqueryAlias => s.child.children.exists{ case p: DataSourceV2Relation => isArcticTable(p)}
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
+    }
+  }
+
+  def isArcticIcebergRelation(plan: LogicalPlan): Boolean = {
+    def isArcticIcebergTable(relation: DataSourceV2Relation): Boolean = relation.table match {
+      case _: ArcticIcebergSparkTable => true
+      case _ => false
+    }
+
+    plan.collectLeaves().exists {
+      case p: DataSourceV2Relation => isArcticIcebergTable(p)
+      case s: SubqueryAlias => s.child.children.exists {
+        case p: DataSourceV2Relation => isArcticIcebergTable(p)
+      }
     }
   }
 
