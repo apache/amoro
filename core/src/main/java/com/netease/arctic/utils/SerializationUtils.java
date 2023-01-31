@@ -92,8 +92,8 @@ public class SerializationUtils {
     return (ContentFileWithSequence<?>) toObject(buffer);
   }
 
-  public static ContentFile<?> toInternalTableFile(byte[] bytes) {
-    return (ContentFile<?>) toObject(bytes);
+  public static ContentFile<?> toContentFile(ByteBuffer buffer) {
+    return (ContentFile<?>) toObject(buffer);
   }
 
   public static ContentFileWithSequence<?> toIcebergContentFile(ByteBuffer buffer) {

@@ -104,7 +104,7 @@ public class BaseOptimizeCommit {
           // tasks in partition
           if (task.getOptimizeTask().getTaskId().getType() == OptimizeType.Minor) {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtils::toInternalTableFile)
+                .map(SerializationUtils::toContentFile)
                 .forEach(minorAddFiles::add);
 
             minorDeleteFiles.addAll(selectDeletedFiles(task, minorAddFiles));
@@ -132,7 +132,7 @@ public class BaseOptimizeCommit {
             partitionOptimizeType.put(entry.getKey(), OptimizeType.Minor);
           } else {
             task.getOptimizeRuntime().getTargetFiles().stream()
-                .map(SerializationUtils::toInternalTableFile)
+                .map(SerializationUtils::toContentFile)
                 .forEach(majorAddFiles::add);
             majorDeleteFiles.addAll(selectDeletedFiles(task, new HashSet<>()));
             partitionOptimizeType.put(entry.getKey(), task.getOptimizeTask().getTaskId().getType());
