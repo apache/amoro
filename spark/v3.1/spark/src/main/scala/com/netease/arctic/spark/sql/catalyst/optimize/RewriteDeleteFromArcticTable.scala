@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package com.netease.arctic.spark.sql.optimize
+package com.netease.arctic.spark.sql.catalyst.optimize
 
 import com.netease.arctic.spark.sql.ArcticExtensionUtils.{ArcticTableHelper, asTableRelation, isArcticRelation}
 import com.netease.arctic.spark.sql.catalyst.plans.ReplaceArcticData
