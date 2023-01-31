@@ -53,7 +53,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
-<!--                            <minimizeJar>true</minimizeJar>-->
+                            <!--                            <minimizeJar>true</minimizeJar>-->
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
                             <shadedArtifactAttached>false</shadedArtifactAttached>
@@ -111,8 +111,12 @@
                                         <exclude>org/codehaus/mojo/animal_sniffer/**</exclude>
                                         <exclude>org/apache/iceberg/spark/extensions/**</exclude>
                                         <exclude>org/apache/spark/sql/catalyst/analysis/ResolveProcedures**</exclude>
-                                        <exclude>org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**</exclude>
-                                        <exclude>org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**</exclude>
+                                        <exclude>
+                                            org/apache/hadoop/hive/ql/optimizer/ppr/PartitionExpressionForMetastore**
+                                        </exclude>
+                                        <exclude>
+                                            org/apache/hadoop/hive/ql/security/authorization/AuthorizationPreEventListener**
+                                        </exclude>
                                     </excludes>
                                 </filter>
 
@@ -120,11 +124,15 @@
                             <relocations>
                                 <!-- relocation arctic spark packages -->
                                 <relocation>
+                                    <pattern>org.apache.spark.sql.arctic</pattern>
+                                    <shadedPattern>com.netease.arctic.spark.sql</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>org.apache.spark.sql.catalyst</pattern>
-                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst</shadedPattern>
+                                    <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst
+                                    </shadedPattern>
                                     <includes>
-                                        <include>org.apache.spark.sql.catalyst.expressions.Arctic*</include>
-                                        <include>org.apache.spark.sql.catalyst.parser.Arctic*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.Arctic*</include>
                                     </includes>
                                 </relocation>
 
@@ -198,10 +206,13 @@
                                     <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.connector.iceberg
                                     </shadedPattern>
                                     <excludes>
-                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureCatalog
+                                        </exclude>
                                         <exclude>org.apache.spark.sql.connector.iceberg.catalog.Procedure</exclude>
-                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter</exclude>
-                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl</exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameter
+                                        </exclude>
+                                        <exclude>org.apache.spark.sql.connector.iceberg.catalog.ProcedureParameterImpl
+                                        </exclude>
                                     </excludes>
                                 </relocation>
 

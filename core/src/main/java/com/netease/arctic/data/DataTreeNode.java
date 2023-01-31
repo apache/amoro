@@ -25,8 +25,9 @@ import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Objects;
 
+
 /**
- * Tree node which data shuffle into, consist of two parts:
+ * Tree node which data shuffle into, consist of two parts.
  * <ul>
  *   <li>mask: mask code representing the height of tree, validate value:2^n-1(n representing the height of tree)</li>
  *   <li>index: index of tree node(starting from 0)</li>
@@ -35,8 +36,8 @@ import java.util.Objects;
  */
 public final class DataTreeNode implements Serializable {
 
-  private long mask;
-  private long index;
+  private final long mask;
+  private final long index;
 
   public static final DataTreeNode ROOT = new DataTreeNode(0, 0);
 
@@ -64,9 +65,6 @@ public final class DataTreeNode implements Serializable {
   private DataTreeNode(long mask, long index) {
     this.mask = mask;
     this.index = index;
-  }
-
-  public DataTreeNode() {
   }
 
   public long mask() {

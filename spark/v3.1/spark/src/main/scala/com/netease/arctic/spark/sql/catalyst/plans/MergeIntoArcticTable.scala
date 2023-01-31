@@ -18,21 +18,23 @@
 
 package com.netease.arctic.spark.sql.catalyst.plans
 
-import org.apache.spark.sql.catalyst.expressions.{AssignmentUtils, Expression}
+import org.apache.spark.sql.arctic.catalyst.AssignmentHelper
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.plans.logical._
 
 case class MergeIntoArcticTable(
-                                 targetTable: LogicalPlan,
-                                 sourceTable: LogicalPlan,
-                                 mergeCondition: Expression,
-                                 matchedActions: Seq[MergeAction],
-                                 notMatchedActions: Seq[MergeAction],
-                                 rewritePlan: Option[LogicalPlan] = None) extends Command {
+  targetTable: LogicalPlan,
+  sourceTable: LogicalPlan,
+  mergeCondition: Expression,
+  matchedActions: Seq[MergeAction],
+  notMatchedActions: Seq[MergeAction],
+  rewritePlan: Option[LogicalPlan] = None
+) extends Command {
 
   lazy val aligned: Boolean = {
     val matchedActionsAligned = matchedActions.forall {
       case UpdateAction(_, assignments) =>
-        AssignmentUtils.aligned(targetTable, assignments)
+        AssignmentHelper.aligned(targetTable, assignments)
       case _: DeleteAction =>
         true
       case _ =>
@@ -41,7 +43,7 @@ case class MergeIntoArcticTable(
 
     val notMatchedActionsAligned = notMatchedActions.forall {
       case InsertAction(_, assignments) =>
-        AssignmentUtils.aligned(targetTable, assignments)
+        AssignmentHelper.aligned(targetTable, assignments)
       case _ =>
         false
     }
