@@ -73,7 +73,7 @@ public class KeyedSparkBatchWrite implements ArcticSparkWriteBuilder.ArcticWrite
     this.txId = TablePropertyUtil.allocateTransactionId(table.asKeyedTable());
     this.hiveSubdirectory = HiveTableUtil.newHiveSubdirectory(this.legacyTxId);
     this.orderedWriter = Boolean.parseBoolean(info.options().getOrDefault(
-        "writer.distributed-and-ordered", "true"
+        "writer.distributed-and-ordered", "false"
     ));
   }
 

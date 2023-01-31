@@ -132,8 +132,7 @@
                                     <shadedPattern>com.netease.arctic.shade.org.apache.spark.sql.catalyst
                                     </shadedPattern>
                                     <includes>
-                                        <include>org.apache.spark.sql.catalyst.expressions.Arctic*</include>
-                                        <include>org.apache.spark.sql.catalyst.parser.Arctic*</include>
+                                        <include>org.apache.spark.sql.execution.datasources.v2.Arctic*</include>
                                     </includes>
                                 </relocation>
 

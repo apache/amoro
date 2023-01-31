@@ -156,9 +156,3 @@ trait ArcticTableWriteExec extends V2CommandExec with BinaryExecNode {
   }
 
 }
-
-
-private[v2] case class ArcticDataWritingSparkTaskResult(
-  numRows: Long,
-  rows: List[InternalRow]
-)

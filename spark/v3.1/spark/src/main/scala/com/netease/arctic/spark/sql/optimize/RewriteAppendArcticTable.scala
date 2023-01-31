@@ -38,7 +38,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
   import com.netease.arctic.spark.sql.ArcticExtensionUtils._
 
   override def apply(plan: LogicalPlan): LogicalPlan = plan transform {
-    case AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
+    case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
       val arcticRelation = asTableRelation(r)
       val upsertWrite = arcticRelation.table.asUpsertWrite
       val (newQuery, options) = if (upsertWrite.appendAsUpsert()) {
@@ -49,8 +49,8 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
         (query, writeOptions)
       }
       arcticRelation.table match {
-        case a: ArcticSparkTable =>
-          if (a.table().isKeyedTable) {
+        case tbl: ArcticSparkTable =>
+          if (tbl.table().isKeyedTable) {
             val validateQuery = buildValidatePrimaryKeyDuplication(r, query)
             if (checkDuplicatesEnabled()) {
               AppendArcticData(arcticRelation, newQuery, validateQuery, options)
@@ -58,7 +58,7 @@ case class RewriteAppendArcticTable(spark: SparkSession) extends Rule[LogicalPla
               ReplaceArcticData(arcticRelation, query, writeOptions)
             }
           } else {
-            ReplaceArcticData(arcticRelation, query, writeOptions)
+            a
           }
       }
     case a @ OverwritePartitionsDynamic(r: DataSourceV2Relation, query, writeOptions, _)

@@ -53,6 +53,11 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
       o.copy(query = newQuery, writeOptions = options)
 
+    case a @ AppendData(r: DataSourceV2Relation, query, writeOptions, _) if isArcticRelation(r) =>
+      val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
+      val options = writeOptions + ("writer.distributed-and-ordered" -> "true")
+      a.copy(query = newQuery, writeOptions = options)
+
     case a @ AppendData(r: DataSourceV2Relation, query, _, _) if isArcticIcebergRelation(r) =>
       val newQuery = distributionQuery(query, r.table, rowLevelOperation = false)
       a.copy(query = newQuery)
@@ -94,9 +99,10 @@ case class OptimizeWriteRule(spark: SparkSession) extends Rule[LogicalPlan] with
       query
     }
 
-    val ordering = DistributionAndOrderingUtil.buildTableRequiredSortOrder(
+    val orderingExpressions = DistributionAndOrderingUtil.buildTableRequiredSortOrder(
       arcticTable, rowLevelOperation, writeBase
-    ).toSeq
+    )
+    val ordering = orderingExpressions.toSeq
       .map(e => toCatalyst(e))
       .asInstanceOf[Seq[SortOrder]]
 
