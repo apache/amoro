@@ -1,5 +1,5 @@
 <template>
-  <a-spin :spinning="loading">
+  <a-spin :spinning="loading" class="echarts-loading">
     <div ref="echart" :style="{ width: width, height: height }" class="timeline-echarts"></div>
   </a-spin>
 </template>
@@ -76,6 +76,9 @@ export default defineComponent({
 })
 </script>
 <style lang="less">
+.echarts-loading {
+  width: 100% !important;
+}
 .timeline-echarts {
   .echarts-tooltip-dark {
     background-color: rgba(0,0,0,.7) !important;

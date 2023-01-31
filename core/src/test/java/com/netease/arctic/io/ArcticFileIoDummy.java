@@ -26,7 +26,7 @@ import org.apache.iceberg.io.OutputFile;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public class ArcticFileIoDummy implements ArcticFileIO{
+public class ArcticFileIoDummy implements ArcticFileIO {
 
   private FileIO fileIO;
 

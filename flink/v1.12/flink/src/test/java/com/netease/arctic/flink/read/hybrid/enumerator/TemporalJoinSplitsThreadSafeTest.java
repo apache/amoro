@@ -95,6 +95,11 @@ public class TemporalJoinSplitsThreadSafeTest {
     }
 
     @Override
+    public ArcticSplit copy() {
+      return new TestArcticSplit(this.splitId);
+    }
+
+    @Override
     public String splitId() {
       return splitId;
     }

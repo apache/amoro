@@ -27,6 +27,7 @@ import com.netease.arctic.flink.read.source.ArcticScanContext;
 import com.netease.arctic.flink.read.source.DataIterator;
 import com.netease.arctic.flink.table.ArcticTableLoader;
 import com.netease.arctic.flink.util.ArcticUtils;
+import com.netease.arctic.flink.util.TestUtil;
 import com.netease.arctic.flink.write.FlinkSink;
 import com.netease.arctic.table.ArcticTable;
 import com.netease.arctic.table.KeyedTable;
@@ -135,6 +136,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
 
   @After
   public void dropTable() {
+    TestUtil.cancelAllJobs(miniClusterResource.getMiniCluster());
     testCatalog.dropTable(FAIL_TABLE_ID, true);
   }
 
@@ -218,7 +220,7 @@ public class ArcticSourceTest extends RowDataReaderFunctionTest implements Seria
     assertRecords(testFailoverTable, expected, Duration.ofMillis(10), 12000);
   }
 
-  @Test(timeout = 30000)
+  @Test(timeout = 60000)
   public void testDimTaskManagerFailover() throws Exception {
     List<RowData> updated = updateRecords();
     writeUpdate(updated);

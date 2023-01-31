@@ -95,7 +95,7 @@ public class TracedRewriteFiles extends ArcticUpdate<RewriteFiles> implements Re
     public ArcticUpdate.Builder<TracedRewriteFiles, RewriteFiles> traceTable(
         AmsClient client, UnkeyedTable traceTable) {
       if (client != null) {
-        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.REPLACE, client);
+        TableTracer tracer = new AmsTableTracer(traceTable, TraceOperations.REPLACE, client, true);
         traceTable(tracer);
       }
       return this;

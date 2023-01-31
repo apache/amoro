@@ -18,13 +18,15 @@
 
 package com.netease.arctic.spark.sql
 
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
 import com.netease.arctic.spark.{ArcticSparkCatalog, ArcticSparkSessionCatalog}
-import com.netease.arctic.spark.table.{ArcticSparkTable, SupportsUpsert}
+import com.netease.arctic.spark.table.{ArcticIcebergSparkTable, ArcticSparkTable, SupportsUpsert}
+import org.apache.spark.sql.catalyst.analysis.Resolver
 import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, SubqueryAlias}
+import org.apache.spark.sql.connector.catalog.{Table, TableCatalog}
 import org.apache.spark.sql.execution.datasources.v2.DataSourceV2Relation
-
-import scala.annotation.tailrec
+import org.apache.spark.sql.types.{ArrayType, MapType, StructField, StructType}
 
 
 object ArcticExtensionUtils {
@@ -50,6 +52,84 @@ object ArcticExtensionUtils {
       ArcticExtensionUtils.asTableRelation(plan)
     }
   }
+
+  implicit class ArcticStructTypeHelper(struct: StructType) {
+    def findNestedField(fieldNames: Seq[String],
+                        includeCollections: Boolean = false,
+                        resolver: Resolver = _ == _): Option[(Seq[String], StructField)] = {
+      def prettyFieldName(nameParts: Seq[String]): String = {
+        nameParts.map(quoteIfNeeded).mkString(".")
+      }
+
+      def quoteIfNeeded(part: String): String = {
+        if (part.contains(".") || part.contains("`")) {
+          s"`${part.replace("`", "``")}`"
+        } else {
+          part
+        }
+      }
+
+
+      def findField(
+                     struct: StructType,
+                     searchPath: Seq[String],
+                     normalizedPath: Seq[String]): Option[(Seq[String], StructField)] = {
+        searchPath.headOption.flatMap { searchName =>
+          val found = struct.fields.filter(f => resolver(searchName, f.name))
+          if (found.length > 1) {
+            val names = found.map(f => prettyFieldName(normalizedPath :+ f.name))
+              .mkString("[", ", ", " ]")
+            throw new UnsupportedOperationException(
+              s"Ambiguous field name: ${prettyFieldName(normalizedPath :+ searchName)}. Found " +
+                s"multiple columns that can match: $names")
+          } else if (found.isEmpty) {
+            None
+          } else {
+            val field = found.head
+            (searchPath.tail, field.dataType, includeCollections) match {
+              case (Seq(), _, _) =>
+                Some(normalizedPath -> field)
+
+              case (names, struct: StructType, _) =>
+                findField(struct, names, normalizedPath :+ field.name)
+
+              case (_, _, false) =>
+                None // types nested in maps and arrays are not used
+
+              case (Seq("key"), MapType(keyType, _, _), true) =>
+                // return the key type as a struct field to include nullability
+                Some((normalizedPath :+ field.name) -> StructField("key", keyType, nullable = false))
+
+              case (Seq("key", names@_*), MapType(struct: StructType, _, _), true) =>
+                findField(struct, names, normalizedPath ++ Seq(field.name, "key"))
+
+              case (Seq("value"), MapType(_, valueType, isNullable), true) =>
+                // return the value type as a struct field to include nullability
+                Some((normalizedPath :+ field.name) ->
+                  StructField("value", valueType, nullable = isNullable))
+
+              case (Seq("value", names@_*), MapType(_, struct: StructType, _), true) =>
+                findField(struct, names, normalizedPath ++ Seq(field.name, "value"))
+
+              case (Seq("element"), ArrayType(elementType, isNullable), true) =>
+                // return the element type as a struct field to include nullability
+                Some((normalizedPath :+ field.name) ->
+                  StructField("element", elementType, nullable = isNullable))
+
+              case (Seq("element", names@_*), ArrayType(struct: StructType, _), true) =>
+                findField(struct, names, normalizedPath ++ Seq(field.name, "element"))
+
+              case _ =>
+                None
+            }
+          }
+        }
+      }
+
+      findField(struct, fieldNames, Nil)
+    }
+  }
+
   def isArcticRelation(plan: LogicalPlan): Boolean = {
     def isArcticTable(relation: DataSourceV2Relation): Boolean = relation.table match {
       case _: ArcticSparkTable => true
@@ -58,7 +138,21 @@ object ArcticExtensionUtils {
 
     plan.collectLeaves().exists {
       case p: DataSourceV2Relation => isArcticTable(p)
-      case s: SubqueryAlias => s.child.children.exists{ case p: DataSourceV2Relation => isArcticTable(p)}
+      case s: SubqueryAlias => s.child.children.exists { case p: DataSourceV2Relation => isArcticTable(p) }
+    }
+  }
+
+  def isArcticIcebergRelation(plan: LogicalPlan): Boolean = {
+    def isArcticIcebergTable(relation: DataSourceV2Relation): Boolean = relation.table match {
+      case _: ArcticIcebergSparkTable => true
+      case _ => false
+    }
+
+    plan.collectLeaves().exists {
+      case p: DataSourceV2Relation => isArcticIcebergTable(p)
+      case s: SubqueryAlias => s.child.children.exists {
+        case p: DataSourceV2Relation => isArcticIcebergTable(p)
+      }
     }
   }
 
@@ -72,6 +166,7 @@ object ArcticExtensionUtils {
 
   def isArcticTable(table: Table): Boolean = table match {
     case _: ArcticSparkTable => true
+    case _: ArcticIcebergSparkTable => true
     case _ => false
   }
 
@@ -84,4 +179,11 @@ object ArcticExtensionUtils {
     }
   }
 
+  def isKeyedTable(relation: DataSourceV2Relation): Boolean = {
+    relation.table match {
+      case arctic: ArcticSparkTable =>
+        arctic.table().isKeyedTable
+      case _ => false
+    }
+  }
 }

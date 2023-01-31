@@ -18,7 +18,9 @@
 
 package com.netease.arctic.io;
 
-import com.netease.arctic.TableTestBase;
+import com.netease.arctic.TableTestHelpers;
+import com.netease.arctic.ams.api.properties.TableFormat;
+import com.netease.arctic.catalog.TableTestBase;
 import com.netease.arctic.io.writer.GenericBaseTaskWriter;
 import com.netease.arctic.io.writer.GenericChangeTaskWriter;
 import com.netease.arctic.io.writer.GenericTaskWriters;
@@ -35,21 +37,23 @@ import org.apache.iceberg.data.Record;
 import org.apache.iceberg.hadoop.HadoopTables;
 import org.apache.iceberg.io.WriteResult;
 import org.apache.iceberg.relocated.com.google.common.collect.ImmutableList;
-import org.apache.iceberg.relocated.com.google.common.collect.ImmutableMap;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 public class TaskWriterTest extends TableTestBase {
 
+  public TaskWriterTest() {
+    super(TableFormat.MIXED_ICEBERG, true, true);
+  }
+
   @Test
   public void testBaseWriter() throws IOException {
-    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(testKeyedTable)
+    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
         .withTransactionId(1L).buildBaseWriter();
 
     for (Record record : writeRecords()) {
@@ -61,42 +65,42 @@ public class TaskWriterTest extends TableTestBase {
 
   @Test
   public void testBasePosDeleteWriter() throws IOException {
-    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(testKeyedTable)
-        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, FILE_A.partition());
+    DataFile dataFile = TableTestHelpers.getFile(1, "op_time_day=2020-01-01");
+    SortedPosDeleteWriter<Record> writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        .withTransactionId(1L).buildBasePosDeleteWriter(2, 1, dataFile.partition());
 
-    writer.delete(FILE_A.path(), 1);
-    writer.delete(FILE_A.path(), 3);
-    writer.delete(FILE_A.path(), 5);
+    writer.delete(dataFile.path(), 1);
+    writer.delete(dataFile.path(), 3);
+    writer.delete(dataFile.path(), 5);
     List<DeleteFile> result = writer.complete();
     Assert.assertEquals(1, result.size());
-    RowDelta rowDelta = testKeyedTable.baseTable().newRowDelta();
+    RowDelta rowDelta = getArcticTable().asKeyedTable().baseTable().newRowDelta();
     result.forEach(rowDelta::addDeletes);
     rowDelta.commit();
 
     // check lower bounds and upper bounds of file_path
     HadoopTables tables = new HadoopTables();
-    Table entriesTable = tables.load(testKeyedTable.baseTable().location() + "#ENTRIES");
+    Table entriesTable = tables.load(getArcticTable().asKeyedTable().baseTable().location() + "#ENTRIES");
     IcebergGenerics.read(entriesTable)
         .build()
         .forEach(record -> {
-          GenericRecord dataFile = (GenericRecord) record.get(ManifestEntryFields.DATA_FILE_ID);
+          GenericRecord fileRecord = (GenericRecord) record.get(ManifestEntryFields.DATA_FILE_ID);
           Map<Integer, ByteBuffer> lowerBounds =
-              (Map<Integer, ByteBuffer>) dataFile.getField(DataFile.LOWER_BOUNDS.name());
+              (Map<Integer, ByteBuffer>) fileRecord.getField(DataFile.LOWER_BOUNDS.name());
           String pathLowerBounds = new String(lowerBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
           Map<Integer, ByteBuffer> upperBounds =
-              (Map<Integer, ByteBuffer>) dataFile.getField(DataFile.UPPER_BOUNDS.name());
+              (Map<Integer, ByteBuffer>) fileRecord.getField(DataFile.UPPER_BOUNDS.name());
           String pathUpperBounds = new String(upperBounds.get(MetadataColumns.DELETE_FILE_PATH.fieldId()).array());
 
-          Assert.assertEquals(FILE_A.path().toString(), pathLowerBounds);
-          Assert.assertEquals(FILE_A.path().toString(), pathUpperBounds);
+          Assert.assertEquals(dataFile.path().toString(), pathLowerBounds);
+          Assert.assertEquals(dataFile.path().toString(), pathUpperBounds);
         });
   }
 
   @Test
   public void testChangeWriter() throws IOException {
-    GenericChangeTaskWriter writer =   GenericTaskWriters.builderFor(testKeyedTable)
+    GenericChangeTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
         .withTransactionId(1L).buildChangeWriter();
-
 
     for (Record record : writeRecords()) {
       writer.write(record);
@@ -106,20 +110,43 @@ public class TaskWriterTest extends TableTestBase {
     Assert.assertEquals(4, result.dataFiles().length);
   }
 
-  private List<Record> writeRecords() {
-    GenericRecord record = GenericRecord.create(TABLE_SCHEMA);
 
+  @Test
+  public void testOrderedWriterBase() throws IOException {
     ImmutableList.Builder<Record> builder = ImmutableList.builder();
-    builder.add(record.copy(ImmutableMap.of("id", 1, "name", "john", "op_time",
-        LocalDateTime.of(2022, 1, 1, 1, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 2, "name", "lily", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 3, "name", "jake", "op_time",
-        LocalDateTime.of(2022, 1, 2, 23, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 4, "name", "sam", "op_time",
-        LocalDateTime.of(2022, 1, 2, 6, 0, 0))));
-    builder.add(record.copy(ImmutableMap.of("id", 5, "name", "john", "op_time",
-        LocalDateTime.of(2022, 1, 1, 12, 0, 0))));
+    builder.add(DataTestHelpers.createRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(3, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(4, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(5, "john", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(6, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(7, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(8, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(9, "john", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(10, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(11, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(12, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(13, "john", 0, "2022-01-01T12:00:00"));
+
+
+    GenericBaseTaskWriter writer = GenericTaskWriters.builderFor(getArcticTable().asKeyedTable())
+        .withOrdered()
+        .withTransactionId(1L)
+        .buildBaseWriter();
+
+    Assert.assertThrows(IllegalStateException.class, () -> {
+      for (Record record : builder.build()) {
+        writer.write(record);
+      }
+    });
+
+  }
+
+  private List<Record> writeRecords() {
+    ImmutableList.Builder<Record> builder = ImmutableList.builder();
+    builder.add(DataTestHelpers.createRecord(2, "lily", 0, "2022-01-01T12:00:00"));
+    builder.add(DataTestHelpers.createRecord(3, "jake", 0, "2022-02-01T23:00:00"));
+    builder.add(DataTestHelpers.createRecord(4, "sam", 0, "2022-02-01T06:00:00"));
+    builder.add(DataTestHelpers.createRecord(5, "john", 0, "2022-01-01T12:00:00"));
 
     return builder.build();
   }
